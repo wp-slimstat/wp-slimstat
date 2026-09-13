@@ -1036,8 +1036,8 @@ echo
 echo "── R4 · idempotence ─────────────────────────────────────────────────────"
 ALTERS_0=$(mysql_q "SHOW GLOBAL STATUS LIKE 'Com_alter_table';" | awk '{print $2}')
 # The return value is captured, because "issued no ALTER" is also what a runner that REFUSED
-# produces: a stale claim row from a killed run makes runAll() return [] immediately and take
-# the takeover window to expire. Without this, a wedged runner reads as perfect idempotence.
+# produces: a still-live DDL session keeps its named lock after the PHP worker dies and makes
+# runAll() return [] until that database session ends. Without this, contention reads as idempotence.
 RERUN=$(wpc eval '
   $a = SlimStat\Migration\MigrationService::analyticsConnection();
   $m = new SlimStat\Migration\MigrationManager();

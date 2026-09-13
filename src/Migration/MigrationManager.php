@@ -19,14 +19,6 @@ class MigrationManager
      */
     private const OPTION_RUN_CLAIM = 'slimstat_migration_run_claim';
 
-    /**
-     * Seconds after which a run claim is treated as abandoned.
-     *
-     * Longer than any single request's budget on purpose — taking over a claim whose holder
-     * is still running is how you get the concurrent rebuilds the claim prevents.
-     */
-    private const RUN_CLAIM_STALE_AFTER = 900;
-
     private const OPTION_DISMISSED = 'slimstat_migration_dismissed';
 
     /**
@@ -64,6 +56,24 @@ class MigrationManager
      * deliberately not written and only this stops the probe repeating.
      */
     private $offeredMemo;
+
+    /** @var \wpdb|null */
+    private $runConnection;
+
+    /** @var string */
+    private $runLock = '';
+
+    /** @var string */
+    private $runToken = '';
+
+    /** @var mixed */
+    private $reconnectRetries;
+
+    /** @var string */
+    private $runRefusal = '';
+
+    /** @var bool */
+    private $runContended = false;
 
     /**
      * @return array<int, MigrationInterface>
@@ -346,44 +356,102 @@ class MigrationManager
         }
     }
 
-    /**
-     * Run one migration by id, under the same single-flight claim as runAll().
-     *
-     * This is the branch the concurrency hazard actually travels. migration.js posts
-     * `migration: <id>` once PER STEP, and only posts the bare action after every step has
-     * already run — so runAll() is the cheap final sweep, while THIS is where a
-     * user-triggered ALGORITHM=COPY rebuild happens. Adding the claim to runAll() alone
-     * protected the sweep and left the rebuild unserialised.
-     *
-     * Also keeps the status write and the probe invalidation with the run rather than in the
-     * admin layer, where the option name was a hardcoded duplicate of OPTION_STATUS and
-     * forgetProbe() was never called at all.
-     *
-     * @return bool|null null when there is no such migration, or the claim was lost.
-     */
-    /**
-     * Take the single-flight claim, or take over a stale one.
-     *
-     * `finally` is exception-safe, not crash-safe — it does not run on a fatal, an OOM,
-     * max_execution_time or a dropped connection, which are exactly how a multi-minute
-     * ALGORITHM=COPY rebuild dies. The claim row has no TTL, so without takeover a killed
-     * run wedges the runner permanently while the UI reports "success, nothing happened".
-     * claim_schema_lock() learned this already; this is the same shape.
-     */
+    /** Acquire the server-side lock on the same session that runs the DDL. */
     private function claimRun(): bool
     {
-        if (OptionClaim::insert(self::OPTION_RUN_CLAIM, (string) time(), 'no')) {
-            return true;
-        }
-
-        $held = (int) get_option(self::OPTION_RUN_CLAIM);
-
-        if ($held > 0 && (time() - $held) < self::RUN_CLAIM_STALE_AFTER) {
+        $db              = MigrationService::analyticsConnection();
+        $this->runLock   = 'wpss_migrate_' . md5($db->__get('dbname') . '|' . $GLOBALS['wpdb']->prefix);
+        $this->reconnectRetries = $db->__get('reconnect_retries');
+        $this->runToken         = bin2hex(random_bytes(16));
+        $result          = $db->get_var($db->prepare('SELECT GET_LOCK(%s, 0)', $this->runLock));
+        if (1 !== $result && '1' !== $result) {
+            $this->runContended = 0 === $result || '0' === $result;
+            $this->runRefusal = $this->runContended
+                ? __('Another migration is already running. Try again in a moment.', 'wp-slimstat')
+                : __('Could not acquire the database migration lock. Check the database connection and try again.', 'wp-slimstat');
             return false;
         }
 
-        return OptionClaim::compareAndSwap(self::OPTION_RUN_CLAIM, (string) $held, (string) time(), 'no');
+        $this->runConnection = $db;
+        $ready = false;
+        try {
+            $db->__set('reconnect_retries', 0);
+            update_option(self::OPTION_RUN_CLAIM, $this->runToken, false);
+            $this->runRefusal   = '';
+            $this->runContended = false;
+            $ready = true;
+        } finally {
+            if (!$ready) {
+                $this->releaseRun();
+            }
+        }
+
+        return true;
     }
+
+    /** The AJAX layer uses this to distinguish contention from a broken lock query. */
+    public function getRunRefusal(): string
+    {
+        return $this->runRefusal;
+    }
+
+    public function isRunContended(): bool
+    {
+        return $this->runContended;
+    }
+
+    /**
+     * Confirm that this exact database session still owns the named lock.
+     *
+     * @phpstan-impure
+     */
+    private function ownsRunLock(): bool
+    {
+        if (!$this->runConnection) {
+            return false;
+        }
+
+        $result = $this->runConnection->get_var($this->runConnection->prepare(
+            'SELECT IS_USED_LOCK(%s) = CONNECTION_ID()',
+            $this->runLock
+        ));
+
+        if (1 === $result || '1' === $result) {
+            return true;
+        }
+
+        $this->runRefusal   = __('The database migration lock was lost. No completion status was written.', 'wp-slimstat');
+        $this->runContended = false;
+        return false;
+    }
+
+    /** Release once, after all protected writes, and restore wpdb's reconnect policy. */
+    private function releaseRun(): void
+    {
+        $db = $this->runConnection;
+        if (!$db) {
+            return;
+        }
+
+        try {
+            if ($this->ownsRunLock()) {
+                OptionClaim::delete(self::OPTION_RUN_CLAIM, $this->runToken, 'no');
+            }
+        } finally {
+            try {
+                $db->get_var($db->prepare('SELECT RELEASE_LOCK(%s)', $this->runLock));
+            } finally {
+                $db->__set('reconnect_retries', $this->reconnectRetries);
+                $this->runConnection = null;
+            }
+        }
+    }
+
+    /**
+     * Run one migration by id, under the same single-flight claim as runAll().
+     *
+     * @return bool|null null when there is no such migration, ownership was refused, or the lock was lost.
+     */
 
     public function runOne(string $id): ?bool
     {
@@ -404,7 +472,15 @@ class MigrationManager
                 return null;
             }
 
+            if (!$this->ownsRunLock()) {
+                return null;
+            }
+
             $ok = $target->run();
+
+            if (!$this->ownsRunLock()) {
+                return null;
+            }
 
             $status = $this->getStatus();
             self::rememberCompletedMigrations([$target->getId() => $ok]);
@@ -415,7 +491,7 @@ class MigrationManager
 
             return $ok;
         } finally {
-            delete_option(self::OPTION_RUN_CLAIM);
+            $this->releaseRun();
         }
     }
 
@@ -445,31 +521,43 @@ class MigrationManager
                     continue;
                 }
 
+                if (!$this->ownsRunLock()) {
+                    return [];
+                }
+
                 // An index can decline DDL because its definition is malformed or unreadable.
                 // Its idempotent run() distinguishes that refusal from a healthy existing index.
-                $ok = $migration instanceof AbstractIndexMigration
-                    ? $migration->run()
-                    : (!$migration->shouldRun() || $migration->run());
+                if ($migration instanceof AbstractIndexMigration) {
+                    $ok = $migration->run();
+                } elseif (!$migration->shouldRun()) {
+                    $ok = true;
+                } elseif (!$this->ownsRunLock()) {
+                    return [];
+                } else {
+                    $ok = $migration->run();
+                }
                 $results[$migration->getId()] = $ok;
             }
+
+            if (!$this->ownsRunLock()) {
+                return [];
+            }
+
+            self::rememberCompletedMigrations($results);
+            update_option(self::OPTION_STATUS, $results, false);
+
+            // Re-probe against the database we just changed, not against the answer cached
+            // before we changed it.
+            $this->forgetProbe(in_array(true, $results, true));
+
+            if (!$this->needsMigration()) {
+                $this->dismissNotice();
+            }
+
+            return $results;
         } finally {
-            // Released on every path a `finally` can see. A crash skips it, which is what
-            // the takeover above exists for.
-            delete_option(self::OPTION_RUN_CLAIM);
+            $this->releaseRun();
         }
-
-        self::rememberCompletedMigrations($results);
-        update_option(self::OPTION_STATUS, $results, false);
-
-        // Re-probe against the database we just changed, not against the answer cached
-        // before we changed it.
-        $this->forgetProbe(in_array(true, $results, true));
-
-        if (!$this->needsMigration()) {
-            $this->dismissNotice();
-        }
-
-        return $results;
     }
 
     /**

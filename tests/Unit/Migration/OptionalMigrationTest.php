@@ -166,15 +166,22 @@ class OptionalMigrationTest extends WpSlimstatTestCase
 
         $wpdb          = \Mockery::mock(\wpdb::class);
         $wpdb->prefix  = 'wp_';
+        $wpdb->dbname  = 'wordpress';
         $wpdb->options = 'wp_options';
+        $wpdb->reconnect_retries = 5;
+        $wpdb->shouldReceive('__get')->andReturnUsing(static fn($name) => 'dbname' === $name ? 'wordpress' : 5);
+        $wpdb->shouldReceive('__set')->andReturnNull();
         $wpdb->shouldReceive('suppress_errors')->andReturn(false);
         $wpdb->shouldReceive('prepare')->andReturnUsing(static fn($sql) => $sql);
         $wpdb->shouldReceive('query')->andReturn(1);
-        $wpdb->shouldReceive('get_var')->andReturn(null);
+        $wpdb->shouldReceive('get_var')->andReturnUsing(static function ($sql) {
+            return preg_match('/(?:GET_LOCK|IS_USED_LOCK|RELEASE_LOCK)/', $sql) ? '1' : null;
+        });
 
         $GLOBALS['wpdb'] = $wpdb;
 
         \Brain\Monkey\Functions\stubs([
+            '__'               => static fn($text) => $text,
             'update_option'    => static function ($k, $v) {
                 $GLOBALS['slimstat_test_options'][$k] = $v;
                 return true;
