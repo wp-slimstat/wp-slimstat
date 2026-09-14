@@ -103,11 +103,13 @@ foreach ($reports as $key => $contract) {
             ? ('slim_p1_04' === $id
                 ? ['type', 'top', 'columns', 'ip', '(dt_out > ', ') OR (dt > ', 'MAX(dt) DESC', 'MAX(dt) AS dt', 'raw', 'wp_slimstat_db', 'get_top']
                 : ['type', 'top', 'columns', 'username', '((dt_out > ', ')) AND username <> "" AND username IS NOT NULL', 'raw', 'wp_slimstat_db', 'get_top'])
+            : ('recent_top' === $kind
+            ? ['type', 'top', 'columns', 'MAX(dt) DESC', 'MAX(dt) AS dt', 'raw', 'wp_slimstat_db', 'get_top']
             : ('top_events' === $kind
             ? ['type', 'top', 'columns', 'notes', 'raw', 'wp_slimstat_db', 'get_top_events']
             : ('top_outbound' === $kind
                 ? ['type', 'top', 'columns', 'outbound_resource', 'raw', 'wp_slimstat_db', 'get_top_outbound']
-                : ['type', 'top', 'columns', 'raw', 'wp_slimstat_db', 'get_top'])))
+                : ['type', 'top', 'columns', 'raw', 'wp_slimstat_db', 'get_top']))))
         : ('recent' === $family
             ? ('recent_events' === $kind
                 ? ['show_events', 'type', 'recent', 'columns', 'notes', 'raw', 'wp_slimstat_db', 'get_recent_events']
@@ -166,6 +168,18 @@ foreach ($reports as $key => $contract) {
     }
     if ('top_language_family_pinned' === $key && 'language_prefix' !== ($contract['transform'] ?? null)) {
         $failures[] = "{$key}: language-family transform is not pinned";
+    }
+    $p2Composite = [
+        'top_user_agent_pinned' => ['browser', 'browser_version'],
+        'top_screen_resolution_pinned' => ['screen_width', 'screen_height'],
+    ];
+    if (isset($p2Composite[$key]) && $p2Composite[$key] !== ($contract['dimensions'] ?? null)) {
+        $failures[] = "{$key}: composite top dimensions are not pinned";
+    }
+    if ('top_screen_resolution_pinned' === $key
+        && [['screen_width', 'ne', 0], ['screen_height', 'ne', 0]] !== ($contract['where'] ?? null)
+    ) {
+        $failures[] = "{$key}: nonzero screen-size predicates are not pinned";
     }
     if ('chart' === $family) {
         $chartDurations = ['chart_daily' => ['ip', 'DAY', 5],

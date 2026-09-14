@@ -39,6 +39,14 @@
     "slim_p1_17": ["top_language_family_pinned"],
     "slim_p1_18": ["top_current_username_pinned"],
     "slim_p1_19_01": ["chart_searchterms_pinned"],
+    "slim_p2_03": ["top_language_pinned"],
+    "slim_p2_04": ["top_user_agent_pinned"],
+    "slim_p2_05": ["top_ip_pinned"],
+    "slim_p2_07": ["top_screen_resolution_pinned"],
+    "slim_p2_08": ["top_viewport_pinned"],
+    "slim_p2_13": ["recent_country_pinned"],
+    "slim_p2_14": ["recent_viewport_pinned"],
+    "slim_p2_15": ["recent_platform_pinned"],
     "slim_p7_02": ["get_recent"],
     "slim_p1_03": ["get_overview_summary"],
     "slim_p1_13": ["uniques_country_pinned"],
@@ -64,6 +72,14 @@
     "slim_p1_17": ["top_language_family_pinned"],
     "slim_p1_18": ["top_current_username_pinned"],
     "slim_p1_19_01": ["chart_searchterms_pinned"],
+    "slim_p2_03": ["top_language_pinned"],
+    "slim_p2_04": ["top_user_agent_pinned"],
+    "slim_p2_05": ["top_ip_pinned"],
+    "slim_p2_07": ["top_screen_resolution_pinned"],
+    "slim_p2_08": ["top_viewport_pinned"],
+    "slim_p2_13": ["recent_country_pinned"],
+    "slim_p2_14": ["recent_viewport_pinned"],
+    "slim_p2_15": ["recent_platform_pinned"],
     "slim_p7_02": ["get_recent"],
     "slim_p1_01": ["chart_daily", "chart_weekly", "count_records_ip"],
     "slim_p1_03": ["count_records_id", "count_records_ip", "count_records_resource", "rows_in_window"],
@@ -81,5 +97,5 @@
     "slim_p4_12": ["get_top_events"],
     "slim_p4_21": ["get_top_outbound"]
   },
-  "summary": {"reports": 67, "modeled": 23, "captured_unmodeled": 6, "uncaptured": 38}
+  "summary": {"reports": 67, "modeled": 31, "captured_unmodeled": 6, "uncaptured": 30}
 }

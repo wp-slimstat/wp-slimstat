@@ -32,9 +32,12 @@ def _transform(value, transform):
 
 def _matches(row, where):
     for column, operator, expected in where:
-        if operator != "not_in":
+        if operator == "ne":
+            if row[column] is None or row[column] == expected:
+                return False
+        elif operator != "not_in":
             raise ValueError("unsupported top predicate")
-        if row[column] is None or row[column] in expected:
+        elif row[column] is None or row[column] in expected:
             return False
     return True
 
@@ -56,8 +59,11 @@ def _equality_key(value, equality):
 def rank_top(rows, dimension, grain=("blog_id",), limit=None, transform=None, exclude_null=False,
              where=(), start=None, end=None, equality="binary"):
     """Count rows by grain+dimension, order deterministically, then apply LIMIT."""
-    if not isinstance(dimension, str) or not dimension:
-        raise ValueError("top dimension must be a non-empty string")
+    dimensions = (dimension,) if isinstance(dimension, str) else tuple(dimension)
+    if not dimensions or any(not isinstance(name, str) or not name for name in dimensions):
+        raise ValueError("top dimension must name at least one field")
+    if transform is not None and len(dimensions) != 1:
+        raise ValueError("top transform requires one dimension")
     if not grain:
         raise ValueError("top grain must name at least one field")
     if limit is not None and (not isinstance(limit, int) or isinstance(limit, bool) or limit < 1):
@@ -69,32 +75,54 @@ def rank_top(rows, dimension, grain=("blog_id",), limit=None, transform=None, ex
     for index, row in enumerate(rows):
         if not isinstance(row, dict):
             raise ValueError("top row %d is not an object" % index)
-        required = tuple(grain) + (dimension,) + tuple(item[0] for item in where) + (() if start is None else ("dt",))
+        required = tuple(grain) + dimensions + tuple(item[0] for item in where) + (() if start is None else ("dt",))
         missing = [name for name in required if name not in row]
         if missing:
             raise ValueError("top row %d is missing %s" % (index, ", ".join(missing)))
         if (start is not None and not start <= row["dt"] <= end) or not _matches(row, where):
             continue
-        if exclude_null and row[dimension] is None:
+        if exclude_null and any(row[name] is None for name in dimensions):
             continue
-        value = _transform(row[dimension], transform)
-        key = tuple(row[name] for name in grain) + (_equality_key(value, equality),)
-        displayed.setdefault(key, value)
+        values = tuple(_transform(row[name], transform) for name in dimensions)
+        key = tuple(row[name] for name in grain) + tuple(_equality_key(value, equality) for value in values)
+        displayed.setdefault(key, values)
         counts[key] = counts.get(key, 0) + 1
 
     ranked = []
     for key, count in counts.items():
         item = {name: key[pos] for pos, name in enumerate(grain)}
-        item[dimension] = displayed[key]
+        item.update(zip(dimensions, displayed[key]))
         item["counthits"] = count
         ranked.append(item)
 
     ranked.sort(key=lambda item: (
         -item["counthits"],
-        _order_value(item[dimension]),
+        tuple(_order_value(_equality_key(item[name], equality)) for name in dimensions),
         tuple(_order_value(item[name]) for name in grain),
     ))
     return ranked if limit is None else ranked[:limit]
+
+
+def rank_recent_top(rows, dimensions, grain, limit, start, end, equality="binary"):
+    """Count grouped values and order them by their latest hit in a pinned window."""
+    dimensions = (dimensions,) if isinstance(dimensions, str) else tuple(dimensions)
+    ranked = rank_top(rows, dimensions, grain, None, start=start, end=end, equality=equality)
+    latest = {}
+    for row in rows:
+        if start <= row["dt"] <= end:
+            key = tuple(row[name] for name in grain) + tuple(
+                _equality_key(row[name], equality) for name in dimensions)
+            latest[key] = max(latest.get(key, row["dt"]), row["dt"])
+    for item in ranked:
+        key = tuple(item[name] for name in grain) + tuple(
+            _equality_key(item[name], equality) for name in dimensions)
+        item["dt"] = latest[key]
+    ranked.sort(key=lambda item: (
+        -item["dt"],
+        tuple(_order_value(_equality_key(item[name], equality)) for name in dimensions),
+        tuple(_order_value(item[name]) for name in grain),
+    ))
+    return ranked[:limit]
 
 
 def rank_current(rows, dimension, grain, limit, end, active_columns, include_max_dt=False,
@@ -112,7 +140,7 @@ def rank_current(rows, dimension, grain, limit, end, active_columns, include_max
         for row in ranked:
             row["dt"] = latest[tuple(row[name] for name in grain)
                                + (_equality_key(row[dimension], equality),)]
-        ranked.sort(key=lambda row: (-row["dt"], _order_value(row[dimension])))
+        ranked.sort(key=lambda row: (-row["dt"], _order_value(_equality_key(row[dimension], equality))))
     return ranked[:limit]
 
 

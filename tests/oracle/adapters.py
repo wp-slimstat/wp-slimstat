@@ -3,7 +3,7 @@
 import json
 import sqlite3
 
-from families.top import rank_current, rank_top, top_events, top_outbound
+from families.top import rank_current, rank_recent_top, rank_top, top_events, top_outbound
 from families.recent import filtered_recent, recent_rows, recent_events
 from families.chart import pageviews_chart
 from families.count import count_values, count_singletons
@@ -74,16 +74,18 @@ def top(export_path, surface, adapter, contract):
     conn = sqlite3.connect('file:%s?mode=ro' % export_path, uri=True)
     conn.text_factory = bytes
     table, dimension = adapter['table'], adapter['dimension']
+    dimensions = contract.get('dimensions', [dimension])
     columns = [_text(row[0]) for row in conn.execute(
         'SELECT name FROM _manifest WHERE tbl = ? ORDER BY ord', (table,))]
     if not columns:
         raise ValueError('%s: export has no %s manifest' % (surface, table))
-    if dimension not in columns:
-        raise ValueError('%s: export has no %s dimension' % (surface, dimension))
+    missing = [name for name in dimensions if name not in columns]
+    if missing:
+        raise ValueError('%s: export has no %s dimension' % (surface, ', '.join(missing)))
     # Raw exports deliberately carry invalid UTF-8 in unrelated fields. Decode
     # only the fields this family consumes, leaving the fidelity proof byte-exact.
-    consumed = [dimension]
-    if contract.get('windowed') or contract.get('kind') == 'current':
+    consumed = list(dimensions)
+    if contract.get('windowed') or contract.get('kind') in ('current', 'recent_top'):
         consumed.append('dt')
     if contract.get('kind') == 'current':
         consumed.append('dt_out')
@@ -104,16 +106,23 @@ def top(export_path, surface, adapter, contract):
                               contract['window_end'], ('dt_out', 'dt'),
                               contract.get('include_max_dt', False), contract.get('exclude_empty', False),
                               contract.get('equality', 'binary'))
+    elif contract.get('kind') == 'recent_top':
+        ranked = rank_recent_top(rows, dimensions, ('blog_id',), contract['default_limit'],
+                                 contract['window_start'], contract['window_end'],
+                                 contract.get('equality', 'binary'))
     else:
-        ranked = rank_top(rows, dimension, ('blog_id',), contract['default_limit'],
+        ranked = rank_top(rows, dimensions, ('blog_id',), contract['default_limit'],
                           contract.get('transform'), contract.get('exclude_null', False),
                           contract.get('where', ()), contract.get('window_start'), contract.get('window_end'),
                           contract.get('equality', 'binary'))
-    fields = [dimension, contract['count_field']] + (['dt'] if contract.get('include_max_dt') else [])
+    fields = list(dimensions) + [contract['count_field']] + (
+        ['dt'] if contract.get('include_max_dt') or contract.get('kind') == 'recent_top' else [])
     value = [{field: row[field] for field in fields} for row in ranked]
     if contract.get('canonical'):
-        value = _canonical(value, string_fields=('counthits', 'dt') if contract.get('include_max_dt')
-                           else ('counthits',))
+        string_fields = list(dimensions) if contract.get('string_dimensions') else []
+        string_fields += ['counthits'] + (
+            ['dt'] if contract.get('include_max_dt') or contract.get('kind') == 'recent_top' else [])
+        value = _canonical(value, string_fields=string_fields)
     return {'class': 'ok' if value else 'empty', 'value': value,
             'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
 
@@ -238,7 +247,7 @@ def oracle_for(export_path, surface, adapter, contracts, windows=None):
         if not isinstance(windows, dict) or type(windows.get('start')) is not int or type(windows.get('end')) is not int:
             raise ValueError('%s: recent adapter requires the pinned capture window' % surface)
         contract = dict(contract, window_start=windows['start'], window_end=windows['end'])
-    if adapter['family'] == 'top' and (contract.get('windowed') or contract.get('kind') == 'current'):
+    if adapter['family'] == 'top' and (contract.get('windowed') or contract.get('kind') in ('current', 'recent_top')):
         if not isinstance(windows, dict) or type(windows.get('start')) is not int or type(windows.get('end')) is not int:
             raise ValueError('%s: top adapter requires the pinned capture window' % surface)
         contract = dict(contract, window_start=windows['start'], window_end=windows['end'])
