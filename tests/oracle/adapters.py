@@ -57,7 +57,8 @@ def top(export_path, surface, adapter, contract):
             rows = [row for row in rows if int(row['blog_id']) == blog_id]
         else:
             rows = [dict(row, blog_id=blog_id) for row in rows]
-    ranked = rank_top(rows, dimension, ('blog_id',), contract['default_limit'])
+    ranked = rank_top(rows, dimension, ('blog_id',), contract['default_limit'],
+                      contract.get('transform'), contract.get('exclude_null', False))
     value = [{dimension: row[dimension], contract['count_field']: row['counthits']}
              for row in ranked]
     return {'class': 'ok' if value else 'empty', 'value': value,
@@ -98,7 +99,9 @@ def count(export_path, surface, adapter, contract, windows):
     table, column = adapter['table'], contract['column']
     manifest = [_text(row[0]) for row in conn.execute(
         'SELECT name FROM _manifest WHERE tbl = ? ORDER BY ord', (table,))]
-    consumed = [column] + (['dt'] if windowed else [])
+    where_not_equal = contract.get('where_not_equal')
+    consumed = [column] + (['dt'] if windowed else []) + ([where_not_equal['column']] if where_not_equal else [])
+    consumed = list(dict.fromkeys(consumed))
     missing = [name for name in consumed if name not in manifest]
     if missing:
         raise ValueError('%s: export %s manifest lacks %s' % (surface, table, ', '.join(missing)))
@@ -109,7 +112,8 @@ def count(export_path, surface, adapter, contract, windows):
     value = count_values(rows, column, contract['distinct'],
                          windows['start'] if windowed else None,
                          windows['end'] if windowed else None,
-                         contract.get('equality', 'binary'))
+                         contract.get('equality', 'binary'),
+                         ((where_not_equal['column'], where_not_equal['value']) if where_not_equal else None))
     return {'class': 'ok', 'value': value,
             'flags': {'clock_dependent': False, 'calendar_day_dependent': False,
                       'pinned': windowed}}

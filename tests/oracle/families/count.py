@@ -12,7 +12,7 @@ def _distinct_key(value, equality):
     return raw.rstrip(b' ').lower()
 
 
-def count_values(rows, column, distinct=False, start=None, end=None, equality='binary'):
+def count_values(rows, column, distinct=False, start=None, end=None, equality='binary', where_not_equal=None):
     if not isinstance(column, str) or not column:
         raise ValueError('count column must be a non-empty string')
     if (start is None) != (end is None) or (start is not None and start > end):
@@ -20,10 +20,12 @@ def count_values(rows, column, distinct=False, start=None, end=None, equality='b
 
     values = []
     for index, row in enumerate(rows):
-        required = (column, 'dt') if start is not None else (column,)
+        required = ((column, 'dt') if start is not None else (column,)) + ((where_not_equal[0],) if where_not_equal else ())
         if not isinstance(row, dict) or any(name not in row for name in required):
             raise ValueError('count row %d lacks a consumed field' % index)
         if start is not None and not start <= row['dt'] <= end:
+            continue
+        if where_not_equal and (row[where_not_equal[0]] is None or row[where_not_equal[0]] == where_not_equal[1]):
             continue
         if row[column] is not None:
             values.append(row[column])

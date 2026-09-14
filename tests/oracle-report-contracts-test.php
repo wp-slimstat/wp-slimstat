@@ -19,6 +19,8 @@ $countContracts = [
     'count_records_ip'       => ['ip', true, 'ascii_ci', false],
     'count_records_resource' => ['resource', true, 'ascii_ci', false],
     'rows_in_window'         => ['id', false, 'binary', true],
+    'count_human_hits'       => ['id', false, 'binary', false],
+    'count_records_visit_id' => ['visit_id', true, 'binary', false],
 ];
 
 if (!is_array($json) || 'SLIMSTAT-ORACLE-CONTRACTS-V1' !== ($json['schema'] ?? null)) {
@@ -80,9 +82,7 @@ foreach ($reports as $key => $contract) {
         $failures[] = "{$key}: report_id is absent";
         continue;
     }
-    if (isset($seenIds[$id])
-        && ($family !== ($reports[$seenIds[$id]]['family'] ?? null) || !in_array($family, ['chart', 'count'], true))
-    ) {
+    if (isset($seenIds[$id]) && $family !== ($reports[$seenIds[$id]]['family'] ?? null)) {
         $failures[] = "{$key}: report_id {$id} is also used by {$seenIds[$id]}";
     }
     $seenIds[$id] = $key;
@@ -98,7 +98,9 @@ foreach ($reports as $key => $contract) {
             : ('chart' === $family
                 ? ['show_chart', 'chart_data', 'data1', 'COUNT( ip )', 'data2', 'COUNT( DISTINCT ip )']
                 : ('count' === $family
-                    ? ['raw_results_to_html', 'raw', 'wp_slimstat_db', 'get_overview_summary']
+                    ? ('slim_p2_01' === $id
+                        ? ['show_chart', 'chart_data', 'COUNT( DISTINCT visit_id )', '(visit_id > 0 AND browser_type <> 1)']
+                        : ['raw_results_to_html', 'raw', 'wp_slimstat_db', 'get_overview_summary'])
                     : [])));
     if (!$requiredStrings) {
         $failures[] = "{$key}: unknown oracle family " . var_export($family, true);
@@ -147,6 +149,11 @@ foreach ($reports as $key => $contract) {
             $contract['equality'] ?? null, $contract['windowed'] ?? null];
         if (!isset($countContracts[$key]) || $countContracts[$key] !== $actual) {
             $failures[] = "{$key}: count contract does not match its captured scalar semantics";
+        }
+        if ('count_human_hits' === $key
+            && ['column' => 'browser_type', 'value' => 1] !== ($contract['where_not_equal'] ?? null)
+        ) {
+            $failures[] = "{$key}: human-hit contract must exclude bots and SQL NULLs";
         }
     }
     // These literals describe the current runtime contract but do not prove how get_top reads it;

@@ -16,7 +16,20 @@ def _order_value(value):
     return (2, str(value).encode("utf-8"))
 
 
-def rank_top(rows, dimension, grain=("blog_id",), limit=None):
+def _transform(value, transform):
+    if value is None or transform is None:
+        return value
+    if transform == "referer_domain":
+        host = str(value).rsplit("://", 1)[-1].split("/", 1)[0]
+        return ".".join(host.split(".")[-5:]).replace("www.", "")
+    if transform == "platform_prefix":
+        return "p-" + str(value)[:3]
+    if transform == "trim_trailing_slash":
+        return str(value).rstrip("/")
+    raise ValueError("unsupported top transform")
+
+
+def rank_top(rows, dimension, grain=("blog_id",), limit=None, transform=None, exclude_null=False):
     """Count rows by grain+dimension, order deterministically, then apply LIMIT."""
     if not isinstance(dimension, str) or not dimension:
         raise ValueError("top dimension must be a non-empty string")
@@ -32,7 +45,9 @@ def rank_top(rows, dimension, grain=("blog_id",), limit=None):
         missing = [name for name in tuple(grain) + (dimension,) if name not in row]
         if missing:
             raise ValueError("top row %d is missing %s" % (index, ", ".join(missing)))
-        key = tuple(row[name] for name in grain) + (row[dimension],)
+        if exclude_null and row[dimension] is None:
+            continue
+        key = tuple(row[name] for name in grain) + (_transform(row[dimension], transform),)
         counts[key] = counts.get(key, 0) + 1
 
     ranked = []
@@ -59,6 +74,8 @@ def evaluate(report_key, contract, rows, limit):
         contract["dimension"],
         tuple(contract["grain"]),
         limit,
+        contract.get("transform"),
+        contract.get("exclude_null", False),
     )
     return {
         "key": report_key,

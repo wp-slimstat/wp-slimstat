@@ -110,6 +110,69 @@
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200
+    },
+    "top_referer": {
+      "report_id": "slim_p1_10",
+      "title": "Top Referring Domains",
+      "family": "top",
+      "dimension": "referer",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200
+    },
+    "top_referer_domains": {
+      "report_id": "slim_p1_10",
+      "title": "Top Referring Domains",
+      "family": "top",
+      "dimension": "referer",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "transform": "referer_domain",
+      "exclude_null": true
+    },
+    "count_human_hits": {
+      "report_id": "slim_p2_01",
+      "title": "Human Visits",
+      "family": "count",
+      "column": "id",
+      "distinct": false,
+      "equality": "binary",
+      "windowed": false,
+      "where_not_equal": {"column": "browser_type", "value": 1}
+    },
+    "count_records_visit_id": {
+      "report_id": "slim_p2_01",
+      "title": "Human Visits",
+      "family": "count",
+      "column": "visit_id",
+      "distinct": true,
+      "equality": "binary",
+      "windowed": false
+    },
+    "top_platform_prefixed": {
+      "report_id": "slim_p2_19",
+      "title": "Top OS Families",
+      "family": "top",
+      "dimension": "platform",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "transform": "platform_prefix"
+    },
+    "top_resource_trimmed": {
+      "report_id": "slim_p4_11",
+      "title": "Top Posts",
+      "family": "top",
+      "dimension": "resource",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "transform": "trim_trailing_slash"
     }
   }
 }
