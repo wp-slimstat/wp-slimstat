@@ -120,6 +120,12 @@ $wanted = isset($args[1]) && $args[1] !== ''
     ? array_intersect_key($all_cells, array_flip(array_map('trim', explode(',', (string) $args[1]))))
     : $all_cells;
 
+// wp eval-file has no web-server request context. Old report code reads this value when
+// excluding the site's own hostname from referrers, so derive it from WordPress's installed URL.
+if (empty($_SERVER['SERVER_NAME'])) {
+    $_SERVER['SERVER_NAME'] = (string) wp_parse_url(home_url(), PHP_URL_HOST);
+}
+
 require_once __DIR__ . '/reports-bootstrap.php';
 
 /**
@@ -216,6 +222,7 @@ $extract_pairs = static function (string $html): array {
 };
 
 $reports = slimstat_bench_bootstrap_reports();
+$cell_contexts = [];
 
 $snapshot = [
     'captured_at'      => time(),
@@ -238,6 +245,16 @@ foreach ($wanted as $cell => $filters) {
     printf("cell %s\n", $cell);
     foreach ($reports as $report_id => $report) {
         wp_slimstat_db::init($filters);
+
+        if (!isset($cell_contexts[$cell])) {
+            $cell_contexts[$cell] = [
+                'scope'            => strpos($cell, 'historical-') === 0 ? 'historical' : 'straddling',
+                'filtered'         => substr($cell, -9) === '-filtered',
+                'requested_filter' => $filters,
+                'resolved_filter'  => wp_slimstat_db::$filters_normalized['columns'] ?? [],
+                'resolved_window'  => wp_slimstat_db::$filters_normalized['utime'] ?? [],
+            ];
+        }
 
         if (strpos($cell, 'straddling') === 0) {
             $snapshot['live_window_end'] = (int) wp_slimstat_db::$filters_normalized['utime']['end'];
@@ -327,6 +344,32 @@ printf("  value_compared %d   (%.1f%%)\n", $counts['value_compared'], $proportio
 $floor = 0.70;
 
 if ($proportion < $floor) {
+    $diagnostic_path = (string) getenv('SLIMSTAT_PARITY_DIAGNOSTIC');
+    if ($diagnostic_path !== '') {
+        $diagnostic = [
+            'valid'    => false,
+            'verdict'  => 'diagnostic_only',
+            'reason'   => 'coverage_below_floor',
+            'coverage' => $snapshot['coverage'],
+            'cells'    => [],
+        ];
+        foreach ($snapshot['cells'] as $cell => $cell_reports) {
+            foreach ($cell_reports as $report_id => $report) {
+                if (!empty($report['numbers'])) {
+                    continue;
+                }
+                $diagnostic['cells'][] = array_merge($cell_contexts[$cell], [
+                    'cell'         => $cell,
+                    'report_id'    => $report_id,
+                    'value_count'  => count($report['pairs']),
+                    'number_count' => count($report['numbers']),
+                    'refusal'      => $report['error'] !== null ? 'render_error' : ((int) $report['bytes'] === 0 ? 'empty' : 'render_only'),
+                ]);
+            }
+        }
+        file_put_contents($diagnostic_path, wp_json_encode($diagnostic, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+        printf("Diagnostic-only classifications written to %s (INVALID as parity evidence).\n", $diagnostic_path);
+    }
     printf("\nVERDICT: ABORTED — only %.1f%% of cells carry a comparable value (floor %.0f%%).\n",
         $proportion * 100, $floor * 100);
     printf("A hollow snapshot reports parity it never checked, so NOTHING is written to %s.\n", $out_path);
