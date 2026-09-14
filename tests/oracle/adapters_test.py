@@ -21,14 +21,15 @@ with tempfile.TemporaryDirectory() as temp:
         ('slim_stats', 8, 'dt_out', 'INT UNSIGNED', 1, 0),
         ('slim_stats', 9, 'username', 'VARCHAR(255)', 1, 0),
         ('slim_stats', 10, 'outbound_resource', 'VARCHAR(2048)', 1, 0),
+        ('slim_stats', 11, 'content_type', 'VARCHAR(255)', 1, 0),
     ])
     db.execute('CREATE TABLE slim_stats (id INTEGER, resource BLOB, user_agent BLOB, dt INTEGER, '
                'email BLOB, ip BLOB, visit_id INTEGER, browser_type INTEGER, dt_out INTEGER, '
-               'username BLOB, outbound_resource BLOB)')
-    db.executemany('INSERT INTO slim_stats VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                   [(1, b'/a', b'\xff', 10, b'ignored', b'a', 1, 0, 40, b'Sam', b'https://a'),
-                    (2, b'/b', b'normal', 20, b'\xff', b'b', 1, 0, 70, b'sam ', b'https://a'),
-                    (3, b'/a', None, 20, b'ignored', None, 2, 1, 90, None, None)])
+               'username BLOB, outbound_resource BLOB, content_type BLOB)')
+    db.executemany('INSERT INTO slim_stats VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                   [(1, b'/a', b'\xff', 10, b'ignored', b'a', 1, 0, 40, b'Sam', b'https://a', b'page'),
+                    (2, b'/b', b'normal', 20, b'\xff', b'b', 1, 0, 70, b'sam ', b'https://a', b'download'),
+                    (3, b'/a', None, 20, b'ignored', None, 2, 1, 90, None, None, b'DOWNLOAD ')])
     db.commit()
     db.close()
     contracts = {'reports': {'top_resource': {'family': 'top', 'dimension': 'resource',
@@ -124,5 +125,18 @@ with tempfile.TemporaryDirectory() as temp:
     values = {row['metric']: row['value'] for row in result['value']}
     assert values['Visits'] == '1' and values['Unique IPs'] == '2', result
     assert values['Bounce rate'] == '0.00' and values['Known visitors'] == '1', result
+
+    for key, kind, expected in (
+            ('slim_p4_20_recent_downloads', 'recent_downloads', [
+                {'counthits': '1', 'dt': '20', 'resource': '/a'},
+                {'counthits': '1', 'dt': '20', 'resource': '/b'}]),
+            ('slim_p4_24_exit_pages', 'exit_pages', [
+                {'counthits': '1', 'resource': '/a'}, {'counthits': '1', 'resource': '/b'}]),
+            ('slim_p4_25_entry_pages', 'entry_pages', [
+                {'counthits': '2', 'resource': '/a'}])):
+        contracts['reports'][key] = {'family': 'pages', 'kind': kind, 'default_limit': 200}
+        result = oracle_for(path, key, {'family': 'pages', 'table': 'slim_stats'}, contracts,
+                            {'start': 10, 'end': 20})
+        assert result['value'] == expected, result
 
 print('PASS: report evidence adapters')

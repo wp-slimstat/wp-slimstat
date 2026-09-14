@@ -119,6 +119,33 @@
       "equality": "binary",
       "windowed": true
     },
+    "slim_p4_20_recent_downloads": {
+      "report_id": "slim_p4_20",
+      "title": "Recent Downloads",
+      "family": "pages",
+      "kind": "recent_downloads",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
+    },
+    "slim_p4_24_exit_pages": {
+      "report_id": "slim_p4_24",
+      "title": "Top Exit Pages",
+      "family": "pages",
+      "kind": "exit_pages",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
+    },
+    "slim_p4_25_entry_pages": {
+      "report_id": "slim_p4_25",
+      "title": "Top Entry Pages",
+      "family": "pages",
+      "kind": "entry_pages",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
+    },
     "top_resource": {
       "report_id": "slim_p1_08",
       "title": "Top Web Pages",

@@ -1188,6 +1188,15 @@ $capture_windowed('recent_user_pinned', static function () {
     ]]));
 });
 
+$capture_windowed('slim_p4_20_recent_downloads', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns'     => 'resource',
+        'where'       => 'content_type = "download"',
+        'order_by'    => 'MAX(dt) DESC',
+        'more_select' => 'MAX(dt) AS dt',
+    ]]));
+});
+
 $capture_windowed('top_user_pinned', static function () {
     return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
         'columns' => 'username',
@@ -1209,6 +1218,23 @@ $capture_ext('chart_searchterms_pinned', static function () use ($chart_capture,
         'where' => 'searchterms <> "_" AND searchterms IS NOT NULL AND searchterms <> ""',
     ]);
 }, ['calendar_day_dependent' => true, 'pinned' => true]);
+
+foreach (['slim_p4_24_exit_pages' => 'MAX', 'slim_p4_25_entry_pages' => 'MIN'] as $id => $boundary) {
+    $capture_windowed($id, static function () use ($boundary) {
+        $result = slimstat_invoke('wp_slimstat_db', 'get_top_aggr', [[
+            'columns'             => 'visit_id',
+            'outer_select_column' => 'resource',
+            'aggr_function'       => $boundary,
+        ]]);
+        $stable = [];
+        foreach ($result as $row) {
+            $row = (array) $row;
+            unset($row['visit_id']);
+            $stable[] = $row;
+        }
+        return slimstat_canon_rows($stable);
+    });
+}
 
 // Array-only in both eras, so the array parser is not a choice here. The two column names are
 // pinned literals and deliberately low-cardinality: column_group is GROUP_CONCAT(DISTINCT …),

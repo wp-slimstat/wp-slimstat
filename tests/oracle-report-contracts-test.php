@@ -36,6 +36,11 @@ $chartContracts = [
     'slim_p4_26_01_chart_daily'      => ['outbound_resource', 5, 'DAY'],
     'slim_p4_26_01_chart_weekly'     => ['outbound_resource', 60, 'WEEK'],
 ];
+$pageContracts = [
+    'slim_p4_20_recent_downloads' => ['recent_downloads', 'get_top', 'resource', 'MAX(dt) DESC'],
+    'slim_p4_24_exit_pages'       => ['exit_pages', 'get_top_aggr', 'visit_id', 'MAX'],
+    'slim_p4_25_entry_pages'      => ['entry_pages', 'get_top_aggr', 'visit_id', 'MIN'],
+];
 
 if (!is_array($json) || 'SLIMSTAT-ORACLE-CONTRACTS-V1' !== ($json['schema'] ?? null)) {
     $failures[] = 'report-contracts.json is missing schema SLIMSTAT-ORACLE-CONTRACTS-V1';
@@ -136,7 +141,11 @@ foreach ($reports as $key => $contract) {
                     : ('summary' === $family
                         ? ['raw_results_to_html', 'raw', 'wp_slimstat_db',
                             'slim_p2_02' === $id ? 'get_visitors_summary' : 'get_visits_duration']
-                        : []))));
+                        : ('pages' === $family
+                            ? ['raw_results_to_html', 'raw', 'wp_slimstat_db',
+                                $pageContracts[$key][1] ?? '', $pageContracts[$key][2] ?? '',
+                                $pageContracts[$key][3] ?? '']
+                            : [])))));
     if (!$requiredStrings) {
         $failures[] = "{$key}: unknown oracle family " . var_export($family, true);
     }
@@ -242,9 +251,21 @@ foreach ($reports as $key => $contract) {
             $failures[] = "{$key}: summary method {$actual[1]} does not exist";
         }
     }
+    if ('pages' === $family) {
+        $actual = [$contract['kind'] ?? null,
+            in_array('get_top_aggr', $strings, true) ? 'get_top_aggr' : 'get_top',
+            in_array('visit_id', $strings, true) ? 'visit_id' : 'resource',
+            in_array('MAX(dt) DESC', $strings, true) ? 'MAX(dt) DESC'
+                : (in_array('MAX', $strings, true) ? 'MAX' : 'MIN')];
+        if (!isset($pageContracts[$key]) || $pageContracts[$key] !== $actual
+            || 'ascii_ci' !== ($contract['equality'] ?? null)
+        ) {
+            $failures[] = "{$key}: page contract does not match its report query semantics";
+        }
+    }
     // These literals describe the current runtime contract but do not prove how get_top reads it;
     // the live report/capture gate owns that behavior in S7 and Phase 2.
-    if (('top' === $family || ('recent' === $family && 'recent_events' !== $kind))
+    if (('top' === $family || ('recent' === $family && 'recent_events' !== $kind) || 'pages' === $family)
         && ('limit_results' !== ($contract['limit_setting'] ?? null) || 200 !== ($contract['default_limit'] ?? null))
     ) {
         $failures[] = "{$key}: limit must come from limit_results with default 200, not a fixture constant";
