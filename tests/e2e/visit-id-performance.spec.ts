@@ -93,7 +93,7 @@ function isTrackerResponse(response: Response): boolean {
 async function trackedRows(markers: string[]): Promise<any[]> {
   const where = markers.map(() => 'resource LIKE ?').join(' OR ');
   const [rows] = await getPool().execute(
-    `SELECT visit_id, resource FROM wp_slim_stats WHERE ${where}`,
+    `SELECT id, visit_id, HEX(vid_hash) AS vid_hash, resource FROM wp_slim_stats WHERE ${where}`,
     markers.map((marker) => `%${marker}%`),
   ) as any;
   return rows;
@@ -274,9 +274,24 @@ test.describe('Visit ID Atomic Counter', () => {
             };
           }))),
           requests: responses.map(requestEvidence),
+          responseIds: await Promise.all(responses.map(async (response) =>
+            parseInt((await response.text()).replace(/^"|"$/g, ''), 10))),
+          cookiesAfter: await Promise.all(contexts.map(async (context) =>
+            (await context.cookies())
+              .filter((cookie) => cookie.name === 'slimstat_tracking_code')
+              .map((cookie) => createHash('sha256').update(cookie.value).digest('hex')))),
           counterBefore,
           counterAfter: await getVisitIdCounter(),
-          visitIds,
+          rows: rows.map((row) => ({
+            id: Number(row.id),
+            visitId: Number(row.visit_id),
+            identityHash: row.vid_hash
+              ? createHash('sha256').update(String(row.vid_hash)).digest('hex')
+              : null,
+          })),
+          counterOptions: (await getPool().execute(
+            "SELECT option_name, option_value FROM wp_options WHERE option_name IN ('slimstat_visit_id_counter', 'slimstat_visit_id_repair_marker') ORDER BY option_name",
+          ) as any)[0],
         }, null, 2),
         contentType: 'application/json',
       });
