@@ -9,6 +9,8 @@ import { test, expect } from '@playwright/test';
 import type { BrowserContext, Page, Response } from '@playwright/test';
 import * as mysql from 'mysql2/promise';
 import { createHash } from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import {
   installOptionMutator,
   uninstallOptionMutator,
@@ -295,6 +297,13 @@ test.describe('Visit ID Atomic Counter', () => {
         }, null, 2),
         contentType: 'application/json',
       });
+      const diagnostic = path.join(process.env.WP_ROOT ?? '', 'wp-content', 'visit-id-diagnostic.log');
+      if (fs.existsSync(diagnostic)) {
+        await testInfo.attach('visitor-separation-trace', {
+          body: fs.readFileSync(diagnostic),
+          contentType: 'application/x-ndjson',
+        });
+      }
       expect(visitIds.every((id) => id > 0)).toBe(true);
       expect(new Set(visitIds).size).toBe(markers.length);
     } finally {
