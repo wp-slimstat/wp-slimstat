@@ -60,6 +60,11 @@
     {"key":"top_viewport_pinned","source":"extended","adapter":{"family":"top","table":"slim_stats","dimension":"resolution","blog_id":1}},
     {"key":"recent_country_pinned","source":"extended","adapter":{"family":"top","table":"slim_stats","dimension":"country","blog_id":1}},
     {"key":"recent_viewport_pinned","source":"extended","adapter":{"family":"top","table":"slim_stats","dimension":"resolution","blog_id":1}},
-    {"key":"recent_platform_pinned","source":"extended","adapter":{"family":"top","table":"slim_stats","dimension":"platform","blog_id":1}}
+    {"key":"recent_platform_pinned","source":"extended","adapter":{"family":"top","table":"slim_stats","dimension":"platform","blog_id":1}},
+    {"key":"recent_user_agent_pinned","source":"extended","adapter":{"family":"top","table":"slim_stats","dimension":"browser","blog_id":1}},
+    {"key":"recent_language_pinned","source":"extended","adapter":{"family":"top","table":"slim_stats","dimension":"language","blog_id":1}},
+    {"key":"recent_user_pinned","source":"extended","adapter":{"family":"top","table":"slim_stats","dimension":"username","blog_id":1}},
+    {"key":"top_user_pinned","source":"extended","adapter":{"family":"top","table":"slim_stats","dimension":"username","blog_id":1}},
+    {"key":"chart_users_pinned","source":"extended","adapter":{"family":"chart","table":"slim_stats"}}
   ]
 }

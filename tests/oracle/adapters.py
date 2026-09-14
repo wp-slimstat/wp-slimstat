@@ -109,7 +109,7 @@ def top(export_path, surface, adapter, contract):
     elif contract.get('kind') == 'recent_top':
         ranked = rank_recent_top(rows, dimensions, ('blog_id',), contract['default_limit'],
                                  contract['window_start'], contract['window_end'],
-                                 contract.get('equality', 'binary'))
+                                 contract.get('equality', 'binary'), contract.get('where', ()))
     else:
         ranked = rank_top(rows, dimensions, ('blog_id',), contract['default_limit'],
                           contract.get('transform'), contract.get('exclude_null', False),

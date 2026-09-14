@@ -35,6 +35,16 @@ def _matches(row, where):
         if operator == "ne":
             if row[column] is None or row[column] == expected:
                 return False
+        elif operator == "contains_ascii_ci":
+            if row[column] is None:
+                return False
+            try:
+                value = row[column].decode("ascii") if isinstance(row[column], bytes) else str(row[column]).encode("ascii").decode()
+                needle = expected.decode("ascii") if isinstance(expected, bytes) else str(expected).encode("ascii").decode()
+            except UnicodeError as error:
+                raise ValueError("ASCII LIKE cannot model non-ASCII collation semantics") from error
+            if needle.lower() not in value.lower():
+                return False
         elif operator != "not_in":
             raise ValueError("unsupported top predicate")
         elif row[column] is None or row[column] in expected:
@@ -103,13 +113,13 @@ def rank_top(rows, dimension, grain=("blog_id",), limit=None, transform=None, ex
     return ranked if limit is None else ranked[:limit]
 
 
-def rank_recent_top(rows, dimensions, grain, limit, start, end, equality="binary"):
+def rank_recent_top(rows, dimensions, grain, limit, start, end, equality="binary", where=()):
     """Count grouped values and order them by their latest hit in a pinned window."""
     dimensions = (dimensions,) if isinstance(dimensions, str) else tuple(dimensions)
-    ranked = rank_top(rows, dimensions, grain, None, start=start, end=end, equality=equality)
+    ranked = rank_top(rows, dimensions, grain, None, where=where, start=start, end=end, equality=equality)
     latest = {}
     for row in rows:
-        if start <= row["dt"] <= end:
+        if start <= row["dt"] <= end and _matches(row, where):
             key = tuple(row[name] for name in grain) + tuple(
                 _equality_key(row[name], equality) for name in dimensions)
             latest[key] = max(latest.get(key, row["dt"]), row["dt"])

@@ -10,7 +10,7 @@ from families.chart import pageviews_chart
 
 contracts = json.loads(Path(__file__).with_name('report-contracts.json').read_text())['reports']
 assert {key for key, value in contracts.items() if value['family'] == 'chart'} == {
-    'chart_daily', 'chart_weekly', 'chart_searchterms_pinned'}
+    'chart_daily', 'chart_weekly', 'chart_searchterms_pinned', 'chart_users_pinned'}
 assert (contracts['chart_daily']['duration_days'], contracts['chart_daily']['granularity']) == (5, 'DAY')
 assert (contracts['chart_weekly']['duration_days'], contracts['chart_weekly']['granularity']) == (60, 'WEEK')
 
@@ -60,6 +60,13 @@ search_rows = [
 ]
 search = pageviews_chart(search_rows, capture_end, 3, 'DAY', 1, 'searchterms', ('', '_'), 'ascii_ci')
 assert search['datasets'] == {'v1': [2, 0, 0], 'v2': [1, 0, 0]}, search
+
+users = pageviews_chart([
+    {'dt': ts('2026-01-08T04:00:00'), 'username': b'Alice'},
+    {'dt': ts('2026-01-08T05:00:00'), 'username': b'alice '},
+    {'dt': ts('2026-01-09T04:00:00'), 'username': None},
+], capture_end, 3, 'DAY', 1, 'username', (), 'ascii_ci')
+assert users['datasets'] == {'v1': [2, 0, 0], 'v2': [1, 0, 0]}, users
 
 try:
     pageviews_chart([{'dt': ts('2026-01-08T04:00:00'), 'searchterms': 'café'}],

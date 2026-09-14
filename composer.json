@@ -111,7 +111,7 @@
     "test:unresolved-differences": "python3 tests/oracle/unresolved_gate_test.py",
     "verify:unresolved-differences": "python3 tests/oracle/unresolved_gate.py",
     "test:classifier-plants": "python3 tests/oracle/classify_test.py",
-    "test:oracle-top": "python3 tests/oracle/top_family_test.py",
+    "test:oracle-top": "python3 tests/oracle/top_family_test.py && python3 tests/oracle/p2_top_family_test.py && python3 tests/oracle/p2_user_top_chart_test.py",
     "test:oracle-chart": "python3 tests/oracle/chart_family_test.py && python3 tests/oracle/adapters_test.py && python3 tests/oracle/report_adapter_inventory_test.py",
     "test:oracle-count": "python3 tests/oracle/count_family_test.py && python3 tests/oracle/adapters_test.py && python3 tests/oracle/report_adapter_inventory_test.py",
     "test:oracle-independence": "python3 tests/oracle/independence_lint.py",

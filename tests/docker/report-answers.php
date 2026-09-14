@@ -1156,6 +1156,8 @@ foreach ([
     'recent_country_pinned' => 'country',
     'recent_viewport_pinned' => 'resolution',
     'recent_platform_pinned' => 'platform',
+    'recent_user_agent_pinned' => 'browser, browser_version',
+    'recent_language_pinned' => 'language',
 ] as $surface => $column) {
     $capture_windowed($surface, static function () use ($column) {
         return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
@@ -1165,6 +1167,29 @@ foreach ([
         ]]));
     });
 }
+
+$capture_windowed('recent_user_pinned', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns' => 'username',
+        'where' => 'notes LIKE "%user:%"',
+        'order_by' => 'MAX(dt) DESC',
+        'more_select' => 'MAX(dt) AS dt',
+    ]]));
+});
+
+$capture_windowed('top_user_pinned', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns' => 'username',
+        'where' => 'notes LIKE "%user:%"',
+    ]]));
+});
+
+$capture_ext('chart_users_pinned', static function () use ($chart_capture, $chart_end) {
+    return $chart_capture($chart_end - 30 * 86400 + 1, $chart_end, [
+        'data1' => 'COUNT( username )',
+        'data2' => 'COUNT( DISTINCT username )',
+    ]);
+}, ['calendar_day_dependent' => true, 'pinned' => true]);
 
 $capture_ext('chart_searchterms_pinned', static function () use ($chart_capture, $chart_end) {
     return $chart_capture($chart_end - 30 * 86400 + 1, $chart_end, [

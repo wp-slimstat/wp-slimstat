@@ -47,6 +47,11 @@
     "slim_p2_13": ["recent_country_pinned"],
     "slim_p2_14": ["recent_viewport_pinned"],
     "slim_p2_15": ["recent_platform_pinned"],
+    "slim_p2_16": ["recent_user_agent_pinned"],
+    "slim_p2_17": ["recent_language_pinned"],
+    "slim_p2_20": ["recent_user_pinned"],
+    "slim_p2_21": ["top_user_pinned"],
+    "slim_p2_22_01": ["chart_users_pinned"],
     "slim_p7_02": ["get_recent"],
     "slim_p1_03": ["get_overview_summary"],
     "slim_p1_13": ["uniques_country_pinned"],
@@ -80,6 +85,11 @@
     "slim_p2_13": ["recent_country_pinned"],
     "slim_p2_14": ["recent_viewport_pinned"],
     "slim_p2_15": ["recent_platform_pinned"],
+    "slim_p2_16": ["recent_user_agent_pinned"],
+    "slim_p2_17": ["recent_language_pinned"],
+    "slim_p2_20": ["recent_user_pinned"],
+    "slim_p2_21": ["top_user_pinned"],
+    "slim_p2_22_01": ["chart_users_pinned"],
     "slim_p7_02": ["get_recent"],
     "slim_p1_01": ["chart_daily", "chart_weekly", "count_records_ip"],
     "slim_p1_03": ["count_records_id", "count_records_ip", "count_records_resource", "rows_in_window"],
@@ -97,5 +107,5 @@
     "slim_p4_12": ["get_top_events"],
     "slim_p4_21": ["get_top_outbound"]
   },
-  "summary": {"reports": 67, "modeled": 31, "captured_unmodeled": 6, "uncaptured": 30}
+  "summary": {"reports": 67, "modeled": 36, "captured_unmodeled": 6, "uncaptured": 25}
 }

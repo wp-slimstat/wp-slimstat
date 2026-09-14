@@ -119,7 +119,9 @@ foreach ($reports as $key => $contract) {
             : ('chart' === $family
                 ? ('slim_p1_19_01' === $id
                     ? ['show_chart', 'chart_data', 'data1', 'COUNT( searchterms )', 'data2', 'COUNT( DISTINCT searchterms )']
-                    : ['show_chart', 'chart_data', 'data1', 'COUNT( ip )', 'data2', 'COUNT( DISTINCT ip )'])
+                    : ('slim_p2_22_01' === $id
+                        ? ['show_chart', 'chart_data', 'data1', 'COUNT( username )', 'data2', 'COUNT( DISTINCT username )']
+                        : ['show_chart', 'chart_data', 'data1', 'COUNT( ip )', 'data2', 'COUNT( DISTINCT ip )']))
                 : ('count' === $family
                     ? ('slim_p2_01' === $id
                         ? ['show_chart', 'chart_data', 'COUNT( DISTINCT visit_id )', '(visit_id > 0 AND browser_type <> 1)']
@@ -172,6 +174,7 @@ foreach ($reports as $key => $contract) {
     $p2Composite = [
         'top_user_agent_pinned' => ['browser', 'browser_version'],
         'top_screen_resolution_pinned' => ['screen_width', 'screen_height'],
+        'recent_user_agent_pinned' => ['browser', 'browser_version'],
     ];
     if (isset($p2Composite[$key]) && $p2Composite[$key] !== ($contract['dimensions'] ?? null)) {
         $failures[] = "{$key}: composite top dimensions are not pinned";
@@ -181,10 +184,16 @@ foreach ($reports as $key => $contract) {
     ) {
         $failures[] = "{$key}: nonzero screen-size predicates are not pinned";
     }
+    if (in_array($key, ['recent_user_pinned', 'top_user_pinned'], true)
+        && [['notes', 'contains_ascii_ci', 'user:']] !== ($contract['where'] ?? null)
+    ) {
+        $failures[] = "{$key}: user-note predicate is not pinned";
+    }
     if ('chart' === $family) {
         $chartDurations = ['chart_daily' => ['ip', 'DAY', 5],
             'chart_weekly' => ['ip', 'WEEK', 60],
-            'chart_searchterms_pinned' => ['searchterms', 'WEEK', 30]];
+            'chart_searchterms_pinned' => ['searchterms', 'WEEK', 30],
+            'chart_users_pinned' => ['username', 'WEEK', 30]];
         $granularity = $contract['granularity'] ?? null;
         $actual = [$contract['metric_column'] ?? null, $granularity, $contract['duration_days'] ?? null];
         if (!isset($chartDurations[$key])
@@ -199,6 +208,9 @@ foreach ($reports as $key => $contract) {
                 || 'ascii_ci' !== ($contract['equality'] ?? null))
         ) {
             $failures[] = "{$key}: search-term chart contract must pin exclusions and collation";
+        }
+        if ('chart_users_pinned' === $key && 'ascii_ci' !== ($contract['equality'] ?? null)) {
+            $failures[] = "{$key}: users chart contract must pin collation";
         }
     }
     if ('count' === $family && 'singletons' !== $kind) {
