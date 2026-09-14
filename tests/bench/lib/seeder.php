@@ -100,6 +100,13 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
          * safety claim enforced by three separate spellings is true only by coincidence.
          */
         private const MARKER_PREFIX = '203.0.113.';
+
+        /**
+         * Distinct download resources. Both download reports are LIMIT 20 over GROUP BY
+         * resource, so a pool of 20 or fewer would never make the cut line bind and the
+         * surface would agree no matter what the code did to it.
+         */
+        private const DOWNLOAD_RESOURCES = 40;
         private const MARKER_LIKE   = '203.0.113.%';
 
         /** @var wpdb */
@@ -342,6 +349,7 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
             $outbound    = $this->share('outbound');
             $searchterms = $this->share('searchterms');
             $loggedin    = $this->share('loggedin');
+            $downloads   = $this->share('downloads');
             $mean_pv  = max(1.0, (float) ($this->profile['mean_pageviews_per_visit'] ?? 1.0));
 
             // Autocommit off keeps each batch to one fsync instead of one per
@@ -411,6 +419,12 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
                         // expressions that have to agree.
                         $user = $this->chance($loggedin) ? 'user-' . random_int(1, 40) : null;
 
+                        // A download hit is a pageview whose content_type the tracker set to
+                        // `download`, and both download reports GROUP BY resource — so the row
+                        // needs its own resource too, out of a pool wide enough that a LIMIT 20
+                        // report cuts inside the data instead of returning all of it.
+                        $is_download = $this->chance($downloads);
+
                         // NULL at the overlay's rate: a pageview with no ip is what separates
                         // count(ip) from count(*), and without one the difference between them is
                         // unobservable — R16 could not fail.
@@ -426,7 +440,9 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
                         $rows[] = $this->tuple([
                             $no_ip ? null : self::MARKER_PREFIX . random_int(1, 254),
                             $no_ip ? self::MARKER_PREFIX . random_int(1, 254) : null,
-                            $this->pick('resource', '/'),
+                            $is_download
+                                ? '/downloads/asset-' . random_int(1, self::DOWNLOAD_RESOURCES) . '.zip'
+                                : $this->pick('resource', '/'),
                             $i === 0 ? $referer : null,
                             $browser,
                             $version,
@@ -444,7 +460,9 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
                             (int) $w,
                             (int) $h,
                             $screen,
-                            $this->chance($ct_null) ? null : $this->pick('content_type', 'post'),
+                            $is_download
+                                ? 'download'
+                                : ($this->chance($ct_null) ? null : $this->pick('content_type', 'post')),
                             $this->chance($cat_null) ? null : 'category-' . random_int(1, 40),
                             $this->chance($auth_null) ? null : 'author-' . random_int(1, 12),
                             random_int(1, 5000),
@@ -452,7 +470,11 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
                             // visitor clicks away from whichever page they were on.
                             $this->chance($outbound) ? 'https://outbound-' . random_int(1, 60) . '.example/' : null,
                             $terms,
-                            null === $user ? null : 'loggedin:' . $user,
+                            // Two notes, not one. The last-login report greps `loggedin:`, but
+                            // every pinned-user surface greps `user:` — seeding only the first
+                            // leaves those surfaces empty on both arms, which compares equal and
+                            // proves nothing (PITFALLS 44).
+                            null === $user ? null : 'loggedin:' . $user . ';user:' . $user,
                             $user,
                         ]);
                     }
