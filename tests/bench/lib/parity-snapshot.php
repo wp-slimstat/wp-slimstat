@@ -155,7 +155,8 @@ $normalise = static function (string $html): string {
 
 /** Pull the numbers a user actually reads out of the rendered HTML. */
 $extract_numbers = static function (string $html): array {
-    $text = html_entity_decode(wp_strip_all_tags($html), ENT_QUOTES, 'UTF-8');
+    preg_match_all('/\bdata-data="([^"]*)"/', $html, $chart_data);
+    $text = html_entity_decode(wp_strip_all_tags(str_replace('<', ' <', $html)) . ' ' . implode(' ', $chart_data[1]), ENT_QUOTES, 'UTF-8');
     preg_match_all('/(?<![\w.])(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*%?/', $text, $m);
     return $m[1];
 };

@@ -55,9 +55,11 @@ eval(substr($s, $start, $end - $start));
 if (count($extract_numbers(implode(' ', range(1, 250)))) !== 250) { exit(1); }
 if ($normalise('2026-01-01 12:00:00') === $normalise('2026-01-02 12:00:00')) { exit(2); }
 if ($normalise('1700000000') === $normalise('1700000001')) { exit(3); }
+if ($extract_numbers('<p>Rank<span>0</span></p>') !== ['0']) { exit(4); }
+if (!in_array('12', $extract_numbers('<div data-data="{&quot;totals&quot;:[{&quot;v1&quot;:12}]}"></div>'), true)) { exit(5); }
 '''
 subprocess.run(['php', '-r', probe, str(comparator.with_name('parity-snapshot.php'))], check=True)
-print('PASS: snapshot preserves dates, chart epochs and all 250 numeric values')
+print('PASS: snapshot preserves dates, chart payloads, element boundaries and all numeric values')
 
 # Execute the snapshot's real coverage refusal: it may emit only a separately named,
 # explicitly invalid diagnostic and must leave the accepted snapshot path absent.
