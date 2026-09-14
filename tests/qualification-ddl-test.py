@@ -47,8 +47,8 @@ interrupt_migration_ddl
 print('PASS: observed DDL, killed worker, live-session refusal, lock release and missing status required')
 
 # Execute the actual offered-UA PHP leg with a migration that refuses any call outside
-# runOne(). A false batch result is resumable; a null lock refusal must abort the leg.
-ua = re.search(r"UA=\$\(wpc eval '(.*?)' 2>/dev/null\)", (harness / 'rehearse-upgrade.sh').read_text(), re.S)
+# runOne(). True is successful progress; false is failure; null is lock refusal.
+ua = re.search(r"UA=\$\(wpc eval '(.*?)'\)", (harness / 'rehearse-upgrade.sh').read_text(), re.S)
 assert ua, 'offered-UA runner missing'
 stubs = r'''
 namespace SlimStat\Migration {
@@ -56,11 +56,16 @@ namespace SlimStat\Migration {
     class MigrationManager {
         private $migration;
         public static $owned = false;
+        public static $calls = 0;
         function register($migration) { $this->migration = $migration; }
         function runOne($id) {
-            if (getenv('UA_REFUSE') === '1') { return null; }
+            self::$calls++;
+            if (getenv('UA_RESULT') === 'null') { return null; }
             self::$owned = true;
-            try { return $this->migration->run(); } finally { self::$owned = false; }
+            try {
+                if (getenv('UA_RESULT') === 'false') { return false; }
+                return $this->migration->run();
+            } finally { self::$owned = false; }
         }
         function getRunRefusal() { return 'lock refused'; }
     }
@@ -73,19 +78,26 @@ namespace SlimStat\Migration\Migrations {
         function shouldRun() { return $this->passes < 2; }
         function run() {
             if (!\SlimStat\Migration\MigrationManager::$owned) { throw new \RuntimeException('manager bypassed'); }
-            return ++$this->passes === 2;
+            $this->passes++;
+            return true;
         }
     }
 }
 '''
-for refuse in ('0', '1'):
-    code = stubs + "\nnamespace { putenv('UA_REFUSE=" + refuse + "'); $GLOBALS['wpdb'] = null;\n" + ua[1] + '\n}'
+for mode in ('true', 'false', 'null'):
+    code = stubs + "\nnamespace { putenv('UA_RESULT=" + mode + "'); $GLOBALS['wpdb'] = null; register_shutdown_function(function () { fwrite(STDERR, 'calls=' . \\SlimStat\\Migration\\MigrationManager::$calls); });\n" + ua[1] + '\n}'
     result = subprocess.run(['php', '-r', code], text=True, capture_output=True)
-    if refuse == '0':
+    output = result.stderr + result.stdout
+    if mode == 'true':
         assert result.returncode == 0 and re.fullmatch(r'done [0-9.]+ 2', result.stdout), result
+        assert 'calls=2' in result.stderr, result
+    elif mode == 'false':
+        assert result.returncode != 0 and 'Migration add-user-agent-dimension failed.' in output, result
+        assert 'calls=1' in result.stderr, result
     else:
-        assert result.returncode != 0 and 'lock refused' in result.stderr + result.stdout, result
-print('PASS: offered UA uses runOne, resumes incomplete batches and aborts lock refusal')
+        assert result.returncode != 0 and 'lock refused' in output, result
+        assert 'calls=1' in result.stderr, result
+print('PASS: offered UA accepts true progress and aborts false failure or null refusal')
 
 # The live matrix is intentionally not executed here. Pin its fail-closed inputs and the
 # evidence-bearing controls so a shortened wait or a story-only result cannot enter Docker.

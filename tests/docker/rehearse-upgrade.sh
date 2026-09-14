@@ -887,13 +887,17 @@ UA=$(wpc eval '
   $manager->register($g);
   $t0 = microtime(true); $passes = 0;
   while ($g->shouldRun() && $passes < 500) {
-    if (null === $manager->runOne($g->getId())) {
+    $result = $manager->runOne($g->getId());
+    if (null === $result) {
       throw new RuntimeException($manager->getRunRefusal());
+    }
+    if (false === $result) {
+      throw new RuntimeException("Migration {$g->getId()} failed.");
     }
     $passes++;
   }
   printf("%s %.1f %d", $g->shouldRun() ? "unfinished" : "done", microtime(true) - $t0, $passes);
-' 2>/dev/null)
+')
 UA_OK=$(echo "$UA" | awk '{print $1}'); UA_S=$(echo "$UA" | awk '{print $2}'); UA_P=$(echo "$UA" | awk '{print $3}')
 [ "$UA_OK" = "done" ] && check "and it completes when asked for by name" 0 "${UA_P} pass(es), ${UA_S}s; see pinned corpus row count" \
   || check "and it completes when asked for by name" 1 "still $UA_OK after ${UA_P} passes"
