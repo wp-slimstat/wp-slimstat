@@ -1220,6 +1220,22 @@ $capture_ext('chart_searchterms_pinned', static function () use ($chart_capture,
 }, ['calendar_day_dependent' => true, 'pinned' => true]);
 
 $grouped_page_shapes = [
+    'slim_p2_24_top_bots' => [
+        'columns' => 'browser, browser_version', 'where' => 'browser_type = 1',
+    ],
+    'slim_p2_25_top_human_browsers' => [
+        'columns' => 'browser, browser_version', 'where' => 'browser_type != 1',
+    ],
+    'slim_p4_02_recent_posts' => [
+        'columns' => 'TRIM( TRAILING "/" FROM resource )', 'as_column' => 'resource',
+        'where' => 'content_type = "post"', 'order_by' => 'MAX(dt) DESC',
+        'more_select' => 'MAX(dt) AS dt',
+    ],
+    'slim_p4_05_recent_not_found' => [
+        'columns' => 'resource',
+        'where' => '(resource LIKE "[404]%" OR content_type LIKE "%404%")',
+        'order_by' => 'MAX(dt) DESC', 'more_select' => 'MAX(dt) AS dt',
+    ],
     'slim_p4_07_top_categories' => [
         'columns' => 'category', 'where' => 'content_type LIKE "%category%"',
     ],
@@ -1253,6 +1269,25 @@ foreach ($grouped_page_shapes as $id => $shape) {
         return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [$shape]));
     });
 }
+
+$capture_windowed('slim_p4_04_recent_feeds', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_recent', [[
+        'columns' => 'resource',
+        'where' => '(resource LIKE "%/feed%" OR resource LIKE "%?feed=>%" '
+            . 'OR resource LIKE "%&feed=>%" OR content_type LIKE "%feed%")',
+    ]]));
+});
+$capture_windowed('slim_p4_06_recent_internal_searches', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_recent', [[
+        'columns' => 'searchterms',
+        'where' => 'content_type LIKE "%search%" AND searchterms <> "" AND searchterms IS NOT NULL',
+    ]]));
+});
+$capture_windowed('slim_p4_01_recent_outbound', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top_outbound', [[
+        'sort_outbound' => 'dt',
+    ]]));
+});
 
 foreach (['slim_p4_24_exit_pages' => 'MAX', 'slim_p4_25_entry_pages' => 'MIN'] as $id => $boundary) {
     $capture_windowed($id, static function () use ($boundary) {

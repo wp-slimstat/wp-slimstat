@@ -134,6 +134,45 @@
       "content_type": {"operator": "contains", "value": "category"},
       "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
     },
+    "slim_p2_24_top_bots": {
+      "report_id": "slim_p2_24", "title": "Top Bots", "family": "pages",
+      "kind": "top_dimensions", "dimensions": ["browser", "browser_version"],
+      "filter_column": "browser_type", "filter_value": 1,
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
+    "slim_p2_25_top_human_browsers": {
+      "report_id": "slim_p2_25", "title": "Top Human Browsers", "family": "pages",
+      "kind": "top_dimensions", "dimensions": ["browser", "browser_version"],
+      "filter_column": "browser_type", "filter_value": 1, "exclude_filter": true,
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
+    "slim_p4_01_recent_outbound": {
+      "report_id": "slim_p4_01", "title": "Recent Outbound Links", "family": "pages",
+      "kind": "recent_outbound",
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
+    "slim_p4_02_recent_posts": {
+      "report_id": "slim_p4_02", "title": "Recent Posts", "family": "pages",
+      "kind": "recent_dimension", "dimension": "resource", "trim_trailing_slash": true,
+      "content_type": {"operator": "exact", "value": "post"},
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
+    "slim_p4_04_recent_feeds": {
+      "report_id": "slim_p4_04", "title": "Recent Feeds", "family": "pages",
+      "kind": "recent_rows", "dimension": "resource", "mode": "feeds",
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
+    "slim_p4_05_recent_not_found": {
+      "report_id": "slim_p4_05", "title": "Recent Pages Not Found", "family": "pages",
+      "kind": "recent_dimension", "dimension": "resource", "dimension_prefix": "[404]",
+      "content_type": {"operator": "contains", "value": "404"}, "filter_join": "or",
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
+    "slim_p4_06_recent_internal_searches": {
+      "report_id": "slim_p4_06", "title": "Recent Internal Searches", "family": "pages",
+      "kind": "recent_rows", "dimension": "searchterms", "mode": "searches",
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
     "slim_p4_09_top_downloads": {
       "report_id": "slim_p4_09", "title": "Top Downloads", "family": "pages",
       "kind": "top_dimension", "dimension": "resource",

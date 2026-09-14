@@ -8,7 +8,8 @@ from families.recent import filtered_recent, recent_rows, recent_events
 from families.chart import pageviews_chart
 from families.count import count_values, count_singletons
 from families.summary import bouncing_visits, pages_per_visit, visit_duration, visitors_summary
-from families.pages import grouped_values, recent_downloads, visit_boundary_pages
+from families.pages import (filtered_recent, grouped_dimensions, grouped_values, recent_downloads,
+                            recent_outbound, visit_boundary_pages)
 
 
 def _text(value):
@@ -224,11 +225,15 @@ def summary(export_path, surface, adapter, contract, windows):
 
 def pages(export_path, surface, adapter, contract, windows):
     if (contract.get('kind') not in ('recent_downloads', 'entry_pages', 'exit_pages',
-                                     'top_dimension', 'recent_dimension')
+                                     'top_dimension', 'recent_dimension', 'top_dimensions',
+                                     'recent_rows', 'recent_outbound')
             or not isinstance(windows, dict) or type(windows.get('start')) is not int
             or type(windows.get('end')) is not int):
         raise ValueError('%s: unsupported or unpinned page contract' % surface)
     grouped = contract['kind'] in ('top_dimension', 'recent_dimension')
+    multi = contract['kind'] == 'top_dimensions'
+    recent_filtered = contract['kind'] == 'recent_rows'
+    outbound = contract['kind'] == 'recent_outbound'
     dimension = contract.get('dimension')
     content_filter = contract.get('content_type')
     if grouped and (not isinstance(dimension, str) or not dimension
@@ -237,9 +242,22 @@ def pages(export_path, surface, adapter, contract, windows):
                         or content_filter.get('operator') not in ('exact', 'contains')
                         or not isinstance(content_filter.get('value'), str)))):
         raise ValueError('%s: invalid grouped page contract' % surface)
-    columns = ((dimension, 'dt') + (('content_type',) if content_filter else ())) if grouped \
-        else (('resource', 'content_type', 'dt') if contract['kind'] == 'recent_downloads'
-              else ('id', 'visit_id', 'resource', 'dt'))
+    if (multi and (not isinstance(contract.get('dimensions'), list)
+                   or not contract['dimensions'] or not isinstance(contract.get('filter_column'), str)
+                   or type(contract.get('filter_value')) is not int)) \
+            or (recent_filtered and (not isinstance(dimension, str) or not dimension
+                                     or contract.get('mode') not in ('feeds', 'searches'))):
+        raise ValueError('%s: invalid page contract' % surface)
+    if outbound:
+        columns = ('outbound_resource', 'dt', 'dt_out')
+    elif multi:
+        columns = tuple(contract['dimensions']) + (contract['filter_column'], 'dt')
+    elif recent_filtered:
+        columns = tuple(dict.fromkeys((dimension, 'resource', 'content_type', 'dt', 'ip')))
+    else:
+        columns = ((dimension, 'dt') + (('content_type',) if content_filter else ())) if grouped \
+            else (('resource', 'content_type', 'dt') if contract['kind'] == 'recent_downloads'
+                  else ('id', 'visit_id', 'resource', 'dt'))
     conn = sqlite3.connect('file:%s?mode=ro' % export_path, uri=True)
     conn.text_factory = bytes
     table = adapter['table']
@@ -252,7 +270,9 @@ def pages(export_path, surface, adapter, contract, windows):
         'SELECT %s FROM "%s"' % (', '.join('"%s"' % column for column in columns),
                                   table.replace('"', '""')))]
     conn.close()
-    if contract['kind'] == 'recent_downloads':
+    if outbound:
+        value = recent_outbound(rows, windows['start'], windows['end'], contract['default_limit'])
+    elif contract['kind'] == 'recent_downloads':
         value = recent_downloads(rows, windows['start'], windows['end'], contract['default_limit'])
     elif grouped:
         value = grouped_values(
@@ -261,7 +281,16 @@ def pages(export_path, surface, adapter, contract, windows):
             contains=bool(content_filter and content_filter['operator'] == 'contains'),
             require_nonempty=contract.get('require_nonempty') is True,
             trim_slash=contract.get('trim_trailing_slash') is True,
-            recent=contract['kind'] == 'recent_dimension')
+            recent=contract['kind'] == 'recent_dimension',
+            dimension_prefix=contract.get('dimension_prefix'),
+            filter_join=contract.get('filter_join', 'and'))
+    elif multi:
+        value = grouped_dimensions(rows, windows['start'], windows['end'], contract['dimensions'],
+                                   contract['default_limit'], contract['filter_column'],
+                                   contract['filter_value'], contract.get('exclude_filter') is True)
+    elif recent_filtered:
+        value = filtered_recent(rows, windows['start'], windows['end'], dimension,
+                                contract['default_limit'], contract['mode'])
     else:
         value = visit_boundary_pages(rows, windows['start'], windows['end'],
                                      'MIN' if contract['kind'] == 'entry_pages' else 'MAX',

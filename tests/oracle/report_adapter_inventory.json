@@ -58,7 +58,14 @@
     "slim_p2_02": ["bouncing_visits_pinned", "get_visitors_summary", "get_max_and_average_pages_per_visit"],
     "slim_p2_12": ["get_visits_duration"],
     "slim_p2_18": ["uniques_browser_pinned"],
+    "slim_p2_24": ["slim_p2_24_top_bots"],
+    "slim_p2_25": ["slim_p2_25_top_human_browsers"],
     "slim_p3_02": ["get_traffic_sources_summary", "count_bouncing_pages"],
+    "slim_p4_01": ["slim_p4_01_recent_outbound"],
+    "slim_p4_02": ["slim_p4_02_recent_posts"],
+    "slim_p4_04": ["slim_p4_04_recent_feeds"],
+    "slim_p4_05": ["slim_p4_05_recent_not_found"],
+    "slim_p4_06": ["slim_p4_06_recent_internal_searches"],
     "slim_p4_07": ["slim_p4_07_top_categories"],
     "slim_p4_09": ["slim_p4_09_top_downloads"],
     "slim_p4_10": ["get_recent_events"],
@@ -118,6 +125,13 @@
     "slim_p4_11": ["top_resource_trimmed"],
     "slim_p4_12": ["get_top_events"],
     "slim_p4_21": ["get_top_outbound"],
+    "slim_p2_24": ["slim_p2_24_top_bots"],
+    "slim_p2_25": ["slim_p2_25_top_human_browsers"],
+    "slim_p4_01": ["slim_p4_01_recent_outbound"],
+    "slim_p4_02": ["slim_p4_02_recent_posts"],
+    "slim_p4_04": ["slim_p4_04_recent_feeds"],
+    "slim_p4_05": ["slim_p4_05_recent_not_found"],
+    "slim_p4_06": ["slim_p4_06_recent_internal_searches"],
     "slim_p4_07": ["slim_p4_07_top_categories"],
     "slim_p4_09": ["slim_p4_09_top_downloads"],
     "slim_p4_13": ["slim_p4_13_top_internal_searches"],
@@ -131,5 +145,5 @@
     "slim_p4_25": ["slim_p4_25_entry_pages"],
     "slim_p4_26_01": ["slim_p4_26_01_chart_daily", "slim_p4_26_01_chart_weekly"]
   },
-  "summary": {"reports": 67, "modeled": 48, "captured_unmodeled": 6, "uncaptured": 13}
+  "summary": {"reports": 67, "modeled": 55, "captured_unmodeled": 6, "uncaptured": 6}
 }

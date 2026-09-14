@@ -26,6 +26,8 @@ def _canonical(rows):
     def scalar(value):
         if value is None:
             return "null"
+        if isinstance(value, int) and not isinstance(value, bool):
+            return str(value)
         return '"' + ''.join(escapes.get(char, char if ord(char) >= 32 else '\\u%04x' % ord(char))
                              for char in value) + '"'
 
@@ -60,18 +62,24 @@ def _group_values(values):
 
 
 def grouped_values(rows, start, end, dimension, limit, content_type=None, contains=False,
-                   require_nonempty=False, trim_slash=False, recent=False):
+                   require_nonempty=False, trim_slash=False, recent=False,
+                   dimension_prefix=None, filter_join="and"):
     """Filter, transform and group a scalar report dimension."""
     if type(limit) is not int or limit < 1:
         raise ValueError("page report limit must be a positive integer")
     required = [dimension, "dt"] + (["content_type"] if content_type is not None else [])
     selected = []
     for row in _window(rows, start, end, required):
+        matches_content = True
         if content_type is not None:
             actual, expected = _ascii_ci(row["content_type"]), content_type.encode("ascii")
-            if actual is None or (expected not in actual if contains else actual != expected):
-                continue
+            matches_content = actual is not None and (expected in actual if contains else actual == expected)
         value = row[dimension]
+        matches_dimension = (dimension_prefix is None or value is not None
+                             and _ascii_ci(value).startswith(dimension_prefix.encode("ascii")))
+        if not ((matches_content or matches_dimension) if filter_join == "or"
+                else (matches_content and matches_dimension)):
+            continue
         if require_nonempty and (value is None or _ascii_ci(value) == b""):
             continue
         if trim_slash and value is not None:
@@ -89,6 +97,87 @@ def grouped_values(rows, start, end, dimension, limit, content_type=None, contai
         for row, key in zip(answer, ranked):
             row["dt"] = str(latest[key])
     return _canonical(answer)
+
+
+def grouped_dimensions(rows, start, end, dimensions, limit, filter_column, filter_value,
+                       exclude=False):
+    """Group a tuple of dimensions after an integer equality/inequality filter."""
+    if not dimensions or type(limit) is not int or limit < 1:
+        raise ValueError("invalid multi-dimension page contract")
+    required = tuple(dimensions) + (filter_column, "dt")
+    values = []
+    for row in _window(rows, start, end, required):
+        matched = row[filter_column] == filter_value
+        if matched == exclude:
+            continue
+        display = tuple(_text(row[name]) for name in dimensions)
+        key = tuple(_ascii_ci(row[name]) for name in dimensions)
+        values.append((key, display))
+    counts, displays = {}, {}
+    for key, display in values:
+        if key in displays and displays[key] != display:
+            raise ValueError("page report has an ambiguous collation-equivalent tuple")
+        displays[key] = display
+        counts[key] = counts.get(key, 0) + 1
+    order = lambda key: tuple((part is not None, part or b"") for part in key)
+    ranked = sorted(counts, key=lambda key: (-counts[key], order(key)))[:limit]
+    return _canonical([dict(zip(dimensions, displays[key]), counthits=str(counts[key]))
+                       for key in ranked])
+
+
+def filtered_recent(rows, start, end, dimension, limit, mode):
+    """Return pinned recent feed/search rows with get_recent's projected columns."""
+    required = (dimension, "resource", "content_type", "dt", "ip")
+    selected = []
+    for row in _window(rows, start, end, required):
+        content = _ascii_ci(row["content_type"])
+        value = row[dimension]
+        if mode == "searches":
+            matched = content is not None and b"search" in content \
+                and value is not None and _ascii_ci(value) != b""
+        elif mode == "feeds":
+            resource = _ascii_ci(row["resource"])
+            matched = ((resource is not None and any(item in resource for item in
+                        (b"/feed", b"?feed=>", b"&feed=>")))
+                       or content is not None and b"feed" in content)
+        else:
+            raise ValueError("unsupported recent page mode")
+        if matched:
+            selected.append(row)
+    selected.sort(key=lambda row: -row["dt"])
+    if len(selected) > limit and selected[limit - 1]["dt"] == selected[limit]["dt"]:
+        raise ValueError("recent page LIMIT cuts through an unordered timestamp tie")
+    answer = [{dimension: _text(row[dimension]), "dt": str(row["dt"]), "ip": _text(row["ip"])}
+              for row in selected[:limit]]
+    return _canonical(answer)
+
+
+def recent_outbound(rows, start, end, limit):
+    """Explode the latest raw outbound rows and aggregate URLs by their click timestamp."""
+    selected = []
+    for row in _window(rows, start, end, ("outbound_resource", "dt", "dt_out")):
+        value = row["outbound_resource"]
+        if value is not None and _ascii_ci(value) != b"":
+            selected.append(row)
+    selected.sort(key=lambda row: -row["dt"])
+    if len(selected) > limit and selected[limit - 1]["dt"] == selected[limit]["dt"]:
+        raise ValueError("outbound LIMIT cuts through an unordered timestamp tie")
+    aggregate = {}
+    for row in selected[:limit]:
+        raw = row["outbound_resource"] if isinstance(row["outbound_resource"], bytes) \
+            else row["outbound_resource"].encode("ascii")
+        click_dt = row["dt_out"] if isinstance(row["dt_out"], int) and row["dt_out"] > 0 else row["dt"]
+        for value in raw.split(b";;;"):
+            if not value:
+                continue
+            text = _text(value)
+            if text.lstrip("-").isdigit():
+                raise ValueError("numeric outbound URL has PHP array-key semantics")
+            item = aggregate.setdefault(text, {"counthits": 0, "dt": 0})
+            item["counthits"] += 1
+            item["dt"] = max(item["dt"], click_dt)
+    return _canonical([{"outbound_resource": url, "counthits": item["counthits"], "dt": item["dt"]}
+                       for url, item in aggregate.items()])
 
 
 def recent_downloads(rows, start, end, limit):

@@ -37,6 +37,13 @@ $chartContracts = [
     'slim_p4_26_01_chart_weekly'     => ['outbound_resource', 60, 'WEEK'],
 ];
 $pageContracts = [
+    'slim_p2_24_top_bots'               => ['top_dimensions', ['get_top', 'browser, browser_version', 'browser_type = 1']],
+    'slim_p2_25_top_human_browsers'     => ['top_dimensions', ['get_top', 'browser, browser_version', 'browser_type != 1']],
+    'slim_p4_01_recent_outbound'        => ['recent_outbound', ['get_top_outbound', 'outbound_resource', 'sort_outbound', 'dt']],
+    'slim_p4_02_recent_posts'           => ['recent_dimension', ['get_top', 'TRIM( TRAILING "/" FROM resource )', 'resource', 'content_type = "post"', 'MAX(dt) DESC', 'MAX(dt) AS dt']],
+    'slim_p4_04_recent_feeds'           => ['recent_rows', ['get_recent', 'resource', '(resource LIKE %s OR resource LIKE %s OR resource LIKE %s OR content_type LIKE %s)', '%/feed%', '%?feed=>%', '%&feed=>%', '%feed%']],
+    'slim_p4_05_recent_not_found'       => ['recent_dimension', ['get_top', 'resource', '(resource LIKE "[404]%" OR content_type LIKE "%404%")', 'MAX(dt) DESC', 'MAX(dt) AS dt']],
+    'slim_p4_06_recent_internal_searches' => ['recent_rows', ['get_recent', 'searchterms', 'content_type LIKE %s AND searchterms <> "" AND searchterms IS NOT NULL', '%search%']],
     'slim_p4_07_top_categories'         => ['top_dimension', ['get_top', 'category', 'content_type LIKE "%category%"']],
     'slim_p4_09_top_downloads'          => ['top_dimension', ['get_top', 'resource', 'content_type = "download"']],
     'slim_p4_13_top_internal_searches'  => ['top_dimension', ['get_top', 'searchterms', 'content_type LIKE %s AND searchterms <> "" AND searchterms IS NOT NULL', '%search%']],

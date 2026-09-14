@@ -148,4 +148,30 @@ with tempfile.TemporaryDirectory() as temp:
     assert result['value'] == [
         {'counthits': '1', 'resource': '/a'}, {'counthits': '1', 'resource': '/b'}], result
 
+    contracts['reports']['slim_p2_24_top_bots'] = {
+        'family': 'pages', 'kind': 'top_dimensions', 'dimensions': ['resource', 'username'],
+        'filter_column': 'browser_type', 'filter_value': 1, 'default_limit': 200}
+    result = oracle_for(path, 'slim_p2_24_top_bots',
+                        {'family': 'pages', 'table': 'slim_stats'}, contracts,
+                        {'start': 10, 'end': 20})
+    assert result['value'] == [
+        {'counthits': '1', 'resource': '/a', 'username': None}], result
+
+    contracts['reports']['slim_p4_01_recent_outbound'] = {
+        'family': 'pages', 'kind': 'recent_outbound', 'default_limit': 200}
+    result = oracle_for(path, 'slim_p4_01_recent_outbound',
+                        {'family': 'pages', 'table': 'slim_stats'}, contracts,
+                        {'start': 10, 'end': 20})
+    assert result['value'] == [
+        {'counthits': 2, 'dt': 70, 'outbound_resource': 'https://a'}], result
+
+    contracts['reports']['slim_p4_04_recent_feeds'] = {
+        'family': 'pages', 'kind': 'recent_rows', 'dimension': 'resource',
+        'mode': 'feeds', 'default_limit': 200}
+    result = oracle_for(path, 'slim_p4_04_recent_feeds',
+                        {'family': 'pages', 'table': 'slim_stats'}, contracts,
+                        {'start': 10, 'end': 20})
+    assert result == {'class': 'empty', 'value': [], 'flags': {
+        'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}, result
+
 print('PASS: report evidence adapters')
