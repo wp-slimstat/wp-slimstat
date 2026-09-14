@@ -37,9 +37,17 @@ $chartContracts = [
     'slim_p4_26_01_chart_weekly'     => ['outbound_resource', 60, 'WEEK'],
 ];
 $pageContracts = [
-    'slim_p4_20_recent_downloads' => ['recent_downloads', 'get_top', 'resource', 'MAX(dt) DESC'],
-    'slim_p4_24_exit_pages'       => ['exit_pages', 'get_top_aggr', 'visit_id', 'MAX'],
-    'slim_p4_25_entry_pages'      => ['entry_pages', 'get_top_aggr', 'visit_id', 'MIN'],
+    'slim_p4_07_top_categories'         => ['top_dimension', ['get_top', 'category', 'content_type LIKE "%category%"']],
+    'slim_p4_09_top_downloads'          => ['top_dimension', ['get_top', 'resource', 'content_type = "download"']],
+    'slim_p4_13_top_internal_searches'  => ['top_dimension', ['get_top', 'searchterms', 'content_type LIKE %s AND searchterms <> "" AND searchterms IS NOT NULL', '%search%']],
+    'slim_p4_15_recent_categories'      => ['recent_dimension', ['get_top', 'TRIM( TRAILING "/" FROM resource )', 'resource', '(content_type = "category")', 'MAX(dt) DESC', 'MAX(dt) AS dt']],
+    'slim_p4_152_recent_tags'            => ['recent_dimension', ['get_top', 'TRIM( TRAILING "/" FROM resource )', 'resource', '(content_type = "tag")', 'MAX(dt) DESC', 'MAX(dt) AS dt']],
+    'slim_p4_16_top_not_found'           => ['top_dimension', ['get_top', 'resource', 'content_type LIKE "%404%"']],
+    'slim_p4_18_top_authors'             => ['top_dimension', ['get_top', 'author']],
+    'slim_p4_19_top_tags'                => ['top_dimension', ['get_top', 'category', '(content_type LIKE "%tag%")']],
+    'slim_p4_20_recent_downloads'        => ['recent_downloads', ['get_top', 'resource', 'content_type = "download"', 'MAX(dt) DESC', 'MAX(dt) AS dt']],
+    'slim_p4_24_exit_pages'              => ['exit_pages', ['get_top_aggr', 'visit_id', 'resource', 'MAX']],
+    'slim_p4_25_entry_pages'             => ['entry_pages', ['get_top_aggr', 'visit_id', 'resource', 'MIN']],
 ];
 
 if (!is_array($json) || 'SLIMSTAT-ORACLE-CONTRACTS-V1' !== ($json['schema'] ?? null)) {
@@ -142,9 +150,8 @@ foreach ($reports as $key => $contract) {
                         ? ['raw_results_to_html', 'raw', 'wp_slimstat_db',
                             'slim_p2_02' === $id ? 'get_visitors_summary' : 'get_visits_duration']
                         : ('pages' === $family
-                            ? ['raw_results_to_html', 'raw', 'wp_slimstat_db',
-                                $pageContracts[$key][1] ?? '', $pageContracts[$key][2] ?? '',
-                                $pageContracts[$key][3] ?? '']
+                            ? array_merge(['raw_results_to_html', 'raw', 'wp_slimstat_db'],
+                                $pageContracts[$key][1] ?? [])
                             : [])))));
     if (!$requiredStrings) {
         $failures[] = "{$key}: unknown oracle family " . var_export($family, true);
@@ -252,12 +259,7 @@ foreach ($reports as $key => $contract) {
         }
     }
     if ('pages' === $family) {
-        $actual = [$contract['kind'] ?? null,
-            in_array('get_top_aggr', $strings, true) ? 'get_top_aggr' : 'get_top',
-            in_array('visit_id', $strings, true) ? 'visit_id' : 'resource',
-            in_array('MAX(dt) DESC', $strings, true) ? 'MAX(dt) DESC'
-                : (in_array('MAX', $strings, true) ? 'MAX' : 'MIN')];
-        if (!isset($pageContracts[$key]) || $pageContracts[$key] !== $actual
+        if (!isset($pageContracts[$key]) || $pageContracts[$key][0] !== ($contract['kind'] ?? null)
             || 'ascii_ci' !== ($contract['equality'] ?? null)
         ) {
             $failures[] = "{$key}: page contract does not match its report query semantics";

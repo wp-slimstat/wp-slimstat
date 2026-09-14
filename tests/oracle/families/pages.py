@@ -46,35 +46,54 @@ def _window(rows, start, end, required):
     return answer
 
 
-def _group_resources(resources):
+def _group_values(values):
     grouped = {}
     displays = {}
-    for resource in resources:
-        key = _ascii_ci(resource)
-        display = _text(resource)
+    for value in values:
+        key = _ascii_ci(value)
+        display = _text(value)
         if key in displays and displays[key] != display:
-            raise ValueError("page report has an ambiguous collation-equivalent resource")
+            raise ValueError("page report has an ambiguous collation-equivalent value")
         displays[key] = display
         grouped[key] = grouped.get(key, 0) + 1
     return grouped, displays
 
 
-def recent_downloads(rows, start, end, limit):
-    """Group download hits by resource and retain each resource's latest timestamp."""
+def grouped_values(rows, start, end, dimension, limit, content_type=None, contains=False,
+                   require_nonempty=False, trim_slash=False, recent=False):
+    """Filter, transform and group a scalar report dimension."""
     if type(limit) is not int or limit < 1:
         raise ValueError("page report limit must be a positive integer")
-    downloads = []
-    for row in _window(rows, start, end, ("resource", "content_type", "dt")):
-        if _ascii_ci(row["content_type"]) == b"download":
-            downloads.append(row)
-    counts, displays = _group_resources(row["resource"] for row in downloads)
+    required = [dimension, "dt"] + (["content_type"] if content_type is not None else [])
+    selected = []
+    for row in _window(rows, start, end, required):
+        if content_type is not None:
+            actual, expected = _ascii_ci(row["content_type"]), content_type.encode("ascii")
+            if actual is None or (expected not in actual if contains else actual != expected):
+                continue
+        value = row[dimension]
+        if require_nonempty and (value is None or _ascii_ci(value) == b""):
+            continue
+        if trim_slash and value is not None:
+            value = (value.rstrip(b"/") if isinstance(value, bytes) else value.rstrip("/"))
+        selected.append((value, row["dt"]))
+    counts, displays = _group_values(value for value, _dt in selected)
     latest = {}
-    for row in downloads:
-        key = _ascii_ci(row["resource"])
-        latest[key] = max(latest.get(key, row["dt"]), row["dt"])
-    ranked = sorted(counts, key=lambda key: (-latest[key], key is not None, key or b""))[:limit]
-    return _canonical([{"resource": displays[key], "counthits": str(counts[key]),
-                        "dt": str(latest[key])} for key in ranked])
+    for value, dt in selected:
+        key = _ascii_ci(value)
+        latest[key] = max(latest.get(key, dt), dt)
+    ranked = sorted(counts, key=lambda key: (
+        -(latest[key] if recent else counts[key]), key is not None, key or b""))[:limit]
+    answer = [{dimension: displays[key], "counthits": str(counts[key])} for key in ranked]
+    if recent:
+        for row, key in zip(answer, ranked):
+            row["dt"] = str(latest[key])
+    return _canonical(answer)
+
+
+def recent_downloads(rows, start, end, limit):
+    """Group download hits by resource and retain each resource's latest timestamp."""
+    return grouped_values(rows, start, end, "resource", limit, content_type="download", recent=True)
 
 
 def visit_boundary_pages(rows, start, end, boundary, limit):
@@ -91,6 +110,6 @@ def visit_boundary_pages(rows, start, end, boundary, limit):
         if current is None or (boundary == "MIN" and row["id"] < current) \
                 or (boundary == "MAX" and row["id"] > current):
             selected[row["visit_id"]] = row["id"]
-    counts, displays = _group_resources(by_id[row_id]["resource"] for row_id in selected.values())
+    counts, displays = _group_values(by_id[row_id]["resource"] for row_id in selected.values())
     ranked = sorted(counts, key=lambda key: (-counts[key], key is not None, key or b""))[:limit]
     return _canonical([{"resource": displays[key], "counthits": str(counts[key])} for key in ranked])

@@ -128,6 +128,53 @@
       "default_limit": 200,
       "equality": "ascii_ci"
     },
+    "slim_p4_07_top_categories": {
+      "report_id": "slim_p4_07", "title": "Top Categories", "family": "pages",
+      "kind": "top_dimension", "dimension": "category",
+      "content_type": {"operator": "contains", "value": "category"},
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
+    "slim_p4_09_top_downloads": {
+      "report_id": "slim_p4_09", "title": "Top Downloads", "family": "pages",
+      "kind": "top_dimension", "dimension": "resource",
+      "content_type": {"operator": "exact", "value": "download"},
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
+    "slim_p4_13_top_internal_searches": {
+      "report_id": "slim_p4_13", "title": "Top Internal Searches", "family": "pages",
+      "kind": "top_dimension", "dimension": "searchterms", "require_nonempty": true,
+      "content_type": {"operator": "contains", "value": "search"},
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
+    "slim_p4_15_recent_categories": {
+      "report_id": "slim_p4_15", "title": "Recent Categories", "family": "pages",
+      "kind": "recent_dimension", "dimension": "resource", "trim_trailing_slash": true,
+      "content_type": {"operator": "exact", "value": "category"},
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
+    "slim_p4_152_recent_tags": {
+      "report_id": "slim_p4_152", "title": "Recent Tags", "family": "pages",
+      "kind": "recent_dimension", "dimension": "resource", "trim_trailing_slash": true,
+      "content_type": {"operator": "exact", "value": "tag"},
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
+    "slim_p4_16_top_not_found": {
+      "report_id": "slim_p4_16", "title": "Top Pages Not Found", "family": "pages",
+      "kind": "top_dimension", "dimension": "resource",
+      "content_type": {"operator": "contains", "value": "404"},
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
+    "slim_p4_18_top_authors": {
+      "report_id": "slim_p4_18", "title": "Top Authors", "family": "pages",
+      "kind": "top_dimension", "dimension": "author",
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
+    "slim_p4_19_top_tags": {
+      "report_id": "slim_p4_19", "title": "Top Tags", "family": "pages",
+      "kind": "top_dimension", "dimension": "category",
+      "content_type": {"operator": "contains", "value": "tag"},
+      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+    },
     "slim_p4_24_exit_pages": {
       "report_id": "slim_p4_24",
       "title": "Top Exit Pages",

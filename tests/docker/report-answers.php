@@ -1219,6 +1219,41 @@ $capture_ext('chart_searchterms_pinned', static function () use ($chart_capture,
     ]);
 }, ['calendar_day_dependent' => true, 'pinned' => true]);
 
+$grouped_page_shapes = [
+    'slim_p4_07_top_categories' => [
+        'columns' => 'category', 'where' => 'content_type LIKE "%category%"',
+    ],
+    'slim_p4_09_top_downloads' => [
+        'columns' => 'resource', 'where' => 'content_type = "download"',
+    ],
+    'slim_p4_13_top_internal_searches' => [
+        'columns' => 'searchterms',
+        'where' => 'content_type LIKE "%search%" AND searchterms <> "" AND searchterms IS NOT NULL',
+    ],
+    'slim_p4_15_recent_categories' => [
+        'columns' => 'TRIM( TRAILING "/" FROM resource )', 'as_column' => 'resource',
+        'where' => '(content_type = "category")', 'order_by' => 'MAX(dt) DESC',
+        'more_select' => 'MAX(dt) AS dt',
+    ],
+    'slim_p4_152_recent_tags' => [
+        'columns' => 'TRIM( TRAILING "/" FROM resource )', 'as_column' => 'resource',
+        'where' => '(content_type = "tag")', 'order_by' => 'MAX(dt) DESC',
+        'more_select' => 'MAX(dt) AS dt',
+    ],
+    'slim_p4_16_top_not_found' => [
+        'columns' => 'resource', 'where' => 'content_type LIKE "%404%"',
+    ],
+    'slim_p4_18_top_authors' => ['columns' => 'author'],
+    'slim_p4_19_top_tags' => [
+        'columns' => 'category', 'where' => '(content_type LIKE "%tag%")',
+    ],
+];
+foreach ($grouped_page_shapes as $id => $shape) {
+    $capture_windowed($id, static function () use ($shape) {
+        return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [$shape]));
+    });
+}
+
 foreach (['slim_p4_24_exit_pages' => 'MAX', 'slim_p4_25_entry_pages' => 'MIN'] as $id => $boundary) {
     $capture_windowed($id, static function () use ($boundary) {
         $result = slimstat_invoke('wp_slimstat_db', 'get_top_aggr', [[

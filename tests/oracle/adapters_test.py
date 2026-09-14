@@ -139,4 +139,13 @@ with tempfile.TemporaryDirectory() as temp:
                             {'start': 10, 'end': 20})
         assert result['value'] == expected, result
 
+    contracts['reports']['slim_p4_09_top_downloads'] = {
+        'family': 'pages', 'kind': 'top_dimension', 'dimension': 'resource',
+        'content_type': {'operator': 'exact', 'value': 'download'}, 'default_limit': 200}
+    result = oracle_for(path, 'slim_p4_09_top_downloads',
+                        {'family': 'pages', 'table': 'slim_stats'}, contracts,
+                        {'start': 10, 'end': 20})
+    assert result['value'] == [
+        {'counthits': '1', 'resource': '/a'}, {'counthits': '1', 'resource': '/b'}], result
+
 print('PASS: report evidence adapters')

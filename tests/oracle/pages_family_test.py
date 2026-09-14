@@ -4,11 +4,19 @@
 import json
 from pathlib import Path
 
-from families.pages import recent_downloads, visit_boundary_pages
+from families.pages import grouped_values, recent_downloads, visit_boundary_pages
 
 
 contracts = json.loads(Path(__file__).with_name("report-contracts.json").read_text())["reports"]
 expected = {
+    "slim_p4_07_top_categories": ("slim_p4_07", "top_dimension"),
+    "slim_p4_09_top_downloads": ("slim_p4_09", "top_dimension"),
+    "slim_p4_13_top_internal_searches": ("slim_p4_13", "top_dimension"),
+    "slim_p4_15_recent_categories": ("slim_p4_15", "recent_dimension"),
+    "slim_p4_152_recent_tags": ("slim_p4_152", "recent_dimension"),
+    "slim_p4_16_top_not_found": ("slim_p4_16", "top_dimension"),
+    "slim_p4_18_top_authors": ("slim_p4_18", "top_dimension"),
+    "slim_p4_19_top_tags": ("slim_p4_19", "top_dimension"),
     "slim_p4_20_recent_downloads": ("slim_p4_20", "recent_downloads"),
     "slim_p4_24_exit_pages": ("slim_p4_24", "exit_pages"),
     "slim_p4_25_entry_pages": ("slim_p4_25", "entry_pages"),
@@ -20,6 +28,7 @@ for key in expected:
 assert "'order_by'    => 'MAX(dt) DESC'" in capture
 assert "['slim_p4_24_exit_pages' => 'MAX', 'slim_p4_25_entry_pages' => 'MIN']" in capture
 assert "unset($row['visit_id']);" in capture
+assert "$grouped_page_shapes" in capture
 
 
 rows = [
@@ -35,6 +44,15 @@ rows = [
 assert recent_downloads(rows, 10, 40, 2) == [
     {"resource": "/other", "counthits": "1", "dt": "30"},
     {"resource": "/exit", "counthits": "2", "dt": "40"},
+]
+assert grouped_values(rows, 10, 40, "resource", 200, content_type="down", contains=True) == [
+    {"resource": "/entry", "counthits": "1"},
+    {"resource": "/other", "counthits": "1"},
+    {"resource": "/exit", "counthits": "2"},
+]
+assert grouped_values([dict(rows[0], resource=b"/entry///")], 10, 40, "resource", 200,
+                      trim_slash=True, recent=True) == [
+    {"resource": "/entry", "counthits": "1", "dt": "10"},
 ]
 assert visit_boundary_pages(rows, 10, 40, "MIN", 200) == [
     {"resource": "/exit", "counthits": "1"},
