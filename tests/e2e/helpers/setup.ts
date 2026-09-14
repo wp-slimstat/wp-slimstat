@@ -96,7 +96,6 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
   { sourceFile: 'rewrite-flush-mu-plugin.php', deployedFile: 'rewrite-flush-mu-plugin.php' },
   { sourceFile: 'plugin-lifecycle-mu-plugin.php', deployedFile: 'plugin-lifecycle-mu-plugin.php' },
   { sourceFile: 'custom-db-simulator-mu-plugin.php', deployedFile: 'custom-db-simulator-mu-plugin.php' },
-  { sourceFile: 'visit-id-diagnostic-mu-plugin.php', deployedFile: 'visit-id-diagnostic-mu-plugin.php' },
   { sourceFile: 'calendar-ext-simulator-mu-plugin.php', deployedFile: 'calendar-ext-simulator-mu-plugin.php' },
   { sourceFile: 'browscap-unzip-blocker-mu-plugin.php', deployedFile: 'browscap-unzip-blocker-mu-plugin.php' },
   { sourceFile: 'fileinfo-disabler-mu-plugin.php', deployedFile: 'fileinfo-disabler-mu-plugin.php' },
