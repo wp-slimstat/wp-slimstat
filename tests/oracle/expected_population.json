@@ -10,6 +10,8 @@
     {"key":"count_records_resource","source":"legacy","adapter":{"family":"count","table":"slim_stats"}},
     {"key":"count_records_visit_id","source":"legacy","adapter":{"family":"count","table":"slim_stats"}},
     {"key":"rows_in_window","source":"legacy","adapter":{"family":"count","table":"slim_stats"}},
+    {"key":"slim_p4_26_01_chart_daily","source":"extended","adapter":{"family":"chart","table":"slim_stats"}},
+    {"key":"slim_p4_26_01_chart_weekly","source":"extended","adapter":{"family":"chart","table":"slim_stats"}},
     {"key":"top_browser","source":"legacy","adapter":{"family":"top","table":"slim_stats","dimension":"browser","blog_id":1}},
     {"key":"top_country","source":"legacy","adapter":{"family":"top","table":"slim_stats","dimension":"country","blog_id":1}},
     {"key":"top_platform","source":"legacy","adapter":{"family":"top","table":"slim_stats","dimension":"platform","blog_id":1}},

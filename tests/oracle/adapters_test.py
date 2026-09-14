@@ -20,13 +20,15 @@ with tempfile.TemporaryDirectory() as temp:
         ('slim_stats', 7, 'browser_type', 'TINYINT UNSIGNED', 1, 0),
         ('slim_stats', 8, 'dt_out', 'INT UNSIGNED', 1, 0),
         ('slim_stats', 9, 'username', 'VARCHAR(255)', 1, 0),
+        ('slim_stats', 10, 'outbound_resource', 'VARCHAR(2048)', 1, 0),
     ])
     db.execute('CREATE TABLE slim_stats (id INTEGER, resource BLOB, user_agent BLOB, dt INTEGER, '
-               'email BLOB, ip BLOB, visit_id INTEGER, browser_type INTEGER, dt_out INTEGER, username BLOB)')
-    db.executemany('INSERT INTO slim_stats VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                   [(1, b'/a', b'\xff', 10, b'ignored', b'a', 1, 0, 40, b'Sam'),
-                    (2, b'/b', b'normal', 20, b'\xff', b'b', 1, 0, 70, b'sam '),
-                    (3, b'/a', None, 20, b'ignored', None, 2, 1, 90, None)])
+               'email BLOB, ip BLOB, visit_id INTEGER, browser_type INTEGER, dt_out INTEGER, '
+               'username BLOB, outbound_resource BLOB)')
+    db.executemany('INSERT INTO slim_stats VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                   [(1, b'/a', b'\xff', 10, b'ignored', b'a', 1, 0, 40, b'Sam', b'https://a'),
+                    (2, b'/b', b'normal', 20, b'\xff', b'b', 1, 0, 70, b'sam ', b'https://a'),
+                    (3, b'/a', None, 20, b'ignored', None, 2, 1, 90, None, None)])
     db.commit()
     db.close()
     contracts = {'reports': {'top_resource': {'family': 'top', 'dimension': 'resource',
@@ -71,6 +73,12 @@ with tempfile.TemporaryDirectory() as temp:
         raise AssertionError('chart adapter passed without its consumed metric column')
     except ValueError:
         pass
+
+    contracts['reports']['slim_p4_26_01_chart_daily'] = dict(
+        contracts['reports']['chart_daily'], metric_column='outbound_resource')
+    result = oracle_for(path, 'slim_p4_26_01_chart_daily',
+                        {'family': 'chart', 'table': 'slim_stats'}, contracts, {'end': 86400})
+    assert result['value']['datasets'] == {'v1': [2], 'v2': [1]}, result
 
     for key, column, distinct, windowed, expected in (
             ('count_records_id', 'id', False, False, 3),

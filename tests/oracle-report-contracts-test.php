@@ -28,6 +28,14 @@ $summaryContracts = [
     'get_visitors_summary'                  => ['visitors_summary', 'get_visitors_summary'],
     'get_visits_duration'                   => ['visit_duration', 'get_visits_duration'],
 ];
+$chartContracts = [
+    'chart_daily'                    => ['ip', 5, 'DAY'],
+    'chart_weekly'                   => ['ip', 60, 'WEEK'],
+    'chart_searchterms_pinned'       => ['searchterms', 30, 'WEEK'],
+    'chart_users_pinned'             => ['username', 30, 'WEEK'],
+    'slim_p4_26_01_chart_daily'      => ['outbound_resource', 5, 'DAY'],
+    'slim_p4_26_01_chart_weekly'     => ['outbound_resource', 60, 'WEEK'],
+];
 
 if (!is_array($json) || 'SLIMSTAT-ORACLE-CONTRACTS-V1' !== ($json['schema'] ?? null)) {
     $failures[] = 'report-contracts.json is missing schema SLIMSTAT-ORACLE-CONTRACTS-V1';
@@ -117,11 +125,8 @@ foreach ($reports as $key => $contract) {
                     ? ['type', 'recent', 'columns', 'searchterms', 'raw', 'wp_slimstat_db', 'get_recent']
                     : ['show_access_log', 'type', 'recent', 'columns', '*', 'raw', 'wp_slimstat_db', 'get_recent']))
             : ('chart' === $family
-                ? ('slim_p1_19_01' === $id
-                    ? ['show_chart', 'chart_data', 'data1', 'COUNT( searchterms )', 'data2', 'COUNT( DISTINCT searchterms )']
-                    : ('slim_p2_22_01' === $id
-                        ? ['show_chart', 'chart_data', 'data1', 'COUNT( username )', 'data2', 'COUNT( DISTINCT username )']
-                        : ['show_chart', 'chart_data', 'data1', 'COUNT( ip )', 'data2', 'COUNT( DISTINCT ip )']))
+                ? ['show_chart', 'chart_data', 'data1', 'COUNT( ' . $contract['metric_column'] . ' )',
+                    'data2', 'COUNT( DISTINCT ' . $contract['metric_column'] . ' )']
                 : ('count' === $family
                     ? ('slim_p2_01' === $id
                         ? ['show_chart', 'chart_data', 'COUNT( DISTINCT visit_id )', '(visit_id > 0 AND browser_type <> 1)']
@@ -190,14 +195,9 @@ foreach ($reports as $key => $contract) {
         $failures[] = "{$key}: user-note predicate is not pinned";
     }
     if ('chart' === $family) {
-        $chartDurations = ['chart_daily' => ['ip', 'DAY', 5],
-            'chart_weekly' => ['ip', 'WEEK', 60],
-            'chart_searchterms_pinned' => ['searchterms', 'WEEK', 30],
-            'chart_users_pinned' => ['username', 'WEEK', 30]];
-        $granularity = $contract['granularity'] ?? null;
-        $actual = [$contract['metric_column'] ?? null, $granularity, $contract['duration_days'] ?? null];
-        if (!isset($chartDurations[$key])
-            || $chartDurations[$key] !== $actual
+        $actual = [$contract['metric_column'] ?? null, $contract['duration_days'] ?? null,
+            $contract['granularity'] ?? null];
+        if (!isset($chartContracts[$key]) || $chartContracts[$key] !== $actual
             || 1 !== ($contract['start_of_week'] ?? null)
             || 'UTC' !== ($contract['timezone'] ?? null)
         ) {

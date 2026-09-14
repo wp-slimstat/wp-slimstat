@@ -64,6 +64,7 @@
     "slim_p4_21": ["get_top_outbound"],
     "slim_p4_22": ["get_your_blog"],
     "slim_p4_23": ["bouncing_visits_pinned", "count_bouncing_pages"],
+    "slim_p4_26_01": ["slim_p4_26_01_chart_daily", "slim_p4_26_01_chart_weekly"],
     "slim_p4_27": ["get_group_by"],
     "slim_p9_01": ["get_goals_raw", "get_goal_results"],
     "slim_p9_02": ["get_funnels_raw", "get_funnel_results"]
@@ -105,7 +106,8 @@
     "slim_p4_10": ["get_recent_events"],
     "slim_p4_11": ["top_resource_trimmed"],
     "slim_p4_12": ["get_top_events"],
-    "slim_p4_21": ["get_top_outbound"]
+    "slim_p4_21": ["get_top_outbound"],
+    "slim_p4_26_01": ["slim_p4_26_01_chart_daily", "slim_p4_26_01_chart_weekly"]
   },
-  "summary": {"reports": 67, "modeled": 36, "captured_unmodeled": 6, "uncaptured": 25}
+  "summary": {"reports": 67, "modeled": 37, "captured_unmodeled": 6, "uncaptured": 24}
 }

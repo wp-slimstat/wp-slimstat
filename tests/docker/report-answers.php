@@ -1032,6 +1032,17 @@ $capture_windowed = static function ($id, callable $fn, array $flags = [])
     }, array_merge(['pinned' => true], $flags));
 };
 
+$outbound_chart_data = [
+    'data1' => 'COUNT( outbound_resource )',
+    'data2' => 'COUNT( DISTINCT outbound_resource )',
+];
+$capture_ext('slim_p4_26_01_chart_daily', static function () use ($chart_capture, $chart_end, $outbound_chart_data) {
+    return $chart_capture($chart_end - 5 * 86400 + 1, $chart_end, $outbound_chart_data);
+}, ['calendar_day_dependent' => true, 'pinned' => true]);
+$capture_ext('slim_p4_26_01_chart_weekly', static function () use ($chart_capture, $chart_end, $outbound_chart_data) {
+    return $chart_capture($chart_end - 60 * 86400 + 1, $chart_end, $outbound_chart_data);
+}, ['calendar_day_dependent' => true, 'pinned' => true]);
+
 // ── the PINNED TWINS (checklist step 5) ─────────────────────────────────────
 //
 // The three legacy keys they mirror are date-filtered through a window that ends at NOW, so

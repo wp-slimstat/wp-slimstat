@@ -21,6 +21,26 @@
       "start_of_week": 1,
       "timezone": "UTC"
     },
+    "slim_p4_26_01_chart_daily": {
+      "report_id": "slim_p4_26_01",
+      "title": "Pages with Outbound Links",
+      "family": "chart",
+      "metric_column": "outbound_resource",
+      "duration_days": 5,
+      "granularity": "DAY",
+      "start_of_week": 1,
+      "timezone": "UTC"
+    },
+    "slim_p4_26_01_chart_weekly": {
+      "report_id": "slim_p4_26_01",
+      "title": "Pages with Outbound Links",
+      "family": "chart",
+      "metric_column": "outbound_resource",
+      "duration_days": 60,
+      "granularity": "WEEK",
+      "start_of_week": 1,
+      "timezone": "UTC"
+    },
     "get_recent": {
       "report_id": "slim_p7_02",
       "title": "Access Log",
