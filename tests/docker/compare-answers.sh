@@ -407,7 +407,7 @@ done
 # all, and a reader who cannot tell them apart cannot tell what an "identical" covered.
 echo "  seed profile: $SEED_PROFILE  (rows=$ROWS days=$DAYS)"
 
-SLIMSTAT_NULL_CONTROL="${SLIMSTAT_NULL_CONTROL:-0}" SLIMSTAT_BLOCKS="$BLOCKS" PYTHONPATH="$HARNESS_DIR" python3 - "$ART" "$WIN_START" "$WIN_END" <<'PY'
+SLIMSTAT_NULL_CONTROL="${SLIMSTAT_NULL_CONTROL:-0}" SLIMSTAT_BLOCKS="$BLOCKS" SLIMSTAT_C2_CORPUS="${SLIMSTAT_C2_CORPUS:-synthetic}" SLIMSTAT_C2_BLIND_PROOF="${SLIMSTAT_C2_BLIND_PROOF:-}" PYTHONPATH="$HARNESS_DIR" python3 - "$ART" "$WIN_START" "$WIN_END" <<'PY'
 import json, sys, os
 art, start, end = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
 # The report population is ONE rule in one file, imported by every site below that needs it —
@@ -444,13 +444,33 @@ print('  [%s] the date window selects a strict subset: %s of %s' % (
 # The corpus must be past A4's MEMORY temp-table cliff, or this is the pre-I8 fixture wearing
 # I8's name. Measured via the reports themselves, not trusted from the seeder's own summary.
 distinct_res = a.get('count_records_resource', 0)
-print('  [%s] corpus cardinality past the 2048 cliff: %s distinct resources' % (
-    'PASS' if distinct_res > 2048 else 'FAIL', distinct_res))
 
 # THE ARMS MUST DIFFER. Two identical files are the strongest possible "equivalent" and also
 # what a harness that failed to swap arms produces. A blind auditor named this as the one thing
 # the artifacts could not establish about themselves.
 null_control_env = os.environ.get('SLIMSTAT_NULL_CONTROL') == '1'
+# O3. `real` says the corpus is a restored production dump, whose shape no profile controls;
+# `synthetic` says it was seeded here, where every knob is ours and an unpopulated surface is a
+# fixture defect. Default synthetic: the stricter reading is the one a silent caller gets.
+corpus_kind = (os.environ.get('SLIMSTAT_C2_CORPUS') or 'synthetic').strip().lower()
+if corpus_kind not in ('synthetic', 'real'):
+    print('\nVERDICT: ABORTED - SLIMSTAT_C2_CORPUS must be synthetic or real, got %r' % corpus_kind)
+    sys.exit(1)
+# O3. Stated ABOVE as a property of the seeder, and that is the only arm of it that can fail:
+# `synthetic` means this harness seeded the corpus and 2048 is a knob it holds, so a corpus
+# under the cliff is a fixture defect and aborts. `real` means a restored production dump,
+# whose cardinality is whatever that site had — failing it would only mean "this site is
+# smaller than our fixture", which is a fact about the site and not a defect in the run. So
+# `real` prints the number and carries the note into the record, where a reader deciding what
+# the A4 measurement covers can see it. The number is never suppressed on either corpus.
+thin_corpus = distinct_res <= 2048
+print('  [%s] corpus cardinality past the 2048 cliff: %s distinct resources%s' % (
+    'PASS' if not thin_corpus else ('NOTE' if corpus_kind == 'real' else 'FAIL'),
+    distinct_res,
+    '' if not thin_corpus or corpus_kind != 'real' else
+    ' — below the cliff, so this run does not cover A4\'s MEMORY temp-table path; a real'
+    ' corpus is not required to reach it and this is not a defect in the run'))
+
 same_arm = a.get('_arm_fingerprint') == b.get('_arm_fingerprint')
 print('  [%s] the two arms are actually different code: %s vs %s  (%s PHP files hashed)' % (
     'FAIL' if same_arm else 'PASS',
@@ -468,6 +488,7 @@ if same_arm and not null_control_env:
 # attributable rather than merged.
 caps_by_arm = {}
 detector = {}
+blind_proof = {}
 for label in ('before', 'after'):
     caps_path = os.path.join(art, label + '-caps.json')
     if not os.path.exists(caps_path) or os.path.getsize(caps_path) == 0:
@@ -480,6 +501,10 @@ for label in ('before', 'after'):
         continue
     surfaces = caps.get('_arm_surfaces', {})
     caps_by_arm[label] = surfaces
+    # The proof is taken on the BEFORE arm: the corpus is the same for both, and the before arm
+    # is the one whose emptiness is being excused as a property of that corpus.
+    if label == 'before':
+        blind_proof = caps.get('_blind_proof', {}) or {}
 
     detector[label] = caps.get('_instrument', {})
     bad = sorted(k for k, v in surfaces.items() if v.get('class') == 'error')
@@ -489,6 +514,24 @@ for label in ('before', 'after'):
         (' — ' + ', '.join(bad)) if bad else ''))
     if unsup:
         print('         unsupported on this arm (recorded, not a failure): %s' % ', '.join(unsup))
+
+# O3. The proof normally rides in the before arm's caps file, written in-container by
+# report-answers.php against the live handle. This override exists for the case where the caps
+# file predates the producer — a rerun on frozen artifacts — and it is an OVERRIDE, not a
+# default: supplying it replaces the measured record, so an operator who wants a surface excused
+# still has to state a count somebody can go and check.
+_bp_env = os.environ.get('SLIMSTAT_C2_BLIND_PROOF')
+if _bp_env:
+    try:
+        blind_proof = json.loads(_bp_env)
+    except ValueError as exc:
+        print('\nVERDICT: ABORTED - SLIMSTAT_C2_BLIND_PROOF is not JSON: %s' % exc)
+        sys.exit(1)
+    if not isinstance(blind_proof, dict):
+        print('\nVERDICT: ABORTED - SLIMSTAT_C2_BLIND_PROOF must be an object of surface -> record')
+        sys.exit(1)
+    print('  [NOTE] blind proof supplied via SLIMSTAT_C2_BLIND_PROOF (%d surfaces), overriding'
+          ' the before arm\'s own record' % len(blind_proof))
 
 # THE CLASSIFIER'S OWN PRECONDITION, printed OUTSIDE the per-arm loop on purpose: inside it, an
 # unreadable or missing CAPS file `continue`s, so the arm whose record is gone would print no line
@@ -532,12 +575,37 @@ for label in ('before', 'after'):
 # whoever reads the table, because "I checked" is the thing this programme keeps disproving.
 if len(caps_by_arm) == 2:
     a_s, b_s = caps_by_arm['before'], caps_by_arm['after']
-    vacuous = sorted(k for k in set(a_s) & set(b_s)
-                     if a_s[k].get('class') == 'empty' and b_s[k].get('class') == 'empty')
-    print('  [%s] no extended surface is empty on BOTH arms%s' % (
+    empty_both = sorted(k for k in set(a_s) & set(b_s)
+                        if a_s[k].get('class') == 'empty' and b_s[k].get('class') == 'empty')
+
+    # O3. "The corpus has none of those" was, until now, something an operator ASSERTED about a
+    # vacuous surface, and the whole programme's shape is that an assertion nobody can fail is
+    # not a control. So the excuse now costs a number: report-answers.php counts the surface's
+    # SOURCE PREDICATE in-container, with no date window, and a count of exactly 0 is a proof
+    # that no window and no code path could have populated it — the emptiness is the corpus
+    # speaking, and the surface is a NOTE. Anything else keeps today's FAIL, and the directions
+    # are deliberately unequal: a surface with no proof record, or one whose table is missing
+    # (count null), is NOT excused. Being unable to measure the corpus is not evidence about it.
+    blind, vacuous = [], []
+    for k in empty_both:
+        rec = blind_proof.get(k)
+        cnt = rec.get('count') if isinstance(rec, dict) else None
+        (blind if cnt == 0 else vacuous).append(k)
+
+    print('  [%s] no extended surface is empty on BOTH arms without a proof%s' % (
         'PASS' if not vacuous else 'FAIL',
-        '' if not vacuous else ': ' + ', '.join(vacuous) +
+        '' if not vacuous else ': ' + ', '.join(
+            '%s (%s)' % (k, 'no proof record' if not isinstance(blind_proof.get(k), dict)
+                         else 'source rows: %s' % blind_proof[k].get('count'))
+            for k in vacuous) +
         ' — these compare equal while proving nothing; enrich the corpus before trusting them'))
+    if blind:
+        print('  [NOTE] corpus-blind, proven: ' + ', '.join(
+            '%s (0 rows matching %s.%s)' % (k, blind_proof[k].get('table'), blind_proof[k].get('where'))
+            for k in blind))
+        print('         Empty on both arms because the corpus holds nothing for them to report,')
+        print('         not because the comparison missed anything. They carry no evidence either')
+        print('         way and are excluded from what this run establishes.')
     # THE EXTENDED TIER'S NULL CONTROL, and it only means anything in this mode. Under
     # SLIMSTAT_NULL_CONTROL the two "arms" are the SAME code over the same corpus, so every
     # extended surface must return the same value twice; anything that moves is nondeterministic
@@ -586,7 +654,7 @@ null_control = null_control_env
 if same_arm and null_control:
     print('  [NOTE] NULL CONTROL: both arms are the same code. Any timing delta below is')
     print('         environmental — it is the noise floor of this harness, not a result.')
-elif same_arm or distinct_res <= 2048:
+elif same_arm or (thin_corpus and corpus_kind == 'synthetic'):
     print('\nVERDICT: ABORTED — the comparison would not mean what it says')
     sys.exit(1)
 

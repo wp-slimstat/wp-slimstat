@@ -1526,6 +1526,71 @@ $slimstat_caps['forced_max_funnels'] = $forced_max_funnels;
 // absent row would be a fact about the corpus wearing the schema's name.
 $slimstat_caps['recent_columns_shape'] = $recent_shape;
 
+// ── THE BLIND PROOF (O3) ────────────────────────────────────────────────────
+//
+// An extended surface empty on BOTH arms compares equal and proves nothing, and the vacuity
+// control in compare-answers.sh aborts on it. That is right for a SYNTHETIC corpus, whose
+// profile is written to populate every surface. On a RESTORED production corpus it is not:
+// the 443k dump genuinely contains zero downloads and zero `user:` notes, and no enrichment
+// of the harness can put them there without ceasing to be that corpus.
+//
+// So the excuse is allowed only with EVIDENCE, and the evidence is a count taken here, in the
+// container, against the same database the reports read - not a claim typed by an operator.
+// A surface may be called corpus-blind only if its SOURCE PREDICATE matches zero rows over the
+// WHOLE table, with no date window: emptiness must be a property of the corpus, not of the
+// window, the code, or the report. A surface with no entry in this table cannot be excused at
+// all, which is the conservative direction.
+$slimstat_blind_predicates = [
+    'get_recent_events'                 => ['slim_events', "notes NOT LIKE 'type:click%'"],
+    'get_top_events'                    => ['slim_events', "notes NOT LIKE 'type:click%'"],
+    'get_top_outbound'                  => ['slim_stats', "outbound_resource IS NOT NULL AND outbound_resource <> ''"],
+    'slim_p4_01_recent_outbound'        => ['slim_stats', "outbound_resource IS NOT NULL AND outbound_resource <> ''"],
+    'slim_p4_09_top_downloads'          => ['slim_stats', "content_type = 'download'"],
+    'slim_p4_20_recent_downloads'       => ['slim_stats', "content_type = 'download'"],
+    'slim_p4_04_recent_feeds'           => ['slim_stats', "(resource LIKE '%/feed%' OR resource LIKE '%?feed=>%' OR resource LIKE '%&feed=>%' OR content_type LIKE '%feed%')"],
+    'slim_p4_06_recent_internal_searches' => ['slim_stats', "content_type LIKE '%search%' AND searchterms <> '' AND searchterms IS NOT NULL"],
+    'slim_p4_13_top_internal_searches'  => ['slim_stats', "content_type LIKE '%search%' AND searchterms <> '' AND searchterms IS NOT NULL"],
+    'recent_searchterms_pinned'         => ['slim_stats', "searchterms <> '_' AND searchterms <> '' AND searchterms IS NOT NULL"],
+    'top_searchterms_pinned'            => ['slim_stats', "searchterms <> '_' AND searchterms <> '' AND searchterms IS NOT NULL"],
+    'top_username_pinned'               => ['slim_stats', "username IS NOT NULL AND username <> ''"],
+    'top_current_username_pinned'       => ['slim_stats', "username IS NOT NULL AND username <> ''"],
+    'recent_user_pinned'                => ['slim_stats', "notes LIKE '%user:%'"],
+    'top_user_pinned'                   => ['slim_stats', "notes LIKE '%user:%'"],
+    'slim_p4_07_top_categories'         => ['slim_stats', "content_type LIKE '%category%'"],
+    'slim_p4_15_recent_categories'      => ['slim_stats', "content_type = 'category'"],
+    'slim_p4_152_recent_tags'           => ['slim_stats', "content_type = 'tag'"],
+    'slim_p4_19_top_tags'               => ['slim_stats', "content_type LIKE '%tag%'"],
+    'slim_p4_16_top_not_found'          => ['slim_stats', "content_type LIKE '%404%'"],
+    'slim_p4_18_top_authors'            => ['slim_stats', "author IS NOT NULL AND author <> ''"],
+];
+
+$slimstat_blind_proof = [];
+$slimstat_proof_handle = slimstat_analytics_handle();
+$slimstat_proof_handle = (null === $slimstat_proof_handle) ? $GLOBALS['wpdb'] : $slimstat_proof_handle;
+foreach ($slimstat_blind_predicates as $slimstat_proof_id => $slimstat_proof_spec) {
+    list($slimstat_proof_suffix, $slimstat_proof_where) = $slimstat_proof_spec;
+    $slimstat_proof_table = $slimstat_proof_handle->prefix . $slimstat_proof_suffix;
+    // A missing table is recorded as null, never as 0: "the rows are not there" and "the table
+    // is not there" are different facts, and only the first excuses an empty surface.
+    if ((string) $slimstat_proof_handle->get_var(
+            "SHOW TABLES LIKE '" . $slimstat_proof_table . "'"
+        ) !== $slimstat_proof_table) {
+        $slimstat_blind_proof[$slimstat_proof_id] = [
+            'table' => $slimstat_proof_table, 'where' => $slimstat_proof_where, 'count' => null,
+        ];
+        continue;
+    }
+    $slimstat_proof_n = $slimstat_proof_handle->get_var(
+        "SELECT COUNT(*) FROM `" . $slimstat_proof_table . "` WHERE " . $slimstat_proof_where
+    );
+    $slimstat_blind_proof[$slimstat_proof_id] = [
+        'table' => $slimstat_proof_table,
+        'where' => $slimstat_proof_where,
+        'count' => (null === $slimstat_proof_n) ? null : (int) $slimstat_proof_n,
+    ];
+}
+$slimstat_caps['_blind_proof'] = $slimstat_blind_proof;
+
 $slimstat_caps['_arm_surfaces'] = $arm_surfaces;
 
 ksort($answers);
