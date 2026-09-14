@@ -27,6 +27,7 @@ $summaryContracts = [
     'get_max_and_average_pages_per_visit'   => ['pages_per_visit', 'get_max_and_average_pages_per_visit'],
     'get_visitors_summary'                  => ['visitors_summary', 'get_visitors_summary'],
     'get_visits_duration'                   => ['visit_duration', 'get_visits_duration'],
+    'get_traffic_sources_summary'           => ['traffic_sources_summary', 'get_traffic_sources_summary'],
 ];
 $chartContracts = [
     'chart_daily'                    => ['ip', 5, 'DAY'],
@@ -35,6 +36,8 @@ $chartContracts = [
     'chart_users_pinned'             => ['username', 30, 'WEEK'],
     'slim_p4_26_01_chart_daily'      => ['outbound_resource', 5, 'DAY'],
     'slim_p4_26_01_chart_weekly'     => ['outbound_resource', 60, 'WEEK'],
+    'slim_p3_01_chart_daily'         => ['referer', 5, 'DAY'],
+    'slim_p3_01_chart_weekly'        => ['referer', 60, 'WEEK'],
 ];
 $pageContracts = [
     'slim_p2_24_top_bots'               => ['top_dimensions', ['get_top', 'browser, browser_version', 'browser_type = 1']],
@@ -151,8 +154,14 @@ foreach ($reports as $key => $contract) {
                     ? ['type', 'recent', 'columns', 'searchterms', 'raw', 'wp_slimstat_db', 'get_recent']
                     : ['show_access_log', 'type', 'recent', 'columns', '*', 'raw', 'wp_slimstat_db', 'get_recent']))
             : ('chart' === $family
-                ? ['show_chart', 'chart_data', 'data1', 'COUNT( ' . $contract['metric_column'] . ' )',
-                    'data2', 'COUNT( DISTINCT ' . $contract['metric_column'] . ' )']
+                ? array_merge(['show_chart', 'chart_data', 'data1',
+                    'COUNT( ' . (($contract['distinct_v1'] ?? false) ? 'DISTINCT ' : '') . $contract['metric_column'] . ' )',
+                    'data2', 'COUNT( DISTINCT ' . ($contract['metric2_column'] ?? $contract['metric_column']) . ' )'],
+                    isset($contract['row_filter']['excludes_self']['column'])
+                        ? ['where', '(' . $contract['row_filter']['excludes_self']['column']
+                            . ' IS NOT NULL AND ' . $contract['row_filter']['excludes_self']['column']
+                            . ' NOT LIKE "%']
+                        : [])
                 : ('count' === $family
                     ? ('slim_p2_01' === $id
                         ? ['show_chart', 'chart_data', 'COUNT( DISTINCT visit_id )', '(visit_id > 0 AND browser_type <> 1)']
@@ -162,13 +171,16 @@ foreach ($reports as $key => $contract) {
                     : ('summary' === $family
                         ? ['raw_results_to_html', 'raw', 'wp_slimstat_db',
                             'slim_p2_02' === $id ? 'get_visitors_summary'
-                                : ('slim_p2_12' === $id ? 'get_visits_duration' : 'get_top')]
+                                : ('slim_p2_12' === $id ? 'get_visits_duration'
+                                    : ('slim_p3_02' === $id ? 'get_traffic_sources_summary' : 'get_top'))]
                         : ('pages' === $family
                             ? array_merge(['raw_results_to_html', 'raw', 'wp_slimstat_db'],
                                 $pageContracts[$key][1] ?? [])
-                            : ('goals' === $family
+                            : ('group_by' === $family
+                                ? ['column_group', 'group_by', 'raw', 'wp_slimstat_db', 'get_group_by']
+                                : ('goals' === $family
                                 ? ['raw', 'wp_slimstat_db', 'slim_p9_01' === $id ? 'get_goals_raw' : 'get_funnels_raw']
-                                : []))))));
+                                : [])))))));
     if (!$requiredStrings) {
         $failures[] = "{$key}: unknown oracle family " . var_export($family, true);
     }
@@ -244,6 +256,27 @@ foreach ($reports as $key => $contract) {
         if ('chart_users_pinned' === $key && 'ascii_ci' !== ($contract['equality'] ?? null)) {
             $failures[] = "{$key}: users chart contract must pin collation";
         }
+        if ('slim_p3_01' === $id
+            && ['ip', true, 'ascii_ci'] !== [$contract['metric2_column'] ?? null,
+                $contract['distinct_v1'] ?? null, $contract['equality'] ?? null]
+        ) {
+            $failures[] = "{$key}: two-series chart must pin its second column, DISTINCT and collation";
+        }
+    }
+    if ('group_by' === $family) {
+        // The capture deliberately asks slim_p4_27's method for a low-cardinality pair rather than
+        // the report's own resource/username: the concatenated member list is bounded by
+        // group_concat_max_len, and a truncated answer is not a comparable one. So the contract
+        // pins whichever pair the capture asked for -- not the registry's -- and both must be real
+        // columns of the measured table.
+        foreach (['group_by', 'column_group'] as $field) {
+            if (!in_array($contract[$field] ?? null, $recentColumns, true)) {
+                $failures[] = "{$key}: group-by contract does not pin a real {$field} column";
+            }
+        }
+        if ('ascii_ci' !== ($contract['equality'] ?? null) || true !== ($contract['windowed'] ?? null)) {
+            $failures[] = "{$key}: group-by contract must pin collation and the window";
+        }
     }
     if ('count' === $family && 'singletons' !== $kind) {
         $actual = [$contract['column'] ?? null, $contract['distinct'] ?? null,
@@ -287,7 +320,8 @@ foreach ($reports as $key => $contract) {
     }
     // These literals describe the current runtime contract but do not prove how get_top reads it;
     // the live report/capture gate owns that behavior in S7 and Phase 2.
-    if (('top' === $family || ('recent' === $family && 'recent_events' !== $kind) || 'pages' === $family)
+    if (('top' === $family || ('recent' === $family && 'recent_events' !== $kind) || 'pages' === $family
+            || 'group_by' === $family)
         && ('limit_results' !== ($contract['limit_setting'] ?? null) || 200 !== ($contract['default_limit'] ?? null))
     ) {
         $failures[] = "{$key}: limit must come from limit_results with default 200, not a fixture constant";

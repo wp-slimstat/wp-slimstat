@@ -69,7 +69,10 @@ def bouncing_pages(rows, start, end):
     counts = defaultdict(int)
     displays = {}
     for row in selected:
-        if row["visit_id"] is None or row["visit_id"] <= 0 or row["content_type"] is None:
+        # get_combined_where injects `resource IS NOT NULL` beside the caller's clause, so a
+        # direct pageview (no resource) is not a bounce page however lonely its visit is.
+        if row["visit_id"] is None or row["visit_id"] <= 0 or row["content_type"] is None \
+                or row["resource"] is None:
             continue
         content = row["content_type"] if isinstance(row["content_type"], bytes) \
             else row["content_type"].encode("ascii")
@@ -183,3 +186,123 @@ def visit_duration(rows, start, end):
     result.sort(key=lambda row: (str(row["counthits"]), row["metric"]))
     result.append({"details": "", "metric": "Average Visit Duration", "value": average})
     return result
+
+
+_TRAFFIC_ROWS = (
+    ("Pageviews",
+     "A pageview is a request to load a single HTML page on your website."),
+    ("Unique Referrers",
+     "A referrer (or referring site) is a site that a visitor previously visited before following a link to your site."),
+    ("Direct Pageviews",
+     "Visitors who typed your website URL directly into their browser address bar. It can also refer to visitors who clicked on one of their bookmarked links, untagged links within emails, or links in documents that don't include tracking variables."),
+    ("From External SERP",
+     "Visitors who clicked on a link to your website listed on a search engine result page (SERP). This metric only counts visits coming from EXTERNAL search pages."),
+    ("Unique Landing Pages",
+     "A landing page is the first page on your website that a visitors opens, also known as <em>entrance page</em>. For example, if they search for 'Brooklyn Office Space,' and they land on a page on your website, this page gets counted (for that visit) as a landing page."),
+    ("Bounce Pages",
+     "Number of single-page visits tracked over the selected period of time."),
+    ("New Visitors Rate",
+     "Percentage of single-page visits, i.e. visits in which the person left your site from the entrance page."),
+    ("Currently from search engines",
+     "Visitors who clicked on a link to your website listed on a search engine result page (SERP), tracked in the last 5 minutes."),
+)
+
+_TRAFFIC_COLUMNS = ("id", "ip", "visit_id", "browser_type", "referer", "resource",
+                    "searchterms", "content_type", "dt")
+
+
+def _contains_ci(value, needle):
+    """Case-insensitive substring containment, the way a wildcard match on both ends reads."""
+    raw = value if isinstance(value, bytes) else value.encode("ascii")
+    hay = needle if isinstance(needle, bytes) else needle.encode("ascii")
+    if any(byte > 127 for byte in raw) or any(byte > 127 for byte in hay):
+        raise ValueError("summary cannot model non-ASCII collation semantics")
+    return hay.lower() in raw.lower()
+
+
+def _counted(rows, column, distinct=False, absent=(), present=(), without=()):
+    """Count a column over rows, after predicates whose unknown result drops the row.
+
+    `absent` names columns that must have no value, `present` columns that must have one, and
+    `without` pairs a column with a fragment it must not contain — a row with no value there
+    fails that test too, because an unknown answer is not a true one.
+    """
+    kept = []
+    for row in rows:
+        if any(row[name] is not None for name in absent):
+            continue
+        if any(row[name] is None for name in present):
+            continue
+        if any(row[name] is None or _contains_ci(row[name], fragment)
+               for name, fragment in without):
+            continue
+        if row[column] is not None:
+            kept.append(row[column])
+    if not distinct:
+        return len(kept)
+    values = set()
+    for value in kept:
+        raw = value if isinstance(value, bytes) else value.encode("ascii")
+        if any(byte > 127 for byte in raw):
+            raise ValueError("summary cannot model non-ASCII collation semantics")
+        values.add(raw.rstrip(b" ").lower())
+    return len(values)
+
+
+def traffic_sources_summary(rows, start, end, home_url, host):
+    """Model get_traffic_sources_summary's eight rows over a pinned window.
+
+    `home_url` and `host` come from the capture, not from a static contract: the container
+    picks its HTTP port at run time, so a literal baked into the contract would model a
+    different site than the one that was measured.
+    """
+    if not isinstance(home_url, str) or not home_url or not isinstance(host, str) or not host:
+        raise ValueError("traffic-sources summary requires the captured self URLs")
+    selected = _window(rows, start, end, _TRAFFIC_COLUMNS)
+
+    # Row 7 alone is asked WITHOUT the date filter and against the wall clock — the last five
+    # minutes before the report ran. Capture runs at or after the window's end, which is the
+    # corpus's own newest timestamp, so every row that report could still see lies inside
+    # "newer than the window's end minus five minutes". An empty superset proves the answer is
+    # 0; anything else means the corpus reaches the live tail and this row has no clock-free
+    # model, so the model refuses rather than guessing.
+    tail = [row for row in rows if row["dt"] is not None and row["dt"] > end - 300]
+    if _counted(tail, "id", present=("searchterms", "referer"), without=(("referer", home_url),)):
+        raise ValueError("corpus reaches the live five-minute tail; this row is clock-bound")
+
+    pageviews = _counted(selected, "id")
+    total_human_hits = len([row for row in selected
+                            if row["visit_id"] is not None and row["visit_id"] > 0
+                            and row["browser_type"] is not None and row["browser_type"] != 1
+                            and row["id"] is not None])
+    # The report's own clause is `visit_id > 0`; the shared where-builder adds "and the address
+    # is present" because the address is what the rows group by.
+    visits_per_ip = defaultdict(int)
+    for row in selected:
+        if row["ip"] is None or row["visit_id"] is None or row["visit_id"] <= 0:
+            continue
+        raw = row["ip"] if isinstance(row["ip"], bytes) else row["ip"].encode("ascii")
+        if any(byte > 127 for byte in raw):
+            raise ValueError("summary cannot model non-ASCII collation semantics")
+        visits_per_ip[raw.rstrip(b" ").lower()] += 1
+    new_visitors = sum(count == 1 for count in visits_per_ip.values())
+
+    rate = (Decimal(100 * new_visitors) / total_human_hits).quantize(
+        Decimal("0.01"), ROUND_HALF_UP) if total_human_hits else Decimal(0)
+    # The product clamps on the truncated value, not the rounded one: 99.6 prints as itself,
+    # 100.4 prints as 100.00.
+    rate_text = "100.00" if int(rate) > 99 else f"{rate:,.2f}"
+
+    values = [
+        f"{pageviews:,}",
+        "{:,}".format(_counted(selected, "referer", True, without=(("referer", host),))),
+        "{:,}".format(_counted(selected, "id", absent=("resource",))),
+        "{:,}".format(_counted(selected, "id", present=("searchterms", "referer"),
+                               without=(("referer", home_url),))),
+        "{:,}".format(_counted(selected, "resource", True)),
+        f"{bouncing_pages(rows, start, end):,}",
+        rate_text,
+        "0",
+    ]
+    return [{"metric": metric, "tooltip": tooltip, "value": value}
+            for (metric, tooltip), value in zip(_TRAFFIC_ROWS, values)]

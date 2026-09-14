@@ -156,6 +156,13 @@ def build(manifest_path, output, resolver=oracle_for):
     required_legacy = {key for key in required if expected[key]['source'] != 'extended'}
     require(required_legacy <= set(observed), 'required key missing from both arms: ' +
             ', '.join(sorted(required_legacy - set(observed))))
+    # Two surfaces exclude the site's own traffic by URL, and the container picks its HTTP port
+    # at run time. The URLs therefore travel with the arm, not with the contract, and ride along
+    # in the window dict the resolver already receives.
+    self_urls = data['after_caps'].get('_self_urls') if isinstance(data['after_caps'], dict) else None
+    if isinstance(self_urls, dict):
+        manifest['capture_windows'] = dict(manifest['capture_windows'], self_urls=self_urls)
+
     register_rows = data['register'].get('entries') if isinstance(data['register'], dict) else data['register']
     register = Register(register_rows)
     contracts = data['contracts']

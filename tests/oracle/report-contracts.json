@@ -48,11 +48,35 @@
       "limit_setting": "limit_results",
       "default_limit": 200,
       "columns": [
-        "id", "ip", "dt", "username", "referer", "resource", "browser", "platform",
-        "country", "city", "content_type", "notes", "visit_id", "server_latency",
-        "page_performance", "browser_version", "browser_type", "language", "fingerprint",
-        "user_agent", "resolution", "screen_width", "screen_height", "category", "author",
-        "content_id", "outbound_resource", "tz_offset", "dt_out"
+        "id",
+        "ip",
+        "dt",
+        "username",
+        "referer",
+        "resource",
+        "browser",
+        "platform",
+        "country",
+        "city",
+        "content_type",
+        "notes",
+        "visit_id",
+        "server_latency",
+        "page_performance",
+        "browser_version",
+        "browser_type",
+        "language",
+        "fingerprint",
+        "user_agent",
+        "resolution",
+        "screen_width",
+        "screen_height",
+        "category",
+        "author",
+        "content_id",
+        "outbound_resource",
+        "tz_offset",
+        "dt_out"
       ]
     },
     "get_visits_duration": {
@@ -70,27 +94,68 @@
       "method": "count_records_having"
     },
     "get_goal_results": {
-      "report_id": "slim_p9_01", "title": "Goals", "family": "goals", "kind": "goal_result",
-      "rule": {"name": "Bench goal", "dimension": "resource", "operator": "contains", "value": "/"}
+      "report_id": "slim_p9_01",
+      "title": "Goals",
+      "family": "goals",
+      "kind": "goal_result",
+      "rule": {
+        "name": "Bench goal",
+        "dimension": "resource",
+        "operator": "contains",
+        "value": "/"
+      }
     },
     "get_goals_raw": {
-      "report_id": "slim_p9_01", "title": "Goals", "family": "goals", "kind": "goals_raw",
+      "report_id": "slim_p9_01",
+      "title": "Goals",
+      "family": "goals",
+      "kind": "goals_raw",
       "name": "Bench goal (raw)",
-      "rule": {"dimension": "browser", "operator": "is_not_empty", "value": ""}
+      "rule": {
+        "dimension": "browser",
+        "operator": "is_not_empty",
+        "value": ""
+      }
     },
     "get_funnel_results": {
-      "report_id": "slim_p9_02", "title": "Funnels", "family": "goals", "kind": "funnel_result",
+      "report_id": "slim_p9_02",
+      "title": "Funnels",
+      "family": "goals",
+      "kind": "funnel_result",
       "steps": [
-        {"name": "step-1", "dimension": "resource", "operator": "contains", "value": "/"},
-        {"name": "step-2", "dimension": "browser", "operator": "is_not_empty", "value": ""}
+        {
+          "name": "step-1",
+          "dimension": "resource",
+          "operator": "contains",
+          "value": "/"
+        },
+        {
+          "name": "step-2",
+          "dimension": "browser",
+          "operator": "is_not_empty",
+          "value": ""
+        }
       ]
     },
     "get_funnels_raw": {
-      "report_id": "slim_p9_02", "title": "Funnels", "family": "goals", "kind": "funnels_raw",
+      "report_id": "slim_p9_02",
+      "title": "Funnels",
+      "family": "goals",
+      "kind": "funnels_raw",
       "name": "Bench funnel (raw)",
       "steps": [
-        {"name": "step-1", "dimension": "resource", "operator": "contains", "value": "/"},
-        {"name": "step-2", "dimension": "country", "operator": "is_not_empty", "value": ""}
+        {
+          "name": "step-1",
+          "dimension": "resource",
+          "operator": "contains",
+          "value": "/"
+        },
+        {
+          "name": "step-2",
+          "dimension": "country",
+          "operator": "is_not_empty",
+          "value": ""
+        }
       ]
     },
     "get_max_and_average_pages_per_visit": {
@@ -153,90 +218,208 @@
       "equality": "ascii_ci"
     },
     "slim_p4_07_top_categories": {
-      "report_id": "slim_p4_07", "title": "Top Categories", "family": "pages",
-      "kind": "top_dimension", "dimension": "category",
-      "content_type": {"operator": "contains", "value": "category"},
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "report_id": "slim_p4_07",
+      "title": "Top Categories",
+      "family": "pages",
+      "kind": "top_dimension",
+      "dimension": "category",
+      "content_type": {
+        "operator": "contains",
+        "value": "category"
+      },
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p2_24_top_bots": {
-      "report_id": "slim_p2_24", "title": "Top Bots", "family": "pages",
-      "kind": "top_dimensions", "dimensions": ["browser", "browser_version"],
-      "filter_column": "browser_type", "filter_value": 1,
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "report_id": "slim_p2_24",
+      "title": "Top Bots",
+      "family": "pages",
+      "kind": "top_dimensions",
+      "dimensions": [
+        "browser",
+        "browser_version"
+      ],
+      "filter_column": "browser_type",
+      "filter_value": 1,
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p2_25_top_human_browsers": {
-      "report_id": "slim_p2_25", "title": "Top Human Browsers", "family": "pages",
-      "kind": "top_dimensions", "dimensions": ["browser", "browser_version"],
-      "filter_column": "browser_type", "filter_value": 1, "exclude_filter": true,
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "report_id": "slim_p2_25",
+      "title": "Top Human Browsers",
+      "family": "pages",
+      "kind": "top_dimensions",
+      "dimensions": [
+        "browser",
+        "browser_version"
+      ],
+      "filter_column": "browser_type",
+      "filter_value": 1,
+      "exclude_filter": true,
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p4_01_recent_outbound": {
-      "report_id": "slim_p4_01", "title": "Recent Outbound Links", "family": "pages",
+      "report_id": "slim_p4_01",
+      "title": "Recent Outbound Links",
+      "family": "pages",
       "kind": "recent_outbound",
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p4_02_recent_posts": {
-      "report_id": "slim_p4_02", "title": "Recent Posts", "family": "pages",
-      "kind": "recent_dimension", "dimension": "resource", "trim_trailing_slash": true,
-      "content_type": {"operator": "exact", "value": "post"},
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "report_id": "slim_p4_02",
+      "title": "Recent Posts",
+      "family": "pages",
+      "kind": "recent_dimension",
+      "dimension": "resource",
+      "trim_trailing_slash": true,
+      "content_type": {
+        "operator": "exact",
+        "value": "post"
+      },
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p4_04_recent_feeds": {
-      "report_id": "slim_p4_04", "title": "Recent Feeds", "family": "pages",
-      "kind": "recent_rows", "dimension": "resource", "mode": "feeds",
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "report_id": "slim_p4_04",
+      "title": "Recent Feeds",
+      "family": "pages",
+      "kind": "recent_rows",
+      "dimension": "resource",
+      "mode": "feeds",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p4_05_recent_not_found": {
-      "report_id": "slim_p4_05", "title": "Recent Pages Not Found", "family": "pages",
-      "kind": "recent_dimension", "dimension": "resource", "dimension_prefix": "[404]",
-      "content_type": {"operator": "contains", "value": "404"}, "filter_join": "or",
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "report_id": "slim_p4_05",
+      "title": "Recent Pages Not Found",
+      "family": "pages",
+      "kind": "recent_dimension",
+      "dimension": "resource",
+      "dimension_prefix": "[404]",
+      "content_type": {
+        "operator": "contains",
+        "value": "404"
+      },
+      "filter_join": "or",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p4_06_recent_internal_searches": {
-      "report_id": "slim_p4_06", "title": "Recent Internal Searches", "family": "pages",
-      "kind": "recent_rows", "dimension": "searchterms", "mode": "searches",
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "report_id": "slim_p4_06",
+      "title": "Recent Internal Searches",
+      "family": "pages",
+      "kind": "recent_rows",
+      "dimension": "searchterms",
+      "mode": "searches",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p4_09_top_downloads": {
-      "report_id": "slim_p4_09", "title": "Top Downloads", "family": "pages",
-      "kind": "top_dimension", "dimension": "resource",
-      "content_type": {"operator": "exact", "value": "download"},
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "report_id": "slim_p4_09",
+      "title": "Top Downloads",
+      "family": "pages",
+      "kind": "top_dimension",
+      "dimension": "resource",
+      "content_type": {
+        "operator": "exact",
+        "value": "download"
+      },
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p4_13_top_internal_searches": {
-      "report_id": "slim_p4_13", "title": "Top Internal Searches", "family": "pages",
-      "kind": "top_dimension", "dimension": "searchterms", "require_nonempty": true,
-      "content_type": {"operator": "contains", "value": "search"},
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "report_id": "slim_p4_13",
+      "title": "Top Internal Searches",
+      "family": "pages",
+      "kind": "top_dimension",
+      "dimension": "searchterms",
+      "require_nonempty": true,
+      "content_type": {
+        "operator": "contains",
+        "value": "search"
+      },
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p4_15_recent_categories": {
-      "report_id": "slim_p4_15", "title": "Recent Categories", "family": "pages",
-      "kind": "recent_dimension", "dimension": "resource", "trim_trailing_slash": true,
-      "content_type": {"operator": "exact", "value": "category"},
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "report_id": "slim_p4_15",
+      "title": "Recent Categories",
+      "family": "pages",
+      "kind": "recent_dimension",
+      "dimension": "resource",
+      "trim_trailing_slash": true,
+      "content_type": {
+        "operator": "exact",
+        "value": "category"
+      },
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p4_152_recent_tags": {
-      "report_id": "slim_p4_152", "title": "Recent Tags", "family": "pages",
-      "kind": "recent_dimension", "dimension": "resource", "trim_trailing_slash": true,
-      "content_type": {"operator": "exact", "value": "tag"},
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "report_id": "slim_p4_152",
+      "title": "Recent Tags",
+      "family": "pages",
+      "kind": "recent_dimension",
+      "dimension": "resource",
+      "trim_trailing_slash": true,
+      "content_type": {
+        "operator": "exact",
+        "value": "tag"
+      },
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p4_16_top_not_found": {
-      "report_id": "slim_p4_16", "title": "Top Pages Not Found", "family": "pages",
-      "kind": "top_dimension", "dimension": "resource",
-      "content_type": {"operator": "contains", "value": "404"},
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "report_id": "slim_p4_16",
+      "title": "Top Pages Not Found",
+      "family": "pages",
+      "kind": "top_dimension",
+      "dimension": "resource",
+      "content_type": {
+        "operator": "contains",
+        "value": "404"
+      },
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p4_18_top_authors": {
-      "report_id": "slim_p4_18", "title": "Top Authors", "family": "pages",
-      "kind": "top_dimension", "dimension": "author",
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "report_id": "slim_p4_18",
+      "title": "Top Authors",
+      "family": "pages",
+      "kind": "top_dimension",
+      "dimension": "author",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p4_19_top_tags": {
-      "report_id": "slim_p4_19", "title": "Top Tags", "family": "pages",
-      "kind": "top_dimension", "dimension": "category",
-      "content_type": {"operator": "contains", "value": "tag"},
-      "limit_setting": "limit_results", "default_limit": 200, "equality": "ascii_ci"
+      "report_id": "slim_p4_19",
+      "title": "Top Tags",
+      "family": "pages",
+      "kind": "top_dimension",
+      "dimension": "category",
+      "content_type": {
+        "operator": "contains",
+        "value": "tag"
+      },
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci"
     },
     "slim_p4_24_exit_pages": {
       "report_id": "slim_p4_24",
@@ -261,7 +444,9 @@
       "title": "Top Web Pages",
       "family": "top",
       "dimension": "resource",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200
@@ -271,7 +456,9 @@
       "title": "Top Countries",
       "family": "top",
       "dimension": "country",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200
@@ -281,7 +468,9 @@
       "title": "Top Operating Systems",
       "family": "top",
       "dimension": "platform",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200
@@ -291,7 +480,9 @@
       "title": "Top Browser Families",
       "family": "top",
       "dimension": "browser",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200
@@ -301,7 +492,9 @@
       "title": "Top Referring Domains",
       "family": "top",
       "dimension": "referer",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200
@@ -311,7 +504,9 @@
       "title": "Top Referring Domains",
       "family": "top",
       "dimension": "referer",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -326,7 +521,10 @@
       "distinct": false,
       "equality": "binary",
       "windowed": false,
-      "where_not_equal": {"column": "browser_type", "value": 1}
+      "where_not_equal": {
+        "column": "browser_type",
+        "value": 1
+      }
     },
     "count_records_visit_id": {
       "report_id": "slim_p2_01",
@@ -342,7 +540,9 @@
       "title": "Top OS Families",
       "family": "top",
       "dimension": "platform",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -353,7 +553,9 @@
       "title": "Top Posts",
       "family": "top",
       "dimension": "resource",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -364,7 +566,17 @@
       "title": "Recent Custom Events",
       "family": "recent",
       "kind": "recent_events",
-      "columns": ["event_id", "type", "event_description", "notes", "position", "id", "dt", "ip", "resource"]
+      "columns": [
+        "event_id",
+        "type",
+        "event_description",
+        "notes",
+        "position",
+        "id",
+        "dt",
+        "ip",
+        "resource"
+      ]
     },
     "get_top_events": {
       "report_id": "slim_p4_12",
@@ -372,7 +584,9 @@
       "family": "top",
       "kind": "top_events",
       "dimension": "notes",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200
@@ -383,7 +597,9 @@
       "family": "top",
       "kind": "top_outbound",
       "dimension": "outbound_resource",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200
@@ -395,7 +611,18 @@
       "kind": "singletons",
       "group_column": "resource",
       "counted_column": "visit_id",
-      "where": [["visit_id", "gt", 0], ["content_type", "ne", "404"]],
+      "where": [
+        [
+          "visit_id",
+          "gt",
+          0
+        ],
+        [
+          "content_type",
+          "ne",
+          "404"
+        ]
+      ],
       "equality": "ascii_ci",
       "windowed": true
     },
@@ -405,7 +632,9 @@
       "family": "top",
       "kind": "current",
       "dimension": "ip",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -417,8 +646,24 @@
       "title": "Recent Search Terms",
       "family": "recent",
       "kind": "filtered_recent",
-      "columns": ["searchterms", "referer", "resource", "dt", "ip"],
-      "where": [["searchterms", "not_in", [null, "", "_"]]],
+      "columns": [
+        "searchterms",
+        "referer",
+        "resource",
+        "dt",
+        "ip"
+      ],
+      "where": [
+        [
+          "searchterms",
+          "not_in",
+          [
+            null,
+            "",
+            "_"
+          ]
+        ]
+      ],
       "limit_setting": "limit_results",
       "default_limit": 200
     },
@@ -427,7 +672,9 @@
       "title": "Top Known Visitors",
       "family": "top",
       "dimension": "username",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -440,11 +687,23 @@
       "title": "Top Search Terms",
       "family": "top",
       "dimension": "searchterms",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
-      "where": [["searchterms", "not_in", [null, "", "_"]]],
+      "where": [
+        [
+          "searchterms",
+          "not_in",
+          [
+            null,
+            "",
+            "_"
+          ]
+        ]
+      ],
       "windowed": true,
       "equality": "ascii_ci",
       "canonical": true
@@ -454,7 +713,9 @@
       "title": "Top Language Families",
       "family": "top",
       "dimension": "language",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -469,7 +730,9 @@
       "family": "top",
       "kind": "current",
       "dimension": "username",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -482,7 +745,9 @@
       "title": "Top Languages",
       "family": "top",
       "dimension": "language",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -495,8 +760,13 @@
       "title": "Top User Agents",
       "family": "top",
       "dimension": "browser, browser_version",
-      "dimensions": ["browser", "browser_version"],
-      "grain": ["blog_id"],
+      "dimensions": [
+        "browser",
+        "browser_version"
+      ],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -509,7 +779,9 @@
       "title": "Top Service Providers",
       "family": "top",
       "dimension": "ip",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -522,12 +794,28 @@
       "title": "Top Screen Resolutions",
       "family": "top",
       "dimension": "screen_width, screen_height",
-      "dimensions": ["screen_width", "screen_height"],
-      "grain": ["blog_id"],
+      "dimensions": [
+        "screen_width",
+        "screen_height"
+      ],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
-      "where": [["screen_width", "ne", 0], ["screen_height", "ne", 0]],
+      "where": [
+        [
+          "screen_width",
+          "ne",
+          0
+        ],
+        [
+          "screen_height",
+          "ne",
+          0
+        ]
+      ],
       "windowed": true,
       "equality": "binary",
       "canonical": true,
@@ -538,7 +826,9 @@
       "title": "Top Viewport Sizes",
       "family": "top",
       "dimension": "resolution",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -552,7 +842,9 @@
       "family": "top",
       "kind": "recent_top",
       "dimension": "country",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -565,7 +857,9 @@
       "family": "top",
       "kind": "recent_top",
       "dimension": "resolution",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -578,7 +872,9 @@
       "family": "top",
       "kind": "recent_top",
       "dimension": "platform",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -591,8 +887,13 @@
       "family": "top",
       "kind": "recent_top",
       "dimension": "browser, browser_version",
-      "dimensions": ["browser", "browser_version"],
-      "grain": ["blog_id"],
+      "dimensions": [
+        "browser",
+        "browser_version"
+      ],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -605,7 +906,9 @@
       "family": "top",
       "kind": "recent_top",
       "dimension": "language",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
@@ -618,11 +921,19 @@
       "family": "top",
       "kind": "recent_top",
       "dimension": "username",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
-      "where": [["notes", "contains_ascii_ci", "user:"]],
+      "where": [
+        [
+          "notes",
+          "contains_ascii_ci",
+          "user:"
+        ]
+      ],
       "equality": "ascii_ci",
       "canonical": true
     },
@@ -631,11 +942,19 @@
       "title": "Top Users",
       "family": "top",
       "dimension": "username",
-      "grain": ["blog_id"],
+      "grain": [
+        "blog_id"
+      ],
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200,
-      "where": [["notes", "contains_ascii_ci", "user:"]],
+      "where": [
+        [
+          "notes",
+          "contains_ascii_ci",
+          "user:"
+        ]
+      ],
       "windowed": true,
       "equality": "ascii_ci",
       "canonical": true
@@ -656,12 +975,78 @@
       "title": "Search Terms",
       "family": "chart",
       "metric_column": "searchterms",
-      "excluded": ["", "_"],
+      "excluded": [
+        "",
+        "_"
+      ],
       "equality": "ascii_ci",
       "duration_days": 30,
       "granularity": "WEEK",
       "start_of_week": 1,
       "timezone": "UTC"
+    },
+    "slim_p3_01_chart_daily": {
+      "report_id": "slim_p3_01",
+      "title": "Traffic Sources",
+      "family": "chart",
+      "metric_column": "referer",
+      "metric2_column": "ip",
+      "distinct_v1": true,
+      "equality": "ascii_ci",
+      "row_filter": {
+        "present": [
+          "referer"
+        ],
+        "excludes_self": {
+          "column": "referer",
+          "url": "home_url"
+        }
+      },
+      "granularity": "DAY",
+      "duration_days": 5,
+      "start_of_week": 1,
+      "timezone": "UTC"
+    },
+    "slim_p3_01_chart_weekly": {
+      "report_id": "slim_p3_01",
+      "title": "Traffic Sources",
+      "family": "chart",
+      "metric_column": "referer",
+      "metric2_column": "ip",
+      "distinct_v1": true,
+      "equality": "ascii_ci",
+      "row_filter": {
+        "present": [
+          "referer"
+        ],
+        "excludes_self": {
+          "column": "referer",
+          "url": "home_url"
+        }
+      },
+      "granularity": "WEEK",
+      "duration_days": 60,
+      "start_of_week": 1,
+      "timezone": "UTC"
+    },
+    "get_traffic_sources_summary": {
+      "report_id": "slim_p3_02",
+      "title": "Traffic Summary",
+      "family": "summary",
+      "kind": "traffic_sources_summary",
+      "method": "get_traffic_sources_summary",
+      "windowed": true
+    },
+    "get_group_by": {
+      "report_id": "slim_p4_27",
+      "title": "Users by Page",
+      "family": "group_by",
+      "group_by": "browser",
+      "column_group": "platform",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "equality": "ascii_ci",
+      "windowed": true
     }
   }
 }

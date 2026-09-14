@@ -47,6 +47,10 @@ def count_singletons(rows, group_column, counted_column, where, start, end, equa
                or (operator == 'ne' and row[column] == value)
                for column, operator, value in where):
             continue
-        group = None if row[group_column] is None else _distinct_key(row[group_column], equality)
+        # The shared where-builder adds "and the grouped column is present" to every caller,
+        # so a row with no value there is not a group of its own — it is not counted at all.
+        if row[group_column] is None:
+            continue
+        group = _distinct_key(row[group_column], equality)
         counts[group] = counts.get(group, 0) + (row[counted_column] is not None)
     return sum(count == 1 for count in counts.values())

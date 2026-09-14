@@ -6,8 +6,10 @@ import sqlite3
 from families.top import rank_current, rank_recent_top, rank_top, top_events, top_outbound
 from families.recent import filtered_recent, recent_rows, recent_events
 from families.chart import pageviews_chart
+from families.group_by import grouped_concat
 from families.count import count_values, count_singletons
-from families.summary import bouncing_pages, bouncing_visits, pages_per_visit, visit_duration, visitors_summary
+from families.summary import (bouncing_pages, bouncing_visits, pages_per_visit,
+                              traffic_sources_summary, visit_duration, visitors_summary)
 from families.pages import (filtered_recent, grouped_dimensions, grouped_values, recent_downloads,
                             recent_outbound, visit_boundary_pages)
 from families.goals import funnel_results, goal_results, percent_text
@@ -130,6 +132,54 @@ def top(export_path, surface, adapter, contract):
             'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
 
 
+def _row_filter(surface, spec, windows):
+    """Build a chart's WHERE from the contract plus the arm's own captured URLs.
+
+    Only slim_p3_01 carries one. `excludes_self` names the URL to exclude rather than the URL
+    itself, because the container's port is chosen at run time — a literal in the contract would
+    model a different site than the one that was measured.
+    """
+    if not spec:
+        return None
+    present = tuple(spec.get('present', ()))
+    exclude = spec.get('excludes_self')
+    needle = None
+    if exclude:
+        value = (windows.get('self_urls') or {}).get(exclude['url'])
+        if not isinstance(value, str) or not value:
+            raise ValueError('%s: chart filter needs the captured %s' % (surface, exclude['url']))
+        needle = value.encode('ascii').lower()
+
+    def keep(row):
+        if any(row[column] is None for column in present):
+            return False
+        if exclude is None:
+            return True
+        value = row[exclude['column']]
+        if value is None:
+            return False
+        raw = value if isinstance(value, bytes) else value.encode('ascii')
+        return needle not in raw.lower()
+    return keep
+
+
+def group_by(export_path, surface, adapter, contract, windows):
+    if (not isinstance(windows, dict) or type(windows.get('start')) is not int
+            or type(windows.get('end')) is not int):
+        raise ValueError('%s: group-by adapter requires the pinned capture window' % surface)
+    conn = sqlite3.connect('file:%s?mode=ro' % export_path, uri=True)
+    conn.text_factory = bytes
+    consumed = list(dict.fromkeys([contract['group_by'], contract['column_group'], 'dt']))
+    rows = _read_rows(conn, surface, adapter['table'], consumed)
+    conn.close()
+    value = grouped_concat(rows, windows['start'], windows['end'], contract['group_by'],
+                           contract['column_group'], contract['default_limit'],
+                           contract.get('equality', 'ascii_ci'))
+    value = [dict(row, counthits=str(row['counthits'])) for row in value]
+    return {'class': 'ok' if value else 'empty', 'value': _canonical(value),
+            'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
+
+
 def chart(export_path, surface, adapter, contract, windows):
     if not isinstance(windows, dict) or type(windows.get('end')) is not int:
         raise ValueError('%s: chart adapter requires the pinned capture end' % surface)
@@ -140,17 +190,24 @@ def chart(export_path, surface, adapter, contract, windows):
     table = adapter['table']
     columns = [_text(row[0]) for row in conn.execute(
         'SELECT name FROM _manifest WHERE tbl = ? ORDER BY ord', (table,))]
-    missing = [column for column in ('dt', contract['metric_column']) if column not in columns]
+    metric_column = contract['metric_column']
+    second_column = contract.get('metric2_column')
+    spec = contract.get('row_filter') or {}
+    consumed = list(dict.fromkeys(
+        ['dt', metric_column] + ([second_column] if second_column else [])
+        + list(spec.get('present', ())) + ([spec['excludes_self']['column']] if spec.get('excludes_self') else [])))
+    missing = [column for column in consumed if column not in columns]
     if missing:
         raise ValueError('%s: export %s manifest lacks %s' % (surface, table, ', '.join(missing)))
-    metric_column = contract['metric_column']
-    rows = [{'dt': dt, metric_column: metric} for dt, metric in conn.execute(
-        'SELECT "dt", "%s" FROM "%s"' %
-        (metric_column.replace('"', '""'), table.replace('"', '""')))]
+    quoted = ', '.join('"%s"' % name.replace('"', '""') for name in consumed)
+    rows = [dict(zip(consumed, row)) for row in conn.execute(
+        'SELECT %s FROM "%s"' % (quoted, table.replace('"', '""')))]
     conn.close()
     value = pageviews_chart(rows, windows['end'], contract['duration_days'],
                             contract['granularity'], contract['start_of_week'], metric_column,
-                            tuple(contract.get('excluded', ())), contract.get('equality', 'binary'))
+                            tuple(contract.get('excluded', ())), contract.get('equality', 'binary'),
+                            contract.get('distinct_v1', False), second_column,
+                            _row_filter(surface, spec, windows))
     return {'class': 'ok', 'value': value,
             'flags': {'clock_dependent': False, 'calendar_day_dependent': True, 'pinned': True}}
 
@@ -204,6 +261,8 @@ def summary(export_path, surface, adapter, contract, windows):
         'pages_per_visit': (('visit_id', 'dt'), pages_per_visit),
         'visit_duration': (('visit_id', 'browser_type', 'dt', 'dt_out'), visit_duration),
         'visitors_summary': (('id', 'visit_id', 'browser_type', 'ip', 'username', 'dt'), visitors_summary),
+        'traffic_sources_summary': (('id', 'ip', 'visit_id', 'browser_type', 'referer', 'resource',
+                                     'searchterms', 'content_type', 'dt'), traffic_sources_summary),
     }
     if (contract.get('kind') not in kinds or not isinstance(windows, dict)
             or type(windows.get('start')) is not int or type(windows.get('end')) is not int):
@@ -220,7 +279,12 @@ def summary(export_path, surface, adapter, contract, windows):
     rows = [dict(zip(columns, row)) for row in conn.execute(
         'SELECT %s FROM "%s"' % (quoted, table.replace('"', '""')))]
     conn.close()
-    value = model(rows, windows['start'], windows['end'])
+    if contract['kind'] == 'traffic_sources_summary':
+        urls = windows.get('self_urls') or {}
+        value = _canonical(model(rows, windows['start'], windows['end'],
+                                 urls.get('home_url'), urls.get('host')))
+    else:
+        value = model(rows, windows['start'], windows['end'])
     return {'class': 'ok', 'value': value,
             'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
 
@@ -339,7 +403,7 @@ def oracle_for(export_path, surface, adapter, contracts, windows=None):
     if adapter is None:
         return {'class': 'unmodeled', 'value': None,
                 'reason': 'No independent model for this surface'}
-    if surface not in contracts['reports'] or adapter.get('family') not in ('top', 'recent', 'chart', 'count', 'summary', 'pages', 'goals'):
+    if surface not in contracts['reports'] or adapter.get('family') not in ('top', 'recent', 'chart', 'count', 'summary', 'pages', 'goals', 'group_by'):
         raise ValueError('%s: unknown or uncontracted adapter' % surface)
     contract = contracts['reports'][surface]
     if contract.get('kind') in ('top_events', 'top_outbound'):
@@ -369,7 +433,7 @@ def oracle_for(export_path, surface, adapter, contracts, windows=None):
     if family:
         return family(export_path, surface, adapter, contract)
     family = {'chart': chart, 'count': count, 'summary': summary, 'pages': pages,
-              'goals': goals}[adapter['family']]
+              'goals': goals, 'group_by': group_by}[adapter['family']]
     return family(export_path, surface, adapter, contracts['reports'][surface], windows)
 
 

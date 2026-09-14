@@ -1043,6 +1043,22 @@ $capture_ext('slim_p4_26_01_chart_weekly', static function () use ($chart_captur
     return $chart_capture($chart_end - 60 * 86400 + 1, $chart_end, $outbound_chart_data);
 }, ['calendar_day_dependent' => true, 'pinned' => true]);
 
+// slim_p3_01 is the only chart in the catalogue whose two series read DIFFERENT columns, and the
+// only one carrying a WHERE. Chart::fetchChartData() allowlists that clause against the report
+// registry, so the string below must stay byte-identical to slim_p3_01's own (reports.php:570) —
+// a "tidied" copy is rejected at run time and the surface captures as unsupported.
+$traffic_chart_data = [
+    'data1' => 'COUNT( DISTINCT referer )',
+    'data2' => 'COUNT( DISTINCT ip )',
+    'where' => '(referer IS NOT NULL AND referer NOT LIKE "%' . home_url() . '%")',
+];
+$capture_ext('slim_p3_01_chart_daily', static function () use ($chart_capture, $chart_end, $traffic_chart_data) {
+    return $chart_capture($chart_end - 5 * 86400 + 1, $chart_end, $traffic_chart_data);
+}, ['calendar_day_dependent' => true, 'pinned' => true]);
+$capture_ext('slim_p3_01_chart_weekly', static function () use ($chart_capture, $chart_end, $traffic_chart_data) {
+    return $chart_capture($chart_end - 60 * 86400 + 1, $chart_end, $traffic_chart_data);
+}, ['calendar_day_dependent' => true, 'pinned' => true]);
+
 // ── the PINNED TWINS (checklist step 5) ─────────────────────────────────────
 //
 // The three legacy keys they mirror are date-filtered through a window that ends at NOW, so
@@ -1337,7 +1353,12 @@ $capture_windowed('get_max_and_average_pages_per_visit', static function () {
     return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_max_and_average_pages_per_visit'));
 });
 
+// Row 0 reads wp_slimstat_db::$pageviews, a static the report does NOT compute: it is left
+// wherever the last caller put it. Today that is right only because get_overview_summary's
+// capture ran two entries earlier inside this same pinned window. Pinning it here makes the
+// answer a property of the window instead of a property of the capture ORDER.
 $capture_windowed('get_traffic_sources_summary', static function () {
+    wp_slimstat_db::$pageviews = (int) wp_slimstat_db::count_records();
     return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_traffic_sources_summary'));
 });
 
@@ -1590,6 +1611,13 @@ foreach ($slimstat_blind_predicates as $slimstat_proof_id => $slimstat_proof_spe
     ];
 }
 $slimstat_caps['_blind_proof'] = $slimstat_blind_proof;
+
+// The container picks its HTTP port at run time, so the host slim_p3_01 and slim_p3_02 exclude
+// their own traffic by is not a constant a static contract could carry. It travels with the arm.
+$slimstat_caps['_self_urls'] = [
+    'home_url' => home_url(),
+    'host'     => (string) wp_parse_url(home_url(), PHP_URL_HOST),
+];
 
 $slimstat_caps['_arm_surfaces'] = $arm_surfaces;
 

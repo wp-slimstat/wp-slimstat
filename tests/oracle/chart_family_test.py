@@ -11,7 +11,8 @@ from families.chart import pageviews_chart
 contracts = json.loads(Path(__file__).with_name('report-contracts.json').read_text())['reports']
 assert {key for key, value in contracts.items() if value['family'] == 'chart'} == {
     'chart_daily', 'chart_weekly', 'chart_searchterms_pinned', 'chart_users_pinned',
-    'slim_p4_26_01_chart_daily', 'slim_p4_26_01_chart_weekly'}
+    'slim_p4_26_01_chart_daily', 'slim_p4_26_01_chart_weekly',
+    'slim_p3_01_chart_daily', 'slim_p3_01_chart_weekly'}
 assert (contracts['chart_daily']['duration_days'], contracts['chart_daily']['granularity']) == (5, 'DAY')
 assert (contracts['chart_weekly']['duration_days'], contracts['chart_weekly']['granularity']) == (60, 'WEEK')
 assert contracts['slim_p4_26_01_chart_daily']['metric_column'] == 'outbound_resource'
@@ -20,6 +21,14 @@ assert "$args['chart_data'] = $chart_data;" in capture
 for key in ('slim_p4_26_01_chart_daily', 'slim_p4_26_01_chart_weekly'):
     start = capture.index("$capture_ext('%s'" % key)
     assert '$outbound_chart_data' in capture[start:start + 350]
+for key in ('slim_p3_01_chart_daily', 'slim_p3_01_chart_weekly'):
+    start = capture.index("$capture_ext('%s'" % key)
+    assert '$traffic_chart_data' in capture[start:start + 350]
+# Chart::fetchChartData() allowlists the WHERE against the report registry, so a capture that
+# spells it differently from slim_p3_01 does not capture that report — it captures nothing.
+registry = (Path(__file__).parents[2] / 'admin' / 'view' / 'wp-slimstat-reports.php').read_text()
+clause = '\'(referer IS NOT NULL AND referer NOT LIKE "%\' . home_url() . \'%")\''
+assert registry.count(clause) == 1 and capture.count(clause) == 1
 
 
 def ts(value):

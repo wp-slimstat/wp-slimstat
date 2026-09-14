@@ -22,14 +22,22 @@ with tempfile.TemporaryDirectory() as temp:
         ('slim_stats', 9, 'username', 'VARCHAR(255)', 1, 0),
         ('slim_stats', 10, 'outbound_resource', 'VARCHAR(2048)', 1, 0),
         ('slim_stats', 11, 'content_type', 'VARCHAR(255)', 1, 0),
+        ('slim_stats', 12, 'browser', 'VARCHAR(40)', 1, 0),
+        ('slim_stats', 13, 'platform', 'VARCHAR(255)', 1, 0),
+        ('slim_stats', 14, 'referer', 'VARCHAR(2048)', 1, 0),
+        ('slim_stats', 15, 'searchterms', 'VARCHAR(2048)', 1, 0),
     ])
     db.execute('CREATE TABLE slim_stats (id INTEGER, resource BLOB, user_agent BLOB, dt INTEGER, '
                'email BLOB, ip BLOB, visit_id INTEGER, browser_type INTEGER, dt_out INTEGER, '
-               'username BLOB, outbound_resource BLOB, content_type BLOB)')
-    db.executemany('INSERT INTO slim_stats VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                   [(1, b'/a', b'\xff', 10, b'ignored', b'a', 1, 0, 40, b'Sam', b'https://a', b'page'),
-                    (2, b'/b', b'normal', 20, b'\xff', b'b', 1, 0, 70, b'sam ', b'https://a', b'download'),
-                    (3, b'/a', None, 20, b'ignored', None, 2, 1, 90, None, None, b'DOWNLOAD ')])
+               'username BLOB, outbound_resource BLOB, content_type BLOB, browser BLOB, '
+               'platform BLOB, referer BLOB, searchterms BLOB)')
+    db.executemany('INSERT INTO slim_stats VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                   [(1, b'/a', b'\xff', 10, b'ignored', b'a', 1, 0, 40, b'Sam', b'https://a', b'page',
+                     b'Chrome', b'Win', b'http://site.example/self', b'q'),
+                    (2, b'/b', b'normal', 20, b'\xff', b'b', 1, 0, 70, b'sam ', b'https://a', b'download',
+                     b'Chrome', b'Mac', b'http://news.example/a', None),
+                    (3, b'/a', None, 20, b'ignored', None, 2, 1, 90, None, None, b'DOWNLOAD ',
+                     None, b'Linux', b'http://other.example/x', None)])
     db.commit()
     db.close()
     contracts = {'reports': {'top_resource': {'family': 'top', 'dimension': 'resource',
@@ -180,5 +188,39 @@ with tempfile.TemporaryDirectory() as temp:
                         {'start': 10, 'end': 20})
     assert result == {'class': 'empty', 'value': [], 'flags': {
         'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}, result
+
+    # group-by: the transport reads exactly the two contract columns plus dt, and stringifies the
+    # count the way every other surface reports one.
+    contracts['reports']['get_group_by'] = {
+        'family': 'group_by', 'group_by': 'browser', 'column_group': 'platform',
+        'default_limit': 200, 'equality': 'ascii_ci', 'windowed': True}
+    result = oracle_for(path, 'get_group_by', {'family': 'group_by', 'table': 'slim_stats'},
+                        contracts, {'start': 10, 'end': 20})
+    assert result['value'] == [{'browser': 'Chrome', 'counthits': '2',
+                                'column_group': 'Mac;;;Win'}], result
+
+    # The site's own URLs ride in with the window, not with the contract: without them the second
+    # row would count this site's own referer and the fourth would call a self-referred hit a SERP.
+    self_urls = {'home_url': 'http://site.example', 'host': 'site.example'}
+    contracts['reports']['get_traffic_sources_summary'] = {
+        'family': 'summary', 'kind': 'traffic_sources_summary'}
+    result = oracle_for(path, 'get_traffic_sources_summary',
+                        {'family': 'summary', 'table': 'slim_stats'}, contracts,
+                        {'start': 10, 'end': 20, 'self_urls': self_urls})
+    values = {row['metric']: row['value'] for row in result['value']}
+    assert values['Pageviews'] == '3' and values['Unique Referrers'] == '2', result
+    assert values['From External SERP'] == '0' and values['Bounce Pages'] == '1', result
+
+    # Two series over the same rows, one of them filtered by the self URL the window carries.
+    contracts['reports']['slim_p3_01_chart_daily'] = {
+        'family': 'chart', 'metric_column': 'referer', 'metric2_column': 'ip',
+        'distinct_v1': True, 'equality': 'ascii_ci', 'granularity': 'DAY', 'duration_days': 1,
+        'start_of_week': 1, 'timezone': 'UTC',
+        'row_filter': {'present': ['referer'],
+                       'excludes_self': {'column': 'referer', 'url': 'home_url'}}}
+    result = oracle_for(path, 'slim_p3_01_chart_daily', {'family': 'chart', 'table': 'slim_stats'},
+                        contracts, {'end': 86400, 'self_urls': self_urls})
+    # Two referers survive the filter; only one of those rows carries an address.
+    assert result['value']['datasets'] == {'v1': [2], 'v2': [1]}, result
 
 print('PASS: report evidence adapters')
