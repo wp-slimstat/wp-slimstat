@@ -543,6 +543,30 @@ BASE_MAX_ID=$(scalar_q "SELECT MAX(id) FROM wordpress.wp_slim_stats;")
 BASE_MAX_VISIT_ID=$(scalar_q "SELECT COALESCE(MAX(visit_id),0) FROM wordpress.wp_slim_stats;")
 [ -n "$BASE_MAX_VISIT_ID" ] || { err "could not pin the baseline visit ID"; exit 1; }
 
+# The F1 legs reset the counter to a value BELOW the corpus MAX and then assert the repair
+# lands above it. A literal 3 makes that assertion unfalsifiable on most corpora: MySQL
+# compares LONGTEXT option_value as text, and '3' already sorts below '19125583', so a
+# string-comparing GREATEST still returns MAX and the leg passes for the wrong reason (that
+# is how PITFALLS 194 reached a release candidate green). Derive instead the smallest value
+# numerically below MAX whose decimal string sorts ABOVE str(MAX) — 2 on the 443k corpus,
+# 6 on the 5M one — so the leg fails on any corpus if the comparison is textual.
+STALE_COUNTER=$(python3 - "$BASE_MAX_VISIT_ID" <<'PYSTALE'
+import sys
+mx = int(sys.argv[1])
+if mx < 10:
+    sys.stderr.write("MAX visit_id %d is below 10: no single digit sorts above it as text, so the "
+                     "F1 legs cannot be made falsifiable on this corpus\n" % mx)
+    raise SystemExit(2)
+lead = int(str(mx)[0])
+if lead >= 9:
+    sys.stderr.write("MAX visit_id %d leads with 9: no smaller integer sorts above it as text\n" % mx)
+    raise SystemExit(2)
+print(lead + 1)
+PYSTALE
+) || exit 2
+[ -n "$STALE_COUNTER" ] || { err "could not derive the stale counter"; exit 2; }
+echo "  F1 stale counter: $STALE_COUNTER (numerically below MAX $BASE_MAX_VISIT_ID, textually above it)"
+
 # H5 · arm the notes projection, if and only if this arm predates the block that rewrites the
 # column. `version_lt` is component-wise and numeric, because 4.8.10 is above 4.8.9 and a string
 # compare says otherwise — and the vintages this cell installs contain that case.
@@ -603,7 +627,7 @@ use_ref "$NEW_REF" || exit 1
 # F1: measure the legacy-repair window on this exact corpus. Each allocation is a fresh
 # WordPress process, so the marker read is not hidden by the request-local option cache.
 dc cp "$HARNESS_DIR/probe-visit-id-repair.php" wp:/tmp/probe-visit-id-repair.php >/dev/null || exit 1
-wpc eval 'SlimStat\Tracker\VisitIdGenerator::resetCounter(3);' >/dev/null 2>&1 || exit 1
+wpc eval 'SlimStat\Tracker\VisitIdGenerator::resetCounter('"$STALE_COUNTER"');' >/dev/null 2>&1 || exit 1
 wpc eval-file /tmp/probe-visit-id-repair.php >"$ART/visit-id-repair-first.json" 2>"$ART/visit-id-repair-first.stderr"
 wpc eval-file /tmp/probe-visit-id-repair.php >"$ART/visit-id-repair-steady.json" 2>"$ART/visit-id-repair-steady.stderr"
 python3 - "$ART/visit-id-repair-first.json" "$ART/visit-id-repair-steady.json" "$BASE_MAX_VISIT_ID" <<'PYF1'
@@ -618,7 +642,7 @@ PYF1
 check "legacy repair scans MAX once; the next fresh request scans zero times within a two-query budget" "$?" "see visit-id-repair-first.json and visit-id-repair-steady.json"
 
 # A reset invalidates the marker and must re-arm the repair on the same 5M dataset.
-wpc eval 'SlimStat\Tracker\VisitIdGenerator::resetCounter(3);' >/dev/null 2>&1 || exit 1
+wpc eval 'SlimStat\Tracker\VisitIdGenerator::resetCounter('"$STALE_COUNTER"');' >/dev/null 2>&1 || exit 1
 wpc eval-file /tmp/probe-visit-id-repair.php >"$ART/visit-id-repair-reset.json" 2>"$ART/visit-id-repair-reset.stderr"
 python3 - "$ART/visit-id-repair-reset.json" "$BASE_MAX_VISIT_ID" <<'PYF1RESET'
 import json,sys
@@ -636,7 +660,7 @@ v=json.load(open(sys.argv[1])); assert v['visit_id'] == int(sys.argv[2])+1, v; a
 PYF1DATASET
 check "an analytics dataset switch re-arms repair against the new MAX" "$?" "see visit-id-repair-dataset.json"
 # Return the counter/marker to the 5M dataset before the actual deferred-window hit.
-wpc eval 'wp_slimstat::$wpdb=$GLOBALS["wpdb"]; SlimStat\Tracker\VisitIdGenerator::resetCounter(3);' >/dev/null 2>&1 || exit 1
+wpc eval 'wp_slimstat::$wpdb=$GLOBALS["wpdb"]; SlimStat\Tracker\VisitIdGenerator::resetCounter('"$STALE_COUNTER"');' >/dev/null 2>&1 || exit 1
 wpc eval-file /tmp/probe-visit-id-repair.php >"$ART/visit-id-repair-restored.json" 2>"$ART/visit-id-repair-restored.stderr"
 
 # An old-arm request may save its settings again after installer setup. Establish and
