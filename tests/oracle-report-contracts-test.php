@@ -110,7 +110,9 @@ foreach ($reports as $key => $contract) {
                         : ('slim_p4_23' === $id
                             ? ['raw_results_to_html', 'raw', 'wp_slimstat_db', 'get_top']
                             : ['raw_results_to_html', 'raw', 'wp_slimstat_db', 'get_overview_summary']))
-                    : [])));
+                    : ('summary' === $family
+                        ? ['raw_results_to_html', 'raw', 'wp_slimstat_db', 'get_visits_duration']
+                        : []))));
     if (!$requiredStrings) {
         $failures[] = "{$key}: unknown oracle family " . var_export($family, true);
     }
@@ -173,6 +175,9 @@ foreach ($reports as $key => $contract) {
             || !is_string($contract['counted_column'] ?? null))
     ) {
         $failures[] = "{$key}: singleton contract is incomplete";
+    }
+    if ('summary' === $family && ('get_visits_duration' !== $key || 'visit_duration' !== ($contract['kind'] ?? null))) {
+        $failures[] = "{$key}: summary contract does not match its captured semantics";
     }
     // These literals describe the current runtime contract but do not prove how get_top reads it;
     // the live report/capture gate owns that behavior in S7 and Phase 2.

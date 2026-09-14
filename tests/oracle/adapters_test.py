@@ -16,12 +16,16 @@ with tempfile.TemporaryDirectory() as temp:
         ('slim_stats', 3, 'dt', 'INT UNSIGNED', 1, 0),
         ('slim_stats', 4, 'email', 'VARCHAR(256)', 1, 0),
         ('slim_stats', 5, 'ip', 'VARCHAR(39)', 1, 0),
+        ('slim_stats', 6, 'visit_id', 'INT UNSIGNED', 1, 0),
+        ('slim_stats', 7, 'browser_type', 'TINYINT UNSIGNED', 1, 0),
+        ('slim_stats', 8, 'dt_out', 'INT UNSIGNED', 1, 0),
     ])
-    db.execute('CREATE TABLE slim_stats (id INTEGER, resource BLOB, user_agent BLOB, dt INTEGER, email BLOB, ip BLOB)')
-    db.executemany('INSERT INTO slim_stats VALUES (?, ?, ?, ?, ?, ?)',
-                   [(1, b'/a', b'\xff', 10, b'ignored', b'a'),
-                    (2, b'/b', b'normal', 20, b'\xff', b'b'),
-                    (3, b'/a', None, 20, b'ignored', None)])
+    db.execute('CREATE TABLE slim_stats (id INTEGER, resource BLOB, user_agent BLOB, dt INTEGER, '
+               'email BLOB, ip BLOB, visit_id INTEGER, browser_type INTEGER, dt_out INTEGER)')
+    db.executemany('INSERT INTO slim_stats VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                   [(1, b'/a', b'\xff', 10, b'ignored', b'a', 1, 0, 40),
+                    (2, b'/b', b'normal', 20, b'\xff', b'b', 1, 0, 70),
+                    (3, b'/a', None, 20, b'ignored', None, 2, 1, 90)])
     db.commit()
     db.close()
     contracts = {'reports': {'top_resource': {'family': 'top', 'dimension': 'resource',
@@ -84,5 +88,14 @@ with tempfile.TemporaryDirectory() as temp:
         raise AssertionError('windowed count adapter passed without pinned bounds')
     except ValueError:
         pass
+
+    contracts['reports']['get_visits_duration'] = {
+        'family': 'summary', 'kind': 'visit_duration'}
+    result = oracle_for(path, 'get_visits_duration',
+                        {'family': 'summary', 'table': 'slim_stats'}, contracts,
+                        {'start': 10, 'end': 20})
+    assert next(row for row in result['value'] if row['metric'] == '31 - 60 seconds') == {
+        'counthits': 1, 'details': 'Hits: 1', 'metric': '31 - 60 seconds', 'value': '100.00%'}, result
+    assert result['value'][-1]['value'] == '01:00', result
 
 print('PASS: report evidence adapters')

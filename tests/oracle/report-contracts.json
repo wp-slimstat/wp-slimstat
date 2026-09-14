@@ -35,6 +35,12 @@
         "content_id", "outbound_resource", "tz_offset", "dt_out"
       ]
     },
+    "get_visits_duration": {
+      "report_id": "slim_p2_12",
+      "title": "Visit Duration",
+      "family": "summary",
+      "kind": "visit_duration"
+    },
     "count_records_id": {
       "report_id": "slim_p1_03",
       "title": "At a Glance",

@@ -41,7 +41,7 @@
     {"key":"get_top_outbound","source":"extended","adapter":{"family":"top","table":"slim_stats"}},
     {"key":"get_traffic_sources_summary","source":"extended","adapter":null},
     {"key":"get_visitors_summary","source":"extended","adapter":null},
-    {"key":"get_visits_duration","source":"extended","adapter":null},
+    {"key":"get_visits_duration","source":"extended","adapter":{"family":"summary","table":"slim_stats"}},
     {"key":"get_your_blog","source":"extended","adapter":null},
     {"key":"live_window_end","source":"extended","adapter":null},
     {"key":"uniques_browser_pinned","source":"extended","adapter":null},
