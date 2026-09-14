@@ -58,6 +58,9 @@ class VicqbFakeWpdb
     /** A concurrent initializer may win after MAX is read but before the monotonic upsert. */
     public $concurrent_seed = null;
 
+    /** @var string|null The raw upsert statement, so the comparison it asks for can be asserted. */
+    public $last_insert_sql = null;
+
     public function __construct(?int $counter, int $max_visit_id)
     {
         $this->dbh = new \mysqli();
@@ -86,9 +89,23 @@ class VicqbFakeWpdb
             return $this->rows_affected = 1;
         }
         if (stripos(ltrim($sql), 'INSERT') === 0) {
+            $this->last_insert_sql = $sql;
             if (null !== $this->concurrent_seed) $this->counter = $this->concurrent_seed;
             preg_match("/VALUES \(.*?, (\\d+),/", $sql, $match);
-            $this->counter = max($this->counter ?? 0, (int) $match[1]);
+            $new = (int) $match[1];
+            if (null === $this->counter) {
+                $this->counter = $new;
+            } else {
+                // MySQL semantics, not PHP's. option_value is LONGTEXT, so GREATEST()
+                // compares its arguments as strings unless BOTH are cast to UNSIGNED —
+                // one cast is not enough, and a fake that maxes numerically here reports
+                // a pass for the defect PITFALLS 194 shipped.
+                $numeric = strpos($sql, 'CAST(option_value AS UNSIGNED)') !== false
+                    && strpos($sql, 'CAST(VALUES(option_value) AS UNSIGNED)') !== false;
+                $this->counter = $numeric
+                    ? max($this->counter, $new)
+                    : (strcmp((string) $this->counter, (string) $new) >= 0 ? $this->counter : $new);
+            }
             $GLOBALS['_vicqb_options'][VisitIdGenerator::OPTION_NAME] = $this->counter;
             return 1;
         }
@@ -311,6 +328,23 @@ vicqb_assert('explicit upgrade repairs an existing low counter', VisitIdGenerato
 $db = vicqb_boot(5000010, 5000000);
 VisitIdGenerator::initializeCounter();
 vicqb_assert('upgrade never reduces a higher live counter', VisitIdGenerator::generateNextVisitId() === 5000011);
+
+// The case above does NOT exercise the string comparison: '3' sorts below '5000000', so a
+// string-comparing GREATEST still lands on MAX and looks correct. A stale counter whose
+// decimal string sorts ABOVE the MAX is the shipping defect (PITFALLS 194) — '6' > '5000000'
+// as text, the low counter survives the repair, and every ID after it collides.
+$db = vicqb_boot(6, 5000000);
+VisitIdGenerator::initializeCounter();
+vicqb_assert(
+    'a stale counter sorting above MAX as text is still repaired',
+    VisitIdGenerator::generateNextVisitId() === 5000001,
+    'counter after the upsert: ' . var_export($db->counter, true)
+);
+vicqb_assert(
+    'the upsert casts both sides of GREATEST',
+    strpos((string) $db->last_insert_sql, 'CAST(VALUES(option_value) AS UNSIGNED)') !== false,
+    'upsert: ' . trim(preg_replace('/\s+/', ' ', (string) $db->last_insert_sql))
+);
 
 define('SLIMSTAT_ANALYTICS_VERSION', '6.0.0');
 \wp_slimstat::$settings['version'] = '5.5.0';

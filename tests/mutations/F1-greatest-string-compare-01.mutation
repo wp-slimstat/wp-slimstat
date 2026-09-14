@@ -1,0 +1,17 @@
+target:    src/Tracker/VisitIdGenerator.php
+gate:      composer test:visit-id-query-budget
+kind:      introduce-defect
+expect:    a stale counter sorting above MAX as text is still repaired
+rationale: Removes the cast from the right-hand side of the monotonic upsert, which is exactly the state this file shipped in. `option_value` is LONGTEXT, and MySQL's GREATEST() compares as strings the moment one argument is a string, so casting only the stored side is not a numeric comparison at all - it is a string comparison with extra steps. The defect is invisible on the obvious fixture: counter 3 against MAX 5000000 still lands on MAX because '3' sorts below '5'. It surfaces only when the stale counter's leading digit is the larger one - '6' beats '5000000', '3' beats '19125583' - and then the repair keeps the stale counter, writes the repair marker anyway, and every visit ID issued afterwards collides with an existing visit. The gate therefore pins a counter whose decimal string sorts ABOVE the MAX; a fixture chosen for its size rather than its leading digit is the reason this reached a release candidate with a green suite.
+---
+--- a/src/Tracker/VisitIdGenerator.php
++++ b/src/Tracker/VisitIdGenerator.php
+@@ -80,7 +80,7 @@
+         global $wpdb;
+         $added = $wpdb->query($wpdb->prepare(
+             "INSERT INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %d, %s)
+-            ON DUPLICATE KEY UPDATE option_value = GREATEST(CAST(option_value AS UNSIGNED), CAST(VALUES(option_value) AS UNSIGNED))",
++            ON DUPLICATE KEY UPDATE option_value = GREATEST(CAST(option_value AS UNSIGNED), VALUES(option_value))",
+             self::OPTION_NAME,
+             $initial_value,
+             'no'

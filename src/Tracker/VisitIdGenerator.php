@@ -80,7 +80,7 @@ class VisitIdGenerator
         global $wpdb;
         $added = $wpdb->query($wpdb->prepare(
             "INSERT INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %d, %s)
-            ON DUPLICATE KEY UPDATE option_value = GREATEST(CAST(option_value AS UNSIGNED), VALUES(option_value))",
+            ON DUPLICATE KEY UPDATE option_value = GREATEST(CAST(option_value AS UNSIGNED), CAST(VALUES(option_value) AS UNSIGNED))",
             self::OPTION_NAME,
             $initial_value,
             'no'
