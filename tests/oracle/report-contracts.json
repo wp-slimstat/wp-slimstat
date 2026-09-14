@@ -173,6 +173,57 @@
       "limit_setting": "limit_results",
       "default_limit": 200,
       "transform": "trim_trailing_slash"
+    },
+    "get_recent_events": {
+      "report_id": "slim_p4_10",
+      "title": "Recent Custom Events",
+      "family": "recent",
+      "kind": "recent_events",
+      "columns": ["event_id", "type", "event_description", "notes", "position", "id", "dt", "ip", "resource"]
+    },
+    "get_top_events": {
+      "report_id": "slim_p4_12",
+      "title": "Top Custom Events",
+      "family": "top",
+      "kind": "top_events",
+      "dimension": "notes",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200
+    },
+    "get_top_outbound": {
+      "report_id": "slim_p4_21",
+      "title": "Top Outbound Links",
+      "family": "top",
+      "kind": "top_outbound",
+      "dimension": "outbound_resource",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200
+    },
+    "bouncing_visits_pinned": {
+      "report_id": "slim_p4_23",
+      "title": "Top Bounce Pages",
+      "family": "count",
+      "kind": "singletons",
+      "group_column": "visit_id",
+      "counted_column": "id",
+      "where": [["visit_id", "gt", 0], ["browser_type", "ne", 1]],
+      "equality": "binary",
+      "windowed": true
+    },
+    "count_bouncing_pages": {
+      "report_id": "slim_p4_23",
+      "title": "Top Bounce Pages",
+      "family": "count",
+      "kind": "singletons",
+      "group_column": "resource",
+      "counted_column": "visit_id",
+      "where": [["visit_id", "gt", 0], ["content_type", "ne", "404"]],
+      "equality": "ascii_ci",
+      "windowed": true
     }
   }
 }

@@ -60,7 +60,10 @@
     "slim_p2_06": ["top_platform"],
     "slim_p2_18": ["top_browser"],
     "slim_p2_19": ["top_platform_prefixed"],
-    "slim_p4_11": ["top_resource_trimmed"]
+    "slim_p4_10": ["get_recent_events"],
+    "slim_p4_11": ["top_resource_trimmed"],
+    "slim_p4_12": ["get_top_events"],
+    "slim_p4_21": ["get_top_outbound"]
   },
-  "summary": {"reports": 67, "modeled": 11, "captured_unmodeled": 11, "uncaptured": 45}
+  "summary": {"reports": 67, "modeled": 14, "captured_unmodeled": 8, "uncaptured": 45}
 }

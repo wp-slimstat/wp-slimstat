@@ -4,7 +4,6 @@ The family receives values. It does not import production code, parse report PHP
 or read captures. Adapters own transport; this module owns only grouping, ordering, and LIMIT.
 """
 
-
 def _order_value(value):
     """A total order for nullable scalar dimensions, independent of input row order."""
     if value is None:
@@ -83,3 +82,28 @@ def evaluate(report_key, contract, rows, limit):
         "family": "top",
         "rows": answer,
     }
+
+
+def top_events(events, start, end, limit):
+    rows = [dict(row, blog_id=1) for row in events
+            if start <= row['dt'] <= end and row['notes'] is not None
+            and not row['notes'].lower().startswith('type:click')]
+    value = [{"notes": row["notes"], "counthits": row["counthits"]}
+             for row in rank_top(rows, "notes", ("blog_id",), limit)]
+    return value
+
+
+def top_outbound(rows, start, end, limit):
+    recent = sorted((row for row in rows if start <= row['dt'] <= end
+                     and row['outbound_resource'] not in (None, '')),
+                    key=lambda row: (row['dt'], row['dt_out']), reverse=True)[:limit]
+    grouped = {}
+    for row in recent:
+        dt = row['dt_out'] if row['dt_out'] and row['dt_out'] > 0 else row['dt']
+        for url in row['outbound_resource'].split(';;;'):
+            if url:
+                count, latest = grouped.get(url, (0, 0))
+                grouped[url] = count + 1, max(latest, dt)
+    value = [{'outbound_resource': url, 'counthits': count, 'dt': dt}
+             for url, (count, dt) in grouped.items()]
+    return sorted(value, key=lambda row: (row['counthits'], row['dt']), reverse=True)

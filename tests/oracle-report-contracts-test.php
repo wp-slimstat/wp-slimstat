@@ -78,6 +78,7 @@ $seenIds = [];
 foreach ($reports as $key => $contract) {
     $id = $contract['report_id'] ?? '';
     $family = $contract['family'] ?? null;
+    $kind = $contract['kind'] ?? null;
     if (!is_string($id) || '' === $id) {
         $failures[] = "{$key}: report_id is absent";
         continue;
@@ -92,15 +93,23 @@ foreach ($reports as $key => $contract) {
         continue;
     }
     $requiredStrings = 'top' === $family
-        ? ['type', 'top', 'columns', 'raw', 'wp_slimstat_db', 'get_top']
+        ? ('top_events' === $kind
+            ? ['type', 'top', 'columns', 'notes', 'raw', 'wp_slimstat_db', 'get_top_events']
+            : ('top_outbound' === $kind
+                ? ['type', 'top', 'columns', 'outbound_resource', 'raw', 'wp_slimstat_db', 'get_top_outbound']
+                : ['type', 'top', 'columns', 'raw', 'wp_slimstat_db', 'get_top']))
         : ('recent' === $family
-            ? ['show_access_log', 'type', 'recent', 'columns', '*', 'raw', 'wp_slimstat_db', 'get_recent']
+            ? ('recent_events' === $kind
+                ? ['show_events', 'type', 'recent', 'columns', 'notes', 'raw', 'wp_slimstat_db', 'get_recent_events']
+                : ['show_access_log', 'type', 'recent', 'columns', '*', 'raw', 'wp_slimstat_db', 'get_recent'])
             : ('chart' === $family
                 ? ['show_chart', 'chart_data', 'data1', 'COUNT( ip )', 'data2', 'COUNT( DISTINCT ip )']
                 : ('count' === $family
                     ? ('slim_p2_01' === $id
                         ? ['show_chart', 'chart_data', 'COUNT( DISTINCT visit_id )', '(visit_id > 0 AND browser_type <> 1)']
-                        : ['raw_results_to_html', 'raw', 'wp_slimstat_db', 'get_overview_summary'])
+                        : ('slim_p4_23' === $id
+                            ? ['raw_results_to_html', 'raw', 'wp_slimstat_db', 'get_top']
+                            : ['raw_results_to_html', 'raw', 'wp_slimstat_db', 'get_overview_summary']))
                     : [])));
     if (!$requiredStrings) {
         $failures[] = "{$key}: unknown oracle family " . var_export($family, true);
@@ -121,7 +130,7 @@ foreach ($reports as $key => $contract) {
     if ('top' === $family && 'counthits' !== ($contract['count_field'] ?? null)) {
         $failures[] = "{$key}: family/count_field must be top/counthits";
     }
-    if ('recent' === $family) {
+    if ('recent' === $family && 'recent_events' !== $kind) {
         if ($recentColumns !== ($contract['columns'] ?? null)) {
             $failures[] = "{$key}: recent contract must contain the exact 29 Access Log columns";
         }
@@ -144,7 +153,7 @@ foreach ($reports as $key => $contract) {
             $failures[] = "{$key}: chart contract must pin the captured IP/calendar semantics";
         }
     }
-    if ('count' === $family) {
+    if ('count' === $family && 'singletons' !== $kind) {
         $actual = [$contract['column'] ?? null, $contract['distinct'] ?? null,
             $contract['equality'] ?? null, $contract['windowed'] ?? null];
         if (!isset($countContracts[$key]) || $countContracts[$key] !== $actual) {
@@ -156,9 +165,18 @@ foreach ($reports as $key => $contract) {
             $failures[] = "{$key}: human-hit contract must exclude bots and SQL NULLs";
         }
     }
+    if ('singletons' === $kind
+        && (!in_array($contract['equality'] ?? null, ['binary', 'ascii_ci'], true)
+            || true !== ($contract['windowed'] ?? null)
+            || !is_array($contract['where'] ?? null)
+            || !is_string($contract['group_column'] ?? null)
+            || !is_string($contract['counted_column'] ?? null))
+    ) {
+        $failures[] = "{$key}: singleton contract is incomplete";
+    }
     // These literals describe the current runtime contract but do not prove how get_top reads it;
     // the live report/capture gate owns that behavior in S7 and Phase 2.
-    if (in_array($family, ['top', 'recent'], true)
+    if (('top' === $family || ('recent' === $family && 'recent_events' !== $kind))
         && ('limit_results' !== ($contract['limit_setting'] ?? null) || 200 !== ($contract['default_limit'] ?? null))
     ) {
         $failures[] = "{$key}: limit must come from limit_results with default 200, not a fixture constant";

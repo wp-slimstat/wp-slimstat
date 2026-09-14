@@ -1,20 +1,46 @@
 #!/usr/bin/env python3
 """Thin transport adapters from raw SQLite exports to independent oracle families."""
+import json
 import sqlite3
 
-from families.top import rank_top
-from families.recent import recent_rows
+from families.top import rank_top, top_events, top_outbound
+from families.recent import recent_rows, recent_events
 from families.chart import pageviews_chart
-from families.count import count_values
+from families.count import count_values, count_singletons
 
 
 def _text(value):
     return value.decode('utf-8') if isinstance(value, bytes) else value
 
 
+def _read_rows(conn, surface, table, expected):
+    columns = [_text(row[0]) for row in conn.execute(
+        'SELECT name FROM _manifest WHERE tbl = ? ORDER BY ord', (table,))]
+    missing = [column for column in expected if column not in columns]
+    if missing:
+        raise ValueError('%s: export %s manifest lacks %s' % (surface, table, ', '.join(missing)))
+    quoted = ', '.join('"%s"' % name.replace('"', '""') for name in expected)
+    return [dict(zip(expected, map(_text, row))) for row in conn.execute(
+        'SELECT %s FROM "%s"' % (quoted, table.replace('"', '""')))]
+
+
+def _canonical(rows, string_counts=False):
+    def key(row):
+        value = dict(row, counthits=str(row['counthits'])) if string_counts else row
+        return json.dumps(value, ensure_ascii=True, separators=(',', ':'), sort_keys=True).replace('/', '\\/')
+    return sorted(rows, key=key)
+
+
 def recent(export_path, surface, adapter, contract):
     conn = sqlite3.connect('file:%s?mode=ro' % export_path, uri=True)
     conn.text_factory = bytes
+    if contract.get('kind') == 'recent_events':
+        stats = _read_rows(conn, surface, 'slim_stats', ['id', 'ip', 'resource', 'dt'])
+        events = _read_rows(conn, surface, 'slim_events', contract['columns'][:-2])
+        conn.close()
+        value = _canonical(recent_events(stats, events, contract['window_start'], contract['window_end']))
+        return {'class': 'ok' if value else 'empty', 'value': value,
+                'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
     table = adapter['table']
     columns = [_text(row[0]) for row in conn.execute(
         'SELECT name FROM _manifest WHERE tbl = ? ORDER BY ord', (table,))]
@@ -96,6 +122,17 @@ def count(export_path, surface, adapter, contract, windows):
         raise ValueError('%s: count adapter requires the pinned capture window' % surface)
     conn = sqlite3.connect('file:%s?mode=ro' % export_path, uri=True)
     conn.text_factory = bytes
+    if contract.get('kind') == 'singletons':
+        if not isinstance(windows, dict) or type(windows.get('start')) is not int or type(windows.get('end')) is not int:
+            raise ValueError('%s: singleton adapter requires the pinned capture window' % surface)
+        consumed = list(dict.fromkeys([contract['group_column'], contract['counted_column'], 'dt']
+                                      + [row[0] for row in contract['where']]))
+        rows = _read_rows(conn, surface, adapter['table'], consumed)
+        conn.close()
+        value = count_singletons(rows, contract['group_column'], contract['counted_column'],
+                                 contract['where'], windows['start'], windows['end'], contract['equality'])
+        return {'class': 'ok', 'value': value,
+                'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
     table, column = adapter['table'], contract['column']
     manifest = [_text(row[0]) for row in conn.execute(
         'SELECT name FROM _manifest WHERE tbl = ? ORDER BY ord', (table,))]
@@ -125,9 +162,29 @@ def oracle_for(export_path, surface, adapter, contracts, windows=None):
                 'reason': 'No independent model for this surface'}
     if surface not in contracts['reports'] or adapter.get('family') not in ('top', 'recent', 'chart', 'count'):
         raise ValueError('%s: unknown or uncontracted adapter' % surface)
+    contract = contracts['reports'][surface]
+    if contract.get('kind') in ('top_events', 'top_outbound'):
+        if not isinstance(windows, dict) or type(windows.get('start')) is not int or type(windows.get('end')) is not int:
+            raise ValueError('%s: specialized top adapter requires the pinned capture window' % surface)
+        conn = sqlite3.connect('file:%s?mode=ro' % export_path, uri=True)
+        conn.text_factory = bytes
+        if contract['kind'] == 'top_events':
+            rows = _read_rows(conn, surface, 'slim_events', ['notes', 'dt'])
+            value = _canonical(top_events(rows, windows['start'], windows['end'],
+                                          contract['default_limit']), string_counts=True)
+        else:
+            rows = _read_rows(conn, surface, 'slim_stats', ['outbound_resource', 'dt', 'dt_out'])
+            value = _canonical(top_outbound(rows, windows['start'], windows['end'], contract['default_limit']))
+        conn.close()
+        return {'class': 'ok' if value else 'empty', 'value': value,
+                'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
+    if contract.get('kind') == 'recent_events':
+        if not isinstance(windows, dict) or type(windows.get('start')) is not int or type(windows.get('end')) is not int:
+            raise ValueError('%s: recent-events adapter requires the pinned capture window' % surface)
+        contract = dict(contract, window_start=windows['start'], window_end=windows['end'])
     family = {'top': top, 'recent': recent}.get(adapter['family'])
     if family:
-        return family(export_path, surface, adapter, contracts['reports'][surface])
+        return family(export_path, surface, adapter, contract)
     family = chart if 'chart' == adapter['family'] else count
     return family(export_path, surface, adapter, contracts['reports'][surface], windows)
 
