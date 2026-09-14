@@ -8,6 +8,7 @@
 import { test, expect } from '@playwright/test';
 import type { BrowserContext, Page, Response } from '@playwright/test';
 import * as mysql from 'mysql2/promise';
+import { createHash } from 'node:crypto';
 import {
   installOptionMutator,
   uninstallOptionMutator,
@@ -103,6 +104,20 @@ async function visit(page: Page, marker: string): Promise<Response> {
   const navigation = await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'domcontentloaded' });
   expect(navigation?.ok()).toBe(true);
   return tracked;
+}
+
+function requestEvidence(response: Response): Record<string, unknown> {
+  const request = response.request();
+  const data = new URLSearchParams(request.postData() ?? '');
+  const sid = data.get('sid') ?? '';
+  const cookie = request.headers()['cookie'] ?? '';
+  return {
+    status: response.status(),
+    hasId: data.has('id'),
+    sidHash: sid ? createHash('sha256').update(sid).digest('hex') : null,
+    cookiePresent: cookie !== '',
+    cookieHash: cookie ? createHash('sha256').update(cookie).digest('hex') : null,
+  };
 }
 
 async function seedVisitIds(visitIds: number[]): Promise<number[]> {
@@ -224,7 +239,7 @@ test.describe('Visit ID Atomic Counter', () => {
 
   // ─── Test 3: No collisions in rapid-fire tracking ────────────
 
-  test('independent concurrent visitors get one row and distinct visit_ids', async ({ browser, page }) => {
+  test('independent concurrent visitors get one row and distinct visit_ids', async ({ browser, page }, testInfo) => {
     test.setTimeout(90_000);
 
     // Enable JS-mode tracking and cookies so visit_id is assigned
@@ -235,6 +250,7 @@ test.describe('Visit ID Atomic Counter', () => {
     await setEffectiveSlimstatOption(page, 'anonymous_tracking', 'off');
 
     const markers = Array.from({ length: 5 }, (_, i) => `rapid-${Date.now()}-${i}`);
+    const counterBefore = await getVisitIdCounter();
     const contexts = await Promise.all(markers.map(() => browser.newContext()));
     const pages = await Promise.all(contexts.map((visitor) => visitor.newPage()));
     try {
@@ -246,6 +262,24 @@ test.describe('Visit ID Atomic Counter', () => {
         expect(rows.filter((row) => row.resource.includes(marker))).toHaveLength(1);
       }
       const visitIds = rows.map((row) => parseInt(row.visit_id, 10));
+      await testInfo.attach('visitor-separation-evidence', {
+        body: JSON.stringify({
+          settings: await Promise.all(pages.map((visitor) => visitor.evaluate(() => {
+            const params = (window as any).SlimStatParams ?? {};
+            return {
+              javascript_mode: params.javascript_mode,
+              set_tracker_cookie: params.set_tracker_cookie,
+              gdpr_enabled: params.gdpr_enabled,
+              anonymous_tracking: params.anonymous_tracking,
+            };
+          }))),
+          requests: responses.map(requestEvidence),
+          counterBefore,
+          counterAfter: await getVisitIdCounter(),
+          visitIds,
+        }, null, 2),
+        contentType: 'application/json',
+      });
       expect(visitIds.every((id) => id > 0)).toBe(true);
       expect(new Set(visitIds).size).toBe(markers.length);
     } finally {

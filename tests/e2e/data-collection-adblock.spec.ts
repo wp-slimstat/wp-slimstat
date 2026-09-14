@@ -140,9 +140,7 @@ test.describe('Ad-Blocker Simulation (AC-TRK-001 ad-blocker)', () => {
       if (url.includes('/wp-json/slimstat/v1/hit')) trackingActions.push('rest-hit');
       if (url.includes('admin-ajax.php')) {
         const action = new URLSearchParams(req.postData() ?? '').get('action') ?? '';
-        if (/^(?:slimtrack|slimstat_)/.test(action)) {
-          trackingActions.push(action.replace(/[^a-z0-9_-]/gi, '?').slice(0, 80));
-        }
+        if (action === 'slimtrack') trackingActions.push(action);
       }
     });
 
