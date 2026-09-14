@@ -45,6 +45,13 @@
     {"key":"get_your_blog","source":"extended","adapter":null},
     {"key":"live_window_end","source":"extended","adapter":null},
     {"key":"uniques_browser_pinned","source":"extended","adapter":null},
-    {"key":"uniques_country_pinned","source":"extended","adapter":null}
+    {"key":"uniques_country_pinned","source":"extended","adapter":null},
+    {"key":"top_current_ip_pinned","source":"extended","adapter":{"family":"top","table":"slim_stats","dimension":"ip","blog_id":1}},
+    {"key":"recent_searchterms_pinned","source":"extended","adapter":{"family":"recent","table":"slim_stats"}},
+    {"key":"top_username_pinned","source":"extended","adapter":{"family":"top","table":"slim_stats","dimension":"username","blog_id":1}},
+    {"key":"top_searchterms_pinned","source":"extended","adapter":{"family":"top","table":"slim_stats","dimension":"searchterms","blog_id":1}},
+    {"key":"top_language_family_pinned","source":"extended","adapter":{"family":"top","table":"slim_stats","dimension":"language","blog_id":1}},
+    {"key":"top_current_username_pinned","source":"extended","adapter":{"family":"top","table":"slim_stats","dimension":"username","blog_id":1}},
+    {"key":"chart_searchterms_pinned","source":"extended","adapter":{"family":"chart","table":"slim_stats"}}
   ]
 }

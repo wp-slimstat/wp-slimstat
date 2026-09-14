@@ -1,4 +1,4 @@
-"""Independent pageview-chart semantics over exported timestamps and IP values."""
+"""Independent chart semantics over exported timestamps and metric values."""
 
 from datetime import datetime, timedelta, timezone
 
@@ -19,7 +19,22 @@ def _week_start(timestamp, start_of_week):
                            seconds=day.second, microseconds=day.microsecond)
 
 
-def pageviews_chart(rows, capture_end, duration_days, granularity, start_of_week=1):
+def _distinct(value, equality):
+    if equality == "binary":
+        return value
+    raw = value if isinstance(value, bytes) else value.encode("ascii")
+    if equality != "ascii_ci" or any(byte > 127 for byte in raw):
+        raise ValueError("unsupported chart equality")
+    return raw.rstrip(b" ").lower()
+
+
+def _excluded(value, excluded):
+    return any(value == item or (isinstance(value, bytes) and isinstance(item, str)
+                                 and value == item.encode("utf-8")) for item in excluded)
+
+
+def pageviews_chart(rows, capture_end, duration_days, granularity, start_of_week=1,
+                    metric_column="ip", excluded=(), equality="binary"):
     if type(capture_end) is not int or capture_end < DAY:
         raise ValueError("chart capture end must be a positive integer timestamp")
     if type(duration_days) is not int or duration_days < 1:
@@ -53,15 +68,16 @@ def pageviews_chart(rows, capture_end, duration_days, granularity, start_of_week
                 for period in bounds}
     totals = {period: {"v1": 0, "v2": set()} for period in bounds}
     for index, row in enumerate(rows):
-        if not isinstance(row, dict) or "dt" not in row or "ip" not in row:
-            raise ValueError("chart row %d must contain dt and ip" % index)
+        if not isinstance(row, dict) or "dt" not in row or metric_column not in row:
+            raise ValueError("chart row %d lacks a consumed field" % index)
         if type(row["dt"]) is not int:
             raise ValueError("chart row %d dt must be an integer" % index)
         period = next((name for name, (low, high) in bounds.items() if low <= row["dt"] <= high), None)
-        if period is None or row["ip"] is None:
+        metric = row[metric_column]
+        if period is None or metric is None or _excluded(metric, excluded):
             continue
         totals[period]["v1"] += 1
-        totals[period]["v2"].add(row["ip"])
+        totals[period]["v2"].add(_distinct(metric, equality))
         if granularity == "DAY":
             offset = (_date(row["dt"]).date() - _date(bounds[period][0]).date()).days
         else:
@@ -69,7 +85,7 @@ def pageviews_chart(rows, capture_end, duration_days, granularity, start_of_week
                       - _week_start(bounds[period][0], start_of_week).date()).days // 7
         if 0 <= offset < len(labels):
             datasets[period]["v1"][offset] += 1
-            datasets[period]["v2"][offset].add(row["ip"])
+            datasets[period]["v2"][offset].add(_distinct(metric, equality))
 
     previous_start = bounds["previous"][0]
     prev_labels = [(_date(previous_start) + timedelta(days=i * (1 if granularity == "DAY" else 7)))

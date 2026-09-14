@@ -99,17 +99,25 @@ foreach ($reports as $key => $contract) {
         continue;
     }
     $requiredStrings = 'top' === $family
-        ? ('top_events' === $kind
+        ? ('current' === $kind
+            ? ('slim_p1_04' === $id
+                ? ['type', 'top', 'columns', 'ip', '(dt_out > ', ') OR (dt > ', 'MAX(dt) DESC', 'MAX(dt) AS dt', 'raw', 'wp_slimstat_db', 'get_top']
+                : ['type', 'top', 'columns', 'username', '((dt_out > ', ')) AND username <> "" AND username IS NOT NULL', 'raw', 'wp_slimstat_db', 'get_top'])
+            : ('top_events' === $kind
             ? ['type', 'top', 'columns', 'notes', 'raw', 'wp_slimstat_db', 'get_top_events']
             : ('top_outbound' === $kind
                 ? ['type', 'top', 'columns', 'outbound_resource', 'raw', 'wp_slimstat_db', 'get_top_outbound']
-                : ['type', 'top', 'columns', 'raw', 'wp_slimstat_db', 'get_top']))
+                : ['type', 'top', 'columns', 'raw', 'wp_slimstat_db', 'get_top'])))
         : ('recent' === $family
             ? ('recent_events' === $kind
                 ? ['show_events', 'type', 'recent', 'columns', 'notes', 'raw', 'wp_slimstat_db', 'get_recent_events']
-                : ['show_access_log', 'type', 'recent', 'columns', '*', 'raw', 'wp_slimstat_db', 'get_recent'])
+                : ('filtered_recent' === $kind
+                    ? ['type', 'recent', 'columns', 'searchterms', 'raw', 'wp_slimstat_db', 'get_recent']
+                    : ['show_access_log', 'type', 'recent', 'columns', '*', 'raw', 'wp_slimstat_db', 'get_recent']))
             : ('chart' === $family
-                ? ['show_chart', 'chart_data', 'data1', 'COUNT( ip )', 'data2', 'COUNT( DISTINCT ip )']
+                ? ('slim_p1_19_01' === $id
+                    ? ['show_chart', 'chart_data', 'data1', 'COUNT( searchterms )', 'data2', 'COUNT( DISTINCT searchterms )']
+                    : ['show_chart', 'chart_data', 'data1', 'COUNT( ip )', 'data2', 'COUNT( DISTINCT ip )'])
                 : ('count' === $family
                     ? ('slim_p2_01' === $id
                         ? ['show_chart', 'chart_data', 'COUNT( DISTINCT visit_id )', '(visit_id > 0 AND browser_type <> 1)']
@@ -139,7 +147,7 @@ foreach ($reports as $key => $contract) {
     if ('top' === $family && 'counthits' !== ($contract['count_field'] ?? null)) {
         $failures[] = "{$key}: family/count_field must be top/counthits";
     }
-    if ('recent' === $family && 'recent_events' !== $kind) {
+    if ('recent' === $family && !in_array($kind, ['recent_events', 'filtered_recent'], true)) {
         if ($recentColumns !== ($contract['columns'] ?? null)) {
             $failures[] = "{$key}: recent contract must contain the exact 29 Access Log columns";
         }
@@ -150,16 +158,33 @@ foreach ($reports as $key => $contract) {
             $failures[] = "{$key}: wp_slimstat_db::recent_columns() does not match the 29-column contract";
         }
     }
+    if ('filtered_recent' === $kind
+        && (['searchterms', 'referer', 'resource', 'dt', 'ip'] !== ($contract['columns'] ?? null)
+            || [['searchterms', 'not_in', [null, '', '_']]] !== ($contract['where'] ?? null))
+    ) {
+        $failures[] = "{$key}: filtered recent contract does not match the captured search-term shape";
+    }
+    if ('top_language_family_pinned' === $key && 'language_prefix' !== ($contract['transform'] ?? null)) {
+        $failures[] = "{$key}: language-family transform is not pinned";
+    }
     if ('chart' === $family) {
-        $chartDurations = ['DAY' => 5, 'WEEK' => 60];
+        $chartDurations = ['chart_daily' => ['ip', 'DAY', 5],
+            'chart_weekly' => ['ip', 'WEEK', 60],
+            'chart_searchterms_pinned' => ['searchterms', 'WEEK', 30]];
         $granularity = $contract['granularity'] ?? null;
-        if ('ip' !== ($contract['metric_column'] ?? null)
-            || !isset($chartDurations[$granularity])
-            || $chartDurations[$granularity] !== ($contract['duration_days'] ?? null)
+        $actual = [$contract['metric_column'] ?? null, $granularity, $contract['duration_days'] ?? null];
+        if (!isset($chartDurations[$key])
+            || $chartDurations[$key] !== $actual
             || 1 !== ($contract['start_of_week'] ?? null)
             || 'UTC' !== ($contract['timezone'] ?? null)
         ) {
-            $failures[] = "{$key}: chart contract must pin the captured IP/calendar semantics";
+            $failures[] = "{$key}: chart contract must pin the captured metric/calendar semantics";
+        }
+        if ('chart_searchterms_pinned' === $key
+            && (['', '_'] !== ($contract['excluded'] ?? null)
+                || 'ascii_ci' !== ($contract['equality'] ?? null))
+        ) {
+            $failures[] = "{$key}: search-term chart contract must pin exclusions and collation";
         }
     }
     if ('count' === $family && 'singletons' !== $kind) {

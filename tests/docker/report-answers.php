@@ -899,14 +899,18 @@ if ($slimstat_windowed) {
 // the module's public surfaces render HTML or read $_POST, and an instrument may open
 // the private data path it measures. Two windows, historical on purpose (ends before
 // today), so neither the live-window quantisation nor the clock moves the capture.
-$chart_capture = static function (int $c_start, int $c_end) {
+$chart_capture = static function (int $c_start, int $c_end, array $chart_data = []) {
     $chart = new \SlimStat\Modules\Chart();
     $norm  = new ReflectionMethod($chart, 'normalizeArgs');
     $norm->setAccessible(true);
     $fetch = new ReflectionMethod($chart, 'fetchChartData');
     $fetch->setAccessible(true);
 
-    return $fetch->invoke($chart, $norm->invoke($chart, ['start' => $c_start, 'end' => $c_end]));
+    $args = ['start' => $c_start, 'end' => $c_end];
+    if ($chart_data !== []) {
+        $args['chart_data'] = $chart_data;
+    }
+    return $fetch->invoke($chart, $norm->invoke($chart, $args));
 };
 
 $chart_today = strtotime(date('Y-m-d 00:00:00'));
@@ -1084,6 +1088,62 @@ $capture_windowed('get_top_events', static function () {
 $capture_windowed('get_top_outbound', static function () {
     return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top_outbound', [[]]));
 });
+
+// Pinned report-order expansion. These mirror the registry callbacks but replace
+// embedded wall-clock bounds with the capture end so both arms read identical rows.
+$capture_windowed('top_current_ip_pinned', static function () use ($end) {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns' => 'ip',
+        'where' => '(dt_out > ' . ($end - 300) . ') OR (dt > ' . ($end - 300) . ')',
+        'order_by' => 'MAX(dt) DESC',
+        'more_select' => 'MAX(dt) AS dt',
+        'use_date_filters' => false,
+    ]]));
+});
+
+$capture_windowed('recent_searchterms_pinned', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_recent', [[
+        'columns' => 'searchterms',
+        'where' => 'searchterms <> "_" AND searchterms <> "" AND searchterms IS NOT NULL',
+        'more_columns' => 'referer, resource',
+    ]]));
+});
+
+$capture_windowed('top_username_pinned', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns' => 'username',
+    ]]));
+});
+
+$capture_windowed('top_searchterms_pinned', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns' => 'searchterms',
+        'where' => 'searchterms <> "_" AND searchterms <> "" AND searchterms IS NOT NULL',
+    ]]));
+});
+
+$capture_windowed('top_language_family_pinned', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns' => 'SUBSTRING( language, 1, 2 )',
+        'as_column' => 'language',
+    ]]));
+});
+
+$capture_windowed('top_current_username_pinned', static function () use ($end) {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns' => 'username',
+        'where' => '((dt_out > ' . ($end - 300) . ') OR (dt > ' . ($end - 300) . ')) AND username <> "" AND username IS NOT NULL',
+        'use_date_filters' => false,
+    ]]));
+});
+
+$capture_ext('chart_searchterms_pinned', static function () use ($chart_capture, $chart_end) {
+    return $chart_capture($chart_end - 30 * 86400 + 1, $chart_end, [
+        'data1' => 'COUNT( searchterms )',
+        'data2' => 'COUNT( DISTINCT searchterms )',
+        'where' => 'searchterms <> "_" AND searchterms IS NOT NULL AND searchterms <> ""',
+    ]);
+}, ['calendar_day_dependent' => true, 'pinned' => true]);
 
 // Array-only in both eras, so the array parser is not a choice here. The two column names are
 // pinned literals and deliberately low-cardinality: column_group is GROUP_CONCAT(DISTINCT …),

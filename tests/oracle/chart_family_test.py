@@ -10,7 +10,7 @@ from families.chart import pageviews_chart
 
 contracts = json.loads(Path(__file__).with_name('report-contracts.json').read_text())['reports']
 assert {key for key, value in contracts.items() if value['family'] == 'chart'} == {
-    'chart_daily', 'chart_weekly'}
+    'chart_daily', 'chart_weekly', 'chart_searchterms_pinned'}
 assert (contracts['chart_daily']['duration_days'], contracts['chart_daily']['granularity']) == (5, 'DAY')
 assert (contracts['chart_weekly']['duration_days'], contracts['chart_weekly']['granularity']) == (60, 'WEEK')
 
@@ -51,6 +51,22 @@ assert weekly['labels'] == ["'2026/01/01'", "'2026/01/05'"], weekly
 assert weekly['prev_labels'] == ['2025/12/22', '2025/12/29'], weekly
 assert weekly['datasets'] == {'v1': [0, 8], 'v2': [0, 3]}, weekly
 assert weekly['today'] == '2026/01/05', weekly
+
+search_rows = [
+    {'dt': ts('2026-01-08T04:00:00'), 'searchterms': b'term'},
+    {'dt': ts('2026-01-08T05:00:00'), 'searchterms': b'TERM '},
+    {'dt': ts('2026-01-09T04:00:00'), 'searchterms': b'_'},
+    {'dt': ts('2026-01-09T05:00:00'), 'searchterms': None},
+]
+search = pageviews_chart(search_rows, capture_end, 3, 'DAY', 1, 'searchterms', ('', '_'), 'ascii_ci')
+assert search['datasets'] == {'v1': [2, 0, 0], 'v2': [1, 0, 0]}, search
+
+try:
+    pageviews_chart([{'dt': ts('2026-01-08T04:00:00'), 'searchterms': 'café'}],
+                    capture_end, 3, 'DAY', 1, 'searchterms', ('', '_'), 'ascii_ci')
+    raise AssertionError('non-ASCII chart collation was guessed')
+except ValueError:
+    pass
 
 try:
     pageviews_chart([{'dt': 'not-an-int', 'ip': b'a'}], capture_end, 3, 'DAY')

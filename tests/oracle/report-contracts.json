@@ -241,6 +241,96 @@
       "where": [["visit_id", "gt", 0], ["content_type", "ne", "404"]],
       "equality": "ascii_ci",
       "windowed": true
+    },
+    "top_current_ip_pinned": {
+      "report_id": "slim_p1_04",
+      "title": "Currently Online",
+      "family": "top",
+      "kind": "current",
+      "dimension": "ip",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "include_max_dt": true,
+      "canonical": true
+    },
+    "recent_searchterms_pinned": {
+      "report_id": "slim_p1_06",
+      "title": "Recent Search Terms",
+      "family": "recent",
+      "kind": "filtered_recent",
+      "columns": ["searchterms", "referer", "resource", "dt", "ip"],
+      "where": [["searchterms", "not_in", [null, "", "_"]]],
+      "limit_setting": "limit_results",
+      "default_limit": 200
+    },
+    "top_username_pinned": {
+      "report_id": "slim_p1_11",
+      "title": "Top Known Visitors",
+      "family": "top",
+      "dimension": "username",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "windowed": true,
+      "equality": "ascii_ci",
+      "canonical": true
+    },
+    "top_searchterms_pinned": {
+      "report_id": "slim_p1_12",
+      "title": "Top Search Terms",
+      "family": "top",
+      "dimension": "searchterms",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "where": [["searchterms", "not_in", [null, "", "_"]]],
+      "windowed": true,
+      "equality": "ascii_ci",
+      "canonical": true
+    },
+    "top_language_family_pinned": {
+      "report_id": "slim_p1_17",
+      "title": "Top Language Families",
+      "family": "top",
+      "dimension": "language",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "transform": "language_prefix",
+      "windowed": true,
+      "equality": "ascii_ci",
+      "canonical": true
+    },
+    "top_current_username_pinned": {
+      "report_id": "slim_p1_18",
+      "title": "Users Currently Online",
+      "family": "top",
+      "kind": "current",
+      "dimension": "username",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200,
+      "exclude_empty": true,
+      "equality": "ascii_ci",
+      "canonical": true
+    },
+    "chart_searchterms_pinned": {
+      "report_id": "slim_p1_19_01",
+      "title": "Search Terms",
+      "family": "chart",
+      "metric_column": "searchterms",
+      "excluded": ["", "_"],
+      "equality": "ascii_ci",
+      "duration_days": 30,
+      "granularity": "WEEK",
+      "start_of_week": 1,
+      "timezone": "UTC"
     }
   }
 }

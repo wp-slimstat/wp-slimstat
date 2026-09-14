@@ -3,8 +3,8 @@
 import json
 import sqlite3
 
-from families.top import rank_top, top_events, top_outbound
-from families.recent import recent_rows, recent_events
+from families.top import rank_current, rank_top, top_events, top_outbound
+from families.recent import filtered_recent, recent_rows, recent_events
 from families.chart import pageviews_chart
 from families.count import count_values, count_singletons
 from families.summary import bouncing_visits, pages_per_visit, visit_duration, visitors_summary
@@ -25,9 +25,10 @@ def _read_rows(conn, surface, table, expected):
         'SELECT %s FROM "%s"' % (quoted, table.replace('"', '""')))]
 
 
-def _canonical(rows, string_counts=False):
+def _canonical(rows, string_counts=False, string_fields=()):
     def key(row):
-        value = dict(row, counthits=str(row['counthits'])) if string_counts else row
+        fields = tuple(string_fields) + (('counthits',) if string_counts else ())
+        value = dict(row, **{field: str(row[field]) for field in fields}) if fields else row
         return json.dumps(value, ensure_ascii=True, separators=(',', ':'), sort_keys=True).replace('/', '\\/')
     return sorted(rows, key=key)
 
@@ -40,6 +41,14 @@ def recent(export_path, surface, adapter, contract):
         events = _read_rows(conn, surface, 'slim_events', contract['columns'][:-2])
         conn.close()
         value = _canonical(recent_events(stats, events, contract['window_start'], contract['window_end']))
+        return {'class': 'ok' if value else 'empty', 'value': value,
+                'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
+    if contract.get('kind') == 'filtered_recent':
+        rows = _read_rows(conn, surface, adapter['table'], contract['columns'])
+        conn.close()
+        value = _canonical(filtered_recent(rows, contract['columns'], contract['where'],
+                                           contract['window_start'], contract['window_end'],
+                                           contract['default_limit']))
         return {'class': 'ok' if value else 'empty', 'value': value,
                 'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
     table = adapter['table']
@@ -73,7 +82,13 @@ def top(export_path, surface, adapter, contract):
         raise ValueError('%s: export has no %s dimension' % (surface, dimension))
     # Raw exports deliberately carry invalid UTF-8 in unrelated fields. Decode
     # only the fields this family consumes, leaving the fidelity proof byte-exact.
-    columns = list(dict.fromkeys([dimension] + (['blog_id'] if 'blog_id' in columns else [])))
+    consumed = [dimension]
+    if contract.get('windowed') or contract.get('kind') == 'current':
+        consumed.append('dt')
+    if contract.get('kind') == 'current':
+        consumed.append('dt_out')
+    consumed += [item[0] for item in contract.get('where', [])]
+    columns = list(dict.fromkeys(consumed + (['blog_id'] if 'blog_id' in columns else [])))
     quoted = ', '.join('"%s"' % name.replace('"', '""') for name in columns)
     rows = [dict(zip(columns, map(_text, row))) for row in conn.execute(
         'SELECT %s FROM "%s"' % (quoted, table.replace('"', '""')))]
@@ -84,10 +99,21 @@ def top(export_path, surface, adapter, contract):
             rows = [row for row in rows if int(row['blog_id']) == blog_id]
         else:
             rows = [dict(row, blog_id=blog_id) for row in rows]
-    ranked = rank_top(rows, dimension, ('blog_id',), contract['default_limit'],
-                      contract.get('transform'), contract.get('exclude_null', False))
-    value = [{dimension: row[dimension], contract['count_field']: row['counthits']}
-             for row in ranked]
+    if contract.get('kind') == 'current':
+        ranked = rank_current(rows, dimension, ('blog_id',), contract['default_limit'],
+                              contract['window_end'], ('dt_out', 'dt'),
+                              contract.get('include_max_dt', False), contract.get('exclude_empty', False),
+                              contract.get('equality', 'binary'))
+    else:
+        ranked = rank_top(rows, dimension, ('blog_id',), contract['default_limit'],
+                          contract.get('transform'), contract.get('exclude_null', False),
+                          contract.get('where', ()), contract.get('window_start'), contract.get('window_end'),
+                          contract.get('equality', 'binary'))
+    fields = [dimension, contract['count_field']] + (['dt'] if contract.get('include_max_dt') else [])
+    value = [{field: row[field] for field in fields} for row in ranked]
+    if contract.get('canonical'):
+        value = _canonical(value, string_fields=('counthits', 'dt') if contract.get('include_max_dt')
+                           else ('counthits',))
     return {'class': 'ok' if value else 'empty', 'value': value,
             'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
 
@@ -105,12 +131,14 @@ def chart(export_path, surface, adapter, contract, windows):
     missing = [column for column in ('dt', contract['metric_column']) if column not in columns]
     if missing:
         raise ValueError('%s: export %s manifest lacks %s' % (surface, table, ', '.join(missing)))
-    rows = [{'dt': dt, 'ip': metric} for dt, metric in conn.execute(
+    metric_column = contract['metric_column']
+    rows = [{'dt': dt, metric_column: metric} for dt, metric in conn.execute(
         'SELECT "dt", "%s" FROM "%s"' %
-        (contract['metric_column'].replace('"', '""'), table.replace('"', '""')))]
+        (metric_column.replace('"', '""'), table.replace('"', '""')))]
     conn.close()
     value = pageviews_chart(rows, windows['end'], contract['duration_days'],
-                            contract['granularity'], contract['start_of_week'])
+                            contract['granularity'], contract['start_of_week'], metric_column,
+                            tuple(contract.get('excluded', ())), contract.get('equality', 'binary'))
     return {'class': 'ok', 'value': value,
             'flags': {'clock_dependent': False, 'calendar_day_dependent': True, 'pinned': True}}
 
@@ -206,9 +234,13 @@ def oracle_for(export_path, surface, adapter, contracts, windows=None):
         conn.close()
         return {'class': 'ok' if value else 'empty', 'value': value,
                 'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
-    if contract.get('kind') == 'recent_events':
+    if contract.get('kind') in ('recent_events', 'filtered_recent'):
         if not isinstance(windows, dict) or type(windows.get('start')) is not int or type(windows.get('end')) is not int:
-            raise ValueError('%s: recent-events adapter requires the pinned capture window' % surface)
+            raise ValueError('%s: recent adapter requires the pinned capture window' % surface)
+        contract = dict(contract, window_start=windows['start'], window_end=windows['end'])
+    if adapter['family'] == 'top' and (contract.get('windowed') or contract.get('kind') == 'current'):
+        if not isinstance(windows, dict) or type(windows.get('start')) is not int or type(windows.get('end')) is not int:
+            raise ValueError('%s: top adapter requires the pinned capture window' % surface)
         contract = dict(contract, window_start=windows['start'], window_end=windows['end'])
     family = {'top': top, 'recent': recent}.get(adapter['family'])
     if family:

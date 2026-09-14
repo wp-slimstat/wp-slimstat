@@ -25,10 +25,36 @@ def _transform(value, transform):
         return "p-" + str(value)[:3]
     if transform == "trim_trailing_slash":
         return str(value).rstrip("/")
+    if transform == "language_prefix":
+        return str(value)[:2]
     raise ValueError("unsupported top transform")
 
 
-def rank_top(rows, dimension, grain=("blog_id",), limit=None, transform=None, exclude_null=False):
+def _matches(row, where):
+    for column, operator, expected in where:
+        if operator != "not_in":
+            raise ValueError("unsupported top predicate")
+        if row[column] is None or row[column] in expected:
+            return False
+    return True
+
+
+def _equality_key(value, equality):
+    if value is None or equality == "binary":
+        return value
+    if equality != "ascii_ci" or not isinstance(value, (bytes, str)):
+        raise ValueError("unsupported top equality")
+    try:
+        raw = value if isinstance(value, bytes) else value.encode("ascii")
+    except UnicodeEncodeError as error:
+        raise ValueError("ascii_ci top cannot model non-ASCII collation semantics") from error
+    if any(byte > 127 for byte in raw):
+        raise ValueError("ascii_ci top cannot model non-ASCII collation semantics")
+    return raw.rstrip(b" ").lower()
+
+
+def rank_top(rows, dimension, grain=("blog_id",), limit=None, transform=None, exclude_null=False,
+             where=(), start=None, end=None, equality="binary"):
     """Count rows by grain+dimension, order deterministically, then apply LIMIT."""
     if not isinstance(dimension, str) or not dimension:
         raise ValueError("top dimension must be a non-empty string")
@@ -36,23 +62,30 @@ def rank_top(rows, dimension, grain=("blog_id",), limit=None, transform=None, ex
         raise ValueError("top grain must name at least one field")
     if limit is not None and (not isinstance(limit, int) or isinstance(limit, bool) or limit < 1):
         raise ValueError("top limit must be a positive integer or None")
+    if (start is None) != (end is None) or (start is not None and start > end):
+        raise ValueError("top window must have ordered start and end values")
 
-    counts = {}
+    counts, displayed = {}, {}
     for index, row in enumerate(rows):
         if not isinstance(row, dict):
             raise ValueError("top row %d is not an object" % index)
-        missing = [name for name in tuple(grain) + (dimension,) if name not in row]
+        required = tuple(grain) + (dimension,) + tuple(item[0] for item in where) + (() if start is None else ("dt",))
+        missing = [name for name in required if name not in row]
         if missing:
             raise ValueError("top row %d is missing %s" % (index, ", ".join(missing)))
+        if (start is not None and not start <= row["dt"] <= end) or not _matches(row, where):
+            continue
         if exclude_null and row[dimension] is None:
             continue
-        key = tuple(row[name] for name in grain) + (_transform(row[dimension], transform),)
+        value = _transform(row[dimension], transform)
+        key = tuple(row[name] for name in grain) + (_equality_key(value, equality),)
+        displayed.setdefault(key, value)
         counts[key] = counts.get(key, 0) + 1
 
     ranked = []
     for key, count in counts.items():
         item = {name: key[pos] for pos, name in enumerate(grain)}
-        item[dimension] = key[-1]
+        item[dimension] = displayed[key]
         item["counthits"] = count
         ranked.append(item)
 
@@ -62,6 +95,25 @@ def rank_top(rows, dimension, grain=("blog_id",), limit=None, transform=None, ex
         tuple(_order_value(item[name]) for name in grain),
     ))
     return ranked if limit is None else ranked[:limit]
+
+
+def rank_current(rows, dimension, grain, limit, end, active_columns, include_max_dt=False,
+                 exclude_empty=False, equality="binary"):
+    """Rank values active in the strict five-minute report window."""
+    active = [row for row in rows if any(row[column] is not None and row[column] > end - 300
+                                         for column in active_columns)
+              and not (exclude_empty and row[dimension] in (None, ""))]
+    ranked = rank_top(active, dimension, grain, None, equality=equality)
+    if include_max_dt:
+        latest = {}
+        for row in active:
+            key = tuple(row[name] for name in grain) + (_equality_key(row[dimension], equality),)
+            latest[key] = max(latest.get(key, row["dt"]), row["dt"])
+        for row in ranked:
+            row["dt"] = latest[tuple(row[name] for name in grain)
+                               + (_equality_key(row[dimension], equality),)]
+        ranked.sort(key=lambda row: (-row["dt"], _order_value(row[dimension])))
+    return ranked[:limit]
 
 
 def evaluate(report_key, contract, rows, limit):

@@ -20,3 +20,20 @@ def recent_events(stats, events, start, end):
         rows.append(dict(event, ip=fact['ip'], resource=fact['resource']))
     rows.sort(key=lambda row: row['dt'], reverse=True)
     return recent_rows(rows)
+
+
+def filtered_recent(rows, columns, where, start, end, limit):
+    """Select the pinned recent rows before transport canonicalisation."""
+    selected = []
+    for index, row in enumerate(rows):
+        required = set(columns) | {'dt'} | {item[0] for item in where}
+        if not isinstance(row, dict) or any(column not in row for column in required):
+            raise ValueError('recent row %d lacks a consumed field' % index)
+        if not start <= row['dt'] <= end:
+            continue
+        if any(operator != 'not_in' or row[column] is None or row[column] in expected
+               for column, operator, expected in where):
+            continue
+        selected.append({column: row[column] for column in columns})
+    selected.sort(key=lambda row: row['dt'], reverse=True)
+    return recent_rows(selected[:limit])
