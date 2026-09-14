@@ -56,6 +56,12 @@ $pageContracts = [
     'slim_p4_24_exit_pages'              => ['exit_pages', ['get_top_aggr', 'visit_id', 'resource', 'MAX']],
     'slim_p4_25_entry_pages'             => ['entry_pages', ['get_top_aggr', 'visit_id', 'resource', 'MIN']],
 ];
+$goalContracts = [
+    'get_goal_results'   => 'goal_result',
+    'get_goals_raw'      => 'goals_raw',
+    'get_funnel_results' => 'funnel_result',
+    'get_funnels_raw'    => 'funnels_raw',
+];
 
 if (!is_array($json) || 'SLIMSTAT-ORACLE-CONTRACTS-V1' !== ($json['schema'] ?? null)) {
     $failures[] = 'report-contracts.json is missing schema SLIMSTAT-ORACLE-CONTRACTS-V1';
@@ -155,11 +161,14 @@ foreach ($reports as $key => $contract) {
                             : ['raw_results_to_html', 'raw', 'wp_slimstat_db', 'get_overview_summary']))
                     : ('summary' === $family
                         ? ['raw_results_to_html', 'raw', 'wp_slimstat_db',
-                            'slim_p2_02' === $id ? 'get_visitors_summary' : 'get_visits_duration']
+                            'slim_p2_02' === $id ? 'get_visitors_summary'
+                                : ('slim_p2_12' === $id ? 'get_visits_duration' : 'get_top')]
                         : ('pages' === $family
                             ? array_merge(['raw_results_to_html', 'raw', 'wp_slimstat_db'],
                                 $pageContracts[$key][1] ?? [])
-                            : [])))));
+                            : ('goals' === $family
+                                ? ['raw', 'wp_slimstat_db', 'slim_p9_01' === $id ? 'get_goals_raw' : 'get_funnels_raw']
+                                : []))))));
     if (!$requiredStrings) {
         $failures[] = "{$key}: unknown oracle family " . var_export($family, true);
     }
@@ -271,6 +280,10 @@ foreach ($reports as $key => $contract) {
         ) {
             $failures[] = "{$key}: page contract does not match its report query semantics";
         }
+    }
+    if ('goals' === $family
+        && (!isset($goalContracts[$key]) || $goalContracts[$key] !== ($contract['kind'] ?? null))) {
+        $failures[] = "{$key}: goal contract does not match its pinned capture fixture";
     }
     // These literals describe the current runtime contract but do not prove how get_top reads it;
     // the live report/capture gate owns that behavior in S7 and Phase 2.

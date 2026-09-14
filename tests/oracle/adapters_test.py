@@ -126,6 +126,13 @@ with tempfile.TemporaryDirectory() as temp:
     assert values['Visits'] == '1' and values['Unique IPs'] == '2', result
     assert values['Bounce rate'] == '0.00' and values['Known visitors'] == '1', result
 
+    contracts['reports']['count_bouncing_pages'] = {
+        'family': 'summary', 'kind': 'bouncing_pages'}
+    result = oracle_for(path, 'count_bouncing_pages',
+                        {'family': 'summary', 'table': 'slim_stats'}, contracts,
+                        {'start': 10, 'end': 20})
+    assert result['value'] == 1, result
+
     for key, kind, expected in (
             ('slim_p4_20_recent_downloads', 'recent_downloads', [
                 {'counthits': '1', 'dt': '20', 'resource': '/a'},

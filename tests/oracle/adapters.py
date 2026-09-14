@@ -7,9 +7,10 @@ from families.top import rank_current, rank_recent_top, rank_top, top_events, to
 from families.recent import filtered_recent, recent_rows, recent_events
 from families.chart import pageviews_chart
 from families.count import count_values, count_singletons
-from families.summary import bouncing_visits, pages_per_visit, visit_duration, visitors_summary
+from families.summary import bouncing_pages, bouncing_visits, pages_per_visit, visit_duration, visitors_summary
 from families.pages import (filtered_recent, grouped_dimensions, grouped_values, recent_downloads,
                             recent_outbound, visit_boundary_pages)
+from families.goals import funnel_results, goal_results, percent_text
 
 
 def _text(value):
@@ -199,6 +200,7 @@ def count(export_path, surface, adapter, contract, windows):
 def summary(export_path, surface, adapter, contract, windows):
     kinds = {
         'bouncing_visits': (('id', 'visit_id', 'browser_type', 'dt'), bouncing_visits),
+        'bouncing_pages': (('visit_id', 'content_type', 'resource', 'dt'), bouncing_pages),
         'pages_per_visit': (('visit_id', 'dt'), pages_per_visit),
         'visit_duration': (('visit_id', 'browser_type', 'dt', 'dt_out'), visit_duration),
         'visitors_summary': (('id', 'visit_id', 'browser_type', 'ip', 'username', 'dt'), visitors_summary),
@@ -299,11 +301,45 @@ def pages(export_path, surface, adapter, contract, windows):
             'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
 
 
+def goals(export_path, surface, adapter, contract, windows):
+    if (contract.get('kind') not in ('goal_result', 'goals_raw', 'funnel_result', 'funnels_raw')
+            or not isinstance(windows, dict) or type(windows.get('start')) is not int
+            or type(windows.get('end')) is not int):
+        raise ValueError('%s: unsupported or unpinned goal contract' % surface)
+    columns = ('id', 'resource', 'browser', 'country', 'fingerprint', 'visit_id', 'ip', 'dt')
+    conn = sqlite3.connect('file:%s?mode=ro' % export_path, uri=True)
+    conn.text_factory = bytes
+    table = adapter['table']
+    manifest = {_text(row[0]) for row in conn.execute(
+        'SELECT name FROM _manifest WHERE tbl = ?', (table,))}
+    missing = [column for column in columns if column not in manifest]
+    if missing:
+        raise ValueError('%s: export %s manifest lacks %s' % (surface, table, ', '.join(missing)))
+    rows = [dict(zip(columns, row)) for row in conn.execute(
+        'SELECT %s FROM "%s"' % (', '.join('"%s"' % column for column in columns),
+                                  table.replace('"', '""')))]
+    conn.close()
+    if contract['kind'] in ('goal_result', 'goals_raw'):
+        value = goal_results(rows, windows['start'], windows['end'], contract['rule'])
+        if contract['kind'] == 'goals_raw':
+            value = [{'goal_name': contract['name'], 'uniques': value['uniques'],
+                      'total': value['total'], 'cr': percent_text(value['cr'])}]
+    else:
+        value = funnel_results(rows, windows['start'], windows['end'], contract['steps'])
+        if contract['kind'] == 'funnels_raw':
+            value = [{'funnel_name': contract['name'], 'step_name': row['name'],
+                      'step_order': index + 1, 'visitors': row['visitors'],
+                      'pct': percent_text(row['pct']), 'dropoff': row['dropoff']}
+                     for index, row in enumerate(value)]
+    return {'class': 'ok' if value else 'empty', 'value': value,
+            'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
+
+
 def oracle_for(export_path, surface, adapter, contracts, windows=None):
     if adapter is None:
         return {'class': 'unmodeled', 'value': None,
                 'reason': 'No independent model for this surface'}
-    if surface not in contracts['reports'] or adapter.get('family') not in ('top', 'recent', 'chart', 'count', 'summary', 'pages'):
+    if surface not in contracts['reports'] or adapter.get('family') not in ('top', 'recent', 'chart', 'count', 'summary', 'pages', 'goals'):
         raise ValueError('%s: unknown or uncontracted adapter' % surface)
     contract = contracts['reports'][surface]
     if contract.get('kind') in ('top_events', 'top_outbound'):
@@ -332,7 +368,8 @@ def oracle_for(export_path, surface, adapter, contracts, windows=None):
     family = {'top': top, 'recent': recent}.get(adapter['family'])
     if family:
         return family(export_path, surface, adapter, contract)
-    family = {'chart': chart, 'count': count, 'summary': summary, 'pages': pages}[adapter['family']]
+    family = {'chart': chart, 'count': count, 'summary': summary, 'pages': pages,
+              'goals': goals}[adapter['family']]
     return family(export_path, surface, adapter, contracts['reports'][surface], windows)
 
 

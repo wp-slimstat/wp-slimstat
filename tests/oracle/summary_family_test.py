@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Hand-derived checks for independent summary semantics."""
 
-from families.summary import bouncing_visits, pages_per_visit, visit_duration, visitors_summary
+from families.summary import bouncing_pages, bouncing_visits, pages_per_visit, visit_duration, visitors_summary
 
 
 def row(visit_id, dt, dt_out, browser_type=0):
@@ -38,6 +38,15 @@ except ValueError:
     pass
 
 print("PASS: visit-duration summary preserves grouping, bounds, nulls and weighted average")
+
+page_rows = [
+    {"visit_id": 1, "content_type": b"post", "resource": b"/single", "dt": 10},
+    {"visit_id": 2, "content_type": b"post", "resource": b"/double", "dt": 11},
+    {"visit_id": 3, "content_type": b"post", "resource": b"/double", "dt": 12},
+    {"visit_id": 4, "content_type": b"404", "resource": b"/excluded", "dt": 13},
+    {"visit_id": 0, "content_type": b"post", "resource": b"/excluded", "dt": 14},
+]
+assert bouncing_pages(page_rows, 10, 14) == 1
 
 audience = [
     {"id": 1, "visit_id": 1, "browser_type": 0, "ip": b"A", "username": b"sam", "dt": 10},

@@ -69,6 +69,30 @@
       "kind": "bouncing_visits",
       "method": "count_records_having"
     },
+    "get_goal_results": {
+      "report_id": "slim_p9_01", "title": "Goals", "family": "goals", "kind": "goal_result",
+      "rule": {"name": "Bench goal", "dimension": "resource", "operator": "contains", "value": "/"}
+    },
+    "get_goals_raw": {
+      "report_id": "slim_p9_01", "title": "Goals", "family": "goals", "kind": "goals_raw",
+      "name": "Bench goal (raw)",
+      "rule": {"dimension": "browser", "operator": "is_not_empty", "value": ""}
+    },
+    "get_funnel_results": {
+      "report_id": "slim_p9_02", "title": "Funnels", "family": "goals", "kind": "funnel_result",
+      "steps": [
+        {"name": "step-1", "dimension": "resource", "operator": "contains", "value": "/"},
+        {"name": "step-2", "dimension": "browser", "operator": "is_not_empty", "value": ""}
+      ]
+    },
+    "get_funnels_raw": {
+      "report_id": "slim_p9_02", "title": "Funnels", "family": "goals", "kind": "funnels_raw",
+      "name": "Bench funnel (raw)",
+      "steps": [
+        {"name": "step-1", "dimension": "resource", "operator": "contains", "value": "/"},
+        {"name": "step-2", "dimension": "country", "operator": "is_not_empty", "value": ""}
+      ]
+    },
     "get_max_and_average_pages_per_visit": {
       "report_id": "slim_p2_02",
       "title": "Audience Overview",

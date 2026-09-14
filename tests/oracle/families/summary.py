@@ -64,6 +64,31 @@ def bouncing_visits(rows, start, end):
     return sum(count == 1 for count in counts.values())
 
 
+def bouncing_pages(rows, start, end):
+    selected = _window(rows, start, end, ("visit_id", "content_type", "resource"))
+    counts = defaultdict(int)
+    displays = {}
+    for row in selected:
+        if row["visit_id"] is None or row["visit_id"] <= 0 or row["content_type"] is None:
+            continue
+        content = row["content_type"] if isinstance(row["content_type"], bytes) \
+            else row["content_type"].encode("ascii")
+        if any(byte > 127 for byte in content):
+            raise ValueError("summary cannot model non-ASCII collation semantics")
+        if content.rstrip(b" ").lower() == b"404":
+            continue
+        value = row["resource"]
+        raw = value if isinstance(value, bytes) or value is None else value.encode("ascii")
+        if raw is not None and any(byte > 127 for byte in raw):
+            raise ValueError("summary cannot model non-ASCII collation semantics")
+        key = None if raw is None else raw.rstrip(b" ").lower()
+        if key in displays and displays[key] != raw:
+            raise ValueError("summary has an ambiguous collation-equivalent resource")
+        displays[key] = raw
+        counts[key] += 1
+    return sum(count == 1 for count in counts.values())
+
+
 def pages_per_visit(rows, start, end):
     selected = _window(rows, start, end, ("visit_id",))
     counts = defaultdict(int)
