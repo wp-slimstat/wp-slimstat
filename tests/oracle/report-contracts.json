@@ -231,17 +231,6 @@
       "limit_setting": "limit_results",
       "default_limit": 200
     },
-    "bouncing_visits_pinned": {
-      "report_id": "slim_p4_23",
-      "title": "Top Bounce Pages",
-      "family": "count",
-      "kind": "singletons",
-      "group_column": "visit_id",
-      "counted_column": "id",
-      "where": [["visit_id", "gt", 0], ["browser_type", "ne", 1]],
-      "equality": "binary",
-      "windowed": true
-    },
     "count_bouncing_pages": {
       "report_id": "slim_p4_23",
       "title": "Top Bounce Pages",
