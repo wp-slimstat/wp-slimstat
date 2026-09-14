@@ -58,6 +58,7 @@
     "slim_p1_13": ["top_country"],
     "slim_p2_01": ["count_human_hits", "count_records_visit_id"],
     "slim_p2_06": ["top_platform"],
+    "slim_p2_02": ["bouncing_visits_pinned", "get_visitors_summary", "get_max_and_average_pages_per_visit"],
     "slim_p2_12": ["get_visits_duration"],
     "slim_p2_18": ["top_browser"],
     "slim_p2_19": ["top_platform_prefixed"],
@@ -66,5 +67,5 @@
     "slim_p4_12": ["get_top_events"],
     "slim_p4_21": ["get_top_outbound"]
   },
-  "summary": {"reports": 67, "modeled": 15, "captured_unmodeled": 7, "uncaptured": 45}
+  "summary": {"reports": 67, "modeled": 16, "captured_unmodeled": 6, "uncaptured": 45}
 }

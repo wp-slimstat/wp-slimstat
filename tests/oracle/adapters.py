@@ -7,7 +7,7 @@ from families.top import rank_top, top_events, top_outbound
 from families.recent import recent_rows, recent_events
 from families.chart import pageviews_chart
 from families.count import count_values, count_singletons
-from families.summary import visit_duration
+from families.summary import bouncing_visits, pages_per_visit, visit_duration, visitors_summary
 
 
 def _text(value):
@@ -158,22 +158,28 @@ def count(export_path, surface, adapter, contract, windows):
 
 
 def summary(export_path, surface, adapter, contract, windows):
-    if (contract.get('kind') != 'visit_duration' or not isinstance(windows, dict)
+    kinds = {
+        'bouncing_visits': (('id', 'visit_id', 'browser_type', 'dt'), bouncing_visits),
+        'pages_per_visit': (('visit_id', 'dt'), pages_per_visit),
+        'visit_duration': (('visit_id', 'browser_type', 'dt', 'dt_out'), visit_duration),
+        'visitors_summary': (('id', 'visit_id', 'browser_type', 'ip', 'username', 'dt'), visitors_summary),
+    }
+    if (contract.get('kind') not in kinds or not isinstance(windows, dict)
             or type(windows.get('start')) is not int or type(windows.get('end')) is not int):
         raise ValueError('%s: unsupported or unpinned summary contract' % surface)
     conn = sqlite3.connect('file:%s?mode=ro' % export_path, uri=True)
     table = adapter['table']
-    columns = ('visit_id', 'browser_type', 'dt', 'dt_out')
+    columns, model = kinds[contract['kind']]
     manifest = {_text(row[0]) for row in conn.execute(
         'SELECT name FROM _manifest WHERE tbl = ?', (table,))}
     missing = [column for column in columns if column not in manifest]
     if missing:
         raise ValueError('%s: export %s manifest lacks %s' % (surface, table, ', '.join(missing)))
+    quoted = ', '.join('"%s"' % column for column in columns)
     rows = [dict(zip(columns, row)) for row in conn.execute(
-        'SELECT "visit_id", "browser_type", "dt", "dt_out" FROM "%s"' %
-        table.replace('"', '""'))]
+        'SELECT %s FROM "%s"' % (quoted, table.replace('"', '""')))]
     conn.close()
-    value = visit_duration(rows, windows['start'], windows['end'])
+    value = model(rows, windows['start'], windows['end'])
     return {'class': 'ok', 'value': value,
             'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
 

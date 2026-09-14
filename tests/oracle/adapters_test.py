@@ -19,13 +19,14 @@ with tempfile.TemporaryDirectory() as temp:
         ('slim_stats', 6, 'visit_id', 'INT UNSIGNED', 1, 0),
         ('slim_stats', 7, 'browser_type', 'TINYINT UNSIGNED', 1, 0),
         ('slim_stats', 8, 'dt_out', 'INT UNSIGNED', 1, 0),
+        ('slim_stats', 9, 'username', 'VARCHAR(255)', 1, 0),
     ])
     db.execute('CREATE TABLE slim_stats (id INTEGER, resource BLOB, user_agent BLOB, dt INTEGER, '
-               'email BLOB, ip BLOB, visit_id INTEGER, browser_type INTEGER, dt_out INTEGER)')
-    db.executemany('INSERT INTO slim_stats VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                   [(1, b'/a', b'\xff', 10, b'ignored', b'a', 1, 0, 40),
-                    (2, b'/b', b'normal', 20, b'\xff', b'b', 1, 0, 70),
-                    (3, b'/a', None, 20, b'ignored', None, 2, 1, 90)])
+               'email BLOB, ip BLOB, visit_id INTEGER, browser_type INTEGER, dt_out INTEGER, username BLOB)')
+    db.executemany('INSERT INTO slim_stats VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                   [(1, b'/a', b'\xff', 10, b'ignored', b'a', 1, 0, 40, b'Sam'),
+                    (2, b'/b', b'normal', 20, b'\xff', b'b', 1, 0, 70, b'sam '),
+                    (3, b'/a', None, 20, b'ignored', None, 2, 1, 90, None)])
     db.commit()
     db.close()
     contracts = {'reports': {'top_resource': {'family': 'top', 'dimension': 'resource',
@@ -97,5 +98,23 @@ with tempfile.TemporaryDirectory() as temp:
     assert next(row for row in result['value'] if row['metric'] == '31 - 60 seconds') == {
         'counthits': 1, 'details': 'Hits: 1', 'metric': '31 - 60 seconds', 'value': '100.00%'}, result
     assert result['value'][-1]['value'] == '01:00', result
+
+    for key, kind, expected in (
+            ('bouncing_visits_pinned', 'bouncing_visits', 0),
+            ('get_max_and_average_pages_per_visit', 'pages_per_visit',
+             [{'avghits': '1.5000', 'maxhits': '2'}])):
+        contracts['reports'][key] = {'family': 'summary', 'kind': kind}
+        result = oracle_for(path, key, {'family': 'summary', 'table': 'slim_stats'},
+                            contracts, {'start': 10, 'end': 20})
+        assert result['value'] == expected, result
+
+    contracts['reports']['get_visitors_summary'] = {
+        'family': 'summary', 'kind': 'visitors_summary'}
+    result = oracle_for(path, 'get_visitors_summary',
+                        {'family': 'summary', 'table': 'slim_stats'}, contracts,
+                        {'start': 10, 'end': 20})
+    values = {row['metric']: row['value'] for row in result['value']}
+    assert values['Visits'] == '1' and values['Unique IPs'] == '2', result
+    assert values['Bounce rate'] == '0.00' and values['Known visitors'] == '1', result
 
 print('PASS: report evidence adapters')

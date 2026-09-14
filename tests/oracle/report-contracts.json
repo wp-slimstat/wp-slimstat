@@ -39,7 +39,29 @@
       "report_id": "slim_p2_12",
       "title": "Visit Duration",
       "family": "summary",
-      "kind": "visit_duration"
+      "kind": "visit_duration",
+      "method": "get_visits_duration"
+    },
+    "bouncing_visits_pinned": {
+      "report_id": "slim_p2_02",
+      "title": "Audience Overview",
+      "family": "summary",
+      "kind": "bouncing_visits",
+      "method": "count_records_having"
+    },
+    "get_max_and_average_pages_per_visit": {
+      "report_id": "slim_p2_02",
+      "title": "Audience Overview",
+      "family": "summary",
+      "kind": "pages_per_visit",
+      "method": "get_max_and_average_pages_per_visit"
+    },
+    "get_visitors_summary": {
+      "report_id": "slim_p2_02",
+      "title": "Audience Overview",
+      "family": "summary",
+      "kind": "visitors_summary",
+      "method": "get_visitors_summary"
     },
     "count_records_id": {
       "report_id": "slim_p1_03",

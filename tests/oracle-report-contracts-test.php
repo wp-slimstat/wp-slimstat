@@ -22,6 +22,12 @@ $countContracts = [
     'count_human_hits'       => ['id', false, 'binary', false],
     'count_records_visit_id' => ['visit_id', true, 'binary', false],
 ];
+$summaryContracts = [
+    'bouncing_visits_pinned'                => ['bouncing_visits', 'count_records_having'],
+    'get_max_and_average_pages_per_visit'   => ['pages_per_visit', 'get_max_and_average_pages_per_visit'],
+    'get_visitors_summary'                  => ['visitors_summary', 'get_visitors_summary'],
+    'get_visits_duration'                   => ['visit_duration', 'get_visits_duration'],
+];
 
 if (!is_array($json) || 'SLIMSTAT-ORACLE-CONTRACTS-V1' !== ($json['schema'] ?? null)) {
     $failures[] = 'report-contracts.json is missing schema SLIMSTAT-ORACLE-CONTRACTS-V1';
@@ -111,7 +117,8 @@ foreach ($reports as $key => $contract) {
                             ? ['raw_results_to_html', 'raw', 'wp_slimstat_db', 'get_top']
                             : ['raw_results_to_html', 'raw', 'wp_slimstat_db', 'get_overview_summary']))
                     : ('summary' === $family
-                        ? ['raw_results_to_html', 'raw', 'wp_slimstat_db', 'get_visits_duration']
+                        ? ['raw_results_to_html', 'raw', 'wp_slimstat_db',
+                            'slim_p2_02' === $id ? 'get_visitors_summary' : 'get_visits_duration']
                         : []))));
     if (!$requiredStrings) {
         $failures[] = "{$key}: unknown oracle family " . var_export($family, true);
@@ -176,8 +183,13 @@ foreach ($reports as $key => $contract) {
     ) {
         $failures[] = "{$key}: singleton contract is incomplete";
     }
-    if ('summary' === $family && ('get_visits_duration' !== $key || 'visit_duration' !== ($contract['kind'] ?? null))) {
-        $failures[] = "{$key}: summary contract does not match its captured semantics";
+    if ('summary' === $family) {
+        $actual = [$contract['kind'] ?? null, $contract['method'] ?? null];
+        if (!isset($summaryContracts[$key]) || $summaryContracts[$key] !== $actual) {
+            $failures[] = "{$key}: summary contract does not match its captured semantics";
+        } elseif (false === strpos($dbSrc, 'function ' . $actual[1] . '(')) {
+            $failures[] = "{$key}: summary method {$actual[1]} does not exist";
+        }
     }
     // These literals describe the current runtime contract but do not prove how get_top reads it;
     // the live report/capture gate owns that behavior in S7 and Phase 2.
