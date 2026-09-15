@@ -50,6 +50,17 @@ WP="${TOPOLOGY_WP:-6.7}"
 # not from what the default happened to be on the day. So there is no default. A caller that
 # does not name a corpus gets an error instead of a fixture.
 SEED_PROFILE="${SLIMSTAT_SEED_PROFILE:?name the corpus (seed-profile-verify.json for the campaign, seed-profile-i8.json to reproduce a pre-Run-58 record)}"
+RESTORE_DUMP="${SLIMSTAT_RESTORE_DUMP:-}"
+RESTORE_SHA256="${SLIMSTAT_RESTORE_SHA256:-}"
+RESTORE_MODE=0
+[ -z "$RESTORE_DUMP" ] || RESTORE_MODE=1
+[ -z "$RESTORE_DUMP" ] || {
+  [ -f "$RESTORE_DUMP" ] || { err "restore dump not found: $RESTORE_DUMP"; exit 1; }
+  [ -n "$RESTORE_SHA256" ] || { err 'SLIMSTAT_RESTORE_SHA256 is required with SLIMSTAT_RESTORE_DUMP'; exit 1; }
+  actual_restore_sha=$(shasum -a 256 "$RESTORE_DUMP" | awk '{print $1}') || exit 1
+  [ "$actual_restore_sha" = "$RESTORE_SHA256" ] || { err 'restore dump SHA256 mismatch'; exit 1; }
+  gzip -t "$RESTORE_DUMP" || { err 'restore dump failed gzip integrity'; exit 1; }
+}
 
 CELL="answers"
 CELL_DIR="$WORK_ROOT/answers/$CELL"
@@ -99,8 +110,8 @@ RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 # control at 1x1 certified a comparison at 5x4, and the mismatch existed only as prose in two
 # log files, one line above the numbers it invalidated. A fact a gate can read, not a variable a
 # reviewer has to trust.
-printf '{"run_id":"%s","before_ref":"%s","after_ref":"%s","seed_profile":"%s","rows":%s,"days":%s,"null_control":%s,"timing_reps":%s,"blocks":%s,"php":"%s","wp":"%s"}\n' \
-  "$RUN_ID" "$BEFORE" "$AFTER" "$SEED_PROFILE" "$ROWS" "$DAYS" \
+printf '{"run_id":"%s","before_ref":"%s","after_ref":"%s","corpus":"%s","seed_profile":"%s","restore_dump":"%s","restore_sha256":"%s","rows":%s,"days":%s,"null_control":%s,"timing_reps":%s,"blocks":%s,"php":"%s","wp":"%s"}\n' \
+  "$RUN_ID" "$BEFORE" "$AFTER" "$([ -n "$RESTORE_DUMP" ] && echo restored || echo synthetic)" "$SEED_PROFILE" "$RESTORE_DUMP" "$RESTORE_SHA256" "$ROWS" "$DAYS" \
   "${SLIMSTAT_NULL_CONTROL:-0}" "${SLIMSTAT_TIMING_REPS:-5}" "${SLIMSTAT_BLOCKS:-4}" \
   "$PHP" "$WP" > "$ART/run.json"
 
@@ -186,6 +197,8 @@ wp_config_debug "$ART/install.log"
 wpc core install --url="http://127.0.0.1:${HTTP_PORT}" --title="SS answers" --admin_user=admin \
     --admin_password=admin --admin_email=qa@example.com --skip-email >>"$ART/install.log" 2>&1 \
     || { err "core install failed"; exit 1; }
+wpc config set DISABLE_WP_CRON true --raw >>"$ART/install.log" 2>&1 \
+  || { err 'could not disable WordPress cron'; exit 1; }
 
 use_arm() {
   # '-' resolved to the working-tree copy made above; see the CONTROLS block.
@@ -226,23 +239,49 @@ fi
 wpc eval 'include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/index.php"); wp_slimstat_admin::init_tables($GLOBALS["wpdb"]); echo "t";' \
     >>"$ART/install.log" 2>&1
 
-log "[$CELL] seeding $ROWS rows over $DAYS days ($SEED_PROFILE)"
-dc exec -T -u www-data wp wp --path=/var/www/html eval-file \
-   wp-content/plugins/wp-slimstat/tests/bench/lib/seed.php "$ROWS" "$DAYS" "$SEED_PROFILE" \
-   > "$ART/seed.log" 2>&1 || { err "seeding failed"; exit 1; }
+if [ -n "$RESTORE_DUMP" ]; then
+  log "[$CELL] restoring pinned analytics dump $RESTORE_SHA256"
+  gzip -dc "$RESTORE_DUMP" | dc exec -T db mysql -uroot -proot wordpress \
+    >"$ART/restore.log" 2>&1 || { err 'restore failed'; exit 1; }
+else
+  log "[$CELL] seeding $ROWS rows over $DAYS days ($SEED_PROFILE)"
+  dc exec -T -u www-data wp wp --path=/var/www/html eval-file \
+     wp-content/plugins/wp-slimstat/tests/bench/lib/seed.php "$ROWS" "$DAYS" "$SEED_PROFILE" \
+     > "$ART/seed.log" 2>&1 || { err "seeding failed"; exit 1; }
+fi
+
+# Freeze the disposable dataset before the first report boot. Cron is disabled in wp-config;
+# these stored settings also make front-end tracking and retention inert on both artifact eras.
+wpc --skip-plugins --skip-themes eval '
+  $o = get_option("slimstat_options", []); if (!is_array($o)) { $o = []; }
+  $o["is_tracking"] = "off"; $o["auto_purge"] = 0; update_option("slimstat_options", $o);
+  wp_clear_scheduled_hook("wp_slimstat_purge");' >>"$ART/install.log" 2>&1 \
+  || { err 'could not freeze analytics writers'; exit 1; }
 
 # Absolute window bounds, computed ONCE and passed to both arms. "Last 30 days" evaluated
 # independently per arm would select different rows on either side of a minute boundary and diff
 # for a reason that is not the code.
-NOW=$(wpc eval 'echo time();' 2>/dev/null | tr -dc '0-9')
-WIN_END="$NOW"
-WIN_START=$((NOW - 30 * 86400))
+if [ -n "$RESTORE_DUMP" ]; then
+  WIN_END=$(dc exec -T db mysql -uroot -proot -N wordpress \
+    -e 'SELECT MAX(dt) FROM wp_slim_stats;' 2>/dev/null | tr -dc '0-9')
+  [ -n "$WIN_END" ] && [ "$WIN_END" -gt 0 ] || { err 'restored corpus has no positive MAX(dt)'; exit 1; }
+else
+  WIN_END=$(wpc eval 'echo time();' 2>/dev/null | tr -dc '0-9')
+fi
+WIN_START=$((WIN_END - 30 * 86400))
+python3 - "$ART/run.json" "$WIN_START" "$WIN_END" <<'PY' || exit 1
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1]); data = json.loads(p.read_text())
+data['capture_windows'] = {'start': int(sys.argv[2]), 'end': int(sys.argv[3])}
+p.write_text(json.dumps(data, sort_keys=True) + '\n')
+PY
 
 answers_for() {
   local ref="$1" out="$2"
   use_arm "$ref" || return 1
   dc exec -T -u www-data \
      -e SLIMSTAT_ANSWERS_START="$WIN_START" -e SLIMSTAT_ANSWERS_END="$WIN_END" \
+     -e SLIMSTAT_RESTORED_CORPUS="$RESTORE_MODE" \
      -e SLIMSTAT_TIMING_REPS="${SLIMSTAT_TIMING_REPS:-5}" wp \
      wp --path=/var/www/html eval-file \
      wp-content/plugins/wp-slimstat/tests/docker/report-answers.php > "$out.raw" 2>&1 || return 1
@@ -250,9 +289,17 @@ answers_for() {
     local side="$(basename "${out%.json}")" rep=0
     mkdir -p "$ART/rendered/$side" || return 1
     while [ "$rep" -lt "${SLIMSTAT_TIMING_REPS:-5}" ]; do
-      dc exec -T -u www-data wp wp --path=/var/www/html eval-file \
+      local snapshot_rc=0
+      dc exec -T wp rm -f /tmp/slimstat-parity.json /tmp/slimstat-parity-diagnostic.json || return 1
+      dc exec -T -u www-data -e SLIMSTAT_PARITY_DIAGNOSTIC=/tmp/slimstat-parity-diagnostic.json \
+        wp wp --path=/var/www/html eval-file \
         wp-content/plugins/wp-slimstat/tests/bench/lib/parity-snapshot.php /tmp/slimstat-parity.json \
-        >"$ART/rendered/$side/block-$b-rep-$rep.log" 2>&1 || return 1
+        >"$ART/rendered/$side/block-$b-rep-$rep.log" 2>&1 || snapshot_rc=$?
+      if [ "$snapshot_rc" -ne 0 ]; then
+        dc exec -T wp cat /tmp/slimstat-parity-diagnostic.json \
+          >"$ART/rendered/$side/block-$b-rep-$rep.diagnostic.invalid.json" 2>/dev/null || true
+        return "$snapshot_rc"
+      fi
       dc exec -T wp cat /tmp/slimstat-parity.json \
         >"$ART/rendered/$side/block-$b-rep-$rep.json" || return 1
       rep=$((rep + 1))
@@ -271,6 +318,32 @@ answers_for() {
   # "recorded loudly" into a file deleted seven times. An extracted file is what makes the claim
   # true. It is deliberately NOT copied into the blind packet: it names capabilities per era.
   grep -h 'SLIMSTAT-CAPS'    "$out.raw" | sed 's/^SLIMSTAT-CAPS //'    > "${out%.json}-caps.json" || return 1
+  if [ "${SLIMSTAT_EXPORT_SQLITE:-0}" = 1 ]; then
+    local side="$(basename "${out%.json}")" export_dir="$ART/exports/$(basename "${out%.json}")"
+    local container_export="/var/www/html/wp-content/slimstat-evidence-$side-$b.sqlite"
+    mkdir -p "$export_dir" || return 1
+    wpc eval-file wp-content/plugins/wp-slimstat/tests/bench/export-report-evidence.php "$container_export" \
+      >"$export_dir/block-$b.raw" 2>&1 || return 1
+    grep -h 'SLIMSTAT-EVIDENCE-EXPORT' "$export_dir/block-$b.raw" \
+      | sed 's/^SLIMSTAT-EVIDENCE-EXPORT //' >"$export_dir/block-$b-fingerprints.json" || return 1
+    mv "$WP_DIR/wp-content/slimstat-evidence-$side-$b.sqlite" "$export_dir/block-$b.sqlite" || return 1
+    python3 - "$export_dir/block-$b-fingerprints.json" "$export_dir/block-$b.sqlite" "$HARNESS_DIR" <<'PY' || return 1
+import json, pathlib, subprocess, sys
+fingerprints, export, harness = pathlib.Path(sys.argv[1]), sys.argv[2], pathlib.Path(sys.argv[3])
+expected = json.loads(fingerprints.read_text())
+for table, mysql in expected['mysql'].items():
+    result = subprocess.run(
+        [sys.executable, str(harness.parent / 'oracle' / 'read_export_cli.py'), export, table,
+         expected['order_by'][table], mysql['manifest_hash']],
+        check=True, capture_output=True, text=True,
+    )
+    sqlite = json.loads(result.stdout)
+    if sqlite != mysql or expected['export'][table] != mysql:
+        raise SystemExit('%s export fidelity failed: mysql=%r export=%r sqlite=%r'
+                         % (table, mysql, expected['export'][table], sqlite))
+print('PASS: MySQL/PHP-export/SQLite fidelity for ' + ', '.join(sorted(expected['mysql'])))
+PY
+  fi
   local capture_dir="$ART/captures/$(basename "${out%.json}")/block-$b"
   mkdir -p "$capture_dir" || return 1
   cp "$out" "$out.raw" "${out%.json}-timing.json" "${out%.json}-caps.json" "$capture_dir/" || return 1
@@ -297,6 +370,17 @@ while [ "$b" -lt "$BLOCKS" ]; do
   fi
   b=$((b + 1))
 done
+if [ "${SLIMSTAT_EXPORT_SQLITE:-0}" = 1 ]; then
+  last=$((BLOCKS - 1))
+  python3 - "$ART/exports/before/block-0-fingerprints.json" \
+    "$ART/exports/before/block-$last-fingerprints.json" <<'PY' || exit 1
+import json, sys
+before, after = (json.load(open(path))['mysql'] for path in sys.argv[1:])
+if before != after:
+    raise SystemExit('first/final exports differ although analytics writers were disabled')
+print('PASS: first/final exports fingerprint the same immutable capture corpus')
+PY
+fi
 
 # ── CONTROLS, before any result ─────────────────────────────────────────────
 echo
@@ -323,7 +407,7 @@ done
 # all, and a reader who cannot tell them apart cannot tell what an "identical" covered.
 echo "  seed profile: $SEED_PROFILE  (rows=$ROWS days=$DAYS)"
 
-SLIMSTAT_NULL_CONTROL="${SLIMSTAT_NULL_CONTROL:-0}" SLIMSTAT_BLOCKS="$BLOCKS" PYTHONPATH="$HARNESS_DIR" python3 - "$ART" "$WIN_START" "$WIN_END" <<'PY'
+SLIMSTAT_NULL_CONTROL="${SLIMSTAT_NULL_CONTROL:-0}" SLIMSTAT_BLOCKS="$BLOCKS" SLIMSTAT_C2_CORPUS="${SLIMSTAT_C2_CORPUS:-synthetic}" SLIMSTAT_C2_BLIND_PROOF="${SLIMSTAT_C2_BLIND_PROOF:-}" PYTHONPATH="$HARNESS_DIR" python3 - "$ART" "$WIN_START" "$WIN_END" <<'PY'
 import json, sys, os
 art, start, end = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
 # The report population is ONE rule in one file, imported by every site below that needs it —
@@ -360,13 +444,33 @@ print('  [%s] the date window selects a strict subset: %s of %s' % (
 # The corpus must be past A4's MEMORY temp-table cliff, or this is the pre-I8 fixture wearing
 # I8's name. Measured via the reports themselves, not trusted from the seeder's own summary.
 distinct_res = a.get('count_records_resource', 0)
-print('  [%s] corpus cardinality past the 2048 cliff: %s distinct resources' % (
-    'PASS' if distinct_res > 2048 else 'FAIL', distinct_res))
 
 # THE ARMS MUST DIFFER. Two identical files are the strongest possible "equivalent" and also
 # what a harness that failed to swap arms produces. A blind auditor named this as the one thing
 # the artifacts could not establish about themselves.
 null_control_env = os.environ.get('SLIMSTAT_NULL_CONTROL') == '1'
+# O3. `real` says the corpus is a restored production dump, whose shape no profile controls;
+# `synthetic` says it was seeded here, where every knob is ours and an unpopulated surface is a
+# fixture defect. Default synthetic: the stricter reading is the one a silent caller gets.
+corpus_kind = (os.environ.get('SLIMSTAT_C2_CORPUS') or 'synthetic').strip().lower()
+if corpus_kind not in ('synthetic', 'real'):
+    print('\nVERDICT: ABORTED - SLIMSTAT_C2_CORPUS must be synthetic or real, got %r' % corpus_kind)
+    sys.exit(1)
+# O3. Stated ABOVE as a property of the seeder, and that is the only arm of it that can fail:
+# `synthetic` means this harness seeded the corpus and 2048 is a knob it holds, so a corpus
+# under the cliff is a fixture defect and aborts. `real` means a restored production dump,
+# whose cardinality is whatever that site had — failing it would only mean "this site is
+# smaller than our fixture", which is a fact about the site and not a defect in the run. So
+# `real` prints the number and carries the note into the record, where a reader deciding what
+# the A4 measurement covers can see it. The number is never suppressed on either corpus.
+thin_corpus = distinct_res <= 2048
+print('  [%s] corpus cardinality past the 2048 cliff: %s distinct resources%s' % (
+    'PASS' if not thin_corpus else ('NOTE' if corpus_kind == 'real' else 'FAIL'),
+    distinct_res,
+    '' if not thin_corpus or corpus_kind != 'real' else
+    ' — below the cliff, so this run does not cover A4\'s MEMORY temp-table path; a real'
+    ' corpus is not required to reach it and this is not a defect in the run'))
+
 same_arm = a.get('_arm_fingerprint') == b.get('_arm_fingerprint')
 print('  [%s] the two arms are actually different code: %s vs %s  (%s PHP files hashed)' % (
     'FAIL' if same_arm else 'PASS',
@@ -384,6 +488,7 @@ if same_arm and not null_control_env:
 # attributable rather than merged.
 caps_by_arm = {}
 detector = {}
+blind_proof = {}
 for label in ('before', 'after'):
     caps_path = os.path.join(art, label + '-caps.json')
     if not os.path.exists(caps_path) or os.path.getsize(caps_path) == 0:
@@ -396,6 +501,10 @@ for label in ('before', 'after'):
         continue
     surfaces = caps.get('_arm_surfaces', {})
     caps_by_arm[label] = surfaces
+    # The proof is taken on the BEFORE arm: the corpus is the same for both, and the before arm
+    # is the one whose emptiness is being excused as a property of that corpus.
+    if label == 'before':
+        blind_proof = caps.get('_blind_proof', {}) or {}
 
     detector[label] = caps.get('_instrument', {})
     bad = sorted(k for k, v in surfaces.items() if v.get('class') == 'error')
@@ -405,6 +514,24 @@ for label in ('before', 'after'):
         (' — ' + ', '.join(bad)) if bad else ''))
     if unsup:
         print('         unsupported on this arm (recorded, not a failure): %s' % ', '.join(unsup))
+
+# O3. The proof normally rides in the before arm's caps file, written in-container by
+# report-answers.php against the live handle. This override exists for the case where the caps
+# file predates the producer — a rerun on frozen artifacts — and it is an OVERRIDE, not a
+# default: supplying it replaces the measured record, so an operator who wants a surface excused
+# still has to state a count somebody can go and check.
+_bp_env = os.environ.get('SLIMSTAT_C2_BLIND_PROOF')
+if _bp_env:
+    try:
+        blind_proof = json.loads(_bp_env)
+    except ValueError as exc:
+        print('\nVERDICT: ABORTED - SLIMSTAT_C2_BLIND_PROOF is not JSON: %s' % exc)
+        sys.exit(1)
+    if not isinstance(blind_proof, dict):
+        print('\nVERDICT: ABORTED - SLIMSTAT_C2_BLIND_PROOF must be an object of surface -> record')
+        sys.exit(1)
+    print('  [NOTE] blind proof supplied via SLIMSTAT_C2_BLIND_PROOF (%d surfaces), overriding'
+          ' the before arm\'s own record' % len(blind_proof))
 
 # THE CLASSIFIER'S OWN PRECONDITION, printed OUTSIDE the per-arm loop on purpose: inside it, an
 # unreadable or missing CAPS file `continue`s, so the arm whose record is gone would print no line
@@ -448,12 +575,37 @@ for label in ('before', 'after'):
 # whoever reads the table, because "I checked" is the thing this programme keeps disproving.
 if len(caps_by_arm) == 2:
     a_s, b_s = caps_by_arm['before'], caps_by_arm['after']
-    vacuous = sorted(k for k in set(a_s) & set(b_s)
-                     if a_s[k].get('class') == 'empty' and b_s[k].get('class') == 'empty')
-    print('  [%s] no extended surface is empty on BOTH arms%s' % (
+    empty_both = sorted(k for k in set(a_s) & set(b_s)
+                        if a_s[k].get('class') == 'empty' and b_s[k].get('class') == 'empty')
+
+    # O3. "The corpus has none of those" was, until now, something an operator ASSERTED about a
+    # vacuous surface, and the whole programme's shape is that an assertion nobody can fail is
+    # not a control. So the excuse now costs a number: report-answers.php counts the surface's
+    # SOURCE PREDICATE in-container, with no date window, and a count of exactly 0 is a proof
+    # that no window and no code path could have populated it — the emptiness is the corpus
+    # speaking, and the surface is a NOTE. Anything else keeps today's FAIL, and the directions
+    # are deliberately unequal: a surface with no proof record, or one whose table is missing
+    # (count null), is NOT excused. Being unable to measure the corpus is not evidence about it.
+    blind, vacuous = [], []
+    for k in empty_both:
+        rec = blind_proof.get(k)
+        cnt = rec.get('count') if isinstance(rec, dict) else None
+        (blind if cnt == 0 else vacuous).append(k)
+
+    print('  [%s] no extended surface is empty on BOTH arms without a proof%s' % (
         'PASS' if not vacuous else 'FAIL',
-        '' if not vacuous else ': ' + ', '.join(vacuous) +
+        '' if not vacuous else ': ' + ', '.join(
+            '%s (%s)' % (k, 'no proof record' if not isinstance(blind_proof.get(k), dict)
+                         else 'source rows: %s' % blind_proof[k].get('count'))
+            for k in vacuous) +
         ' — these compare equal while proving nothing; enrich the corpus before trusting them'))
+    if blind:
+        print('  [NOTE] corpus-blind, proven: ' + ', '.join(
+            '%s (0 rows matching %s.%s)' % (k, blind_proof[k].get('table'), blind_proof[k].get('where'))
+            for k in blind))
+        print('         Empty on both arms because the corpus holds nothing for them to report,')
+        print('         not because the comparison missed anything. They carry no evidence either')
+        print('         way and are excluded from what this run establishes.')
     # THE EXTENDED TIER'S NULL CONTROL, and it only means anything in this mode. Under
     # SLIMSTAT_NULL_CONTROL the two "arms" are the SAME code over the same corpus, so every
     # extended surface must return the same value twice; anything that moves is nondeterministic
@@ -502,7 +654,7 @@ null_control = null_control_env
 if same_arm and null_control:
     print('  [NOTE] NULL CONTROL: both arms are the same code. Any timing delta below is')
     print('         environmental — it is the noise floor of this harness, not a result.')
-elif same_arm or distinct_res <= 2048:
+elif same_arm or (thin_corpus and corpus_kind == 'synthetic'):
     print('\nVERDICT: ABORTED — the comparison would not mean what it says')
     sys.exit(1)
 

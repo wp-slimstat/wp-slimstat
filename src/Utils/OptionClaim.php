@@ -91,6 +91,26 @@ final class OptionClaim
         return (bool) $won;
     }
 
+    /** Delete only the row still owned by this caller. */
+    public static function delete($name, $value, $autoload = 'no')
+    {
+        global $wpdb;
+
+        $suppressed = $wpdb->suppress_errors(true);
+        $deleted    = $wpdb->query($wpdb->prepare(
+            "DELETE FROM `{$wpdb->options}` WHERE option_name = %s AND option_value = %s",
+            $name,
+            $value
+        ));
+        $wpdb->suppress_errors($suppressed);
+
+        if ($deleted) {
+            self::flush($name, $autoload);
+        }
+
+        return (bool) $deleted;
+    }
+
     /**
      * Drop the caches the row was just written behind the back of.
      *

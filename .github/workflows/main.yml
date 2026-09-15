@@ -112,6 +112,15 @@ jobs:
     - name: Install required dependencies
       run: sudo apt-get update && sudo apt-get install -y subversion
 
+    - name: Set up PHP for the production autoloader
+      uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f # 2.35.5
+      with:
+        php-version: "8.2"
+        tools: composer:v2
+
+    - name: Generate production autoloader
+      run: composer run build:autoload
+
     - name: WordPress Plugin Deploy
       # 54bd289 is the commit the `stable` BRANCH pointed at when this was pinned, and it is
       # the same commit as tag 2.3.0 — so this froze the action without changing what runs.

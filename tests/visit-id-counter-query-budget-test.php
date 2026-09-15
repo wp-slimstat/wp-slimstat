@@ -37,6 +37,8 @@ class VicqbFakeWpdb
     public $dbh;
     public $options    = 'wp_options';
     public $prefix     = 'wp_';
+    public $dbhost     = 'db.internal:3306';
+    public $dbname     = 'analytics';
     public $insert_id  = 0;
     public $rows_affected = 0;
 
@@ -55,6 +57,9 @@ class VicqbFakeWpdb
 
     /** A concurrent initializer may win after MAX is read but before the monotonic upsert. */
     public $concurrent_seed = null;
+
+    /** @var string|null The raw upsert statement, so the comparison it asks for can be asserted. */
+    public $last_insert_sql = null;
 
     public function __construct(?int $counter, int $max_visit_id)
     {
@@ -84,9 +89,23 @@ class VicqbFakeWpdb
             return $this->rows_affected = 1;
         }
         if (stripos(ltrim($sql), 'INSERT') === 0) {
+            $this->last_insert_sql = $sql;
             if (null !== $this->concurrent_seed) $this->counter = $this->concurrent_seed;
             preg_match("/VALUES \(.*?, (\\d+),/", $sql, $match);
-            $this->counter = max($this->counter ?? 0, (int) $match[1]);
+            $new = (int) $match[1];
+            if (null === $this->counter) {
+                $this->counter = $new;
+            } else {
+                // MySQL semantics, not PHP's. option_value is LONGTEXT, so GREATEST()
+                // compares its arguments as strings unless BOTH are cast to UNSIGNED —
+                // one cast is not enough, and a fake that maxes numerically here reports
+                // a pass for the defect PITFALLS 194 shipped.
+                $numeric = strpos($sql, 'CAST(option_value AS UNSIGNED)') !== false
+                    && strpos($sql, 'CAST(VALUES(option_value) AS UNSIGNED)') !== false;
+                $this->counter = $numeric
+                    ? max($this->counter, $new)
+                    : (strcmp((string) $this->counter, (string) $new) >= 0 ? $this->counter : $new);
+            }
             $GLOBALS['_vicqb_options'][VisitIdGenerator::OPTION_NAME] = $this->counter;
             return 1;
         }
@@ -161,6 +180,9 @@ if (!function_exists('add_option')) {
 if (!function_exists('get_option')) {
     function get_option($option, $default = false)
     {
+        if (isset($GLOBALS['wpdb'])) {
+            $GLOBALS['wpdb']->log[] = 'OPTION-READ:' . $option;
+        }
         return $GLOBALS['_vicqb_options'][$option] ?? $default;
     }
 }
@@ -172,6 +194,18 @@ if (!function_exists('update_option')) {
         vicqb_mirror_counter($option, $value);
         return true;
     }
+}
+
+if (!function_exists('delete_option')) {
+    function delete_option($option)
+    {
+        unset($GLOBALS['_vicqb_options'][$option]);
+        return true;
+    }
+}
+
+if (!function_exists('get_current_blog_id')) {
+    function get_current_blog_id() { return $GLOBALS['_vicqb_blog_id']; }
 }
 
 if (!class_exists('wp_slimstat')) {
@@ -206,6 +240,7 @@ function vicqb_boot(?int $counter, int $max_visit_id): VicqbFakeWpdb
     $GLOBALS['wpdb']           = $db;
     \wp_slimstat::$wpdb        = $db;
     $GLOBALS['_vicqb_options'] = null === $counter ? [] : [VisitIdGenerator::OPTION_NAME => $counter];
+    $GLOBALS['_vicqb_blog_id'] = 1;
 
     return $db;
 }
@@ -294,14 +329,74 @@ $db = vicqb_boot(5000010, 5000000);
 VisitIdGenerator::initializeCounter();
 vicqb_assert('upgrade never reduces a higher live counter', VisitIdGenerator::generateNextVisitId() === 5000011);
 
+// The case above does NOT exercise the string comparison: '3' sorts below '5000000', so a
+// string-comparing GREATEST still lands on MAX and looks correct. A stale counter whose
+// decimal string sorts ABOVE the MAX is the shipping defect (PITFALLS 194) — '6' > '5000000'
+// as text, the low counter survives the repair, and every ID after it collides.
+$db = vicqb_boot(6, 5000000);
+VisitIdGenerator::initializeCounter();
+vicqb_assert(
+    'a stale counter sorting above MAX as text is still repaired',
+    VisitIdGenerator::generateNextVisitId() === 5000001,
+    'counter after the upsert: ' . var_export($db->counter, true)
+);
+vicqb_assert(
+    'the upsert casts both sides of GREATEST',
+    strpos((string) $db->last_insert_sql, 'CAST(VALUES(option_value) AS UNSIGNED)') !== false,
+    'upsert: ' . trim(preg_replace('/\s+/', ' ', (string) $db->last_insert_sql))
+);
+
 define('SLIMSTAT_ANALYTICS_VERSION', '6.0.0');
 \wp_slimstat::$settings['version'] = '5.5.0';
 $db = vicqb_boot(3, 5000000);
 vicqb_assert('legacy allocation repairs before returning an ID', VisitIdGenerator::generateNextVisitId() === 5000001);
+vicqb_assert('successful legacy repair writes a separate marker', isset($GLOBALS['_vicqb_options'][VisitIdGenerator::REPAIR_MARKER_OPTION]));
+$db->log = [];
+vicqb_assert('marked legacy allocation stays monotonic', VisitIdGenerator::generateNextVisitId() === 5000002);
+vicqb_assert(
+    'marked legacy hits use two queries without rescanning MAX',
+    $db->log === ['OPTION-READ:' . VisitIdGenerator::REPAIR_MARKER_OPTION, 'INCREMENT'],
+    'queries: ' . implode(', ', $db->log)
+);
 $db = vicqb_boot(3, 5000000);
 $db->max_read_fails = true;
 vicqb_assert('legacy failed MAX refuses an ID', VisitIdGenerator::generateNextVisitId() === 0);
 vicqb_assert('legacy failed MAX preserves existing counter', $db->counter === 3);
+vicqb_assert('legacy failed MAX writes no marker', !isset($GLOBALS['_vicqb_options'][VisitIdGenerator::REPAIR_MARKER_OPTION]));
+
+$db = vicqb_boot(null, 5000000);
+$GLOBALS['_vicqb_options'][VisitIdGenerator::REPAIR_MARKER_OPTION] = 'stale-marker';
+vicqb_assert('a marker never hides a missing counter repair', VisitIdGenerator::generateNextVisitId() === 5000001);
+
+$db = vicqb_boot(3, 5000000);
+VisitIdGenerator::initializeCounter();
+$db->dbhost = 'replacement.internal:3306';
+$db->counter = 3;
+$GLOBALS['_vicqb_options'][VisitIdGenerator::OPTION_NAME] = 3;
+$db->log = [];
+vicqb_assert('an analytics dataset switch repairs again', VisitIdGenerator::generateNextVisitId() === 5000001);
+vicqb_assert('dataset switch re-reads MAX', in_array('SEED-MAX', $db->log, true));
+
+$db = vicqb_boot(3, 5000000);
+VisitIdGenerator::initializeCounter();
+$db->counter = 3;
+$GLOBALS['_vicqb_options'][VisitIdGenerator::OPTION_NAME] = 3;
+$GLOBALS['_vicqb_blog_id'] = 2;
+$db->log = [];
+vicqb_assert('blog switching cannot reuse another blog marker', VisitIdGenerator::generateNextVisitId() === 5000001);
+vicqb_assert('blog switch re-reads MAX', in_array('SEED-MAX', $db->log, true));
+
+VisitIdGenerator::resetCounter(7);
+vicqb_assert('counter reset invalidates the repair marker', !isset($GLOBALS['_vicqb_options'][VisitIdGenerator::REPAIR_MARKER_OPTION]));
+
+$db = vicqb_boot(3, 5000000);
+VisitIdGenerator::initializeCounter();
+$db->counter = 3;
+$GLOBALS['_vicqb_options'][VisitIdGenerator::OPTION_NAME] = 3;
+VisitIdGenerator::invalidateRepairMarker();
+$db->log = [];
+vicqb_assert('same-scope dataset replacement repairs again', VisitIdGenerator::generateNextVisitId() === 5000001);
+vicqb_assert('same-scope replacement re-reads MAX', in_array('SEED-MAX', $db->log, true));
 \wp_slimstat::$settings['version'] = '6.0.0';
 
 // ── Report ──────────────────────────────────────────────────────────────────

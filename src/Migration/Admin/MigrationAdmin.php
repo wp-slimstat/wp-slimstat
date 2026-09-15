@@ -368,13 +368,20 @@ class MigrationAdmin
 				$analytics->suppress_errors($suppressed);
 
 				wp_send_json_error([
-					'busy'    => true,
-					'message' => __('Another migration is already running. Try again in a moment.', 'wp-slimstat'),
+					'busy'    => $this->manager->isRunContended(),
+					'message' => $this->manager->getRunRefusal(),
 				]);
 			}
 
 			// Run all
 			$result = $this->manager->runAll();
+			if ('' !== $this->manager->getRunRefusal()) {
+				$analytics->suppress_errors($suppressed);
+				wp_send_json_error([
+					'busy'    => $this->manager->isRunContended(),
+					'message' => $this->manager->getRunRefusal(),
+				]);
+			}
 
 			// Check if all migrations are now complete
 			$all_complete = !$this->manager->needsMigration();

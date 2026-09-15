@@ -6,7 +6,8 @@
     ".",
     "../wp-slimstat-pro",
     "../cookie-law-info",
-    "../wp-consent-api"
+    "../wp-consent-api",
+    "../woocommerce"
   ],
   "themes": [],
   "env": {

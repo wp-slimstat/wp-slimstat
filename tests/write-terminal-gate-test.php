@@ -6,9 +6,8 @@
  * and it exists for two reasons the unit test cannot cover:
  *
  *   1. It runs on the 7.4 lane and in the mutation registry, where PHPUnit cannot — the
- *      committed autoloader is classmap-authoritative, so a PHPUnit gate would be INVALID
- *      on a clean checkout. That is the ADR-E8 trap, and picking a gate that cannot run is
- *      how a mutation run reports KILLED for a reason that has nothing to do with the code.
+ *      PHPUnit is unavailable. Picking a gate that cannot run there makes a mutation report
+ *      KILLED for a reason that has nothing to do with the code.
  *   2. It forbids the SHAPE that produced C30 anywhere on the write path, not just the
  *      shape at the two call sites the unit test drives.
  *

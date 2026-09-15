@@ -97,7 +97,13 @@ class DataBuckets
                 $this->initSeq(3600);
                 break;
             case 'DAY':
-                $this->initSeq(86400);
+                // The label sequence and addRow()'s offsets must count from the same calendar base,
+                // or a range that starts mid-day is one bucket short and today falls off the end.
+                $this->initSeq(
+                    86400,
+                    strtotime(date('Y-m-d', $this->start)),
+                    strtotime(date('Y-m-d', $this->end)) + 86400
+                );
                 break;
             case 'WEEK':
                 $this->initSeqWeek();
@@ -111,11 +117,13 @@ class DataBuckets
         }
     }
 
-    private function initSeq(int $interval): void
+    private function initSeq(int $interval, ?int $start = null, ?int $end = null): void
     {
-        $range = $this->end - $this->start;
+        $start = $start ?? $this->start;
+        $end   = $end ?? $this->end;
+        $range = $end - $start;
         $count = (int)ceil($range / $interval);
-        $time  = $this->start;
+        $time  = $start;
         for ($i = 0; $i < $count; $i++) {
             $label          = date($this->labelFormat, $time);
             $this->labels[] = sprintf("'%s'", $label);
@@ -209,6 +217,7 @@ class DataBuckets
             $dt     = strtotime(date('Y-m-d H:00:00', $dt));
             $offset = floor(($dt - $base) / 3600);
         } elseif ('DAY' === $this->gran) {
+            $base   = strtotime(date('Y-m-d', $base));
             $offset = floor(($dt - $base) / 86400);
         } elseif ('MONTH' === $this->gran) {
             $start  = new \DateTime('@' . $base);

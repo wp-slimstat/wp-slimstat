@@ -191,6 +191,28 @@ function extractJson(raw: string): any {
 // ─── DB helpers ──────────────────────────────────────────────────────────────
 
 /**
+ * A "today" timestamp far enough back that Chart's live-end quantisation cannot
+ * hide it.
+ *
+ * Chart::fetchChartData() floors a today-inclusive range end to the previous
+ * CACHE_LIVE_BUCKET_SECONDS (60s) boundary before building the WHERE clause, so
+ * that the cache key stops moving every second (Chart.php:245-270). The last
+ * <60s of the window is therefore invisible **on purpose**. insertRows() spreads
+ * `count` rows over `count` seconds, so a seed at now-60 put up to 4 of 5 rows
+ * past that floored end whenever the run happened to start in the last three
+ * seconds of a minute -- a ~5%-per-run flake that reads as "today shows zero is
+ * back" and is nothing of the kind. 300s clears the bucket, the row spread and
+ * any clock skew between the runner and the database, and still lands in today's
+ * bucket at every granularity.
+ *
+ * Seed "today" with this, never with a raw offset, in any spec that asserts an
+ * exact chart total.
+ */
+export function liveSafeTodayTs(now: number = Math.floor(Date.now() / 1000)): number {
+  return now - 300;
+}
+
+/**
  * Insert `count` rows at a specific UTC timestamp, each with a distinct resource.
  * Rows are spaced 1 second apart by default to avoid exact duplicates.
  */

@@ -6,7 +6,7 @@ import re
 import sys
 
 ALLOWED_IMPORT_ROOTS = {
-    "collections", "dataclasses", "decimal", "functools", "itertools", "math",
+    "collections", "dataclasses", "datetime", "decimal", "functools", "itertools", "math",
     "statistics", "typing",
 }
 FORBIDDEN_CALLS = {

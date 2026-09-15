@@ -17,8 +17,8 @@ with tempfile.TemporaryDirectory() as temp:
     good = {'triples': [triple], 'classifications': [classify(triple).as_dict()], 'register': []}
 
     def run(documents, population=None, corrupt=None):
-        evidence = {'source_shas': dict(free='a'*40, pro='b'*40),
-                    'artifact_sha256': dict(free='c'*64, pro='d'*64)}
+        evidence = {'source_shas': {arm: dict(free='a'*40, pro='b'*40) for arm in ('before', 'after')},
+                    'artifact_sha256': {arm: dict(free='c'*64, pro='d'*64) for arm in ('before', 'after')}}
         for name, data in documents.items():
             path = root / (name + '.json')
             path.write_text(json.dumps(data))

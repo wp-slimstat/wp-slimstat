@@ -1,24 +1,28 @@
 #!/usr/bin/env python3
 """Behavioral controls for the host DDL observer, independent of Docker."""
 import pathlib
+import re
 import subprocess
 import tempfile
 
 harness = pathlib.Path(__file__).parent.resolve() / 'docker'
 with tempfile.TemporaryDirectory() as temp:
     root = pathlib.Path(temp)
-    for name, state, worker_exit, column_exists, refusal, valid in [
-        ('interrupted', 'altering table', 137, 0, 'DDL-CLAIM-REFUSED', True),
-        ('success-is-not-interruption', 'altering table', 0, 0, 'DDL-CLAIM-REFUSED', False),
-        ('no-observation', '', 137, 0, 'DDL-CLAIM-REFUSED', False),
-        ('ddl-already-completed', 'altering table', 137, 1, 'DDL-CLAIM-REFUSED', False),
-        ('claim-not-refused', 'altering table', 137, 0, '', False),
+    for name, state, worker_exit, column_exists, refusal, owner, session_alive, valid in [
+        ('interrupted', 'altering table', 137, 0, 'DDL-CLAIM-REFUSED', 42, 1, True),
+        ('session-already-ended', 'altering table', 137, 0, '', 42, 0, True),
+        ('success-is-not-interruption', 'altering table', 0, 0, 'DDL-CLAIM-REFUSED', 42, 1, False),
+        ('no-observation', '', 137, 0, 'DDL-CLAIM-REFUSED', 42, 1, False),
+        ('ddl-already-completed', 'altering table', 137, 1, 'DDL-CLAIM-REFUSED', 42, 1, False),
+        ('claim-not-refused', 'altering table', 137, 0, '', 42, 1, False),
+        ('wrong-lock-owner', 'altering table', 137, 0, 'DDL-CLAIM-REFUSED', 41, 1, False),
     ]:
         art = root / name
         art.mkdir()
         script = r'''
 source "$1/interrupt-ddl.sh"
-HARNESS_DIR="$1"; ART="$2"; observation="$3"; worker_exit="$4"; column_exists="$5"; refusal="$6"; CELL=test
+HARNESS_DIR="$1"; ART="$2"; observation="$3"; worker_exit="$4"; column_exists="$5"; refusal="$6"; owner="$7"; CELL=test
+session_alive="$8"
 log() { return 0; }
 dc() {
   if [ "$1" = cp ] && [ "$2" = wp:/tmp/ddl-worker.json ]; then printf '{"pid":123,"connection":42}' >"$3"; fi
@@ -27,16 +31,97 @@ dc() {
 }
 wpc() {
   case "${3:-}" in
-    claim) printf '{"held":1,"ttl":1,"now":3}'; return 0;;
+    lock) printf '{"name":"wpss_migrate_test","owner":%s,"hint":"token"}' "$owner"; return 0;;
     refused) printf '%s\n' "$refusal"; return 0;;
+    status) printf 'DDL-NO-STATUS\n'; return 0;;
     *) return "$worker_exit";;
   esac
 }
 mysql_q() { [ -z "$observation" ] || printf '42\t%s\tALTER TABLE wp_slim_stats ADD COLUMN vid_hash BINARY(16)\n' "$observation"; }
-scalar_q() { case "$1" in *COLUMNS*) printf '%s' "$column_exists";; *) printf 0;; esac; }
-mysql_exec() { [ "$1" = 'KILL QUERY 42;' ]; }
+scalar_q() { case "$1" in *COLUMNS*) printf '%s' "$column_exists";; *PROCESSLIST*) printf '%s' "$session_alive";; *IS_FREE_LOCK*) [ "$1" = "SELECT IS_FREE_LOCK('wpss_migrate_test');" ] || return 1; [ "$session_alive" = 0 ] && printf 1 || printf 0;; *) return 1;; esac; }
+mysql_exec() { [ "$1" = 'KILL QUERY 42;' ] && session_alive=0; }
 interrupt_migration_ddl
 '''
-        r = subprocess.run(['bash', '-c', script, 'test', str(harness), str(art), state, str(worker_exit), str(column_exists), refusal], capture_output=True)
+        r = subprocess.run(['bash', '-c', script, 'test', str(harness), str(art), state, str(worker_exit), str(column_exists), refusal, str(owner), str(session_alive)], capture_output=True)
         assert (r.returncode == 0) == valid, (name, r.stdout, r.stderr)
-print('PASS: observed DDL, killed worker, missing column and real claim refusal required')
+print('PASS: observed DDL, killed worker, live-session refusal, lock release and missing status required')
+
+# Execute the actual offered-UA PHP leg with a migration that refuses any call outside
+# runOne(). True is successful progress; false is failure; null is lock refusal.
+ua = re.search(r"UA=\$\(wpc eval '(.*?)'\)", (harness / 'rehearse-upgrade.sh').read_text(), re.S)
+assert ua, 'offered-UA runner missing'
+stubs = r'''
+namespace SlimStat\Migration {
+    class MigrationService { static function analyticsConnection() { return null; } }
+    class MigrationManager {
+        private $migration;
+        public static $owned = false;
+        public static $calls = 0;
+        function register($migration) { $this->migration = $migration; }
+        function runOne($id) {
+            self::$calls++;
+            if (getenv('UA_RESULT') === 'null') { return null; }
+            self::$owned = true;
+            try {
+                if (getenv('UA_RESULT') === 'false') { return false; }
+                return $this->migration->run();
+            } finally { self::$owned = false; }
+        }
+        function getRunRefusal() { return 'lock refused'; }
+    }
+}
+namespace SlimStat\Migration\Migrations {
+    class AddUserAgentDimension {
+        private $passes = 0;
+        function __construct($a, $core) {}
+        function getId() { return 'add-user-agent-dimension'; }
+        function shouldRun() { return $this->passes < 2; }
+        function run() {
+            if (!\SlimStat\Migration\MigrationManager::$owned) { throw new \RuntimeException('manager bypassed'); }
+            $this->passes++;
+            return true;
+        }
+    }
+}
+'''
+for mode in ('true', 'false', 'null'):
+    code = stubs + "\nnamespace { putenv('UA_RESULT=" + mode + "'); $GLOBALS['wpdb'] = null; register_shutdown_function(function () { fwrite(STDERR, 'calls=' . \\SlimStat\\Migration\\MigrationManager::$calls); });\n" + ua[1] + '\n}'
+    result = subprocess.run(['php', '-r', code], text=True, capture_output=True)
+    output = result.stderr + result.stdout
+    if mode == 'true':
+        assert result.returncode == 0 and re.fullmatch(r'done [0-9.]+ 2', result.stdout), result
+        assert 'calls=2' in result.stderr, result
+    elif mode == 'false':
+        assert result.returncode != 0 and 'Migration add-user-agent-dimension failed.' in output, result
+        assert 'calls=1' in result.stderr, result
+    else:
+        assert result.returncode != 0 and 'lock refused' in output, result
+        assert 'calls=1' in result.stderr, result
+print('PASS: offered UA accepts true progress and aborts false failure or null refusal')
+
+# The live matrix is intentionally not executed here. Pin its fail-closed inputs and the
+# evidence-bearing controls so a shortened wait or a story-only result cannot enter Docker.
+live = (harness / 'run-migration-lock-controls.sh').read_text()
+for required in [
+    'A1_OWNER_SECONDS must be greater than the retired 900-second lease',
+    'while [ $(( $(date +%s) - age_started )) -le 900 ]',
+    'A1-CLAIM-REFUSED', 'KILL CONNECTION $ddl_thread',
+    "mysql.general_log WHERE command_type='Query'", 'disconnect_no_replay=True',
+    'QUALIFICATION_FREE_ZIP', 'QUALIFICATION_PRO_ZIP',
+    'docker-compose.a1.yml',
+]:
+    assert required in live, required
+subprocess.run(['bash', '-n', harness / 'run-migration-lock-controls.sh'], check=True)
+subprocess.run(['php', '-l', harness / 'probe-migration-lock.php'], check=True, stdout=subprocess.DEVNULL)
+subprocess.run(['php', '-l', harness / 'probe-visit-id-repair.php'], check=True, stdout=subprocess.DEVNULL)
+print('PASS: six-cell live lock runner pins >900s contention, disconnect/no replay/status and exact artifacts')
+
+rehearsal = (harness / 'rehearse-upgrade.sh').read_text()
+for required in [
+    'visit-id-repair-first.json', "first['max_scan_count'] == 1",
+    "steady['max_scan_count'] == 0", "steady['query_count'] <= 2",
+    'visit-id-repair-reset.json', 'slimstat_f1_alt',
+    "v['max_scan_count'] == 1",
+]:
+    assert required in rehearsal, required
+print('PASS: 5M rehearsal records first/steady/reset/dataset-switch visit-ID scan and query budgets')

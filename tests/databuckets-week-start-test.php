@@ -1,7 +1,6 @@
 <?php
 /**
- * Weekly chart buckets follow WordPress's `start_of_week`, not ISO weeks — and a row past the
- * range never lands in a phantom bucket.
+ * Calendar chart buckets align their rows to the same DAY/WEEK boundary as their labels.
  *
  * ── WHERE THIS CAME FROM ────────────────────────────────────────────────────────────────────
  *
@@ -109,6 +108,63 @@ if ([10, 0, 0, 0, 5] !== $out['datasets']['v1']) {
         . 'phantom bucket with no label';
 }
 
+// ── 3. DAY: an inclusive equal-length previous window starts one second after midnight ────
+//
+// Grouped DAY rows are midnight timestamps. Comparing them to the second-bearing range start
+// used to make the first offset -1 and shift every following value one label to the left.
+$dayStart = strtotime('2026-09-08');
+$dayEnd = strtotime('2026-09-10') + 86399;
+$previousStart = strtotime('2026-09-05') + 1;
+$buckets = new \SlimStat\Helpers\DataBuckets('Y/m/d', 'DAY', $dayStart, $dayEnd, $previousStart, $dayStart);
+$buckets->addRow(strtotime('2026-09-05'), 649, 238, 'previous');
+$buckets->addRow(strtotime('2026-09-06'), 579, 233, 'previous');
+$buckets->addRow(strtotime('2026-09-07'), 574, 223, 'previous');
+$out = $buckets->toArray();
+
+if ([649, 579, 574] !== $out['datasets_prev']['v1']) {
+    $failures[] = 'day alignment: expected [649, 579, 574]; got ['
+        . implode(', ', $out['datasets_prev']['v1']) . ']. The first previous day was dropped '
+        . 'and later days shifted because the bucket timestamp preceded its range base by one second';
+}
+
+// ── 4. DAY: a 28-day window that starts mid-day still has a bucket for today ─────────────
+//
+// The default "last 28 days" range is built from `now` minus 28 days, so it carries a time of
+// day. addRow() floors its DAY base to midnight; initSeq() counted buckets from the raw,
+// time-bearing start, so 28 days of range produced 28 labels while the last grouped midnight row
+// sat at offset 28 and was dropped by the [0, points) clamp. Both ends of the contract must come
+// off the same calendar base: a partial first day and today are both real buckets.
+$windowStart = strtotime('2026-08-17 10:30:00');
+$windowEnd   = strtotime('2026-09-14 10:30:00');
+$buckets = new \SlimStat\Helpers\DataBuckets(
+    'Y/m/d',
+    'DAY',
+    $windowStart,
+    $windowEnd,
+    $windowStart - ($windowEnd - $windowStart),
+    $windowStart
+);
+$buckets->addRow(strtotime('2026-08-17'), 3, 0, 'current');
+$buckets->addRow(strtotime('2026-09-14'), 5, 0, 'current');
+$out    = $buckets->toArray();
+$labels = array_map(static fn($l) => trim((string) $l, "'"), $out['labels']);
+$v1     = $out['datasets']['v1'];
+$lastLabel = $labels ? $labels[count($labels) - 1] : 'nothing';
+
+if (29 !== count($labels) || '2026/08/17' !== ($labels[0] ?? null) || '2026/09/14' !== $lastLabel) {
+    $failures[] = 'day today bucket: a 17 Aug 10:30 – 14 Sep 10:30 window spans 29 calendar days, so '
+        . 'labels should run 2026/08/17 … 2026/09/14 (29 of them); got ' . count($labels) . ' running '
+        . ($labels[0] ?? 'nothing') . ' … ' . $lastLabel . '. 28 labels ending 2026/09/13 means the '
+        . 'label sequence counted buckets from the raw time-bearing start while addRow() floored its '
+        . 'base to midnight — today has no bucket to land in';
+}
+if (3 !== ($v1[0] ?? null) || 5 !== ($v1[28] ?? null) || 8 !== array_sum($v1)) {
+    $failures[] = 'day today bucket: the partial first day (3) belongs at index 0 and today (5) at '
+        . 'index 28, summing to 8; got [' . implode(', ', $v1) . ']. A sum of 3 means the grouped '
+        . 'midnight row for today was dropped off the end of the sequence — counted in the totals, '
+        . 'drawn as zero';
+}
+
 if ($failures) {
     fwrite(STDERR, 'FAIL: DataBuckets week start (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {
@@ -117,5 +173,5 @@ if ($failures) {
     exit(1);
 }
 
-echo "PASS: weekly buckets cut on start_of_week (sow=6 separates Fri 13 / Sat 14 March), and a row "
-    . "one week past the range is dropped rather than parked in a phantom bucket\n";
+echo "PASS: DAY buckets align second-bearing ranges; WEEK buckets cut on start_of_week and drop "
+    . "rows beyond the range\n";

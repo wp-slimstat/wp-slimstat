@@ -798,7 +798,7 @@ function slimstat_strip_comments_and_strings(string $source, ?bool $is_file = nu
  * sentence than the tree supports.
  *
  * RESTATES the bootstrap rather than deriving from it, which is the weaker half of this helper.
- * src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php is 58 lines of one repeating
+ * The generated Symfony/Polyfill/Php80 bootstrap is one repeating
  * `if (!function_exists('X')) { function X(...) }` shape, so a guard-name-matches-declared-name
  * regex would return exactly these seven from the authority itself. Not done here because a
  * derivation over a scoper output that silently returns [] turns the ban into a loop over nothing

@@ -793,7 +793,16 @@ class wp_slimstat_db
 
                     case 'limit_results':
                     case 'start_from':
-                        $filters_parsed['misc'][$a_filter[1]] = str_replace('\\', '', htmlspecialchars_decode($a_filter[3]));
+                        // Both are declared 'int' in self::$all_columns_names, but this stored
+                        // the raw request string, and admin/index.php's posts-column query
+                        // concatenates limit_results into the FIRST argument of
+                        // $wpdb->prepare() — the template, which prepare() does not escape.
+                        // Every other consumer happens to intval() on read; that one did not,
+                        // so `fs[limit_results]=equals 1 UNION SELECT …` reached the query
+                        // verbatim for any logged-in user on a front-end URL containing
+                        // "edit.php" with the posts column enabled. Normalise once, here,
+                        // where every consumer routes through, instead of per caller.
+                        $filters_parsed['misc'][$a_filter[1]] = absint($a_filter[3]);
                         break;
 
                     case 'content_id':

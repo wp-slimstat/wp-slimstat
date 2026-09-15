@@ -1,7 +1,12 @@
 <?php
 // Verifies that seeded data actually reproduces the measured profile.
 //
-//   wp eval-file tests/bench/lib/verify-seed.php [tolerance]
+//   wp eval-file tests/bench/lib/verify-seed.php [tolerance] [profile.json]
+//
+// The second argument names the profile the corpus was SEEDED with. Without it this
+// checks the measured base profile, which describes no `verify` shares at all — so the
+// discriminator knobs (downloads, pinned-user notes) go unchecked and a corpus that
+// cannot answer those reports still verifies clean.
 //
 // A seeder that silently drifts is worse than no seeder: every benchmark and
 // EXPLAIN plan built on it would be measuring traffic that does not exist.
@@ -21,6 +26,7 @@ if (!defined('ABSPATH')) {
 }
 
 $tolerance = isset($args[0]) ? (float) $args[0] : 0.02;
+$profile_name = isset($args[1]) && $args[1] !== '' ? basename((string) $args[1]) : 'seed-profile.json';
 
 $db      = (class_exists('wp_slimstat') && wp_slimstat::$wpdb instanceof wpdb) ? wp_slimstat::$wpdb : $GLOBALS['wpdb'];
 $table   = $db->prefix . 'slim_stats';
@@ -31,6 +37,25 @@ if (!is_array($profile)) {
     echo "ERROR: seed-profile.json unreadable\n";
     echo "VERDICT: ERROR\n";
     return;
+}
+
+// The `verify` shares live in an overlay, and the seeder resolves them through the same
+// `extends` chain. Walk it here rather than reading one file, or an overlay of an overlay
+// reports no shares and every discriminator check below silently skips.
+$shares = [];
+$seen   = [];
+$next   = $profile_name;
+while ($next !== null && !isset($seen[$next])) {
+    $seen[$next] = true;
+    $layer = json_decode((string) @file_get_contents(dirname(__DIR__) . '/' . basename($next)), true);
+    if (!is_array($layer)) {
+        echo "ERROR: seed profile unreadable — {$next}\n";
+        echo "VERDICT: ERROR\n";
+        return;
+    }
+    // Outer layers win: an overlay's share overrides the one it extends.
+    $shares = array_merge(is_array($layer['verify'] ?? null) ? $layer['verify'] : [], $shares);
+    $next   = isset($layer['extends']) ? (string) $layer['extends'] : null;
 }
 
 // One pass instead of eleven. There is no index on `ip`, so every one of these
@@ -126,6 +151,59 @@ foreach (['resource', 'user_agent', 'country', 'browser', 'platform'] as $column
     printf("%-30s %10d %10d%s\n", "  {$column}", $got, $want, $got < $floor ? '  FAIL' : '');
     if ($got < $floor) {
         $failures[] = sprintf('%s cardinality %d is below the %d floor for %s rows', $column, $got, $floor, number_format($rows));
+    }
+}
+
+// ── Discriminators the `verify` overlay asks for ───────────────────────────
+//
+// A share of 0 means this corpus was never asked to carry the rows, so nothing is checked.
+// A share above 0 that produced NOTHING is the failure the overlay exists to catch: the
+// reports that read these rows return EMPTY on both arms, and empty compares equal to empty.
+$discriminators = [
+    'downloads' => [
+        'label' => 'download rows (content_type="download")',
+        'sql'   => "SELECT COUNT(*) n, COUNT(DISTINCT resource) d FROM `{$table}`
+                    WHERE {$marker} AND content_type = 'download'",
+        // Both download reports are LIMIT 20 over GROUP BY resource; at 20 or fewer targets
+        // the cut line never binds and the surface agrees whatever the code does.
+        'floor' => 30,
+    ],
+    'loggedin' => [
+        'label' => 'pinned-user rows (notes LIKE "%user:%")',
+        'sql'   => "SELECT COUNT(*) n, COUNT(DISTINCT username) d FROM `{$table}`
+                    WHERE {$marker} AND notes LIKE '%user:%'",
+        'floor' => 1,
+    ],
+];
+
+$printed_header = false;
+foreach ($discriminators as $key => $spec) {
+    if ((float) ($shares[$key] ?? 0.0) <= 0.0) {
+        continue;
+    }
+    if (!$printed_header) {
+        echo str_repeat('-', 62) . "\n";
+        printf("%-42s %8s %8s\n", "discriminators ({$profile_name})", 'rows', 'distinct');
+        $printed_header = true;
+    }
+    $got = $db->get_row($spec['sql'], ARRAY_A);
+    $n   = (int) ($got['n'] ?? 0);
+    $d   = (int) ($got['d'] ?? 0);
+    $bad = $n === 0 || $d < $spec['floor'];
+    printf("%-42s %8d %8d%s\n", '  ' . $spec['label'], $n, $d, $bad ? '  FAIL' : '');
+    if ($n === 0) {
+        $failures[] = sprintf(
+            '%s: the profile asks for a share of %.4f but the corpus holds NONE - every report reading them returns empty on both arms, which compares equal and proves nothing',
+            $spec['label'],
+            (float) $shares[$key]
+        );
+    } elseif ($d < $spec['floor']) {
+        $failures[] = sprintf(
+            '%s: only %d distinct value(s), below the %d that the report row limit needs to bind',
+            $spec['label'],
+            $d,
+            $spec['floor']
+        );
     }
 }
 

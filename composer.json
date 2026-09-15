@@ -5,7 +5,13 @@
   "license": "MIT",
   "config": {
     "platform-check": false,
-    "autoloader-suffix": "218de6ada5bccdc9e632ba1181c21f7e"
+    "platform": {
+      "php": "8.1.0"
+    },
+    "autoloader-suffix": "218de6ada5bccdc9e632ba1181c21f7e",
+    "allow-plugins": {
+      "veronalabs/wp-scoper": true
+    }
   },
   "repositories": [
     {
@@ -19,7 +25,11 @@
   "autoload": {
     "psr-4": {
       "SlimStat\\": "src/"
-    }
+    },
+    "exclude-from-classmap": [
+      "/src/Dependencies/",
+      "/vendor/veronalabs/browscap-php/src/"
+    ]
   },
   "autoload-dev": {
     "psr-4": {
@@ -35,30 +45,26 @@
     "brain/monkey": "^2.6",
     "mockery/mockery": "^1.6",
     "phpstan/phpstan": "^2.2",
-    "szepeviktor/phpstan-wordpress": "^2.0"
+    "szepeviktor/phpstan-wordpress": "^2.0",
+    "veronalabs/wp-scoper": "^1.4.2"
   },
   "extra": {
-    "mozart": {
-      "dep_namespace": "SlimStat\\Dependencies\\",
-      "dep_directory": "/src/Dependencies/",
-      "classmap_directory": "/src/",
-      "classmap_prefix": "SlimStat_",
-      "packages": [
-        "veronalabs/browscap-php",
-        "league/flysystem"
-      ],
-      "delete_vendor_directories": true
+    "wp-scoper": {
+      "namespace_prefix": "SlimStat\\Dependencies",
+      "class_prefix": "SlimStat_",
+      "constant_prefix": "SLIMSTAT_DEPENDENCIES_",
+      "packages": ["veronalabs/browscap-php"],
+      "target_directory": "src/Dependencies",
+      "update_call_sites": false,
+      "delete_vendor_packages": false,
+      "php_compat": true,
+      "exclude_directories": []
     }
   },
   "scripts": {
-    "post-install-cmd": [
-      "~/.composer/vendor/bin/mozart compose",
-      "composer dump-autoload"
-    ],
-    "post-update-cmd": [
-      "~/.composer/vendor/bin/mozart compose",
-      "composer dump-autoload"
-    ],
+    "post-install-cmd": "@scoper:ext-constants",
+    "post-update-cmd": "@scoper:ext-constants",
+    "scoper:ext-constants": "php build/scoper-ext-constants.php src/Dependencies",
     "build:autoload": "composer dump-autoload --no-dev -o",
     "i18n:pot": "wp i18n make-pot . languages/wp-slimstat.pot --domain=wp-slimstat --skip-plugins --skip-themes --exclude=tests,build",
     "i18n:json": "wp i18n make-json languages/ --no-purge --pretty-print",
@@ -91,6 +97,7 @@
     "test:referer-android-app": "php tests/referer-android-app-storage-test.php",
     "test:referer-searchterms-encoding": "php tests/referer-searchterms-encoding-test.php",
     "test:answer-envelope": "php tests/answer-envelope-classes-test.php",
+    "test:restore-hollow-twin": "php -d zend.assertions=1 -d assert.exception=1 tests/restore-hollow-twin-test.php",
     "test:fingerprint-v2": "php tests/fingerprint-v2-encoding-test.php",
     "test:export-fidelity": "php tests/export-fidelity-test.php",
     "test:fingerprint-v2-py": "python3 tests/oracle/encoding_v1_test.py",
@@ -98,13 +105,19 @@
     "test:qualification-ddl": "python3 tests/qualification-ddl-test.py",
     "test:qualification-pro-window": "python3 tests/qualification-pro-window-test.py",
     "test:query-cache-timezone": "php tests/query-cache-timezone-test.php",
-    "test:report-request-shape": "php tests/report-request-shape-test.php && php tests/chart-request-boundary-test.php && php tests/admin-request-boundary-test.php && php tests/report-author-scope-test.php && php tests/spam-cleanup-boundary-test.php",
+    "test:report-request-shape": "php tests/report-request-shape-test.php && php tests/chart-request-boundary-test.php && php tests/admin-request-boundary-test.php && php tests/report-author-scope-test.php && php tests/spam-cleanup-boundary-test.php && php tests/limit-results-int-normalization-test.php",
     "test:qualification-backup-recovery": "python3 tests/qualification-backup-recovery-test.py",
     "test:qualification-matrix": "python3 tests/qualification-matrix-test.py",
     "test:unresolved-differences": "python3 tests/oracle/unresolved_gate_test.py",
     "verify:unresolved-differences": "python3 tests/oracle/unresolved_gate.py",
     "test:classifier-plants": "python3 tests/oracle/classify_test.py",
-    "test:oracle-top": "python3 tests/oracle/top_family_test.py",
+    "test:oracle-top": "python3 tests/oracle/top_family_test.py && python3 tests/oracle/p2_top_family_test.py && python3 tests/oracle/p2_user_top_chart_test.py",
+    "test:oracle-chart": "python3 tests/oracle/chart_family_test.py && python3 tests/oracle/adapters_test.py && python3 tests/oracle/report_adapter_inventory_test.py",
+    "test:oracle-count": "python3 tests/oracle/count_family_test.py && python3 tests/oracle/adapters_test.py && python3 tests/oracle/report_adapter_inventory_test.py",
+    "test:oracle-pages": "python3 tests/oracle/pages_family_test.py && python3 tests/oracle/adapters_test.py && python3 tests/oracle/report_adapter_inventory_test.py",
+    "test:oracle-goals": "python3 tests/oracle/goals_family_test.py && python3 tests/oracle/adapters_test.py && python3 tests/oracle/report_adapter_inventory_test.py",
+    "test:oracle-group-by": "python3 tests/oracle/group_by_family_test.py && python3 tests/oracle/adapters_test.py && python3 tests/oracle/report_adapter_inventory_test.py",
+    "test:oracle-traffic": "python3 tests/oracle/traffic_sources_family_test.py && python3 tests/oracle/adapters_test.py && python3 tests/oracle/report_adapter_inventory_test.py",
     "test:oracle-independence": "python3 tests/oracle/independence_lint.py",
     "test:oracle-report-contracts": "php tests/oracle-report-contracts-test.php",
     "test:seal": "bash tests/docker/seal.sh --selftest",
@@ -115,6 +128,8 @@
     "test:canary-filing": "python3 tests/docker/canary/file-reports.py --selftest",
     "test:campaign-phase-gate": "php tests/campaign-phase-gate-test.php",
     "test:answers-population": "python3 tests/docker/answers_population.py --selftest",
+    "test:c2-capture-prep": "python3 tests/docker/c2-capture-prep-test.py",
+    "test:c2-blind-proof": "python3 tests/docker/c2-blind-proof-test.py",
     "test:source-scan-strength": "php tests/source-scan-strength-test.php",
     "test:control-wiring": "php tests/control-wiring-test.php",
     "test:fp-negative": "php tests/fp-negative/run-negatives.php",
@@ -165,6 +180,8 @@
     "test:funnels-widget-compact": "php tests/funnels-widget-compact-test.php",
     "test:css-selector-scope": "php tests/css-selector-scope-test.php",
     "test:classmap-completeness": "php tests/classmap-completeness-test.php",
+    "test:scoped-dependencies-parity": "php tests/scoped-dependencies-parity-test.php",
+    "test:scoped-runtime": "php tests/scoped-runtime-test.php",
     "test:gdpr-banner-theme-mode": "php tests/gdpr-banner-theme-mode-test.php",
     "test:rest-api-fail-soft": "php tests/rest-api-fail-soft-test.php",
     "test:gdpr-service-fail-soft": "php tests/gdpr-service-fail-soft-test.php",
@@ -291,6 +308,8 @@
       "@test:funnels-widget-compact",
       "@test:css-selector-scope",
       "@test:classmap-completeness",
+      "@test:scoped-dependencies-parity",
+      "@test:scoped-runtime",
       "@test:gdpr-banner-theme-mode",
       "@test:rest-api-fail-soft",
       "@test:gdpr-service-fail-soft",
@@ -364,6 +383,7 @@
       "@test:referer-android-app",
       "@test:referer-searchterms-encoding",
       "@test:answer-envelope",
+      "@test:restore-hollow-twin",
       "@test:fingerprint-v2",
       "@test:fingerprint-v2-py",
       "@test:classifier-plants",
@@ -376,6 +396,12 @@
       "@test:report-request-shape",
       "@test:query-cache-timezone",
       "@test:oracle-top",
+      "@test:oracle-chart",
+      "@test:oracle-count",
+      "@test:oracle-pages",
+      "@test:oracle-goals",
+      "@test:oracle-group-by",
+      "@test:oracle-traffic",
       "@test:oracle-independence",
       "@test:oracle-report-contracts",
       "@test:seal",
@@ -386,6 +412,8 @@
       "@test:canary-filing",
       "@test:campaign-phase-gate",
       "@test:answers-population",
+      "@test:c2-capture-prep",
+      "@test:c2-blind-proof",
       "@test:export-fidelity",
       "@test:php-floor",
       "@test:no-unguarded-error-log",

@@ -28,6 +28,12 @@ if (get_option($fixture_key, false) !== false) {
     throw new RuntimeException('Unclean Woo fixture found; cleanup required before seeding');
 }
 $settings = [
+    // WooCommerce 9.1+ turns "Coming soon" ON for every newly installed store, so a fresh
+    // lane serves "Great things are on the horizon" to logged-out visitors instead of the
+    // product page -- the shopper context has no cookies, so it gets exactly that. The
+    // journey then hangs at the first tracking wait until the test times out, which reads
+    // as a tracking defect and is not one. Saved and restored like every other setting here.
+    'woocommerce_coming_soon' => 'no',
     'woocommerce_enable_guest_checkout' => 'yes',
     'woocommerce_enable_signup_and_login_from_checkout' => 'no',
     'woocommerce_cart_redirect_after_add' => 'yes',

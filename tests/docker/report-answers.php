@@ -899,14 +899,18 @@ if ($slimstat_windowed) {
 // the module's public surfaces render HTML or read $_POST, and an instrument may open
 // the private data path it measures. Two windows, historical on purpose (ends before
 // today), so neither the live-window quantisation nor the clock moves the capture.
-$chart_capture = static function (int $c_start, int $c_end) {
+$chart_capture = static function (int $c_start, int $c_end, array $chart_data = []) {
     $chart = new \SlimStat\Modules\Chart();
     $norm  = new ReflectionMethod($chart, 'normalizeArgs');
     $norm->setAccessible(true);
     $fetch = new ReflectionMethod($chart, 'fetchChartData');
     $fetch->setAccessible(true);
 
-    return $fetch->invoke($chart, $norm->invoke($chart, ['start' => $c_start, 'end' => $c_end]));
+    $args = ['start' => $c_start, 'end' => $c_end];
+    if ($chart_data !== []) {
+        $args['chart_data'] = $chart_data;
+    }
+    return $fetch->invoke($chart, $norm->invoke($chart, $args));
 };
 
 $chart_today = strtotime(date('Y-m-d 00:00:00'));
@@ -1028,6 +1032,33 @@ $capture_windowed = static function ($id, callable $fn, array $flags = [])
     }, array_merge(['pinned' => true], $flags));
 };
 
+$outbound_chart_data = [
+    'data1' => 'COUNT( outbound_resource )',
+    'data2' => 'COUNT( DISTINCT outbound_resource )',
+];
+$capture_ext('slim_p4_26_01_chart_daily', static function () use ($chart_capture, $chart_end, $outbound_chart_data) {
+    return $chart_capture($chart_end - 5 * 86400 + 1, $chart_end, $outbound_chart_data);
+}, ['calendar_day_dependent' => true, 'pinned' => true]);
+$capture_ext('slim_p4_26_01_chart_weekly', static function () use ($chart_capture, $chart_end, $outbound_chart_data) {
+    return $chart_capture($chart_end - 60 * 86400 + 1, $chart_end, $outbound_chart_data);
+}, ['calendar_day_dependent' => true, 'pinned' => true]);
+
+// slim_p3_01 is the only chart in the catalogue whose two series read DIFFERENT columns, and the
+// only one carrying a WHERE. Chart::fetchChartData() allowlists that clause against the report
+// registry, so the string below must stay byte-identical to slim_p3_01's own (reports.php:570) —
+// a "tidied" copy is rejected at run time and the surface captures as unsupported.
+$traffic_chart_data = [
+    'data1' => 'COUNT( DISTINCT referer )',
+    'data2' => 'COUNT( DISTINCT ip )',
+    'where' => '(referer IS NOT NULL AND referer NOT LIKE "%' . home_url() . '%")',
+];
+$capture_ext('slim_p3_01_chart_daily', static function () use ($chart_capture, $chart_end, $traffic_chart_data) {
+    return $chart_capture($chart_end - 5 * 86400 + 1, $chart_end, $traffic_chart_data);
+}, ['calendar_day_dependent' => true, 'pinned' => true]);
+$capture_ext('slim_p3_01_chart_weekly', static function () use ($chart_capture, $chart_end, $traffic_chart_data) {
+    return $chart_capture($chart_end - 60 * 86400 + 1, $chart_end, $traffic_chart_data);
+}, ['calendar_day_dependent' => true, 'pinned' => true]);
+
 // ── the PINNED TWINS (checklist step 5) ─────────────────────────────────────
 //
 // The three legacy keys they mirror are date-filtered through a window that ends at NOW, so
@@ -1085,6 +1116,212 @@ $capture_windowed('get_top_outbound', static function () {
     return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top_outbound', [[]]));
 });
 
+// Pinned report-order expansion. These mirror the registry callbacks but replace
+// embedded wall-clock bounds with the capture end so both arms read identical rows.
+$capture_windowed('top_current_ip_pinned', static function () use ($end) {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns' => 'ip',
+        'where' => '(dt_out > ' . ($end - 300) . ') OR (dt > ' . ($end - 300) . ')',
+        'order_by' => 'MAX(dt) DESC',
+        'more_select' => 'MAX(dt) AS dt',
+        'use_date_filters' => false,
+    ]]));
+});
+
+$capture_windowed('recent_searchterms_pinned', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_recent', [[
+        'columns' => 'searchterms',
+        'where' => 'searchterms <> "_" AND searchterms <> "" AND searchterms IS NOT NULL',
+        'more_columns' => 'referer, resource',
+    ]]));
+});
+
+$capture_windowed('top_username_pinned', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns' => 'username',
+    ]]));
+});
+
+$capture_windowed('top_searchterms_pinned', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns' => 'searchterms',
+        'where' => 'searchterms <> "_" AND searchterms <> "" AND searchterms IS NOT NULL',
+    ]]));
+});
+
+$capture_windowed('top_language_family_pinned', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns' => 'SUBSTRING( language, 1, 2 )',
+        'as_column' => 'language',
+    ]]));
+});
+
+$capture_windowed('top_current_username_pinned', static function () use ($end) {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns' => 'username',
+        'where' => '((dt_out > ' . ($end - 300) . ') OR (dt > ' . ($end - 300) . ')) AND username <> "" AND username IS NOT NULL',
+        'use_date_filters' => false,
+    ]]));
+});
+
+foreach ([
+    'top_language_pinned' => ['columns' => 'language'],
+    'top_user_agent_pinned' => ['columns' => 'browser, browser_version'],
+    'top_ip_pinned' => ['columns' => 'ip'],
+    'top_screen_resolution_pinned' => [
+        'columns' => 'screen_width, screen_height',
+        'where' => 'screen_width <> 0 AND screen_height <> 0',
+    ],
+    'top_viewport_pinned' => ['columns' => 'resolution'],
+] as $surface => $shape) {
+    $capture_windowed($surface, static function () use ($shape) {
+        return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [$shape]));
+    });
+}
+
+foreach ([
+    'recent_country_pinned' => 'country',
+    'recent_viewport_pinned' => 'resolution',
+    'recent_platform_pinned' => 'platform',
+    'recent_user_agent_pinned' => 'browser, browser_version',
+    'recent_language_pinned' => 'language',
+] as $surface => $column) {
+    $capture_windowed($surface, static function () use ($column) {
+        return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+            'columns' => $column,
+            'order_by' => 'MAX(dt) DESC',
+            'more_select' => 'MAX(dt) AS dt',
+        ]]));
+    });
+}
+
+$capture_windowed('recent_user_pinned', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns' => 'username',
+        'where' => 'notes LIKE "%user:%"',
+        'order_by' => 'MAX(dt) DESC',
+        'more_select' => 'MAX(dt) AS dt',
+    ]]));
+});
+
+$capture_windowed('slim_p4_20_recent_downloads', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns'     => 'resource',
+        'where'       => 'content_type = "download"',
+        'order_by'    => 'MAX(dt) DESC',
+        'more_select' => 'MAX(dt) AS dt',
+    ]]));
+});
+
+$capture_windowed('top_user_pinned', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
+        'columns' => 'username',
+        'where' => 'notes LIKE "%user:%"',
+    ]]));
+});
+
+$capture_ext('chart_users_pinned', static function () use ($chart_capture, $chart_end) {
+    return $chart_capture($chart_end - 30 * 86400 + 1, $chart_end, [
+        'data1' => 'COUNT( username )',
+        'data2' => 'COUNT( DISTINCT username )',
+    ]);
+}, ['calendar_day_dependent' => true, 'pinned' => true]);
+
+$capture_ext('chart_searchterms_pinned', static function () use ($chart_capture, $chart_end) {
+    return $chart_capture($chart_end - 30 * 86400 + 1, $chart_end, [
+        'data1' => 'COUNT( searchterms )',
+        'data2' => 'COUNT( DISTINCT searchterms )',
+        'where' => 'searchterms <> "_" AND searchterms IS NOT NULL AND searchterms <> ""',
+    ]);
+}, ['calendar_day_dependent' => true, 'pinned' => true]);
+
+$grouped_page_shapes = [
+    'slim_p2_24_top_bots' => [
+        'columns' => 'browser, browser_version', 'where' => 'browser_type = 1',
+    ],
+    'slim_p2_25_top_human_browsers' => [
+        'columns' => 'browser, browser_version', 'where' => 'browser_type != 1',
+    ],
+    'slim_p4_02_recent_posts' => [
+        'columns' => 'TRIM( TRAILING "/" FROM resource )', 'as_column' => 'resource',
+        'where' => 'content_type = "post"', 'order_by' => 'MAX(dt) DESC',
+        'more_select' => 'MAX(dt) AS dt',
+    ],
+    'slim_p4_05_recent_not_found' => [
+        'columns' => 'resource',
+        'where' => '(resource LIKE "[404]%" OR content_type LIKE "%404%")',
+        'order_by' => 'MAX(dt) DESC', 'more_select' => 'MAX(dt) AS dt',
+    ],
+    'slim_p4_07_top_categories' => [
+        'columns' => 'category', 'where' => 'content_type LIKE "%category%"',
+    ],
+    'slim_p4_09_top_downloads' => [
+        'columns' => 'resource', 'where' => 'content_type = "download"',
+    ],
+    'slim_p4_13_top_internal_searches' => [
+        'columns' => 'searchterms',
+        'where' => 'content_type LIKE "%search%" AND searchterms <> "" AND searchterms IS NOT NULL',
+    ],
+    'slim_p4_15_recent_categories' => [
+        'columns' => 'TRIM( TRAILING "/" FROM resource )', 'as_column' => 'resource',
+        'where' => '(content_type = "category")', 'order_by' => 'MAX(dt) DESC',
+        'more_select' => 'MAX(dt) AS dt',
+    ],
+    'slim_p4_152_recent_tags' => [
+        'columns' => 'TRIM( TRAILING "/" FROM resource )', 'as_column' => 'resource',
+        'where' => '(content_type = "tag")', 'order_by' => 'MAX(dt) DESC',
+        'more_select' => 'MAX(dt) AS dt',
+    ],
+    'slim_p4_16_top_not_found' => [
+        'columns' => 'resource', 'where' => 'content_type LIKE "%404%"',
+    ],
+    'slim_p4_18_top_authors' => ['columns' => 'author'],
+    'slim_p4_19_top_tags' => [
+        'columns' => 'category', 'where' => '(content_type LIKE "%tag%")',
+    ],
+];
+foreach ($grouped_page_shapes as $id => $shape) {
+    $capture_windowed($id, static function () use ($shape) {
+        return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [$shape]));
+    });
+}
+
+$capture_windowed('slim_p4_04_recent_feeds', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_recent', [[
+        'columns' => 'resource',
+        'where' => '(resource LIKE "%/feed%" OR resource LIKE "%?feed=>%" '
+            . 'OR resource LIKE "%&feed=>%" OR content_type LIKE "%feed%")',
+    ]]));
+});
+$capture_windowed('slim_p4_06_recent_internal_searches', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_recent', [[
+        'columns' => 'searchterms',
+        'where' => 'content_type LIKE "%search%" AND searchterms <> "" AND searchterms IS NOT NULL',
+    ]]));
+});
+$capture_windowed('slim_p4_01_recent_outbound', static function () {
+    return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top_outbound', [[
+        'sort_outbound' => 'dt',
+    ]]));
+});
+
+foreach (['slim_p4_24_exit_pages' => 'MAX', 'slim_p4_25_entry_pages' => 'MIN'] as $id => $boundary) {
+    $capture_windowed($id, static function () use ($boundary) {
+        $result = slimstat_invoke('wp_slimstat_db', 'get_top_aggr', [[
+            'columns'             => 'visit_id',
+            'outer_select_column' => 'resource',
+            'aggr_function'       => $boundary,
+        ]]);
+        $stable = [];
+        foreach ($result as $row) {
+            $row = (array) $row;
+            unset($row['visit_id']);
+            $stable[] = $row;
+        }
+        return slimstat_canon_rows($stable);
+    });
+}
+
 // Array-only in both eras, so the array parser is not a choice here. The two column names are
 // pinned literals and deliberately low-cardinality: column_group is GROUP_CONCAT(DISTINCT …),
 // and grouping a 4,000-resource corpus that way returns a payload bounded only by
@@ -1116,7 +1353,12 @@ $capture_windowed('get_max_and_average_pages_per_visit', static function () {
     return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_max_and_average_pages_per_visit'));
 });
 
+// Row 0 reads wp_slimstat_db::$pageviews, a static the report does NOT compute: it is left
+// wherever the last caller put it. Today that is right only because get_overview_summary's
+// capture ran two entries earlier inside this same pinned window. Pinning it here makes the
+// answer a property of the window instead of a property of the capture ORDER.
 $capture_windowed('get_traffic_sources_summary', static function () {
+    wp_slimstat_db::$pageviews = (int) wp_slimstat_db::count_records();
     return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_traffic_sources_summary'));
 });
 
@@ -1305,6 +1547,78 @@ $slimstat_caps['forced_max_funnels'] = $forced_max_funnels;
 // absent row would be a fact about the corpus wearing the schema's name.
 $slimstat_caps['recent_columns_shape'] = $recent_shape;
 
+// ── THE BLIND PROOF (O3) ────────────────────────────────────────────────────
+//
+// An extended surface empty on BOTH arms compares equal and proves nothing, and the vacuity
+// control in compare-answers.sh aborts on it. That is right for a SYNTHETIC corpus, whose
+// profile is written to populate every surface. On a RESTORED production corpus it is not:
+// the 443k dump genuinely contains zero downloads and zero `user:` notes, and no enrichment
+// of the harness can put them there without ceasing to be that corpus.
+//
+// So the excuse is allowed only with EVIDENCE, and the evidence is a count taken here, in the
+// container, against the same database the reports read - not a claim typed by an operator.
+// A surface may be called corpus-blind only if its SOURCE PREDICATE matches zero rows over the
+// WHOLE table, with no date window: emptiness must be a property of the corpus, not of the
+// window, the code, or the report. A surface with no entry in this table cannot be excused at
+// all, which is the conservative direction.
+$slimstat_blind_predicates = [
+    'get_recent_events'                 => ['slim_events', "notes NOT LIKE 'type:click%'"],
+    'get_top_events'                    => ['slim_events', "notes NOT LIKE 'type:click%'"],
+    'get_top_outbound'                  => ['slim_stats', "outbound_resource IS NOT NULL AND outbound_resource <> ''"],
+    'slim_p4_01_recent_outbound'        => ['slim_stats', "outbound_resource IS NOT NULL AND outbound_resource <> ''"],
+    'slim_p4_09_top_downloads'          => ['slim_stats', "content_type = 'download'"],
+    'slim_p4_20_recent_downloads'       => ['slim_stats', "content_type = 'download'"],
+    'slim_p4_04_recent_feeds'           => ['slim_stats', "(resource LIKE '%/feed%' OR resource LIKE '%?feed=>%' OR resource LIKE '%&feed=>%' OR content_type LIKE '%feed%')"],
+    'slim_p4_06_recent_internal_searches' => ['slim_stats', "content_type LIKE '%search%' AND searchterms <> '' AND searchterms IS NOT NULL"],
+    'slim_p4_13_top_internal_searches'  => ['slim_stats', "content_type LIKE '%search%' AND searchterms <> '' AND searchterms IS NOT NULL"],
+    'recent_searchterms_pinned'         => ['slim_stats', "searchterms <> '_' AND searchterms <> '' AND searchterms IS NOT NULL"],
+    'top_searchterms_pinned'            => ['slim_stats', "searchterms <> '_' AND searchterms <> '' AND searchterms IS NOT NULL"],
+    'top_username_pinned'               => ['slim_stats', "username IS NOT NULL AND username <> ''"],
+    'top_current_username_pinned'       => ['slim_stats', "username IS NOT NULL AND username <> ''"],
+    'recent_user_pinned'                => ['slim_stats', "notes LIKE '%user:%'"],
+    'top_user_pinned'                   => ['slim_stats', "notes LIKE '%user:%'"],
+    'slim_p4_07_top_categories'         => ['slim_stats', "content_type LIKE '%category%'"],
+    'slim_p4_15_recent_categories'      => ['slim_stats', "content_type = 'category'"],
+    'slim_p4_152_recent_tags'           => ['slim_stats', "content_type = 'tag'"],
+    'slim_p4_19_top_tags'               => ['slim_stats', "content_type LIKE '%tag%'"],
+    'slim_p4_16_top_not_found'          => ['slim_stats', "content_type LIKE '%404%'"],
+    'slim_p4_18_top_authors'            => ['slim_stats', "author IS NOT NULL AND author <> ''"],
+];
+
+$slimstat_blind_proof = [];
+$slimstat_proof_handle = slimstat_analytics_handle();
+$slimstat_proof_handle = (null === $slimstat_proof_handle) ? $GLOBALS['wpdb'] : $slimstat_proof_handle;
+foreach ($slimstat_blind_predicates as $slimstat_proof_id => $slimstat_proof_spec) {
+    list($slimstat_proof_suffix, $slimstat_proof_where) = $slimstat_proof_spec;
+    $slimstat_proof_table = $slimstat_proof_handle->prefix . $slimstat_proof_suffix;
+    // A missing table is recorded as null, never as 0: "the rows are not there" and "the table
+    // is not there" are different facts, and only the first excuses an empty surface.
+    if ((string) $slimstat_proof_handle->get_var(
+            "SHOW TABLES LIKE '" . $slimstat_proof_table . "'"
+        ) !== $slimstat_proof_table) {
+        $slimstat_blind_proof[$slimstat_proof_id] = [
+            'table' => $slimstat_proof_table, 'where' => $slimstat_proof_where, 'count' => null,
+        ];
+        continue;
+    }
+    $slimstat_proof_n = $slimstat_proof_handle->get_var(
+        "SELECT COUNT(*) FROM `" . $slimstat_proof_table . "` WHERE " . $slimstat_proof_where
+    );
+    $slimstat_blind_proof[$slimstat_proof_id] = [
+        'table' => $slimstat_proof_table,
+        'where' => $slimstat_proof_where,
+        'count' => (null === $slimstat_proof_n) ? null : (int) $slimstat_proof_n,
+    ];
+}
+$slimstat_caps['_blind_proof'] = $slimstat_blind_proof;
+
+// The container picks its HTTP port at run time, so the host slim_p3_01 and slim_p3_02 exclude
+// their own traffic by is not a constant a static contract could carry. It travels with the arm.
+$slimstat_caps['_self_urls'] = [
+    'home_url' => home_url(),
+    'host'     => (string) wp_parse_url(home_url(), PHP_URL_HOST),
+];
+
 $slimstat_caps['_arm_surfaces'] = $arm_surfaces;
 
 ksort($answers);
@@ -1353,10 +1667,33 @@ ksort($answers);
 // deliberately NOT added to the frozen answers and timing lines.
 $slimstat_caps_json = json_encode($slimstat_caps, JSON_INVALID_UTF8_SUBSTITUTE);
 
+/** A restored corpus may replace only the two clock-moving legacy uniques with their pinned twin. */
+function slimstat_restored_uniques_twin_answers($key, $restored, array $surfaces)
+{
+    $twins = [
+        'uniques_browser' => 'uniques_browser_pinned',
+        'uniques_country' => 'uniques_country_pinned',
+    ];
+    if (!$restored || !isset($twins[$key], $surfaces[$twins[$key]])) {
+        return false;
+    }
+
+    $twin = $surfaces[$twins[$key]];
+    return 'ok' === ($twin['class'] ?? null)
+        && is_array($twin['value'] ?? null)
+        && [] !== $twin['value'];
+}
+
 $hollow  = [];
 $errored = [];
 foreach ($arm_status as $key => $env) {
-    if ('empty' === $env['class'] && null === $env['scalar']) {
+    if ('empty' === $env['class'] && null === $env['scalar']
+        && !slimstat_restored_uniques_twin_answers(
+            $key,
+            '1' === getenv('SLIMSTAT_RESTORED_CORPUS'),
+            $arm_surfaces
+        )
+    ) {
         $hollow[] = $key;
     } elseif ('error' === $env['class']) {
         $errored[] = $key;

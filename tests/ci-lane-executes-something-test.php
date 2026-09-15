@@ -32,7 +32,7 @@ $ci_code = slimstat_yaml_strip_comments((string) file_get_contents($plugin_root 
 // A denylist of shapes, and it says so: composer/npm test scripts, PHPUnit, k6, the EXPLAIN
 // gate, and any invocation of a `tests/…-test.php` script by any path (a container path such
 // as `wp-content/plugins/wp-slimstat/tests/x-test.php` counts).
-$test_command = '/(composer\s+test|vendor\/bin\/phpunit|\bphpunit\b|npm\s+run\s+test|k6\s+run|explain-gate\.sh|(^|[\s\/])tests\/[a-z0-9-]+-test\.php)/';
+$test_command = '/(composer[ \t]+test|vendor\/bin\/phpunit|\bphpunit\b|npm[ \t]+run[ \t]+test|k6[ \t]+run|explain-gate\.sh|(^|[\s\/])tests\/[a-z0-9-]+-test\.php)/';
 
 $jobs_seen = 0;
 $cells     = 0;

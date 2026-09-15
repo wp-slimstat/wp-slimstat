@@ -50,6 +50,7 @@ $read = static function (string $rel) use ($plugin_root): string {
 $service = $read('src/Migration/MigrationService.php');
 $manager = $read('src/Migration/MigrationManager.php');
 $admin   = $read('src/Migration/Admin/MigrationAdmin.php');
+$manager_raw = (string) file_get_contents($plugin_root . '/src/Migration/MigrationManager.php');
 
 // ── The switch is honoured at all four entry points ─────────────────────────
 $sites = [
@@ -101,6 +102,7 @@ if (preg_match('/apply_filters\s*\(/', $helper)) {
 $runAll   = slimstat_function_body($manager, 'runAll');
 $runOne   = (string) slimstat_find_function_body($manager, 'runOne');
 $claimRun = (string) slimstat_find_function_body($manager, 'claimRun');
+$releaseRun = (string) slimstat_find_function_body($manager, 'releaseRun');
 
 // BOTH runners must take the claim, and runOne matters most: migration.js posts
 // `migration: <id>` once PER STEP and only posts the bare action after every step has already
@@ -121,18 +123,25 @@ foreach (['runAll' => $runAll, 'runOne' => $runOne] as $fn => $body) {
     }
 }
 
-if (false === strpos($claimRun, 'OptionClaim')) {
-    $failures[] = 'claimRun() does not use OptionClaim. add_option() is not atomic — it '
-        . 'pre-checks then INSERTs ON DUPLICATE KEY UPDATE, which overwrites, so every '
-        . 'concurrent caller believes it won';
+if (false === strpos($manager_raw, 'SELECT GET_LOCK(%s, 0)') || false === strpos($claimRun, 'analyticsConnection')) {
+    $failures[] = 'claimRun() does not acquire a MySQL session lock on the analytics handle; '
+        . 'an option lease can expire while a long DDL statement is still running';
 }
 
-// A claim with no takeover has no TTL. `finally` is exception-safe, not crash-safe: it does
-// not run on a fatal, an OOM or max_execution_time, which is exactly how a multi-minute
-// rebuild dies. Without takeover the runner wedges permanently while the UI reports success.
-if (false === strpos($claimRun, 'compareAndSwap')) {
-    $failures[] = 'claimRun() cannot take over a stale claim, so a run killed mid-rebuild '
-        . 'strands the row forever and every later attempt returns empty while reporting success';
+if (false !== strpos($claimRun, 'compareAndSwap') || false !== strpos($manager, 'RUN_CLAIM_STALE_AFTER')) {
+    $failures[] = 'the old timestamp takeover protocol remains; ownership must last for the '
+        . 'database session rather than expire while its DDL is live';
+}
+
+if (false === strpos($manager_raw, "__set('reconnect_retries', 0)") || false === strpos($manager_raw, 'SELECT RELEASE_LOCK(%s)')) {
+    $failures[] = 'the session-lock path does not disable reconnect replay and release exactly '
+        . 'once from the shared cleanup path';
+}
+
+foreach (['runAll' => $runAll, 'runOne' => $runOne] as $fn => $body) {
+    if (false === strpos($body, 'ownsRunLock')) {
+        $failures[] = "{$fn}() does not verify that the DDL session still owns the lock before protected work/writes";
+    }
 }
 
 // ── The switch beats the cache ─────────────────────────────────────────────
@@ -156,4 +165,4 @@ if ($failures) {
     exit(1);
 }
 
-echo "PASS: SLIMSTAT_DISABLE_MIGRATIONS honoured at all 4 entry points; runAll() is single-flight\n";
+echo "PASS: migration kill switch and analytics-session single-flight lock are enforced\n";

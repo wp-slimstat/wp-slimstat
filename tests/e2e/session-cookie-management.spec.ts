@@ -18,6 +18,7 @@ import {
   installMuPluginByName,
   uninstallMuPluginByName,
   closeDb,
+  waitForTrackerId,
 } from './helpers/setup';
 import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
 
@@ -120,14 +121,20 @@ test.describe('Session & Cookie Management — #199', () => {
       const marker = `session-continuity-${Date.now()}`;
 
       // Navigate to 3 distinct pages within the same anonymous session
+      // Wait for the server to hand back a pageview id before navigating on.
+      // goto()'s own 'load' can win the race against the tracker actually issuing
+      // its hit, and a navigation that lands first cancels a request that was never
+      // sent -- which is `waitForStatRows(marker, 3)` returning 2. (Once the hit IS
+      // in flight the row lands regardless; the delayed-response test below proves
+      // that.) Reuses the wait migration-cookie-restore already applies to page 1.
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p1`);
-      await anonPage.waitForLoadState('load');
+      await waitForTrackerId(anonPage);
 
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p2`);
-      await anonPage.waitForLoadState('load');
+      await waitForTrackerId(anonPage);
 
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p3`);
-      await anonPage.waitForLoadState('load');
+      await waitForTrackerId(anonPage);
 
       // Wait for all 3 rows to appear in the DB
       const rows = await waitForStatRows(marker, 3, 20_000);

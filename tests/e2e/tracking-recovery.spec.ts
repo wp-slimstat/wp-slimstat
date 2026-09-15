@@ -510,19 +510,39 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
       (window as any).SlimStat._send_pageview({ isConsentRetry: true });
     }, staleId);
 
-    await expect.poll(
-      async () => page.evaluate(() => (window as any).SlimStatParams?.id || ''),
-      { timeout: 20_000 }
-    ).not.toBe(staleId);
-    const recoveredId = await page.evaluate(() => (window as any).SlimStatParams?.id || '');
-    const debugData = await page.evaluate(() => (window as any).__slimstatDebug?.lastPageview);
-    const rowCountAfter = await getStatCountForMarker(marker);
+    // Wait for the *settled* recovery, and sample every value in one round trip.
+    //
+    // handleStaleIdRecovery() clears SlimStatParams.id before it fires the retry
+    // (wp-slimstat.js clearCurrentPageviewId), and __slimstatDebug.lastPageview is only
+    // published when a send finalises (debugFinalize). So `id !== staleId` is already
+    // true throughout the in-flight window, where the id is '' and lastPageview is still
+    // the PREVIOUS pageview's record -- and a later recovery can clear the id again after
+    // this one has succeeded. Polling on `!== staleId` and then reading the id and the
+    // debug record in two further evaluate() calls therefore samples three different
+    // instants, and can pair a finished debug record with a cleared id, or a fresh id
+    // with the record of the pageview before it. Both halves of that race were observed
+    // on the WP 6.4 lane: run 34460621048 lost it once and passed on retry, run
+    // 34529285017 lost it twice and failed the lane.
+    //
+    // The product is correct either way: the only finalize that publishes a `success`
+    // lastPageview assigns the new id first, so a settled record always has its id.
+    const readRecovery = () => page.evaluate((stale) => {
+      const pageview = (window as any).__slimstatDebug?.lastPageview;
+      const id = (window as any).SlimStatParams?.id || '';
+      return {
+        idIsFresh: id !== '' && id !== stale,
+        outcome: pageview?.finalOutcome,
+        retriedWithoutId: !!pageview?.attempts?.some((a: any) => a.bodyKind === 'stale_id_retry'),
+      };
+    }, staleId);
 
-    expect(rowCountAfter).toBeGreaterThanOrEqual(rowsBefore);
-    expect(debugData?.finalOutcome).toBe('success');
-    expect(debugData?.attempts?.some((attempt: any) => attempt.bodyKind === 'stale_id_retry')).toBe(true);
-    expect(recoveredId).toBeTruthy();
-    expect(recoveredId).not.toBe(staleId);
+    await expect.poll(readRecovery, { timeout: 20_000 }).toEqual({
+      idIsFresh: true,
+      outcome: 'success',
+      retriedWithoutId: true,
+    });
+
+    expect(await getStatCountForMarker(marker)).toBeGreaterThanOrEqual(rowsBefore);
   });
 
   test('explicit negative rejection does not queue offline retries and stays rejected', async ({ page, browser }) => {

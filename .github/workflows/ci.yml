@@ -77,12 +77,7 @@ jobs:
           # --quiet; --no-progress suppresses download bars without hiding test output.
 
       - name: Cache Composer dependencies
-        # ONLY on lanes that run composer install. The 7.4/8.0 lanes run from the
-        # CHECKOUT alone — the committed autoloader (build:autoload, #325) is exactly
-        # what they exercise — and a prefix-key restore here clobbered that committed
-        # classmap with a stale cached vendor/, failing source-level with "Schema not
-        # found" on the 8.0 lane while 8.1+ stayed green (they rebuild the classmap
-        # via dump-autoload, silently repairing the same clobber).
+        # Only lanes that install development dependencies need this cache.
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         uses: actions/cache@v4
         with:
@@ -94,15 +89,18 @@ jobs:
       - name: Install Composer dependencies
         # PHPUnit 10.5 requires PHP ^8.1 — skip on 7.4 AND 8.0 (lint + source-level
         # only on those lanes; the source-level scanners are vendor-independent).
-        # mozart post-install hook requires a global mozart binary which is not
-        # available in CI — skip the hook with --no-scripts; the autoloader is
-        # still generated via the next step.
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
-        run: composer install --no-interaction --no-progress --no-scripts
+        run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Dump autoload (without mozart)
+      - name: Verify generated dependencies, then enable the dev autoloader
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
-        run: composer dump-autoload -o --no-interaction
+        run: |
+          composer run build:autoload
+          git diff --exit-code -- src/Dependencies
+          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies)"
+          php tests/autoloader-production-test.php
+          php tests/classmap-completeness-test.php
+          composer dump-autoload
 
       - name: Run PHPUnit unit tests
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
@@ -127,7 +125,7 @@ jobs:
 
       - name: PHP syntax lint (src/)
         # Lint plugin source only — skip src/Dependencies/ which contains
-        # Mozart-scoped vendor files that may use PHP 8.0+ syntax.
+        # WP-Scoper vendor files that may use PHP 8.0+ syntax.
         # Print only files with errors; grep exits 1 when nothing matches (no
         # errors), so we invert: fail only when errors ARE found.
         run: |
@@ -162,7 +160,9 @@ jobs:
         # implicit-nullable params (E_DEPRECATED on 8.1+, fatal in 9.0), and the
         # ENCODING_V1 pair — one PHP encoder and one Python encoder held to the same
         # hand-derived fixtures, which is only evidence if BOTH actually run.
-        run: composer test:source-level
+        run: |
+          composer run build:autoload
+          composer test:source-level
 
       - name: Mutation registry
         # Proves the gates can actually FAIL. Writing an assertion is not the work;
@@ -172,7 +172,7 @@ jobs:
         # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
         # this runs here rather than living in composer.json unreferenced.
         #
-        # The full registry holds 247 entries. The step took 210-270s per lane across all six
+        # The full registry holds 249 entries. The step took 210-270s per lane across all six
         # Tier 1 lanes on run 33874090767 (2026-09-04). THAT RUN IS THE AUTHORITY for the
         # duration: the seconds in this block are not gate-checked, and no sentence written here
         # can tell you whether they are still current.
@@ -217,18 +217,7 @@ jobs:
         #       BASE_SHA: ${{ github.event.pull_request.base.sha }}
         #     run: composer test:mutations -- "--changed=$BASE_SHA"
         #
-        # The vendor/ restore is load-bearing on the 8.1+ lanes: the dump-autoload step
-        # above rewrites the COMMITTED autoloader (dev-inclusive), and the runner's
-        # clean-tree gate rightly ABORTS on a dirty tree — a mutation cannot be told
-        # from an edit. Scoped to vendor/, the diagnosed perturbation, on purpose: a
-        # blanket `git checkout -- .` would launder ANY future step's tracked-file
-        # edits and the abort that surfaced this very surprise could never fire again.
-        # The gates are vendor-independent and were proven against the committed build
-        # (a bare clone on the 7.4 floor), so the commit under test is the right state
-        # to mutate. Untracked files are unaffected.
-        run: |
-          git checkout -- vendor/
-          composer test:mutations
+        run: composer test:mutations
 
 ##############################################################################
 # PHPStan — static analysis (baseline-gated), every push / PR
@@ -250,10 +239,14 @@ jobs:
           coverage: none
 
       - name: Install Composer dependencies (with dev — PHPStan + WP stubs)
-        run: composer install --no-interaction --no-progress --no-scripts
+        run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Dump autoload (without mozart)
-        run: composer dump-autoload -o --no-interaction
+      - name: Verify generated dependencies, then enable the dev autoloader
+        run: |
+          composer run build:autoload
+          git diff --exit-code -- src/Dependencies
+          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies)"
+          composer dump-autoload
 
       - name: Run PHPStan (level 5, target 7.4, baseline-gated)
         # phpstan.neon.dist analyzes own code (src/Dependencies excluded); legacy
@@ -314,10 +307,24 @@ jobs:
       # read the same value and cannot drift apart.
       WP_AUTHOR_USER: e2e_author
       WP_AUTHOR_PASS: password
+      # The one lane that installs WooCommerce and runs the purchase-journey spec.
+      # Named once, read by three steps (override, active-plugin check, E2E grep) so
+      # they cannot drift into "installed here, run there".
+      #
+      # 7.1, not 6.9, for two reasons. WooCommerce 10.6.2 declares `Requires at
+      # least: 6.8`, so the 6.4 full-suite lane cannot host it -- and 7.1 is the only
+      # lane at or above that floor whose E2E step BLOCKS (continue-on-error is false
+      # for the baseline and the newest lane only). On a soft lane a WooCommerce
+      # regression would fail the step and leave the job green, which is the exact
+      # shape of self-skipping this workstream exists to end.
+      WOO_E2E_LANE: "7.1"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Generate production autoloader before wp-env mounts the plugin
+        run: composer run build:autoload
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -431,7 +438,21 @@ jobs:
           # SlimStat-shaped message. Bump these deliberately, with a diff someone reads.
           CONSENT_API_ZIP="https://downloads.wordpress.org/plugin/wp-consent-api.2.0.1.zip"
           COOKIE_LAW_ZIP="https://downloads.wordpress.org/plugin/cookie-law-info.3.5.5.zip"
+          # Pinned for the same reason as the two above, and one more: the version is
+          # part of the claim. tests/e2e/woocommerce-purchase-journey.spec.ts is the
+          # only automated proof that checkout PII (buyer name, billing email) never
+          # reaches wp_slim_stats, and "we tested it against WooCommerce" means nothing
+          # without saying which. 10.6.2 is the version the spec was authored against.
+          WOOCOMMERCE_ZIP="https://downloads.wordpress.org/plugin/woocommerce.10.6.2.zip"
           PLUGINS='".","'"${CONSENT_API_ZIP}"'","'"${COOKIE_LAW_ZIP}"'"'
+          # ONE lane, not all of them. WooCommerce brings admin chrome, an onboarding
+          # redirect and a large plugin load into every spec on whatever lane installs
+          # it; adding that to the 6.4 lane -- the only one running all 750+ tests --
+          # would risk the whole suite to cover one spec. So it rides the lane named
+          # by WOO_E2E_LANE, and the E2E step below routes the tagged spec there.
+          if [ "${WP_VERSION}" = "${WOO_E2E_LANE}" ]; then
+            PLUGINS="${PLUGINS}"',"'"${WOOCOMMERCE_ZIP}"'"'
+          fi
           if [ "${WP_VERSION}" = "6.4" ]; then
             printf '{"phpVersion":"%s","plugins":[%s]}\n' "${WP_ENV_PHP_VERSION}" "${PLUGINS}" > .wp-env.override.json
           elif [ "${WP_VERSION}" = "5.6" ]; then
@@ -590,6 +611,36 @@ jobs:
             fi
           done
 
+      - name: WooCommerce lane — active, and not holding the onboarding redirect
+        # Same argument as the step above, for the same reason: naming the zip in the
+        # override proves nothing about what wordpress.org served. If WooCommerce is
+        # absent the purchase-journey spec fails with "UNAVAILABLE PREREQUISITE"
+        # (tests/e2e/helpers/woocommerce-store.php:25 raises rather than skips, on
+        # purpose), which is a truthful failure but a confusing one -- it reads as a
+        # product defect. Fail here instead, where the cause is the message.
+        #
+        # The transient is the second half. WooCommerce sets _wc_activation_redirect on
+        # activation and redirects the FIRST admin request to its setup wizard; that
+        # request is Playwright's global-setup login, which would then never reach
+        # /wp-admin/ and would fail the whole lane in loginAndSave() with a message
+        # about credentials.
+        #
+        # Only the transient. An earlier version also set woocommerce_task_list_hidden,
+        # which failed the lane on run 34521234912: WooCommerce already stores that value,
+        # update_option() returns false when nothing changes, and wp-cli reports false as
+        # "Could not update option" with exit 1. It was belt-and-braces anyway -- the task
+        # list is admin clutter, the transient is what redirects.
+        if: ${{ matrix.wp == env.WOO_E2E_LANE }}
+        run: |
+          if ! npx wp-env run tests-cli -- wp plugin is-active woocommerce; then
+            echo "::error::woocommerce is not active on the WP ${WP_VERSION} lane, which is the"
+            echo "::error::only lane that runs woocommerce-purchase-journey.spec.ts -- the only"
+            echo "::error::automated proof that checkout PII stays out of wp_slim_stats."
+            exit 1
+          fi
+          npx wp-env run tests-cli -- wp transient delete _wc_activation_redirect
+          npx wp-env run tests-cli -- wp plugin get woocommerce --field=version
+
       - name: Expose wp-env filesystem and MySQL to E2E tests
         # wp-env runs WordPress inside Docker containers. The E2E test helpers
         # (setup.ts) need direct filesystem access to wp-config.php and mu-plugins,
@@ -715,22 +766,22 @@ jobs:
           echo "Floor guard: no fatals/own-code deprecations in debug.log."
 
       - name: Run E2E tests
-        # The committed-baseline (6.4) lane runs the FULL suite; the WP-version
-        # matrix lanes run only the @compat-tagged compat specs via --grep, so
-        # PRs stay within budget (the lane is the CI job, not the filename).
+        # Pull requests run the focused @compat specs on every matrix lane. The
+        # WooCommerce lane also runs its routed @woocommerce spec, while non-PR
+        # baseline runs retain the full suite (the lane is the CI job, not the filename).
         #
         # BLOCKING on 6.4 and 7.1; soft everywhere else. continue-on-error is the
         # setting being excused, and the expression is FALSE — the lane can fail
         # the job — for exactly two versions: the committed baseline that
         # .wp-env.json boots, and the newest WordPress in the matrix above.
         #
-        # Read "blocking on 7.1" literally. The branch below runs the full suite
-        # only when WP_VERSION is the baseline; every other lane runs
-        # --grep "@compat". So 7.1 blocking gates the @compat subset, and the real
-        # target of this flip is the 6.4/PHP 8.2 lane running the full suite. The interior
-        # lanes stay soft on purpose: they are version-drift signal, not a merge
-        # gate, and making them blocking would fail the job on host-environment
-        # debt rather than on defects.
+        # Read "blocking on 7.1" literally. On pull requests, 7.1 gates the
+        # @compat subset plus its routed @woocommerce spec. On non-PR runs, the
+        # 6.4/PHP 8.2 baseline runs the full suite except @woocommerce, whose
+        # prerequisite requires a newer WordPress and is exercised on 7.1 instead.
+        # The interior lanes stay soft on purpose: they are version-drift signal,
+        # not a merge gate, and making them blocking would fail the job on
+        # host-environment debt rather than on defects.
         #
         # The version list is not free-form. perf-gate-integrity §7 derives the
         # blocking set from .wp-env.json's `core` and the newest lane in the
@@ -746,7 +797,13 @@ jobs:
           WP_ADMIN_PASS: password
         run: |
           if [ "${{ github.event_name }}" != "pull_request" ] && [ "${WP_VERSION}" = "6.4" ]; then
-            npm run test:e2e
+            # "Full suite" minus the one spec whose prerequisite this lane cannot have:
+            # WooCommerce 10.6.2 declares `Requires at least: 6.8`. The exclusion is by
+            # TAG, not by filename, so the carve-out and the routing below read the same
+            # marker and a renamed spec cannot silently fall out of both.
+            npm run test:e2e -- --grep-invert "@woocommerce"
+          elif [ "${WP_VERSION}" = "${WOO_E2E_LANE}" ]; then
+            npm run test:e2e -- --grep "@compat|@woocommerce"
           else
             npm run test:e2e -- --grep "@compat"
           fi
@@ -818,11 +875,7 @@ jobs:
 
       - name: Cache Composer dependencies
         # The 7.4/8.0 exclusion this step carried went with those lanes (see the matrix
-        # above). The hazard it described is kept because it is not obvious: a prefix-key
-        # restore clobbered the COMMITTED classmap with a stale cached vendor/, failing
-        # source-level with "Schema not found" on 8.0 while 8.1+ stayed green — they rebuild
-        # it via dump-autoload and silently repair the same clobber. Tier 1 still guards
-        # against it, because Tier 1 still runs those two versions.
+        # above). The ignored vendor tree is rebuilt and checked before use.
         uses: actions/cache@v4
         with:
           path: vendor
@@ -831,10 +884,14 @@ jobs:
             composer-${{ matrix.php }}-
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --no-progress --no-scripts
+        run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Dump autoload (without mozart)
-        run: composer dump-autoload -o --no-interaction
+      - name: Verify generated dependencies, then enable the dev autoloader
+        run: |
+          composer run build:autoload
+          git diff --exit-code -- src/Dependencies
+          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies)"
+          composer dump-autoload
 
       - name: Run full PHPUnit suite
         # composer test:all runs phpunit + all standalone PHP test scripts.
@@ -924,7 +981,7 @@ jobs:
           echo "--- .wp-env.override.json ---"; cat .wp-env.override.json
 
       - name: Restore the production autoloader before wp-env mounts the plugin
-        # WHY THE NIGHTLY HAS BEEN RED EVERY NIGHT. "Dump autoload (without mozart)" above
+        # WHY THE NIGHTLY HAS BEEN RED EVERY NIGHT. The dev autoload step above
         # rebuilds the autoloader on a tree that HAS dev dependencies installed, so the
         # checkout now carries a dev autoloader. wp-env mounts that checkout, WordPress loads
         # the plugin, and the container's PHP fatals parsing a union type in the dev
@@ -936,12 +993,10 @@ jobs:
         # this pipeline produces — never run. Measured across five consecutive nightlies, all
         # red here, all with both skipped.
         #
-        # Same shape and same remedy as the mutation step in Tier 1 (see its `git checkout --
-        # vendor/` note for the full dev-autoloader rationale); this is that hazard reached
-        # through wp-env's bind mount instead.
+        # Rebuild the ignored vendor tree in its production form before wp-env mounts it.
         if: ${{ matrix.php == '8.2' }}
         run: |
-          git checkout -- vendor/
+          composer run build:autoload
           # Assert rather than print, and check the BOOT path (autoload_real/autoload_static),
           # not the classmap, which is only consulted lazily. Patterns are capitalised because
           # that is how the namespaces appear — and because a lowercase spelling here would be

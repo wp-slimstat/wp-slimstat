@@ -363,6 +363,14 @@ test.describe('Live Analytics — Timezone & Custom DB Scenarios', () => {
     const rows = await waitForNewRows(beforeId, 1);
     expect(rows.length).toBeGreaterThanOrEqual(1);
 
+    // Same reason as the timezone matrix above: the two goto()s just made two
+    // logged-in frontend pageviews, and add_menu_to_adminbar() (admin/index.php:2014)
+    // reads online_count() on every one of them. The first ran against the table
+    // beforeEach had truncated, so it cached a 0 with a TTL that lasts to the next
+    // minute boundary -- outliving the tracker rows waited for above. This test
+    // compares two endpoints; it is not a test of how stale that cache may be.
+    await clearAdminbarOnlineCache();
+
     // Fetch both endpoints
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'domcontentloaded',

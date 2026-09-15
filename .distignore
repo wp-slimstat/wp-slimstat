@@ -5,11 +5,13 @@
 /.github
 /node_modules
 /tests
+/build
 /test-results
 /admin/assets/scss
 
 # Build & dev files
 .distignore
+.gitattributes
 .gitignore
 .editorconfig
 .coderabbit.yaml
@@ -54,4 +56,4 @@ LICENSE
 security.md
 
 # Private Symfony Windows interactive-console helper; no plugin entrypoint uses it.
-/src/Dependencies/Symfony/Component/Console/Resources/bin/hiddeninput.exe
+/src/Dependencies/veronalabs/browscap-php/src/Symfony/Component/Console/Resources/bin/hiddeninput.exe

@@ -118,6 +118,18 @@ class OptionClaimTest extends WpSlimstatTestCase
         $this->assertSame([], $this->flushed);
     }
 
+    public function test_delete_cannot_remove_a_new_owners_value(): void
+    {
+        $this->writeResult = 0;
+
+        $this->assertFalse(OptionClaim::delete('lock', 'old-owner'));
+        $this->assertMatchesRegularExpression(
+            '/DELETE.+WHERE\s+option_name\s*=\s*%s\s+AND\s+option_value\s*=\s*%s/is',
+            $this->statements[0]
+        );
+        $this->assertSame([], $this->flushed);
+    }
+
     /**
      * A hard error is not a lost race, and conflating them is expensive: on an
      * unwritable database, invalidating alloptions on every attempt turns a fault into

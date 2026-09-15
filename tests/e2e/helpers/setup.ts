@@ -602,8 +602,22 @@ export async function clearStatsTable(): Promise<void> {
   await pool.execute("TRUNCATE TABLE wp_slim_stats");
   await pool.execute("TRUNCATE TABLE wp_slim_events");
   await pool.execute("SET FOREIGN_KEY_CHECKS = 1");
+  // Every cache derived from wp_slim_stats must go with the rows, or a spec that
+  // truncates and re-seeds reads the pre-truncate answer. admin/index.php:3276
+  // online_count() caches to the next minute boundary, so a `0` written while the
+  // table was empty outlives the seeding of the very rows the assertion is about --
+  // that is production-bug-regression.spec.ts:237 failing with `Received: 0` in
+  // ~600ms while its sibling, which runs the same SQL directly, passes.
+  //
+  // Named families only. slimstat_matomo_searchengine and
+  // slimstat_notification_fetch_lock cache/limit *outbound network* calls, and
+  // slimstat_migration_offered / slimstat_migration_probe are migration state --
+  // dropping any of those makes the suite noisier, not cleaner. Both
+  // `slimstat_query_*` (admin/view/wp-slimstat-db.php:551) and
+  // `wp_slimstat_query_*` (src/Utils/Query.php:847) exist; the earlier pattern
+  // matched only the second.
   await pool.execute(
-    "DELETE FROM wp_options WHERE option_name LIKE '\\_transient\\_wp\\_slimstat\\_query\\_%' OR option_name LIKE '\\_transient\\_timeout\\_wp\\_slimstat\\_query\\_%'"
+    "DELETE FROM wp_options WHERE option_name REGEXP '^_transient_(timeout_)?(wp_)?slimstat_(adminbar_|chart_data_|query_|resource_titles)'"
   );
 }
 

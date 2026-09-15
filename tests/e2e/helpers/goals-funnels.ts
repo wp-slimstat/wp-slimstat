@@ -177,6 +177,28 @@ export async function clearAll(): Promise<void> {
     );
 }
 
+// The forcer's *code* never changes; only the two option rows it reads do.
+// Rewriting a PHP file and loading a page in the same breath is a race against
+// opcache (validate_timestamps=On, revalidate_freq=2 in wp-env and LocalWP alike):
+// the next request can be served the previous compilation, so the page renders the
+// limits of the test before it. That is goals-funnels.spec.ts:88 reading
+// `0 of 5 used` where forceLimits(1, 0) had already returned -- the 5/3 of a
+// neighbouring spec, one compilation stale. Options have no compiled form.
+const LIMIT_FORCER = `<?php
+/*
+ * Plugin Name: SlimStat Goals & Funnels — E2E Limit Forcer (test harness)
+ * Description: Forces slimstat_max_goals / slimstat_max_funnels for E2E tests.
+ * Values come from options so this file's bytes stay constant across tests --
+ * see the note in helpers/goals-funnels.ts.
+ */
+add_filter('slimstat_max_goals',   static fn() => (int) get_option('slimstat_e2e_gf_max_goals', 1), PHP_INT_MAX);
+add_filter('slimstat_max_funnels', static fn() => (int) get_option('slimstat_e2e_gf_max_funnels', 0), PHP_INT_MAX);
+`;
+
+function limitForcerPath(wpContentDir: string, path: typeof import('path')): string {
+    return path.join(wpContentDir, 'mu-plugins', 'slimstat-goals-funnels-e2e-limits.php');
+}
+
 /**
  * Toggle Pro via a forced filter mu-plugin. Pass maxGoals=0/maxFunnels=0 to
  * simulate Free tier; maxGoals=5/maxFunnels=3 to simulate Pro.
@@ -184,24 +206,30 @@ export async function clearAll(): Promise<void> {
 export async function forceLimits(maxGoals: number, maxFunnels: number, wpContentDir: string): Promise<void> {
     const fs = await import('fs');
     const path = await import('path');
-    const muPlugin = path.join(wpContentDir, 'mu-plugins', 'slimstat-goals-funnels-e2e-limits.php');
-    const contents = `<?php
-/*
- * Plugin Name: SlimStat Goals & Funnels — E2E Limit Forcer (test harness)
- * Description: Forces slimstat_max_goals / slimstat_max_funnels for E2E tests.
- */
-add_filter('slimstat_max_goals',   static fn() => ${maxGoals}, PHP_INT_MAX);
-add_filter('slimstat_max_funnels', static fn() => ${maxFunnels}, PHP_INT_MAX);
-`;
+    const muPlugin = limitForcerPath(wpContentDir, path);
+
+    await upsertOption('slimstat_e2e_gf_max_goals', maxGoals);
+    await upsertOption('slimstat_e2e_gf_max_funnels', maxFunnels);
+
+    const current = fs.existsSync(muPlugin) ? fs.readFileSync(muPlugin, 'utf8') : null;
+    if (current === LIMIT_FORCER) {
+        return; // untouched file, no mtime change, nothing for opcache to be stale about
+    }
     fs.mkdirSync(path.dirname(muPlugin), { recursive: true });
-    fs.writeFileSync(muPlugin, contents, 'utf8');
+    fs.writeFileSync(muPlugin, LIMIT_FORCER, 'utf8');
+    // Paid at most once per spec file, not once per call: settle past the revalidate
+    // window so the very first page load runs the forcer rather than whatever the
+    // previous compilation of this path was.
+    await new Promise((r) => setTimeout(r, 2500));
 }
 
 export async function restoreDefaultLimits(wpContentDir: string): Promise<void> {
     const fs = await import('fs');
     const path = await import('path');
-    const muPlugin = path.join(wpContentDir, 'mu-plugins', 'slimstat-goals-funnels-e2e-limits.php');
+    const muPlugin = limitForcerPath(wpContentDir, path);
     if (fs.existsSync(muPlugin)) {
         fs.unlinkSync(muPlugin);
     }
+    await deleteOption('slimstat_e2e_gf_max_goals');
+    await deleteOption('slimstat_e2e_gf_max_funnels');
 }

@@ -118,7 +118,7 @@ Deleting the plugin no longer erases your analytics. Data is now kept by default
 
 == Changelog ==
 
-= 6.0.0 - 2026-09-01 =
+= 6.0.0 - 2026-09-15 =
 
 **Performance — measured, not estimated**
 * Admin charts read about half as many database rows: totals now ride the same query as their buckets. Measured on the weekly chart over the 150,000-row reference bench corpus, as deterministic counters rather than timings: rows read 304,454 -> 152,227 and sort work 212,301 -> 106,141. That change alone leaves report output byte-identical; the separate previous-period correction below does move two numbers, on purpose.
@@ -144,6 +144,7 @@ Deleting the plugin no longer erases your analytics. Data is now kept by default
 * Tied rows in top-list reports (pages, browsers, countries, entry/exit pages) stop reordering between page refreshes.
 * Same-page refreshes during an anonymous session stop double-counting, so anonymous pageview counts can decrease slightly — to their true value.
 * Percentages round the same way everywhere. A value landing exactly on a rounding boundary — 1 in 32 is exactly 3.125% — was printed as 3.12 in the top-list percentage column and the new-visitor rate, while the bar drawn beside it used 3.13. Both now round half-up, and the number and its bar are the same figure. Only on-the-boundary values move, and they move up by one in the last digit.
+* Sites using a consent plugin through the WP Consent API stop double-counting consenting visitors. A consent grant that arrived after the page had loaded inserted a *second* row for the same pageview instead of upgrading the first, and that second row recorded the tracker's own endpoint (/wp-json/slimstat/v1/hit) as the page visited. Pageview totals on those sites go DOWN, to their true value, and the endpoint disappears from Top Pages. Over the AJAX transport the same request was refused outright, so a consent upgrade applied no consent at all; both transports now agree.
 
 **Upgrading — what the Migration screen asks for**
 * After updating, SlimStat adds a "Migration" screen under its menu. Nothing on that screen runs on its own: every step waits for an explicit click, and tracking keeps working the whole time.
@@ -154,9 +155,14 @@ Deleting the plugin no longer erases your analytics. Data is now kept by default
 * Back up your database before upgrading, as with any major release.
 
 **Reliability**
+* Dependency scoping is now reproducible from the Composer lockfile with WP Scoper; the private Browscap/Flysystem bundle, polyfill stubs and PHP 7.4 fallbacks retain their existing namespaces and behavior. ([#339](https://github.com/wp-slimstat/wp-slimstat/issues/339))
 * Fixed: the upgrade step that repairs corrupted heat-map positions could offer itself forever. It asked "is there a candidate row?" but only repaired rows it could resolve unambiguously, so on a site with unresolvable rows it reported success and then offered again, each click re-scanning the events table. "All migrations complete" is now reachable.
 * One schema source of truth — fresh installs are born at the target schema; migrations are kill-switchable, single-flight and checkpointed; failed purges are reported, not forgotten.
 * The full 23-report parity set verified byte-identical across MySQL 5.6, 5.7 and 8.0 on one fingerprint-proven corpus — the declared MySQL floor is tested, not assumed. MariaDB 10.0+ is supported by design and has not yet been exercised in a test cell.
+
+**Security**
+* Fixed a SQL injection reachable by any logged-in user, including a subscriber, on sites that had turned on the "Posts and Pages" column under Settings > Reports (off by default). The limit_results and start_from report filters were carried through from the request as raw text and concatenated into a query template, where $wpdb->prepare() does not escape them. Both are now normalised to non-negative integers at the single point every report reads them through. Found in-house during the 6.0.0 release review; no report of it in the wild.
+
 
 = 5.5.1 - 2026-07-26 =
 * Fix: A rare plugin-loading problem could white-screen the entire site and lock administrators out of wp-admin. When a plugin file no longer matched its build index — after an interrupted update, a manually uploaded copy, or stale server caching — every page including wp-login stopped loading. The plugin now falls back to loading files directly, and disables only the affected feature if one part still cannot load. A build-time check prevents shipping an incomplete package. If your host caches PHP aggressively, flush its opcache if a blank screen persists after updating. ([#325](https://github.com/wp-slimstat/wp-slimstat/issues/325))

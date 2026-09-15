@@ -33,10 +33,26 @@ git -C "$PLUGIN_SRC" show "$FULL:.distignore" > "$DISTIGNORE" \
   || { err "Free $SHA has no exported .distignore"; exit 1; }
 
 if [ "$CACHED" -eq 0 ]; then
+  command -v composer >/dev/null 2>&1 || { err "Composer is required to build the Free ZIP"; exit 1; }
+  composer dump-autoload --working-dir="$BUILD/raw" --no-dev -o --no-interaction --no-ansi
   rsync -a --exclude-from="$DISTIGNORE" "$BUILD/raw/" "$BUILD/stage/wp-slimstat/"
 
   VERSION=$(sed -n 's/^ \* Version: *//p' "$BUILD/raw/wp-slimstat.php" | tr -d ' \r')
   [ -n "$VERSION" ] || { err "cannot read Free version at $SHA"; exit 1; }
+
+  # The catalog ships in the ZIP; a stale one means the strings a translator sees are not
+  # the strings the frozen code calls __() with, and nothing downstream would notice. This
+  # is NOT in composer test:source-level on purpose: the check needs pinned WP-CLI, and a
+  # gate that quietly skips itself where WP-CLI is missing is a silent pass. Here it is a
+  # build refusal, and a missing `wp` is a refusal too rather than a skip. Both the checker
+  # and the tree it checks come from the frozen SHA, not from the working copy.
+  command -v wp >/dev/null 2>&1 \
+    || { err "WP-CLI is required to verify the shipped catalog before freezing a Free ZIP"; exit 1; }
+  [ -f "$BUILD/raw/tests/check-pot.py" ] \
+    || { err "Free $SHA exports no tests/check-pot.py — the catalog would ship unverified"; exit 1; }
+  python3 "$BUILD/raw/tests/check-pot.py" "$BUILD/raw" \
+    || { err "catalog does not match the source at $SHA — refusing to build the Free ZIP"; exit 1; }
+
   rm -f "$OUT"
   ( cd "$BUILD/stage" && zip -qr -X -9 "$OUT" wp-slimstat )
   printf '%s' "$FULL" > "$REF_STAMP"
@@ -50,11 +66,12 @@ LIST="$BUILD/list.txt"
 unzip -Z1 "$OUT" | grep -v '/$' > "$LIST"
 [ "$(cut -d/ -f1 "$LIST" | sort -u)" = wp-slimstat ] || { err "Free ZIP root is not wp-slimstat/"; exit 1; }
 for required in wp-slimstat/wp-slimstat.php wp-slimstat/uninstall.php wp-slimstat/readme.txt \
-                wp-slimstat/vendor/autoload.php wp-slimstat/vendor/composer/autoload_classmap.php; do
+                wp-slimstat/vendor/autoload.php wp-slimstat/vendor/composer/autoload_classmap.php \
+                wp-slimstat/src/Dependencies/autoload.php wp-slimstat/src/Dependencies/autoload-classmap.php; do
   grep -qxF "$required" "$LIST" || { err "Free ZIP is missing $required"; exit 1; }
 done
 # Independent deny rule: the private vendor CLI password executable is not a plugin runtime asset.
-if grep -qxF 'wp-slimstat/src/Dependencies/Symfony/Component/Console/Resources/bin/hiddeninput.exe' "$LIST"; then
+if grep -qxF 'wp-slimstat/src/Dependencies/veronalabs/browscap-php/src/Symfony/Component/Console/Resources/bin/hiddeninput.exe' "$LIST"; then
   err "Free ZIP contains private Windows interactive-console executable"
   exit 1
 fi

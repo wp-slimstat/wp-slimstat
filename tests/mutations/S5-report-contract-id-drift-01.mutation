@@ -7,9 +7,9 @@ rationale: Moves the top_resource mapping to a plausible but absent report id. T
 ---
 --- a/tests/oracle/report-contracts.json
 +++ b/tests/oracle/report-contracts.json
-@@ -2,7 +2,7 @@
-   "schema": "SLIMSTAT-ORACLE-CONTRACTS-V1",
-   "reports": {
+@@ -100,7 +100,7 @@
+       "equality": "ascii_ci"
+     },
      "top_resource": {
 -      "report_id": "slim_p1_08",
 +      "report_id": "slim_p1_99",

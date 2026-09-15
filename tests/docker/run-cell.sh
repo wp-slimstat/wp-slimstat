@@ -192,32 +192,95 @@ after=$(wpc db query "SELECT COUNT(*) FROM wp_slim_stats;" --skip-column-names 2
 [ "${after:-0}" -gt "${before:-0}" ] || fail "no wp_slim_stats row after tracking hit (before=$before after=$after)"
 
 # ── (d) standalone PHP suites on this PHP ───────────────────────────────────
-# Pure source-level SCAN tests — these are the version-compatibility tests, run
-# on this exact PHP. (Stub/full-WP functional tests are covered by the E2E step.)
-dc exec -T -u www-data wp bash -c '
-  set -e; cd /var/www/html/wp-content/plugins/wp-slimstat
-  for t in tests/php74-no-php80-functions-test.php tests/php-implicit-nullable-test.php \
-           tests/php80-syntax-scan-test.php tests/php82-84-forward-scan-test.php \
-           tests/wp70-wp-version-guard-test.php tests/wp70-tested-up-to-test.php \
-           tests/loose-comparison-scan-test.php tests/dtr-pton-init-test.php \
-           tests/wp-removed-core-fns-scan-test.php tests/dead-symfony-removed-test.php \
-           tests/jquery4-own-code-shorthand-scan-test.php tests/loginnote-bracket-parse-test.php \
-           tests/shortcode-w-whitelist-test.php tests/avg-duration-format-test.php \
-           tests/admin-ui-render-guards-test.php tests/goals-free-active-limit-test.php \
-           tests/goals-funnels-index-migration-test.php tests/ci-matrix-coverage-test.php; do
-    [ -f "$t" ] || continue; echo "== $t =="; php "$t" || exit 1
-  done' > "$ART/free-suite.log" 2>&1 || fail "free PHP suite failed"
+# Pure source-level SCAN tests — the version-compatibility tests, run on this exact
+# PHP. (Stub/full-WP functional tests are covered by the E2E step.)
+#
+# THE SHIPPED ZIP EXCLUDES tests/ (.distignore), and this step used to loop over
+# `tests/*.php` inside the INSTALLED plugin with `[ -f "$t" ] || continue`. Every
+# path was missing, every iteration was skipped, the loop exited 0, and the step
+# reported a green PHP suite having executed nothing at all — PITFALLS 191. The
+# files are copied in from the harness checkout the way run-escaping-hook-r2.sh
+# does, and the number of suites that ACTUALLY RAN is asserted, because "the tests
+# passed" and "there were no tests" produce the same exit code.
+FREE_SCANS=(php74-no-php80-functions-test.php php-implicit-nullable-test.php
+            php80-syntax-scan-test.php php82-84-forward-scan-test.php
+            wp70-wp-version-guard-test.php wp70-tested-up-to-test.php
+            loose-comparison-scan-test.php dtr-pton-init-test.php
+            wp-removed-core-fns-scan-test.php dead-symfony-removed-test.php
+            jquery4-own-code-shorthand-scan-test.php loginnote-bracket-parse-test.php
+            shortcode-w-whitelist-test.php avg-duration-format-test.php
+            admin-ui-render-guards-test.php goals-free-active-limit-test.php
+            goals-funnels-index-migration-test.php ci-matrix-coverage-test.php)
+PRO_SCANS=(pro-php80-syntax-scan-test.php pro-php82-84-forward-scan-test.php
+           pro-implicit-nullable-test.php php81-runtime-null-args-test.php
+           scoper-patcher-implicit-nullable-test.php scoper-patcher-e-strict-test.php
+           jquery4-own-code-shorthand-scan-test.php pro-wp-removed-core-fns-scan-test.php
+           pro-wp70-tested-up-to-test.php)
+PRO_SRC="${PRO_SRC:-$(cd "$PLUGIN_SRC/../wp-slimstat-pro" 2>/dev/null && pwd)}"
 
-dc exec -T -u www-data wp bash -c '
-  set -e; cd /var/www/html/wp-content/plugins/wp-slimstat-pro 2>/dev/null || exit 0
-  [ -d tests ] || exit 0
-  for t in tests/pro-php80-syntax-scan-test.php tests/pro-php82-84-forward-scan-test.php \
-           tests/pro-implicit-nullable-test.php tests/php81-runtime-null-args-test.php \
-           tests/scoper-patcher-implicit-nullable-test.php tests/scoper-patcher-e-strict-test.php \
-           tests/jquery4-own-code-shorthand-scan-test.php tests/pro-wp-removed-core-fns-scan-test.php \
-           tests/pro-wp70-tested-up-to-test.php; do
-    [ -f "$t" ] || continue; echo "== $t =="; php "$t" || exit 1
-  done' > "$ART/pro-suite.log" 2>&1 || fail "pro PHP suite failed"
+# <label> <host tests dir> <container plugin dir> <log> <files...>
+run_scan_suite() {
+  local label="$1" src="$2" dest="$3" logf="$4"; shift 4
+  local t copied=0 ran=0 rc=0
+
+  : > "$logf"
+  if [ -z "$src" ] || [ ! -d "$src" ]; then
+    echo "no harness tests/ directory for $label" >> "$logf"
+    fail "$label PHP suite has no source tests/ directory — nothing could have run"
+    return 1
+  fi
+  dc exec -T -u root wp bash -c "mkdir -p '$dest/tests' && chown -R www-data '$dest/tests'" >/dev/null 2>&1
+
+  for t in "$@"; do
+    if dc exec -T -u www-data wp test -f "$dest/tests/$t" >/dev/null 2>&1; then
+      echo "route: $t — already installed" >> "$logf"
+      copied=$((copied + 1)); continue
+    fi
+    if [ ! -f "$src/$t" ]; then
+      echo "route: $t — ABSENT from the harness checkout, skipped" >> "$logf"
+      continue
+    fi
+    if dc cp "$src/$t" "wp:$dest/tests/$t" >/dev/null 2>&1; then
+      echo "route: $t — copied from the harness checkout" >> "$logf"
+      copied=$((copied + 1))
+    else
+      echo "route: $t — COPY FAILED" >> "$logf"
+    fi
+  done
+  dc exec -T -u root wp bash -c "chown -R www-data '$dest/tests'" >/dev/null 2>&1
+
+  for t in "$@"; do
+    dc exec -T -u www-data wp test -f "$dest/tests/$t" >/dev/null 2>&1 || continue
+    echo "== tests/$t ==" >> "$logf"
+    dc exec -T -u www-data wp bash -c "cd '$dest' && php 'tests/$t'" >> "$logf" 2>&1 || rc=1
+    ran=$((ran + 1))
+  done
+
+  echo "EXECUTED $ran of ${#@} $label suite(s) (staged $copied)" >> "$logf"
+  dc exec -T -u root wp bash -c "rm -rf '$dest/tests'" >/dev/null 2>&1
+
+  if [ "$ran" -eq 0 ]; then
+    fail "$label PHP suite executed ZERO tests — a step that runs nothing is not a passing step"
+    return 1
+  fi
+  if [ ! -s "$logf" ]; then
+    fail "$label PHP suite produced an empty log — no evidence it ran"
+    return 1
+  fi
+  [ "$rc" -eq 0 ] || fail "$label PHP suite failed"
+  log "[$CELL] $label scans: $ran/${#@} executed"
+  return "$rc"
+}
+
+run_scan_suite free "$PLUGIN_SRC/tests" \
+  /var/www/html/wp-content/plugins/wp-slimstat "$ART/free-suite.log" "${FREE_SCANS[@]}"
+
+if dc exec -T -u www-data wp test -d /var/www/html/wp-content/plugins/wp-slimstat-pro >/dev/null 2>&1; then
+  run_scan_suite pro "${PRO_SRC:+$PRO_SRC/tests}" \
+    /var/www/html/wp-content/plugins/wp-slimstat-pro "$ART/pro-suite.log" "${PRO_SCANS[@]}"
+else
+  echo "Pro plugin is not installed in this cell" > "$ART/pro-suite.log"
+fi
 
 # ── (e) full Playwright E2E from the host ───────────────────────────────────
 if [ "$RUN_E2E" = "1" ]; then
