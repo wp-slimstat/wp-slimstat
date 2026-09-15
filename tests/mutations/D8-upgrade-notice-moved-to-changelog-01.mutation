@@ -19,7 +19,7 @@ rationale: Deletes the Upgrade Notice entry and makes the changelog heading `= 6
  
  == Changelog ==
  
--= 6.0.0 - 2026-09-01 =
+-= 6.0.0 - 2026-09-15 =
 += 6.0.0 =
  
  **Performance — measured, not estimated**

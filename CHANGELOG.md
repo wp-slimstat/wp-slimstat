@@ -1,4 +1,4 @@
-= 6.0.0 - 2026-09-01 =
+= 6.0.0 - 2026-09-15 =
 
 **Performance — measured, not estimated**
 * Admin charts read about half as many database rows: totals now ride the same query as their buckets. Measured on the weekly chart over the 150,000-row reference bench corpus, as deterministic counters rather than timings: rows read 304,454 -> 152,227 and sort work 212,301 -> 106,141. That change alone leaves report output byte-identical; the separate previous-period correction below does move two numbers, on purpose.
