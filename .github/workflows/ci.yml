@@ -256,7 +256,7 @@ jobs:
 
 ##############################################################################
 # TIER 2 — standard (Playwright E2E via @wordpress/env, target <12 min)
-# Runs on: push or PR targeting main or development branches only
+# Runs on: push or PR targeting master, main, or development
 ##############################################################################
   standard:
     name: "Tier 2 · standard · E2E · WP ${{ matrix.wp }} · PHP ${{ matrix.php }}"
@@ -707,7 +707,7 @@ jobs:
         # The upstream npm package is republished monthly at the same URL, so the
         # cache key has to move with it or CI pins a database that ages out.
         if: ${{ matrix.wp == '6.4' }}
-        run: echo "DBIP_MONTH=$(date -u +%Y-%m)" >> $GITHUB_ENV
+        run: echo "DBIP_MONTH=$(date -u +%Y-%m)" >> "$GITHUB_ENV"
 
       - name: Cache the DB-IP City Lite database
         if: ${{ matrix.wp == '6.4' }}
@@ -766,22 +766,22 @@ jobs:
           echo "Floor guard: no fatals/own-code deprecations in debug.log."
 
       - name: Run E2E tests
-        # The committed-baseline (6.4) lane runs the FULL suite; the WP-version
-        # matrix lanes run only the @compat-tagged compat specs via --grep, so
-        # PRs stay within budget (the lane is the CI job, not the filename).
+        # Pull requests run the focused @compat specs on every matrix lane. The
+        # WooCommerce lane also runs its routed @woocommerce spec, while non-PR
+        # baseline runs retain the full suite (the lane is the CI job, not the filename).
         #
         # BLOCKING on 6.4 and 7.1; soft everywhere else. continue-on-error is the
         # setting being excused, and the expression is FALSE — the lane can fail
         # the job — for exactly two versions: the committed baseline that
         # .wp-env.json boots, and the newest WordPress in the matrix above.
         #
-        # Read "blocking on 7.1" literally. The branch below runs the full suite
-        # only when WP_VERSION is the baseline; every other lane runs
-        # --grep "@compat". So 7.1 blocking gates the @compat subset, and the real
-        # target of this flip is 6.4/PHP 7.4 running all 748 tests. The interior
-        # lanes stay soft on purpose: they are version-drift signal, not a merge
-        # gate, and making them blocking would fail the job on host-environment
-        # debt rather than on defects.
+        # Read "blocking on 7.1" literally. On pull requests, 7.1 gates the
+        # @compat subset plus its routed @woocommerce spec. On non-PR runs, the
+        # 6.4/PHP 8.2 baseline runs the full suite except @woocommerce, whose
+        # prerequisite requires a newer WordPress and is exercised on 7.1 instead.
+        # The interior lanes stay soft on purpose: they are version-drift signal,
+        # not a merge gate, and making them blocking would fail the job on
+        # host-environment debt rather than on defects.
         #
         # The version list is not free-form. perf-gate-integrity §7 derives the
         # blocking set from .wp-env.json's `core` and the newest lane in the
@@ -796,7 +796,7 @@ jobs:
           WP_ADMIN_USER: admin
           WP_ADMIN_PASS: password
         run: |
-          if [ "${WP_VERSION}" = "6.4" ]; then
+          if [ "${{ github.event_name }}" != "pull_request" ] && [ "${WP_VERSION}" = "6.4" ]; then
             # "Full suite" minus the one spec whose prerequisite this lane cannot have:
             # WooCommerce 10.6.2 declares `Requires at least: 6.8`. The exclusion is by
             # TAG, not by filename, so the carve-out and the routing below read the same
