@@ -1,0 +1,17 @@
+target:    uninstall.php
+gate:      php tests/uninstall-data-safety-test.php
+kind:      guard-removal
+expect:    with LIKE wildcards escaped
+rationale: Drop esc_like() from the sweep patterns. `_` is a single-character LIKE wildcard, so an unescaped `_transient_slimstat_` also matches option names this plugin does not own - a DELETE against wp_options that is wider than intended, on the path that runs for every uninstall including the keep-my-data one. Worth pinning because the gate could NOT see this until the test's wpdb double stopped stubbing esc_like() as the identity function: the escaping was justified in a paragraph and proven by nothing.
+---
+--- a/uninstall.php
++++ b/uninstall.php
+@@ -187,7 +187,7 @@
+ 
+     $patterns = [];
+     foreach ($families as $family) {
+-        $patterns[] = $db->esc_like($family) . '%';
++        $patterns[] = $family . '%';
+         $patterns[] = $db->esc_like(str_replace('_transient_', '_transient_timeout_', $family)) . '%';
+     }
+ 

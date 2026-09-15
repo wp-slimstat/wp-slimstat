@@ -8,9 +8,16 @@ use SlimStat\Services\Privacy;
 use SlimStat\Services\Geolocation\GeolocationService;
 use SlimStat\Providers\IPHashProvider;
 use SlimStat\Utils\Consent;
+use SlimStat\Utils\OptionClaim;
 
 class Processor
 {
+    /** Single-flight claim for the tracking path's schema repair. */
+    private const REPAIR_CLAIM_OPTION = 'slimstat_schema_repair_claim';
+
+    /** Seconds before another repair may be attempted. */
+    private const REPAIR_COOLDOWN = 300;
+
     /**
      * Schemes accepted for the stored referer. Anything else is treated as an XSS
      * attempt and dropped. Used both as the protocols allow-list for sanitize_url()
@@ -98,7 +105,18 @@ class Processor
         // Get current stat with validation
         $stat = \wp_slimstat::get_stat();
 
-        $stat['dt'] = \wp_slimstat::date_i18n('U');
+        // now(), not date_i18n('U'), and this is a CLARITY change rather than a behavioural one.
+        // Measured: core's date_i18n() short-circuits 'U' and returns current_time('timestamp'),
+        // an int already — so now()'s cast is an identity here, and every downstream use
+        // (`$stat['dt'] - $session_duration`, the `%d` in prepare(), the INT column) is unaffected
+        // either way. An earlier version of this comment claimed date_i18n() "returns a STRING"
+        // and that setProcessingTimestamp() "declares int|null"; neither is true, and both were
+        // written from reading the call rather than from running it.
+        //
+        // What stands is that now() is the documented call for this — "the current timestamp in
+        // the same format stored in the dt column" — and that it carries the type where
+        // date_i18n()'s is conditional on the format string.
+        $stat['dt'] = \wp_slimstat::now();
         if (empty($stat['notes'])) {
             $stat['notes'] = [];
         }
@@ -180,7 +198,7 @@ class Processor
         $stat['resource'] = preg_replace_callback('/[^\x20-\x7E]/', function ($m) {
             return '%' . bin2hex($m[0]);
         }, $stat['resource']);
-        $parsed_url = parse_url($stat['resource'] ?? '');
+        $parsed_url = wp_parse_url($stat['resource'] ?? '');
         if (!$parsed_url) {
             Query::setProcessingTimestamp(null);
             return Utils::logError(203);
@@ -193,24 +211,26 @@ class Processor
             return Utils::logError(305);
         }
 
-        if (empty($stat['referer']) && !empty($_SERVER['HTTP_REFERER'])) {
+        $http_referer = $_SERVER['HTTP_REFERER'] ?? '';
+        if (empty($stat['referer']) && is_string($http_referer) && '' !== $http_referer) {
             // sanitize_url() with android-app added to the allow-list: app-scheme referers
             // (android-app://com.google.android.googlequicksearchbox/, Google Discover) survive,
             // disallowed schemes (javascript:, data:) are emptied at the boundary, and — unlike
             // sanitize_text_field — percent-encoded query octets are preserved so getSearchTerms()
             // below can still decode non-Latin / spaced search terms. See #306.
-            $stat['referer'] = sanitize_url(wp_unslash($_SERVER['HTTP_REFERER']), self::REFERER_ALLOWED_SCHEMES);
+            $stat['referer'] = sanitize_url(wp_unslash($http_referer), self::REFERER_ALLOWED_SCHEMES);
         }
 
 
         if (!empty($stat['referer'])) {
-            $parsed_url = parse_url($stat['referer'] ?? '');
+            $parsed_url = wp_parse_url($stat['referer'] ?? '');
             if (!$parsed_url) {
                 Query::setProcessingTimestamp(null);
                 return Utils::logError(201);
             }
 
             if (isset($parsed_url['scheme']) && ('' !== $parsed_url['scheme'] && '0' !== $parsed_url['scheme']) && !in_array(strtolower($parsed_url['scheme']), self::REFERER_ALLOWED_SCHEMES)) {
+                /* translators: %s: referring URL rejected as an attempted XSS injection. */
                 $stat['notes'][] = sprintf(__('Attempted XSS Injection: %s', 'wp-slimstat'), $stat['referer']);
                 unset($stat['referer']);
             }
@@ -222,14 +242,15 @@ class Processor
 
 
             $stat['searchterms'] = Utils::getSearchTerms($stat['referer']);
-            $parsed_site_url = parse_url(get_site_url(), PHP_URL_HOST);
+            $parsed_site_url = wp_parse_url(get_site_url(), PHP_URL_HOST);
             if (isset($parsed_url['host']) && ('' !== $parsed_url['host'] && '0' !== $parsed_url['host']) && $parsed_url['host'] == $parsed_site_url && 'on' != \wp_slimstat::$settings['track_same_domain_referers']) {
                 unset($stat['referer']);
             }
         }
 
-        if (empty($stat['searchterms']) && !empty($_POST['s'])) {
-            $stat['searchterms'] = sanitize_text_field(str_replace('\\', '', wp_unslash($_POST['s'])));
+        $posted_search = $_POST['s'] ?? '';
+        if (empty($stat['searchterms']) && is_string($posted_search) && '' !== $posted_search) {
+            $stat['searchterms'] = sanitize_text_field(str_replace('\\', '', wp_unslash($posted_search)));
         }
 
         if (!isset($stat['content_type'])) {
@@ -259,7 +280,9 @@ class Processor
             $stat['notes'][] = 'results:' . intval($GLOBALS['wp_query']->found_posts);
         }
 
-        if ((isset($stat['resource']) && ($stat['resource'] !== '' && $stat['resource'] !== '0') && false !== strpos($stat['resource'], 'wp-admin/admin-ajax.php')) || (!empty($_GET['page']) && false !== strpos($_GET['page'], 'slimview'))) {
+        $admin_page = $_GET['page'] ?? '';
+        $admin_page = is_string($admin_page) ? sanitize_text_field(wp_unslash($admin_page)) : '';
+        if ((isset($stat['resource']) && ($stat['resource'] !== '' && $stat['resource'] !== '0') && false !== strpos($stat['resource'], 'wp-admin/admin-ajax.php')) || ('' !== $admin_page && false !== strpos($admin_page, 'slimview'))) {
             Query::setProcessingTimestamp(null);
             return Utils::logError(308);
         }
@@ -290,7 +313,14 @@ class Processor
         } elseif ($piiAllowed && isset($_COOKIE['comment_author_' . COOKIEHASH])) {
             // Only check comment cookies if PII is allowed
             // Use original IP (before hashing) for spam check with Query builder
+            // ->local(): wp_comments is a CORE table. The default Query handle is the
+            // analytics connection, which under the custom-DB add-on is a different
+            // database (often server) with no wp_comments — so on an external-DB install
+            // a known commenter's username/email were never attached, silently, on every
+            // one of their pageviews (F6/C44). DB_NAME still qualifies it, harmlessly,
+            // since the local handle IS DB_NAME.
             $spam_comment = Query::select('comment_author, comment_author_email, COUNT(*) as comment_count')
+                ->local()
                 ->from(DB_NAME . '.' . $GLOBALS['wpdb']->comments)
                 ->where('comment_author_IP', '=', $originalIpForGeo)
                 ->where('comment_approved', '=', 'spam')
@@ -308,12 +338,14 @@ class Processor
                 $stat['username'] = $spam_comment->comment_author;
                 $stat['email']    = $spam_comment->comment_author_email;
             } else {
-                if (!empty($_COOKIE['comment_author_' . COOKIEHASH])) {
-                    $stat['username'] = sanitize_user($_COOKIE['comment_author_' . COOKIEHASH]);
+                $comment_author = $_COOKIE['comment_author_' . COOKIEHASH] ?? '';
+                if (is_string($comment_author) && '' !== $comment_author) {
+                    $stat['username'] = sanitize_user(wp_unslash($comment_author));
                 }
 
-                if (!empty($_COOKIE['comment_author_email_' . COOKIEHASH])) {
-                    $stat['email'] = sanitize_email($_COOKIE['comment_author_email_' . COOKIEHASH]);
+                $comment_email = $_COOKIE['comment_author_email_' . COOKIEHASH] ?? '';
+                if (is_string($comment_email) && '' !== $comment_email) {
+                    $stat['email'] = sanitize_email(wp_unslash($comment_email));
                 }
             }
         }
@@ -364,7 +396,11 @@ class Processor
             }
         }
 
-        if ((isset($_SERVER['HTTP_X_MOZ']) && ('prefetch' === strtolower($_SERVER['HTTP_X_MOZ']))) || (isset($_SERVER['HTTP_X_PURPOSE']) && ('preview' === strtolower($_SERVER['HTTP_X_PURPOSE'])))) {
+        $x_moz = $_SERVER['HTTP_X_MOZ'] ?? '';
+        $x_moz = is_string($x_moz) ? sanitize_text_field(wp_unslash($x_moz)) : '';
+        $x_purpose = $_SERVER['HTTP_X_PURPOSE'] ?? '';
+        $x_purpose = is_string($x_purpose) ? sanitize_text_field(wp_unslash($x_purpose)) : '';
+        if ('prefetch' === strtolower($x_moz) || 'preview' === strtolower($x_purpose)) {
             if ('on' == \wp_slimstat::$settings['ignore_prefetch']) {
                 Query::setProcessingTimestamp(null);
                 return Utils::logError(312);
@@ -402,6 +438,10 @@ class Processor
         }
         $cookie_has_been_set = Session::ensureVisitId($forceVisitIdAssign);
         $stat = \wp_slimstat::get_stat(); // Get updated stat after ensureVisitId
+        if ([] === $stat) {
+            Query::setProcessingTimestamp(null);
+            return Utils::logError(500);
+        }
 
         $stat = apply_filters('slimstat_filter_pageview_stat', $stat);
         do_action('slimstat_track_pageview', $stat);
@@ -431,8 +471,9 @@ class Processor
 				// Allow explicit visit_id from client to target original anonymous record
 				// Security: Only accept visit_id with valid checksum to prevent targeting arbitrary records
 				$requestedVisitId = 0;
-				if (!empty($_REQUEST['visit_id'])) {
-					$visitIdRaw = sanitize_text_field(wp_unslash($_REQUEST['visit_id']));
+				$requestedVisitIdRaw = $_REQUEST['visit_id'] ?? '';
+				if (is_scalar($requestedVisitIdRaw) && '' !== (string) $requestedVisitIdRaw) {
+					$visitIdRaw = sanitize_text_field(wp_unslash((string) $requestedVisitIdRaw));
 					$visitIdValue = Utils::getValueWithoutChecksum($visitIdRaw);
 					if (false !== $visitIdValue) {
 						$requestedVisitId = intval($visitIdValue);
@@ -491,9 +532,31 @@ class Processor
 							$searchIp = $hashedIp;
 						}
 
-						// Calculate the expected Anonymous Visit ID based on current IP/UA
-						// This helps find the session even if IP hashing doesn't match perfectly or if lookup needs to be more robust
-						$anonymousVisitId = Session::generateAnonymousVisitId();
+						// Re-derive the anonymous IDENTITY (vid_hash), not a visit id: since
+						// D68 the visit id is sequential and cannot be recomputed, while the
+						// hash is deterministic for the same person on the same day — which
+						// is exactly the window a consent upgrade happens in. It also finds
+						// the whole anonymous session regardless of how many visit ids the
+						// old code had split it across.
+						//
+						// OWED, AND THE COMMENT HERE USED TO UNDERSTATE IT. It said the SELECT
+						// "fails softly (finds nothing) … which is the pre-existing degraded
+						// behaviour". Both halves are wrong. The vid_hash test below is OR'd
+						// with the ip and visit_id tests, and MySQL rejects the WHOLE statement
+						// on an unknown column (1054) — so before AddVisitIdentity runs it is
+						// not the vid_hash disjunct that fails, it is the entire lookup, and
+						// the ip match that used to claim the row goes with it. That path
+						// worked before the disjunct was added, so this is a regression, not
+						// the prior behaviour. The consent upgrade silently inserts a duplicate
+						// instead of claiming the anonymous rows.
+						//
+						// Not fixed here: this needs the same probe-and-fall-back treatment
+						// findExistingAnonymousVisitId() now has, plus its own mutation, and
+						// widening this change to restructure the consent-upgrade query is
+						// scope this commit should not take. Narrow but real — it needs
+						// $isConsentUpgrade && $isAnonymousTracking && $piiAllowed on a
+						// pre-migration schema, and it inflates visits rather than losing data.
+						$anonymousVidHash = Session::generateAnonymousVidHash($stat);
 
 						// Build complex WHERE clause: (ID match) OR (VisitID match) OR (IP match)
 						// Note: We effectively group conditions here
@@ -506,9 +569,8 @@ class Processor
 							$whereClause[] = $GLOBALS['wpdb']->prepare("visit_id = %d", $stat['visit_id']);
 						}
 
-						if ($anonymousVisitId > 0) {
-							// Use %s to handle large integers correctly on all platforms
-							$whereClause[] = $GLOBALS['wpdb']->prepare("visit_id = %s", (string)$anonymousVisitId);
+						if ('' !== $anonymousVidHash) {
+							$whereClause[] = $GLOBALS['wpdb']->prepare('vid_hash = UNHEX(%s)', $anonymousVidHash);
 						}
 
 						if (!empty($searchIp)) {
@@ -629,18 +691,8 @@ class Processor
                             }
                         }
 
-                        // Use atomic counter for thread-safe visit ID generation (O(1) instead of O(n))
-                        $next_visit_id = VisitIdGenerator::generateNextVisitId();
-                        if ($next_visit_id <= 0) {
-                            $next_visit_id = time();
-                        }
-
-                        $stat['visit_id'] = intval($next_visit_id);
-
-                        // Sync visit_id to ensure session continuity
-                        if (!empty($stat['visit_id']) && isset($existing_record->visit_id) && $stat['visit_id'] != $existing_record->visit_id) {
-                            $update_data['visit_id'] = $stat['visit_id'];
-                        }
+                        // Consent enriches the existing session; it must not allocate a new visit.
+                        $stat['visit_id'] = intval($existing_record->visit_id);
 
                         // Update the existing record
                         if (!empty($update_data)) {
@@ -677,8 +729,10 @@ class Processor
                             \wp_slimstat::set_stat($stat);
                             Query::setProcessingTimestamp(null);
 
-                            // Ensure tracking cookie is set after upgrade
-                            if (empty($stat['visit_id']) && !empty($stat['id'])) {
+                            // Match the cookie to the preserved session after ensureVisitId's provisional allocation.
+                            if (!empty($stat['visit_id'])) {
+                                Session::setTrackingCookie($stat['visit_id'], 'visit');
+                            } elseif (!empty($stat['id'])) {
                                 Session::setTrackingCookie($stat['id'], 'id', 2678400);
                             }
 
@@ -745,23 +799,33 @@ class Processor
             }
         }
 
-        $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
+        $write = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
 
-        if (false === $stat['id']) {
-            include_once(SLIMSTAT_ANALYTICS_DIR . 'admin/index.php');
-            \wp_slimstat_admin::init_environment();
-            $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
-            if (false === $stat['id']) {
-                Query::setProcessingTimestamp(null);
-                // Store DB error detail for admin diagnostics
-                $dbError = (string) $GLOBALS['wpdb']->last_error;
-                \wp_slimstat::update_option('slimstat_tracker_error_detail', sanitize_text_field($dbError));
-                return Utils::logError(200);
-            }
+        // The error is passed rather than re-read from $wpdb->last_error: insertRow() can
+        // run a column probe and a retry after the failing statement, each of which resets
+        // it, so the global no longer describes the write being classified.
+        if ($write->isFailed() && self::repairSchemaOnce($write->error())) {
+            $write = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
         }
 
-        // Clear stale DB error detail on successful insert
-        \wp_slimstat::update_option('slimstat_tracker_error_detail', '');
+        // One exit for "nothing was stored". isFailed() is a strict subset of !isStored():
+        // an INSERT IGNORE that matched an existing row, or a row an FK refused, stored
+        // nothing without erroring — and that used to be a `0` that passed `false === $id`
+        // and propagated as $stat['id'] = 0, whose event insert then violated the FK and
+        // was silently dropped. One lost pageview beats a lost pageview plus a lost event
+        // plus a diagnostic saying everything is fine.
+        if (!$write->isStored()) {
+            Query::setProcessingTimestamp(null);
+            Utils::recordErrorDetail($write->isFailed()
+                ? $write->error()
+                : 'insert stored no row (duplicate or constraint) — not a database error');
+            return Utils::logError(200);
+        }
+
+        $stat['id'] = $write->id();
+
+        // Clear stale DB error detail on successful insert.
+        Utils::clearErrorDetail();
 
         // Update stat after getting ID
         \wp_slimstat::set_stat($stat);
@@ -820,4 +884,76 @@ class Processor
         )));
     }
 
+
+    /**
+     * Rebuild the schema from the tracking path — narrowly, and once.
+     *
+     * This exists because a site can genuinely have no tables: before C38 both
+     * lifecycle registrations sat inside `if (is_admin())`, which is false under
+     * WP-CLI, so `wp plugin activate` created nothing and this was the only thing that
+     * ever did. C38 fixed activation, which is what makes this the abnormal path again
+     * — and abnormal paths that run four CREATE TABLEs, five CREATE INDEXes and
+     * flush_rewrite_rules() from an anonymous front-end request need gating.
+     *
+     * Two gates, because the old code had neither:
+     *
+     *   - THE TRIGGER. It fired on ANY insert failure. A deadlock, a lock-wait timeout,
+     *     a full disk, an oversized packet — every one of them ran the whole DDL and
+     *     retried, and almost none of them is a missing table. Only an
+     *     ER_NO_SUCH_TABLE (1146) means the thing this repairs.
+     *   - SINGLE-FLIGHT. On a busy site a transient failure is not one failure, it is
+     *     every concurrent request failing at once. Each would have run the DDL
+     *     together, against the database that was already the thing in trouble. The
+     *     claim row also serves as the cooldown: it is left behind deliberately and
+     *     expires, so a site whose tables cannot be created does not retry forever.
+     *
+     * @return bool Whether the schema was rebuilt and a retry is worth attempting.
+     */
+    private static function repairSchemaOnce($error = '')
+    {
+        $error = (string) $error;
+
+        // MySQL 1146 / MariaDB: "Table 'db.wp_slim_stats' doesn't exist". Matched on the
+        // text because wpdb exposes no error code, and on both spellings because the
+        // apostrophe is typographic in some locales.
+        if (!preg_match("/doesn'?t exist|no such table|1146/i", $error)) {
+            return false;
+        }
+
+        // One repair per cooldown, whoever gets there first. A losing request skips the
+        // DDL and reports the failure normally; it does not queue behind a rebuild.
+        if (!OptionClaim::insert(self::REPAIR_CLAIM_OPTION, (string) time(), 'no')) {
+            $held = (int) get_option(self::REPAIR_CLAIM_OPTION);
+
+            if ($held > 0 && (time() - $held) < self::REPAIR_COOLDOWN) {
+                return false;
+            }
+
+            // The claim is stale — the previous attempt died or its cooldown elapsed.
+            if (!OptionClaim::compareAndSwap(
+                self::REPAIR_CLAIM_OPTION,
+                (string) $held,
+                (string) time(),
+                'no'
+            )) {
+                return false;
+            }
+        }
+
+        try {
+            include_once SLIMSTAT_ANALYTICS_DIR . 'admin/index.php';
+            if (false === \wp_slimstat_admin::init_environment()) {
+                return false;
+            }
+        } catch (\Throwable $e) {
+            \wp_slimstat::record_degradation(
+                'schema repair from the tracking path',
+                $e,
+                \wp_slimstat::DEGRADATION_OPERATIONAL
+            );
+            return false;
+        }
+
+        return true;
+    }
 }

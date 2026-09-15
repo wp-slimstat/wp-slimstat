@@ -88,7 +88,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     await snapshotSlimstatOptions();
     await clearStatsTable();
     await clearDiagnosticOptions();
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'off',
       javascript_mode: 'on',
       ignore_wp_users: 'no',
@@ -110,13 +110,13 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('adblock HTML failure falls back to AJAX and records the first pageview', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'adblock_bypass',
       javascript_mode: 'on',
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
     let adblockAttempts = 0;
     const requestOrder: string[] = [];
@@ -164,13 +164,13 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('aborted first adblock request falls back to AJAX on the same load', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'adblock_bypass',
       javascript_mode: 'on',
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
     let adblockAttempts = 0;
 
@@ -204,12 +204,12 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('REST pretty failure falls back to rest_route query transport', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'rest',
       javascript_mode: 'on',
     });
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
     let sawQueryRoute = false;
 
@@ -243,7 +243,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('REST query fallback uses index.php routing on index-permalink installs', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'rest',
       javascript_mode: 'on',
     });
@@ -256,7 +256,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     try {
       await flushRewrites(page);
 
-      const ctx = await browser.newContext();
+      const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
       const anonPage = await ctx.newPage();
       let queryRouteUrl = '';
 
@@ -350,8 +350,23 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     expect(typeof health.last_tracker_warning.label).toBe('string');
   });
 
-  test('stale interaction id triggers pageview recovery and flushes the buffered event', async ({ page }) => {
-    await setSlimstatOptions(page, {
+  test('stale interaction id triggers pageview recovery and flushes the buffered event', async ({ page }, testInfo) => {
+    const trackerResponses: Array<{ url: string; request: string; status: number; response: string }> = [];
+    page.on('response', async response => {
+      const request = response.request();
+      if (request.method() !== 'POST' || !/admin-ajax\.php|slimstat\/v1\/hit|\/request\//.test(response.url())) return;
+      try {
+        trackerResponses.push({
+          url: response.url(),
+          request: request.postData() || '',
+          status: response.status(),
+          response: await response.text(),
+        });
+      } catch {
+        // A navigation can dispose a response body; the server/database assertions remain authoritative.
+      }
+    });
+    await setSlimstatOptions({
       tracking_request_method: 'ajax',
       javascript_mode: 'on',
     });
@@ -383,16 +398,102 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
 
     await page.click('#recover-link');
 
-    await expect.poll(async () => getStatCountForMarker(marker), { timeout: 20_000 }).toBe(countsBefore.stats + 1);
-    await expect.poll(async () => getTotalEventCount(), { timeout: 20_000 }).toBe(countsBefore.events + 1);
+    try {
+      await expect.poll(async () => getStatCountForMarker(marker), { timeout: 20_000 }).toBe(countsBefore.stats + 1);
+      await expect.poll(async () => getTotalEventCount(), { timeout: 20_000 }).toBe(countsBefore.events + 1);
 
+      const recoveredId = await page.evaluate(() => (window as any).SlimStatParams?.id || '');
+      expect(recoveredId).toBeTruthy();
+      expect(recoveredId).not.toBe(staleId);
+    } finally {
+      await testInfo.attach('stale-id-transports', {
+        body: JSON.stringify(trackerResponses, null, 2),
+        contentType: 'application/json',
+      });
+    }
+  });
+
+  test('one stale-id recovery rebases two queued sibling interactions', async ({ page }) => {
+    await setSlimstatOptions({
+      tracking_request_method: 'ajax',
+      javascript_mode: 'on',
+    });
+
+    const marker = `recovery-stale-siblings-${Date.now()}`;
+    await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'networkidle' });
+    const originalId = await waitForTrackerId(page);
+    const countsBefore = {
+      stats: await getStatCountForMarker(marker),
+      events: await getTotalEventCount(),
+    };
+    const staleId = `${originalId.slice(0, -1)}${originalId.slice(-1) === '0' ? '1' : '0'}`;
+
+    await page.evaluate((invalidId) => {
+      (window as any).SlimStatParams.id = invalidId;
+      (window as any).slimstatPageviewTracked = false;
+      ['first', 'second'].forEach((name, index) => {
+        const link = document.createElement('a');
+        link.href = `https://example.com/recovery-${name}`;
+        link.textContent = name;
+        document.body.appendChild(link);
+        (window as any).SlimStat.ss_track({
+          type: 'click',
+          target: link,
+          pageX: 10 + index,
+          pageY: 20 + index,
+        }, '', false);
+      });
+    }, staleId);
+
+    await expect.poll(async () => getTotalEventCount(), { timeout: 20_000 }).toBe(countsBefore.events + 2);
+    expect(await getStatCountForMarker(marker)).toBe(countsBefore.stats + 1);
     const recoveredId = await page.evaluate(() => (window as any).SlimStatParams?.id || '');
     expect(recoveredId).toBeTruthy();
     expect(recoveredId).not.toBe(staleId);
   });
 
+  test('real offline interaction replays once after reconnect without duplicate rows', async ({ page, browser }) => {
+    await setSlimstatOptions({ tracking_request_method: 'ajax', javascript_mode: 'on' });
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      const visitor = await ctx.newPage();
+      const marker = `recovery-real-offline-${Date.now()}`;
+      await visitor.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'networkidle' });
+      await waitForTrackerId(visitor);
+      await visitor.evaluate(() => {
+        const link = document.createElement('a');
+        link.id = 'offline-link';
+        link.href = 'https://example.com/offline-replay';
+        link.target = '_blank';
+        link.textContent = 'Offline interaction';
+        document.body.appendChild(link);
+      });
+      visitor.on('popup', popup => { void popup.close(); });
+      const eventsBefore = await getTotalEventCount();
+      await ctx.setOffline(true);
+      await visitor.click('#offline-link');
+      const offlineQueue = () => visitor.evaluate(() =>
+        JSON.parse(localStorage.getItem('slimstat_offline_queue') || '[]'));
+      await expect.poll(offlineQueue).toHaveLength(1);
+      expect(await getTotalEventCount()).toBe(eventsBefore);
+
+      await ctx.setOffline(false);
+      await expect.poll(getTotalEventCount, { timeout: 20_000 }).toBe(eventsBefore + 1);
+      await expect.poll(offlineQueue).toHaveLength(0);
+      await ctx.setOffline(true);
+      await ctx.setOffline(false);
+      await visitor.reload({ waitUntil: 'networkidle' });
+      await waitForTrackerId(visitor);
+      expect(await offlineQueue()).toHaveLength(0);
+      expect(await getTotalEventCount()).toBe(eventsBefore + 1);
+      expect(await getStatCountForMarker(marker)).toBe(2);
+    } finally {
+      await ctx.close();
+    }
+  });
+
   test('stale pageview id retries once without id and assigns a fresh pageview id', async ({ page }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'ajax',
       javascript_mode: 'on',
     });
@@ -409,23 +510,43 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
       (window as any).SlimStat._send_pageview({ isConsentRetry: true });
     }, staleId);
 
-    await expect.poll(
-      async () => page.evaluate(() => (window as any).SlimStatParams?.id || ''),
-      { timeout: 20_000 }
-    ).not.toBe(staleId);
-    const recoveredId = await page.evaluate(() => (window as any).SlimStatParams?.id || '');
-    const debugData = await page.evaluate(() => (window as any).__slimstatDebug?.lastPageview);
-    const rowCountAfter = await getStatCountForMarker(marker);
+    // Wait for the *settled* recovery, and sample every value in one round trip.
+    //
+    // handleStaleIdRecovery() clears SlimStatParams.id before it fires the retry
+    // (wp-slimstat.js clearCurrentPageviewId), and __slimstatDebug.lastPageview is only
+    // published when a send finalises (debugFinalize). So `id !== staleId` is already
+    // true throughout the in-flight window, where the id is '' and lastPageview is still
+    // the PREVIOUS pageview's record -- and a later recovery can clear the id again after
+    // this one has succeeded. Polling on `!== staleId` and then reading the id and the
+    // debug record in two further evaluate() calls therefore samples three different
+    // instants, and can pair a finished debug record with a cleared id, or a fresh id
+    // with the record of the pageview before it. Both halves of that race were observed
+    // on the WP 6.4 lane: run 34460621048 lost it once and passed on retry, run
+    // 34529285017 lost it twice and failed the lane.
+    //
+    // The product is correct either way: the only finalize that publishes a `success`
+    // lastPageview assigns the new id first, so a settled record always has its id.
+    const readRecovery = () => page.evaluate((stale) => {
+      const pageview = (window as any).__slimstatDebug?.lastPageview;
+      const id = (window as any).SlimStatParams?.id || '';
+      return {
+        idIsFresh: id !== '' && id !== stale,
+        outcome: pageview?.finalOutcome,
+        retriedWithoutId: !!pageview?.attempts?.some((a: any) => a.bodyKind === 'stale_id_retry'),
+      };
+    }, staleId);
 
-    expect(rowCountAfter).toBeGreaterThanOrEqual(rowsBefore);
-    expect(debugData?.finalOutcome).toBe('success');
-    expect(debugData?.attempts?.some((attempt: any) => attempt.bodyKind === 'stale_id_retry')).toBe(true);
-    expect(recoveredId).toBeTruthy();
-    expect(recoveredId).not.toBe(staleId);
+    await expect.poll(readRecovery, { timeout: 20_000 }).toEqual({
+      idIsFresh: true,
+      outcome: 'success',
+      retriedWithoutId: true,
+    });
+
+    expect(await getStatCountForMarker(marker)).toBeGreaterThanOrEqual(rowsBefore);
   });
 
   test('explicit negative rejection does not queue offline retries and stays rejected', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'adblock_bypass',
       javascript_mode: 'on',
       ignore_bots: 'on',
@@ -434,6 +555,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     await flushRewrites(page);
 
     const ctx = await browser.newContext({
+      storageState: { cookies: [], origins: [] },
       userAgent: 'Googlebot/2.1 (+http://www.google.com/bot.html)',
     });
     const anonPage = await ctx.newPage();
@@ -465,13 +587,13 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('transport memory prefers the last known good fallback after a transport-only failure', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'adblock_bypass',
       javascript_mode: 'on',
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
     let requestAttempts = 0;
 
@@ -511,7 +633,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('GET requests to the adblock endpoint return 405 with no-store cache headers', async ({ page }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'adblock_bypass',
       javascript_mode: 'on',
     });

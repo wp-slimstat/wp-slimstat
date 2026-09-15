@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    two rows with the same values under different columns are different rows verdict
+rationale: Drops the column NAMES from a row's canonical key, so two rows holding the same values under different columns key alike and a swapped pair of columns reads as ORDER-ONLY rather than as a difference - the shape of a rewrite defect in a query builder that assembles its SELECT list positionally. The docstring says 'column names included'; until this assertion nothing checked that the next line performed it.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -459,7 +459,7 @@ def _row_key(row, contract):
+     other side that nothing here checks.
+     """
+     if isinstance(row, dict):
+-        items = sorted((str(k), _cell(v, str(k), contract)) for k, v in row.items())
++        items = sorted([_cell(v, str(k), contract)] for k, v in row.items())
+     elif isinstance(row, (list, tuple)):
+         # A positional row: index as the column name, so a positional and an associative row
+         # never accidentally key alike.

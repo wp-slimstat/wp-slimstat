@@ -1,0 +1,18 @@
+target:    wp-slimstat.php
+gate:      composer test:activation-hooks
+kind:      name-only
+expect:    names wp_slimstat_admin, which lives in admin/index.php
+rationale: Writes the C38 defect in the ONE spelling the gate could not see. PHP 8.0 collapses `\wp_slimstat_admin` into a single T_NAME_FULLY_QUALIFIED token; the scan tested for T_STRING and T_CONSTANT_ENCAPSED_STRING, so it `continue`d straight past it. Measured on PHP 8.5.5 against this exact hunk: the pre-fix gate printed 'PASS: 2 lifecycle hook(s) registered unconditionally, with self-loading callbacks' and exited 0. Same input, fixed gate, exit 1 naming line 2700. The defect is real -- activating from WP-CLI calls a class admin/index.php never loaded on that request -- and the gate that exists to refuse it welcomed it. Registered name-only because nothing about the code's BEHAVIOUR changes for the scanner: only how the name is spelled.
+---
+diff --git a/wp-slimstat.php b/wp-slimstat.php
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -2697,7 +2697,7 @@
+     // The callbacks go through wrappers rather than naming wp_slimstat_admin directly,
+     // because that class lives in admin/index.php and is not loaded on the CLI path
+     // these registrations were just moved onto.
+-    register_activation_hook(__FILE__, ['wp_slimstat', 'on_activate']);
++    register_activation_hook(__FILE__, [\wp_slimstat_admin::class, 'on_activate']);
+     register_deactivation_hook(__FILE__, ['wp_slimstat', 'on_deactivate']);
+ 
+     // Subsite creation (D10). Unconditional for the same reason as the two hooks above:

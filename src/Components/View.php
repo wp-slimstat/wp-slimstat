@@ -86,7 +86,8 @@ class View
                 $viewPath = sprintf('%s/views/%s.php', $baseDir, $view);
 
                 if (!file_exists($viewPath)) {
-                    throw new \Exception(esc_html__('View file not found: ' . $viewPath, 'wp-slimstat'));
+                    /* translators: %s: missing template file path. */
+                    throw new \Exception(sprintf(esc_html__('View file not found: %s', 'wp-slimstat'), esc_html($viewPath)));
                 }
 
                 // Make $view_args available to templates (safer than extract)

@@ -13,6 +13,15 @@
  *                      return false. Tests the error code 10 path added to fix #14843.
  */
 
+/**
+ * Guarded by SLIMSTAT_E2E_TESTING, like every other helper here. Ungated, this breaks the browscap download path.
+ * The file reaching wp-content/mu-plugins is not consent to run it: a helper
+ * gets there by an interrupted test run as easily as a deliberate one.
+ */
+if (!defined('SLIMSTAT_E2E_TESTING') || !SLIMSTAT_E2E_TESTING) {
+    return;
+}
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }

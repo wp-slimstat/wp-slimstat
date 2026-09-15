@@ -1,0 +1,17 @@
+target:    tests/docker/lib.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    a reversed index reads back reversed, not equal
+rationale: The P1 read path needs the composite (vid_hash, dt) in that order: a visit lookup becomes a ref on vid_hash with the range served on dt. Built the other way round the index still exists, still carries the right name, still reports "index present" -- and serves no range at all, which is the regression the whole identity column was added to remove. information_schema.STATISTICS does not guarantee row order, so without ORDER BY SEQ_IN_INDEX the helper returns the two columns in whatever order the server hands them back and a reversed index can read as identical to a correct one. The gate stubs mysql_q with the columns reversed, which is the only way to tell those two apart offline.
+---
+--- a/tests/docker/lib.sh
++++ b/tests/docker/lib.sh
+@@ -347,7 +347,7 @@
+ index_columns() { # <table> <index> — the index's columns in SEQ order, comma-joined; empty if absent
+   mysql_q "SELECT COLUMN_NAME FROM information_schema.STATISTICS
+              WHERE TABLE_SCHEMA='wordpress' AND TABLE_NAME='$1' AND INDEX_NAME='$2'
+-             ORDER BY SEQ_IN_INDEX;" \
++             ORDER BY COLUMN_NAME;" \
+     | tr -d '\r' | sed '/^$/d' | tr '\n' ',' | sed 's/,$//'
+ }
+ 

@@ -17,7 +17,8 @@ class LogException extends Exception
     private function generateLogMessage($message, $code)
     {
         return sprintf(
-            __('Exception occurred: [Code %d] %s at %s:%d', 'wp-slimstat'),
+            /* translators: 1: exception code, 2: message, 3: source file, 4: line number. */
+            __('Exception occurred: [Code %1$d] %2$s at %3$s:%4$d', 'wp-slimstat'),
             $code,
             $message,
             $this->getFile(),

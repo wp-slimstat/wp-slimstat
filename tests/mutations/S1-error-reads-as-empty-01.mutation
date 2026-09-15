@@ -1,0 +1,21 @@
+target:    tests/docker/report-answers.php
+gate:      php tests/answer-envelope-classes-test.php
+kind:      restore-defect
+expect:    failed-query class: expected 'error', got 'empty'
+rationale: Restores the two-year conflation the envelope exists to end: with the EZSQL delta no longer consulted, a query that FAILED into a well-formed empty array classifies as `empty` and compares equal to an honest nothing - which is how two reports agreed in every arm of every run while neither had ever executed (PITFALLS 38). The campaign's R4/R5 amendment ("funnels ERROR on MySQL 8; they do not report zero") cites the gate this mutation proves can fire. The thrown-exception branch is left intact so the kill demonstrates the EZSQL detector specifically, not the try/catch beside it.
+---
+diff --git a/tests/docker/report-answers.php b/tests/docker/report-answers.php
+--- a/tests/docker/report-answers.php
++++ b/tests/docker/report-answers.php
+@@ -428,10 +428,10 @@
+         'flags'         => array_merge(
+             ['clock_dependent' => false, 'calendar_day_dependent' => false, 'pinned' => false],
+             $flags
+         ),
+     ];
+ 
+-    if ($thrown !== null || $e1 > $e0) {
++    if ($thrown !== null) {
+         $env['class'] = 'error';
+ 
+         $str   = $thrown;

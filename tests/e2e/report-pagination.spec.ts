@@ -14,7 +14,10 @@ import { BASE_URL } from './helpers/env';
 import {
   closeDb,
   clearStatsTable,
+  restoreSlimstatOptions,
   seedPageviews,
+  setSlimstatOption,
+  snapshotSlimstatOptions,
 } from './helpers/setup';
 import * as mysql from 'mysql2/promise';
 import { MYSQL_CONFIG } from './helpers/env';
@@ -98,6 +101,10 @@ async function getFirstRowText(page: any, panelId: string): Promise<string> {
 // ─── Setup / Teardown ────────────────────────────────────────────
 
 test.beforeAll(async () => {
+  await snapshotSlimstatOptions();
+  await setSlimstatOption(null!, 'limit_results', '200');
+  await setSlimstatOption(null!, 'rows_to_show', '20');
+  await setSlimstatOption(null!, 'async_load', 'no');
   await clearStatsTable();
   // Seed 60 generic pageviews (for top reports)
   await seedPageviews({ count: 60, resourcePrefix: '/e2e-pagination-' });
@@ -109,6 +116,7 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => {
   await clearStatsTable();
+  await restoreSlimstatOptions();
   await closeDb();
 });
 

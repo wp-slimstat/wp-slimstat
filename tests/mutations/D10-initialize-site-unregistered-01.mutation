@@ -1,0 +1,20 @@
+target:    wp-slimstat.php
+gate:      php tests/subsite-table-hook-test.php
+kind:      name-only
+expect:    does not register a callback on 'wp_initialize_site'
+rationale: Removes the registration and LEAVES THE COMMENT BLOCK naming wp_initialize_site right above where it stood. A text scan for the hook name passes on the comment alone; the gate must demand the add_action construct with the hook name as its first string-literal argument.
+---
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -2868,11 +2868,10 @@
+     // Subsite creation (D10). Unconditional for the same reason as the two hooks above:
+     // sites are created by WP-CLI, REST and programmatic wp_insert_site() calls, where
+     // is_admin() is false and the admin bundle — home of the old wpmu_new_blog
+     // registration — was never loaded. The callback itself checks network-active status
+     // at fire time, so on single sites and per-site-activated networks this is a no-op.
+-    add_action('wp_initialize_site', ['wp_slimstat', 'on_initialize_site'], 200);
+ 
+     // The consumer of the activation cursor. Registered here, beside the hook that WRITES
+     // it, because WordPress fires activation once: a resume whose only caller is the
+     // activation hook is a marker nothing ever resumes from. Both callbacks return
+     // immediately outside the network admin, so on single sites this is two no-ops.

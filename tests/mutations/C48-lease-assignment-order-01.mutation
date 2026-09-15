@@ -1,0 +1,21 @@
+target:    src/Schema/Meta.php
+gate:      php tests/lease-claim-shape-test.php
+kind:      restore-defect
+expect:    dt must be assigned BEFORE meta_value
+rationale: Reorders the ON DUPLICATE KEY UPDATE assignments. MySQL evaluates them left to right, each seeing the previous ones' effects — with meta_value assigned first, the dt assignment compares against the NEW holder and self-poisons: a steal writes the thief's name with the victim's expiry, splitting the row's two halves between two claimers. No unit test executes the SQL, so the order lives only in this gate.
+---
+diff --git a/src/Schema/Meta.php b/src/Schema/Meta.php
+index 4fdc1fe7..7ae247b2 100644
+--- a/src/Schema/Meta.php
++++ b/src/Schema/Meta.php
+@@ -100,8 +100,8 @@ final class Meta
+         $written = $db->query($db->prepare(
+             "INSERT INTO {$prefix}slim_meta (meta_key, meta_value, dt) VALUES (%s, %s, %d)
+              ON DUPLICATE KEY UPDATE
+-                 dt         = IF(meta_value = VALUES(meta_value) OR dt < %d, VALUES(dt), dt),
+-                 meta_value = IF(dt = VALUES(dt), VALUES(meta_value), meta_value)",
++                 meta_value = IF(dt < %d OR meta_value = VALUES(meta_value), VALUES(meta_value), meta_value),
++                 dt         = IF(meta_value = VALUES(meta_value), VALUES(dt), dt)",
+             $key,
+             $holder,
+             $expiry,

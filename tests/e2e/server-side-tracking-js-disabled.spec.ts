@@ -49,7 +49,7 @@ test.describe('Server-Side Tracking with JS Disabled', () => {
     await setSlimstatOption(page, 'javascript_mode', 'off');
 
     // Create a browser context with JavaScript disabled
-    const noJsContext = await browser.newContext({ javaScriptEnabled: false });
+    const noJsContext = await browser.newContext({ javaScriptEnabled: false, storageState: { cookies: [], origins: [] } });
     const noJsPage = await noJsContext.newPage();
 
     const marker = `js-disabled-servermode-${Date.now()}`;
@@ -69,7 +69,7 @@ test.describe('Server-Side Tracking with JS Disabled', () => {
     // Set client-side tracking mode
     await setSlimstatOption(page, 'javascript_mode', 'on');
 
-    const noJsContext = await browser.newContext({ javaScriptEnabled: false });
+    const noJsContext = await browser.newContext({ javaScriptEnabled: false, storageState: { cookies: [], origins: [] } });
     const noJsPage = await noJsContext.newPage();
 
     const marker = `js-disabled-clientmode-${Date.now()}`;
@@ -91,7 +91,7 @@ test.describe('Server-Side Tracking with JS Disabled', () => {
     await setSlimstatOption(page, 'javascript_mode', 'off');
 
     // Use a regular (JS-enabled) anonymous context
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     const marker = `js-enabled-servermode-${Date.now()}`;

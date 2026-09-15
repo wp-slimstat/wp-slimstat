@@ -39,12 +39,76 @@ class FunnelOrderingSqlTest extends TestCase
 
     public function test_temp_table_carries_timestamp_column(): void
     {
-        // The temp table now stores (vid, t) so step N+1 can compare against
-        // the visitor's first-seen timestamp at step N.
-        $this->assertStringContainsString(
-            't INT UNSIGNED NOT NULL',
+        // The temp table carries (vid, t, rid, rkind) so step N+1 can compare against the
+        // visitor's first-seen timestamp at step N *and* exclude the row that produced it.
+        //
+        // The columns are DERIVED from the SELECT, not declared. This assertion used to
+        // require the literal `t INT UNSIGNED NOT NULL`, which pinned the declaration —
+        // and the declaration was the defect: an explicit `vid VARCHAR(64)` took the
+        // database's default collation, so the step-2 join against the visitor-identity
+        // expression threw ER_CANT_AGGREGATE_2COLLATIONS whenever the two differed, and
+        // every step after the first silently reported 0 visitors.
+        //
+        // What must hold is that the column exists and carries the timestamp, which the
+        // SELECT alias establishes and test_step_aggregates_min_dt_per_visitor() pins.
+        $this->assertMatchesRegularExpression(
+            '/CREATE\s+TEMPORARY\s+TABLE\s+\$temp_write\s*\(\s*KEY\s*\(\s*vid\s*\)\s*\)\s*AS/i',
             $this->body,
-            'Funnel temp table must include a `t INT UNSIGNED` column to store per-visitor first-seen timestamps'
+            'The funnel temp table must derive its columns from the SELECT — declaring '
+                . '`vid VARCHAR(...)` gives it the database default collation and breaks the '
+                . 'step-2 join on any install whose column collation differs'
+        );
+        $this->assertMatchesRegularExpression(
+            '/MIN\(%s\)\s+AS\s+t\b/i',
+            $this->body,
+            'The temp table must still carry the per-visitor first-seen timestamp as `t`'
+        );
+    }
+
+    public function test_step_two_plus_excludes_the_row_that_satisfied_the_previous_step(): void
+    {
+        // `dt >= r.t` alone lets ONE physical pageview satisfy TWO steps whenever the step
+        // rules overlap — "contains shop" then "contains shop/cart" against a single visit
+        // to /shop/cart — and report a conversion that never happened. Measured through
+        // get_funnel_results() on scratch tables: 3 converted visitors where 2 converted.
+        //
+        // Tightening to `>` is NOT the fix; it drops a real conversion whose two separate
+        // pageviews land in the same second (also measured). The row identity is the test.
+        $this->assertMatchesRegularExpression(
+            '/%s\s*<>\s*r\.rid/i',
+            $this->body,
+            'Step N>1 must exclude the physical row that satisfied step N, or one pageview '
+                . 'matching two overlapping step rules is counted as a conversion'
+        );
+        $this->assertStringContainsString(
+            'AS rid',
+            $this->body,
+            'The temp table must carry the id of the row that satisfied the step'
+        );
+    }
+
+    public function test_row_id_is_an_argmin_not_a_second_aggregate(): void
+    {
+        // `MIN(dt) AS t, MIN(id) AS rid` looks right and is not: independent aggregates
+        // over the same group need not describe the same row. For a visitor with rows
+        // (id 5, dt 100) and (id 8, dt 90) it stores t=90 with rid=5 — an id belonging to a
+        // row that did not achieve t. Step N+1 then excludes a row that never satisfied
+        // step N while the row that did stays eligible.
+        //
+        // Measured through get_funnel_results() on scratch tables, with the two rows
+        // inserted so id order and dt order disagree: the paired form reported 0 converted
+        // visitors where 1 genuinely converted; the argmin reported 1. Reachable in normal
+        // operation — dt is stamped by PHP before the INSERT, so a request that starts
+        // later can commit first and take a lower auto-increment id.
+        $this->assertDoesNotMatchRegularExpression(
+            '/MIN\(%s\)\s+AS\s+rid/i',
+            $this->body,
+            '`rid` must not be a plain MIN() beside MIN(dt) — see this test\'s comment'
+        );
+        $this->assertMatchesRegularExpression(
+            '/SUBSTRING_INDEX\(GROUP_CONCAT\(%s ORDER BY %s ASC, %s ASC\)/i',
+            $this->body,
+            '`rid` must be an argmin over (dt, id) so it names the row that achieved `t`'
         );
     }
 

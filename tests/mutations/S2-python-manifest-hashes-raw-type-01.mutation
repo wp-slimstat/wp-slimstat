@@ -1,0 +1,18 @@
+target:    tests/oracle/encoding_v1.py
+gate:      composer test:fingerprint-v2-py
+kind:      restore-defect
+expect:    the 5.6 spelling of one schema hashes the same as the 8.0 spelling
+rationale: The PYTHON TWIN of S2-manifest-hashes-raw-type-01, and it exists because the PHP one escaped. When that defect was first mutated it PASSED - every manifest line in the fixture was already MySQL 8.0's spelling, so removing the canonicalisation changed nothing observable. The Python side carried the IDENTICAL vacuity and was fixed by the IDENTICAL new fixture key, but on this side "verified before this case existed" was inherited from the other language's run rather than demonstrated on this one. Two independent encoders is a claim about both halves; a registry that proves one half's guard can fire and assumes the other's is exactly the asymmetry this campaign exists to refuse. Killed here on its own gate, in its own language.
+---
+diff --git a/tests/oracle/encoding_v1.py b/tests/oracle/encoding_v1.py
+--- a/tests/oracle/encoding_v1.py
++++ b/tests/oracle/encoding_v1.py
+@@ -105,7 +105,7 @@ def canonical_type(declared_type):
+ 
+ def manifest_hash(columns, order_by):
+     """Schema identity, separate from data identity. `columns` is (name, type, nullable)."""
+-    lines = [f"{n}|{canonical_type(t)}|{'NULL' if nullable else 'NOT NULL'}"
++    lines = [f"{n}|{t}|{'NULL' if nullable else 'NOT NULL'}"
+              for n, t, nullable in columns]
+     text = "\n".join(lines) + "\n" + "ORDER BY " + order_by
+     return hashlib.sha256(text.encode("utf-8")).hexdigest()

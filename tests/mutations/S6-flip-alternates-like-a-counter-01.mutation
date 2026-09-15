@@ -1,0 +1,19 @@
+target:    tests/docker/seal-lib.sh
+gate:      composer test:seal-entrypoint
+kind:      introduce-defect
+expect:    the flip alternates
+rationale: Replaces the entropy bit with a counter's low bit, which is what a counter-backed or LCG-derived source actually does to `first_byte & 1`. The result is PERFECTLY BALANCED - k=10 of 20 - so it passes the stuck check, passes the two-tailed sign test, and produces a mapping, a commitment and a private answer key that are all structurally valid. Only the runs half of the degenerate band sees it: R=20. That is why the band has two clauses rather than one, and this entry is the reason the second exists - the gate briefly asserted only that both assignments occur, which this defect satisfies twenty times out of twenty.
+---
+--- a/tests/docker/seal-lib.sh
++++ b/tests/docker/seal-lib.sh
+@@ -99,7 +99,9 @@
+       [ "$a" != "$z" ] || { seal_err "SEAL REFUSED: one ref as both arms is a null control; pass null=1 to say so"; return 3; } ;;
+   esac
+   entropy=$(seal_draw_entropy) || return 3; seal_validate_entropy "$entropy" || return 3
+-  commitment=$(seal_sha256_text "$entropy"); first=$(printf '%s' "$entropy" | cut -c1-2); bit=$((16#$first & 1))
++  commitment=$(seal_sha256_text "$entropy"); first=$(printf '%s' "$entropy" | cut -c1-2)
++  _ctr_file="$(dirname "$dir")/.flip-counter"; _ctr=$(cat "$_ctr_file" 2>/dev/null || echo 0)
++  bit=$((_ctr % 2)); echo $((_ctr + 1)) > "$_ctr_file"
+   if [ "$bit" -eq 0 ]; then arm1="$a"; arm2="$z"; else arm1="$z"; arm2="$a"; fi
+   now=$(date -u +%FT%TZ); source=/dev/urandom; [ -n "$SLIMSTAT_SEAL_ENTROPY_SOURCE" ] && source=test-fixture
+   mkdir -p "$dir/.sealed" "$dir/packet/arm-1" "$dir/packet/arm-2" "$dir/adjudication" "$dir/timing" || return 3

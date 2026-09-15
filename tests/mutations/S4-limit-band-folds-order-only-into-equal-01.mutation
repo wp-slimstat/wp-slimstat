@@ -1,0 +1,14 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      restore-defect
+expect:    P55-order-only-remains-distinct-under-a-limit-contract label
+rationale: Deletes the ADR-18 Q3 fallthrough when the cut-band memberships match. The same LIMIT-N rows in another sequence then fall through to tie-at-the-cut/EQUAL and PASS, erasing ORDER_ONLY from the ordinary top-N shape. P55 is the first plant to reach this branch under a LIMIT contract.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -617,4 +617,1 @@
+-    if at_a == at_b:
+-        return compare_rows(a_rows, b_rows, contract)
+-
+     swapped_out = sorted((at_a - at_b).elements())

@@ -1,0 +1,18 @@
+target:    tests/docker/build-packet.py
+gate:      composer test:seal-negative
+kind:      guard-removal
+expect:    T17 expected exit 3 and 'the two arms share an identity field'
+rationale: Deletes the count floor on the sealed literals. Every packet still builds and every other control still passes, because the floor's subject is a state no other check looks at: two captures carrying the SAME identity fields, which is what a comparison whose arms failed to swap produces. Until T17 and T18 existed both branches of the expectation were deletable with the suite green - T12 asserts exit 5 from the scrub audit, never exit 3 from this count - so the floor was an assertion nothing had ever run.
+---
+--- a/tests/docker/build-packet.py
++++ b/tests/docker/build-packet.py
+@@ -73,8 +73,7 @@
+ # two, one ref rather than two -- and `len({ref_a,ref_b})` computes the second instead of
+ # hardcoding it, so a run mislabelled null with two distinct refs gets the right expectation and
+ # therefore the right diagnosis rather than this floor's.
+-eras=1 if null_control else len(captured)
+-expected_literals=len(identity_keys)*eras+len({ref_a,ref_b})
++expected_literals=len(literals)
+ if len(literals)!=expected_literals:
+     detail=("a null control's arms must share every identity field" if null_control
+             else "the two arms share an identity field")

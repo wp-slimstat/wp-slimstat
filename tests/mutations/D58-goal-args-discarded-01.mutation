@@ -1,0 +1,17 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      php tests/goals-args-scope-test.php
+kind:      restore-defect
+expect:    goals: no scoped query carries the caller's WHERE
+rationale: Restores D58's minimal goal form - get_goals_raw() extracts the caller's WHERE and then calls get_goal_results() WITHOUT it, so the extraction line reads as protection while the args are discarded one call deeper. The gate must see that no scoped GOAL statement carries the clause; the cache half also fires, but the discarded-WHERE assertion is the one this mutation restores. The funnel path stays fixed, which is why the expect is path-prefixed.
+---
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -2264,7 +2264,7 @@
+                 break;
+             }
+             $remaining--;
+-            $data      = self::get_goal_results($goal, $extra_where);
++            $data      = self::get_goal_results($goal);
+             $results[] = [
+                 'goal_name' => $goal['name'],
+                 'uniques'   => $data['uniques'],

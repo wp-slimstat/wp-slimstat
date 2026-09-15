@@ -13,6 +13,7 @@
  *   5. Toggle OFF works correctly after successful enable
  */
 import { test, expect } from '@playwright/test';
+import { setSettingsToggle } from './helpers/settings';
 import * as fs from 'fs';
 import * as path from 'path';
 import { unserialize as phpUnserialize } from 'php-serialize';
@@ -111,7 +112,7 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
     // Find and toggle Browscap ON
     const browscapToggle = page.locator('#enable_browscap');
     await expect(browscapToggle).toBeAttached();
-    await browscapToggle.check();
+    await setSettingsToggle(browscapToggle, true);
 
     // Submit the form
     await page.locator('input.slimstat-settings-button[type="submit"]').click();
@@ -151,7 +152,7 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
     enableUnzipBlocker('unzip_fail');
 
     await page.goto(SETTINGS_URL, { waitUntil: 'domcontentloaded' });
-    await page.locator('#enable_browscap').check();
+    await setSettingsToggle(page.locator('#enable_browscap'), true);
     await page.locator('input.slimstat-settings-button[type="submit"]').click();
     await page.waitForLoadState('domcontentloaded');
 
@@ -181,7 +182,7 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
     disableUnzipBlocker(); // Ensure no blocker
 
     await page.goto(SETTINGS_URL, { waitUntil: 'domcontentloaded' });
-    await page.locator('#enable_browscap').check();
+    await setSettingsToggle(page.locator('#enable_browscap'), true);
     await page.locator('input.slimstat-settings-button[type="submit"]').click();
     await page.waitForLoadState('domcontentloaded');
 
@@ -219,7 +220,7 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
     enableUnzipBlocker('corrupt_zip');
 
     await page.goto(SETTINGS_URL, { waitUntil: 'domcontentloaded' });
-    await page.locator('#enable_browscap').check();
+    await setSettingsToggle(page.locator('#enable_browscap'), true);
     await page.locator('input.slimstat-settings-button[type="submit"]').click();
     await page.waitForLoadState('domcontentloaded');
 
@@ -260,7 +261,7 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
     }
 
     // Toggle OFF
-    await browscapToggle.uncheck();
+    await setSettingsToggle(browscapToggle, false);
     await page.locator('input.slimstat-settings-button[type="submit"]').click();
     await page.waitForLoadState('domcontentloaded');
 
@@ -301,7 +302,7 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
 
     // Change session_duration AND try to enable browscap
     await sessionInput.fill(newValue);
-    await page.locator('#enable_browscap').check();
+    await setSettingsToggle(page.locator('#enable_browscap'), true);
 
     // Submit
     await page.locator('input.slimstat-settings-button[type="submit"]').click();
@@ -335,7 +336,7 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
     enableUnzipBlocker('fs_method_block');
 
     await page.goto(SETTINGS_URL, { waitUntil: 'domcontentloaded' });
-    await page.locator('#enable_browscap').check();
+    await setSettingsToggle(page.locator('#enable_browscap'), true);
     await page.locator('input.slimstat-settings-button[type="submit"]').click();
     await page.waitForLoadState('domcontentloaded');
 

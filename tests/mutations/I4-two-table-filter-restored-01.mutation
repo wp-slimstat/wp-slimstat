@@ -1,0 +1,17 @@
+target:    tests/perf/lib/explain-capture.php
+gate:      php tests/explain-gate-strength-test.php
+kind:      restore-defect
+expect:    invisible to the old two-name filter
+rationale: Restores the enumerated two-table filter while its replacement's comment stands - slim_meta, slim_user_agents and every Phase G table go invisible to the EXPLAIN gate again, and "no full scans found" quietly means "on two tables". The gate drives the REAL record() path, so only actual capture behaviour can satisfy it.
+---
+--- a/tests/perf/lib/explain-capture.php
++++ b/tests/perf/lib/explain-capture.php
+@@ -87,7 +87,7 @@
+             // gate (the I4 audit finding). 'slim_' WITH the underscore matches table
+             // names and cannot match 'slimstat' option keys, so core's transient
+             // reads stay out of scope.
+-            if (stripos($sql, 'slim_') === false) {
++            if (stripos($sql, 'slim_stats') === false && stripos($sql, 'slim_events') === false) {
+                 return;
+             }
+ 

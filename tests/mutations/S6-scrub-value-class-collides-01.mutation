@@ -1,0 +1,17 @@
+target:    tests/docker/scrub-audit.py
+gate:      composer test:scrub-audit
+kind:      restore-defect
+expect:    legitimate report values fired
+rationale: Puts `era` back among the classes applied to VALUES, which is the state that refused R20260824-a51bf2. `\bv[56]\b` cannot tell the marker in _arm_version from the slug /big-changes-slimstat-v5-1/, and the capture carried four of the latter. Only the false-positive floor can see this: all eleven classes still fire, the drop-class control still works, and a packet of synthetic answers is still clean - so the pre-fix selftest, which asserted only set(fixtures) - seen, was green with exactly this defect present.
+---
+--- a/tests/docker/scrub-audit.py
++++ b/tests/docker/scrub-audit.py
+@@ -115,7 +115,7 @@
+ #
+ # What none of this weakens is the identity check. Whether an era leaks is decided by the sealed
+ # literals — this run's own SHAs, fingerprints and versions — which are exact, not lexical.
+-VALUE_CLASSES=("arm-metadata","capability","v6-column","migration")
++VALUE_CLASSES=("arm-metadata","capability","v6-column","migration","era")
+ 
+ # A file the audit cannot parse is not a file the audit has cleared. Declared here so the
+ # refusal names a class like every other refusal does, rather than printing a tuple.

@@ -1,0 +1,17 @@
+target:    tests/lib/source-scan.php
+gate:      php tests/source-scan-strength-test.php
+kind:      construct-removal
+expect:    a genuinely absent function must be fatal, never a silent empty string
+rationale: Restores the pre-I1 contract where a missing function returns the empty string instead of throwing. That silence is how two gating tests asked for functions which have never existed and stayed green for the life of the tree. The strength test MUST fail when absence goes quiet again.
+---
+--- a/tests/lib/source-scan.php
++++ b/tests/lib/source-scan.php
+@@ -116,7 +116,7 @@ function slimstat_find_function_body(string $source, string $name): ?string
+         return slimstat_token_text_range($tokens, $brace + 1, $range[1]);
+     }
+ 
+-    return null;
++    return '';
+ }
+ 
+ /**

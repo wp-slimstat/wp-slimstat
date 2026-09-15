@@ -1,0 +1,55 @@
+target:    tests/docker/verify-export-fingerprint.php
+gate:      php tests/docker/reachability/analyse-controls.php tests/docker/verify-export-fingerprint.php
+expect:    [!!] 5 CORPUS-STABLE
+control:   5 (CORPUS-STABLE)
+relation:  exit-effect
+kind:      guard-removal
+detection: an analysis PASSES this mutation only if it names CONTROL 5 and says its failure
+           cannot change the exit status (exit-ineffective, records into nothing the terminal
+           reads, wired to nothing). Naming it UNREACHABLE is a MISS - it is reached, and an
+           analysis that cannot tell the two relations apart cannot vouch for either. A generic
+           error, a refusal, a timeout, an unrelated finding, or a finding already true of the
+           baseline is a MISS.
+static:    the gate above must exit 1 with "CONTROL 5 (CORPUS-STABLE) at line N is EXIT-INEFFECTIVE"
+live:      run-rollup-floor.sh lane fp_reachability_mutations - forcing control 5 must print
+           "[!!] 5" AND the run must still exit 0: the control executed, and its failure reached
+           nothing
+rationale: The second, and quieter, way a control dies. M1's severed call site at least stops
+           printing. This one prints perfectly: the predicate is evaluated, the line is rendered,
+           `[!!] 5` appears in the CONTROLS block exactly as it would if the control worked - and
+           the process exits 0. Every artifact of such a run contains the failure, in the block a
+           reader is told to read first, above a PASS line. That combination is worse than a
+           missing control, because it is evidence-shaped.
+
+           It is built the way it would really happen: not by deleting `$failures[]`, but by a
+           second renderer that "just prints", introduced for a control that felt advisory.
+           CONTROL 5 is chosen because it is the one that plausibly reads as advisory - it
+           reports on cron scheduling rather than on a hash - and it is the control whose failure
+           means the run may have been certifying a corpus something was deleting from.
+
+           ONE KINDNESS IS RECORDED. The `if ($forced === $n)` line inside the new renderer is
+           there so the LIVE half can observe the control still executing; a real defect would
+           not carry it, and the self-test would then report control 5 as unreachable rather than
+           as exit-ineffective. The mutation is therefore slightly easier on the analysers than
+           the defect it models, and that is stated rather than left for someone to find.
+
+           REGENERATE, never hand-edit - see M1.
+---
+diff --git a/tests/docker/verify-export-fingerprint.php b/tests/docker/verify-export-fingerprint.php
+--- a/tests/docker/verify-export-fingerprint.php
++++ b/tests/docker/verify-export-fingerprint.php
+@@ -1028,7 +1028,13 @@
+     // This file only SELECTs; the BOOT that runs it does not. Sampled before either pass, and
+     // therefore after the boot that may already have spawned the job — so this is a refusal to
+     // certify such a run, not a guard that prevents the write.
+-    $control(
++    // M2: CONTROL 5 still runs, still evaluates its predicate, still prints [!!] when unmet -
++    // through a renderer that records nothing the terminal exit is guarded on.
++    $control_advisory = function ($ok, $n, $name, $detail) use (&$controls, $forced) {
++        if ($forced === $n) { $ok = false; }
++        $controls[] = sprintf('[%s] %d %-13s %s', $ok ? 'OK' : '!!', $n, $name, $detail);
++    };
++    $control_advisory(
+         $c5_ok, 5, 'CORPUS-STABLE',
+         sprintf('DISABLE_WP_CRON=%s, wp_slimstat_purge %s, auto_purge=%s',
+             $cron_off ? 'true' : 'NOT DEFINED',

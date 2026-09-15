@@ -7,6 +7,95 @@ use SlimStat\Utils\Consent;
 
 class Ajax
 {
+    /** Requests one client may make inside RATE_LIMIT_WINDOW before being refused. */
+    private const RATE_LIMIT_HITS = 10;
+
+    /** Length of the rate-limiting window, in seconds. */
+    private const RATE_LIMIT_WINDOW = 5;
+
+    /** Object-cache group for the counters. Kept out of 'default' so a flush is targeted. */
+    private const RATE_LIMIT_GROUP = 'slimstat_rl';
+
+    /**
+     * Whether this client has exceeded the tracking rate limit.
+     *
+     * The counter lives in the object cache, never in the options table. It used to be
+     * a transient with a five-second TTL, which is shorter than the gap between most
+     * visitors' hits — so the timeout row was normally expired, WordPress deleted both
+     * rows and re-inserted them, and the measured cost was 2 to 4 `wp_options` writes
+     * on *every tracked hit*. That is several times the write work of storing the
+     * pageview, spent to save roughly six queries on the rare request it refuses. (D29)
+     *
+     * Without a persistent object cache there is nowhere free to keep a cross-request
+     * counter, so the limiter stands down rather than charging every site a write per
+     * hit for a counter it cannot afford. Two things make that the right trade rather
+     * than a silent loss of protection:
+     *
+     *   - by the time this runs, the request has already paid for the full WordPress
+     *     bootstrap, so refusing it saves a fraction of its cost. A cap that matters
+     *     belongs at the edge, ahead of PHP;
+     *   - `slimstat_rate_limit_enabled` lets a site turn it back on regardless.
+     *
+     * The counter is keyed on the raw REMOTE_ADDR, unchanged. Behind a CDN or a NAT
+     * gateway that is one bucket for everyone behind it, which is a real limitation —
+     * `slimstat_rate_limit_key` exists so such a site can supply the client address it
+     * trusts. Resolving forwarded headers here by default would let anyone evade the
+     * limit by varying a header, which is a worse trade than the one it fixes.
+     *
+     * @param string $ip Client address, already validated by the caller.
+     * @return bool True when the request should be refused.
+     */
+    /**
+     * Whether rate limiting is in effect on this site.
+     *
+     * Exposed so the Tracker Health endpoint can report it: a protection that turns
+     * itself off according to the hosting environment is one a site owner has to be
+     * able to see.
+     *
+     * @param string $ip Client address, when the decision is being made for a request.
+     * @return bool
+     */
+    public static function isRateLimitingActive(string $ip = ''): bool
+    {
+        /**
+         * Filters whether tracking requests are rate limited at all.
+         *
+         * @param bool   $enabled Defaults to true only when a persistent object cache
+         *                        can hold the counter without a database write.
+         * @param string $ip      Client address, or '' when queried for reporting.
+         */
+        // function_exists guarded like every other wp_using_ext_object_cache() call in
+        // the plugin: the tracker can run before the full object-cache API is loaded.
+        $has_persistent_cache = function_exists('wp_using_ext_object_cache') && wp_using_ext_object_cache();
+
+        return (bool) apply_filters('slimstat_rate_limit_enabled', $has_persistent_cache, $ip);
+    }
+
+    public static function isRateLimited(string $ip): bool
+    {
+        if (!self::isRateLimitingActive($ip)) {
+            return false;
+        }
+
+        /**
+         * Filters the identity a rate-limit budget is tracked against.
+         *
+         * @param string $ip Client address as seen by PHP.
+         */
+        $key = 'rl_' . md5((string) apply_filters('slimstat_rate_limit_key', $ip));
+
+        $hits = wp_cache_incr($key, 1, self::RATE_LIMIT_GROUP);
+        if (false === $hits) {
+            // No counter yet, or the window just expired. `add` rather than `set` so
+            // two concurrent requests cannot each reset the other's window; the loser
+            // undercounts by one, which a rate limiter can afford.
+            wp_cache_add($key, 1, self::RATE_LIMIT_GROUP, self::RATE_LIMIT_WINDOW);
+            $hits = 1;
+        }
+
+        return $hits > self::RATE_LIMIT_HITS;
+    }
+
     /**
      * Validate click position as strict "x,y" format with 1-5 digit coordinates.
      *
@@ -52,7 +141,7 @@ class Ajax
     public static function sanitizeReferer($rawEncoded)
     {
         $referer    = Utils::base64UrlDecode($rawEncoded);
-        $parsed_ref = parse_url($referer ?: '');
+        $parsed_ref = wp_parse_url($referer ?: '');
 
         // Security: Validate referer format
         if (false === $parsed_ref) {
@@ -105,19 +194,16 @@ class Ajax
      */
     public static function process()
     {
-        $remote_ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
-        if (!empty($remote_ip)) {
-            $key        = 'slimstat_rl_' . md5($remote_ip);
-            $hits_in_5s = (int) get_transient($key);
-            if ($hits_in_5s >= 10) {
-                return Utils::logError(429);
-            }
-
-            set_transient($key, $hits_in_5s + 1, 5);
-        }
-
+        // Tracking-disabled is checked first: it is an array read, so a site with
+        // tracking off short-circuits without touching the object cache at all.
         if ('on' != \wp_slimstat::$settings['is_tracking']) {
             return Utils::logError(204);
+        }
+
+        $remote_ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        $remote_ip = is_string($remote_ip) ? sanitize_text_field(wp_unslash($remote_ip)) : '';
+        if (!empty($remote_ip) && self::isRateLimited($remote_ip)) {
+            return Utils::logError(429);
         }
 
         $id = 0;
@@ -127,8 +213,8 @@ class Ajax
         $data_js   = \wp_slimstat::get_data_js();
         $stat      = \wp_slimstat::get_stat();
 
-        $site_host = parse_url(get_site_url(), PHP_URL_HOST);
-        $home_host = parse_url(home_url(), PHP_URL_HOST);
+        $site_host = wp_parse_url(get_site_url(), PHP_URL_HOST);
+        $home_host = wp_parse_url(home_url(), PHP_URL_HOST);
         $http_host = isset($_SERVER['HTTP_HOST']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_HOST'])) : '';
         $allowed_hosts = array_filter([$site_host, $home_host, $http_host]);
         $normalize_host = static function ($host) {
@@ -192,6 +278,28 @@ class Ajax
                 return Utils::getValueWithChecksum($stat['id']);
             }
 
+            if ($isConsentUpgrade && empty($data_js['pos']) && 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off')) {
+                // The verified existing ID must use the session-wide consent merge,
+                // rather than the ordinary one-row update path below. Only when
+                // anonymous tracking is on, though: that merge (Processor::process(),
+                // the `$isAnonymousTracking && $piiAllowed` block) is the only thing
+                // process() does for an upgrade, and with anonymous tracking off it
+                // fell through to a plain INSERT — a second row for one pageview,
+                // whose resource was the tracker endpoint itself, because process()
+                // falls back to REQUEST_URI and its self-tracking guard names only
+                // admin-ajax.php, never the REST route. The ordinary update path
+                // below is what an upgrade of one known, already-identified row
+                // means: re-process the IP under the new consent, collect the PII
+                // consent now permits, and leave the resource alone.
+                \wp_slimstat::set_stat(Utils::getClientInfo($data_js, $stat));
+                $id = Processor::process();
+                if (empty($id) || $id < 0) {
+                    return $id ?: 0;
+                }
+                do_action('slimstat_track_success');
+                return Utils::getValueWithChecksum($id);
+            }
+
             // Process IP according to consent status (cookie set only by consent upgrade handler)
             // $isConsentUpgrade already defined above
             // Pass explicit consent flag if this is a consent upgrade request
@@ -203,12 +311,14 @@ class Ajax
                     $stat['email']    = $GLOBALS['current_user']->data->user_email;
                     $stat['notes'][]  = 'user:' . $GLOBALS['current_user']->data->ID;
                 } elseif (isset($_COOKIE['comment_author_' . COOKIEHASH])) {
-                    if (!empty($_COOKIE['comment_author_' . COOKIEHASH])) {
-                        $stat['username'] = sanitize_user($_COOKIE['comment_author_' . COOKIEHASH]);
+                    $comment_author = $_COOKIE['comment_author_' . COOKIEHASH] ?? '';
+                    if (is_string($comment_author) && '' !== $comment_author) {
+                        $stat['username'] = sanitize_user(wp_unslash($comment_author));
                     }
 
-                    if (!empty($_COOKIE['comment_author_email_' . COOKIEHASH])) {
-                        $stat['email'] = sanitize_email($_COOKIE['comment_author_email_' . COOKIEHASH]);
+                    $comment_email = $_COOKIE['comment_author_email_' . COOKIEHASH] ?? '';
+                    if (is_string($comment_email) && '' !== $comment_email) {
+                        $stat['email'] = sanitize_email(wp_unslash($comment_email));
                     }
                 }
             }
@@ -218,10 +328,10 @@ class Ajax
                 // This ensures we track the correct page for navigation requests while preventing injection attacks
                 if (!empty($data_js['res'])) {
                     $resource = Utils::base64UrlDecode($data_js['res']);
-                    $parsed_resource = parse_url($resource ?: '');
+                    $parsed_resource = wp_parse_url($resource ?: '');
 
                     // Security: Validate host is from current site domain
-                    $site_host = parse_url(get_site_url(), PHP_URL_HOST);
+                    $site_host = wp_parse_url(get_site_url(), PHP_URL_HOST);
                     if (false !== $parsed_resource && !empty($parsed_resource['host'])) {
                         // Security: Whitelist validation - only allow current site domain
                         if (!$is_allowed_host($parsed_resource['host'])) {
@@ -262,6 +372,13 @@ class Ajax
                     unset($stat['resource']);
                 }
 
+                // Client info BEFORE ensureVisitId — this order is load-bearing (D68
+                // mechanism c). The other way round, the anonymous branch derived the
+                // identity without the fingerprint, fell to the weaker IP+UA formula,
+                // produced a different id for the same person, and updateRow() then
+                // rewrote the original row's visit_id with it.
+                $stat = Utils::getClientInfo($data_js, $stat);
+
                 // Sync local stat (including id from client) to global before ensureVisitId,
                 // which calls get_stat()/set_stat() internally and would lose the id otherwise.
                 // See: https://github.com/wp-slimstat/wp-slimstat/issues/242
@@ -275,8 +392,6 @@ class Ajax
                 if (empty($stat['visit_id']) || $stat['visit_id'] <= 0) {
                     return Utils::logError(500);
                 }
-
-                $stat = Utils::getClientInfo($data_js, $stat);
 
                 if (empty($stat['resolution'])) {
                     $stat['dt_out'] = \wp_slimstat::date_i18n('U');
@@ -352,7 +467,7 @@ class Ajax
                     }
                 }
 
-                $id = Storage::updateRow($stat);
+                $id = Storage::updateRow($stat)->id();
             } else {
                 // Security: Validate and sanitize event position (x,y coordinates)
                 $position = self::sanitizePosition($data_js['pos'] ?? '');
@@ -376,12 +491,27 @@ class Ajax
 
                 $shouldEventBeTracked = apply_filters('slimstat_track_event_enabled', true, $event_info);
                 if ($shouldEventBeTracked) {
-                    Storage::insertRow($event_info, $GLOBALS['wpdb']->prefix . 'slim_events');
+                    // C30's sharpest edge lands here: slim_events carries a FOREIGN KEY onto
+                    // slim_stats, so a pageview id of 0 made this insert fail — and the
+                    // failure was discarded, so the event vanished with no trace anywhere.
+                    $eventWrite = Storage::insertRow($event_info, $GLOBALS['wpdb']->prefix . 'slim_events');
+
+                    // NOT isFailed(): under INSERT IGNORE an FK refusal is downgraded to a
+                    // warning — rows_affected 0, last_error empty — so it arrives as IGNORED,
+                    // not FAILED. Asking "did it fail" would have missed the exact case this
+                    // guard exists for, which is a pageview id that no longer references a row.
+                    if (!$eventWrite->isStored()) {
+                        \wp_slimstat::record_degradation(
+                            'event insert stored no row',
+                            $eventWrite->error() ?: 'no matching pageview (foreign key)',
+                            \wp_slimstat::DEGRADATION_OPERATIONAL
+                        );
+                    }
                 }
 
                 if (!empty($data_js['res'])) {
                     $resource        = Utils::base64UrlDecode($data_js['res']);
-                    $parsed_resource = parse_url($resource ?: '');
+                    $parsed_resource = wp_parse_url($resource ?: '');
                     if (false === $parsed_resource || empty($parsed_resource['host'])) {
                         return Utils::logError(203);
                     }
@@ -411,21 +541,21 @@ class Ajax
 
                         // Update stat before storage
                         \wp_slimstat::set_stat($stat);
-                        $id = Storage::updateRow($stat);
+                        $id = Storage::updateRow($stat)->id();
                     }
                 } else {
                     $stat['dt_out'] = \wp_slimstat::date_i18n('U');
 
                     // Update stat before storage
                     \wp_slimstat::set_stat($stat);
-                    $id = Storage::updateRow($stat);
+                    $id = Storage::updateRow($stat)->id();
                 }
             }
         } else {
             $stat['resource'] = '';
             if (!empty($data_js['res'])) {
                 $stat['resource'] = Utils::base64UrlDecode($data_js['res']);
-                if (false === parse_url($stat['resource'] ?: '')) {
+                if (false === wp_parse_url($stat['resource'] ?: '')) {
                     return Utils::logError(203);
                 }
             }

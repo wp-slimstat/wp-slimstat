@@ -1,0 +1,177 @@
+<?php
+/**
+ * Calendar chart buckets align their rows to the same DAY/WEEK boundary as their labels.
+ *
+ * ── WHERE THIS CAME FROM ────────────────────────────────────────────────────────────────────
+ *
+ * `tests/e2e/chart-negative-regression.spec.ts` carried two live assertions about the current
+ * code and two about the OLD code: it `git worktree add`-ed `master` inside the E2E container
+ * and grepped the old `DataBuckets.php`. The container is not a git repository, so the setup
+ * could never succeed, and master is 5.5.x now — a spec that cannot pass, sitting in the census
+ * denominator. The two live assertions moved here, where they run on all six Tier 1 PHP lanes
+ * instead of one soft E2E lane; "master had the bug" became mutations D1 and D2.
+ *
+ * Vendor-free: `DataBuckets` needs `get_option`, `wp_date`, `wp_timezone`, `ABSPATH`, and a
+ * `$wpdb` for the timezone probe. UTC throughout so the arithmetic is the calendar's.
+ *
+ * Run: php tests/databuckets-week-start-test.php
+ */
+
+declare(strict_types=1);
+
+if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {
+    http_response_code(403);
+    exit(1);
+}
+
+error_reporting(E_ALL);
+date_default_timezone_set('UTC');
+
+define('ABSPATH', dirname(__DIR__) . '/');
+
+$GLOBALS['__slimstat_test_start_of_week'] = 1;
+
+function get_option($key, $default = false)
+{
+    return 'start_of_week' === $key ? $GLOBALS['__slimstat_test_start_of_week'] : $default;
+}
+
+function wp_date($format, $timestamp = null, $timezone = null)
+{
+    return date($format, (int) $timestamp);
+}
+
+function wp_timezone()
+{
+    return new DateTimeZone('UTC');
+}
+
+// serverTimezoneOffset() reads \wp_slimstat::$wpdb ?? $GLOBALS['wpdb']; a missing CLASS is a
+// fatal that `??` does not catch, so the class must exist with a null property.
+class wp_slimstat
+{
+    public static $wpdb = null;
+}
+
+$GLOBALS['wpdb'] = new class {
+    public function get_var($sql)
+    {
+        return 0;
+    }
+};
+
+require_once dirname(__DIR__) . '/src/Helpers/DataBuckets.php';
+
+$failures    = [];
+$range_start = strtotime('2026-02-18');
+$range_end   = strtotime('2026-03-17') + 86399;
+
+// ── 1. start_of_week = 6 (Saturday): Fri 13 and Sat 14 March are different site-weeks ───
+//
+// Labels over 18 Feb–17 Mar with Saturday weeks: Feb 18 (partial), Feb 21, Feb 28, Mar 7, Mar 14.
+// initSeqWeek() zero-fills every bucket, so a strict compare of the whole dataset also proves
+// nothing leaked into a neighbouring bucket.
+$GLOBALS['__slimstat_test_start_of_week'] = 6;
+$buckets = new \SlimStat\Helpers\DataBuckets('M j', 'WEEK', $range_start, $range_end, 0, 0); // previous period unused
+$buckets->addRow(strtotime('2026-03-13'), 100, 0, 'current');
+$buckets->addRow(strtotime('2026-03-14'), 200, 0, 'current');
+$out    = $buckets->toArray();
+$labels = array_map(static fn($l) => trim((string) $l, "'"), $out['labels']);
+
+if (['Feb 18', 'Feb 21', 'Feb 28', 'Mar 7', 'Mar 14'] !== $labels) {
+    $failures[] = 'sow=6: weekly labels over 18 Feb–17 Mar 2026 should be [Feb 18, Feb 21, Feb 28, '
+        . 'Mar 7, Mar 14]; got [' . implode(', ', $labels) . ']';
+}
+if ([0, 0, 0, 100, 200] !== $out['datasets']['v1']) {
+    $failures[] = 'sow=6: Friday 13 March (100) belongs in the Mar 7 bucket and Saturday 14 March '
+        . '(200) in the Mar 14 bucket; got [' . implode(', ', $out['datasets']['v1']) . ']. Both in '
+        . 'one bucket means weeks are cut on ISO Mondays (date(\'W\')) instead of on start_of_week '
+        . '— Saturday landed in the Mar 7 bucket';
+}
+
+// ── 2. start_of_week = 0 (Sunday): boundary rows kept, a row one week past the range dropped ──
+//
+// Labels: Feb 18 (partial), Feb 22, Mar 1, Mar 8, Mar 15. A row at the exact start, one a
+// minute before the end, and one on Sunday 22 March — a week past the range, which the old
+// `<=` bounds check parked at index == points, a phantom bucket with no label.
+$GLOBALS['__slimstat_test_start_of_week'] = 0;
+$buckets = new \SlimStat\Helpers\DataBuckets('M j', 'WEEK', $range_start, $range_end, 0, 0);
+$buckets->addRow($range_start, 10, 0, 'current');
+$buckets->addRow($range_end - 60, 5, 0, 'current');
+$buckets->addRow(strtotime('2026-03-22'), 7, 0, 'current');
+$out = $buckets->toArray();
+
+if ([10, 0, 0, 0, 5] !== $out['datasets']['v1']) {
+    $failures[] = 'sow=0: expected [10, 0, 0, 0, 5]; got [' . implode(', ', $out['datasets']['v1'])
+        . ']. A sixth entry, or a total of 22, means the row one week PAST the range was accepted '
+        . '— the bounds check admits offset == points, a row one week past the range landed in a '
+        . 'phantom bucket with no label';
+}
+
+// ── 3. DAY: an inclusive equal-length previous window starts one second after midnight ────
+//
+// Grouped DAY rows are midnight timestamps. Comparing them to the second-bearing range start
+// used to make the first offset -1 and shift every following value one label to the left.
+$dayStart = strtotime('2026-09-08');
+$dayEnd = strtotime('2026-09-10') + 86399;
+$previousStart = strtotime('2026-09-05') + 1;
+$buckets = new \SlimStat\Helpers\DataBuckets('Y/m/d', 'DAY', $dayStart, $dayEnd, $previousStart, $dayStart);
+$buckets->addRow(strtotime('2026-09-05'), 649, 238, 'previous');
+$buckets->addRow(strtotime('2026-09-06'), 579, 233, 'previous');
+$buckets->addRow(strtotime('2026-09-07'), 574, 223, 'previous');
+$out = $buckets->toArray();
+
+if ([649, 579, 574] !== $out['datasets_prev']['v1']) {
+    $failures[] = 'day alignment: expected [649, 579, 574]; got ['
+        . implode(', ', $out['datasets_prev']['v1']) . ']. The first previous day was dropped '
+        . 'and later days shifted because the bucket timestamp preceded its range base by one second';
+}
+
+// ── 4. DAY: a 28-day window that starts mid-day still has a bucket for today ─────────────
+//
+// The default "last 28 days" range is built from `now` minus 28 days, so it carries a time of
+// day. addRow() floors its DAY base to midnight; initSeq() counted buckets from the raw,
+// time-bearing start, so 28 days of range produced 28 labels while the last grouped midnight row
+// sat at offset 28 and was dropped by the [0, points) clamp. Both ends of the contract must come
+// off the same calendar base: a partial first day and today are both real buckets.
+$windowStart = strtotime('2026-08-17 10:30:00');
+$windowEnd   = strtotime('2026-09-14 10:30:00');
+$buckets = new \SlimStat\Helpers\DataBuckets(
+    'Y/m/d',
+    'DAY',
+    $windowStart,
+    $windowEnd,
+    $windowStart - ($windowEnd - $windowStart),
+    $windowStart
+);
+$buckets->addRow(strtotime('2026-08-17'), 3, 0, 'current');
+$buckets->addRow(strtotime('2026-09-14'), 5, 0, 'current');
+$out    = $buckets->toArray();
+$labels = array_map(static fn($l) => trim((string) $l, "'"), $out['labels']);
+$v1     = $out['datasets']['v1'];
+$lastLabel = $labels ? $labels[count($labels) - 1] : 'nothing';
+
+if (29 !== count($labels) || '2026/08/17' !== ($labels[0] ?? null) || '2026/09/14' !== $lastLabel) {
+    $failures[] = 'day today bucket: a 17 Aug 10:30 – 14 Sep 10:30 window spans 29 calendar days, so '
+        . 'labels should run 2026/08/17 … 2026/09/14 (29 of them); got ' . count($labels) . ' running '
+        . ($labels[0] ?? 'nothing') . ' … ' . $lastLabel . '. 28 labels ending 2026/09/13 means the '
+        . 'label sequence counted buckets from the raw time-bearing start while addRow() floored its '
+        . 'base to midnight — today has no bucket to land in';
+}
+if (3 !== ($v1[0] ?? null) || 5 !== ($v1[28] ?? null) || 8 !== array_sum($v1)) {
+    $failures[] = 'day today bucket: the partial first day (3) belongs at index 0 and today (5) at '
+        . 'index 28, summing to 8; got [' . implode(', ', $v1) . ']. A sum of 3 means the grouped '
+        . 'midnight row for today was dropped off the end of the sequence — counted in the totals, '
+        . 'drawn as zero';
+}
+
+if ($failures) {
+    fwrite(STDERR, 'FAIL: DataBuckets week start (' . count($failures) . " problem(s))\n");
+    foreach ($failures as $f) {
+        fwrite(STDERR, "  - {$f}\n");
+    }
+    exit(1);
+}
+
+echo "PASS: DAY buckets align second-bearing ranges; WEEK buckets cut on start_of_week and drop "
+    . "rows beyond the range\n";

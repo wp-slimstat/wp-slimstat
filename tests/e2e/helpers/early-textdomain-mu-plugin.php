@@ -8,18 +8,18 @@ if (!defined('SLIMSTAT_E2E_TESTING') || !SLIMSTAT_E2E_TESTING) return;
 
 $GLOBALS['e2e_textdomain_log'] = [];
 
-add_filter('load_textdomain', function($override, $domain, $mofile = '') {
+add_action('load_textdomain', function($domain, $mofile) {
     if ($domain === 'wp-slimstat' || $domain === 'wp-slimstat-pro') {
         $GLOBALS['e2e_textdomain_log'][] = [
             'domain' => $domain,
             'hook' => current_filter(),
             'current_action' => current_action(),
+            'init_started' => did_action('init') > 0,
             'time' => microtime(true),
             'mofile' => $mofile,
         ];
     }
-    return $override;
-}, 1, 3);
+}, 1, 2);
 
 // AJAX endpoint to read the log
 add_action('wp_ajax_e2e_get_textdomain_log', function() {

@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    a number against a non-number is a difference verdict
+rationale: An answer that stopped being a number compares equal to the number it used to be. There are two shape-differs branches in this file and they must both be exercised; this is the scalar one, asserted directly because no capture surface answers a non-numeric scalar today and a plant would have to invent one.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -387,7 +387,7 @@ def compare_scalar(a, b, places=None):
+                      a=str(ra), b=str(rb))
+ 
+     if (na is None) != (nb is None):
+-        return _diff(DIFFER, "shape-differs", "scalar",
++        return _diff(EQUAL, "shape-differs", "scalar",
+                      "one side is a number and the other is not: %r vs %r" % (a, b), a=a, b=b)
+ 
+     sa, sb = _text(a), _text(b)

@@ -12,6 +12,7 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Trend, Counter } from 'k6/metrics';
+import { BASE_URL, credentials } from './lib/env.js';
 
 const ajaxDuration = new Trend('adminbar_ajax_duration_ms', true);
 const cacheHits = new Counter('transient_cache_hits');
@@ -43,9 +44,7 @@ export const options = {
   },
 };
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:10003';
-const WP_USER = __ENV.WP_USER || 'parhumm';
-const WP_PASS = __ENV.WP_PASS || 'testpass123';
+const { user: WP_USER, pass: WP_PASS } = credentials();
 
 let nonce = '';
 let loggedIn = false;

@@ -1,0 +1,24 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      php tests/group-by-conformance-test.php
+kind:      restore-defect
+expect:    inside a block guarded by fact_column_present()
+rationale: THE BYPASS A BLIND REVIEWER DEMONSTRATED against the first draft of this gate, registered rather than merely fixed. The guard is still called, the manifest is never returned by name, and the function still ships D74 - the result is copied wholesale and the guard's answer is discarded. The original layer 2 (a `return $manifest;` regex) pinned a LOCAL VARIABLE'S SPELLING, so this shape satisfied both layers while restoring the defect exactly. It is killable only by the structural layer that asks whether the append is governed by the guard, which is what makes that layer load-bearing rather than decorative.
+---
+diff --git a/admin/view/wp-slimstat-db.php b/admin/view/wp-slimstat-db.php
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -1390,12 +1390,12 @@
+     {
+         $manifest = ['id', 'ip', 'dt', 'username', 'referer', 'resource', 'browser', 'platform', 'country', 'city', 'content_type', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser_version', 'browser_type', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out'];
+ 
+-        $present = [];
++        $present = $manifest;
+         foreach ($manifest as $column) {
+             if (self::fact_column_present($column)) {
+-                $present[] = $column;
++                continue;
+             }
+         }
+ 
+         return $present;
+     }

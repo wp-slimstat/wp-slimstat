@@ -1,0 +1,30 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    a tracked hit is measured by the row it wrote, not by what slimtrack returned
+rationale: 4.8.1's slimtrack($_argument = '') is a filter callback and all twelve of its returns hand back $_argument, never an id. Reading that return as the row id is a check that cannot pass on the oldest arm no matter what the code under test does -- it measures the NEW code's return convention and reports the OLD code's tracking. R7 carried that permanent red through pass 1 and pass 2 of Run 65 as "the previous version still tracks after a migration", a sentence about the rollback that had nothing to do with the rollback.
+---
+diff --git a/tests/docker/rehearse-upgrade.sh b/tests/docker/rehearse-upgrade.sh
+index cf049d04..520501e2 100755
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -321,16 +321,14 @@ track_hit() { # <marker>
+   # the greatest id after, and the delta. Not `WHERE resource = '/$1'` — hit_resource() below
+   # asserts the marker separately, and a lookup keyed on the marker would make that check assert
+   # its own SELECT. Run 65 cell 7a, PITFALLS 136.
+-  _th_before=$(scalar_q "SELECT COALESCE(MAX(id),0) FROM wordpress.wp_slim_stats;")
+   wpc eval "
+     \$_SERVER['HTTP_USER_AGENT']='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36';
+     \$_SERVER['REMOTE_ADDR']='203.0.113.7';
+     \$_SERVER['HTTP_REFERER']='https://example.com/from';
+     \$_SERVER['REQUEST_URI']='/$1';
+-    wp_slimstat::slimtrack();
+-  " >/dev/null 2>&1
+-  _th_after=$(scalar_q "SELECT COALESCE(MAX(id),0) FROM wordpress.wp_slim_stats;")
+-  if [ "${_th_after:-0}" -gt "${_th_before:-0}" ]; then echo "$_th_after"; else echo 0; fi
++    \$id = wp_slimstat::slimtrack();
++    echo is_numeric(\$id) ? \$id : 0;
++  " 2>/dev/null | tr -d '[:space:]'
+ }
+ 
+ # The row a track_hit() claims to have written, read back by id.

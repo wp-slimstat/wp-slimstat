@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    negative zero is zero (row path) verdict
+rationale: Restores the negative-zero fork: EQUAL down the scalar path (Decimal('-0') == Decimal('0')) and DIFFER down the row path, because normalize() keeps the sign bit and the cell token reads 'n:-0' against 'n:0'. One differ, two answers for one pair of values, decided by whether the report's answer is shaped as rows or as a scalar - PITFALLS 5 inside the file whose opening paragraph is that a tolerance living in one file cannot fork between the two sides of the comparison. ENCODING_V1 canonicalises the same case on purpose; half of that canonicalisation had been carried across and half had not.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -440,7 +440,7 @@ def _cell(value, column, contract):
+         return "t:" + _text(value)
+     if contract["places"] is not None:
+         number = round_half_up(number, contract["places"])
+-    if number == 0:
++    if False:
+         # abs() and not `+number`: under a localcontext that is not the default, unary plus
+         # applies the context's rounding and precision to a value this function has already
+         # decided. The only thing that must change is the sign of a zero. Reached both from a

@@ -1,0 +1,58 @@
+target:    tests/docker/verify-export-fingerprint.php
+gate:      php tests/docker/reachability/analyse-controls.php tests/docker/verify-export-fingerprint.php
+expect:    [!!] 4 SERVER-SIDE
+control:   4 (SERVER-SIDE)
+relation:  reachability
+kind:      construct-removal
+detection: an analysis PASSES this mutation only if it names CONTROL 4 and says it is UNREACHABLE
+           (never called, dead, not executed). A generic error, a refusal, a timeout, an
+           unrelated finding, or a finding already true of the baseline is a MISS, not a pass.
+static:    the gate above must exit 1 with "CONTROL 4 (SERVER-SIDE) at line N is UNREACHABLE"
+live:      run-rollup-floor.sh lane fp_reachability_mutations - forcing control 4 must produce
+           NO "[!!] 4" line at all, because the call site no longer executes
+rationale: The whole reason the wire is gated. verify-export-fingerprint.php is 76KB, and 76KB is
+           exactly where a control can be present, correct, well-commented and never run.
+           CONTROL 4 is the one that measures where the row encoding is evaluated - the file's
+           strongest claim - so it is the one worth proving is not decorative.
+
+           The mutation is deliberately the QUIET form. It does not delete the control, does not
+           change its predicate, and does not change a single character of what it would print.
+           It moves the call site inside a closure that nothing invokes. Every grep for
+           "SERVER-SIDE", every reviewer scrolling past, and every count of "how many controls
+           does this file have" still answers nine. Only something that follows the call chain
+           can tell the difference - which is the property under test.
+
+           NOT A REGISTRY ENTRY, and its `gate:` is a bare `php` invocation rather than a
+           composer script because it targets an analyser, not the plugin. It is nonetheless
+           held to the registry's FORMAT by tests/mutation-registry-test.php, which parses every
+           .mutation under tests/docker/ - the first version of this file had a truly-empty
+           context line and a hunk header declaring -7,+7 over a body of -4,+4, both of which
+           `patch` fuzzed in silently and both of which that parser exists to catch.
+
+           REGENERATE, never hand-edit: the diff below came from `diff -u` over a transformed
+           copy, so its arithmetic is the tool's. Hand-counting hunk headers is what started
+           PITFALLS 64. run-gate.sh restores from a pristine copy and refuses a partial apply.
+---
+diff --git a/tests/docker/verify-export-fingerprint.php b/tests/docker/verify-export-fingerprint.php
+--- a/tests/docker/verify-export-fingerprint.php
++++ b/tests/docker/verify-export-fingerprint.php
+@@ -1011,7 +1011,9 @@
+     // "nothing was measured", which is not "nothing disagreed" — that distinction is the whole
+     // reason this block exists, so it is not lost in the predicate that reports it.
+     $c4_ok = $c4_probed && !in_array(false, $c4_probed, true);
+-    $control(
++    // M1: the call site moves inside a closure nothing invokes. CONTROL 4 is still written,
++    // still correct, still nine-of-nine by any count of the file - and it never runs.
++    $severed_control_4 = function () use ($control, $c4_ok, $c4_notes, $indent) { $control(
+         $c4_ok, 4, 'SERVER-SIDE',
+         ($c4_notes
+             ? implode($indent, $c4_notes)
+@@ -1022,7 +1024,7 @@
+         . $indent . 'field short, so the guards are what makes the CONCAT choice safe.'
+         . $indent . 'NOT observed: which encoder slimstat_fp2_table_fingerprint() folded. A PHP fold there'
+         . $indent . 'would agree with the Python side on every field and move nothing this file prints.'
+-    );
++    ); };
+ 
+     // ── CONTROL 5 — nothing scheduled can rewrite the corpus under the run ────────────────────
+     // This file only SELECTs; the BOOT that runs it does not. Sampled before either pass, and

@@ -1,0 +1,24 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+expect:    P47-the-other-era-spells-the-clock-flag-and-this-one-does-not
+kind:      guard-removal
+rationale: The MIRROR of S4-clock-flag-read-from-old-only-01, and the reason that one was not enough.
+
+           The clock flag is read from BOTH arms with `any()`, deliberately: the two eras spell
+           their capabilities differently, and a surface either era calls clock-dependent is
+           clock-dependent. The existing mutation reads OLD only; this reads NEW only. Before P47
+           existed, the old-only shape was killed and the new-only shape SURVIVED, because the one
+           asymmetric plant in the set happened to carry old=false / new=true — a NEW-only reader
+           still saw the flag and agreed. One plant, one direction, half a guard.
+---
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -608,7 +608,7 @@
+         # Either arm declaring clock dependence makes the surface clock-dependent: the flag
+         # describes the QUESTION, and one era spelling it and the other not is itself a reason
+         # to distrust a difference.
+-        clock=any(_flag(env, name) for env in (old_env, new_env)
++        clock=any(_flag(env, name) for env in (new_env,)
+                   for name in ("clock_dependent", "calendar_day_dependent")),
+         # BOTH arms must be pinned for the pin to help. A window pinned on one side only leaves
+         # the other free to move, which is the state the pin exists to prevent.

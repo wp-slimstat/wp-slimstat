@@ -77,6 +77,14 @@ namespace {
         function wp_unslash($v) { return is_string($v) ? stripslashes($v) : $v; }
     }
 
+    if (!function_exists('wp_strip_all_tags')) {
+        function wp_strip_all_tags($v) { return strip_tags((string) $v); }
+    }
+
+    if (!function_exists('wp_parse_url')) {
+        function wp_parse_url($url, $component = -1) { return parse_url($url, $component); }
+    }
+
     require_once __DIR__ . '/../src/Tracker/Utils.php';
     require_once __DIR__ . '/../src/Tracker/Processor.php';
     require_once __DIR__ . '/../src/Tracker/Ajax.php';

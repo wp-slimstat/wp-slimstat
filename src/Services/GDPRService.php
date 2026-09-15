@@ -36,6 +36,11 @@ class GDPRService
 	/**
 	 * Check if SlimStat banner is enabled
 	 *
+	 * NOTE: this reports the `use_slimstat_banner` setting alone. A banner only actually
+	 * appears when GDPR mode is on as well — see shouldRenderBanner(), which is the
+	 * complete answer. Left as-is here because the consent-health REST endpoint exposes
+	 * this value and narrowing it would change a published field's meaning.
+	 *
 	 * @return bool
 	 */
 	public function isBannerEnabled(): bool
@@ -169,14 +174,40 @@ class GDPRService
 	}
 
 	/**
+	 * Whether the consent banner will appear on this request.
+	 *
+	 * The single authority for that question, so the banner's markup and the banner's
+	 * stylesheet cannot disagree. They did: getBannerHtml() has always returned '' once
+	 * the visitor has decided, while enqueue_gdpr_assets() enqueued a 14.8 KB
+	 * render-blocking stylesheet for every visitor regardless — so everyone who had
+	 * already accepted or denied kept downloading it, on every page, to style markup
+	 * that was no longer emitted. (D45)
+	 *
+	 * @return bool
+	 */
+	public function shouldRenderBanner(): bool
+	{
+		// Both settings, not just isBannerEnabled(). The banner only ever appears when
+		// GDPR mode is on too — wp-slimstat.php registers its hooks on that pair — and
+		// that condition was previously spelled out independently at each call site, so
+		// nothing stopped them drifting. This is the complete answer; isBannerEnabled()
+		// deliberately remains the narrower one it has always been, because a REST field
+		// publishes it.
+		return 'on' === ($this->settings['gdpr_enabled'] ?? 'off')
+			&& $this->isBannerEnabled()
+			&& !$this->hasConsentDecision();
+	}
+
+	/**
 	 * Get consent banner HTML
 	 *
 	 * @return string HTML markup for the banner
 	 */
 	public function getBannerHtml(): string
 	{
-		// Don't show banner if user already made a decision
-		if ($this->hasConsentDecision()) {
+		// Nothing to show once the visitor has decided. Same authority the stylesheet
+		// enqueue consults, so the two cannot drift apart.
+		if (!$this->shouldRenderBanner()) {
 			return '';
 		}
 
@@ -240,7 +271,8 @@ class GDPRService
 			esc_html($denyText)
 		);
 
-        $classes = in_array( $this->settings['gdpr_theme_mode'], ['dark', 'light'], true ) ? ' gdpr-' . esc_attr( $this->settings['gdpr_theme_mode'] ) . '-mode' : '';
+		$theme_mode = $this->settings['gdpr_theme_mode'] ?? 'auto';
+		$classes    = in_array( $theme_mode, ['dark', 'light'], true ) ? ' gdpr-' . esc_attr( $theme_mode ) . '-mode' : '';
 
 		return sprintf(
 			'<div id="slimstat-gdpr-banner" class="slimstat-gdpr-banner%s">

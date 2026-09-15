@@ -6,12 +6,10 @@
     ".",
     "../wp-slimstat-pro",
     "../cookie-law-info",
-    "../wp-consent-api"
+    "../wp-consent-api",
+    "../woocommerce"
   ],
   "themes": [],
-  "mappings": {
-    "wp-content/mu-plugins": "./tests/e2e/mu-plugins"
-  },
   "env": {
     "development": {
       "config": {

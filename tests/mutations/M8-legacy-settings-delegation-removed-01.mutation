@@ -1,0 +1,13 @@
+target:    wp-slimstat.php
+gate:      composer test:v5460-migration
+kind:      guard-removal
+expect:    init() calls LegacySettings5460::apply() exactly once
+rationale: Renames the call so init() no longer delegates to the class the test exercises. The point of the extraction is one implementation; a block creeping back inline puts the test and production one file apart again, which is how the regression in M7 survived. The check reads wp-slimstat.php with comments blanked, because the comment above the call names the old guard while explaining why it is gone, and a raw scan found it there.
+---
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -293,3 +293,3 @@
+         // plugins_loaded fires before the rule is registered on 'init' and wastes a DB write.
+-        $_legacy = \SlimStat\Migration\LegacySettings5460::apply(
++        $_legacy = \SlimStat\Migration\LegacySettings5460::applyLegacy(
+             self::$settings,

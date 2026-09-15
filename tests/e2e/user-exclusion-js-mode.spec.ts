@@ -24,7 +24,7 @@ import {
   enableDisableWpCron,
   restoreWpConfig,
 } from './helpers/setup';
-import { BASE_URL } from './helpers/env';
+import { ADMIN_USER, BASE_URL } from './helpers/env';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -167,7 +167,7 @@ test.describe('User Exclusion — JS/Client-Side Mode (@user-exclusion-js)', () 
   // ────────────────────────────────────────────────────────────────
   test('ignore_users excludes specific username in JS mode', async ({ browser }) => {
     await setSlimstatSetting('ignore_wp_users', 'no');
-    await setSlimstatSetting('ignore_users', 'parhumm');
+    await setSlimstatSetting('ignore_users', ADMIN_USER);
     await setSlimstatSetting('tracking_request_method', 'ajax');
 
     const { context, page } = await loginAsAdmin(browser);
@@ -177,7 +177,7 @@ test.describe('User Exclusion — JS/Client-Side Mode (@user-exclusion-js)', () 
     await page.goto(`${BASE_URL}/?e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
     await waitForTrackingRequest(page);
 
-    // User 'parhumm' should be excluded by username blacklist
+    // The logged-in admin should be excluded by username blacklist
     await expect.poll(
       () => getRecentStatByResource(marker),
       { timeout: 5_000, intervals: [500] }

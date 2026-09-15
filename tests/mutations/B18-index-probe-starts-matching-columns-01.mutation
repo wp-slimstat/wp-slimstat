@@ -1,0 +1,17 @@
+target:    src/Schema/Schema.php
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      guard-removal
+expect:    the index probe validates definitions and separates malformed indexes from missing
+rationale: Bypassing the definition comparison restores the name-only false-positive defect. The control must keep explicit cleanup because malformed detection does not authorize DROP/rebuild; this gate pins that changed premise and IndexStateTest exercises malformed real metadata.
+---
+--- a/src/Schema/Schema.php
++++ b/src/Schema/Schema.php
+@@ -1306,7 +1306,7 @@
+             $rows = $have[strtolower($resolved)] ?? null;
+             if (null === $rows) {
+                 $state['missing'][] = $name;
+-            } elseif (self::indexMatches($rows, $definition)) {
++            } elseif (true) {
+                 $state['present'][] = $resolved;
+             } else {
+                 $state['malformed'][] = $name;

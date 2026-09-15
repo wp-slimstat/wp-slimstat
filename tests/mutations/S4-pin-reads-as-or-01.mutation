@@ -1,0 +1,18 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+kind:      boundary
+expect:    P41-a-pin-on-one-arm-only-is-not-a-pin label
+rationale: A window pinned on one side only leaves the other free to move, which is the state the pin exists to prevent - the comment on those two lines says exactly that, and until P41 nothing could tell whether the code did. The single clock plant carried pinned:false on both arms, so the flag space was one point.
+---
+diff --git a/tests/oracle/classify.py b/tests/oracle/classify.py
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -597,7 +597,7 @@ def classify(triple, contract=None, register=None):
+                   for name in ("clock_dependent", "calendar_day_dependent")),
+         # BOTH arms must be pinned for the pin to help. A window pinned on one side only leaves
+         # the other free to move, which is the state the pin exists to prevent.
+-        pinned=_flag(old_env, "pinned") and _flag(new_env, "pinned"),
++        pinned=_flag(old_env, "pinned") or _flag(new_env, "pinned"),
+         observable=observable,
+         register_hit=hit,
+         register_near=tuple(near),

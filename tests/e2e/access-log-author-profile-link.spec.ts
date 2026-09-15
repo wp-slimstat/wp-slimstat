@@ -13,7 +13,7 @@
  * access-log-author-profile-link.author.spec.ts.
  */
 import { test, expect } from '@playwright/test';
-import { BASE_URL } from './helpers/env';
+import { AUTHOR_USER, BASE_URL } from './helpers/env';
 import {
   closeDb,
   clearStatsTable,
@@ -22,7 +22,7 @@ import {
   seedAuthoredPageview,
 } from './helpers/setup';
 
-const KNOWN_LOGIN = process.env.WP_AUTHOR_USER ?? 'dordane';
+const KNOWN_LOGIN = AUTHOR_USER;
 
 test.describe('Access Log author profile pencil — #273', () => {
   test.setTimeout(60_000);

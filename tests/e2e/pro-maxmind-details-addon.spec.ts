@@ -16,6 +16,7 @@ import {
   closeDb,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
+import { requireProBooted } from './helpers/pro-state';
 
 test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
   test.beforeAll(async () => {
@@ -36,17 +37,6 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
     uninstallNonceHelper();
     await closeDb();
   });
-
-  /**
-   * Check if WP SlimStat Pro is active by inspecting the plugins page HTML.
-   * Does not require any mu-plugin.
-   */
-  async function isProActive(page: import('@playwright/test').Page): Promise<boolean> {
-    const res = await page.request.get(`${BASE_URL}/wp-admin/plugins.php`);
-    if (!res.ok()) return false;
-    const body = await res.text();
-    return body.includes('wp-slimstat-pro') && body.includes('Deactivate');
-  }
 
   /**
    * Get a nonce for the whois AJAX endpoint via the nonce-helper mu-plugin.
@@ -97,6 +87,10 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
   // ─── Test 2: Whois AJAX works with DB-backed provider ──────────────
 
   test('whois AJAX responds without fatal error', async ({ page }) => {
+    // The whois endpoint IS the Pro addon. CI deliberately does not install Pro
+    // (ci.yml:374), so without this the same absent plugin is a skip in five tests
+    // of this file and a failure in three -- H-PROGATE in the uncapped census.
+    await requireProBooted(page);
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
 
@@ -112,7 +106,7 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
     expect(result.body).not.toContain("Class 'SlimStat\\Services\\GeoIP' not found");
 
     // Should show either geo data HTML or actionable DB-missing message
-    const hasGeoData = result.body.includes('IP Geolocation Information');
+    const hasGeoData = result.body.includes('Current IP geolocation lookup');
     const hasDbMissing = result.body.includes('geolocation database is not available');
     expect(hasGeoData || hasDbMissing, 'Should show geo data or DB-missing message').toBeTruthy();
   });
@@ -120,6 +114,10 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
   // ─── Test 3: Cloudflare provider → explicit unsupported message ────
 
   test('cloudflare provider blocks whois with explicit message', async ({ page }) => {
+    // The whois endpoint IS the Pro addon. CI deliberately does not install Pro
+    // (ci.yml:374), so without this the same absent plugin is a skip in five tests
+    // of this file and a failure in three -- H-PROGATE in the uncapped census.
+    await requireProBooted(page);
     await setSlimstatOption(page, 'geolocation_provider', 'cloudflare');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
 
@@ -143,6 +141,10 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
   // ─── Test 4: Geolocation disabled → actionable settings message ────
 
   test('disabled geolocation shows settings message on AJAX call', async ({ page }) => {
+    // The whois endpoint IS the Pro addon. CI deliberately does not install Pro
+    // (ci.yml:374), so without this the same absent plugin is a skip in five tests
+    // of this file and a failure in three -- H-PROGATE in the uncapped census.
+    await requireProBooted(page);
     await setSlimstatOption(page, 'geolocation_provider', 'disable');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
 
@@ -185,7 +187,7 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
   test('MaxMind Details: city and coordinates populated for known IP', async ({ page }) => {
     // Skip if Pro plugin is not active
     await page.goto('/wp-admin/');
-    test.skip(!await isProActive(page), 'Pro plugin is not active — skipping MaxMind Details test');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'maxmind');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -201,7 +203,7 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
     expect(result.body).not.toContain('Fatal error');
 
     // If the MaxMind database is available, verify city/lat/lon are populated
-    const hasGeoData = result.body.includes('IP Geolocation Information');
+    const hasGeoData = result.body.includes('Current IP geolocation lookup');
     if (hasGeoData) {
       // The response HTML should contain city, latitude, and longitude data
       // for Google's public DNS IP (8.8.8.8) — typically resolves to a US location
@@ -233,7 +235,7 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
 
   test('MaxMind whois: no fatal on subdivision/postal code access for routable IP', async ({ page }) => {
     await page.goto('/wp-admin/');
-    test.skip(!await isProActive(page), 'Pro plugin is not active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'maxmind');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -249,7 +251,7 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
 
   test('MaxMind whois: coordinates array notation — no object-access fatal (REQ-AC6)', async ({ page }) => {
     await page.goto('/wp-admin/');
-    test.skip(!await isProActive(page), 'Pro plugin is not active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'maxmind');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -266,7 +268,7 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
 
   test('MaxMind whois: IPv6 address does not cause fatal error', async ({ page }) => {
     await page.goto('/wp-admin/');
-    test.skip(!await isProActive(page), 'Pro plugin is not active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'maxmind');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -281,7 +283,7 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
 
   test('MaxMind whois: private IPs handled without crash', async ({ page }) => {
     await page.goto('/wp-admin/');
-    test.skip(!await isProActive(page), 'Pro plugin is not active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'maxmind');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');

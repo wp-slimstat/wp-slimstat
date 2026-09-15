@@ -1,0 +1,23 @@
+target:    admin/index.php
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      guard-removal
+expect:    the premise still holds: the notice refresh returns early when there is no record
+rationale: A plugin-side premise pin, not a defect claim about this hunk. The rehearsal leg observes drift itself rather than reading the option BECAUSE the refresh re-derives an existing record and never makes a first observation. If that early return goes, deciding the leg from the option becomes sound and the paragraph explaining why it is not becomes a story about code that no longer exists.
+---
+diff --git a/admin/index.php b/admin/index.php
+index eb8e8fa1..e7484fd3 100644
+--- a/admin/index.php
++++ b/admin/index.php
+@@ -728,11 +728,7 @@ class wp_slimstat_admin
+     {
+         $stored = get_option(self::COLUMN_DRIFT_OPTION, []);
+ 
+-        if (!is_array($stored) || [] === $stored) {
+-            return;
+-        }
+-
+-        $current = $stored;
++        $current = is_array($stored) ? $stored : [];
+ 
+         if (false === get_transient(self::COLUMN_DRIFT_CHECK_TRANSIENT)) {
+             set_transient(self::COLUMN_DRIFT_CHECK_TRANSIENT, 1, wp_slimstat::DEGRADATION_REFRESH);

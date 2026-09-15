@@ -26,6 +26,7 @@ import {
   restoreSlimstatOptions,
   clearStatsTable,
   closeDb,
+  waitForTrackerId,
 } from './helpers/setup';
 import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
 
@@ -126,7 +127,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     // - set_tracker_cookie='off' (broken v5.4.0 default)
     // - gdpr_enabled='on' (v5.4.0 forced this)
     // - _migration_5460='0' (force migration to re-run)
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'on',
       opt_out_cookie_names: '',
       opt_in_cookie_names: '',
@@ -179,7 +180,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     await clearStatsTable();
 
     // Set the bugged state directly (as migration would leave it)
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'off',
       set_tracker_cookie: 'off', // <-- the bug
       javascript_mode: 'on',
@@ -263,7 +264,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     page,
   }) => {
     // Same pre-migration state as Test 1
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'on',
       opt_out_cookie_names: '',
       opt_in_cookie_names: '',
@@ -312,7 +313,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     await clearStatsTable();
 
     // Set the FIXED state: gdpr on + cookie on + slimstat banner
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'on',
       set_tracker_cookie: 'on', // <-- the fix
       use_slimstat_banner: 'on',
@@ -363,14 +364,13 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
           { timeout: 15_000 },
         );
 
-        // Click Accept
+        // Await the successful upgrade response, not the initial pageview request
+        // already in trackingRequests before the visitor accepted.
+        const upgradeResponse = anonPage.waitForResponse(response =>
+          isSlimstatTrackingRequest(response.request()) &&
+          (response.request().postData() || '').includes('consent_upgrade=1') && response.ok());
         await anonPage.locator('[data-consent="accepted"]').click();
-
-        // Wait for consent upgrade request
-        const deadline = Date.now() + 15_000;
-        while (trackingRequests.length === 0 && Date.now() < deadline) {
-          await new Promise((r) => setTimeout(r, 500));
-        }
+        await upgradeResponse;
 
         // After consent: tracking cookie SHOULD be set
         cookies = await ctx.cookies();
@@ -429,7 +429,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
   test('FIXED: cookie set immediately when gdpr_enabled=off', async ({ page, browser }) => {
     await clearStatsTable();
 
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'off',
       set_tracker_cookie: 'on',
       javascript_mode: 'on',
@@ -471,12 +471,18 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       ).toBeTruthy();
 
       // Visit page 2
+      // Wait for the server to hand back a pageview id before navigating on.
+      // goto()'s own 'load' can win the race against the tracker actually issuing
+      // its hit, and a navigation that lands first cancels a request that was never
+      // sent -- which is `waitForStatRows(marker, 3)` returning 2. (Once the hit IS
+      // in flight the row lands regardless; the delayed-response test below proves
+      // that.) Reuses the wait migration-cookie-restore already applies to page 1.
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p2`);
-      await anonPage.waitForLoadState('load');
+      await waitForTrackerId(anonPage);
 
       // Visit page 3
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p3`);
-      await anonPage.waitForLoadState('load');
+      await waitForTrackerId(anonPage);
 
       // All 3 pages should share the same visit_id
       const rows = await waitForStatRows(marker, 3, 20_000);
@@ -508,7 +514,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
 
   test('clean install: migration correctly sets gdpr=off and cookie=on', async ({ page }) => {
     // Simulate v5.4.0 state with NO legacy consent settings
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'no',     // v5.3.x default — no banner
       opt_out_cookie_names: '',   // no legacy cookies
       opt_in_cookie_names: '',    // no legacy cookies
@@ -549,7 +555,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
   test('third-party CMP: migration preserves gdpr=on and restores cookie=on', async ({
     page,
   }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'no',
       opt_out_cookie_names: '',
       opt_in_cookie_names: '',
@@ -596,7 +602,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     // - display_opt_out='on' (legacy v5.3.x consent → triggers gdpr_enabled='on' path)
     // - set_tracker_cookie='off' (broken v5.4.0 default)
     // - _migration_5460='0' (force migration re-run)
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'on',
       set_tracker_cookie: 'off',
       javascript_mode: 'on',

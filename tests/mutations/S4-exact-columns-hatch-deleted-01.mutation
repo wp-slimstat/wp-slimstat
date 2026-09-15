@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      construct-removal
+expect:    a column declared exact compares as bytes verdict
+rationale: Deletes the exact_columns escape hatch from the cell token, so a column declared byte-exact is normalised as a number anyway and '007' equals 7 for every report with no way for a contract to say otherwise. No plant set exact_columns for the whole of S4, so the branch could be removed with the gate green - and the direction it fails in is the silent one, a difference read as agreement.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -433,8 +433,6 @@ def _cell(value, column, contract):
+         )
+     if value is None:
+         return "\\NUL"
+-    if column in tuple(contract["exact_columns"]):
+-        return "t:" + _text(value)
+     number = as_number(value)
+     if number is None:
+         return "t:" + _text(value)

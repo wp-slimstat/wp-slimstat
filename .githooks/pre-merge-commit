@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#
+# BYTE-IDENTICAL in wp-slimstat and wp-slimstat-pro; jaan-to/bin/check-twins.sh holds them so.
+#
+# `git merge` runs pre-merge-commit, NOT pre-commit — so without this file every gate the
+# pre-commit hook enforces is skipped by a merge. The concrete case: two branches each add a
+# mutation and each bump tests/mutations/FLOOR to the same number; the identical FLOOR hunk
+# auto-merges, the registry then holds one more entry than the floor, and the merge lands
+# locally with the ratchet red on CI. Found by the altitude review of 2026-09-04, which also
+# named the shape: a gate wired to one entry point and believed to cover all of them.
+#
+# Delegation, not a copy: one rule, one file to fix.
+#
+exec "$(dirname "$0")/pre-commit" "$@"

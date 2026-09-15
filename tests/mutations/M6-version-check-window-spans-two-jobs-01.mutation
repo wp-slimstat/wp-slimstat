@@ -1,0 +1,15 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:perf-gate-integrity
+kind:      introduce-defect
+expect:    outside the running window
+rationale: Deletes Tier 2's `Stop wp-env`. Free has two wp-env jobs, so over a FLAT step list Tier 2's start then pairs with Tier 3's stop and the version check still reads as 'inside' -- a window spanning two jobs, which would bless a check sitting in any job between them. The window is asked per job block now, so it cannot straddle one; the first draft recovered job identity by sniffing a two-space key and diverged from slimstat_ci_job_blocks() by one whitespace character.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -632,6 +632,2 @@
+ 
+-      - name: Stop wp-env
+-        if: always()
+-        run: npx wp-env stop
+-
+ ##############################################################################

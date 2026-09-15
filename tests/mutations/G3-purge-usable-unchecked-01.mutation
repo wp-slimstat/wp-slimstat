@@ -1,0 +1,28 @@
+target:    wp-slimstat.php
+gate:      php tests/purge-archive-order-test.php
+kind:      guard-removal
+expect:    nothing checks the usable flag
+rationale: Delete the refusal that fires when an archive table has lost its primary key column. Without it the purge builds an INSERT and a collision probe that cannot identify a row, and then DELETEs through the answer - which is the one direction a data-safety fix must never move. It is the same refusal probeForCollision() already makes for a question it could not ask, and it has to be made here too because a missing key means there was no question to ask in the first place.
+---
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -1886,19 +1886,6 @@
+             $event_columns = $event_plan['copy'];
+             $stats_columns = $stats_plan['copy'];
+ 
+-            // No key, no statement. Refusing here is the same refusal probeForCollision()
+-            // makes: never DELETE through a question that could not be asked.
+-            if (!$event_plan['usable'] || !$stats_plan['usable']) {
+-                self::record_degradation(
+-                    'purge (archive schema)',
+-                    'an archive table is missing its primary key column, so nothing could be '
+-                        . 'archived and nothing was deleted. Recreate the archive tables, or turn '
+-                        . 'off archiving in Settings > Maintenance.',
+-                    self::DEGRADATION_OPERATIONAL
+-                );
+-
+-                return;
+-            }
+ 
+             // Columns the LIVE table has and the archive does not are real fidelity loss, and
+             // they are NOT reported here. Archive drift is permanent -- the archive gains no

@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      boundary
+expect:    P36-more-rows-than-the-limit-is-not-a-tie label
+rationale: Restores the `< limit` band guard. It establishes at-least-limit while the comment above the membership check asserts both answers are EXACTLY limit long, so an arm that lost its LIMIT and returned a tied tail entered the band and compared EQUAL on tie-at-the-cut - on any report whose cut value is 1, which a count-1 tail makes routine. The detail line then read 'drew 0 different member(s)' while rows had been ADDED, because it counted one side of the swap. A comment claiming a property the next lines do not perform (PITFALLS 10/31), sitting directly above the branch that returns EQUAL.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -565,7 +565,7 @@ def compare_banded(a_rows, b_rows, contract=None):
+     limit = contract["limit"]
+     if limit is None:
+         return compare_rows(a_rows, b_rows, contract)
+-    if len(a_rows) != limit or len(b_rows) != limit:
++    if len(a_rows) < limit or len(b_rows) < limit:
+         return compare_rows(a_rows, b_rows, contract)
+ 
+     field_name = contract["count_field"]

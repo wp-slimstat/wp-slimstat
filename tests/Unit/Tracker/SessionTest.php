@@ -23,6 +23,7 @@ class SessionTest extends WpSlimstatTestCase
         // Reset global state before each test.
         \wp_slimstat::$settings['anonymous_tracking'] = 'off';
         \wp_slimstat::$settings['gdpr_enabled']       = 'off';
+        \wp_slimstat::$settings['consent_integration'] = '';
         \wp_slimstat::$settings['javascript_mode']    = 'off';
         \wp_slimstat::$settings['session_duration']   = 1800;
         \wp_slimstat::$settings['set_tracker_cookie'] = 'off';
@@ -45,15 +46,14 @@ class SessionTest extends WpSlimstatTestCase
      * The test verifies the return value and that setcookie() is NOT called
      * (cookies are PII and require explicit consent in anonymous mode).
      *
-     * @todo Requires Patchwork or a seam on Session::findExistingAnonymousVisitId()
-     *       to avoid a real DB lookup.  The test is marked incomplete when DB
-     *       classes are unavailable.
-     *
      * @test
      */
     public function test_ensure_visit_id_anonymous_no_consent_returns_true(): void
     {
         \wp_slimstat::$settings['anonymous_tracking'] = 'on';
+        \wp_slimstat::$settings['gdpr_enabled'] = 'on';
+        \wp_slimstat::$settings['consent_integration'] = 'wp_consent_api';
+        Functions\stubs(['wp_has_consent' => false, 'wp_get_consent_type' => 'optin']);
 
         // Stub WP functions used inside ensureVisitId / Consent.
         Functions\stubs([
@@ -72,15 +72,44 @@ class SessionTest extends WpSlimstatTestCase
 
         \wp_slimstat::set_stat(['dt' => time(), 'notes' => [], 'resource' => '/test']);
 
+        $GLOBALS['slimstat_test_options']['slimstat_daily_salt'] = ['date' => gmdate('Y-m-d'), 'salt' => 'a-fixed-test-salt'];
+        Functions\stubs(['wp_salt' => 'a-fixed-test-key-longer-than-thirty-two-characters']);
+        $this->stubTransientCacheMiss();
+        $db = \Mockery::mock(\wpdb::class);
+        $db->prefix = 'wp_';
+        $db->options = 'wp_options';
+        $db->last_error = '';
+        $db->rows_affected = 2;
+        $db->insert_id = 42;
+        $db->shouldReceive('flush')->once();
+        $db->shouldReceive('suppress_errors')->andReturn(false);
+        $db->shouldReceive('prepare')->andReturnUsing(static fn($sql) => $sql);
+        $db->shouldReceive('get_var')->with('SELECT LAST_INSERT_ID()')->once()->andReturn(42);
+        $db->shouldReceive('get_var')->once()->andReturn(null);
+        $db->shouldReceive('query')->once()->with(\Mockery::pattern('/UPDATE wp_options/'))->andReturn(1);
+        $hadGlobal = array_key_exists('wpdb', $GLOBALS);
+        $originalGlobal = $GLOBALS['wpdb'] ?? null;
+        $originalAnalytics = \wp_slimstat::$wpdb;
+        $GLOBALS['wpdb'] = \wp_slimstat::$wpdb = $db;
+        $cookieCalls = 0;
+        class_exists(\SlimStat\Tracker\Session::class);
+        \Patchwork\redefine('SlimStat\\Tracker\\Session::setTrackingCookie', static function () use (&$cookieCalls) {
+            $cookieCalls++;
+            return true;
+        });
         try {
             $result = \SlimStat\Tracker\Session::ensureVisitId(false);
-            // In anonymous mode without existing records the method returns true.
-            $this->assertTrue($result, 'ensureVisitId() must return true for a new anonymous session');
-        } catch (\Throwable $e) {
-            $this->markTestIncomplete(
-                'ensureVisitId() requires DB for findExistingAnonymousVisitId(): ' . $e->getMessage()
-            );
+            $this->assertTrue($result, 'new anonymous session must be created');
+            $stat = \wp_slimstat::get_stat();
+            $this->assertSame(42, $stat['visit_id']);
+            $this->assertMatchesRegularExpression('/^[0-9a-f]{32}$/', $stat['vid_hash']);
+            $this->assertSame(0, $cookieCalls, 'anonymous identity must not attempt a tracking cookie');
+            $this->assertArrayNotHasKey('slimstat_tracking_code', $_COOKIE);
+        } finally {
+            \wp_slimstat::$wpdb = $originalAnalytics;
+            if ($hadGlobal) { $GLOBALS['wpdb'] = $originalGlobal; } else { unset($GLOBALS['wpdb']); }
         }
+
     }
 
     /**
@@ -108,20 +137,19 @@ class SessionTest extends WpSlimstatTestCase
                 return $value;
             });
 
-        // Build a valid checksum cookie value for visit_id = 42.
+        // Build a valid checksum cookie value for visit_id = 42, through the signer the
+        // code under test verifies against. Hand-rolling `md5($visitId . $secret)` here
+        // meant this "valid cookie" case and the "invalid checksum" case below were
+        // exercising the same rejection path — both assert false, so the suite stayed
+        // green while proving nothing. setUp() never sets a secret, and an empty secret
+        // is exactly the state whose md5 form is no longer accepted (X2).
         $visitId = 42;
-        $secret  = \wp_slimstat::$settings['secret'] ?? '';
-        $cookieValue = $visitId . '.' . md5($visitId . $secret);
-        $_COOKIE['slimstat_tracking_code'] = $cookieValue;
+        $_COOKIE['slimstat_tracking_code'] = \SlimStat\Tracker\Utils::getValueWithChecksum($visitId);
 
         try {
             $result = \SlimStat\Tracker\Session::ensureVisitId(false);
             // Existing session — not a new visit.
             $this->assertFalse($result, 'ensureVisitId() must return false when re-using existing session');
-        } catch (\Throwable $e) {
-            $this->markTestIncomplete(
-                'ensureVisitId() path threw an exception: ' . $e->getMessage()
-            );
         } finally {
             unset($_COOKIE['slimstat_tracking_code']);
         }
@@ -148,11 +176,31 @@ class SessionTest extends WpSlimstatTestCase
         try {
             $result = \SlimStat\Tracker\Session::ensureVisitId(false);
             $this->assertFalse($result, 'ensureVisitId() must return false for an invalid cookie checksum');
-        } catch (\Throwable $e) {
-            $this->markTestIncomplete('Unexpected exception: ' . $e->getMessage());
         } finally {
             unset($_COOKIE['slimstat_tracking_code']);
         }
+    }
+
+    public function test_failed_allocation_never_invents_time_id_or_sets_cookie(): void
+    {
+        class_exists(\SlimStat\Tracker\VisitIdGenerator::class);
+        class_exists(\SlimStat\Tracker\Session::class);
+        class_exists(\SlimStat\Utils\Consent::class);
+        \Patchwork\redefine('SlimStat\\Tracker\\VisitIdGenerator::generateNextVisitId', static fn() => 0);
+        \Patchwork\redefine('SlimStat\\Tracker\\Session::generateAnonymousVidHash', static fn() => str_repeat('a', 32));
+        \Patchwork\redefine('SlimStat\\Tracker\\Session::findExistingAnonymousVisitId', static fn() => 0);
+        \Patchwork\redefine('SlimStat\\Utils\\Consent::getIntegrationKey', static fn() => '');
+        $cookieCalls = 0;
+        \Patchwork\redefine('SlimStat\\Tracker\\Session::setTrackingCookie', static function () use (&$cookieCalls) { $cookieCalls++; return true; });
+        foreach (['off', 'on'] as $anonymous) {
+            \wp_slimstat::$settings['anonymous_tracking'] = $anonymous;
+            \wp_slimstat::$settings['javascript_mode'] = 'on';
+            \wp_slimstat::set_stat(['resource' => '/must-not-store', 'dt' => time()]);
+            \Patchwork\redefine('SlimStat\\Utils\\Consent::piiAllowed', static fn() => 'off' === $anonymous);
+            $this->assertFalse(\SlimStat\Tracker\Session::ensureVisitId(true));
+            $this->assertSame([], \wp_slimstat::get_stat());
+        }
+        $this->assertSame(0, $cookieCalls);
     }
 
     // -----------------------------------------------------------------------
@@ -174,61 +222,71 @@ class SessionTest extends WpSlimstatTestCase
     }
 
     // -----------------------------------------------------------------------
-    // generateAnonymousVisitId — pure PHP, no DB
+    // generateAnonymousVidHash — pure PHP, no DB (the only DB touch is the
+    // daily-salt option read, stubbed like everything else here)
     // -----------------------------------------------------------------------
+    //
+    // These two tests targeted generateAnonymousVisitId() until D68 deleted it — and
+    // then kept "passing": the try/catch → markTestIncomplete wrapper swallowed the
+    // Call-to-undefined-method Error, the pair reported Incomplete, and the assertion
+    // floor was RATCHETED from a run in which they asserted nothing (found by review;
+    // the incomplete count sat exactly at its ceiling). The wrappers are gone — a
+    // deleted callee must FAIL these tests, not excuse them. PITFALLS 41's shape, in
+    // the seam that was citing PITFALLS 41.
 
     /**
-     * generateAnonymousVisitId() must return a positive integer in all cases.
+     * generateAnonymousVidHash() returns exactly 32 lowercase hex chars — the one
+     * spelling that survives sanitize_text_field() at the write terminals, and the
+     * exact contract Storage::insertRow() validates before packing to BINARY(16).
      *
      * @test
      */
-    public function test_generate_anonymous_visit_id_returns_positive_int(): void
+    public function test_generate_anonymous_vid_hash_is_32_hex_chars(): void
     {
-        \wp_slimstat::set_stat(['dt' => time(), 'notes' => []]);
-
         Functions\stubs([
             'sanitize_text_field' => static fn($v) => is_string($v) ? $v : '',
             'wp_unslash'          => static fn($v) => is_string($v) ? stripslashes($v) : $v,
             'wp_salt'             => 'test-salt-value-that-is-long-enough-to-pass-validation',
         ]);
 
-        try {
-            $id = \SlimStat\Tracker\Session::generateAnonymousVisitId();
-            $this->assertIsInt($id, 'generateAnonymousVisitId() must return an integer');
-            $this->assertGreaterThan(0, $id, 'generateAnonymousVisitId() must return a positive integer');
-        } catch (\Throwable $e) {
-            $this->markTestIncomplete(
-                'generateAnonymousVisitId() threw: ' . $e->getMessage()
-            );
-        }
+        // A stored salt for TODAY, via the bootstrap's real get_option() store (Brain
+        // Monkey cannot stub over a defined function): generateDailySalt() returns it
+        // without minting, so wp_generate_password()/update_option() are never reached.
+        $GLOBALS['slimstat_test_options']['slimstat_daily_salt'] = ['date' => gmdate('Y-m-d'), 'salt' => 'a-fixed-test-salt'];
+
+        $hash = \SlimStat\Tracker\Session::generateAnonymousVidHash(['dt' => time(), 'notes' => []]);
+
+        $this->assertMatchesRegularExpression(
+            '/^[0-9a-f]{32}$/',
+            $hash,
+            'the identity must be exactly 16 raw bytes spelled as lowercase hex — anything '
+                . 'else is dropped at the terminal and the visitor loses their identity'
+        );
     }
 
     /**
-     * generateAnonymousVisitId() must return a deterministic value for the same
-     * inputs (fingerprint + daily salt).
+     * Same person, same day, same fingerprint — same identity. Determinism is what
+     * lets the reuse probe and the consent-upgrade fallback FIND the person again.
      *
      * @test
      */
-    public function test_generate_anonymous_visit_id_is_deterministic(): void
+    public function test_generate_anonymous_vid_hash_is_deterministic(): void
     {
-        $fingerprint = 'abc123fingerprint';
-        \wp_slimstat::set_stat(['dt' => time(), 'notes' => [], 'fingerprint' => $fingerprint]);
-
         Functions\stubs([
             'sanitize_text_field' => static fn($v) => is_string($v) ? $v : '',
             'wp_unslash'          => static fn($v) => is_string($v) ? stripslashes($v) : $v,
             'wp_salt'             => 'test-salt-value-that-is-long-enough-to-pass-validation',
         ]);
 
-        try {
-            $id1 = \SlimStat\Tracker\Session::generateAnonymousVisitId();
-            $id2 = \SlimStat\Tracker\Session::generateAnonymousVisitId();
-            $this->assertSame($id1, $id2, 'generateAnonymousVisitId() must be deterministic for same inputs');
-        } catch (\Throwable $e) {
-            $this->markTestIncomplete(
-                'generateAnonymousVisitId() threw: ' . $e->getMessage()
-            );
-        }
+        $GLOBALS['slimstat_test_options']['slimstat_daily_salt'] = ['date' => gmdate('Y-m-d'), 'salt' => 'a-fixed-test-salt'];
+
+        $stat = ['dt' => time(), 'notes' => [], 'fingerprint' => 'abc123fingerprint'];
+
+        $this->assertSame(
+            \SlimStat\Tracker\Session::generateAnonymousVidHash($stat),
+            \SlimStat\Tracker\Session::generateAnonymousVidHash($stat),
+            'generateAnonymousVidHash() must be deterministic for the same inputs'
+        );
     }
 
     // -----------------------------------------------------------------------

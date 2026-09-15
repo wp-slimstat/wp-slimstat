@@ -116,6 +116,27 @@ class Consent
 	}
 
 	/**
+	 * Safe wrapper around the SlimStat-banner consent check.
+	 *
+	 * Mirrors wpHasConsentSafe() for the internal banner path: if GDPRService is
+	 * unloadable (missing/corrupt class), degrade to "no consent" instead of
+	 * throwing. A fatal here would white-screen the front page and wp-login
+	 * during script enqueue and server-side tracking (issue #325). Fails closed.
+	 *
+	 * @param array $settings SlimStat settings passed to GDPRService.
+	 * @return bool True only if the visitor has granted SlimStat-banner consent.
+	 */
+	public static function bannerHasConsentSafe(array $settings): bool
+	{
+		try {
+			return (new \SlimStat\Services\GDPRService($settings))->hasConsent();
+		} catch (\Throwable $e) {
+			\wp_slimstat::record_degradation('banner_consent_check', $e);
+			return false;
+		}
+	}
+
+	/**
 	 * Normalize consent data from various CMP formats to a standard structure.
 	 *
 	 * Converts different CMP consent formats (WP Consent API, Real Cookie Banner, etc.)
@@ -294,8 +315,7 @@ class Consent
 				// visitors have no way to grant consent through a banner they never see.
 				if ('slimstat_banner' === $integrationKey) {
 					if ('on' === ($settings['use_slimstat_banner'] ?? 'off')) {
-						$gdpr_service = new \SlimStat\Services\GDPRService($settings);
-						if (!$gdpr_service->hasConsent()) {
+						if (!self::bannerHasConsentSafe($settings)) {
 							$default = false;
 						}
 					}
@@ -442,12 +462,7 @@ class Consent
 			$hasCmpConsent = false;
 
 			if ('slimstat_banner' === $integrationKey) {
-				$gdpr_service = new \SlimStat\Services\GDPRService($settings);
-				$cookieName = \SlimStat\Services\GDPRService::CONSENT_COOKIE_NAME;
-				$cookieValue = isset($_COOKIE[$cookieName]) ? sanitize_text_field(wp_unslash($_COOKIE[$cookieName])) : 'not_set';
-				if ($gdpr_service->hasConsent()) {
-					$hasCmpConsent = true;
-				}
+				$hasCmpConsent = self::bannerHasConsentSafe($settings);
 			} elseif ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
 				$wpConsentCategory = (string) ($settings['consent_level_integration'] ?? 'statistics');
 				try {
@@ -552,8 +567,7 @@ class Consent
 			if ('on' !== ($settings['use_slimstat_banner'] ?? 'off')) {
 				return true;
 			}
-			$gdpr_service = new \SlimStat\Services\GDPRService($settings);
-			return $gdpr_service->hasConsent();
+			return self::bannerHasConsentSafe($settings);
 		}
 
 		// WP Consent API integration - can read consent server-side

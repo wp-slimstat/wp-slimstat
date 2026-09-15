@@ -1,0 +1,18 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    P40-calendar-day-dependence-is-clock-dependence label
+rationale: Drops calendar-day dependence from the clock fact. report-answers.php flags the two chart captures calendar_day_dependent and NOT clock_dependent, on the stated grounds that they are a different hazard deserving a different flag; with this mutation a run that straddled midnight is adjudicated as a code difference. No plant set the flag at all before P40, so the whole calendar-day half of the contract was unobserved.
+---
+diff --git a/tests/oracle/classify.py b/tests/oracle/classify.py
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -594,7 +594,7 @@ def classify(triple, contract=None, register=None):
+         # describes the QUESTION, and one era spelling it and the other not is itself a reason
+         # to distrust a difference.
+         clock=any(_flag(env, name) for env in (old_env, new_env)
+-                  for name in ("clock_dependent", "calendar_day_dependent")),
++                  for name in ("clock_dependent",)),
+         # BOTH arms must be pinned for the pin to help. A window pinned on one side only leaves
+         # the other free to move, which is the state the pin exists to prevent.
+         pinned=_flag(old_env, "pinned") and _flag(new_env, "pinned"),

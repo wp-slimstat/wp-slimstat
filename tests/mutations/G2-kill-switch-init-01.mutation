@@ -1,0 +1,19 @@
+target:    src/Migration/MigrationService.php
+gate:      php tests/migration-kill-switch-test.php
+kind:      guard-removal
+expect:    MigrationService::init() does not consult the kill switch
+rationale: Removes the load-bearing guard — the one that stops the manager, the admin hooks and the AJAX endpoints from being registered at all. The other three checks are defence in depth and would not save it: with init() unguarded the whole object graph is built and the runner is reachable, which is the state that made the switch trusted-but-partial in the first place.
+---
+--- a/src/Migration/MigrationService.php
++++ b/src/Migration/MigrationService.php
+@@ -79,10 +79,6 @@ class MigrationService
+         // this framework did not — so an owner who set it had every reason to believe
+         // migrations were off while the runner proceeded. A switch that is documented and
+         // silently partial is worse than one that does not exist, because it is trusted.
+-        if (self::migrationsDisabled()) {
+-            return;
+-        }
+-
+         add_action('init', function () {
+             // Not redundant with the is_user_logged_in() gate at the call site: that is true
+             // for any authenticated visitor on any FRONTEND page too. Without this, every

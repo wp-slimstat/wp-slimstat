@@ -1,0 +1,16 @@
+target:    tests/docker/canary/compute-canary-verdict.py
+gate:      composer test:canary-verdict
+kind:      guard-narrowing
+expect:    right subject, wrong relation: expected MISSED, got CAUGHT
+rationale: Drops the relation term from the detection match, so naming the pre-declared report under ANY of the eight relations counts as a catch. CANARY-C1.md requires both -- the subject AND the defect -- and this is precisely how that rule erodes in practice: the subject is the memorable half, the relation reads like taxonomy, and an adjudicator that said 'top_resource: value-differs' about a report that lost a row looks close enough to a reader who already knows the answer. Under the mutation an agent that identified the wrong defect in the right report is scored as having caught the canary.
+---
+--- a/tests/docker/canary/compute-canary-verdict.py
++++ b/tests/docker/canary/compute-canary-verdict.py
+@@ -60,7 +60,6 @@
+         for f in (report.get("findings") or [])
+         if isinstance(f, dict)
+         and f.get("subject") == subject
+-        and f.get("relation") == relation
+     ]
+ 
+ 

@@ -1,0 +1,17 @@
+target:    tests/docker/canary/compute-canary-verdict.py
+gate:      composer test:canary-verdict
+kind:      guard-strengthening
+expect:    observable: ONLY the subject is charged to the canary
+rationale: Restores PITFALLS 90 exactly: charges the canary with every report whose lengths differ between the arms, rather than only those it ADDED relative to the baseline run. The two arms are two versions of the software and are already known to differ -- uniques_browser and uniques_country are the registered R15 pair and have differed in row count in every OLD<->NEW capture ever taken -- so the mutated control FAILS on a perfectly correct canary run. A control that cannot pass destroys good evidence rather than certifying bad, which is why this is filed as strengthening and is the only entry in the registry of that kind. It also exists because writing it is what found that observable() had no executable coverage at all: this exact diff SURVIVED every verdict fixture, which inject the function's OUTPUT, and is killed only by the assertions that drive the function itself. PITFALLS 91.
+---
+--- a/tests/docker/canary/compute-canary-verdict.py
++++ b/tests/docker/canary/compute-canary-verdict.py
+@@ -114,7 +114,7 @@
+         "delta": deltas.get(subject, 0),
+         "reports_differing_in_this_run": sorted(deltas),
+         "reports_differing_in_the_baseline_run": sorted(base["deltas"]),
+-        "added_by_the_canary": sorted(set(deltas) - set(base["deltas"])),
++        "added_by_the_canary": sorted(deltas),
+     }
+ 
+ 

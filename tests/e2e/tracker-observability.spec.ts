@@ -36,7 +36,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
   test.beforeEach(async ({ page }) => {
     await snapshotSlimstatOptions();
     await clearStatsTable();
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       ignore_wp_users: 'no',
       gdpr_enabled: 'off',
     });
@@ -64,14 +64,14 @@ test.describe('Tracker Observability — Production Scenario', () => {
 
   test('AJAX transport returns numeric body (not empty) on rejection', async ({ page, browser }) => {
     // Configure: use AJAX as primary transport so the echo fix is exercised directly
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'ajax',
       javascript_mode: 'on',
       ignore_ip: '127.0.0.1,::1',
       slimstat_debug: 'on',
     });
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     // Capture the AJAX tracking response
@@ -110,7 +110,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
   // ─────────────────────────────────────────────────────────────────
 
   test('debug headers expose rejection code on adblock_bypass transport', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'adblock_bypass',
       javascript_mode: 'on',
       ignore_ip: '127.0.0.1,::1',
@@ -118,7 +118,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     // Capture response headers from the adblock bypass endpoint
@@ -150,7 +150,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
   // ─────────────────────────────────────────────────────────────────
 
   test('JS __slimstatDebug records transport attempts when debug is on', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'adblock_bypass',
       javascript_mode: 'on',
       ignore_ip: '127.0.0.1,::1',
@@ -158,7 +158,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     await anonPage.goto(`${BASE_URL}/?e2e=js-debug-${Date.now()}`, { waitUntil: 'networkidle' });
@@ -189,12 +189,12 @@ test.describe('Tracker Observability — Production Scenario', () => {
   // ─────────────────────────────────────────────────────────────────
 
   test('JS __slimstatDebug is absent when debug is off', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'rest',
       slimstat_debug: 'off',
     });
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     await anonPage.goto(`${BASE_URL}/?e2e=no-debug-${Date.now()}`, { waitUntil: 'networkidle' });
@@ -257,7 +257,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
   // ─────────────────────────────────────────────────────────────────
 
   test('tracker-health endpoint returns 401 for anonymous users', async ({ browser }) => {
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     const response = await anonPage.request.get(`${BASE_URL}/wp-json/slimstat/v1/tracker-health`);
@@ -282,7 +282,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
 
   test('full production failure scenario — rejection is diagnosable end-to-end', async ({ page, browser }) => {
     // Step 1: Configure like the production site
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'adblock_bypass',
       javascript_mode: 'on',
       ignore_ip: '127.0.0.1,::1', // This causes the rejection
@@ -297,7 +297,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
     const nonce = await page.evaluate(() => (window as any).wpApiSettings?.nonce ?? '');
 
     // Step 2: Visit as anonymous user (simulates real visitor)
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     // Capture all tracking responses
@@ -378,7 +378,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
   // ─────────────────────────────────────────────────────────────────
 
   test('normal tracking still records pageviews after error code changes', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'adblock_bypass',
       ignore_ip: '',
       ignore_bots: 'no',
@@ -386,7 +386,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     const marker = `regression-guard-${Date.now()}`;

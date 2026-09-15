@@ -1,0 +1,18 @@
+target:    .github/workflows/main.yml
+gate:      composer test:perf-gate-integrity
+kind:      restore-defect
+expect:    a path inside the checkout
+rationale: Redirects the CI job listing back into the workspace root, where it was written until 2026-09-05. The step below rsyncs this checkout into the wordpress.org SVN repository and .distignore is that rsync's only exclusion list -- jobs.json is not in it, so every tag would have published a CI scratch file to ~70,000 installs. The gate pins the CLASS rather than the two names, because the next scratch file will be called something else and .distignore is a list somebody has to remember.
+---
+diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
+--- a/.github/workflows/main.yml
++++ b/.github/workflows/main.yml
+@@ -85,7 +85,7 @@
+         echo "Gating on CI run ${run_id} for ${GITHUB_SHA}"
+ 
+         gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/jobs?per_page=100" \
+-          --paginate --slurp > "${RUNNER_TEMP:?}/jobs.json"
++          --paginate --slurp > jobs.json
+ 
+         bash .github/expected-lanes.sh > "${RUNNER_TEMP:?}/expected.txt"
+ 

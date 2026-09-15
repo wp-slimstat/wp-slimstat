@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    two failures have not agreed about anything verdict
+rationale: Two reports that both FAILED have not agreed about anything, and EQUAL here is PITFALLS 38 with an error record in place of the empty list. Label-inert today, because new-errored and old-errored fire before any rule reads the arms verdict - which is precisely why it needs an assertion of its own: it is load-bearing for the oracle families that will call compare_envelopes directly, and for nothing else.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -762,7 +762,7 @@ def compare_envelopes(old_env, new_env, contract=None, roles=("old", "new")):
+                      % (a_cls, b_cls), a_class=a_cls, b_class=b_cls)
+ 
+     if a_cls == "error":
+-        return _diff(INCOMPARABLE, "both-error", "class",
++        return _diff(EQUAL, "both-error", "class",
+                      "both answers failed; two failures carry no comparable value",
+                      a_error=_error_text(old_env), b_error=_error_text(new_env))
+     if a_cls in ("unsupported", "unmodeled"):

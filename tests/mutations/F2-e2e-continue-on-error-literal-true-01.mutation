@@ -1,0 +1,17 @@
+target:    .github/workflows/ci.yml
+gate:      php tests/perf-gate-integrity-test.php
+kind:      restore-defect
+expect:    the E2E step is soft on every lane
+rationale: The state this commit left, restored exactly. It is also the proof that the old §7 was vacuous in the other direction: §7 matched the literal `continue-on-error: true` and nothing else, so before the widening this mutation was the ONLY shape it could see and the flip itself would have made it see nothing. Killed now by the blocking-set branch, not by the literal match.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -657,7 +657,7 @@
+         # everything, dropping either version, or reverting to a bare `true` all
+         # fail that gate. §7 used to match only the literal `continue-on-error:
+         # true`, so before this commit it would have matched nothing here.
+-        continue-on-error: ${{ !contains(fromJSON('["6.4","7.1"]'), matrix.wp) }}
++        continue-on-error: true
+         env:
+           # wp-env creates a fresh WordPress with default admin credentials.
+           # Override WP_ADMIN_USER / WP_ADMIN_PASS in global-setup.ts.

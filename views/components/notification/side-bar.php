@@ -1,5 +1,9 @@
 <?php
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 use SlimStat\Components\View;
 
 // Notification sidebar component

@@ -14,7 +14,11 @@ test.describe('Dashboard Access Log Widget Height (#247)', () => {
   test.beforeAll(async () => {
     // Seed at least 15 pageviews so the widget has content
     const pool = getPool();
-    const visitIdBase = Date.now();
+    // visit_id is INT UNSIGNED (max 4,294,967,295). Date.now() is ~1.7e12, so this fixture
+    // failed with "Out of range value for column 'visit_id'" on CI's strict-mode MySQL 8 —
+    // and only ever passed locally because a non-strict server silently truncated it. Keep
+    // the base unique per run but inside the column's range.
+    const visitIdBase = 3_000_000_000 + (Math.floor(Date.now() / 1000) % 1_000_000_000);
     const values = Array.from({ length: 15 }, (_, i) => {
       const visitId = visitIdBase + i;
       createdVisitIds.push(visitId);

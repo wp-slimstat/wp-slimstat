@@ -23,6 +23,7 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Counter, Trend, Rate } from 'k6/metrics';
+import { BASE_URL } from './lib/env.js';
 
 // Custom metrics
 const newSessionRate = new Rate('new_session_rate');
@@ -65,7 +66,6 @@ export const options = {
   },
 };
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:10003';
 
 // Frontend pages to simulate real browsing
 const PAGES = [

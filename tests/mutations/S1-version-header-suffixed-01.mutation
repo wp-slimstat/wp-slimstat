@@ -1,0 +1,17 @@
+target:    wp-slimstat.php
+gate:      composer test:version-suffix-contract
+kind:      introduce-defect
+expect:    not a bare X.Y.Z
+rationale: Suffixes the header only, leaving the define and Stable tag bare; both the bare-X.Y.Z and the three-sites-agree assertions fire.
+---
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -3,7 +3,7 @@
+  * Plugin Name: SlimStat Analytics
+  * Plugin URI: https://wp-slimstat.com/
+  * Description: The leading web analytics plugin for WordPress
+- * Version: 6.0.0
++ * Version: 6.0.0-beta1
+  * Author: Jason Crouse, VeronaLabs
+  * Text Domain: wp-slimstat
+  * Domain Path: /languages

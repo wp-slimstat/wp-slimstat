@@ -1,0 +1,22 @@
+target:    wp-slimstat.php
+gate:      composer test:network-activation-bounded
+kind:      guard-removal
+expect:    an exhausted budget still starts exactly one site
+rationale: Removes the deadline check, restoring the walk that cannot activate. Core's activate_plugin() fires `activate_{$plugin}` and only THEN writes `active_sitewide_plugins`, so a walk that exhausts max_execution_time dies inside the hook and the plugin is not network-activated at all -- leaving tables and rewritten .htaccess files behind on the sites it reached, for a plugin that is not running, and a retry that runs the same walk again. Per site the walk does up to 6 CREATE TABLE, ~13 CREATE INDEX and a HARD flush_rewrite_rules(). The mutation is one deleted `if`, and every other property stays true: the cursor is still written, still consumed, still deleted when it empties.
+---
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -2526,13 +2526,10 @@
+ 
+             // CHECKED AT THE TAIL, which is what makes every pass start at least one site —
+             // and it needs no sentinel to say so. Checking at the head instead required a
+             // `$first` flag whose only job was to skip the check once; the two are the same
+             // set of work, and this spelling cannot get the flag wrong.
+-            if (microtime(true) >= $deadline) {
+-                break;
+-            }
+         }
+ 
+         return count($pending);
+     }
+ 

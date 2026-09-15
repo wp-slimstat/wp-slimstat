@@ -1,0 +1,24 @@
+target:    .github/workflows/main.yml
+gate:      composer test:perf-gate-integrity
+kind:      name-only
+expect:    no longer runs .github/expected-lanes.sh
+rationale: Puts the lane derivation back inline in the workflow, PHPStan plus Tier 1, while leaving .github/expected-lanes.sh in the tree for section 5b to keep executing and approving. This is the name-only shape aimed at the gate itself: the script stays correct, the check on it stays green, and the deploy uses something else entirely. Killed because section 5b requires main.yml to invoke the script it proves.
+---
+diff --git a/.github/workflows/main.yml b/.github/workflows/main.yml
+--- a/.github/workflows/main.yml
++++ b/.github/workflows/main.yml
+@@ -87,7 +87,13 @@
+         gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/jobs?per_page=100" \
+           --paginate --slurp > "${RUNNER_TEMP:?}/jobs.json"
+ 
+-        bash .github/expected-lanes.sh > "${RUNNER_TEMP:?}/expected.txt"
++        {
++          echo "Static analysis · PHPStan"
++          sed -n '/^  fast:/,/^  phpstan:/p' .github/workflows/ci.yml \
++            | grep -m1 -oE 'php: \[[^]]*\]' \
++            | grep -oE '[0-9]+\.[0-9]+' \
++            | while read -r v; do echo "Tier 1 · fast · PHP $v"; done
++        } > "${RUNNER_TEMP:?}/expected.txt"
+ 
+         echo "Expected lanes:"; cat "${RUNNER_TEMP:?}/expected.txt"
+ 

@@ -1,0 +1,17 @@
+target:    src/Migration/Migrations/AddUserAgentDimension.php
+gate:      php tests/migration-ui-honesty-test.php
+kind:      restore-defect
+expect:    still returns !dimensionIsBehind()
+rationale: Report a pass that made real progress as a failure. backfill() is resumable by construction - the next call picks up whatever is still NULL - so a pass that stamped 500 tuples and left 4,000 did exactly what it was asked; returning false made runOne() record false and the UI paint "Failed", with nothing telling the admin that clicking again would help. "Did it work" and "is it finished" are different questions and this conflates them.
+---
+--- a/src/Migration/Migrations/AddUserAgentDimension.php
++++ b/src/Migration/Migrations/AddUserAgentDimension.php
+@@ -268,7 +268,7 @@
+         // "Did it work" and "is it finished" are different questions. This answers the first;
+         // shouldRun() answers the second, and the AJAX response now carries it so the client
+         // can re-post the same step until it is done.
+-        return true;
++        return !$this->dimensionIsBehind();
+     }
+ 
+     /**

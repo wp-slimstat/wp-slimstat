@@ -57,6 +57,8 @@ namespace SlimStat\Utils {
 
 namespace {
 
+    class wp_slimstat { public static $wpdb; }
+
     $assertions = 0;
 
     function assert_same($expected, $actual, string $message): void
@@ -109,8 +111,15 @@ namespace {
 
     $GLOBALS['wpdb'] = new class {
         public string $prefix = 'wp_';
+        public string $last_error = '';
     };
 
+    // WriteResult BEFORE Storage: this script hand-requires its subject rather than using the
+    // autoloader, and Storage::write() gained a WriteResult return in the F1 seam — so the
+    // require list silently went stale and the script has fataled with "Class not found" ever
+    // since. Same shape as tracker-health-auth-test.php, and unnoticed for the same reason:
+    // `composer test:all` is where both live, and the sub-suites were being run individually.
+    require_once __DIR__ . '/../src/Tracker/WriteResult.php';
     require_once __DIR__ . '/../src/Tracker/Storage.php';
 
     $ANDROID_APP = 'android-app://com.google.android.googlequicksearchbox/';

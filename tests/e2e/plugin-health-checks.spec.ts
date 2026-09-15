@@ -96,7 +96,7 @@ test.describe('Plugin Health Checks', () => {
     }
 
     // Also visit frontend as anonymous
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
     await anonPage.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded' });
     await ctx.close();
@@ -151,7 +151,7 @@ test.describe('Plugin Health Checks', () => {
     await setSlimstatOption(page, 'consent_integration', 'slimstat_banner');
 
     // Visit frontend as anonymous user (no consent cookie = banner should show)
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     await anonPage.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });

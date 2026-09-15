@@ -88,7 +88,7 @@
     height: 27px;
     border-radius: 999px;
     background-color: #18A4561A;
-    color: #18A456;
+    color: var(--ss-success-fg, #087a37);
     font-weight: 600;
     font-size: 12px;
     letter-spacing: 0.01em;
@@ -204,7 +204,7 @@
     padding: 6px 0;
     border-radius: 999px;
     background-color: transparent;
-    color: #18A456;
+    color: var(--ss-success-fg, #087a37);
     font-weight: 600;
     font-size: 14px;
 }

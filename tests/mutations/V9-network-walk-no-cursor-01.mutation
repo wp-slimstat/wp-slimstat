@@ -1,0 +1,21 @@
+target:    wp-slimstat.php
+gate:      composer test:network-activation-bounded
+kind:      guard-removal
+expect:    three passes consume three DIFFERENT sites
+rationale: Stops the walk persisting its progress after each site, leaving the cursor exactly as on_activate() wrote it. THE MUTATED CODE STILL LOOKS RESUMABLE: the option is written, a continuation is registered on admin_init, the notice still renders. What it does is re-run the FIRST site on every pass forever, because nothing ever shortens the list -- a cursor nothing advances is a marker, which is the exact shape this repo keeps recording one altitude up. A single-pass test cannot see it; only running a second pass and asserting it consumes a DIFFERENT site can. That is why the scenario runs three passes and compares the ids rather than the count.
+---
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -2518,12 +2518,10 @@
+             // safe direction. Persisting after the whole loop is what made the previous
+             // version record nothing at all when it died.
+             if ([] === $pending) {
+                 delete_site_option(self::ACTIVATION_CURSOR_OPTION);
+                 delete_site_option(self::ACTIVATION_ATTEMPT_OPTION);
+-            } else {
+-                update_site_option(self::ACTIVATION_CURSOR_OPTION, $pending);
+             }
+ 
+             // CHECKED AT THE TAIL, which is what makes every pass start at least one site —
+             // and it needs no sentinel to say so. Checking at the head instead required a
+             // `$first` flag whose only job was to skip the check once; the two are the same

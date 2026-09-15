@@ -1,0 +1,19 @@
+target:    uninstall.php
+gate:      php tests/schema-single-source-test.php
+kind:      restore-defect
+expect:    uninstall.php names slim_stats directly
+rationale: C16 exactly. The drop list was hardcoded here, in FK-safe order, in the one file that cannot see the table inventory because it runs with the plugin unloaded and no autoloader — which is why Schema.php is dependency-free and required directly. A table added in Phase G and forgotten here is analytics data surviving an uninstall the user asked for, on the code path where nobody looks afterwards.
+---
+diff --git a/uninstall.php b/uninstall.php
+index 0358c472..51b3c8fa 100644
+--- a/uninstall.php
++++ b/uninstall.php
+@@ -159,6 +159,8 @@ function slimstat_uninstall($_wpdb = '')
+         SlimStat\Schema\Schema::legacyTables('prefix')
+     );
+ 
++    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_stats', $GLOBALS['wpdb']->prefix));
++
+     foreach ($slimstat_drop as $slimstat_table) {
+         $_wpdb->query(sprintf('DROP TABLE IF EXISTS %s%s', $GLOBALS['wpdb']->prefix, $slimstat_table));
+     }

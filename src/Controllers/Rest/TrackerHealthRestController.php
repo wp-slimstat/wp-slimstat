@@ -107,6 +107,13 @@ class TrackerHealthRestController implements RestControllerInterface
                 'recorded_at' => $warningTime ? gmdate('Y-m-d H:i:s', $warningTime) : null,
             ],
             'last_geoip_error'       => !empty($geoipError) ? $geoipError : null,
+            // Rate limiting stands down on sites with no persistent object cache,
+            // because the only other place to keep a cross-request counter is the
+            // options table and that cost a write on every hit. Reported here rather
+            // than left to a code comment: a behaviour that silently turns itself off
+            // is one nobody can diagnose. Computed at render time, so it costs the
+            // tracking path nothing. (D29)
+            'rate_limiting'          => \SlimStat\Tracker\Ajax::isRateLimitingActive() ? 'on' : 'off',
         ];
 
         return rest_ensure_response($data);

@@ -1,4 +1,8 @@
 <?php
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 $tab = $tab ?? __('inbox', 'wp-slimstat');
 ?>
 <div class="slimstat-notification-sidebar__card slimstat-notification-sidebar__no-card">

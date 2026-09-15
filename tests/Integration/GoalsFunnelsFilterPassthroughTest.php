@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
  *   B) the lazily-loaded (non-first) funnel tab never POSTed the active fs[...]
  *      filters, so its AJAX request computed unfiltered.
  *
- * The fix folds funnel_filters_signature() into funnel_cache_key(), exposes a
+ * The fix folds filters_signature() into funnel_cache_key(), exposes a
  * reusable SlimStatGetFiltersForAjax() in admin.js, and posts those filters on
  * funnel-load. The per-step "Test" affordance is deliberately left unfiltered
  * (it validates a raw rule while building).
@@ -38,32 +38,38 @@ class GoalsFunnelsFilterPassthroughTest extends TestCase
     {
         $db = $this->read('admin/view/wp-slimstat-db.php');
 
-        // The key builder must accept and fold in a column-filter signature.
+        // The shared key builder must fold in a column-filter signature. It reads the
+        // signature itself rather than taking it as an argument, so a caller cannot
+        // pair one request's filters with another's window. (D33/D37)
         $this->assertMatchesRegularExpression(
-            '/function funnel_cache_key\([^)]*\$filters_sig[^)]*\)/',
+            '/function results_cache_key\([\s\S]*?filters_signature\(\)/',
             $db,
-            'funnel_cache_key() must take a $filters_sig argument'
+            'results_cache_key() must fold in the column-filter signature'
         );
         $this->assertStringContainsString(
-            'function funnel_filters_signature(',
+            'function filters_signature(',
             $db,
-            'A funnel_filters_signature() helper must exist'
+            'A filters_signature() helper must exist (renamed from funnel_filters_signature() '
+                . 'when goals and the unique-visitor denominator started sharing it)'
         );
 
         // The signature must derive from the NORMALIZED filter array, never from the
         // prepared get_combined_where() SQL (whose $wpdb->prepare salt is unstable).
         $this->assertMatchesRegularExpression(
-            "/funnel_filters_signature\(\)\s*\{[\s\S]*?serialize\(self::\\\$filters_normalized\['columns'\]/",
+            "/filters_signature\(\)\s*\{[\s\S]*?serialize\(self::\\\$filters_normalized\['columns'\]/",
             $db,
-            'funnel_filters_signature() must serialize $filters_normalized[columns], not the prepared SQL'
+            'filters_signature() must serialize $filters_normalized[columns], not the prepared SQL'
         );
 
-        // get_funnel_results() must feed the signature into the key.
-        $this->assertStringContainsString(
-            'self::funnel_filters_signature()',
-            $db,
-            'get_funnel_results() must pass the filter signature into the cache key'
-        );
+        // And the goal / funnel / uv keys must all route through that one builder, so
+        // none of them can be built without the signature.
+        foreach (['get_goal_results', 'get_total_unique_visitors', 'funnel_cache_key'] as $fn) {
+            $this->assertMatchesRegularExpression(
+                '/function ' . preg_quote($fn, '/') . '\([\s\S]*?results_cache_key\(/',
+                $db,
+                $fn . '() must build its cache key through results_cache_key()'
+            );
+        }
     }
 
     public function test_admin_js_exposes_a_filter_getter_that_skips_date_keys(): void

@@ -1,14 +1,17 @@
 # Directories
 /.wordpress-org
 /.git
+/.githooks
 /.github
 /node_modules
 /tests
+/build
 /test-results
 /admin/assets/scss
 
 # Build & dev files
 .distignore
+.gitattributes
 .gitignore
 .editorconfig
 .coderabbit.yaml
@@ -24,8 +27,12 @@ package.json
 package-lock.json
 bun.lock
 phpunit.xml.dist
+phpstan.neon.dist
+phpstan-baseline.neon
+.phpunit.result.cache
 .wp-env.json
 .wp-env.override.json
+.DS_Store
 
 # Dev-only directories not needed in release
 /packages
@@ -43,6 +50,10 @@ phpunit.xml.dist
 
 # Docs (wp.org uses readme.txt)
 CHANGELOG.md
+CONTRIBUTING.md
 README.md
 LICENSE
 security.md
+
+# Private Symfony Windows interactive-console helper; no plugin entrypoint uses it.
+/src/Dependencies/veronalabs/browscap-php/src/Symfony/Component/Console/Resources/bin/hiddeninput.exe

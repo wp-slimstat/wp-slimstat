@@ -1474,7 +1474,9 @@ jQuery(function () {
                 var data = {
                     action: "meta-box-order",
                     _ajax_nonce: jQuery("#meta-box-order-nonce").val(),
-                    page: SlimStatAdminParams.page_location + "_page_slimlayout",
+                    page: SlimStatAdminParams.page_location + "_page_slimlayout" + (SlimStatAdminParams.layout_scope === "network" ? "-network" : ""),
+                    slimstat_layout_scope: SlimStatAdminParams.layout_scope,
+                    _slimstat_nonce: SlimStatAdminParams.network_layout_nonce,
                     page_columns: 0,
                 };
 
@@ -1503,7 +1505,9 @@ jQuery(function () {
         var data = {
             action: "meta-box-order",
             _ajax_nonce: jQuery("#meta-box-order-nonce").val(),
-            page: SlimStatAdminParams.page_location + "_page_slimlayout",
+            page: SlimStatAdminParams.page_location + "_page_slimlayout" + (SlimStatAdminParams.layout_scope === "network" ? "-network" : ""),
+                    slimstat_layout_scope: SlimStatAdminParams.layout_scope,
+                    _slimstat_nonce: SlimStatAdminParams.network_layout_nonce,
             page_columns: 0,
         };
 
@@ -1716,6 +1720,15 @@ var SlimStatAdmin = {
                 report_id: id,
                 granularity: granularity,
             };
+
+            // Ask for network scope explicitly when this is the network report
+            // screen. The nonce is minted server-side only for a super admin, and
+            // Pro re-checks the capability, so this says "which scope", not "may I".
+            // Absent nonce = single-site, which is the safe default.
+            if (SlimStatAdminParams.network_scope_nonce) {
+                data.slimstat_network_scope = 1;
+                data.slimstat_network_nonce = SlimStatAdminParams.network_scope_nonce;
+            }
 
             // Append the data from the hidden form
             filters_input = jQuery("#slimstat-filters-form .slimstat-post-filter").toArray();

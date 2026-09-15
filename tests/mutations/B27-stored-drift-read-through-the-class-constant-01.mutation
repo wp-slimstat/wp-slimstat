@@ -1,0 +1,19 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      introduce-defect
+expect:    the literal the stale-record leg reads is the constant the plugin writes
+rationale: Reading through wp_slimstat_admin::COLUMN_DRIFT_OPTION is the tidier spelling and it can fatal, in a process where that class is not loaded. A fatal returns the empty string, which is indistinguishable from a cleared option — on the one leg whose entire job is to tell a stale record from a healed one. The literal cannot fatal; the gate pins it against the constant so the two cannot drift apart in silence.
+---
+diff --git a/tests/docker/rehearse-upgrade.sh b/tests/docker/rehearse-upgrade.sh
+index f142f0bc..4399ba25 100755
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -869,7 +869,7 @@ DRIFT_NOW=$(wpc eval '
+ # whether the record is stale, and a read that can fatal returns the empty string — which is
+ # exactly what a healed record looks like. The gate pins the literal against the constant.
+ DRIFT_STORED=$(wpc eval '
+-  echo implode(", ", (array) get_option("slimstat_schema_column_drift", []));' 2>/dev/null | tr -d '\n')
++  echo implode(", ", (array) get_option(wp_slimstat_admin::COLUMN_DRIFT_OPTION, []));' 2>/dev/null | tr -d '\n')
+ [ "$DRIFT_STORED" = "$DRIFT_NOW" ] && check "and the durable record was re-derived, not replayed" 0 "${DRIFT_NOW:-none}" \
+   || check "and the durable record was re-derived, not replayed" 1 "stored '${DRIFT_STORED:-none}' vs on disk '${DRIFT_NOW:-none}'"
+ 

@@ -117,6 +117,7 @@ test.describe('AC-CMP-001: Textdomain Loaded at init Hook', () => {
       domain: string;
       hook: string;
       current_action: string;
+      init_started: boolean;
       time: number;
       mofile: string;
     }>;
@@ -130,7 +131,9 @@ test.describe('AC-CMP-001: Textdomain Loaded at init Hook', () => {
     // The load_textdomain filter fires during the hook where textdomain is loaded.
     // For SlimStat 5.4.2+, this should be 'init' (not plugins_loaded or earlier).
     for (const entry of slimstatEntries) {
-      // current_action should be 'init' or a later hook, not 'plugins_loaded'
+      // current_action() inside this callback is always load_textdomain.
+      // The actual timing proof is whether init has started in this request.
+      expect(entry.init_started, `textdomain loaded before init: ${entry.mofile}`).toBe(true);
       expect(
         entry.current_action,
         `wp-slimstat textdomain loaded during "${entry.current_action}" instead of "init" or later`

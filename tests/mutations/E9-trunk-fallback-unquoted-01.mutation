@@ -1,0 +1,19 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:perf-gate-integrity
+kind:      restore-defect
+expect:    assigns WP_REF as [
+rationale: Restores the trunk fallback as unquoted `WP_REF=trunk`, the spelling the original two-literal check missed; the assignment-list assertion sees two assignments.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -384,8 +384,8 @@
+             fi
+             if [ -z "${wp_tag_refs}" ]; then
+               echo "::error::WordPress tag ${WP_VERSION} does not exist. Fix the matrix entry, or"
+-              echo "::error::remove the lane — do not let it silently test trunk under that name."
+-              exit 1
++              echo "::warning::tag not found, falling back to trunk"
++              WP_REF=trunk
+             fi
+           fi
+           # PINNED TO VERSIONS, for the same reason main.yml's actions are pinned to commits

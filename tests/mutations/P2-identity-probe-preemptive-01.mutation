@@ -1,0 +1,19 @@
+target:    src/Tracker/Session.php
+gate:      php tests/anonymous-identity-test.php
+kind:      introduce-defect
+expect:    that is a schema probe on the path that runs for EVERY anonymous pageview
+rationale: Fix the correctness half by asking the schema first - which is the obvious fix, and which trades the defect for a different one: one extra SHOW COLUMNS on every anonymous hit, forever, on healthy installs too. src/Tracker/Storage.php:52-54 states the rule this breaks. Memoising inside Schema is not the escape either, because AddVisitIdentity::shouldRun() asks the same question before and after its own ALTER in one request. Worth pinning because it LOOKS more careful than the reactive form.
+---
+--- a/src/Tracker/Session.php
++++ b/src/Tracker/Session.php
+@@ -289,6 +289,10 @@
+ 		// checked first. Memoising the check inside Schema is not the escape either:
+ 		// AddVisitIdentity::shouldRun() asks the same question before and after its own
+ 		// ALTER in one request, and a memo would freeze the migration screen.
++		if (!\SlimStat\Schema\Schema::hasColumn(\wp_slimstat::$wpdb, 'slim_stats', $GLOBALS['wpdb']->prefix, 'vid_hash')) {
++			return 0;
++		}
++
+ 		$probe = Query::select('visit_id')
+ 			->from($GLOBALS['wpdb']->prefix . 'slim_stats')
+ 			// UNHEX in SQL rather than hex2bin in PHP so the comparison stays on the

@@ -1,0 +1,21 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      php tests/funnel-step-identity-test.php
+kind:      name-only
+expect:    guard(s) in CODE where 2 are expected
+rationale: MOVES THE CONSTRUCT OUT AND LEAVES THE NAME BEHIND - the guard is removed while its exact spelling survives inside a string literal. A comments-only scan stayed green on precisely this mutant (demonstrated during blind review); the strings-stripped construct count is what kills it. This is the mutation every source-scan assertion owes, registered for the section it defeated.
+---
+diff --git a/admin/view/wp-slimstat-db.php b/admin/view/wp-slimstat-db.php
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -2136,9 +2136,8 @@ class wp_slimstat_db
+         if (self::fact_column_present('fingerprint')) {
+             $tiers[] = $prefix . 'fingerprint';
+         }
+-        if (self::fact_column_present('vid_hash')) {
+-            $tiers[] = sprintf('HEX(%svid_hash)', $prefix);
+-        }
++        $ladder_note = "self::fact_column_present('vid_hash')";
++        $tiers[]     = sprintf('HEX(%svid_hash)', $prefix);
+         $tiers[] = sprintf("CONCAT('v_', %svisit_id)", $prefix);
+         $tiers[] = sprintf("CONCAT('ip_', %sip)", $prefix);
+ 

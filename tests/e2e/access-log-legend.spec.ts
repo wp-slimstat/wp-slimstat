@@ -6,13 +6,12 @@
  * swatch is now grouped with its label inside .slimstat-legend-item, with a
  * hover title, laid out as a wrapping flex row.
  *
- * The "legend" describe is READ-ONLY (it never seeds/clears the DB), so it is
- * safe to run against any site. The "row colours" describe seeds rows and must
- * run on a throwaway DB (wp-env / playground) or with ALLOW_LIVE_DB=1.
+ * Both describes seed their own current-date rows in the disposable test DB.
+ * The legend is intentionally absent when the selected Access Log range is empty.
  */
 import { test, expect, Page } from '@playwright/test';
 import { BASE_URL } from './helpers/env';
-import { getPool, closeDb, clearStatsTable, seedAuthoredPageview } from './helpers/setup';
+import { getPool, closeDb, clearStatsTable, seedAuthoredPageview, seedPageviews } from './helpers/setup';
 
 const SLIMVIEW1 = `${BASE_URL}/wp-admin/admin.php?page=slimview1`;
 
@@ -31,8 +30,13 @@ async function openAccessLog(page: Page): Promise<void> {
   await expect(page.locator('#slim_p7_02')).toBeVisible({ timeout: 30_000 });
 }
 
-test.describe('Access Log colour legend — clarity (read-only)', () => {
+test.describe('Access Log colour legend — clarity (seeded)', () => {
   test.setTimeout(60_000);
+
+  test.beforeEach(async () => {
+    await clearStatsTable();
+    await seedPageviews({ count: 1, resourcePrefix: '/legend-clarity-', baseDt: Math.floor(Date.now() / 1000) });
+  });
 
   test('each swatch is paired with its label, correctly coloured, and titled', async ({ page }) => {
     await openAccessLog(page);
@@ -110,11 +114,12 @@ test.describe('Access Log row colours — per visitor type (seeds; throwaway DB 
 
   test('each visitor type gets its matching header highlight colour', async ({ page }) => {
     await openAccessLog(page);
-    await expect(page.locator('#slim_p7_02 p.header.is-known-user')).toHaveCount(1);   // WP user
-    await expect(page.locator('#slim_p7_02 p.header.is-known-visitor')).toHaveCount(1); // commenter
-    await expect(page.locator('#slim_p7_02 p.header.is-direct')).toHaveCount(1);        // direct human
+    await expect(page.locator('#slim_p7_02 p.header.is-known-user').filter({ hasText: 'e2e_wp_user' })).toHaveCount(1);   // WP user
+    await expect(page.locator('#slim_p7_02 p.header.is-known-visitor').filter({ hasText: 'e2e_commenter' })).toHaveCount(1); // commenter
+    await expect(page.locator('#slim_p7_02 p.header.is-direct').filter({ hasText: '10.0.0.4' })).toHaveCount(1);        // direct human
     // The bot row's header carries none of the human/user highlight classes.
-    const botRow = page.locator('#slim_p7_02 p.header', { hasText: '/legend-bot' });
+    const botRow = page.locator('#slim_p7_02 p.header').filter({ has: page.locator('img[title="Bot/Crawler"]') });
+    await expect(botRow).toHaveCount(1);
     await expect(botRow).not.toHaveClass(/is-known-user|is-known-visitor|is-search-engine|is-direct/);
   });
 });

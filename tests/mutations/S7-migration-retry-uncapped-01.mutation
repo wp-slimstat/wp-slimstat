@@ -1,0 +1,17 @@
+target:    admin/assets/js/migration.js
+gate:      php tests/migration-ui-honesty-test.php
+kind:      guard-removal
+expect:    with no cap
+rationale: Remove the pass cap from the re-post loop. The exit condition lives on the other end of the network - the client keeps going while the server answers remaining:true - so a step that does not converge spins the browser forever with a spinner that reads as healthy. A bounded loop that reports "not converging" is more useful than an unbounded one that never reports anything.
+---
+--- a/admin/assets/js/migration.js
++++ b/admin/assets/js/migration.js
+@@ -111,7 +111,7 @@
+             var ok = !!(resp && resp.success);
+             var more = !!(resp && resp.data && resp.data.remaining);
+ 
+-            if (ok && more && pass < MAX_PASSES && (Date.now() - since) < MAX_RETRY_MS) {
++            if (ok && more) {
+                 runStep(id, onSettled, pass + 1, since);
+                 return;
+             }

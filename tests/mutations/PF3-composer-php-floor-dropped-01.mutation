@@ -1,0 +1,16 @@
+target:    composer.json
+gate:      composer test:php-floor
+kind:      guard-removal
+expect:    declares no `php` constraint
+rationale: Removes the php >= 7.4 constraint from composer.json; the header, the guard and the manifest are three declarations of one number and the gate holds them together.
+---
+--- a/composer.json
++++ b/composer.json
+@@ -27,7 +27,6 @@
+     }
+   },
+   "require": {
+-    "php": ">=7.4",
+     "veronalabs/browscap-php": "dev-standalone"
+   },
+   "require-dev": {

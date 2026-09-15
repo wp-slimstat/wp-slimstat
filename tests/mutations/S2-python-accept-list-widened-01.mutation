@@ -1,0 +1,14 @@
+target:    tests/oracle/encoding_v1.py
+gate:      composer test:fingerprint-v2-py
+kind:      restore-defect
+expect:    text must raise
+rationale: Widens ONE language's accept-list past the pinned set (see encoding-spec.md, "Field encoding"). This is the failure the shared fixture was restructured to catch: before type_kinds and types_that_must_raise moved into golden-encoding-fixtures.json, adding a type to one side's list left every value assertion green while the two encoders had silently stopped implementing the same spec. Registered on the PYTHON side deliberately - it is the half whose gate is newest to CI. The mutation restores two of the four unauthorised types (text, char) that the first version of both encoders accepted. ANCHORED ON _INT_TYPES, its sibling accept-list, and nothing else: the previous version carried three lines of trailing context that reached down to the memoisation decorator, so an unrelated performance change to kind() broke a registry file that pins a type-safety property. Context a mutation does not need is a line that can break it.
+---
+diff --git a/tests/oracle/encoding_v1.py b/tests/oracle/encoding_v1.py
+--- a/tests/oracle/encoding_v1.py
++++ b/tests/oracle/encoding_v1.py
+@@ -27,3 +27,3 @@
+ _INT_TYPES = ("tinyint", "smallint", "int", "bigint")
+-_STR_TYPES = ("varchar",)
++_STR_TYPES = ("varchar", "text", "char")
+ 

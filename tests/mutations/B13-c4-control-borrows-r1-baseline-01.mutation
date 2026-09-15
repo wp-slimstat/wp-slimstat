@@ -1,0 +1,17 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    the C4 control measures against its own baseline, not against R1
+rationale: C4 is the required-red control: it drops the column the migration adds and asserts the v5-scoped fingerprint does not move. Comparing against FP_0 -- R1's reading -- makes it answerable only on a cell that is already green. On Run 65 cell 7a the conversion had not run, so the fingerprint already differed from FP_0 for reasons unrelated to vid_hash, and the control announced "C4 fingerprint is not v5-scoped": a specific, false diagnosis about a property it never tested, printed on the one run where a reader most needs the controls to be trustworthy.
+---
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -871,7 +871,7 @@
+   note FAIL "the column check cannot see a dropped column"; fail "C4 column check is blind"
+ fi
+ FP_BROKEN=$(fingerprint)
+-if [ "$FP_BROKEN" != "$FP_PRE_C4" ]; then
++if [ "$FP_BROKEN" != "$FP_0" ]; then
+   note FAIL "the fingerprint changed when only an ADDED column was dropped"; fail "C4 fingerprint is not v5-scoped"
+ else
+   note PASS "the fingerprint ignores columns the migration added, as its scope requires"

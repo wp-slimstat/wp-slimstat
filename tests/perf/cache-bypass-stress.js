@@ -24,6 +24,7 @@
 import http from 'k6/http';
 import { check, sleep, group } from 'k6';
 import { Trend, Counter, Rate } from 'k6/metrics';
+import { BASE_URL, credentials } from './lib/env.js';
 
 // ─── Custom metrics ──────────────────────────────────────────────────────────
 
@@ -77,9 +78,7 @@ export const options = {
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:10003';
-const WP_USER = __ENV.WP_USER || 'parhumm';
-const WP_PASS = __ENV.WP_PASS || 'testpass123';
+const { user: WP_USER, pass: WP_PASS } = credentials();
 
 // All SlimStat report pages (all use live date ranges by default)
 const REPORT_PAGES = [

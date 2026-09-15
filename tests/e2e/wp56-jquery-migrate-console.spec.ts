@@ -18,6 +18,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { BASE_URL, WP_ROOT } from './helpers/env';
+import { deployMuPlugin } from './helpers/setup';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MU_DIR = path.join(WP_ROOT, 'wp-content', 'mu-plugins');
@@ -36,7 +37,7 @@ const ADMIN_PAGES = [
 test.describe('JQMIGRATE watchdog — own-code is jQuery-4.0 clean @compat', () => {
   test.beforeAll(() => {
     fs.mkdirSync(MU_DIR, { recursive: true });
-    fs.copyFileSync(MU_SRC, MU_DEST);
+    deployMuPlugin(MU_SRC, MU_DEST);
   });
 
   test.afterAll(() => {

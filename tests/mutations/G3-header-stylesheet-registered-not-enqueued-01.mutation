@@ -1,0 +1,12 @@
+target:    src/Migration/Admin/MigrationAdmin.php
+gate:      composer test:admin-header-assets
+kind:      guard-removal
+expect:    and never enqueues that handle
+rationale: Registers the header stylesheet and never enqueues it -- a file the browser never requests, so the header renders exactly as it did before the fix, with the CSS sitting in the repo looking correct. This entry exists because the gate's first enqueue check asked only whether the file called wp_enqueue_style() AT ALL, and it enqueues its base stylesheet two lines earlier, so the check was true no matter what: deleting this very line left the gate green. G2 mutates the PATH and is caught by the other half, which is why it did not notice. The check now pins the handle the register call uses.
+---
+--- a/src/Migration/Admin/MigrationAdmin.php
++++ b/src/Migration/Admin/MigrationAdmin.php
+@@ -89,3 +89,2 @@
+ 		wp_register_style('slimstat-header-modern', plugins_url('/admin/assets/css/header-modern.css', SLIMSTAT_FILE), ['slimstat-admin-base'], SLIMSTAT_ANALYTICS_VERSION);
+-		wp_enqueue_style('slimstat-header-modern');
+ 

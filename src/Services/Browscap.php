@@ -113,6 +113,21 @@ class Browscap
         return $browser;
     }
 
+    /**
+     * Whether ext-fileinfo is available, asked from inside this namespace.
+     *
+     * The admin notice in admin/view/index.php used to call extension_loaded('fileinfo')
+     * itself. That file has no namespace, so the call resolved straight to the PHP
+     * built-in and nothing in userland could answer it differently: the E2E simulation
+     * of a fileinfo-less host could never make the notice render, and the companion
+     * "no notice when Browscap is off" assertion passed vacuously on every host that
+     * has the extension. Admin code asks Browscap, which owns the requirement.
+     */
+    public static function has_fileinfo(): bool
+    {
+        return extension_loaded('fileinfo');
+    }
+
     public static function get_browser_from_browscap($_browser = [], $_cache_path = '')
     {
         // Flysystem's LocalFilesystemAdapter eagerly constructs FinfoMimeTypeDetector,
@@ -234,6 +249,7 @@ class Browscap
             if (is_wp_error($response) || 200 != wp_remote_retrieve_response_code($response)) {
                 $http_code = is_wp_error($response) ? $response->get_error_message() : wp_remote_retrieve_response_code($response);
                 @unlink($browscap_zip);
+                /* translators: %s: HTTP status code or download error message. */
                 return [7, sprintf(__('There was an error downloading the Browscap data file (%s). Please try again later.', 'wp-slimstat'), $http_code)];
             }
 
@@ -262,6 +278,7 @@ class Browscap
             // We're ready to unzip the file
             $result = unzip_file($browscap_zip, wp_slimstat::$upload_dir);
             if (is_wp_error($result)) {
+                /* translators: %s: archive extraction error message. */
                 return [9, sprintf(__('There was an error uncompressing the Browscap data file: %s', 'wp-slimstat'), $result->get_error_message())];
             }
 

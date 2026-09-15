@@ -311,9 +311,7 @@ test.describe('Tracking Request Methods — All Transports', () => {
       const marker = `trm-fallback-${Date.now()}`;
 
       // Block REST endpoint to force fallback
-      await page.route('**/wp-json/slimstat/v1/hit', (route) => route.abort('connectionfailed'));
-      // Also block the ?rest_route= variant
-      await page.route('**/?rest_route=/slimstat/v1/hit*', (route) => route.abort('connectionfailed'));
+      await page.route((url) => url.pathname.endsWith('/wp-json/slimstat/v1/hit') || url.searchParams.get('rest_route') === '/slimstat/v1/hit', (route) => route.abort('connectionfailed'));
 
       let ajaxFallbackUsed = false;
       page.on('request', (req) => {

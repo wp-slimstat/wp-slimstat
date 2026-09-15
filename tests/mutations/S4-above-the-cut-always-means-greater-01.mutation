@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    P37-an-ascending-report-cuts-at-the-max label
+rationale: The twin of the cut-side mutation, one line down: with the band's 'above' test fixed to greater-than, an ascending report's above-cut band empties and the strict half of the rule has nothing to check, so the verdict collapses to whole-result-is-one-tie-band. Registered separately because the two lines are separate decisions and cut_side must be read by both.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -580,7 +580,7 @@ def compare_banded(a_rows, b_rows, contract=None):
+                      "answers were cut in different places" % (cut_a, cut_b),
+                      cut_a=str(cut_a), cut_b=str(cut_b))
+ 
+-    beyond = (lambda c: c > cut_a) if contract["cut_side"] == "min" else (lambda c: c < cut_a)
++    beyond = (lambda c: c > cut_a)
+     above_a = Counter(_row_key(r, contract) for r, c in zip(a_rows, counts_a) if beyond(c))
+     above_b = Counter(_row_key(r, contract) for r, c in zip(b_rows, counts_b) if beyond(c))
+ 

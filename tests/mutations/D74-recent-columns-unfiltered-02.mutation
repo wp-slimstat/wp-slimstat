@@ -1,0 +1,24 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      php tests/group-by-conformance-test.php
+kind:      name-only
+expect:    holds no fact_column_present() call in CODE
+rationale: The DEMONSTRATED bypass, registered rather than imagined - a blind reviewer proved the funnel ladder's single-layer scan could be satisfied by a string literal, and this is the same shape one function away. The guard is removed from CODE while its spelling survives inside a string, and the function still returns $present, so the "returns the manifest unfiltered" layer stays silent. Only the strings-stripped construct count can fail here, which is exactly what makes that layer load-bearing rather than decorative.
+---
+diff --git a/admin/view/wp-slimstat-db.php b/admin/view/wp-slimstat-db.php
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -1390,12 +1390,8 @@
+     {
+         $manifest = ['id', 'ip', 'dt', 'username', 'referer', 'resource', 'browser', 'platform', 'country', 'city', 'content_type', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser_version', 'browser_type', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out'];
+ 
+-        $present = [];
+-        foreach ($manifest as $column) {
+-            if (self::fact_column_present($column)) {
+-                $present[] = $column;
+-            }
+-        }
++        $probe   = 'self::fact_column_present(';
++        $present = $manifest;
+ 
+         return $present;
+     }

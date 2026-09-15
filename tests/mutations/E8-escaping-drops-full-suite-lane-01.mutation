@@ -1,0 +1,17 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:perf-gate-integrity
+kind:      guard-narrowing
+expect:    does not run on WP 6.4 (the full-suite baseline lane)
+rationale: Narrows the escaping `if:` to the newest lane, dropping the 6.4 that .wp-env.json boots; the newest-lane assertion stays green so only the baseline-lane one fires.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -462,7 +462,7 @@
+         #
+         # Blocking, unlike the E2E step below. On these lanes it is the first step that can
+         # fail this job, which is the point of adding it.
+-        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1' }}
++        if: ${{ matrix.wp == '7.1' }}
+         run: npx wp-env run tests-cli -- php wp-content/plugins/wp-slimstat/tests/reports-output-escaping-test.php
+ 
+       - name: Activate plugin and create database tables

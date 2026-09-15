@@ -1,0 +1,21 @@
+target:    src/Helpers/DataBuckets.php
+gate:      composer test:databuckets-week-start
+kind:      restore-defect
+expect:    Saturday landed in the Mar 7 bucket
+rationale: Replaces the start_of_week arithmetic with date('W') differences. With sow=6, Fri 13 and Sat 14 March share ISO week 11, so both land in one bucket; the strict [0,0,0,100,200] compare fires.
+---
+--- a/src/Helpers/DataBuckets.php
++++ b/src/Helpers/DataBuckets.php
+@@ -225,11 +225,7 @@
+         } elseif ('WEEK' === $this->gran) {
+             // Calculate the start-of-week date for both base and dt
+             // This respects WordPress start_of_week setting instead of using ISO weeks
+-            $baseWeekStart = $this->getWeekStartTimestamp($base);
+-            $dtWeekStart = $this->getWeekStartTimestamp($dt);
+-
+-            // Calculate weeks between the two week start dates
+-            $offset = (int) round(($dtWeekStart - $baseWeekStart) / (7 * 86400));
++            $offset = (int) date('W', $dt) - (int) date('W', $base);
+ 
+             if ($offset < 0) {
+                 $offset = -1;

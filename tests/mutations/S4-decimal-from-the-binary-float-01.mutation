@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      restore-defect
+expect:    round_half_up(1.005, 2) matches PHP round()
+rationale: Builds the Decimal from a float's exact binary expansion instead of its decimal rendering. round_half_up's docstring names this as THE boundary the PHP agreement rests on - and for the whole of S4 the mutation was unobservable, because every one of the eleven probes passed its value as a JSON STRING and the float branch was never taken. The oracle side is the side that computes in Python and hands over floats, so it is the production path into that branch. Four probes now carry the value as a JSON number and six assertions go red.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -250,7 +250,7 @@ def _decimal(value):
+     elif isinstance(value, int):
+         parsed = decimal.Decimal(value)
+     elif isinstance(value, float):
+-        parsed = decimal.Decimal(str(value))
++        parsed = decimal.Decimal(value)
+     elif isinstance(value, (bytes, bytearray)):
+         parsed = decimal.Decimal(bytes(value).decode("utf-8").strip())
+     elif isinstance(value, str):
