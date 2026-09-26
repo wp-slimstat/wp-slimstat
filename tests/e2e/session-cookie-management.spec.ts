@@ -178,7 +178,11 @@ test.describe('Session & Cookie Management — #199', () => {
       await visitor.goto(`${BASE_URL}/?e2e_marker=${marker}-p1`);
       await firstRequest; // Confirm in-flight; deliberately do not await its response.
       const beforeSecond = await context.cookies();
-      await visitor.goto(`${BASE_URL}/?e2e_marker=${marker}-p2`);
+      const secondUrl = `${BASE_URL}/?e2e_marker=${marker}-p2`;
+      const secondRequest = visitor.waitForRequest(req => isSlimstatTrackingRequest(req) && req.frame().url() === secondUrl);
+      await visitor.goto(secondUrl);
+      // load precedes the idle/fingerprint work that dispatches this hit, too.
+      await secondRequest; // Still do not wait for a response before navigating.
       const beforeThird = await context.cookies();
       await visitor.goto(`${BASE_URL}/?e2e_marker=${marker}-p3`);
       let delayProof: any;
