@@ -520,6 +520,8 @@ jQuery(function () {
         }
 
         init() {
+            const hadFocus = document.activeElement === this.element;
+            const selection = hadFocus ? [this.element.selectionStart, this.element.selectionEnd] : null;
             this.createWrapper();
             this.bindEvents();
             // Seed the display + selected state from any value the host input
@@ -529,6 +531,13 @@ jQuery(function () {
             // values that aren't in the (possibly not-yet-loaded) option list are
             // kept as typed text; setOptions() highlights them if a match arrives. (#4)
             this.seedFromInputValue();
+            // Async options can arrive while the user is typing in the original input.
+            if (hadFocus) {
+                this.open();
+                const searchInput = this.searchContainer.querySelector("input");
+                searchInput.value = this.element.value;
+                searchInput.setSelectionRange(...selection);
+            }
         }
 
         seedFromInputValue() {
