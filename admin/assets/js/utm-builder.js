@@ -56,6 +56,8 @@
     form.addEventListener('submit', async event => {
         event.preventDefault();
         update();
+        // Native validation must be able to focus invalid fields inside the disclosure.
+        for (const field of form.querySelectorAll('input:invalid')) field.closest('details').open = true;
         if (!form.reportValidity() || !output.value) return;
         const value = output.value;
         let copied = false;

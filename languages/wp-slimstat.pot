@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-26T13:37:45+00:00\n"
+"POT-Creation-Date: 2026-09-26T13:45:50+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -2563,100 +2563,104 @@ msgstr ""
 msgid "Add custom columns to the User Overview widget and export file."
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:6
+#: admin/view/partials/utm-builder.php:7
 msgid "Campaign source"
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:6
+#: admin/view/partials/utm-builder.php:7
 msgid "Where you will share the link, such as google or newsletter."
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:7
+#: admin/view/partials/utm-builder.php:8
 msgid "Campaign medium"
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:7
+#: admin/view/partials/utm-builder.php:8
 msgid "The marketing channel, such as email, cpc (paid search) or social."
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:8
+#: admin/view/partials/utm-builder.php:9
 msgid "Campaign name"
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:8
-msgid "A name for your promotion, such as spring_sale. Required unless you enter a campaign ID."
+#: admin/view/partials/utm-builder.php:9
+msgid "A name for your promotion, such as spring_sale. Or use a campaign ID under Additional campaign details."
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:9
+#: admin/view/partials/utm-builder.php:12
 #: src/Reports/AcquisitionReport.php:20
 msgid "Campaign ID"
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:9
+#: admin/view/partials/utm-builder.php:12
 msgid "An ID from your ad platform, used with or instead of a campaign name."
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:10
+#: admin/view/partials/utm-builder.php:13
 msgid "Campaign term"
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:10
+#: admin/view/partials/utm-builder.php:13
 msgid "The paid search keyword, such as running shoes."
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:11
+#: admin/view/partials/utm-builder.php:14
 msgid "Campaign content"
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:11
+#: admin/view/partials/utm-builder.php:14
 msgid "Identify a specific ad or link, such as header_button."
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:15
+#: admin/view/partials/utm-builder.php:19
 msgid "UTM link builder"
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:17
+#: admin/view/partials/utm-builder.php:21
 msgid "Create a link to see which campaigns bring visitors to your site. Fields marked * are required."
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:20
+#: admin/view/partials/utm-builder.php:23
 msgid "Website URL"
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:22
+#: admin/view/partials/utm-builder.php:25
 msgid "The page visitors should land on. Include https:// or http://. Existing UTM tags will be replaced."
 msgstr ""
 
-#: admin/view/partials/utm-builder.php:27
-msgid "(optional)"
-msgstr ""
-
-#: admin/view/partials/utm-builder.php:33
-msgid "Keep names consistent: Email and email appear separately in reports. Avoid personal information in campaign links."
-msgstr ""
-
-#: admin/view/partials/utm-builder.php:35
-msgid "Campaign URL"
+#: admin/view/partials/utm-builder.php:30
+msgid "Additional campaign details"
 msgstr ""
 
 #: admin/view/partials/utm-builder.php:36
-msgid "Complete the required fields to generate your link."
-msgstr ""
-
-#: admin/view/partials/utm-builder.php:37
-msgid "Your URL updates as you type. Copy it into your campaign; recorded visits appear in UTM Campaigns."
-msgstr ""
-
-#: admin/view/partials/utm-builder.php:39
-msgid "Copy campaign URL"
-msgstr ""
-
-#: admin/view/partials/utm-builder.php:40
-msgid "Reset"
+msgid "(optional)"
 msgstr ""
 
 #: admin/view/partials/utm-builder.php:44
+msgid "Keep names consistent: Email and email appear separately in reports. Avoid personal information in campaign links."
+msgstr ""
+
+#: admin/view/partials/utm-builder.php:46
+msgid "Campaign URL"
+msgstr ""
+
+#: admin/view/partials/utm-builder.php:47
+msgid "Complete the required fields to generate your link."
+msgstr ""
+
+#: admin/view/partials/utm-builder.php:48
+msgid "Your URL updates as you type. Copy it into your campaign; recorded visits appear in UTM Campaigns."
+msgstr ""
+
+#: admin/view/partials/utm-builder.php:50
+msgid "Copy campaign URL"
+msgstr ""
+
+#: admin/view/partials/utm-builder.php:51
+msgid "Reset"
+msgstr ""
+
+#: admin/view/partials/utm-builder.php:55
 msgid "Enable JavaScript to generate campaign links."
 msgstr ""
 
@@ -7715,10 +7719,10 @@ msgstr ""
 msgid "This URL is too long to track. Shorten its existing query parameters."
 msgstr ""
 
-#: admin/assets/js/utm-builder.js:74
+#: admin/assets/js/utm-builder.js:76
 msgid "Campaign URL copied."
 msgstr ""
 
-#: admin/assets/js/utm-builder.js:75
+#: admin/assets/js/utm-builder.js:77
 msgid "Link selected. Use your browser’s Copy command."
 msgstr ""

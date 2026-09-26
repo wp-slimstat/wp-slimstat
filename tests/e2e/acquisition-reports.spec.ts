@@ -54,6 +54,7 @@ test.describe('UTM and channel reports', () => {
   test('builder links retain all six tags through real tracking and the UTM report', async ({ page, browser }) => {
     await setSlimstatOption(page, 'javascript_mode', 'on');
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview5#slimstat-utm-builder`, { waitUntil: 'domcontentloaded' });
+    await page.locator('.slimstat-utm-builder__extra > summary').click();
     const marker = `builder-${Date.now()}`;
     const tags = { utm_source: 'Newsletter & café', utm_medium: 'email', utm_campaign: marker, utm_id: '0', utm_term: '東京 + 20%', utm_content: '&amp; \\ header' };
     await page.locator('[name="website"]').fill(`${BASE_URL}/?acq=${marker}&keep=a%20b#details`);

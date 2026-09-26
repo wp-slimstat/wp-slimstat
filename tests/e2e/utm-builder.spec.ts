@@ -11,6 +11,10 @@ test.describe('UTM link builder', () => {
 
   test('requires source, medium and either campaign name or ID, and clears stale output', async ({ page }) => {
     const output = page.locator('#slimstat-utm-result');
+    const extra = page.locator('.slimstat-utm-builder__extra');
+    for (const name of ['utm_id', 'utm_term', 'utm_content']) {
+      await expect(page.locator(`[name="${name}"]`)).toBeHidden();
+    }
     await expect(output).toHaveValue('');
     await page.getByRole('button', { name: 'Copy campaign URL' }).click();
     await expect(page.locator('[name="utm_source"]')).toBeFocused();
@@ -19,7 +23,12 @@ test.describe('UTM link builder', () => {
     await expect(output).toHaveValue('');
     await page.getByRole('button', { name: 'Copy campaign URL' }).click();
     await expect(page.locator('[name="utm_campaign"]')).toBeFocused();
+    await extra.locator('summary').focus();
+    await page.keyboard.press('Enter');
     await page.locator('[name="utm_id"]').fill('0');
+    expect(new URL(await output.inputValue()).searchParams.get('utm_id')).toBe('0');
+    await extra.locator('summary').click();
+    await expect(page.locator('[name="utm_id"]')).toBeHidden();
     expect(new URL(await output.inputValue()).searchParams.get('utm_id')).toBe('0');
     await page.locator('[name="utm_source"]').fill('   ');
     await expect(output).toHaveValue('');
@@ -36,6 +45,7 @@ test.describe('UTM link builder', () => {
   });
 
   test('preserves query bytes and fragments, replaces duplicate tags and copies exact encoded values', async ({ page }) => {
+    await page.locator('.slimstat-utm-builder__extra > summary').click();
     await page.locator('[name="website"]').fill('https://example.com/path?keep=a%20b&repeat=1&repeat=2&utm_source=old&utm_source=again&utm_content=stale&utm_medium%5B%5D=x&UTM_CAMPAIGN=old#pricing');
     for (const [name, value] of Object.entries({ utm_source: 'A&B', utm_medium: 'Email', utm_campaign: 'Spring + 20%', utm_id: '0', utm_term: 'café 東京', utm_content: '&amp; \\ header' })) {
       await page.locator(`[name="${name}"]`).fill(value);
@@ -69,6 +79,10 @@ test.describe('UTM link builder', () => {
     await expect(page.locator('#slimstat-utm-result')).toHaveValue('');
     await page.locator('[name="utm_content"]').fill('<b>changed</b>');
     await expect(page.locator('#slimstat-utm-result')).toHaveValue('');
+    await page.locator('.slimstat-utm-builder__extra > summary').click();
+    await page.getByRole('button', { name: 'Copy campaign URL' }).click();
+    await expect(page.locator('[name="utm_content"]')).toBeFocused();
+    await expect(page.locator('.slimstat-utm-builder__extra')).toHaveAttribute('open', '');
   });
 
   test('report shortcut preserves filters and draft, with keyboard and mobile RTL access', async ({ page }) => {
