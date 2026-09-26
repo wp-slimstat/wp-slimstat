@@ -448,7 +448,7 @@ jQuery(function () {
             clean_filters = SlimStatAdmin.get_query_string_filters(jQuery(this).attr("href").split("?")[1].substring(1));
             if (typeof clean_filters["fs[start_from]"] == "string") {
                 isPagination = true;
-                jQuery('<input type="hidden" name="fs[start_from]" class="slimstat-post-filter slimstat-temp-filter" value="' + clean_filters["fs[start_from]"] + '">').appendTo("#slimstat-filters-form");
+                jQuery('<input>', { type: 'hidden', name: 'fs[start_from]', class: 'slimstat-post-filter slimstat-temp-filter', value: clean_filters['fs[start_from]'] }).appendTo('#slimstat-filters-form');
             }
         }
 
@@ -2159,7 +2159,7 @@ var SlimStatAdmin = {
 
             a_pair = decoded_pair.split("=");
             if (a_pair[0].length) {
-                clean_filters[a_pair[0]] = a_pair[1];
+                clean_filters[a_pair[0]] = a_pair.slice(1).join("=");
             }
         }
 
@@ -2186,16 +2186,17 @@ var SlimStatAdmin = {
                 } else if (jQuery('input[name="' + i + '"]').length > 0) {
                     jQuery('input[name="' + i + '"]').attr("value", clean_filters[i]);
                 } else {
-                    jQuery('<input type="hidden" name="' + i + '" class="slimstat-post-filter' + is_temporary_class + '" value="' + clean_filters[i] + '">').appendTo("#slimstat-filters-form");
+                    jQuery('<input>', { type: 'hidden', name: i, class: 'slimstat-post-filter' + is_temporary_class, value: clean_filters[i] }).appendTo('#slimstat-filters-form');
                 }
             }
         }
         // Start from a clean slate
         else {
-            jQuery(".slimstat-post-filter").remove();
+            // Saved segments replace dimensions, while the selected date range stays active.
+            jQuery(".slimstat-post-filter:not(.slimstat-date-filter)").remove();
 
             for (i in clean_filters) {
-                jQuery('<input type="hidden" name="' + i + '" class="slimstat-post-filter' + is_temporary_class + '" value="' + clean_filters[i] + '">').appendTo("#slimstat-filters-form");
+                jQuery('<input>', { type: 'hidden', name: i, class: 'slimstat-post-filter' + is_temporary_class, value: clean_filters[i] }).appendTo('#slimstat-filters-form');
             }
         }
     },

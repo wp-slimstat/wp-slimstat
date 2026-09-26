@@ -559,6 +559,22 @@ class wp_slimstat_reports
                 'locations' => ['slimview3'],
             ],
 
+            'slim_p3_03' => [
+                'title' => __('Channels', 'wp-slimstat'),
+                'callback' => [\SlimStat\Reports\AcquisitionReport::class, 'render'],
+                'callback_args' => ['mode' => 'channels', 'raw' => [\SlimStat\Reports\AcquisitionReport::class, 'rows']],
+                'classes' => ['extralarge', 'slimstat-acquisition-box'],
+                'locations' => ['slimview5'],
+                'tooltip' => __('Pageview sources, classified from campaign tags, referring sites and user agents. AI referrals and automated requests are reported separately.', 'wp-slimstat'),
+            ],
+            'slim_p3_04' => [
+                'title' => __('UTM Campaigns', 'wp-slimstat'),
+                'callback' => [\SlimStat\Reports\AcquisitionReport::class, 'render'],
+                'callback_args' => ['mode' => 'utm', 'raw' => [\SlimStat\Reports\AcquisitionReport::class, 'rows']],
+                'classes' => ['extralarge', 'slimstat-acquisition-box'],
+                'locations' => ['slimview5'],
+                'tooltip' => __('Compare tagged pageviews by campaign, source and medium. Campaign values are case-sensitive; missing values are shown explicitly.', 'wp-slimstat'),
+            ],
             'slim_p3_01' => [
                 'title'         => __('Traffic Sources', 'wp-slimstat'),
                 'callback'      => [self::class, 'show_chart'],
@@ -2745,7 +2761,9 @@ class wp_slimstat_reports
         // Columns
         if (!empty($fn['columns'])) {
             foreach ($fn['columns'] as $a_key => $a_filter) {
-                $request_uri .= sprintf('&amp;fs%%5B%s%%5D=', $a_key) . urlencode($a_filter[0] . ' ' . str_replace('=', '%3D', $a_filter[1]));
+                $value = 0 === strpos($a_key, 'utm_') || 'traffic_source' === $a_key
+                    ? $a_filter[1] : str_replace('=', '%3D', $a_filter[1]);
+                $request_uri .= sprintf('&amp;fs%%5B%s%%5D=', $a_key) . urlencode($a_filter[0] . ' ' . $value);
             }
         }
 

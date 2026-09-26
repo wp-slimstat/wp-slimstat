@@ -726,6 +726,9 @@ class wp_slimstat_admin
 
         self::stamp_index_options($report['present'], $prefix);
         self::record_column_drift($report);
+        if ($_wpdb instanceof \wpdb) {
+            \SlimStat\Tracker\Acquisition::checkSchema();
+        }
 
         // C48 — mint the install's identity beside its data, first-writer-wins. Here and
         // not inside ensure(): ensure() is a DDL reconciler the tracker's repair path also
@@ -1451,7 +1454,7 @@ class wp_slimstat_admin
                 // drawer/builder/confirm-sheet markup never mounts inside the widget.
                 // Mutation is kept local: we only re-bind the registry field when
                 // registering this specific widget, avoiding cross-request leaks.
-                if ('slim_p9_01' === $a_report_id || 'slim_p9_02' === $a_report_id) {
+                if (in_array($a_report_id, ['slim_p9_01', 'slim_p9_02', 'slim_p3_03', 'slim_p3_04'], true)) {
                     wp_slimstat_reports::$reports[$a_report_id]['callback_args']['is_widget'] = true;
                 }
                 wp_add_dashboard_widget($a_report_id, wp_slimstat_reports::$reports[$a_report_id]['title'], ['wp_slimstat_reports', 'callback_wrapper']);
@@ -1505,6 +1508,10 @@ class wp_slimstat_admin
 			SLIMSTAT_ANALYTICS_VERSION
 		);
 		wp_enqueue_style('wp-slimstat-header-modern');
+
+        // Report widgets can be moved to any SlimStat screen through Customize.
+        wp_enqueue_style('wp-slimstat-tokens', plugins_url('/admin/assets/css/tokens.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
+        wp_enqueue_style('wp-slimstat-acquisition', plugins_url('/admin/assets/css/acquisition.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
 
 		// Goals & Funnels CSS — only loaded on screens that actually render those reports.
 		// Honors slimlayout/Customize drag by inspecting the user's resolved report layout.
@@ -3133,7 +3140,9 @@ class wp_slimstat_admin
                         }
                         $filter_value_no_slashes = htmlentities(str_replace('\\', '', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
                         $filter_html[]           = strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0] ?? $a_filter_label) . ' ' . (wp_slimstat_db::$operator_names[$a_filter_details[0]] ?? str_replace('_', ' ', $a_filter_details[0])) . ' ' . $filter_value_no_slashes;
-                        $filter_strings[]        = sprintf('%s %s %s', $a_filter_label, $a_filter_details[0], $filter_value_no_slashes);
+                        $filter_url_value = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label
+                            ? rawurlencode((string) $a_filter_details[1]) : $filter_value_no_slashes;
+                        $filter_strings[]        = sprintf('%s %s %s', $a_filter_label, $a_filter_details[0], $filter_url_value);
                     }
 
                     echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="' . esc_attr($a_filter_id) . '" title="' . esc_attr__('Delete this filter', 'wp-slimstat') . '" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . esc_url(wp_slimstat_reports::fs_url(implode('&&&', $filter_strings))) . '">' . wp_kses_post(implode(', ', $filter_html)) . '</a></p>';

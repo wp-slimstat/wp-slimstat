@@ -194,6 +194,8 @@ class Processor
             $stat['resource'] = \wp_slimstat::get_request_uri();
         }
 
+        // Capture campaign values BEFORE legacy URL decoding changes encoded delimiters.
+        $acquisitionParams = Acquisition::parameters((string) $stat['resource']);
         $stat['resource'] = sanitize_text_field(urldecode($stat['resource']));
         $stat['resource'] = preg_replace_callback('/[^\x20-\x7E]/', function ($m) {
             return '%' . bin2hex($m[0]);
@@ -222,6 +224,7 @@ class Processor
         }
 
 
+        $acquisitionReferer = $stat['referer'] ?? '';
         if (!empty($stat['referer'])) {
             $parsed_url = wp_parse_url($stat['referer'] ?? '');
             if (!$parsed_url) {
@@ -410,6 +413,9 @@ class Processor
         }
 
         $browser = Browscap::get_browser();
+        if (Acquisition::aiAgent((string) $browser['user_agent'])) {
+            $browser['browser_type'] = 1;
+        }
         if ('on' == \wp_slimstat::$settings['ignore_bots'] && 1 == $browser['browser_type']) {
             Query::setProcessingTimestamp(null);
             return Utils::logError(313);
@@ -426,6 +432,15 @@ class Processor
         }
 
         $stat += $browser;
+        if ('1' === get_option(Acquisition::readinessKey(), '0')) {
+            $stat = array_merge($stat, array_intersect_key($acquisitionParams, array_flip(Acquisition::UTM_FIELDS)), Acquisition::classify(
+                $acquisitionParams,
+                (string) $acquisitionReferer,
+                (string) $browser['user_agent'],
+                (int) $browser['browser_type'],
+                home_url()
+            ));
+        }
 
         // Update stat before ensureVisitId (which may need to read it)
         \wp_slimstat::set_stat($stat);
@@ -454,7 +469,9 @@ class Processor
             $stat['notes'] = '[' . implode('][', $stat['notes']) . ']';
         }
 
-        $stat = array_filter($stat);
+        $stat = array_filter($stat, static function ($value, $key) {
+            return in_array($key, Acquisition::COLUMNS, true) ? null !== $value && '' !== $value : (bool) $value;
+        }, ARRAY_FILTER_USE_BOTH);
 
         // Update before insert
         \wp_slimstat::set_stat($stat);

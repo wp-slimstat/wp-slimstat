@@ -65,6 +65,14 @@ class wp_slimstat_db
             'platform'             => [__('Operating System', 'wp-slimstat'), 'varchar'],
             'resource'             => [__('Permalink', 'wp-slimstat'), 'varchar'],
             'referer'              => [__('Referer', 'wp-slimstat'), 'varchar'],
+            'traffic_channel'      => [__('Channel', 'wp-slimstat'), 'varchar'],
+            'traffic_source'       => [__('Channel Source', 'wp-slimstat'), 'varchar'],
+            'utm_campaign'         => [__('UTM Campaign', 'wp-slimstat'), 'varchar'],
+            'utm_source'           => [__('UTM Source', 'wp-slimstat'), 'varchar'],
+            'utm_medium'           => [__('UTM Medium', 'wp-slimstat'), 'varchar'],
+            'utm_content'          => [__('UTM Content', 'wp-slimstat'), 'varchar'],
+            'utm_term'             => [__('UTM Term', 'wp-slimstat'), 'varchar'],
+            'utm_id'               => [__('UTM Campaign ID', 'wp-slimstat'), 'varchar'],
             'username'             => [__("Visitor's Username", 'wp-slimstat'), 'varchar'],
             'email'                => [__("Visitor's Email", 'wp-slimstat'), 'varchar'],
             'outbound_resource'    => [__('Outbound Link', 'wp-slimstat'), 'varchar'],
@@ -211,6 +219,11 @@ class wp_slimstat_db
                 }
                 $safe_name  = sanitize_text_field(wp_unslash($a_request_filter_name));
                 $safe_value = str_replace('&&&', '', sanitize_text_field(wp_unslash($a_request_filter_value)));
+                if (0 === strpos($safe_name, 'utm_') || 'traffic_source' === $safe_name) {
+                    // HTTP already decoded these values. The filter grammar decodes once more;
+                    // protect literal '+', '%xx', '&' and delimiters before handing it the value.
+                    $safe_value = rawurlencode(trim(wp_strip_all_tags(wp_check_invalid_utf8(wp_unslash($a_request_filter_value)))));
+                }
                 $filters_array[$safe_name] = sprintf('%s %s', $safe_name, $safe_value);
             }
         }
@@ -226,6 +239,11 @@ class wp_slimstat_db
         if (!empty($_POST['f']) && is_string($_POST['f']) && !empty($_POST['o']) && is_string($_POST['o'])
             && (!isset($_POST['v']) || is_string($_POST['v']))) {
             $filters_array[sanitize_text_field(wp_unslash($_POST['f']))] = sprintf('%s %s ', sanitize_text_field(wp_unslash($_POST[ 'f' ])), sanitize_text_field(wp_unslash($_POST[ 'o' ]))) . (isset($_POST['v']) ? sanitize_text_field(wp_unslash($_POST['v'])) : '');
+            $field = sanitize_text_field(wp_unslash($_POST['f']));
+            if (0 === strpos($field, 'utm_') || 'traffic_source' === $field) {
+                $value = isset($_POST['v']) ? wp_strip_all_tags(wp_check_invalid_utf8(wp_unslash($_POST['v']))) : '';
+                $filters_array[$field] = $field . ' ' . sanitize_key($_POST['o']) . ' ' . rawurlencode($value);
+            }
         }
 
         // Filters set via the plugin options
@@ -418,6 +436,10 @@ class wp_slimstat_db
         if (!empty($_slim_stats_table_alias)) {
             $column_with_alias = $_slim_stats_table_alias . '.' . $_dimension;
         }
+        if ((0 === strpos($_dimension, 'utm_') || 'traffic_source' === $_dimension) && in_array($_operator, ['matches', 'does_not_match'], true)) {
+            // MySQL 8's ICU regex rejects binary strings; retain case-sensitive UTF-8 matching.
+            $column_with_alias = 'CONVERT(' . $column_with_alias . ' USING utf8mb4) COLLATE utf8mb4_bin';
+        }
 
         switch ($_dimension) {
             case 'ip':
@@ -433,6 +455,9 @@ class wp_slimstat_db
         }
 
         $where = ['', htmlentities($_value, ENT_QUOTES, 'UTF-8')];
+        if (0 === strpos($_dimension, 'utm_') || 'traffic_source' === $_dimension) {
+            $where[1] = $_value;
+        }
 
         switch ($_operator) {
             case 'is_not_equal_to':

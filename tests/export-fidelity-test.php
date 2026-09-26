@@ -201,7 +201,7 @@ $check('slim_events pins its whole set', count($events), 7);
 // grows by the two columns no longer excluded), so the assertion FLOOR stays satisfied by
 // coincidence. Measured, not theorised — that is how S3-pinned-set-includes-v6-columns-01
 // passed the count check while gutting the thing it exists to pin.
-$check('the v6 exclusion names exactly two columns', count(slimstat_fp2_v6_added_columns()), 2);
+$check('the v6 exclusion names two identity and eight acquisition columns', count(slimstat_fp2_v6_added_columns()), 10);
 foreach (slimstat_fp2_v6_added_columns() as $v6) {
     $check("the v6-added {$v6} is EXCLUDED by pinning", in_array($v6, $names, true), false);
 }
@@ -245,7 +245,7 @@ $check('no NULL keyword is derived as nullable (type: TINYINT UNSIGNED DEFAULT 0
 
 // A counter nothing checks is decoration: without this, deleting assertions leaves the gate
 // printing PASS with a smaller number nobody reads. Both sibling gates carry the same floor.
-$expected_assertions = 62;
+$expected_assertions = 70;
 if ($passed + count($failures) !== $expected_assertions) {
     $failures[] = sprintf(
         'assertion floor — ran %d, expected %d. Update the floor deliberately when adding or '

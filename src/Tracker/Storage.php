@@ -19,7 +19,9 @@ class Storage
 		}
 
 		foreach ($data as $key => $value) {
-			$data[$key] = 'resource' == $key ? sanitize_url($value) : sanitize_text_field($value);
+			$data[$key] = 0 === strpos($key, 'utm_') || 'traffic_source' === $key
+				? Acquisition::clean($value)
+				: ('resource' == $key ? sanitize_url($value) : sanitize_text_field($value));
 		}
 
 		// vid_hash travels through $stat as 32 hex chars — the one spelling that survives
@@ -60,6 +62,10 @@ class Storage
 			// retry would be the identical failing statement. array_intersect_key can only
 			// shrink, hence `<`.
 			if ($writable !== [] && count($writable) < count($data)) {
+				// A restored pre-upgrade table must not pay this failed insert on every hit.
+				if (preg_grep('/^(utm_|traffic_)/', array_diff(array_keys($data), $present))) {
+					update_option(Acquisition::readinessKey(), '0', true);
+				}
 				self::recordColumnDegradation($table, array_diff(array_keys($data), $present));
 				$result = self::write($table, $writable);
 			}

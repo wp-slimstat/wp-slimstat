@@ -55,6 +55,8 @@ class PurgeArchive
         // that declared it on slim_stats. Retention applies to the identity exactly as it
         // applies to the row that carries it.
         'vid_hash',
+        'traffic_channel', 'traffic_source', 'utm_source', 'utm_medium', 'utm_campaign',
+        'utm_content', 'utm_term', 'utm_id',
     ];
 
     /**

@@ -85,7 +85,7 @@ if (!empty($saved_filters)) {
             <?php endforeach ?>
 
             <?php foreach (wp_slimstat_db::$filters_normalized['date'] as $a_key => $a_value) : if (!empty($a_value)) : ?>
-                <input type="hidden" name="fs[<?php echo esc_attr($a_key); ?>]" class="slimstat-post-filter" value="equals <?php echo esc_attr($a_value) ?>"/>
+                <input type="hidden" name="fs[<?php echo esc_attr($a_key); ?>]" class="slimstat-post-filter slimstat-date-filter" value="equals <?php echo esc_attr($a_value) ?>"/>
             <?php endif;
             endforeach; ?>
 

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-15T05:06:43+00:00\n"
+"POT-Creation-Date: 2026-09-26T08:19:11+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -131,14 +131,14 @@ msgid "Report Type"
 msgstr ""
 
 #: admin/config/index.php:87
-#: admin/view/wp-slimstat-db.php:135
-#: admin/view/wp-slimstat-db.php:1922
-#: admin/view/wp-slimstat-db.php:1929
-#: admin/view/wp-slimstat-db.php:1936
-#: admin/view/wp-slimstat-db.php:1943
-#: admin/view/wp-slimstat-db.php:1950
-#: admin/view/wp-slimstat-db.php:1957
-#: admin/view/wp-slimstat-db.php:1964
+#: admin/view/wp-slimstat-db.php:143
+#: admin/view/wp-slimstat-db.php:1947
+#: admin/view/wp-slimstat-db.php:1954
+#: admin/view/wp-slimstat-db.php:1961
+#: admin/view/wp-slimstat-db.php:1968
+#: admin/view/wp-slimstat-db.php:1975
+#: admin/view/wp-slimstat-db.php:1982
+#: admin/view/wp-slimstat-db.php:1989
 msgid "Hits"
 msgstr ""
 
@@ -390,13 +390,13 @@ msgid "Geolocation Precision"
 msgstr ""
 
 #: admin/config/index.php:320
-#: admin/index.php:2466
+#: admin/index.php:2473
 #: src/Services/Privacy/DataExporter.php:135
 msgid "Country"
 msgstr ""
 
 #: admin/config/index.php:321
-#: admin/view/wp-slimstat-db.php:79
+#: admin/view/wp-slimstat-db.php:87
 #: src/Services/Privacy/DataExporter.php:142
 msgid "City"
 msgstr ""
@@ -478,7 +478,7 @@ msgstr ""
 
 #: admin/config/index.php:388
 #: admin/config/index.php:674
-#: admin/view/wp-slimstat-db.php:126
+#: admin/view/wp-slimstat-db.php:134
 msgid "days"
 msgstr ""
 
@@ -662,7 +662,7 @@ msgid "If enabled, visits from users identified as spammers by third-party tools
 msgstr ""
 
 #: admin/config/index.php:513
-#: admin/view/wp-slimstat-db.php:2027
+#: admin/view/wp-slimstat-db.php:2052
 msgid "Bots"
 msgstr ""
 
@@ -986,7 +986,7 @@ msgstr ""
 #: admin/index.php:572
 #: admin/index.php:582
 #: admin/index.php:613
-#: admin/index.php:4289
+#: admin/index.php:4298
 #: admin/view/addons.php:10
 msgid "Insufficient permissions."
 msgstr ""
@@ -1089,7 +1089,7 @@ msgstr ""
 
 #: admin/index.php:121
 #: admin/view/wp-slimstat-reports.php:83
-#: admin/view/wp-slimstat-reports.php:563
+#: admin/view/wp-slimstat-reports.php:579
 msgid "Traffic Sources"
 msgstr ""
 
@@ -1115,10 +1115,10 @@ msgid "Customize"
 msgstr ""
 
 #: admin/index.php:159
-#: admin/index.php:4152
+#: admin/index.php:4161
 #: admin/view/partials/goals-funnels/funnels-card.php:55
 #: admin/view/partials/goals-funnels/goals-card.php:171
-#: admin/view/wp-slimstat-reports.php:2231
+#: admin/view/wp-slimstat-reports.php:2247
 msgid "Upgrade to Pro"
 msgstr ""
 
@@ -1138,8 +1138,8 @@ msgstr ""
 msgid "Settings could not be saved."
 msgstr ""
 
-#: admin/index.php:1822
-#: admin/index.php:1836
+#: admin/index.php:1829
+#: admin/index.php:1843
 msgid "SlimStat"
 msgstr ""
 
@@ -1147,106 +1147,106 @@ msgstr ""
 #. translators: %s: formatted session count for the previous day.
 #. translators: %s: formatted pageview count for the previous day.
 #. translators: %s: formatted referral count for the previous day.
-#: admin/index.php:1987
-#: admin/index.php:2108
-#: admin/index.php:2116
-#: admin/index.php:2124
+#: admin/index.php:1994
+#: admin/index.php:2115
+#: admin/index.php:2123
+#: admin/index.php:2131
 #, php-format
 msgid "was %s last day"
 msgstr ""
 
-#: admin/index.php:1988
-#: admin/index.php:2065
-#: admin/index.php:2095
+#: admin/index.php:1995
+#: admin/index.php:2072
+#: admin/index.php:2102
 msgid "Online Users"
 msgstr ""
 
-#: admin/index.php:1989
-#: admin/index.php:2066
+#: admin/index.php:1996
+#: admin/index.php:2073
 msgid "Count"
 msgstr ""
 
-#: admin/index.php:1990
-#: admin/index.php:2052
+#: admin/index.php:1997
+#: admin/index.php:2059
 #: src/Modules/Chart.php:178
 msgid "Now"
 msgstr ""
 
-#: admin/index.php:1991
-#: admin/index.php:2053
+#: admin/index.php:1998
+#: admin/index.php:2060
 msgid "min ago"
 msgstr ""
 
 #. translators: %s: formatted online visitor count inside its updating HTML span.
-#: admin/index.php:2080
+#: admin/index.php:2087
 #, php-format
 msgid "Online: %s"
 msgstr ""
 
-#: admin/index.php:2100
+#: admin/index.php:2107
 msgid "Realtime"
 msgstr ""
 
-#: admin/index.php:2104
+#: admin/index.php:2111
 msgid "Sessions Today"
 msgstr ""
 
-#: admin/index.php:2112
+#: admin/index.php:2119
 msgid "Views Today"
 msgstr ""
 
-#: admin/index.php:2120
+#: admin/index.php:2127
 msgid "Referrals Today"
 msgstr ""
 
-#: admin/index.php:2152
+#: admin/index.php:2159
 #: views/reports/live-analytics.php:184
 msgid "Unlock the Full Power of SlimStat Analytics"
 msgstr ""
 
-#: admin/index.php:2155
+#: admin/index.php:2162
 #: admin/view/partials/slimstat-pro-modal.php:105
 #: views/reports/live-analytics.php:192
 msgid "Unlock SlimStat Pro"
 msgstr ""
 
-#: admin/index.php:2175
+#: admin/index.php:2182
 msgid "Explore Details"
 msgstr ""
 
 #. translators: %s: number of days in the reporting interval.
-#: admin/index.php:2302
+#: admin/index.php:2309
 #, php-format
 msgid "Pageviews in the last %s days"
 msgstr ""
 
 #. translators: %s: number of days in the reporting interval.
-#: admin/index.php:2302
+#: admin/index.php:2309
 msgid "Views"
 msgstr ""
 
 #. translators: %s: number of days in the reporting interval.
-#: admin/index.php:2305
+#: admin/index.php:2312
 #, php-format
 msgid "Unique IPs in the last %s days"
 msgstr ""
 
-#: admin/index.php:2462
+#: admin/index.php:2469
 msgid "Page URL"
 msgstr ""
 
-#: admin/index.php:2463
+#: admin/index.php:2470
 #: admin/view/right-now.php:312
 msgid "Content Type"
 msgstr ""
 
-#: admin/index.php:2464
+#: admin/index.php:2471
 msgid "Content ID"
 msgstr ""
 
-#: admin/index.php:2465
-#: admin/index.php:4026
-#: admin/index.php:4041
+#: admin/index.php:2472
+#: admin/index.php:4035
+#: admin/index.php:4050
 #: admin/view/right-now.php:273
 #: admin/view/wp-slimstat-db.php:63
 #: admin/view/wp-slimstat-reports.php:74
@@ -1256,127 +1256,127 @@ msgstr ""
 msgid "Search Terms"
 msgstr ""
 
-#: admin/index.php:2467
-#: admin/index.php:4038
+#: admin/index.php:2474
+#: admin/index.php:4047
 #: admin/view/wp-slimstat-db.php:60
 #: src/Services/Privacy/DataExporter.php:113
 msgid "Browser"
 msgstr ""
 
-#: admin/index.php:2468
-#: admin/index.php:4043
+#: admin/index.php:2475
+#: admin/index.php:4052
 #: admin/view/wp-slimstat-db.php:65
 #: src/Services/Privacy/DataExporter.php:120
 msgid "Operating System"
 msgstr ""
 
-#: admin/index.php:2469
-#: admin/index.php:4045
+#: admin/index.php:2476
+#: admin/index.php:4054
 #: admin/view/wp-slimstat-db.php:67
 msgid "Referer"
 msgstr ""
 
-#: admin/index.php:2470
+#: admin/index.php:2477
 #: src/Services/Privacy/DataExporter.php:76
 msgid "Username"
 msgstr ""
 
-#: admin/index.php:2471
+#: admin/index.php:2478
 msgid "Event"
 msgstr ""
 
-#: admin/index.php:2595
-#: admin/index.php:2671
-#: admin/index.php:2701
-#: admin/index.php:2778
-#: admin/index.php:2879
-#: admin/index.php:3163
+#: admin/index.php:2602
+#: admin/index.php:2678
+#: admin/index.php:2708
+#: admin/index.php:2785
+#: admin/index.php:2886
+#: admin/index.php:3172
 #: src/Modules/Chart.php:67
 #: src/Reports/Types/Analytics/LiveAnalyticsReport.php:630
 msgid "Insufficient permissions"
 msgstr ""
 
-#: admin/index.php:2600
+#: admin/index.php:2607
 msgid "Invalid goal definition"
 msgstr ""
 
-#: admin/index.php:2629
+#: admin/index.php:2636
 msgid "Too many goals stored. Delete unused goals before adding more."
 msgstr ""
 
 #. translators: %d is the max goal count for the tier
-#: admin/index.php:2648
+#: admin/index.php:2655
 #, php-format
 msgid "Goal limit reached (%d). Upgrade to Pro for more goals."
 msgstr ""
 
-#: admin/index.php:2676
+#: admin/index.php:2683
 msgid "Invalid goal id"
 msgstr ""
 
-#: admin/index.php:2685
+#: admin/index.php:2692
 msgid "Goal not found"
 msgstr ""
 
-#: admin/index.php:2706
+#: admin/index.php:2713
 msgid "Funnels require SlimStat Pro"
 msgstr ""
 
-#: admin/index.php:2711
+#: admin/index.php:2718
 msgid "Funnels require 2-5 steps"
 msgstr ""
 
-#: admin/index.php:2718
+#: admin/index.php:2725
 msgid "Invalid step definition"
 msgstr ""
 
-#: admin/index.php:2734
+#: admin/index.php:2741
 msgid "Funnel name is required"
 msgstr ""
 
 #. translators: %d: maximum number of funnels allowed.
-#: admin/index.php:2756
+#: admin/index.php:2763
 #, php-format
 msgid "Funnel limit reached (%d)."
 msgstr ""
 
-#: admin/index.php:2783
+#: admin/index.php:2790
 msgid "Invalid funnel id"
 msgstr ""
 
-#: admin/index.php:2792
-#: admin/index.php:2825
+#: admin/index.php:2799
+#: admin/index.php:2832
 msgid "Funnel not found"
 msgstr ""
 
-#: admin/index.php:2884
+#: admin/index.php:2891
 msgid "Step is missing required fields"
 msgstr ""
 
-#: admin/index.php:3069
+#: admin/index.php:3076
 msgid "Invalid saved filter data."
 msgstr ""
 
-#: admin/index.php:3077
-#: admin/index.php:3081
-#: admin/index.php:3114
+#: admin/index.php:3084
+#: admin/index.php:3088
+#: admin/index.php:3121
 msgid "Invalid filter data."
 msgstr ""
 
-#: admin/index.php:3099
+#: admin/index.php:3106
 msgid "Already saved"
 msgstr ""
 
-#: admin/index.php:3107
+#: admin/index.php:3114
 msgid "Saved"
 msgstr ""
 
-#: admin/index.php:3139
+#: admin/index.php:3148
 msgid "Delete this filter"
 msgstr ""
 
-#: admin/index.php:3934
-#: admin/index.php:3982
+#: admin/index.php:3943
+#: admin/index.php:3991
 #: src/Migration/Admin/MigrationAdmin.php:288
 #: src/Migration/Admin/MigrationAdmin.php:403
 #: src/Migration/Admin/MigrationAdmin.php:430
@@ -1384,566 +1384,566 @@ msgstr ""
 msgid "Permission denied"
 msgstr ""
 
-#: admin/index.php:3941
-#: admin/index.php:3989
+#: admin/index.php:3950
+#: admin/index.php:3998
 #: src/Services/GeoService.php:100
 #: src/Services/GeoService.php:126
 msgid "Geolocation is disabled."
 msgstr ""
 
-#: admin/index.php:3946
+#: admin/index.php:3955
 msgid "Cloudflare geolocation does not require a database."
 msgstr ""
 
-#: admin/index.php:3957
+#: admin/index.php:3966
 #: src/Services/GeoService.php:108
 msgid "GeoIP Database Successfully Updated!"
 msgstr ""
 
-#: admin/index.php:3960
+#: admin/index.php:3969
 #: src/Services/GeoService.php:108
 msgid "Failed to update GeoIP Database."
 msgstr ""
 
-#: admin/index.php:3962
+#: admin/index.php:3971
 msgid "Please check your MaxMind license key and try again."
 msgstr ""
 
 #. translators: %s: geolocation database error details.
-#: admin/index.php:3967
+#: admin/index.php:3976
 #, php-format
 msgid "Details: %s"
 msgstr ""
 
-#: admin/index.php:3973
+#: admin/index.php:3982
 msgid "An unexpected error occurred while updating the GeoIP database."
 msgstr ""
 
-#: admin/index.php:3993
+#: admin/index.php:4002
 msgid "Cloudflare geolocation is active. No database to check."
 msgstr ""
 
-#: admin/index.php:3998
+#: admin/index.php:4007
 msgid "GeoIP Database is present and ready."
 msgstr ""
 
-#: admin/index.php:3998
+#: admin/index.php:4007
 msgid "GeoIP Database not found."
 msgstr ""
 
-#: admin/index.php:4003
+#: admin/index.php:4012
 msgid "An unexpected error occurred while checking the GeoIP database."
 msgstr ""
 
-#: admin/index.php:4017
+#: admin/index.php:4026
 msgid "Definitions"
 msgstr ""
 
-#: admin/index.php:4019
+#: admin/index.php:4028
 msgid "Pageview"
 msgstr ""
 
-#: admin/index.php:4019
+#: admin/index.php:4028
 msgid "A request to load a single HTML file (\"page\"). This should be contrasted with a \"hit\", which refers to a request for any file from a web server. Slimstat logs a pageview each time the tracking code is executed"
 msgstr ""
 
-#: admin/index.php:4020
+#: admin/index.php:4029
 msgid "(Human) Visit"
 msgstr ""
 
-#: admin/index.php:4020
+#: admin/index.php:4029
 msgid "A period of interaction between a visitor's browser and your website, ending when the browser is closed or when the user has been inactive on that site for 30 minutes"
 msgstr ""
 
-#: admin/index.php:4021
+#: admin/index.php:4030
 msgid "Known Visitor"
 msgstr ""
 
-#: admin/index.php:4021
+#: admin/index.php:4030
 msgid "Any user who has left a comment on your blog, and is thus identified by WordPress as a returning visitor"
 msgstr ""
 
-#: admin/index.php:4022
+#: admin/index.php:4031
 msgid "Unique IP"
 msgstr ""
 
-#: admin/index.php:4022
+#: admin/index.php:4031
 msgid "Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses; since this measurement looks only at the internet address a pageview came from, it is useful, but not perfect"
 msgstr ""
 
-#: admin/index.php:4023
-#: admin/index.php:4061
+#: admin/index.php:4032
+#: admin/index.php:4070
 #: admin/view/right-now.php:207
-#: admin/view/wp-slimstat-db.php:85
+#: admin/view/wp-slimstat-db.php:93
 msgid "Originating IP"
 msgstr ""
 
-#: admin/index.php:4023
+#: admin/index.php:4032
 msgid "the originating IP address of a client connecting to a web server through an HTTP proxy or load balancer"
 msgstr ""
 
-#: admin/index.php:4024
+#: admin/index.php:4033
 msgid "Direct Traffic"
 msgstr ""
 
-#: admin/index.php:4024
+#: admin/index.php:4033
 msgid "All those people showing up to your Web site by typing in the URL of your Web site coming or from a bookmark; some people also call this \"default traffic\" or \"ambient traffic\""
 msgstr ""
 
-#: admin/index.php:4025
+#: admin/index.php:4034
 msgid "Search Engine"
 msgstr ""
 
-#: admin/index.php:4025
+#: admin/index.php:4034
 msgid "Google, Yahoo, MSN, Ask, others; this bucket will include both your organic as well as your paid (PPC/SEM) traffic, so be aware of that"
 msgstr ""
 
-#: admin/index.php:4026
-#: admin/index.php:4041
+#: admin/index.php:4035
+#: admin/index.php:4050
 msgid "Keywords used by your visitors to find your website on a search engine"
 msgstr ""
 
-#: admin/index.php:4027
+#: admin/index.php:4036
 msgid "SERP"
 msgstr ""
 
-#: admin/index.php:4027
+#: admin/index.php:4036
 msgid "Short for search engine results page, the Web page that a search engine returns with the results of its search. The value shown represents your rank (or position) within that list of results"
 msgstr ""
 
-#: admin/index.php:4028
-#: admin/view/wp-slimstat-db.php:78
+#: admin/index.php:4037
+#: admin/view/wp-slimstat-db.php:86
 #: src/Services/Privacy/DataExporter.php:105
 msgid "User Agent"
 msgstr ""
 
-#: admin/index.php:4028
+#: admin/index.php:4037
 msgid "Any program used for accessing a website; this includes browsers, robots, spiders and any other program that was used to retrieve information from the site"
 msgstr ""
 
-#: admin/index.php:4029
-#: admin/view/wp-slimstat-db.php:70
+#: admin/index.php:4038
+#: admin/view/wp-slimstat-db.php:78
 msgid "Outbound Link"
 msgstr ""
 
-#: admin/index.php:4029
+#: admin/index.php:4038
 msgid "A link from one domain to another is said to be outbound from its source anchor and inbound to its target. This report lists all the links to other websites followed by your visitors."
 msgstr ""
 
-#: admin/index.php:4036
+#: admin/index.php:4045
 msgid "Basic Filters"
 msgstr ""
 
-#: admin/index.php:4038
+#: admin/index.php:4047
 msgid "User agent (Firefox, Chrome, ...)"
 msgstr ""
 
-#: admin/index.php:4039
+#: admin/index.php:4048
 #: admin/view/wp-slimstat-db.php:61
 msgid "Country Code"
 msgstr ""
 
-#: admin/index.php:4039
+#: admin/index.php:4048
 msgid "2-letter code (us, ru, de, it, ...)"
 msgstr ""
 
-#: admin/index.php:4040
-#: admin/view/wp-slimstat-reports.php:1748
+#: admin/index.php:4049
+#: admin/view/wp-slimstat-reports.php:1764
 msgid "IP"
 msgstr ""
 
-#: admin/index.php:4040
+#: admin/index.php:4049
 msgid "Visitor's public IP address"
 msgstr ""
 
-#: admin/index.php:4042
+#: admin/index.php:4051
 msgid "Language Code"
 msgstr ""
 
-#: admin/index.php:4042
+#: admin/index.php:4051
 msgid "Please refer to this <a target=\"_blank\" href=\"https://msdn.microsoft.com/en-us/library/ee825488(v=cs.20).aspx\">language culture page</a> (first column) for more information"
 msgstr ""
 
-#: admin/index.php:4043
+#: admin/index.php:4052
 msgid "Accepts identifiers like win7, win98, macosx, ...; please refer to <a target=\"_blank\" href=\"https://php.net/manual/en/function.get-browser.php\">this manual page</a> for more information"
 msgstr ""
 
-#: admin/index.php:4044
+#: admin/index.php:4053
 #: admin/view/wp-slimstat-db.php:66
 msgid "Permalink"
 msgstr ""
 
-#: admin/index.php:4044
+#: admin/index.php:4053
 msgid "URL accessed on your site"
 msgstr ""
 
-#: admin/index.php:4045
+#: admin/index.php:4054
 msgid "Complete address of the referrer page"
 msgstr ""
 
-#: admin/index.php:4046
+#: admin/index.php:4055
 msgid "Visitor's Name"
 msgstr ""
 
-#: admin/index.php:4046
+#: admin/index.php:4055
 msgid "Visitors' names according to the cookie set by WordPress after they leave a comment"
 msgstr ""
 
-#: admin/index.php:4054
+#: admin/index.php:4063
 msgid "Advanced Filters"
 msgstr ""
 
-#: admin/index.php:4056
-#: admin/view/wp-slimstat-db.php:76
+#: admin/index.php:4065
+#: admin/view/wp-slimstat-db.php:84
 msgid "Browser Version"
 msgstr ""
 
-#: admin/index.php:4056
+#: admin/index.php:4065
 msgid "user agent version (9.0, 11, ...)"
 msgstr ""
 
-#: admin/index.php:4057
-#: admin/view/wp-slimstat-db.php:77
+#: admin/index.php:4066
+#: admin/view/wp-slimstat-db.php:85
 msgid "Browser Type"
 msgstr ""
 
-#: admin/index.php:4057
+#: admin/index.php:4066
 msgid "1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = all others"
 msgstr ""
 
-#: admin/index.php:4058
+#: admin/index.php:4067
 msgid "Pageview Attributes"
 msgstr ""
 
-#: admin/index.php:4058
+#: admin/index.php:4067
 msgid "this field is set to <em>[pre]</em> if the resource has been accessed through <a target=\"_blank\" href=\"https://developer.mozilla.org/en/Link_prefetching_FAQ\">Link Prefetching</a> or similar techniques"
 msgstr ""
 
-#: admin/index.php:4059
-#: admin/view/wp-slimstat-db.php:83
+#: admin/index.php:4068
+#: admin/view/wp-slimstat-db.php:91
 msgid "Post Author"
 msgstr ""
 
-#: admin/index.php:4059
+#: admin/index.php:4068
 msgid "author associated to that post/page when the resource was accessed"
 msgstr ""
 
-#: admin/index.php:4060
-#: admin/view/wp-slimstat-db.php:84
+#: admin/index.php:4069
+#: admin/view/wp-slimstat-db.php:92
 msgid "Post Category ID"
 msgstr ""
 
-#: admin/index.php:4060
+#: admin/index.php:4069
 msgid "ID of the category/term associated to the resource, when available"
 msgstr ""
 
-#: admin/index.php:4061
+#: admin/index.php:4070
 msgid "visitor's originating IP address, if available"
 msgstr ""
 
-#: admin/index.php:4062
-#: admin/view/wp-slimstat-db.php:86
+#: admin/index.php:4071
+#: admin/view/wp-slimstat-db.php:94
 msgid "Resource Content Type"
 msgstr ""
 
-#: admin/index.php:4062
+#: admin/index.php:4071
 msgid "post, page, cpt:<em>custom-post-type</em>, cpt:attachment, singular, post_type_archive, tag, taxonomy, category, date, author, archive, search, feed, home; please refer to the <a target=\"_blank\" href=\"https://codex.wordpress.org/Conditional_Tags\">Conditional Tags</a> manual page for more information"
 msgstr ""
 
-#: admin/index.php:4063
+#: admin/index.php:4072
 #: src/Services/Privacy/DataExporter.php:127
 msgid "Screen Resolution"
 msgstr ""
 
-#: admin/index.php:4063
+#: admin/index.php:4072
 msgid "viewport width and height (1024x768, 800x600, ...)"
 msgstr ""
 
-#: admin/index.php:4064
-#: admin/view/wp-slimstat-db.php:91
+#: admin/index.php:4073
+#: admin/view/wp-slimstat-db.php:99
 #: src/Services/Privacy/DataExporter.php:150
 msgid "Visit ID"
 msgstr ""
 
-#: admin/index.php:4064
+#: admin/index.php:4073
 msgid "generally used in conjunction with <em>is not empty</em>, identifies human visitors"
 msgstr ""
 
-#: admin/index.php:4065
+#: admin/index.php:4074
 msgid "Date Filters"
 msgstr ""
 
-#: admin/index.php:4065
+#: admin/index.php:4074
 msgid "you can specify the timeframe by entering a number in the <em>interval</em> field; use -1 to indicate <em>to date</em> (i.e., day=1, month=1, year=blank, interval=-1 will set a year-to-date filter)"
 msgstr ""
 
-#: admin/index.php:4066
+#: admin/index.php:4075
 msgid "SERP Position"
 msgstr ""
 
-#: admin/index.php:4066
+#: admin/index.php:4075
 msgid "set the filter to Referer contains cd=N&, where N is the position you are looking for"
 msgstr ""
 
-#: admin/index.php:4154
+#: admin/index.php:4163
 msgid "Export"
 msgstr ""
 
-#: admin/index.php:4193
+#: admin/index.php:4202
 msgid "A Goal is one question you ask of your traffic."
 msgstr ""
 
-#: admin/index.php:4196
+#: admin/index.php:4205
 msgid "String 2 to 5 steps into a journey. A funnel shows the conversion rate and exact drop-off at each stage."
 msgstr ""
 
-#: admin/index.php:4299
+#: admin/index.php:4308
 msgid "Migrations are disabled by SLIMSTAT_DISABLE_MIGRATIONS in wp-config.php."
 msgstr ""
 
-#: admin/index.php:4309
+#: admin/index.php:4318
 msgid "Index already exists."
 msgstr ""
 
-#: admin/index.php:4318
+#: admin/index.php:4327
 msgid "Index added successfully."
 msgstr ""
 
-#: admin/index.php:4320
+#: admin/index.php:4329
 msgid "Unable to add index."
 msgstr ""
 
-#: admin/index.php:4356
+#: admin/index.php:4365
 msgid "Browser detection library"
 msgstr ""
 
-#: admin/index.php:4357
+#: admin/index.php:4366
 msgid "Upload directory setup"
 msgstr ""
 
-#: admin/index.php:4358
+#: admin/index.php:4367
 msgid "Daily IP-hash salt (privacy)"
 msgstr ""
 
-#: admin/index.php:4359
+#: admin/index.php:4368
 msgid "Ad-blocker bypass tracking"
 msgstr ""
 
-#: admin/index.php:4360
+#: admin/index.php:4369
 msgid "REST API tracking endpoints"
 msgstr ""
 
-#: admin/index.php:4361
+#: admin/index.php:4370
 msgid "Consent AJAX handlers"
 msgstr ""
 
-#: admin/index.php:4362
+#: admin/index.php:4371
 msgid "GDPR consent banner setup"
 msgstr ""
 
-#: admin/index.php:4363
+#: admin/index.php:4372
 msgid "GDPR consent banner assets"
 msgstr ""
 
-#: admin/index.php:4364
+#: admin/index.php:4373
 msgid "GDPR consent banner display"
 msgstr ""
 
-#: admin/index.php:4365
+#: admin/index.php:4374
 msgid "REST tracking controller"
 msgstr ""
 
-#: admin/index.php:4366
+#: admin/index.php:4375
 msgid "REST route registration"
 msgstr ""
 
-#: admin/index.php:4367
+#: admin/index.php:4376
 msgid "Consent banner status check"
 msgstr ""
 
-#: admin/index.php:4368
+#: admin/index.php:4377
 msgid "Plugin activation"
 msgstr ""
 
-#: admin/index.php:4369
+#: admin/index.php:4378
 msgid "Plugin deactivation"
 msgstr ""
 
-#: admin/index.php:4370
+#: admin/index.php:4379
 msgid "Setting up sites on this network"
 msgstr ""
 
-#: admin/index.php:4374
+#: admin/index.php:4383
 msgid "Database columns differ from this version"
 msgstr ""
 
-#: admin/index.php:4375
+#: admin/index.php:4384
 msgid "Database schema upgrade"
 msgstr ""
 
-#: admin/index.php:4376
+#: admin/index.php:4385
 msgid "Database repair during tracking"
 msgstr ""
 
-#: admin/index.php:4377
+#: admin/index.php:4386
 msgid "Notes format migration"
 msgstr ""
 
-#: admin/index.php:4378
+#: admin/index.php:4387
 msgid "Analytics settings recovery"
 msgstr ""
 
-#: admin/index.php:4379
+#: admin/index.php:4388
 msgid "Character-set conversion"
 msgstr ""
 
-#: admin/index.php:4380
+#: admin/index.php:4389
 msgid "Database unreachable during migration"
 msgstr ""
 
-#: admin/index.php:4381
+#: admin/index.php:4390
 msgid "Migration: visit identity column"
 msgstr ""
 
-#: admin/index.php:4382
+#: admin/index.php:4391
 msgid "Migration: legacy column widths"
 msgstr ""
 
-#: admin/index.php:4383
+#: admin/index.php:4392
 msgid "Migration: browser dimension column"
 msgstr ""
 
-#: admin/index.php:4384
+#: admin/index.php:4393
 msgid "Event could not be recorded"
 msgstr ""
 
-#: admin/index.php:4385
+#: admin/index.php:4394
 msgid "Cookieless visit grouping"
 msgstr ""
 
-#: admin/index.php:4386
+#: admin/index.php:4395
 msgid "Retention: archiving events"
 msgstr ""
 
-#: admin/index.php:4387
+#: admin/index.php:4396
 msgid "Retention: deleting events"
 msgstr ""
 
-#: admin/index.php:4388
+#: admin/index.php:4397
 msgid "Retention: archiving pageviews"
 msgstr ""
 
-#: admin/index.php:4389
+#: admin/index.php:4398
 msgid "Retention: deleting pageviews"
 msgstr ""
 
-#: admin/index.php:4390
+#: admin/index.php:4399
 msgid "Retention: archive table columns"
 msgstr ""
 
-#: admin/index.php:4394
+#: admin/index.php:4403
 msgid "Retention has not completed recently"
 msgstr ""
 
-#: admin/index.php:4438
+#: admin/index.php:4447
 msgid "Slimstat Analytics is running with reduced functionality."
 msgstr ""
 
-#: admin/index.php:4439
+#: admin/index.php:4448
 msgid "These features failed to load and were disabled so the rest of your site keeps working. This usually means an interrupted update or a stale server cache — reinstalling the plugin and flushing your PHP opcache normally clears it."
 msgstr ""
 
-#: admin/index.php:4447
+#: admin/index.php:4456
 msgid "Slimstat Analytics reported a problem while running."
 msgstr ""
 
-#: admin/index.php:4448
+#: admin/index.php:4457
 msgid "Tracking and reports kept working. These are maintenance tasks that did not complete — some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check Slimstat > Migrations and Settings > Maintenance."
 msgstr ""
 
-#: admin/index.php:4484
+#: admin/index.php:4493
 msgid "Currently Online Reports"
 msgstr ""
 
-#: admin/index.php:4485
+#: admin/index.php:4494
 msgid "Index on <code>dt_out</code>"
 msgstr ""
 
-#: admin/index.php:4489
+#: admin/index.php:4498
 msgid "World Map & Country Reports"
 msgstr ""
 
-#: admin/index.php:4490
+#: admin/index.php:4499
 msgid "Index on <code>country</code> and <code>dt</code>"
 msgstr ""
 
-#: admin/index.php:4494
+#: admin/index.php:4503
 msgid "Screen Resolution Reports"
 msgstr ""
 
-#: admin/index.php:4495
+#: admin/index.php:4504
 msgid "Index on <code>dt</code>, <code>screen_width</code>, <code>screen_height</code>"
 msgstr ""
 
-#: admin/index.php:4499
+#: admin/index.php:4508
 msgid "Browser Reports"
 msgstr ""
 
-#: admin/index.php:4500
+#: admin/index.php:4509
 msgid "Index on <code>dt</code>, <code>browser</code>, <code>browser_version</code>"
 msgstr ""
 
-#: admin/index.php:4504
+#: admin/index.php:4513
 msgid "Platform Reports"
 msgstr ""
 
-#: admin/index.php:4505
+#: admin/index.php:4514
 msgid "Index on <code>dt</code>, <code>platform</code>"
 msgstr ""
 
-#: admin/index.php:4509
+#: admin/index.php:4518
 msgid "Visitor Counter Performance"
 msgstr ""
 
-#: admin/index.php:4510
+#: admin/index.php:4519
 msgid "Index on <code>dt</code>, <code>visit_id</code>"
 msgstr ""
 
-#: admin/index.php:4530
+#: admin/index.php:4539
 #: admin/view/index.php:41
 #: src/Components/DateRangeHelper.php:212
 msgid "Apply"
 msgstr ""
 
-#: admin/index.php:4546
+#: admin/index.php:4555
 msgid "Improve SlimStat Report Performance"
 msgstr ""
 
-#: admin/index.php:4547
+#: admin/index.php:4556
 msgid "To speed up SlimStat reports, please apply the following database optimizations. These changes are safe and will not affect your data."
 msgstr ""
 
-#: admin/index.php:4565
+#: admin/index.php:4574
 msgid "Apply All"
 msgstr ""
 
-#: admin/index.php:4566
+#: admin/index.php:4575
 msgid "Do not close this tab until all optimizations are complete."
 msgstr ""
 
-#: admin/index.php:4593
+#: admin/index.php:4602
 msgid "Please wait for SlimStat optimizations to finish."
 msgstr ""
 
-#: admin/index.php:4601
+#: admin/index.php:4610
 msgid "In progress..."
 msgstr ""
 
-#: admin/index.php:4609
+#: admin/index.php:4618
 msgid "Done!"
 msgstr ""
 
-#: admin/index.php:4613
+#: admin/index.php:4622
 msgid "Error: "
 msgstr ""
 
@@ -2028,7 +2028,7 @@ msgstr ""
 #. translators: %s: URL of the geolocation settings section.
 #: admin/view/index.php:107
 #: admin/view/index.php:111
-#: admin/view/wp-slimstat-reports.php:2578
+#: admin/view/wp-slimstat-reports.php:2594
 #, php-format
 msgid "GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor."
 msgstr ""
@@ -2191,7 +2191,7 @@ msgstr ""
 
 #: admin/view/partials/goals-funnels/funnel-builder.php:100
 #: admin/view/partials/goals-funnels/goal-drawer.php:63
-#: admin/view/wp-slimstat-db.php:134
+#: admin/view/wp-slimstat-db.php:142
 msgid "Value"
 msgstr ""
 
@@ -2233,7 +2233,7 @@ msgstr ""
 #. translators: 1: number of steps, 2: conversion rate
 #. translators: 1: step count, 2: conversion rate
 #: admin/view/partials/goals-funnels/funnel-summary.php:51
-#: admin/view/wp-slimstat-reports.php:2318
+#: admin/view/wp-slimstat-reports.php:2334
 #: admin/assets/js/goals-funnels.js:711
 #, php-format,js-format
 msgid "%1$d-step funnel · %2$s%% conversion rate"
@@ -2314,7 +2314,7 @@ msgid "Landing → Form → Thank-you (only if you redirect after submit)"
 msgstr ""
 
 #: admin/view/partials/goals-funnels/funnels-card.php:102
-#: admin/view/wp-slimstat-reports.php:1989
+#: admin/view/wp-slimstat-reports.php:2005
 msgid "+ Add funnel"
 msgstr ""
 
@@ -2327,7 +2327,7 @@ msgid "Templates pre-fill the dimension and operator. You fill in the URLs or ev
 msgstr ""
 
 #: admin/view/partials/goals-funnels/funnels-card.php:132
-#: admin/view/wp-slimstat-reports.php:2256
+#: admin/view/wp-slimstat-reports.php:2272
 msgid "Configured funnels"
 msgstr ""
 
@@ -2415,7 +2415,7 @@ msgid "Unique visitors who matched this goal at least once."
 msgstr ""
 
 #: admin/view/partials/goals-funnels/goals-card.php:110
-#: admin/view/wp-slimstat-reports.php:2097
+#: admin/view/wp-slimstat-reports.php:2113
 msgid "Uniques"
 msgstr ""
 
@@ -2424,7 +2424,7 @@ msgid "Matching pageviews. A single visitor can match several times, so Total is
 msgstr ""
 
 #: admin/view/partials/goals-funnels/goals-card.php:114
-#: admin/view/wp-slimstat-reports.php:2098
+#: admin/view/wp-slimstat-reports.php:2114
 msgid "Total"
 msgstr ""
 
@@ -2580,9 +2580,9 @@ msgid "Syndication Reader"
 msgstr ""
 
 #: admin/view/right-now.php:51
-#: admin/view/wp-slimstat-reports.php:1310
-#: admin/view/wp-slimstat-reports.php:1709
-#: admin/view/wp-slimstat-reports.php:2375
+#: admin/view/wp-slimstat-reports.php:1326
+#: admin/view/wp-slimstat-reports.php:1725
+#: admin/view/wp-slimstat-reports.php:2391
 msgid "No data to display"
 msgstr ""
 
@@ -2616,9 +2616,9 @@ msgid "Date and Time"
 msgstr ""
 
 #: admin/view/right-now.php:242
-#: admin/view/wp-slimstat-reports.php:1616
-#: admin/view/wp-slimstat-reports.php:1624
-#: admin/view/wp-slimstat-reports.php:2402
+#: admin/view/wp-slimstat-reports.php:1632
+#: admin/view/wp-slimstat-reports.php:1640
+#: admin/view/wp-slimstat-reports.php:2418
 msgid "Open this URL in a new window"
 msgstr ""
 
@@ -2676,431 +2676,465 @@ msgid "Language"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:68
-msgid "Visitor's Username"
+#: src/Reports/AcquisitionReport.php:22
+msgid "Channel"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:69
-msgid "Visitor's Email"
+msgid "Channel Source"
+msgstr ""
+
+#: admin/view/wp-slimstat-db.php:70
+msgid "UTM Campaign"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:71
-msgid "Timezone Offset"
+msgid "UTM Source"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:72
-msgid "Fingerprint"
+msgid "UTM Medium"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:73
-msgid "Page Speed"
+msgid "UTM Content"
+msgstr ""
+
+#: admin/view/wp-slimstat-db.php:74
+msgid "UTM Term"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:75
-msgid "-- Advanced filters --"
+msgid "UTM Campaign ID"
+msgstr ""
+
+#: admin/view/wp-slimstat-db.php:76
+msgid "Visitor's Username"
+msgstr ""
+
+#: admin/view/wp-slimstat-db.php:77
+msgid "Visitor's Email"
+msgstr ""
+
+#: admin/view/wp-slimstat-db.php:79
+msgid "Timezone Offset"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:80
-#: admin/view/wp-slimstat-reports.php:1748
-msgid "Coordinates"
+msgid "Fingerprint"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:81
-msgid "Annotations"
+msgid "Page Speed"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:82
-msgid "Server Latency"
-msgstr ""
-
-#: admin/view/wp-slimstat-db.php:87
-msgid "Resource ID"
+#: admin/view/wp-slimstat-db.php:83
+msgid "-- Advanced filters --"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:88
-msgid "Screen Width"
+#: admin/view/wp-slimstat-reports.php:1764
+msgid "Coordinates"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:89
-msgid "Screen Height"
+msgid "Annotations"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:90
+msgid "Server Latency"
+msgstr ""
+
+#: admin/view/wp-slimstat-db.php:95
+msgid "Resource ID"
+msgstr ""
+
+#: admin/view/wp-slimstat-db.php:96
+msgid "Screen Width"
+msgstr ""
+
+#: admin/view/wp-slimstat-db.php:97
+msgid "Screen Height"
+msgstr ""
+
+#: admin/view/wp-slimstat-db.php:98
 msgid "Viewport Size"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:101
+#: admin/view/wp-slimstat-db.php:109
 msgid "equals"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:102
+#: admin/view/wp-slimstat-db.php:110
 msgid "is not equal to"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:103
+#: admin/view/wp-slimstat-db.php:111
 msgid "contains"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:104
+#: admin/view/wp-slimstat-db.php:112
 msgid "is included in"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:105
+#: admin/view/wp-slimstat-db.php:113
 msgid "does not contain"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:106
+#: admin/view/wp-slimstat-db.php:114
 msgid "starts with"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:107
+#: admin/view/wp-slimstat-db.php:115
 msgid "ends with"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:108
+#: admin/view/wp-slimstat-db.php:116
 msgid "sounds like"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:109
+#: admin/view/wp-slimstat-db.php:117
 msgid "is greater than"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:110
+#: admin/view/wp-slimstat-db.php:118
 msgid "is less than"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:111
+#: admin/view/wp-slimstat-db.php:119
 msgid "is between (x,y)"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:112
+#: admin/view/wp-slimstat-db.php:120
 msgid "matches"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:113
+#: admin/view/wp-slimstat-db.php:121
 msgid "does not match"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:114
+#: admin/view/wp-slimstat-db.php:122
 msgid "is empty"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:115
+#: admin/view/wp-slimstat-db.php:123
 msgid "is not empty"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:121
+#: admin/view/wp-slimstat-db.php:129
 msgid "Minute"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:122
+#: admin/view/wp-slimstat-db.php:130
 msgid "Hour"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:123
+#: admin/view/wp-slimstat-db.php:131
 msgid "Day"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:124
+#: admin/view/wp-slimstat-db.php:132
 msgid "Month"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:125
+#: admin/view/wp-slimstat-db.php:133
 msgid "Year"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:127
+#: admin/view/wp-slimstat-db.php:135
 msgid "hours"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:128
+#: admin/view/wp-slimstat-db.php:136
 msgid "minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:129
+#: admin/view/wp-slimstat-db.php:137
 msgid "Timestamp"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:130
+#: admin/view/wp-slimstat-db.php:138
 msgid "Exit Timestamp"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:133
+#: admin/view/wp-slimstat-db.php:141
 msgid "Metric"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:136
+#: admin/view/wp-slimstat-db.php:144
 msgid "Grouped Value"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:137
+#: admin/view/wp-slimstat-db.php:145
 msgid "Percentage"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:138
-#: admin/view/wp-slimstat-db.php:139
+#: admin/view/wp-slimstat-db.php:146
+#: admin/view/wp-slimstat-db.php:147
 #: src/Services/Privacy/DataExporter.php:240
 msgid "Notes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:142
+#: admin/view/wp-slimstat-db.php:150
 msgid "Event ID"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:143
+#: admin/view/wp-slimstat-db.php:151
 msgid "Type"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:144
+#: admin/view/wp-slimstat-db.php:152
 #: src/Services/Privacy/DataExporter.php:226
 msgid "Event Description"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:145
+#: admin/view/wp-slimstat-db.php:153
 msgid "Event Coordinates"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:147
+#: admin/view/wp-slimstat-db.php:155
 msgid "Max Results"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:148
+#: admin/view/wp-slimstat-db.php:156
 msgid "Offset"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1381
-#: admin/view/wp-slimstat-db.php:1878
+#: admin/view/wp-slimstat-db.php:1406
+#: admin/view/wp-slimstat-db.php:1903
 #: admin/view/wp-slimstat-reports.php:47
 #: admin/view/wp-slimstat-reports.php:116
 #: admin/view/wp-slimstat-reports.php:125
+#: src/Reports/AcquisitionReport.php:143
 msgid "Pageviews"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1383
-#: admin/view/wp-slimstat-db.php:1880
+#: admin/view/wp-slimstat-db.php:1408
+#: admin/view/wp-slimstat-db.php:1905
 msgid "A pageview is a request to load a single HTML page on your website."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1385
+#: admin/view/wp-slimstat-db.php:1410
 msgid "Days in Range"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1388
+#: admin/view/wp-slimstat-db.php:1413
 msgid "Average Daily Pageviews"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1390
+#: admin/view/wp-slimstat-db.php:1415
 msgid "How many daily pageviews have been generated on average."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1392
+#: admin/view/wp-slimstat-db.php:1417
 msgid "From Any SERP"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1394
+#: admin/view/wp-slimstat-db.php:1419
 msgid "Visitors who landed on your site after searching for a keyword on a search engine and clicking on the corresponding search result link. This value includes both internal and external search result pages."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1396
-#: admin/view/wp-slimstat-db.php:2011
+#: admin/view/wp-slimstat-db.php:1421
+#: admin/view/wp-slimstat-db.php:2036
 #: admin/view/wp-slimstat-reports.php:126
 #: admin/view/wp-slimstat-reports.php:305
-#: admin/view/wp-slimstat-reports.php:574
+#: admin/view/wp-slimstat-reports.php:590
 msgid "Unique IPs"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1398
+#: admin/view/wp-slimstat-db.php:1423
 msgid "Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1400
+#: admin/view/wp-slimstat-db.php:1425
 msgid "Last 30 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1403
+#: admin/view/wp-slimstat-db.php:1428
 #: src/Components/DateRangeHelper.php:199
 #: src/Modules/Chart.php:174
 msgid "Today"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1406
+#: admin/view/wp-slimstat-db.php:1431
 #: src/Components/DateRangeHelper.php:200
 msgid "Yesterday"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1882
+#: admin/view/wp-slimstat-db.php:1907
 msgid "Unique Referrers"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1884
+#: admin/view/wp-slimstat-db.php:1909
 msgid "A referrer (or referring site) is a site that a visitor previously visited before following a link to your site."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1886
+#: admin/view/wp-slimstat-db.php:1911
 msgid "Direct Pageviews"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1888
+#: admin/view/wp-slimstat-db.php:1913
 msgid "Visitors who typed your website URL directly into their browser address bar. It can also refer to visitors who clicked on one of their bookmarked links, untagged links within emails, or links in documents that don't include tracking variables."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1890
+#: admin/view/wp-slimstat-db.php:1915
 msgid "From External SERP"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1892
+#: admin/view/wp-slimstat-db.php:1917
 msgid "Visitors who clicked on a link to your website listed on a search engine result page (SERP). This metric only counts visits coming from EXTERNAL search pages."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1894
+#: admin/view/wp-slimstat-db.php:1919
 msgid "Unique Landing Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1896
+#: admin/view/wp-slimstat-db.php:1921
 msgid "A landing page is the first page on your website that a visitors opens, also known as <em>entrance page</em>. For example, if they search for 'Brooklyn Office Space,' and they land on a page on your website, this page gets counted (for that visit) as a landing page."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1898
+#: admin/view/wp-slimstat-db.php:1923
 msgid "Bounce Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1900
+#: admin/view/wp-slimstat-db.php:1925
 msgid "Number of single-page visits tracked over the selected period of time."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1902
+#: admin/view/wp-slimstat-db.php:1927
 msgid "New Visitors Rate"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1904
+#: admin/view/wp-slimstat-db.php:1929
 msgid "Percentage of single-page visits, i.e. visits in which the person left your site from the entrance page."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1906
+#: admin/view/wp-slimstat-db.php:1931
 msgid "Currently from search engines"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1908
+#: admin/view/wp-slimstat-db.php:1933
 msgid "Visitors who clicked on a link to your website listed on a search engine result page (SERP), tracked in the last 5 minutes."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1920
+#: admin/view/wp-slimstat-db.php:1945
 msgid "0 - 30 seconds"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1927
+#: admin/view/wp-slimstat-db.php:1952
 msgid "31 - 60 seconds"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1934
+#: admin/view/wp-slimstat-db.php:1959
 msgid "1 - 3 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1941
+#: admin/view/wp-slimstat-db.php:1966
 msgid "3 - 5 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1948
+#: admin/view/wp-slimstat-db.php:1973
 msgid "5 - 7 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1955
+#: admin/view/wp-slimstat-db.php:1980
 msgid "7 - 10 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1962
+#: admin/view/wp-slimstat-db.php:1987
 msgid "More than 10 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1983
+#: admin/view/wp-slimstat-db.php:2008
 msgid "Average Visit Duration"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2007
+#: admin/view/wp-slimstat-db.php:2032
 #: admin/view/wp-slimstat-reports.php:304
 msgid "Visits"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2009
+#: admin/view/wp-slimstat-db.php:2034
 msgid "A visit is a group of pageviews within a 30-minute time span. Returning visitors are counted multiple times if they start a new visit."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2013
+#: admin/view/wp-slimstat-db.php:2038
 msgid "It includes only traffic generated by human visitors."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2015
+#: admin/view/wp-slimstat-db.php:2040
 msgid "Bounce rate"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2017
+#: admin/view/wp-slimstat-db.php:2042
 msgid "Total number of one-page visits divided by the total number of entries to a website. Please see the <a href=\"https://support.google.com/analytics/answer/1009409?hl=en\" target=\"_blank\">official Google docs</a> for more information."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2019
+#: admin/view/wp-slimstat-db.php:2044
 msgid "Known visitors"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2021
+#: admin/view/wp-slimstat-db.php:2046
 msgid "Visitors who have previously left a comment on your blog."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2023
+#: admin/view/wp-slimstat-db.php:2048
 msgid "Single-page Visits"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2025
+#: admin/view/wp-slimstat-db.php:2050
 msgid "Human users that generated one single page view on your website."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2030
+#: admin/view/wp-slimstat-db.php:2055
 msgid "Pageviews per visit"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2033
+#: admin/view/wp-slimstat-db.php:2058
 msgid "Longest visit"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2034
+#: admin/view/wp-slimstat-db.php:2059
 msgid "hits"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2052
+#: admin/view/wp-slimstat-db.php:2077
 msgid "Content Items"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2054
+#: admin/view/wp-slimstat-db.php:2079
 msgid "This value includes not only posts and pages, but any custom post type, regardless of their status."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2056
+#: admin/view/wp-slimstat-db.php:2081
 msgid "Posts"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2059
+#: admin/view/wp-slimstat-db.php:2084
 msgid "Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2062
+#: admin/view/wp-slimstat-db.php:2087
 msgid "Attachments"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2065
+#: admin/view/wp-slimstat-db.php:2090
 msgid "Revisions"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2068
+#: admin/view/wp-slimstat-db.php:2093
 msgid "Comments"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2071
+#: admin/view/wp-slimstat-db.php:2096
 msgid "Avg Comments per Post"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2074
+#: admin/view/wp-slimstat-db.php:2099
 msgid "Avg Server Latency"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2076
+#: admin/view/wp-slimstat-db.php:2101
 msgid "Latency is the amount of time it takes for the host server to receive and process a request for a page object. The amount of latency depends largely on how far away the user is from the server."
 msgstr ""
 
@@ -3165,7 +3199,7 @@ msgid "Tap “Visits” or “Unique IPs” to toggle each line."
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:65
-#: admin/view/wp-slimstat-reports.php:880
+#: admin/view/wp-slimstat-reports.php:896
 msgid "Pages with Outbound Links"
 msgstr ""
 
@@ -3256,7 +3290,7 @@ msgid "Top Search Terms"
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:222
-#: admin/view/wp-slimstat-reports.php:2555
+#: admin/view/wp-slimstat-reports.php:2571
 msgid "Top Countries"
 msgstr ""
 
@@ -3390,209 +3424,225 @@ msgstr ""
 msgid "Top Human Browsers"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:573
+#: admin/view/wp-slimstat-reports.php:563
+msgid "Channels"
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:568
+msgid "Pageview sources, classified from campaign tags, referring sites and user agents. AI referrals and automated requests are reported separately."
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:571
+msgid "UTM Campaigns"
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:576
+msgid "Compare tagged pageviews by campaign, source and medium. Campaign values are case-sensitive; missing values are shown explicitly."
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:589
 msgid "Domains"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:582
+#: admin/view/wp-slimstat-reports.php:598
 msgid "Traffic Summary"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:592
+#: admin/view/wp-slimstat-reports.php:608
 msgid "Recent Outbound Links"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:608
+#: admin/view/wp-slimstat-reports.php:624
 msgid "Recent Posts"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:623
+#: admin/view/wp-slimstat-reports.php:639
 msgid "Recent Feeds"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:636
+#: admin/view/wp-slimstat-reports.php:652
 msgid "Recent Pages Not Found"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:650
+#: admin/view/wp-slimstat-reports.php:666
 msgid "Recent Internal Searches"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:661
+#: admin/view/wp-slimstat-reports.php:677
 msgid "Searches performed using WordPress' built-in search functionality."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:664
+#: admin/view/wp-slimstat-reports.php:680
 msgid "Top Categories"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:676
+#: admin/view/wp-slimstat-reports.php:692
 msgid "Top Downloads"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:686
+#: admin/view/wp-slimstat-reports.php:702
 msgid "You can configure Slimstat to track specific file extensions as downloads."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:689
+#: admin/view/wp-slimstat-reports.php:705
 msgid "Recent Custom Events"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:698
-#: admin/view/wp-slimstat-reports.php:723
+#: admin/view/wp-slimstat-reports.php:714
+#: admin/view/wp-slimstat-reports.php:739
 msgid "This report lists any <em>event</em> occurred on your website. Please refer to the FAQ for more information on how to use this functionality."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:701
+#: admin/view/wp-slimstat-reports.php:717
 msgid "Top Posts"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:714
+#: admin/view/wp-slimstat-reports.php:730
 msgid "Top Custom Events"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:726
+#: admin/view/wp-slimstat-reports.php:742
 msgid "Top Internal Searches"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:739
+#: admin/view/wp-slimstat-reports.php:755
 msgid "Recent Categories"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:754
+#: admin/view/wp-slimstat-reports.php:770
 msgid "Recent Tags"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:769
+#: admin/view/wp-slimstat-reports.php:785
 msgid "Top Pages Not Found"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:781
+#: admin/view/wp-slimstat-reports.php:797
 msgid "Top Authors"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:792
+#: admin/view/wp-slimstat-reports.php:808
 msgid "Top Tags"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:804
+#: admin/view/wp-slimstat-reports.php:820
 msgid "Recent Downloads"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:818
+#: admin/view/wp-slimstat-reports.php:834
 msgid "Top Outbound Links"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:829
+#: admin/view/wp-slimstat-reports.php:845
 msgid "Your Website"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:836
+#: admin/view/wp-slimstat-reports.php:852
 msgid "Your content at a glance: posts, comments, pingbacks, etc. Please note that this report is not affected by the filters set here above."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:839
+#: admin/view/wp-slimstat-reports.php:855
 msgid "Top Bounce Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:853
+#: admin/view/wp-slimstat-reports.php:869
 msgid "Top Exit Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:866
+#: admin/view/wp-slimstat-reports.php:882
 msgid "Top Entry Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:889
+#: admin/view/wp-slimstat-reports.php:905
 msgid "Outbound Links"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:890
+#: admin/view/wp-slimstat-reports.php:906
 msgid "Unique Outbound"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:898
+#: admin/view/wp-slimstat-reports.php:914
 msgid "Users by Page"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:909
+#: admin/view/wp-slimstat-reports.php:925
 msgid "Audience Location"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:916
+#: admin/view/wp-slimstat-reports.php:932
 msgid "Dots on the map represent the most recent pageviews geolocated by City. This feature is only available by enabling the corresponding precision level in the settings."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:921
+#: admin/view/wp-slimstat-reports.php:937
 msgid "Goals"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:938
+#: admin/view/wp-slimstat-reports.php:954
 msgid "Track conversions for custom goals you define. Goals are evaluated retroactively against existing data."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:941
+#: admin/view/wp-slimstat-reports.php:957
 msgid "Funnels"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:957
-#: admin/view/wp-slimstat-reports.php:2230
+#: admin/view/wp-slimstat-reports.php:973
+#: admin/view/wp-slimstat-reports.php:2246
 msgid "Visualize conversion funnels with step-by-step drop-off analysis."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:963
+#: admin/view/wp-slimstat-reports.php:979
 msgid "Top Cities"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1084
+#: admin/view/wp-slimstat-reports.php:1100
 #: src/Reports/Abstracts/AbstractReport.php:277
 msgid "Refresh"
 msgstr ""
 
 #. translators: 1: first displayed row, 2: last displayed row, 3: total row count.
-#: admin/view/wp-slimstat-reports.php:1166
+#: admin/view/wp-slimstat-reports.php:1182
 #, php-format
 msgid "Showing %1$s - %2$s of %3$s"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1169
+#: admin/view/wp-slimstat-reports.php:1185
 msgid "Refresh in"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1384
+#: admin/view/wp-slimstat-reports.php:1400
 msgid "Tag"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1387
-#: admin/view/wp-slimstat-reports.php:1396
+#: admin/view/wp-slimstat-reports.php:1403
+#: admin/view/wp-slimstat-reports.php:1412
 msgid "ID"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1393
+#: admin/view/wp-slimstat-reports.php:1409
 msgid "Category"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1414
-#: admin/view/wp-slimstat-reports.php:1446
-#: admin/view/wp-slimstat-reports.php:1451
+#: admin/view/wp-slimstat-reports.php:1430
+#: admin/view/wp-slimstat-reports.php:1462
+#: admin/view/wp-slimstat-reports.php:1467
 msgid "Code"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1494
+#: admin/view/wp-slimstat-reports.php:1510
 msgid "URL"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1514
+#: admin/view/wp-slimstat-reports.php:1530
 msgid "No referrer"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1517
+#: admin/view/wp-slimstat-reports.php:1533
 #: src/Services/Privacy/DataExporter.php:68
 msgid "Referrer"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1537
-#: admin/view/wp-slimstat-reports.php:1565
+#: admin/view/wp-slimstat-reports.php:1553
+#: admin/view/wp-slimstat-reports.php:1581
 #: languages/index.php:11
 #: languages/index.php:14
 #: languages/index.php:15
@@ -3605,133 +3655,133 @@ msgstr ""
 msgid "Unknown"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1541
-#: admin/view/wp-slimstat-reports.php:1569
+#: admin/view/wp-slimstat-reports.php:1557
+#: admin/view/wp-slimstat-reports.php:1585
 msgid "Guest"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1748
+#: admin/view/wp-slimstat-reports.php:1764
 msgid "Page"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1748
+#: admin/view/wp-slimstat-reports.php:1764
 msgid "Date"
 msgstr ""
 
 #. translators: 1: used count, 2: maximum count
-#: admin/view/wp-slimstat-reports.php:1929
+#: admin/view/wp-slimstat-reports.php:1945
 #, php-format
 msgid "%1$d of %2$d used"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1958
+#: admin/view/wp-slimstat-reports.php:1974
 msgid "+ Add goal"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1982
+#: admin/view/wp-slimstat-reports.php:1998
 #: admin/assets/js/goals-funnels.js:503
 msgid "See templates"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2027
-#: admin/view/wp-slimstat-reports.php:2131
+#: admin/view/wp-slimstat-reports.php:2043
+#: admin/view/wp-slimstat-reports.php:2147
 msgid "Goal data reflects visitors who provided statistics consent."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2087
+#: admin/view/wp-slimstat-reports.php:2103
 msgid "No goals defined yet."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2096
+#: admin/view/wp-slimstat-reports.php:2112
 msgid "Goal"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2099
+#: admin/view/wp-slimstat-reports.php:2115
 msgid "CR%"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2115
+#: admin/view/wp-slimstat-reports.php:2131
 msgid "Not shown here — open the Goals report."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2220
+#: admin/view/wp-slimstat-reports.php:2236
 msgid "Step 1"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2220
+#: admin/view/wp-slimstat-reports.php:2236
 msgid "Step 2"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2220
+#: admin/view/wp-slimstat-reports.php:2236
 msgid "Step 3"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2229
+#: admin/view/wp-slimstat-reports.php:2245
 msgid "Visualize every step of the journey"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2237
+#: admin/view/wp-slimstat-reports.php:2253
 msgid "No funnels configured."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2301
+#: admin/view/wp-slimstat-reports.php:2317
 msgid "Not shown here — open the Funnels report."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2311
+#: admin/view/wp-slimstat-reports.php:2327
 msgid "No matching visitors in this date range."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2411
-#: admin/view/wp-slimstat-reports.php:2413
+#: admin/view/wp-slimstat-reports.php:2427
+#: admin/view/wp-slimstat-reports.php:2429
 msgid "Filter by element in a group"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2450
+#: admin/view/wp-slimstat-reports.php:2466
 msgid "Moz Domain Authority"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2451
+#: admin/view/wp-slimstat-reports.php:2467
 msgid "A normalized 100-point score representing the likelihood of a domain to rank well in search engine results."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2455
+#: admin/view/wp-slimstat-reports.php:2471
 msgid "Moz Backlinks"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2456
+#: admin/view/wp-slimstat-reports.php:2472
 msgid "Number of external equity links to your website."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2460
+#: admin/view/wp-slimstat-reports.php:2476
 msgid "Moz Links"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2461
+#: admin/view/wp-slimstat-reports.php:2477
 msgid "The number of links (external, equity or nonequity or not) to your homepage."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2647
+#: admin/view/wp-slimstat-reports.php:2663
 msgid "Edit user profile"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2662
+#: admin/view/wp-slimstat-reports.php:2678
 msgid "src"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2666
+#: admin/view/wp-slimstat-reports.php:2682
 msgid "serp"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2693
+#: admin/view/wp-slimstat-reports.php:2709
 msgid "Remove filter for"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2698
+#: admin/view/wp-slimstat-reports.php:2714
 msgid "Save"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2702
+#: admin/view/wp-slimstat-reports.php:2718
 msgid "Reset All"
 msgstr ""
 
@@ -5892,7 +5942,7 @@ msgid "Tracking is turned off, but it looks like the client-side code is still a
 msgstr ""
 
 #: languages/index.php:581
-#: src/Tracker/Processor.php:373
+#: src/Tracker/Processor.php:376
 msgid "GeoIP database file is missing or corrupt. Please go to Settings -> Tracker and click on the \"Update Database\" button to download a fresh copy."
 msgstr ""
 
@@ -6223,6 +6273,14 @@ msgstr ""
 msgid "The database migration lock was lost. No completion status was written."
 msgstr ""
 
+#: src/Migration/Migrations/AddAcquisitionColumns.php:19
+msgid "Enable UTM and channel reports"
+msgstr ""
+
+#: src/Migration/Migrations/AddAcquisitionColumns.php:24
+msgid "Adds campaign and channel fields to the analytics table and archive. Each table may be rebuilt; the time depends on its size and your database server. Servers without online ALTER support may pause tracking writes. Existing pageviews remain unchanged and appear as Not attributed. Attribution starts after setup completes."
+msgstr ""
+
 #: src/Migration/Migrations/AddUserAgentDimension.php:101
 msgid "Build the browser dimension"
 msgstr ""
@@ -6367,6 +6425,129 @@ msgstr ""
 
 #: src/Reports/Abstracts/AbstractReport.php:363
 msgid "No content available for this report."
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:15
+msgid "Campaign"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:16
+#: src/Reports/AcquisitionReport.php:23
+msgid "Source"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:17
+msgid "Medium"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:18
+msgid "Content"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:19
+msgid "Term"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:20
+msgid "Campaign ID"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:92
+msgid "UTM and channel reports need a database update. Existing tracking continues while setup is pending."
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:94
+msgid "Set up reports"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:112
+msgid "This report could not be loaded. Check the database connection and report setup, then refresh."
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:116
+msgid "Tagged pageviews, excluding detected bots. Select a value to filter your reports."
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:117
+msgid "Pageviews by channel and source. Select a value to filter your reports."
+msgstr ""
+
+#. translators: %s: localized pageview count.
+#: src/Reports/AcquisitionReport.php:121
+#, php-format
+msgid "%s pageview"
+msgid_plural "%s pageviews"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Reports/AcquisitionReport.php:126
+msgid "No tagged pageviews in this period. Add utm_source, utm_medium and utm_campaign to your incoming links, or choose another date range."
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:127
+msgid "No pageviews match this period and these filters. Try a wider date range or clear a filter."
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:136
+msgid "UTM campaign results"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:136
+msgid "Channel results"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:138
+msgid "Site"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:143
+msgid "Share"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:152
+msgid "Not set"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:154
+msgid "Not attributed"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:172
+msgid "Report pages"
+msgstr ""
+
+#. translators: 1: first row, 2: last row, 3: displayed result count.
+#: src/Reports/AcquisitionReport.php:175
+#, php-format
+msgid "%1$s–%2$s of %3$s"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:178
+msgid "Previous"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:181
+msgid "Next"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:185
+msgid "The report result limit was reached. Narrow your filters to see more detail. Shares use all matching pageviews, including rows beyond this limit."
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:188
+msgid "How to read this report"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:190
+msgid "Each row is one combination of campaign tags on a recorded page URL, not a session or conversion. Values keep their original case. Not set means that tag was absent. Use consistent names and tag incoming links, not internal links."
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:191
+msgid "These are pageview channels, not session attribution. Campaign tags take priority over referring sites. Internal navigation is separate. Direct / unknown means no usable source was sent; it can include untagged email, private messages or apps. Not attributed means the pageview predates report setup."
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:193
+msgid "AI Assistants identifies referrals or tagged links from known assistants. AI Crawlers and AI User-requested Fetches identify automated requests by their claimed user agent, not verified identity. They appear only when your tracking settings collect them. Google AI Overviews cannot reliably be separated from Organic Search. Unknown tagged media appear as Unassigned."
 msgstr ""
 
 #: src/Reports/Types/Analytics/LiveAnalyticsReport.php:48
@@ -6721,6 +6902,7 @@ msgid "Page Visited"
 msgstr ""
 
 #: src/Services/Privacy/DataExporter.php:83
+#: src/Tracker/Acquisition.php:82
 msgid "Email"
 msgstr ""
 
@@ -6740,8 +6922,104 @@ msgstr ""
 msgid "Position"
 msgstr ""
 
+#: src/Tracker/Acquisition.php:73
+msgid "Direct / unknown"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:74
+msgid "Organic Search"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:75
+msgid "Paid Search"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:76
+msgid "Organic Social"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:77
+msgid "Paid Social"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:78
+msgid "Organic Video"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:79
+msgid "Paid Video"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:80
+msgid "Organic Shopping"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:81
+msgid "Paid Shopping"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:83
+msgid "Referral"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:84
+msgid "Affiliates"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:85
+msgid "Display"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:86
+msgid "Audio"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:87
+msgid "SMS"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:88
+msgid "Push Notifications"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:89
+msgid "Messaging"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:90
+msgid "Cross-network"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:91
+msgid "Paid Other"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:92
+msgid "AI Assistants"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:93
+msgid "AI Crawlers"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:94
+msgid "AI User-requested Fetches"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:95
+msgid "Other Bots"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:96
+msgid "Internal Navigation"
+msgstr ""
+
+#: src/Tracker/Acquisition.php:97
+msgid "Unassigned"
+msgstr ""
+
 #. translators: %s: referring URL rejected as an attempted XSS injection.
-#: src/Tracker/Processor.php:234
+#: src/Tracker/Processor.php:237
 #, php-format
 msgid "Attempted XSS Injection: %s"
 msgstr ""

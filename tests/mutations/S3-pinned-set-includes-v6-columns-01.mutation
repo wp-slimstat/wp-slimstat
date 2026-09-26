@@ -11,7 +11,7 @@ diff --git a/tests/bench/lib/pinned-columns.php b/tests/bench/lib/pinned-columns
       */
      function slimstat_fp2_v6_added_columns()
      {
--        return ['vid_hash', 'ua_id'];
+-        return ['vid_hash', 'ua_id', 'traffic_channel', 'traffic_source', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'utm_id'];
 +        return [];
      }
  

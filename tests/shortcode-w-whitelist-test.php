@@ -46,7 +46,7 @@ preg_match_all("/'([^']+)'/", $m[1], $tokens);
 $whitelist = $tokens[1];
 
 // (a) the columns issue #277 was about must now be allowed.
-foreach (['country', 'browser', 'platform', 'language'] as $col) {
+foreach (['country', 'browser', 'platform', 'language', 'slim_p3_03', 'slim_p3_04', 'traffic_channel', 'traffic_source', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'utm_id'] as $col) {
     check(in_array($col, $whitelist, true), "whitelist must include '{$col}' (#277)");
 }
 

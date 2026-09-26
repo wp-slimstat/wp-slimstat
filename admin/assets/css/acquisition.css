@@ -1,0 +1,115 @@
+.wrap-slimstat .slimstat-acquisition-box .inside {
+    height: auto;
+    max-height: none;
+    padding: var(--ss-space-4);
+}
+.wrap-slimstat .slimstat-acquisition {
+    color: var(--ss-text-body);
+    font-family: var(--ss-font-modern);
+    font-size: var(--ss-text-base);
+}
+.wrap-slimstat .slimstat-acquisition__intro {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--ss-space-3);
+    padding-block: var(--ss-space-2) var(--ss-space-4);
+    color: var(--ss-text-muted);
+}
+.wrap-slimstat .slimstat-acquisition__intro strong {
+    color: var(--ss-text-body);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.wrap-slimstat .slimstat-acquisition__scroll {
+    overflow-x: auto;
+}
+.wrap-slimstat .slimstat-acquisition table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: start;
+}
+.wrap-slimstat .slimstat-acquisition th,
+.wrap-slimstat .slimstat-acquisition td {
+    padding: var(--ss-space-3) var(--ss-space-4);
+    border-bottom: 1px solid var(--ss-border);
+    text-align: start;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+    min-width: 90px;
+    max-width: 280px;
+}
+.wrap-slimstat .slimstat-acquisition th {
+    background: var(--ss-surface-tint);
+    font-weight: 600;
+}
+.wrap-slimstat .slimstat-acquisition td a {
+    display: inline-block;
+    padding-block: var(--ss-space-1);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.wrap-slimstat .slimstat-acquisition .slimstat-acquisition__number {
+    text-align: end;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.wrap-slimstat .slimstat-acquisition__share {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ss-space-3);
+}
+.wrap-slimstat .slimstat-acquisition meter {
+    width: 72px;
+    height: 8px;
+}
+.wrap-slimstat .slimstat-acquisition meter::-webkit-meter-bar {
+    border: 0;
+    background: var(--ss-surface-tint);
+}
+.wrap-slimstat .slimstat-acquisition meter::-webkit-meter-optimum-value {
+    background: var(--ss-funnel-bar);
+}
+.wrap-slimstat .slimstat-acquisition meter::-moz-meter-bar {
+    background: var(--ss-funnel-bar);
+}
+.wrap-slimstat .slimstat-acquisition__muted,
+.wrap-slimstat .slimstat-acquisition__note {
+    color: var(--ss-text-muted);
+}
+.wrap-slimstat .slimstat-acquisition__help {
+    margin-block-start: var(--ss-space-4);
+    color: var(--ss-text-muted);
+}
+.wrap-slimstat .slimstat-acquisition__pagination {
+    display: flex;
+    align-items: center;
+    gap: var(--ss-space-2);
+    margin-block-start: var(--ss-space-4);
+}
+.wrap-slimstat .slimstat-acquisition__pagination > span {
+    margin-inline-end: auto;
+    color: var(--ss-text-muted);
+}
+.wrap-slimstat .slimstat-acquisition__help summary {
+    cursor: pointer;
+    padding-block: var(--ss-space-2);
+}
+.wrap-slimstat .slimstat-acquisition__help p {
+    max-width: 75ch;
+    line-height: 1.6;
+}
+.wrap-slimstat .slimstat-acquisition__empty {
+    padding-block: var(--ss-space-6);
+    max-width: 65ch;
+    line-height: 1.6;
+}
+.wrap-slimstat .slimstat-acquisition :focus-visible {
+    outline: 2px solid var(--ss-focus);
+    outline-offset: 2px;
+}
+@media (max-width: 600px) {
+    .wrap-slimstat .slimstat-acquisition meter { display: none; }
+    .wrap-slimstat .slimstat-acquisition th,
+    .wrap-slimstat .slimstat-acquisition td { padding-inline: var(--ss-space-2); }
+}
