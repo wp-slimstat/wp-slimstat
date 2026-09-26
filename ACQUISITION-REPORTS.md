@@ -10,13 +10,13 @@ Tag incoming campaign links consistently, for example:
 https://example.com/offer?utm_source=newsletter&utm_medium=email&utm_campaign=autumn
 ```
 
-The UTM table groups the complete combination of `utm_campaign`, `utm_source`, `utm_medium`, `utm_content`, `utm_term` and `utm_id`. Missing values show **Not set**. Tags preserve case: `Autumn` and `autumn` are different campaigns. Detected bots, including AI fetchers, are excluded from this table.
+UTM Campaigns starts with one expandable total per campaign. Its breakdown groups the complete combination of `utm_campaign`, `utm_source`, `utm_medium`, `utm_content`, `utm_term` and `utm_id`. Expand a campaign to compare sources and media. **More tags** expands content, term and campaign ID within a row when any are present; these values remain filterable and all six dimensions remain in exports. Missing primary values show **Not set**. Tags preserve case: `Autumn` and `autumn` are different campaigns. Detected bots, including AI fetchers, are excluded from this table.
 
-The Channels table groups channel and normalized source. Its total includes every matching stored pageview, including bots if tracking settings collected them. **Internal Navigation** separates subsequent same-site navigation from incoming traffic. Tags on internal links override that classification, so tag incoming links only.
+Channels starts with one expandable total per channel. Expand it to compare normalized sources. Collapsed rows preview up to three recorded sources; this is a preview, not a source count. Its total includes every matching stored pageview, including bots if tracking settings collected them. **Internal Navigation** separates subsequent same-site navigation from incoming traffic. Tags on internal links override that classification, so tag incoming links only.
 
-Shares use all matching pageviews, including rows beyond the configured result limit. Pagination is deterministic, and reaching the limit produces an explanation. Tables have column headers, visible keyboard focus, a keyboard-accessible horizontal scroll region on small screens, RTL support and expandable help. There is no new JavaScript dependency.
+Shares use all matching pageviews, including rows beyond the configured result limit. Pagination applies to summaries. Group totals are aggregated independently before the result cap, never added up from a truncated breakdown. A single bounded detail query covers the visible groups; a partial breakdown states its shown and complete pageview counts. Shares in both views use the complete report total. Pagination is deterministic, and reaching the limit produces an explanation. Tables have column headers, visible keyboard focus, a keyboard-accessible horizontal scroll region on small screens, RTL support and expandable help. There is no new JavaScript dependency.
 
-Customize can move either report to another SlimStat screen or the WordPress Dashboard. The existing widget shortcode also accepts `slim_p3_03` (Channels) and `slim_p3_04` (UTM Campaigns), with the same date and dimension filters. Public widgets show a read-only table. Saved segments preserve the selected dates, and changing dates retains filters submitted by the report form. Literal punctuation in tag values survives drilldowns and saved segments; the shared form helper sets values without parsing them as HTML.
+Customize can move either report to another SlimStat screen or the WordPress Dashboard. The existing widget shortcode also accepts `slim_p3_03` (Channels) and `slim_p3_04` (UTM Campaigns), with the same date and dimension filters. Public widgets show the same expandable summaries without report-filter links. Saved segments preserve the selected dates, and changing dates retains filters submitted by the report form. Literal punctuation in tag values survives drilldowns and saved segments; the shared form helper sets values without parsing them as HTML.
 
 ## Classification rules
 
@@ -45,7 +45,7 @@ Historical rows remain NULL and display **Not attributed**. They are not guessed
 
 ## Queries and performance
 
-Aggregation happens in SQL over the existing indexed `dt` range, with existing global and author filters. There are no new indexes, dimension tables, scheduled backfills or per-pageview joins. Historical-only queries use the existing cache; ranges reaching today stay live. One aggregation spans midnight so the result cap cannot lose a group's older or newer contributions. The existing network merge receives the full group key and applies its cap after merging.
+Each rendered report uses three aggregate queries: group totals, a bounded breakdown for the visible groups, and the report denominator. There is no query per expanded row, and native disclosure controls add no JavaScript requests. Aggregation happens in SQL over the existing indexed `dt` range, with existing global and author filters. There are no new indexes, dimension tables, scheduled backfills or per-pageview joins. Historical-only queries use the existing cache; ranges reaching today stay live. One aggregation spans midnight so the result cap cannot lose a group's older or newer contributions. The existing network merge receives the full group key and applies its cap after merging.
 
 The database test creates and removes private tables on a separate analytics connection. Its 98,304-row fixture spans 96 days and verifies totals and an indexed one-day range with EXPLAIN. The last two local Docker/MariaDB runs took approximately 6–15 ms for one day, 189–293 ms for 30 days and 522–964 ms for 96 days. These observations varied with load on the shared development machine; they are not production guarantees. Wide ranges still require grouping and sorting matching rows; use narrower dates/filters on large installations. Add an index only after measuring a representative workload and its write/storage cost.
 
@@ -87,3 +87,7 @@ Reviewed 2026-09-26. The primary sources informing the decisions are:
 - [MySQL binary string comparisons](https://dev.mysql.com/doc/refman/8.0/en/charset-binary-collations.html): exact byte comparison versus character collation, informing campaign storage.
 
 Provider domains and agent tokens are a maintained list, not a universal discovery service. Future changes belong beside classifier fixtures that cover legitimate signals, collisions, missing information and spoofed hosts.
+
+## Report design references
+
+The summary-to-source flow follows [Plausible acquisition reports](https://plausible.io/docs/top-referrers) and [Carbon expandable table guidance](https://carbondesignsystem.com/components/data-table/usage/) (reviewed 2026-09-26). Report scope remains recorded pageviews; no visitor, session or conversion metrics are inferred for decoration.

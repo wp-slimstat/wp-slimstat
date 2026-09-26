@@ -66,6 +66,20 @@ test.describe('UTM and channel reports', () => {
         const zero = `${marker}-zero`;
         await visitor.goto(`${BASE_URL}/?acq=${zero}&utm_source=0&utm_medium=email`);
         await expect.poll(async () => (await stat(zero))?.traffic_source).toBe('0');
+        const direct = `${marker}-direct`;
+        const landing = await context.newPage();
+        await landing.goto(`${BASE_URL}/?acq=${direct}`);
+        await expect.poll(async () => (await stat(direct))?.traffic_channel).toBe('direct');
+        const internal = `${marker}-internal`;
+        await landing.evaluate(url => {
+          const link = document.createElement('a');
+          link.id = 'acquisition-internal-link';
+          link.href = url;
+          link.textContent = 'Continue';
+          document.body.append(link);
+        }, `${BASE_URL}/?acq=${internal}`);
+        await landing.locator('#acquisition-internal-link').click();
+        await expect.poll(async () => (await stat(internal))?.traffic_channel).toBe('internal');
       } finally { await context.close(); }
     });
   }
@@ -101,21 +115,34 @@ test.describe('UTM and channel reports', () => {
     await page.goto('/wp-admin/admin.php?page=slimview5&type=today');
     const channels = page.locator('#slim_p3_03');
     const utm = page.locator('#slim_p3_04');
-    await expect(channels.locator('tbody tr')).toHaveCount(7);
+    await expect(channels.locator('.slimstat-acquisition__group')).toHaveCount(6);
+    await expect(channels.locator('.slimstat-acquisition__group[open]')).toHaveCount(0);
     await expect(channels.locator('.slimstat-acquisition__intro strong')).toHaveText('8 pageviews');
-    await expect(channels.getByText('Not attributed', { exact: true })).toBeVisible();
-    await expect(channels.getByText('AI User-requested Fetches', { exact: true })).toBeVisible();
+    await expect(channels.locator('.slimstat-acquisition__label').filter({ hasText: /^Not attributed$/ })).toBeVisible();
+    await expect(channels.locator('.slimstat-acquisition__label').filter({ hasText: /^AI User-requested Fetches$/ })).toBeVisible();
     await expect(utm.locator('tbody tr')).toHaveCount(3);
     await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('4 pageviews');
-    const campaign = utm.locator('tbody tr').filter({ hasText: 'Spring + 20%' });
+    const campaign = utm.locator('.slimstat-acquisition__group').filter({ hasText: 'Spring + 20%' });
+    await expect(campaign.locator('table')).not.toBeVisible();
+    await campaign.locator(':scope > summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(campaign.locator('table')).toBeVisible();
+    await expect(campaign.locator('thead th')).toHaveText(['Source', 'Medium', 'Pageviews', 'Share']);
     await expect(campaign).toContainText('50.0%');
+    const tags = campaign.locator('.slimstat-acquisition__tags');
+    await expect(tags.locator('dl')).not.toBeVisible();
+    await tags.locator('summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(tags.locator('dl')).toBeVisible();
+    await expect(tags.getByRole('link', { name: '0', exact: true })).toBeVisible();
+    await expect(tags.getByRole('link', { name: '%20', exact: true })).toBeVisible();
     await utm.scrollIntoViewIfNeeded();
     await expect(utm.locator('.inside')).toHaveCSS('opacity', '1');
     await page.screenshot({ path: 'tests/e2e/run-artifacts/acquisition-desktop.png', fullPage: true });
-    await campaign.getByRole('link', { name: 'Spring + 20%', exact: true }).click();
+    await campaign.getByRole('link', { name: 'Filter by this campaign', exact: true }).click();
     await expect(utm.locator('tbody tr')).toHaveCount(1);
     await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('2 pageviews');
-    await expect(utm.locator('tbody')).toContainText('100.0%');
+    await expect(utm.locator('.slimstat-acquisition__group > summary')).toContainText('100.0%');
     const probe = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, { form: { action: 'e2e_get_slimstat_version' } });
     const { data } = await probe.json();
     // Pro is optional; with it installed this same flow must export the displayed segment.
@@ -136,6 +163,28 @@ test.describe('UTM and channel reports', () => {
     }
   });
 
+  test('collapsed totals combine sources and remain exact when breakdowns reach the result limit', async ({ page }) => {
+    await fixture();
+    await db.execute("UPDATE wp_slim_stats SET utm_campaign='Spring + 20%' WHERE utm_campaign='Search'");
+    await setSlimstatOption(page, 'limit_results', '1');
+    await page.goto('/wp-admin/admin.php?page=slimview5&type=today');
+    const utm = page.locator('#slim_p3_04');
+    const group = utm.locator('.slimstat-acquisition__group');
+    await expect(group).toHaveCount(1);
+    await expect(group.locator(':scope > summary .slimstat-acquisition__number')).toHaveText('3 Pageviews');
+    await expect(group.locator(':scope > summary')).toContainText('75.0%');
+    await expect(group.locator('table')).not.toBeVisible();
+    await group.locator(':scope > summary').click();
+    await expect(group.locator('table')).toBeVisible();
+    await expect(group).toContainText('Showing 2 of 3 pageviews');
+    await group.locator(':scope > summary').click();
+    await expect(group.locator('table')).not.toBeVisible();
+    const email = page.locator('#slim_p3_03 .slimstat-acquisition__group');
+    await expect(email.locator(':scope > summary .slimstat-acquisition__number')).toHaveText('3 Pageviews');
+    await email.locator(':scope > summary').click();
+    await expect(email).toContainText('Showing 2 of 3 pageviews');
+  });
+
   test('small screens, RTL, keyboard help and pagination remain usable', async ({ page }) => {
     await fixture();
     await setSlimstatOption(page, 'rows_to_show', '2');
@@ -145,11 +194,11 @@ test.describe('UTM and channel reports', () => {
     await expect(utm.locator('tbody tr')).toHaveCount(2);
     await utm.getByRole('link', { name: 'Next', exact: true }).click();
     await expect(utm.locator('tbody tr')).toHaveCount(1);
-    await expect(utm.locator('tbody')).toContainText('Search');
-    const help = utm.locator('summary');
+    await expect(utm.locator('.slimstat-acquisition__groups')).toContainText('Search');
+    const help = utm.locator('.slimstat-acquisition__help summary');
     await help.focus();
     await page.keyboard.press('Enter');
-    await expect(utm.locator('details')).toHaveAttribute('open', '');
+    await expect(utm.locator('.slimstat-acquisition__help')).toHaveAttribute('open', '');
     await page.evaluate(() => document.documentElement.setAttribute('dir', 'rtl'));
     await utm.scrollIntoViewIfNeeded();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
@@ -176,7 +225,7 @@ test.describe('UTM and channel reports', () => {
 
       await page.locator('.slimstat-date-range-btn').click();
       await page.locator('.daterangepicker:visible .ranges li').filter({ hasText: /^Yesterday$/ }).click();
-      await expect(utm.locator('tbody')).toContainText('Yesterday only');
+      await expect(utm.locator('.slimstat-acquisition__groups')).toContainText('Yesterday only');
       await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('1 pageview');
       await expect(page.locator('#slimstat-current-filters')).toContainText(source);
 
@@ -184,7 +233,7 @@ test.describe('UTM and channel reports', () => {
       await page.goto('/wp-admin/admin.php?page=slimview5&type=yesterday');
       await page.locator('#slimstat-load-saved-filters').click();
       await page.locator('#slim_filters_overlay a.slimstat-filter-link').filter({ hasText: source }).click();
-      await expect(utm.locator('tbody')).toContainText('Yesterday only');
+      await expect(utm.locator('.slimstat-acquisition__groups')).toContainText('Yesterday only');
       await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('1 pageview');
       await expect(page.locator('#slimstat-current-filters')).toContainText(source);
 
@@ -250,6 +299,7 @@ test.describe('UTM and channel reports', () => {
       await page.goto('/wp-admin/index.php');
       await expect(page.locator('#slim_p3_04 tbody tr')).toHaveCount(3);
       await expect(page.locator('#wp-slimstat-acquisition-css')).toBeAttached();
+      expect(await page.locator('#slim_p3_04 .inside').evaluate(element => element.scrollHeight <= element.clientHeight + 1)).toBeTruthy();
     } finally {
       await db.execute('DELETE FROM wp_usermeta WHERE user_id=? AND meta_key LIKE ?', [id, pattern]);
       for (const row of saved) await db.execute('INSERT INTO wp_usermeta (user_id, meta_key, meta_value) VALUES (?, ?, ?)', [id, row.meta_key, row.meta_value]);

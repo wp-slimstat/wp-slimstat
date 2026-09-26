@@ -97,6 +97,14 @@ try {
     $check(2 === (int) $rows[0]['counthits'], 'Repeated tagged pageviews aggregate');
     $check('A&B' === $rows[0]['utm_source'] && 'Summer+2026' === $rows[0]['utm_campaign'], 'Encoded delimiters survive the database');
     $check('%20' === $rows[0]['utm_id'] && '0' === $rows[0]['utm_content'], 'Literal percent escapes and zero-valued tags survive');
+    $insert('utm_source=second&utm_medium=email&utm_campaign=Summer%2B2026', '');
+    wp_slimstat::$settings['limit_results'] = 1;
+    $summary = AcquisitionReport::rows(['mode' => 'utm', 'summary' => true]);
+    $check('Summer+2026' === $summary[0]['utm_campaign'] && 3 === (int) $summary[0]['counthits'], 'Campaign summary aggregates distinct tag combinations before applying the result cap');
+    $summary = AcquisitionReport::rows(['mode' => 'channels', 'summary' => true]);
+    $check('email' === $summary[0]['traffic_channel'] && 5 === (int) $summary[0]['counthits'], 'Channel summary combines all sources before applying the result cap');
+    $db->query("DELETE FROM `{$testPrefix}slim_stats` WHERE utm_source = 'second'");
+    wp_slimstat::$settings['limit_results'] = 1000;
     $rows = AcquisitionReport::rows(['mode' => 'channels']);
     $check(8 === array_sum(array_column($rows, 'counthits')), 'Channels partition all matching pageviews including legacy and bots');
     $check(1 === (int) array_values(array_filter($rows, static function ($row) { return 'ai_fetcher' === $row['traffic_channel']; }))[0]['counthits'], 'AI fetches stay separate');
@@ -144,6 +152,7 @@ try {
         $check(false !== $db->query("INSERT INTO `{$testPrefix}slim_stats` ({$names}) SELECT {$names} FROM `{$testPrefix}slim_stats`"), 'Grow performance fixture');
     }
     $timings = [];
+    $summaryTimings = [];
     foreach ([1, 30, 96] as $days) {
         wp_slimstat_db::$filters_normalized['utime'] = ['start' => $now - ($days - 1) * DAY_IN_SECONDS, 'end' => $now + 1];
         $start = microtime(true);
@@ -155,8 +164,16 @@ try {
             $plan = $db->get_row('EXPLAIN ' . $sql, ARRAY_A);
             $check('range' === $plan['type'], 'Selective report uses an indexed date range');
         }
+        $start = microtime(true);
+        $summary = AcquisitionReport::rows(['mode' => 'utm', 'summary' => true]);
+        $summaryTimings[$days] = round((microtime(true) - $start) * 1000, 2);
+        $check($days * 1024 === array_sum(array_column($summary, 'counthits')), 'Summary totals match the performance fixture');
+        if (1 === $days) {
+            $summaryPlan = $db->get_row('EXPLAIN ' . $db->last_query, ARRAY_A);
+            $check('range' === $summaryPlan['type'], 'Selective summary uses an indexed date range');
+        }
     }
-    echo json_encode(['checks' => $checks, 'fixture_rows' => 98304, 'query_ms_by_days' => $timings, 'selective_explain' => $plan], JSON_PRETTY_PRINT) . "\n";
+    echo json_encode(['checks' => $checks, 'fixture_rows' => 98304, 'query_ms_by_days' => $timings, 'summary_query_ms_by_days' => $summaryTimings, 'selective_explain' => $plan], JSON_PRETTY_PRINT) . "\n";
 } finally {
     delete_option(Acquisition::readinessKey());
     $degradations = get_option(wp_slimstat::DEGRADATION_OPTION, []);

@@ -1,85 +1,147 @@
-.wrap-slimstat .slimstat-acquisition-box .inside {
+.wrap-slimstat .slimstat-acquisition-box:not(.closed) .inside,
+#dashboard-widgets #slim_p3_03:not(.closed) .inside,
+#dashboard-widgets #slim_p3_04:not(.closed) .inside {
     height: auto;
     max-height: none;
-    padding: var(--ss-space-4);
+    /* The legacy report body forces zero padding and a 45px footer gap. */
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+    scrollbar-gutter: auto;
 }
 .wrap-slimstat .slimstat-acquisition {
     color: var(--ss-text-body);
     font-family: var(--ss-font-modern);
     font-size: var(--ss-text-base);
+    line-height: 1.5;
+    padding: var(--ss-space-4);
 }
 .wrap-slimstat .slimstat-acquisition__intro {
     display: flex;
+    align-items: center;
     flex-wrap: wrap;
     justify-content: space-between;
     gap: var(--ss-space-3);
-    padding-block: var(--ss-space-2) var(--ss-space-4);
+    padding-block: var(--ss-space-2) var(--ss-space-5);
     color: var(--ss-text-muted);
 }
+.wrap-slimstat .slimstat-acquisition__intro > span {
+    max-width: 65ch;
+}
 .wrap-slimstat .slimstat-acquisition__intro strong {
-    color: var(--ss-text-body);
+    padding: var(--ss-space-1) var(--ss-space-3);
+    border-radius: var(--ss-radius-2xs);
+    background: var(--ss-surface-tint);
+    color: var(--ss-text-strong);
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
 }
 .wrap-slimstat .slimstat-acquisition__scroll {
     overflow-x: auto;
+    border-block: 1px solid var(--ss-border);
 }
 .wrap-slimstat .slimstat-acquisition table {
     width: 100%;
     border-collapse: collapse;
     text-align: start;
+    font-size: inherit;
 }
 .wrap-slimstat .slimstat-acquisition th,
 .wrap-slimstat .slimstat-acquisition td {
-    padding: var(--ss-space-3) var(--ss-space-4);
-    border-bottom: 1px solid var(--ss-border);
+    padding: var(--ss-space-2) var(--ss-space-4);
+    border-bottom: 1px solid var(--ss-border-soft);
     text-align: start;
-    vertical-align: middle;
+    vertical-align: top;
     overflow-wrap: anywhere;
-    min-width: 90px;
-    max-width: 280px;
+    min-width: 100px;
+    max-width: 320px;
 }
 .wrap-slimstat .slimstat-acquisition th {
+    padding-block: var(--ss-space-3);
     background: var(--ss-surface-tint);
+    color: var(--ss-text-muted);
+    font-size: var(--ss-text-sm);
     font-weight: 600;
+}
+.wrap-slimstat .slimstat-acquisition tbody tr:last-child td {
+    border-bottom: 0;
+}
+.wrap-slimstat .slimstat-acquisition tbody tr:hover,
+.wrap-slimstat .slimstat-acquisition tbody tr:focus-within {
+    background: var(--ss-surface-tint);
 }
 .wrap-slimstat .slimstat-acquisition td a {
     display: inline-block;
     padding-block: var(--ss-space-1);
+    color: var(--ss-info-fg);
     text-decoration: underline;
+    text-decoration-color: var(--ss-border);
     text-underline-offset: 3px;
 }
+.wrap-slimstat .slimstat-acquisition td a:hover,
+.wrap-slimstat .slimstat-acquisition td a:focus-visible {
+    text-decoration-color: currentColor;
+}
 .wrap-slimstat .slimstat-acquisition .slimstat-acquisition__number {
+    width: 1%;
+    min-width: 72px;
     text-align: end;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
 }
+.wrap-slimstat .slimstat-acquisition td.slimstat-acquisition__number {
+    padding-block: var(--ss-space-3);
+    font-weight: 600;
+}
 .wrap-slimstat .slimstat-acquisition__share {
     display: inline-flex;
     align-items: center;
+    justify-content: flex-end;
     gap: var(--ss-space-3);
+    font-weight: 400;
+}
+.wrap-slimstat .slimstat-acquisition__share > span {
+    min-width: 6ch;
+    text-align: end;
 }
 .wrap-slimstat .slimstat-acquisition meter {
-    width: 72px;
+    width: 96px;
     height: 8px;
 }
 .wrap-slimstat .slimstat-acquisition meter::-webkit-meter-bar {
     border: 0;
-    background: var(--ss-surface-tint);
+    border-radius: var(--ss-radius-pill);
+    background: var(--ss-border);
 }
 .wrap-slimstat .slimstat-acquisition meter::-webkit-meter-optimum-value {
+    border-radius: var(--ss-radius-pill);
     background: var(--ss-funnel-bar);
 }
 .wrap-slimstat .slimstat-acquisition meter::-moz-meter-bar {
+    border-radius: var(--ss-radius-pill);
     background: var(--ss-funnel-bar);
 }
 .wrap-slimstat .slimstat-acquisition__muted,
-.wrap-slimstat .slimstat-acquisition__note {
+.wrap-slimstat .slimstat-acquisition__note,
+.wrap-slimstat .slimstat-acquisition__help,
+.wrap-slimstat .slimstat-acquisition__tags {
     color: var(--ss-text-muted);
+    font-weight: 400;
 }
-.wrap-slimstat .slimstat-acquisition__help {
-    margin-block-start: var(--ss-space-4);
-    color: var(--ss-text-muted);
+.wrap-slimstat .slimstat-acquisition__tags summary {
+    width: fit-content;
+    font-size: var(--ss-text-sm);
+}
+.wrap-slimstat .slimstat-acquisition__tags dl {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--ss-space-1) var(--ss-space-3);
+    margin-block: var(--ss-space-2);
+}
+.wrap-slimstat .slimstat-acquisition__tags dt {
+    font-size: var(--ss-text-sm);
+}
+.wrap-slimstat .slimstat-acquisition__tags dd {
+    margin: 0;
 }
 .wrap-slimstat .slimstat-acquisition__pagination {
     display: flex;
@@ -90,26 +152,154 @@
 .wrap-slimstat .slimstat-acquisition__pagination > span {
     margin-inline-end: auto;
     color: var(--ss-text-muted);
+    font-variant-numeric: tabular-nums;
 }
-.wrap-slimstat .slimstat-acquisition__help summary {
+.wrap-slimstat .slimstat-acquisition__help {
+    margin-block-start: var(--ss-space-3);
+}
+.wrap-slimstat .slimstat-acquisition summary {
     cursor: pointer;
     padding-block: var(--ss-space-2);
 }
-.wrap-slimstat .slimstat-acquisition__help p {
-    max-width: 75ch;
+.wrap-slimstat .slimstat-acquisition__help p,
+.wrap-slimstat .slimstat-acquisition__empty {
+    max-width: 65ch;
     line-height: 1.6;
 }
 .wrap-slimstat .slimstat-acquisition__empty {
     padding-block: var(--ss-space-6);
-    max-width: 65ch;
-    line-height: 1.6;
 }
 .wrap-slimstat .slimstat-acquisition :focus-visible {
     outline: 2px solid var(--ss-focus);
     outline-offset: 2px;
 }
+.wrap-slimstat .slimstat-acquisition__groups {
+    --ss-acquisition-count: 80px;
+    --ss-acquisition-share: minmax(160px, 30%);
+    border-block: 1px solid var(--ss-border);
+}
+.wrap-slimstat .slimstat-acquisition__group + .slimstat-acquisition__group {
+    border-top: 1px solid var(--ss-border-soft);
+}
+.wrap-slimstat .slimstat-acquisition__group > summary,
+.wrap-slimstat .slimstat-acquisition__columns {
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr) var(--ss-acquisition-count) var(--ss-acquisition-share);
+    align-items: center;
+    gap: var(--ss-space-2);
+    padding: var(--ss-space-3) var(--ss-space-4);
+}
+.wrap-slimstat .slimstat-acquisition__columns {
+    color: var(--ss-text-muted);
+    font-size: var(--ss-text-sm);
+    background: var(--ss-surface-tint);
+    font-weight: 500;
+}
+.wrap-slimstat .slimstat-acquisition__columns::before {
+    content: "";
+}
+.wrap-slimstat .slimstat-acquisition__columns > span:not(:first-child) {
+    text-align: end;
+}
+.wrap-slimstat .slimstat-acquisition__group > summary {
+    list-style: none;
+    min-height: 60px;
+    box-sizing: border-box;
+}
+.wrap-slimstat .slimstat-acquisition__group > summary::-webkit-details-marker {
+    display: none;
+}
+.wrap-slimstat .slimstat-acquisition__group > summary::before {
+    content: "";
+    width: 0;
+    height: 0;
+    border-block: 4px solid transparent;
+    border-inline-start: 5px solid var(--ss-text-muted);
+}
+.wrap-slimstat .slimstat-acquisition__group[open] > summary::before {
+    transform: rotate(90deg);
+}
+[dir="rtl"] .wrap-slimstat .slimstat-acquisition__group[open] > summary::before {
+    transform: rotate(-90deg);
+}
+.wrap-slimstat .slimstat-acquisition__group > summary:hover,
+.wrap-slimstat .slimstat-acquisition__group[open] > summary {
+    background: var(--ss-surface-tint);
+}
+.wrap-slimstat .slimstat-acquisition__group > summary > .slimstat-acquisition__number {
+    width: auto;
+    min-width: 0;
+    font-size: var(--ss-text-lg);
+}
+.wrap-slimstat .slimstat-acquisition__identity {
+    min-width: 0;
+}
+.wrap-slimstat .slimstat-acquisition__label {
+    display: block;
+    font-size: var(--ss-text-md);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.wrap-slimstat .slimstat-acquisition__identity small,
+.wrap-slimstat .slimstat-acquisition__preview {
+    display: block;
+    color: var(--ss-text-muted);
+    font-size: var(--ss-text-sm);
+    font-weight: 400;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.wrap-slimstat .slimstat-acquisition__group > summary .slimstat-acquisition__share {
+    width: 100%;
+}
+.wrap-slimstat .slimstat-acquisition__group > summary meter {
+    flex: 1;
+    min-width: 0;
+}
+.wrap-slimstat .slimstat-acquisition__group[open] > summary .slimstat-acquisition__label {
+    color: var(--ss-brand-900);
+}
+.wrap-slimstat .slimstat-acquisition__breakdown {
+    padding: var(--ss-space-4);
+    background: var(--ss-surface-tint);
+}
+.wrap-slimstat .slimstat-acquisition__filter {
+    color: var(--ss-text-muted);
+    margin-block-end: var(--ss-space-3);
+}
+.wrap-slimstat .slimstat-acquisition__filter a {
+    display: inline-block;
+    padding: var(--ss-space-2) var(--ss-space-3);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-2xs);
+    background: var(--ss-surface);
+    color: var(--ss-info-fg);
+    font-weight: 500;
+    text-decoration: none;
+}
+.wrap-slimstat .slimstat-acquisition__filter a:hover {
+    border-color: var(--ss-info-fg);
+    text-decoration: underline;
+}
 @media (max-width: 600px) {
+    .wrap-slimstat .slimstat-acquisition__groups {
+        --ss-acquisition-count: 64px;
+        --ss-acquisition-share: 60px;
+    }
+    .wrap-slimstat .slimstat-acquisition__group > summary,
+    .wrap-slimstat .slimstat-acquisition__columns,
+    .wrap-slimstat .slimstat-acquisition__breakdown { padding-inline: var(--ss-space-2); }
+    .wrap-slimstat .slimstat-acquisition { font-size: var(--ss-text-md); }
     .wrap-slimstat .slimstat-acquisition meter { display: none; }
     .wrap-slimstat .slimstat-acquisition th,
-    .wrap-slimstat .slimstat-acquisition td { padding-inline: var(--ss-space-2); }
+    .wrap-slimstat .slimstat-acquisition td { padding-inline: var(--ss-space-3); }
+    .wrap-slimstat .slimstat-acquisition td a,
+    .wrap-slimstat .slimstat-acquisition__filter a,
+    .wrap-slimstat .slimstat-acquisition summary {
+        box-sizing: border-box;
+        min-height: 44px;
+        padding-block: var(--ss-space-3);
+    }
+    .wrap-slimstat .slimstat-acquisition td.slimstat-acquisition__number { padding-block: var(--ss-space-5); }
 }

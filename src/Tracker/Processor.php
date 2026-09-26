@@ -214,7 +214,9 @@ class Processor
         }
 
         $http_referer = $_SERVER['HTTP_REFERER'] ?? '';
-        if (empty($stat['referer']) && is_string($http_referer) && '' !== $http_referer) {
+        // Ajax explicitly supplies an empty referrer for direct visits. Its HTTP header
+        // identifies the tracked page, not that page's source; only fall back when absent.
+        if (!isset($stat['referer']) && is_string($http_referer) && '' !== $http_referer) {
             // sanitize_url() with android-app added to the allow-list: app-scheme referers
             // (android-app://com.google.android.googlequicksearchbox/, Google Discover) survive,
             // disallowed schemes (javascript:, data:) are emptied at the boundary, and — unlike

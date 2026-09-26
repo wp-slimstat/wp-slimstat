@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-26T08:19:11+00:00\n"
+"POT-Creation-Date: 2026-09-26T09:12:40+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -2905,7 +2905,9 @@ msgstr ""
 #: admin/view/wp-slimstat-reports.php:47
 #: admin/view/wp-slimstat-reports.php:116
 #: admin/view/wp-slimstat-reports.php:125
-#: src/Reports/AcquisitionReport.php:143
+#: src/Reports/AcquisitionReport.php:98
+#: src/Reports/AcquisitionReport.php:207
+#: src/Reports/AcquisitionReport.php:225
 msgid "Pageviews"
 msgstr ""
 
@@ -5942,7 +5944,7 @@ msgid "Tracking is turned off, but it looks like the client-side code is still a
 msgstr ""
 
 #: languages/index.php:581
-#: src/Tracker/Processor.php:376
+#: src/Tracker/Processor.php:378
 msgid "GeoIP database file is missing or corrupt. Please go to Settings -> Tracker and click on the \"Update Database\" button to download a fresh copy."
 msgstr ""
 
@@ -6452,101 +6454,114 @@ msgstr ""
 msgid "Campaign ID"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:92
-msgid "UTM and channel reports need a database update. Existing tracking continues while setup is pending."
+#: src/Reports/AcquisitionReport.php:72
+#: src/Reports/AcquisitionReport.php:210
+msgid "Not set"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:74
+#: src/Reports/AcquisitionReport.php:210
+msgid "Not attributed"
 msgstr ""
 
 #: src/Reports/AcquisitionReport.php:94
+msgid "Source breakdown"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:98
+#: src/Reports/AcquisitionReport.php:207
+msgid "Share"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:109
+msgid "More tags"
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:150
+msgid "UTM and channel reports need a database update. Existing tracking continues while setup is pending."
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:152
 msgid "Set up reports"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:112
+#: src/Reports/AcquisitionReport.php:184
 msgid "This report could not be loaded. Check the database connection and report setup, then refresh."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:116
-msgid "Tagged pageviews, excluding detected bots. Select a value to filter your reports."
+#: src/Reports/AcquisitionReport.php:188
+msgid "Tagged pageviews, excluding detected bots."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:117
-msgid "Pageviews by channel and source. Select a value to filter your reports."
+#: src/Reports/AcquisitionReport.php:189
+msgid "All recorded pageviews, grouped by channel."
 msgstr ""
 
 #. translators: %s: localized pageview count.
-#: src/Reports/AcquisitionReport.php:121
+#: src/Reports/AcquisitionReport.php:193
 #, php-format
 msgid "%s pageview"
 msgid_plural "%s pageviews"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Reports/AcquisitionReport.php:126
+#: src/Reports/AcquisitionReport.php:198
 msgid "No tagged pageviews in this period. Add utm_source, utm_medium and utm_campaign to your incoming links, or choose another date range."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:127
+#: src/Reports/AcquisitionReport.php:199
 msgid "No pageviews match this period and these filters. Try a wider date range or clear a filter."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:136
-msgid "UTM campaign results"
+#: src/Reports/AcquisitionReport.php:230
+msgid "Filter by this campaign"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:136
-msgid "Channel results"
+#: src/Reports/AcquisitionReport.php:230
+msgid "Filter by this channel"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:138
-msgid "Site"
+#. translators: 1: shown pageviews, 2: complete group pageviews.
+#: src/Reports/AcquisitionReport.php:240
+#, php-format
+msgid "Showing %1$s of %2$s pageviews in this breakdown. The result limit was reached; filter this group or narrow your filters for more detail."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:143
-msgid "Share"
-msgstr ""
-
-#: src/Reports/AcquisitionReport.php:152
-msgid "Not set"
-msgstr ""
-
-#: src/Reports/AcquisitionReport.php:154
-msgid "Not attributed"
-msgstr ""
-
-#: src/Reports/AcquisitionReport.php:172
+#: src/Reports/AcquisitionReport.php:248
 msgid "Report pages"
 msgstr ""
 
 #. translators: 1: first row, 2: last row, 3: displayed result count.
-#: src/Reports/AcquisitionReport.php:175
+#: src/Reports/AcquisitionReport.php:251
 #, php-format
 msgid "%1$s–%2$s of %3$s"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:178
+#: src/Reports/AcquisitionReport.php:254
 msgid "Previous"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:181
+#: src/Reports/AcquisitionReport.php:257
 msgid "Next"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:185
+#: src/Reports/AcquisitionReport.php:261
 msgid "The report result limit was reached. Narrow your filters to see more detail. Shares use all matching pageviews, including rows beyond this limit."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:188
+#: src/Reports/AcquisitionReport.php:264
 msgid "How to read this report"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:190
-msgid "Each row is one combination of campaign tags on a recorded page URL, not a session or conversion. Values keep their original case. Not set means that tag was absent. Use consistent names and tag incoming links, not internal links."
+#: src/Reports/AcquisitionReport.php:266
+msgid "Campaign totals combine all sources and tags. Expand a campaign for each combination of tags on a recorded page URL, not a session or conversion. Values keep their original case. More tags reveals content, term and campaign ID when present. Not set means that tag was absent. Use consistent names and tag incoming links, not internal links."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:191
-msgid "These are pageview channels, not session attribution. Campaign tags take priority over referring sites. Internal navigation is separate. Direct / unknown means no usable source was sent; it can include untagged email, private messages or apps. Not attributed means the pageview predates report setup."
+#: src/Reports/AcquisitionReport.php:267
+msgid "Channel totals combine all sources. Expand a channel for its source breakdown. These are pageview channels, not session attribution. Campaign tags take priority over referring sites. Internal navigation is separate. Direct / unknown means no usable source was sent; it can include untagged email, private messages or apps. Not attributed means the pageview predates report setup."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:193
+#: src/Reports/AcquisitionReport.php:269
 msgid "AI Assistants identifies referrals or tagged links from known assistants. AI Crawlers and AI User-requested Fetches identify automated requests by their claimed user agent, not verified identity. They appear only when your tracking settings collect them. Google AI Overviews cannot reliably be separated from Organic Search. Unknown tagged media appear as Unassigned."
 msgstr ""
 
@@ -7019,7 +7034,7 @@ msgid "Unassigned"
 msgstr ""
 
 #. translators: %s: referring URL rejected as an attempted XSS injection.
-#: src/Tracker/Processor.php:237
+#: src/Tracker/Processor.php:239
 #, php-format
 msgid "Attempted XSS Injection: %s"
 msgstr ""
