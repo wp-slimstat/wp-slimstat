@@ -120,9 +120,13 @@ try {
     wp_slimstat_db::$filters_normalized['columns'] = [];
     $db->query("UPDATE `{$testPrefix}slim_stats` SET utm_campaign = '' WHERE utm_source = 'private'");
     $aggregateQueries = 0;
-    $countAggregate = static function ($sql) use (&$aggregateQueries, $testPrefix) {
+    $schemaQueries = 0;
+    $countAggregate = static function ($sql) use (&$aggregateQueries, &$schemaQueries, $testPrefix) {
         if (preg_match('/^\\s*SELECT\\b/i', $sql) && false !== strpos($sql, $testPrefix . 'slim_stats')) {
             ++$aggregateQueries;
+        }
+        if (0 === strpos($sql, 'SHOW COLUMNS') && false !== strpos($sql, $testPrefix . 'slim_stats')) {
+            ++$schemaQueries;
         }
         return $sql;
     };
@@ -133,6 +137,7 @@ try {
     remove_filter('query', $countAggregate);
     $check(false !== strpos($emptyTagHtml, 'class="slimstat-acquisition__label">Not set</span>'), 'An empty campaign gets a readable summary label');
     $check(3 === $aggregateQueries, 'Report uses three aggregate queries, independent of group count');
+    $check(0 === $schemaQueries, 'Public reports use the readiness marker without probing the schema');
     $db->query("UPDATE `{$testPrefix}slim_stats` SET utm_campaign = NULL WHERE utm_source = 'private'");
 
     // The same group's contributions on either side of midnight must survive the top-N cap.
@@ -158,6 +163,25 @@ try {
     $savedFilters = wp_slimstat_db::$filters_normalized;
     $shortcode = do_shortcode('[slimstat f="widget" w="slim_p3_04"]utm_campaign equals winner&&&interval equals -2[/slimstat]');
     $check(false !== strpos($shortcode, 'winner') && false !== strpos($shortcode, '3 pageviews'), 'Public shortcode uses the same campaign and date filters');
+    wp_slimstat_db::$filters_normalized = $savedFilters;
+
+    // Exact values survive the shared filter grammar and HTML output independently.
+    $literal = 'A&amp;B + \\ path &#039;';
+    $insert('utm_source=' . rawurlencode($literal) . '&utm_campaign=' . rawurlencode($literal) . '&utm_medium=email', '');
+    foreach (['utm_source', 'utm_campaign', 'traffic_source'] as $field) {
+        $value = 'traffic_source' === $field ? strtolower($literal) : $literal;
+        $parsed = wp_slimstat_db::parse_filters($field . ' equals ' . rawurlencode($value));
+        wp_slimstat_db::$filters_normalized['columns'] = $parsed['columns'];
+        $check(1 === array_sum(array_column(AcquisitionReport::rows(['mode' => 'utm']), 'counthits')), 'Literal entities and backslashes match ' . $field);
+    }
+    ob_start();
+    AcquisitionReport::render(['mode' => 'utm', 'is_widget' => true]);
+    $literalHtml = ob_get_clean();
+    $check(false !== strpos($literalHtml, htmlspecialchars($literal, ENT_QUOTES, 'UTF-8')), 'Public reports display literal entities without decoding them');
+    $danger = '<img src=x onerror=alert(1)>&amp;';
+    $db->update($testPrefix . 'slim_stats', ['utm_campaign' => $danger], ['utm_source' => $literal]);
+    $shortcode = do_shortcode('[slimstat f="recent" w="utm_campaign"]utm_source equals ' . rawurlencode($literal) . '&&&interval equals -2[/slimstat]');
+    $check(false === strpos($shortcode, '<img') && false !== strpos($shortcode, htmlspecialchars($danger, ENT_QUOTES, 'UTF-8')), 'Shortcode text escapes stored markup and preserves literal entities');
     wp_slimstat_db::$filters_normalized = $savedFilters;
 
     // Bounded performance fixture, private to these disposable tables: 98,304 rows.

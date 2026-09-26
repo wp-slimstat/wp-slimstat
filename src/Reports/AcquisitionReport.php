@@ -69,15 +69,16 @@ class AcquisitionReport
 
     private static function value(string $field, $value, ?string $action = null): void
     {
+        // Stored tags are literal text: encode existing entities too, unlike esc_html().
         $text = null === $value || '' === $value ? __('Not set', 'wp-slimstat') : $value;
         if ('traffic_channel' === $field) {
             $text = Acquisition::labels()[$value ?? ''] ?? __('Not attributed', 'wp-slimstat');
         }
         if (is_admin() && null !== $value && '' !== $value) {
             $url = \wp_slimstat_reports::fs_url($field . ' equals ' . rawurlencode($value) . '&&&start_from equals 0');
-            echo '<a class="slimstat-filter-link" href="' . esc_url($url) . '">' . esc_html($action ?? $text) . '</a>';
+            echo '<a class="slimstat-filter-link" href="' . esc_url($url) . '">' . htmlspecialchars($action ?? $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</a>';
         } else {
-            echo '<span class="slimstat-acquisition__muted">' . esc_html($text) . '</span>';
+            echo '<span class="slimstat-acquisition__muted">' . htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</span>';
         }
     }
 
@@ -146,7 +147,8 @@ class AcquisitionReport
     private static function content(array $args): void
     {
         echo '<div class="slimstat-acquisition">';
-        if (!Acquisition::checkSchema()) {
+        $ready = is_admin() ? Acquisition::checkSchema() : '1' === get_option(Acquisition::readinessKey(), '0');
+        if (!$ready) {
             echo '<p class="slimstat-acquisition__empty">' . esc_html__('UTM and channel reports need a database update. Existing tracking continues while setup is pending.', 'wp-slimstat') . '</p>';
             if (current_user_can('manage_options')) {
                 echo '<a class="button" href="' . esc_url(admin_url('admin.php?page=slimstat_migration')) . '">' . esc_html__('Set up reports', 'wp-slimstat') . '</a>';
@@ -211,13 +213,13 @@ class AcquisitionReport
                 $key = serialize([(int) ($row['blog_id'] ?? 0), $value]);
                 $groupRows = $byGroup[$key] ?? [];
                 $count = (int) $row['counthits'];
-                echo '<details class="slimstat-acquisition__group"><summary><span class="slimstat-acquisition__identity"><span class="slimstat-acquisition__label">' . esc_html($label) . '</span>';
+                echo '<details class="slimstat-acquisition__group"><summary><span class="slimstat-acquisition__identity"><span class="slimstat-acquisition__label">' . htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</span>';
                 $sources = array_unique(array_filter(array_column($groupRows, 'utm' === $mode ? 'utm_source' : 'traffic_source'), static function ($source) {
                     return null !== $source && '' !== $source;
                 }));
                 if ($sources) {
                     // A preview only: never infer the total number of sources from capped rows.
-                    echo '<span class="slimstat-acquisition__preview">' . esc_html(implode(' · ', array_slice($sources, 0, 3))) . '</span>';
+                    echo '<span class="slimstat-acquisition__preview">' . htmlspecialchars(implode(' · ', array_slice($sources, 0, 3)), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</span>';
                 }
                 if ($network) {
                     echo '<small>' . esc_html(get_blog_option((int) ($row['blog_id'] ?? 0), 'blogname')) . '</small>';

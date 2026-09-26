@@ -2705,7 +2705,9 @@ class wp_slimstat_reports
                     continue;
                 }
 
-                $a_filter_value_no_slashes = in_array($a_filter_details[0], wp_slimstat_db::$valueless_operators, true) ? '' : htmlentities(str_replace('\\', '', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
+                $filter_value = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label
+                    ? $a_filter_details[1] : str_replace('\\', '', $a_filter_details[1]);
+                $a_filter_value_no_slashes = in_array($a_filter_details[0], wp_slimstat_db::$valueless_operators, true) ? '' : htmlentities($filter_value, ENT_QUOTES, 'UTF-8');
                 $filters_html .= '<li>' . strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]) . ' ' . esc_html(wp_slimstat_db::$operator_names[$a_filter_details[0]] ?? str_replace('_', ' ', $a_filter_details[0])) . sprintf(" %s <a class='slimstat-filter-link slimstat-font-cancel' title='", $a_filter_value_no_slashes) . htmlentities(__('Remove filter for', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . ' ' . wp_slimstat_db::$columns_names[$a_filter_label][0] . "' href='" . self::fs_url($a_filter_label . ' equals ') . "'></a></li>";
             }
         }

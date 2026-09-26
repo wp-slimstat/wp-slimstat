@@ -1041,7 +1041,9 @@ class wp_slimstat
                                 break;
 
                             default:
-                                $output[$result_idx][$a_column] .= $a_result[$a_column] ?? '';
+                                $text = (string) ($a_result[$a_column] ?? '');
+                                $output[$result_idx][$a_column] .= 0 === strpos($a_column, 'utm_') || 'traffic_source' === $a_column
+                                    ? htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : esc_html($text);
                                 break;
                         }
                         $output[$result_idx][$a_column] .= '</span>';

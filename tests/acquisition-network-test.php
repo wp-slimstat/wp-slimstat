@@ -2,6 +2,8 @@
 /**
  * Run with wp eval-file on a disposable two-site network with Free and Pro active.
  * Requires DB_NAME beginning test_acquisition_network_; never uses a real site's DB.
+ *
+ * @license GPL-2.0-or-later
  */
 
 use SlimStat\Reports\AcquisitionReport;

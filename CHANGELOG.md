@@ -5,7 +5,7 @@
 * Direct JavaScript-tracked visits retain their empty browser referrer instead of being mistaken for internal navigation from the tracking request's HTTP header.
 * Traffic Sources now includes UTM Campaigns and Channels, with pageview counts, shares, filters and accessible tables. Campaign tags preserve their case and encoded values.
 * Channels distinguish AI assistant referrals, AI crawlers and user-requested AI fetches, alongside search, social, email, paid and other sources. Classification respects bot exclusions; missing evidence is shown explicitly.
-* Date changes retain active filters, saved segments retain selected dates, and quoted campaign values remain intact and inert in filter forms.
+* Date changes retain active filters, saved segments retain selected dates, and literal campaign values (including HTML entities and backslashes) remain intact and inert across forms, AJAX, summaries and shortcodes. Public report widgets avoid acquisition schema probes.
 * Upgrades add nullable attribution fields through the Migration screen. Existing pageviews remain unattributed; new tracking uses the existing date indexes without per-hit schema queries.
 
 **Performance — measured, not estimated**

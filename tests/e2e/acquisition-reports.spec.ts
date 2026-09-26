@@ -208,13 +208,15 @@ test.describe('UTM and channel reports', () => {
   test('date picker and saved segments retain exact campaign filters across ranges', async ({ page }) => {
     await fixture();
     await snapshotOption('slimstat_filters');
-    const source = 'A&B + %20 = x &&& y "quoted"';
+    const source = 'A&B + %20 = x &&& y "quoted" &amp; \\ literal';
     try {
       await db.execute("UPDATE wp_slim_stats SET utm_source=? WHERE utm_source='newsletter'", [source]);
       await db.execute("INSERT INTO wp_slim_stats (dt, resource, traffic_channel, traffic_source, utm_campaign, utm_source, utm_medium) SELECT MAX(dt)-86400, '/yesterday', 'email', 'archive', 'Yesterday only', ?, 'email' FROM wp_slim_stats", [source]);
       await page.goto('/wp-admin/admin.php?page=slimview5&type=today');
       const utm = page.locator('#slim_p3_04');
       await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('4 pageviews');
+      await utm.locator('.slimstat-acquisition__group').filter({ hasText: 'Spring + 20%' }).locator(':scope > summary').click();
+      await expect(utm.getByRole('link', { name: source, exact: true })).toBeVisible();
       await page.locator('#slimstat-filter-name').selectOption('utm_source', { force: true });
       await page.locator('#slimstat-filter-operator').selectOption('equals', { force: true });
       await page.locator('#slimstat-filter-value').fill(source);

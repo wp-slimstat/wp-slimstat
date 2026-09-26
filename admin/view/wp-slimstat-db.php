@@ -840,7 +840,11 @@ class wp_slimstat_db
 
                     default:
                         $filter_op    = $a_filter[2];
-                        $filter_value = isset($a_filter[3]) ? str_replace('\\', '', htmlspecialchars_decode($a_filter[3])) : '';
+                        $filter_value = $a_filter[3] ?? '';
+                        // Acquisition values are stored literally, including entities and backslashes.
+                        if (0 !== strpos($a_filter[1], 'utm_') && 'traffic_source' !== $a_filter[1]) {
+                            $filter_value = str_replace('\\', '', htmlspecialchars_decode($filter_value));
+                        }
                         if (in_array($filter_op, self::$valueless_operators, true)) {
                             // Value-less by design — store an empty value, scrubbing any stale
                             // UI value the SQL builder would ignore anyway. See #305.

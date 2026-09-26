@@ -3138,7 +3138,9 @@ class wp_slimstat_admin
                         if (!is_array($a_filter_details) || !isset($a_filter_details[0], $a_filter_details[1]) || !is_string($a_filter_details[0]) || !is_scalar($a_filter_details[1])) {
                             continue;
                         }
-                        $filter_value_no_slashes = htmlentities(str_replace('\\', '', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
+                        $filter_value = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label
+                            ? $a_filter_details[1] : str_replace('\\', '', $a_filter_details[1]);
+                        $filter_value_no_slashes = htmlentities($filter_value, ENT_QUOTES, 'UTF-8');
                         $filter_html[]           = strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0] ?? $a_filter_label) . ' ' . (wp_slimstat_db::$operator_names[$a_filter_details[0]] ?? str_replace('_', ' ', $a_filter_details[0])) . ' ' . $filter_value_no_slashes;
                         $filter_url_value = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label
                             ? rawurlencode((string) $a_filter_details[1]) : $filter_value_no_slashes;
