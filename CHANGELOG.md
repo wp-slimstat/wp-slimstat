@@ -1,6 +1,7 @@
 = 6.0.0 - 2026-09-15 =
 
 **UTM and channel reports**
+* Build and copy campaign URLs directly from the UTM report. The local builder validates required tags, preserves existing URL parameters and fragments, and supports campaign names or IDs.
 * Campaign and channel totals now expand into source breakdowns, with exact totals under result caps, compact optional tags, blue share bars, highlighted open rows, and layouts that adapt to narrow dashboard widgets and mobile screens.
 * Direct JavaScript-tracked visits retain their empty browser referrer instead of being mistaken for internal navigation from the tracking request's HTTP header.
 * Traffic Sources now includes UTM Campaigns and Channels, with pageview counts, shares, filters and accessible tables. Campaign tags preserve their case and encoded values.

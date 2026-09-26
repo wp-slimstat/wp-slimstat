@@ -161,6 +161,10 @@ if (!empty($filters_html)) {
             </div>
         <?php endif; ?>
 
+        <?php if ('slimview5' === wp_slimstat_admin::$current_screen) {
+            wp_slimstat_admin::get_template('utm-builder');
+        } ?>
+
         <div class="meta-box-sortables">
             <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo esc_attr(wp_create_nonce('meta-box-order')) ?>"/></form><?php
 

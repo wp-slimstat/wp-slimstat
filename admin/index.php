@@ -1703,6 +1703,10 @@ class wp_slimstat_admin
         // this, the strings are extracted into the .pot but never translated.
         wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog', 'slimstat-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
         self::set_slimstat_script_translations('slimstat_admin');
+        if ('slimview5' === self::$current_screen) {
+            wp_enqueue_script('slimstat-utm-builder', plugins_url('/admin/assets/js/utm-builder.js', __DIR__), ['slimstat-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
+            self::set_slimstat_script_translations('slimstat-utm-builder');
+        }
 
         // Enqueue notification assets if notifications are enabled
         if (wp_slimstat::$settings['display_notifications'] == 'on') {

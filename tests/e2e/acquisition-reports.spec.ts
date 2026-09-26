@@ -51,6 +51,26 @@ test.describe('UTM and channel reports', () => {
   test.afterEach(async () => { await restoreSlimstatOptions(); });
   test.afterAll(async () => { await db.end(); await closeDb(); });
 
+  test('builder links retain all six tags through real tracking and the UTM report', async ({ page, browser }) => {
+    await setSlimstatOption(page, 'javascript_mode', 'on');
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview5#slimstat-utm-builder`, { waitUntil: 'domcontentloaded' });
+    const marker = `builder-${Date.now()}`;
+    const tags = { utm_source: 'Newsletter & café', utm_medium: 'email', utm_campaign: marker, utm_id: '0', utm_term: '東京 + 20%', utm_content: '&amp; \\ header' };
+    await page.locator('[name="website"]').fill(`${BASE_URL}/?acq=${marker}&keep=a%20b#details`);
+    for (const [key, value] of Object.entries(tags)) await page.locator(`[name="${key}"]`).fill(value);
+    const url = await page.locator('#slimstat-utm-result').inputValue();
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      const visitor = await context.newPage();
+      await visitor.goto(url);
+      await expect.poll(async () => (await stat(marker))?.utm_campaign).toBe(marker);
+      expect(await stat(marker)).toMatchObject({ ...tags, traffic_channel: 'email' });
+      await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview5&fs[utm_campaign]=equals+${marker}`, { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('#slim_p3_04')).toContainText(marker);
+      await expect(page.locator('#slim_p3_04 .slimstat-acquisition__intro')).toContainText('1 pageview');
+    } finally { await context.close(); }
+  });
+
   for (const transport of ['rest', 'ajax']) {
     test(`${transport} tracking preserves encoded campaign values and zero`, async ({ page, browser }) => {
       await setSlimstatOption(page, 'javascript_mode', 'on');

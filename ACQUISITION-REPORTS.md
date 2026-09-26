@@ -91,3 +91,9 @@ Provider domains and agent tokens are a maintained list, not a universal discove
 ## Report design references
 
 The summary-to-source flow follows [Plausible acquisition reports](https://plausible.io/docs/top-referrers) and [Carbon expandable table guidance](https://carbondesignsystem.com/components/data-table/usage/) (reviewed 2026-09-26). Report scope remains recorded pageviews; no visitor, session or conversion metrics are inferred for decoration.
+
+## UTM link builder
+
+Traffic Sources includes a collapsible **UTM link builder**, also linked from the UTM Campaigns report (including its dashboard widget and empty/setup states). Source and medium are required, along with either campaign name or campaign ID. Website URL defaults to the current site; only HTTP(S) URLs without credentials are accepted. The six campaign fields match the tracker and keep their case, Unicode and literal punctuation.
+
+The URL updates locally as users type. Existing UTM tags are replaced, including duplicate/array variants; unrelated query bytes and fragments are retained. Values are encoded once using URLSearchParams. Tag inputs are capped at 191 characters and reject HTML/control characters; queries exceeding the tracker's 16 KiB limit cannot be copied. Copy uses the browser clipboard with a selection fallback on plain HTTP or denied permission. No endpoint, database write, dependency or persistence is added. The builder sits outside AJAX report bodies so report refreshes retain the current draft. Reloading the page clears it.

@@ -147,6 +147,9 @@ class AcquisitionReport
     private static function content(array $args): void
     {
         echo '<div class="slimstat-acquisition">';
+        if ('utm' === ($args['mode'] ?? '') && is_admin()) {
+            echo '<a class="button slimstat-utm-builder-link" href="' . esc_url(admin_url('admin.php?page=slimview5#slimstat-utm-builder')) . '">' . esc_html__('Build a UTM link', 'wp-slimstat') . '</a>';
+        }
         $ready = is_admin() ? Acquisition::checkSchema() : '1' === get_option(Acquisition::readinessKey(), '0');
         if (!$ready) {
             echo '<p class="slimstat-acquisition__empty">' . esc_html__('UTM and channel reports need a database update. Existing tracking continues while setup is pending.', 'wp-slimstat') . '</p>';
