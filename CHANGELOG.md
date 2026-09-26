@@ -1,7 +1,7 @@
 = 6.0.0 - 2026-09-15 =
 
 **UTM and channel reports**
-* Campaign and channel totals now expand into source breakdowns, with exact totals under result caps, compact optional tags, clear share bars, and accessible mobile controls.
+* Campaign and channel totals now expand into source breakdowns, with exact totals under result caps, compact optional tags, blue share bars, highlighted open rows, and layouts that adapt to narrow dashboard widgets and mobile screens.
 * Direct JavaScript-tracked visits retain their empty browser referrer instead of being mistaken for internal navigation from the tracking request's HTTP header.
 * Traffic Sources now includes UTM Campaigns and Channels, with pageview counts, shares, filters and accessible tables. Campaign tags preserve their case and encoded values.
 * Channels distinguish AI assistant referrals, AI crawlers and user-requested AI fetches, alongside search, social, email, paid and other sources. Classification respects bot exclusions; missing evidence is shown explicitly.

@@ -299,6 +299,8 @@ test.describe('UTM and channel reports', () => {
       await page.goto('/wp-admin/index.php');
       await expect(page.locator('#slim_p3_04 tbody tr')).toHaveCount(3);
       await expect(page.locator('#wp-slimstat-acquisition-css')).toBeAttached();
+      await page.locator('#slim_p3_04').evaluate(element => { element.style.width = '300px'; });
+      expect(await page.locator('#slim_p3_04 .slimstat-acquisition__groups').evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBeTruthy();
       expect(await page.locator('#slim_p3_04 .inside').evaluate(element => element.scrollHeight <= element.clientHeight + 1)).toBeTruthy();
     } finally {
       await db.execute('DELETE FROM wp_usermeta WHERE user_id=? AND meta_key LIKE ?', [id, pattern]);

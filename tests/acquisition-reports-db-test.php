@@ -116,6 +116,25 @@ try {
     wp_slimstat_db::$filters_normalized['columns']['utm_campaign'] = ['matches', '^Summer'];
     $check(2 === array_sum(array_column(AcquisitionReport::rows(['mode' => 'utm']), 'counthits')), 'UTF-8 regex filters preserve campaign case');
 
+    // Imported/externally written empty tags still need a readable group label.
+    wp_slimstat_db::$filters_normalized['columns'] = [];
+    $db->query("UPDATE `{$testPrefix}slim_stats` SET utm_campaign = '' WHERE utm_source = 'private'");
+    $aggregateQueries = 0;
+    $countAggregate = static function ($sql) use (&$aggregateQueries, $testPrefix) {
+        if (preg_match('/^\\s*SELECT\\b/i', $sql) && false !== strpos($sql, $testPrefix . 'slim_stats')) {
+            ++$aggregateQueries;
+        }
+        return $sql;
+    };
+    add_filter('query', $countAggregate);
+    ob_start();
+    AcquisitionReport::render(['mode' => 'utm']);
+    $emptyTagHtml = ob_get_clean();
+    remove_filter('query', $countAggregate);
+    $check(false !== strpos($emptyTagHtml, 'class="slimstat-acquisition__label">Not set</span>'), 'An empty campaign gets a readable summary label');
+    $check(3 === $aggregateQueries, 'Report uses three aggregate queries, independent of group count');
+    $db->query("UPDATE `{$testPrefix}slim_stats` SET utm_campaign = NULL WHERE utm_source = 'private'");
+
     // The same group's contributions on either side of midnight must survive the top-N cap.
     wp_slimstat_db::$filters_normalized['columns'] = [];
     wp_slimstat_db::$filters_normalized['utime'] = ['start' => $now - 2 * DAY_IN_SECONDS, 'end' => $now + 1];

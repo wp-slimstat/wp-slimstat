@@ -207,7 +207,7 @@ class AcquisitionReport
             echo '<div class="slimstat-acquisition__groups"><div class="slimstat-acquisition__columns" aria-hidden="true"><span>' . esc_html($fields[$groupField]) . '</span><span>' . esc_html__('Pageviews', 'wp-slimstat') . '</span><span>' . esc_html__('Share', 'wp-slimstat') . '</span></div>';
             foreach ($rows as $row) {
                 $value = $row[$groupField] ?? null;
-                $label = 'traffic_channel' === $groupField ? (Acquisition::labels()[$value ?? ''] ?? __('Not attributed', 'wp-slimstat')) : ($value ?? __('Not set', 'wp-slimstat'));
+                $label = 'traffic_channel' === $groupField ? (Acquisition::labels()[$value ?? ''] ?? __('Not attributed', 'wp-slimstat')) : ('' !== ($value ?? '') ? $value : __('Not set', 'wp-slimstat'));
                 $key = serialize([(int) ($row['blog_id'] ?? 0), $value]);
                 $groupRows = $byGroup[$key] ?? [];
                 $count = (int) $row['counthits'];
