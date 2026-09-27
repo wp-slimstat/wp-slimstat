@@ -296,6 +296,16 @@ jQuery(document).ready(function($) {
     function generateSlimStatUrl(startDate, endDate, presetType = null) {
         const url = new URL(window.location);
 
+        // Drilldowns and saved segments submit filters by POST, so the URL alone
+        // cannot carry them into a new date range. The rendered form is authoritative.
+        $('#slimstat-filters-form .slimstat-post-filter').each(function() {
+            if ($(this).hasClass('slimstat-date-filter') || this.name === 'fs[start_from]') {
+                url.searchParams.delete(this.name);
+            } else {
+                url.searchParams.set(this.name, this.value);
+            }
+        });
+
         // Clear existing date-related parameters
         url.searchParams.delete('from');
         url.searchParams.delete('to');

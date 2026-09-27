@@ -106,6 +106,7 @@ class MigrationService
             $manager = new MigrationManager();
 
             // Register all migrations
+            $manager->register(new Migrations\AddAcquisitionColumns($analytics, $core));
             // D68/P2's REQUIRED column, ahead of everything. It is an in-place rebuild of
             // two tables — cost and reasoning on AddVisitIdentity. Until it lands every anonymous pageview pays
             // P1's failed-INSERT-probe-retry dance and loses its identity field. Also

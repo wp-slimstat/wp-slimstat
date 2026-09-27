@@ -81,11 +81,11 @@ if (!empty($saved_filters)) {
             </fieldset><!-- .slimstat-date-filters -->
 
             <?php foreach (wp_slimstat_db::$filters_normalized['columns'] as $a_key => $a_details) : ?>
-                <input type="hidden" name="fs[<?php echo esc_attr($a_key); ?>]" class="slimstat-post-filter" value="<?php echo esc_attr($a_details[0] . ' ' . $a_details[1]) ?>"/>
+                <input type="hidden" name="fs[<?php echo esc_attr($a_key); ?>]" class="slimstat-post-filter" value="<?php echo htmlspecialchars($a_details[0] . ' ' . $a_details[1], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"/>
             <?php endforeach ?>
 
             <?php foreach (wp_slimstat_db::$filters_normalized['date'] as $a_key => $a_value) : if (!empty($a_value)) : ?>
-                <input type="hidden" name="fs[<?php echo esc_attr($a_key); ?>]" class="slimstat-post-filter" value="equals <?php echo esc_attr($a_value) ?>"/>
+                <input type="hidden" name="fs[<?php echo esc_attr($a_key); ?>]" class="slimstat-post-filter slimstat-date-filter" value="equals <?php echo esc_attr($a_value) ?>"/>
             <?php endif;
             endforeach; ?>
 
@@ -160,6 +160,10 @@ if (!empty($filters_html)) {
                 <p class="slimstat-gf-pageintro__lead"><?php echo esc_html($current_screen_info['lead']); ?></p>
             </div>
         <?php endif; ?>
+
+        <?php if ('slimview5' === wp_slimstat_admin::$current_screen) {
+            wp_slimstat_admin::get_template('utm-builder');
+        } ?>
 
         <div class="meta-box-sortables">
             <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo esc_attr(wp_create_nonce('meta-box-order')) ?>"/></form><?php

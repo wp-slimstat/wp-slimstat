@@ -198,6 +198,16 @@ final class Schema
                 'location'          => 'VARCHAR(36) DEFAULT NULL',
                 'city'              => 'VARCHAR(256) DEFAULT NULL',
                 'referer'           => 'VARCHAR(2048) DEFAULT NULL',
+                'traffic_channel'   => 'VARCHAR(32) DEFAULT NULL',
+                'traffic_source'    => 'VARBINARY(764) DEFAULT NULL',
+                // Validated UTF-8, bounded to 191 characters (764 bytes) by Acquisition::clean.
+                // Binary comparison preserves exact tags even after table charset conversions.
+                'utm_source'        => 'VARBINARY(764) DEFAULT NULL',
+                'utm_medium'        => 'VARBINARY(764) DEFAULT NULL',
+                'utm_campaign'      => 'VARBINARY(764) DEFAULT NULL',
+                'utm_content'       => 'VARBINARY(764) DEFAULT NULL',
+                'utm_term'          => 'VARBINARY(764) DEFAULT NULL',
+                'utm_id'            => 'VARBINARY(764) DEFAULT NULL',
                 'resource'          => 'VARCHAR(2048) DEFAULT NULL',
                 'searchterms'       => 'VARCHAR(2048) DEFAULT NULL',
                 'notes'             => 'VARCHAR(2048) DEFAULT NULL',
@@ -860,24 +870,24 @@ final class Schema
      */
     public static function addColumnSql(string $suffix, string $column, string $prefix, string $after = ''): string
     {
-        $columns = self::columns($suffix);
+        return self::addColumnsSql($suffix, [$column], $prefix) . ('' === $after ? '' : ' AFTER ' . $after);
+    }
 
-        if (!isset($columns[$column])) {
-            throw new \InvalidArgumentException(sprintf(
-                'Schema: no column "%s" declared on %s. A migration that adds a column the '
-                    . 'manifest does not know about is C39 reopened — the fresh install is born '
-                    . 'without it and the upgraded one has it.',
-                $column,
-                $suffix
-            ));
+    /** One table rebuild for a group of new fields; the manifest owns every definition. */
+    public static function addColumnsSql(string $suffix, array $names, string $prefix): string
+    {
+        if (!$names) {
+            throw new \InvalidArgumentException('Schema: at least one column is required.');
         }
-
-        return sprintf(
-            'ALTER TABLE `%s` ADD COLUMN %s%s',
-            $prefix . $suffix,
-            self::columnSql($column, $columns[$column]),
-            '' === $after ? '' : ' AFTER ' . $after
-        );
+        $columns = self::columns($suffix);
+        $clauses = [];
+        foreach ($names as $column) {
+            if (!isset($columns[$column])) {
+                throw new \InvalidArgumentException(sprintf('Schema: no column "%s" declared on %s.', $column, $suffix));
+            }
+            $clauses[] = 'ADD COLUMN ' . self::columnSql($column, $columns[$column]);
+        }
+        return sprintf('ALTER TABLE `%s` %s', $prefix . $suffix, implode(', ', $clauses));
     }
 
     /**

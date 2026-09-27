@@ -1,5 +1,14 @@
 = 6.0.0 - 2026-09-15 =
 
+**UTM and channel reports**
+* Build and copy campaign URLs directly from the UTM report. The local builder validates required tags, preserves existing URL parameters and fragments, and supports campaign names or IDs.
+* Campaign and channel totals now expand into source breakdowns, with exact totals under result caps, compact optional tags, blue share bars, highlighted open rows, and layouts that adapt to narrow dashboard widgets and mobile screens.
+* Direct JavaScript-tracked visits retain their empty browser referrer instead of being mistaken for internal navigation from the tracking request's HTTP header.
+* Traffic Sources now includes UTM Campaigns and Channels, with pageview counts, shares, filters and accessible tables. Campaign tags preserve their case and encoded values.
+* Channels distinguish AI assistant referrals, AI crawlers and user-requested AI fetches, alongside search, social, email, paid and other sources. Classification respects bot exclusions; missing evidence is shown explicitly.
+* Date changes retain active filters, saved segments retain selected dates, and literal campaign values (including HTML entities and backslashes) remain intact and inert across forms, AJAX, summaries and shortcodes. Public report widgets avoid acquisition schema probes.
+* Upgrades add nullable attribution fields through the Migration screen. Existing pageviews remain unattributed; new tracking uses the existing date indexes without per-hit schema queries.
+
 **Performance — measured, not estimated**
 * Admin charts read about half as many database rows: totals now ride the same query as their buckets. Measured on the weekly chart over the 150,000-row reference bench corpus, as deterministic counters rather than timings: rows read 304,454 -> 152,227 and sort work 212,301 -> 106,141. That change alone leaves report output byte-identical; the separate previous-period correction below does move two numbers, on purpose.
 * The tracking path stopped writing diagnostics into wp_options: 62% fewer option writes per stored pageview (2.83 -> 1.07), 96% fewer per refused bot (1.75 -> 0.07).
