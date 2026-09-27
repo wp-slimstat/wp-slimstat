@@ -1,0 +1,23 @@
+target:    admin/index.php
+gate:      php tests/degradation-notice-honesty-test.php
+kind:      construct-removal
+expect:    emits no warning-severity notice
+rationale: Collapse the two notices back into one, which is the shipped defect. Every record then renders at error severity under copy reading "These features failed to load and were disabled ... reinstalling the plugin and flushing your PHP opcache normally clears it" - true of the #325 load-failure class it was written for, false of schema drift, a failed purge, a migration and a character-set conversion. AbstractMigration.php records rejecting this exact channel for that exact reason; the drift reporter used it anyway, so an install upgraded from below 4.8.2 saw a permanent red banner telling it to reinstall a plugin that was fine.
+---
+--- a/admin/index.php
++++ b/admin/index.php
+@@ -4221,14 +4221,6 @@
+             );
+         }
+ 
+-        if ('' !== $operational_items) {
+-            self::show_message(
+-                '<strong>' . esc_html__('Slimstat Analytics reported a problem while running.', 'wp-slimstat') . '</strong><br>' .
+-                esc_html__('Tracking and reports kept working. These are maintenance tasks that did not complete — some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check Slimstat > Migrations and Settings > Maintenance.', 'wp-slimstat') .
+-                '<ul class="ul-disc">' . $operational_items . '</ul>',
+-                'warning'
+-            );
+-        }
+     }
+ 
+     public static function show_indexes_notice()

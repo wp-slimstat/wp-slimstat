@@ -1,5 +1,8 @@
-<!-- Header File-->
 <?php
+
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 use SlimStat\Components\View;
 use SlimStat\Services\Admin\Notification\NotificationFactory;
@@ -15,43 +18,7 @@ if ($displayNotifications && class_exists(NotificationFactory::class)) {
 
 
 
-$online_visitors = 0;
-
-if (class_exists('wp_slimstat_db')) {
-    $wpdb = \wp_slimstat::$wpdb;
-    $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
-    $current_minute_start = (int) floor(\wp_slimstat::now() / 60) * 60;
-    $window_minutes = 30; // 30 minutes - synced with Live Analytics Users Live
-    $window_start = $current_minute_start - (($window_minutes - 1) * 60);
-
-    $sql = $wpdb->prepare(
-        "
-        SELECT COUNT(*) FROM (
-            SELECT visit_id, MAX(
-                CASE
-                    WHEN dt_out IS NOT NULL AND dt_out > 0 AND dt_out >= dt THEN dt_out
-                    ELSE dt
-                END
-            ) AS last_activity
-            FROM {$table}
-            WHERE visit_id > 0
-                AND (
-                    dt >= %d
-                    OR ( dt_out IS NOT NULL AND dt_out >= %d )
-                )
-            GROUP BY visit_id
-            HAVING (FLOOR(last_activity / 60) * 60 + 59) >= %d
-        ) live_sessions
-        ",
-        $window_start,
-        $window_start,
-        $window_start
-    );
-
-    $online_visitors = (int) $wpdb->get_var($sql);
-}
-
-$online_visitors = max(0, (int) $online_visitors);
+$online_visitors = class_exists('wp_slimstat_db') ? wp_slimstat_admin::online_count() : 0;
 $formatted_online_visitors = number_format_i18n($online_visitors);
 
 $support_url   = 'https://wp-slimstat.com/contact/?utm_source=plugin&utm_medium=header&utm_campaign=support';

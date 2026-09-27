@@ -1,0 +1,14 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      restore-defect
+expect:    P51-both-arms-over-the-limit-with-equal-counts-is-not-a-tie arms compared by
+rationale: Weakens the exact-length guard only for limit+1, the one over-long equal-count cell no previous plant exercised. Both four-row arms then enter a LIMIT 3 tie band and a swapped tail member is pardoned as tie-at-the-cut instead of compared by row-values. P36 and P49 differ in row count and cannot isolate this branch.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -574,2 +574,3 @@
+-    if len(a_rows) != limit or len(b_rows) != limit:
++    if (len(a_rows) not in (limit, limit + 1)
++            or len(b_rows) not in (limit, limit + 1)):
+         return compare_rows(a_rows, b_rows, contract)

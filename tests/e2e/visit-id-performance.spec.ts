@@ -6,13 +6,17 @@
  * monotonically increasing IDs, and doesn't degrade TTFB.
  */
 import { test, expect } from '@playwright/test';
+import type { BrowserContext, Page, Response } from '@playwright/test';
 import * as mysql from 'mysql2/promise';
+import { createHash } from 'node:crypto';
 import {
   installOptionMutator,
   uninstallOptionMutator,
   setSlimstatOption,
   snapshotSlimstatOptions,
   restoreSlimstatOptions,
+  snapshotOption,
+  restoreOption,
   closeDb,
 } from './helpers/setup';
 import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
@@ -41,6 +45,22 @@ async function deleteVisitIdCounter(): Promise<void> {
   );
 }
 
+async function setWpOption(name: string, value: string): Promise<void> {
+  await getPool().execute(
+    `INSERT INTO wp_options (option_name, option_value, autoload)
+     VALUES (?, ?, 'yes') ON DUPLICATE KEY UPDATE option_value = ?`,
+    [name, value, value],
+  );
+}
+
+async function setEffectiveSlimstatOption(page: Page, key: string, value: string): Promise<void> {
+  const response = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
+    form: { action: 'test_set_slimstat_option', key, value },
+  });
+  expect(response.ok()).toBe(true);
+  expect(await response.json()).toMatchObject({ success: true, data: { key, value } });
+}
+
 async function getMaxVisitId(): Promise<number> {
   const [rows] = await getPool().execute(
     "SELECT COALESCE(MAX(visit_id), 0) as max_id FROM wp_slim_stats"
@@ -60,6 +80,44 @@ async function getRowCount(): Promise<number> {
     "SELECT COUNT(*) as cnt FROM wp_slim_stats"
   ) as any;
   return parseInt(rows[0].cnt, 10);
+}
+
+function isTrackerResponse(response: Response): boolean {
+  const request = response.request();
+  if (request.method() !== 'POST') return false;
+  if (request.url().includes('/wp-json/slimstat/v1/hit')) return true;
+  if (!request.url().includes('admin-ajax.php')) return false;
+  return new URLSearchParams(request.postData() ?? '').get('action') === 'slimtrack';
+}
+
+async function trackedRows(markers: string[]): Promise<any[]> {
+  const where = markers.map(() => 'resource LIKE ?').join(' OR ');
+  const [rows] = await getPool().execute(
+    `SELECT id, visit_id, HEX(vid_hash) AS vid_hash, resource FROM wp_slim_stats WHERE ${where}`,
+    markers.map((marker) => `%${marker}%`),
+  ) as any;
+  return rows;
+}
+
+async function visit(page: Page, marker: string): Promise<Response> {
+  const tracked = page.waitForResponse(isTrackerResponse, { timeout: 20_000 });
+  const navigation = await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'domcontentloaded' });
+  expect(navigation?.ok()).toBe(true);
+  return tracked;
+}
+
+function requestEvidence(response: Response): Record<string, unknown> {
+  const request = response.request();
+  const data = new URLSearchParams(request.postData() ?? '');
+  const sid = data.get('sid') ?? '';
+  const cookie = request.headers()['cookie'] ?? '';
+  return {
+    status: response.status(),
+    hasId: data.has('id'),
+    sidHash: sid ? createHash('sha256').update(sid).digest('hex') : null,
+    cookiePresent: cookie !== '',
+    cookieHash: cookie ? createHash('sha256').update(cookie).digest('hex') : null,
+  };
 }
 
 async function seedVisitIds(visitIds: number[]): Promise<number[]> {
@@ -181,49 +239,70 @@ test.describe('Visit ID Atomic Counter', () => {
 
   // ─── Test 3: No collisions in rapid-fire tracking ────────────
 
-  test('no visit_id collisions under rapid page loads', async ({ context }) => {
+  test('independent concurrent visitors get one row and distinct visit_ids', async ({ browser, page }, testInfo) => {
     test.setTimeout(90_000);
 
     // Enable JS-mode tracking and cookies so visit_id is assigned
-    const setupPage = await context.newPage();
-    await setSlimstatOption(setupPage, 'javascript_mode', 'on');
-    await setSlimstatOption(setupPage, 'set_tracker_cookie', 'on');
-    await setSlimstatOption(setupPage, 'gdpr_enabled', 'off');
-    await setupPage.close();
+    await setEffectiveSlimstatOption(page, 'javascript_mode', 'on');
+    await setEffectiveSlimstatOption(page, 'set_tracker_cookie', 'on');
+    await setEffectiveSlimstatOption(page, 'tracking_request_method', 'rest');
+    await setEffectiveSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setEffectiveSlimstatOption(page, 'anonymous_tracking', 'off');
 
-    // Open 3 pages simultaneously to generate concurrent tracking
-    const pages = await Promise.all([
-      context.newPage(),
-      context.newPage(),
-      context.newPage(),
-    ]);
-
-    const markers: string[] = [];
-    await Promise.all(pages.map(async (p, i) => {
-      const marker = `rapid-${Date.now()}-${i}`;
-      markers.push(marker);
-      await p.goto(`${BASE_URL}/?e2e=${marker}`);
-    }));
-
-    // Wait for tracking to complete
-    await pages[0].waitForTimeout(8000);
-
-    // Check that visit_ids are all valid (> 0)
-    const [rows] = await getPool().execute(
-      `SELECT id, visit_id, resource FROM wp_slim_stats
-       WHERE resource LIKE '%rapid-%' ORDER BY id DESC LIMIT 10`
-    ) as any;
-
-    // With JS-mode tracking, rows should have visit_id > 0
-    // Some rows may still be 0 if the JS tracker hasn't processed yet
-    const validRows = rows.filter((r: any) => parseInt(r.visit_id, 10) > 0);
-    expect(validRows.length).toBeGreaterThanOrEqual(0);
-
-    // At minimum, verify no HTTP 500 errors occurred (pages loaded)
-    expect(rows.length).toBeGreaterThanOrEqual(0);
-
-    // Close extra pages
-    for (const p of pages) await p.close();
+    const markers = Array.from({ length: 5 }, (_, i) => `rapid-${Date.now()}-${i}`);
+    const counterBefore = await getVisitIdCounter();
+    // Manual contexts inherit the admin project's storage state unless it is overridden.
+    const contexts = await Promise.all(markers.map(() => browser.newContext({
+      storageState: { cookies: [], origins: [] },
+    })));
+    const pages = await Promise.all(contexts.map((visitor) => visitor.newPage()));
+    try {
+      const responses = await Promise.all(pages.map((visitor, i) => visit(visitor, markers[i])));
+      responses.forEach((response) => expect(response.ok()).toBe(true));
+      await expect.poll(async () => (await trackedRows(markers)).length, { timeout: 20_000 }).toBe(markers.length);
+      const rows = await trackedRows(markers);
+      for (const marker of markers) {
+        expect(rows.filter((row) => row.resource.includes(marker))).toHaveLength(1);
+      }
+      const visitIds = rows.map((row) => parseInt(row.visit_id, 10));
+      await testInfo.attach('visitor-separation-evidence', {
+        body: JSON.stringify({
+          settings: await Promise.all(pages.map((visitor) => visitor.evaluate(() => {
+            const params = (window as any).SlimStatParams ?? {};
+            return {
+              javascript_mode: params.javascript_mode,
+              set_tracker_cookie: params.set_tracker_cookie,
+              gdpr_enabled: params.gdpr_enabled,
+              anonymous_tracking: params.anonymous_tracking,
+            };
+          }))),
+          requests: responses.map(requestEvidence),
+          responseIds: await Promise.all(responses.map(async (response) =>
+            parseInt((await response.text()).replace(/^"|"$/g, ''), 10))),
+          cookiesAfter: await Promise.all(contexts.map(async (context) =>
+            (await context.cookies())
+              .filter((cookie) => cookie.name === 'slimstat_tracking_code')
+              .map((cookie) => createHash('sha256').update(cookie.value).digest('hex')))),
+          counterBefore,
+          counterAfter: await getVisitIdCounter(),
+          rows: rows.map((row) => ({
+            id: Number(row.id),
+            visitId: Number(row.visit_id),
+            identityHash: row.vid_hash
+              ? createHash('sha256').update(String(row.vid_hash)).digest('hex')
+              : null,
+          })),
+          counterOptions: (await getPool().execute(
+            "SELECT option_name, option_value FROM wp_options WHERE option_name IN ('slimstat_visit_id_counter', 'slimstat_visit_id_repair_marker') ORDER BY option_name",
+          ) as any)[0],
+        }, null, 2),
+        contentType: 'application/json',
+      });
+      expect(visitIds.every((id) => id > 0)).toBe(true);
+      expect(new Set(visitIds).size).toBe(markers.length);
+    } finally {
+      await Promise.all(contexts.map((visitor) => visitor.close()));
+    }
   });
 
   // ─── Test 4: Fallback when counter row missing ───────────────
@@ -293,31 +372,92 @@ test.describe('Visit ID Atomic Counter', () => {
 
   // ─── Test 6: Session continuity — same visit_id within session ─
 
-  test('session continuity: multiple pages share same visit_id', async ({ page }) => {
+  test('session continuity: several tabs share one visit_id', async ({ browser, page }) => {
     test.setTimeout(60_000);
 
-    const sessionMarker = `session-${Date.now()}`;
+    await setSlimstatOption(page, 'javascript_mode', 'on');
+    await setSlimstatOption(page, 'set_tracker_cookie', 'on');
+    await setSlimstatOption(page, 'tracking_request_method', 'rest');
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'anonymous_tracking', 'off');
+    const markers = Array.from({ length: 3 }, (_, i) => `session-${Date.now()}-${i}`);
+    const visitor = await browser.newContext();
+    const tabs = await Promise.all(markers.map(() => visitor.newPage()));
+    try {
+      for (let i = 0; i < tabs.length; i++) {
+        expect((await visit(tabs[i], markers[i])).ok()).toBe(true);
+      }
+      await expect.poll(async () => (await trackedRows(markers)).length, { timeout: 20_000 }).toBe(markers.length);
+      const rows = await trackedRows(markers);
+      for (const marker of markers) {
+        expect(rows.filter((row) => row.resource.includes(marker))).toHaveLength(1);
+      }
+      const visitIds = rows.map((row) => parseInt(row.visit_id, 10));
+      expect(visitIds.every((id) => id > 0)).toBe(true);
+      expect(new Set(visitIds).size).toBe(1);
+    } finally {
+      await visitor.close();
+    }
+  });
 
-    // Navigate 3 pages in same session
-    await page.goto(`/?p=${sessionMarker}-page1`);
-    await page.waitForTimeout(2500);
-    await page.goto(`/?p=${sessionMarker}-page2`);
-    await page.waitForTimeout(2500);
-    await page.goto(`/?p=${sessionMarker}-page3`);
-    await page.waitForTimeout(2500);
+  test('custom DB handle preserves visitor separation and tab continuity', async ({ browser, page }) => {
+    test.setTimeout(90_000);
 
-    // All 3 should have the same visit_id (session cookie)
-    const [rows] = await getPool().execute(
-      `SELECT visit_id FROM wp_slim_stats
-       WHERE resource LIKE ? ORDER BY id ASC`,
-      [`%${sessionMarker}%`]
-    ) as any;
+    const externalDatabase = `slimstat_e2e_${Date.now()}`;
+    await snapshotOption('slimstat_test_use_custom_db');
+    await snapshotOption('slimstat_test_custom_database');
+    let created = false;
+    let visitors: BrowserContext[] = [];
+    try {
+      await getPool().execute(`CREATE DATABASE ${externalDatabase}`);
+      created = true;
+      await getPool().execute(`CREATE TABLE ${externalDatabase}.wp_slim_stats LIKE wp_slim_stats`);
+      await setWpOption('slimstat_test_custom_database', externalDatabase);
+      await setWpOption('slimstat_test_use_custom_db', 'yes');
+      await setEffectiveSlimstatOption(page, 'javascript_mode', 'on');
+      await setEffectiveSlimstatOption(page, 'set_tracker_cookie', 'on');
+      await setEffectiveSlimstatOption(page, 'tracking_request_method', 'rest');
+      await setEffectiveSlimstatOption(page, 'gdpr_enabled', 'off');
+      await setEffectiveSlimstatOption(page, 'anonymous_tracking', 'off');
 
-    if (rows.length >= 2) {
-      const visitIds = rows.map((r: any) => parseInt(r.visit_id, 10));
-      const uniqueIds = [...new Set(visitIds)];
-      // Within a session, visit_id should be consistent
-      expect(uniqueIds.length).toBe(1);
+      const markers = Array.from({ length: 3 }, (_, i) => `custom-db-${Date.now()}-${i}`);
+      visitors = await Promise.all([
+        browser.newContext({ storageState: { cookies: [], origins: [] } }),
+        browser.newContext({ storageState: { cookies: [], origins: [] } }),
+      ]);
+      const first = await visitors[0].newPage();
+      const second = await visitors[1].newPage();
+      const tab = await visitors[0].newPage();
+      const responses = await Promise.all([
+        visit(first, markers[0]),
+        visit(second, markers[1]),
+      ]);
+      expect((await visit(tab, markers[2])).ok()).toBe(true);
+      responses.forEach((response) => expect(response.ok()).toBe(true));
+      const externalRows = async () => {
+        const where = markers.map(() => 'resource LIKE ?').join(' OR ');
+        const [rows] = await getPool().execute(
+          `SELECT visit_id, resource FROM ${externalDatabase}.wp_slim_stats WHERE ${where}`,
+          markers.map((marker) => `%${marker}%`),
+        ) as any;
+        return rows;
+      };
+      await expect.poll(async () => (await externalRows()).length, { timeout: 20_000 }).toBe(3);
+
+      const rows = await externalRows();
+      const visitId = (marker: string) => parseInt(
+        rows.find((row) => row.resource.includes(marker))?.visit_id ?? '0',
+        10,
+      );
+      expect(visitId(markers[0])).toBeGreaterThan(0);
+      expect(visitId(markers[1])).not.toBe(visitId(markers[0]));
+      expect(visitId(markers[2])).toBe(visitId(markers[0]));
+      expect(await trackedRows(markers)).toHaveLength(0);
+    } finally {
+      await Promise.all(visitors.map((visitor) => visitor.close()));
+      await restoreOption('slimstat_test_use_custom_db');
+      await restoreOption('slimstat_test_custom_database');
+      if (created) await getPool().execute(`DROP DATABASE ${externalDatabase}`);
     }
   });
 

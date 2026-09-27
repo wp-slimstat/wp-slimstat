@@ -1,0 +1,18 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      php tests/group-by-conformance-test.php
+kind:      restore-defect
+expect:    no longer orders by counthits DESC with the grouped column as tie-break
+rationale: Restores ORDER BY counthits DESC alone. Equal-count rows then return in PLAN order, which the Run 42 floor cells measured varying between two identical executions on MySQL 5.7 (a failed same-corpus null control: tied rows 19/20 swapped) — and which flaps between page refreshes for a user. The gate matches the sprintf'd tie-broken spelling on a comment-blanked body, so the bare form quoted in the comment above the call cannot keep it green.
+---
+diff --git a/admin/view/wp-slimstat-db.php b/admin/view/wp-slimstat-db.php
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -1688,7 +1688,7 @@
+             // EXECUTIONS on MySQL 5.7 — measured as a failed same-corpus null control (two
+             // identical runs, rows 19/20 swapped). Tied rows also flap between page refreshes
+             // for a human. Grouped column second makes the order a property of the DATA.
+-            ->orderBy(sprintf('counthits DESC, %s ASC', $_outer_select_column))
++            ->orderBy('counthits DESC')
+             ->limit(max(1, intval(self::$filters_normalized['misc']['limit_results'])));
+ 
+         self::maybe_enable_query_cache($query);

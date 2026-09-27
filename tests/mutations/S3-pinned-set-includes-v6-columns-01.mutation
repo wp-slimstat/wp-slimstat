@@ -1,0 +1,18 @@
+target:    tests/bench/lib/pinned-columns.php
+gate:      composer test:export-fidelity
+kind:      restore-defect
+expect:    slim_stats pins the v5-era set
+rationale: Empties the v6-added exclusion, so vid_hash and ua_id enter the pinned set. The fingerprint of an unmigrated corpus would then differ from a migrated one for a reason that is not a data difference - which is the exact question the deferred-window cell exists to answer, decided wrongly by the instrument measuring it. It also drags BINARY(8) and BINARY(16) in, and ENCODING_V1 deliberately writes no rule for BINARY, so the gate names those types too: the exclusion and the spec's type set are consistent by construction rather than by coincidence, and this mutation is what proves that link is load-bearing.
+---
+diff --git a/tests/bench/lib/pinned-columns.php b/tests/bench/lib/pinned-columns.php
+--- a/tests/bench/lib/pinned-columns.php
++++ b/tests/bench/lib/pinned-columns.php
+@@ -32,7 +32,7 @@
+      */
+     function slimstat_fp2_v6_added_columns()
+     {
+-        return ['vid_hash', 'ua_id'];
++        return [];
+     }
+ 
+     /**

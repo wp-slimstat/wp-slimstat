@@ -1,0 +1,17 @@
+target:    tests/docker/verify-change.sh
+gate:      composer test:seal-entrypoint
+kind:      restore-defect
+expect:    does not select the campaign corpus
+rationale: Returns the entry point to the corpus the campaign actually ran on. Under I8, get_recent_events, get_top_events and get_top_outbound are EMPTY ON BOTH ARMS - equal, about a question neither arm was asked. Nothing downstream catches it: the packet's nine controls read the answers document and all nine PASSED on that run, because the vacuity lives in the caps file the packet excludes. Only the behavioral sweep, which reads the corpus out of a dry run rather than out of the source, can tell this from a working entry point - and the gate pops the variable from its environment so an exported value cannot mask it.
+---
+--- a/tests/docker/verify-change.sh
++++ b/tests/docker/verify-change.sh
+@@ -47,7 +47,7 @@
+ #
+ # Printed in the dry-run line below so this is a fact a gate can read, not a variable a reviewer
+ # has to trust: SLIMSTAT_SEAL_DRYRUN=1 names the corpus without booting a container.
+-: "${SLIMSTAT_SEED_PROFILE:=seed-profile-verify.json}"
++: "${SLIMSTAT_SEED_PROFILE:=seed-profile-i8.json}"
+ 
+ # The comparison driver, overridable so the negative suite can drive this script's own abort
+ # handling without a four-minute container boot.

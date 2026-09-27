@@ -38,21 +38,24 @@ class Tracker
         return Processor::updateContentType($_status, $_location);
     }
 
-	public static function _insert_row($_data = [], $_table = '')
-	{
-		if (empty($_data) || empty($_table)) {
-			return -1;
-		}
+    /**
+     * BC shims. These carried FULL COPIES of the pre-fix write path — the same
+     * `insert_id ?: $result` conflation as C30, the same discarded `$query->execute()`
+     * as C31, and _update_row() additionally lacked the CVE-2026-7634 sanitization that
+     * Storage::updateRow() gained. A duplicate of a defect is a defect, and it survives
+     * every fix applied to the original.
+     *
+     * They keep their int contract for anything outside the tree; callers that need to
+     * know WHAT happened use Storage directly and read the WriteResult.
+     */
+    public static function _insert_row($_data = [], $_table = '')
+    {
+        if (empty($_data) || empty($_table)) {
+            return -1;
+        }
 
-		foreach ($_data as $key => $value) {
-			$_data[$key] = 'resource' == $key ? sanitize_url($value) : sanitize_text_field($value);
-		}
-
-		return Query::insert($_table)
-			->ignore()
-			->values($_data)
-			->execute();
-	}
+        return Storage::insertRow($_data, $_table)->id();
+    }
 
     public static function _update_row($_data = [])
     {
@@ -60,27 +63,7 @@ class Tracker
             return false;
         }
 
-        $id = abs(intval($_data['id']));
-        unset($_data['id']);
-
-        $_data = array_filter($_data);
-
-        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-        $query = Query::update($table)->ignore()->where('id', '=', $id);
-
-        if (!empty($_data['notes']) && is_array($_data['notes'])) {
-            $notes_to_append = '[' . implode('][', $_data['notes']) . ']';
-            $query->setRaw('notes', "CONCAT(IFNULL(notes, ''), %s)", [$notes_to_append]);
-            unset($_data['notes']);
-        }
-
-        if ($_data !== []) {
-            $query->set($_data);
-        }
-
-        $query->execute();
-
-        return $id;
+        return Storage::updateRow($_data)->id();
     }
 
     public static function _set_visit_id($_force_assign = false)
@@ -140,15 +123,18 @@ class Tracker
     {
         $ip_array = ['', ''];
 
-        if (!empty($_SERVER['REMOTE_ADDR']) && false !== filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP)) {
-            $ip_array[0] = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
+        $remote_addr = $_SERVER['REMOTE_ADDR'] ?? '';
+        $remote_addr = is_string($remote_addr) ? sanitize_text_field(wp_unslash($remote_addr)) : '';
+        if (false !== filter_var($remote_addr, FILTER_VALIDATE_IP)) {
+            $ip_array[0] = $remote_addr;
         }
 
         // CF-Connecting-IP is handled separately via Utils::getCfClientIp() with CF-Ray validation.
         $originating_ip_headers = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
         foreach ($originating_ip_headers as $a_header) {
-            if (!empty($_SERVER[$a_header])) {
-                $header_value = sanitize_text_field(wp_unslash($_SERVER[$a_header]));
+            $header_value = $_SERVER[$a_header] ?? '';
+            if (is_string($header_value) && '' !== $header_value) {
+                $header_value = sanitize_text_field(wp_unslash($header_value));
                 foreach (explode(',', $header_value) as $a_ip) {
                     $a_ip = trim($a_ip);
                     if (false !== filter_var($a_ip, FILTER_VALIDATE_IP) && $a_ip != $ip_array[0]) {
@@ -185,7 +171,7 @@ class Tracker
         $search_engines = file_get_contents(SLIMSTAT_ANALYTICS_DIR . 'admin/assets/data/matomo-searchengine.json');
         $search_engines = json_decode($search_engines, true);
 
-        $parsed_url = @parse_url($_url);
+        $parsed_url = wp_parse_url($_url);
 
         if (empty($search_engines) || empty($parsed_url) || empty($parsed_url['host'])) {
             return '';
@@ -335,7 +321,7 @@ class Tracker
     public static function _get_client_info($_data_js = [], $_stat = [])
     {
         if (!empty($_data_js['bw'])) {
-            $_stat['resolution'] = strip_tags(trim($_data_js['bw'] . 'x' . $_data_js['bh']));
+            $_stat['resolution'] = wp_strip_all_tags(trim($_data_js['bw'] . 'x' . $_data_js['bh']));
         }
 
         if (!empty($_data_js['sw'])) {
@@ -369,17 +355,32 @@ class Tracker
         return $_stat;
     }
 
+    /**
+     * @deprecated Use SlimStat\Tracker\Utils::logError().
+     *
+     * Kept as a delegate rather than deleted because it is public and may be reachable
+     * from an add-on. It used to carry its own copy of the write, which meant one call
+     * would bypass the throttle and record a diagnostic on every occurrence. (D30)
+     */
     public static function _log_error($_error_code = 0)
     {
-        \wp_slimstat::update_option('slimstat_tracker_error', [$_error_code, \wp_slimstat::date_i18n('U')]);
-        $stat = \wp_slimstat::get_stat();
-        do_action('slimstat_track_exit_' . abs($_error_code), $stat);
-        return -$_error_code;
+        return Utils::logError($_error_code);
     }
 
+    /**
+     * @deprecated Use SlimStat\Tracker\Utils::getValueWithChecksum().
+     *
+     * Kept as a delegate rather than deleted for the same reason as _log_error(): it is
+     * public and reachable from an add-on. It carried its own copy of the signing key —
+     * the raw `settings['secret']` with no AUTH_KEY fallback, the most drifted of the
+     * copies X2 was about — and it is a live SIGNER, wired at :118. So this was not a
+     * legacy acceptor for pre-5.4.2 cookies: 5.5.1 mints md5 cookies today, through
+     * here. Delegating makes the two halves agree again, and moves this path onto HMAC,
+     * which the verifier already accepts alongside md5.
+     */
     public static function _get_value_with_checksum($_value = 0)
     {
-        return $_value . '.' . md5($_value . (\wp_slimstat::$settings['secret'] ?? ''));
+        return Utils::getValueWithChecksum($_value);
     }
 
 
@@ -401,26 +402,17 @@ class Tracker
         return false;
     }
 
+    /**
+     * @deprecated Use SlimStat\Tracker\Utils::isNewVisitor().
+     *
+     * Kept as a delegate rather than deleted because the Tracker::_* surface is public
+     * back-compat for add-ons. It carried its own copy of the lookup, so it kept the
+     * unbounded `COUNT(id)` — and the two implementations had already silently
+     * diverged. (D43)
+     */
     public static function _is_new_visitor($_fingerprint = '')
     {
-        if ('on' == (\wp_slimstat::$settings['hash_ip'] ?? 'off')) {
-            return false;
-        }
-
-        if ('on' == \wp_slimstat::$settings['anonymize_ip']) {
-            return false;
-        }
-
-        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-        $query = Query::select('COUNT(id) as cnt')->from($table)->where('fingerprint', '=', $_fingerprint);
-        $today = date('Y-m-d');
-        $stat = \wp_slimstat::get_stat();
-        if (!empty($stat['dt']) && date('Y-m-d', $stat['dt']) < $today) {
-            $query->allowCaching(true);
-        }
-
-        $count_fingerprint = $query->getVar();
-        return 0 == $count_fingerprint;
+        return Utils::isNewVisitor($_fingerprint);
     }
 
     public static function _dtr_pton($_ip)
@@ -467,6 +459,6 @@ class Tracker
 
     public static function _base64_url_decode($_input = '')
     {
-        return strip_tags(trim(base64_decode(strtr($_input, '._-', '+/='))));
+        return wp_strip_all_tags(trim(base64_decode(strtr($_input, '._-', '+/='))));
     }
 }

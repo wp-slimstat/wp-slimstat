@@ -17,18 +17,13 @@ class CreateDtOutIndex extends AbstractIndexMigration
         return __('Create dt_out Index', 'wp-slimstat');
     }
 
-    protected function getIndexName(): string
+    protected function getIndexKey(): string
     {
         return 'idx_dt_out';
     }
 
-    protected function getIndexColumns(): array
+    protected function getTableSuffix(): string
     {
-        return ['dt_out'];
-    }
-
-    protected function getTableName(): string
-    {
-        return $this->wpdb->prefix . 'slim_stats';
+        return 'slim_stats';
     }
 }

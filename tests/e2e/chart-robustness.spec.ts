@@ -16,7 +16,7 @@ import {
   fetchChartData, insertRows, clearTestData,
   getV1, getLabels, sumArr, sumV1, utcMidnight, utcTimestamp,
 } from './helpers/chart';
-import { BASE_URL } from './helpers/env';
+import { ADMIN_PASS, ADMIN_USER, BASE_URL } from './helpers/env';
 import type { Page } from '@playwright/test';
 
 /** Login as admin if the page was redirected or access denied */
@@ -27,8 +27,8 @@ async function ensureAdminLoggedIn(page: Page): Promise<void> {
 
   if (needsLogin) {
     await page.goto(`${BASE_URL}/wp-login.php`);
-    await page.fill('#user_login', 'parhumm');
-    await page.fill('#user_pass', 'testpass123');
+    await page.fill('#user_login', ADMIN_USER);
+    await page.fill('#user_pass', ADMIN_PASS);
     await page.click('#wp-submit');
     await page.waitForURL('**/wp-admin/**', { timeout: 30_000 });
   }
@@ -210,14 +210,14 @@ test.describe('Chart browser AJAX', () => {
     const wpcliSum = sumV1(wpcliJson);
     expect(wpcliSum).toBe(30);
 
-    // Navigate to slimview2 as admin
-    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
+    // Use the same explicit range as the reference query, independent of today.
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&type=custom&from=2026-02-18&to=2026-03-17`, {
       waitUntil: 'networkidle',
     });
     await ensureAdminLoggedIn(page);
     // Re-navigate after login if needed
     if (!page.url().includes('slimview2')) {
-      await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
+      await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&type=custom&from=2026-02-18&to=2026-03-17`, {
         waitUntil: 'networkidle',
       });
     }
@@ -256,12 +256,13 @@ test.describe('Chart browser AJAX', () => {
       await insertRows(utcMidnight(d), 5, d.replace(/-/g, ''));
     }
 
-    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
+    // Keep all seeded months inside the selected report range.
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&type=custom&from=2025-11-01&to=2026-03-17`, {
       waitUntil: 'networkidle',
     });
     await ensureAdminLoggedIn(page);
     if (!page.url().includes('slimview2')) {
-      await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
+      await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&type=custom&from=2025-11-01&to=2026-03-17`, {
         waitUntil: 'networkidle',
       });
     }

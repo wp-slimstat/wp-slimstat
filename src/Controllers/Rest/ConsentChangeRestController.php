@@ -224,7 +224,8 @@ class ConsentChangeRestController implements RestControllerInterface
 		}
 
 		// 1. Tracking cookie — most stable, persists across pageviews for the same visitor
-		$tracking_cookie = wp_unslash( $_COOKIE['slimstat_tracking_code'] ?? '' );
+		$tracking_cookie = $_COOKIE['slimstat_tracking_code'] ?? '';
+		$tracking_cookie = is_string($tracking_cookie) ? wp_unslash($tracking_cookie) : '';
 		if (!empty($tracking_cookie)) {
 			$this->consentCacheKey = 'slimstat_consent_state_' . md5($tracking_cookie);
 			return $this->consentCacheKey;
@@ -234,8 +235,8 @@ class ConsentChangeRestController implements RestControllerInterface
 		$pageview_id_raw = $this->currentRequest
 			? ($this->currentRequest->get_param('pageview_id') ?? '')
 			: '';
-		if (!empty($pageview_id_raw)) {
-			$this->consentCacheKey = 'slimstat_consent_state_' . md5($pageview_id_raw);
+		if (is_scalar($pageview_id_raw) && '' !== (string) $pageview_id_raw) {
+			$this->consentCacheKey = 'slimstat_consent_state_' . md5((string) $pageview_id_raw);
 			return $this->consentCacheKey;
 		}
 

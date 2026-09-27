@@ -306,7 +306,7 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     await setSlimstatSetting('ignore_wp_users', 'on');
 
     // Login directly in a fresh browser context
-    const adminCtx = await browser.newContext({ javaScriptEnabled: false });
+    const adminCtx = await browser.newContext({ javaScriptEnabled: false, storageState: { cookies: [], origins: [] } });
     const adminPage = await adminCtx.newPage();
     await adminPage.goto(`${BASE_URL}/wp-login.php`);
     await adminPage.fill('#user_login', ADMIN_USER);

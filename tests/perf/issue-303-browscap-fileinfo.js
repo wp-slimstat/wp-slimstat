@@ -22,11 +22,11 @@
 import http from 'k6/http';
 import { check } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
+import { BASE_URL } from './lib/env.js';
 
 const trackerDuration = new Trend('tracker_request_duration_ms', true);
 const trackerFatalRate = new Rate('tracker_fatal_500_rate');
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:10003';
 const FILEINFO_MISSING = __ENV.K6_FILEINFO_MISSING === '1';
 const SCENARIO_LABEL = FILEINFO_MISSING ? 'fallback' : 'baseline';
 

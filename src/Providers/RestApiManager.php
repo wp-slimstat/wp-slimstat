@@ -44,14 +44,24 @@ class RestApiManager
      */
     private static function load_controllers(): void
     {
-        // Default core controllers
-		$controllers = [
-			new TrackingRestController(),
-			new GDPRBannerRestController(),
-			new ConsentChangeRestController(),
-			new ConsentHealthRestController(),
-			new TrackerHealthRestController(),
-		];
+        // Default core controllers. Each instantiation is guarded so a single
+        // class-load failure (e.g. a stale/incomplete classmap) degrades just
+        // that endpoint instead of fataling every request (issue #325).
+        $controllers = [];
+        $factories   = [
+            static function () { return new TrackingRestController(); },
+            static function () { return new GDPRBannerRestController(); },
+            static function () { return new ConsentChangeRestController(); },
+            static function () { return new ConsentHealthRestController(); },
+            static function () { return new TrackerHealthRestController(); },
+        ];
+        foreach ($factories as $factory) {
+            try {
+                $controllers[] = $factory();
+            } catch (\Throwable $e) {
+                \wp_slimstat::record_degradation('rest_controller', $e);
+            }
+        }
 
         /**
          * Filter: slimstat_rest_controllers
@@ -82,7 +92,11 @@ class RestApiManager
     public static function register_routes(): void
     {
         foreach (self::$controllers as $controller) {
-            $controller->register_routes();
+            try {
+                $controller->register_routes();
+            } catch (\Throwable $e) {
+                \wp_slimstat::record_degradation('rest_routes', $e);
+            }
         }
     }
 
@@ -164,7 +178,8 @@ class RestApiManager
 
         self::prepareAdblockTrackingResponse();
 
-        if ('POST' !== strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET')) {
+        $request_method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if (!is_string($request_method) || 'POST' !== strtoupper(wp_unslash($request_method))) {
             status_header(405);
             header('Allow: POST');
             exit;

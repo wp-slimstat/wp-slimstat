@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    P35-cut-value-differs-is-not-a-tie label
+rationale: The other half of the same rail. A moved cut means the ranking changed, which is what a top-N report IS; with this EQUAL a report that started returning weaker rows compares clean. Registered separately from its sibling because the two are separate branches and a single mutation killing both would not say which of them the plant set can see.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -575,7 +575,7 @@ def compare_banded(a_rows, b_rows, contract=None):
+     cut_a, cut_b = pick(counts_a), pick(counts_b)
+ 
+     if cut_a != cut_b:
+-        return _diff(DIFFER, "cut-value-differs", "the cut band",
++        return _diff(EQUAL, "cut-value-differs", "the cut band",
+                      "the last-ranked row holds %s on one side and %s on the other, so the two "
+                      "answers were cut in different places" % (cut_a, cut_b),
+                      cut_a=str(cut_a), cut_b=str(cut_b))

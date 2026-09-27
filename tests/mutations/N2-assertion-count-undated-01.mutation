@@ -1,0 +1,18 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:ci-comment-metrics
+kind:      guard-removal
+expect:    carries no ISO date
+rationale: Strips the date from the ProcessorTest incident narrative, leaving 'Tests: 317' and 'assertions 602 -> 598' reading as current figures when the suite is at 322/623. The exemption this gate grants to history is the one loophole in it, so the cost of that loophole has to be a real cost: an ISO date, present, or the numbers must match. Without this mutation the exemption would be a branch nothing exercises -- and an unexercised exemption is how a gate ends up accepting everything through a door it was told to leave slightly open.
+---
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -107,7 +107,7 @@
+       - name: Assertion floor
+         # A suite can lose coverage WITHOUT losing a test: two ProcessorTest cases once went
+         # PASSING -> INCOMPLETE because a stub lacked a method, and PHPUnit still printed OK.
+-        # As measured 2026-05-14: Tests: 317 was identical before and after; assertions 602 -> 598
++        # Tests: 317 was identical before and after; assertions 602 -> 598
+         # was the entire signal. Those are that incident's numbers, not today's — today's live in
+         # tests/ASSERTION-FLOOR.json, which is what this step actually reads.
+         # Runs on the same lanes as the two suites above, because it reads the JUnit they write.

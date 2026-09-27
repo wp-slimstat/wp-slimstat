@@ -67,6 +67,21 @@ if (!function_exists('number_format_i18n')) {
     }
 }
 
+// The widget renderer bounds how many funnels it computes per render, reading the
+// limit through slimstat_widget_max_entries. Steerable so one case can exercise the
+// bound rather than every case quietly disabling it. (D40)
+$GLOBALS['fwc_widget_budget'] = null;   // null = leave the tier default alone
+
+if (!function_exists('apply_filters')) {
+    function apply_filters($hook, $value, ...$args)
+    {
+        if ('slimstat_widget_max_entries' === $hook && null !== $GLOBALS['fwc_widget_budget']) {
+            return $GLOBALS['fwc_widget_budget'];
+        }
+        return $value;
+    }
+}
+
 // Test double for the DB — the same get_funnel_results() the main page uses, so
 // "widget data == main-page data source" holds by construction.
 if (!class_exists('wp_slimstat_db')) {
@@ -76,8 +91,12 @@ if (!class_exists('wp_slimstat_db')) {
             ['name' => 'Home',    'visitors' => 200, 'pct' => 100],
             ['name' => 'Pricing', 'visitors' => 34,  'pct' => 17.0],
         ];
+        /** How many funnel chains were actually computed — the compute budget's contract. */
+        public static int $calls = 0;
+
         public static function get_funnel_results(array $funnel): array
         {
+            self::$calls++;
             return self::$result;
         }
     }
@@ -86,7 +105,7 @@ if (!class_exists('wp_slimstat_db')) {
 $plugin_root = dirname(__DIR__);
 require_once $plugin_root . '/admin/view/wp-slimstat-reports.php';
 
-$render = static function (bool $is_pro, array $funnels): string {
+$render = static function (int $max_funnels, array $funnels): string {
     $m = new ReflectionMethod('wp_slimstat_reports', 'show_funnels_compact');
     // Required on PHP < 8.1 to invoke a private method; on 8.1+ it's a no-op and
     // is deprecated in 8.5, so only call it where it's actually needed.
@@ -94,7 +113,8 @@ $render = static function (bool $is_pro, array $funnels): string {
         $m->setAccessible(true);
     }
     ob_start();
-    $m->invoke(null, $is_pro, $funnels);
+    wp_slimstat_db::$calls = 0;
+    $m->invoke(null, $max_funnels, $funnels);
     return (string) ob_get_clean();
 };
 
@@ -104,7 +124,7 @@ $two = [
 ];
 
 // --- multi-funnel: every funnel renders, with a unique-classed tab strip ---
-$html = $render(true, $two);
+$html = $render(10, $two);
 fwc_assert(substr_count($html, 'class="slimstat-funnel-chart"') === 2, 'two funnels -> two .slimstat-funnel-chart panels', $failures);
 fwc_assert(substr_count($html, 'data-funnel-index="0"') >= 1 && substr_count($html, 'data-funnel-index="1"') >= 1, 'each panel is tagged with its funnel index', $failures);
 fwc_assert(strpos($html, 'slimstat-funnel-widget') !== false, 'panels are wrapped in the .slimstat-funnel-widget container', $failures);
@@ -124,14 +144,14 @@ fwc_assert(strpos($html, '<div class="slimstat-funnel-chart" data-funnel-index="
     && !preg_match('/data-funnel-index="1"[^>]*hidden/', $html), 'inactive panel is visible by default (no-JS shows all funnels stacked)', $failures);
 
 // --- single funnel: no tab strip, still one tagged panel ---
-$single = $render(true, [$two[0]]);
+$single = $render(10, [$two[0]]);
 fwc_assert(substr_count($single, 'class="slimstat-funnel-chart"') === 1, 'single funnel -> one panel', $failures);
 fwc_assert(strpos($single, 'slimstat-funnel-wtab') === false, 'single funnel -> no tab strip', $failures);
 
 // --- locked (free) + empty states preserved ---
-$locked = $render(false, []);
+$locked = $render(0, []);
 fwc_assert(strpos($locked, 'slimstat-funnel--locked') !== false, 'free tier still shows the locked upsell', $failures);
-$empty = $render(true, []);
+$empty = $render(10, []);
 fwc_assert(strpos($empty, 'nodata') !== false, 'pro + no funnels still shows the empty state', $failures);
 
 // --- polish: a zero-visitor / unreachable step keeps the muted fill (data-zero) ---
@@ -141,13 +161,49 @@ wp_slimstat_db::$result = [
     ['name' => 'Home',    'visitors' => 100, 'pct' => 100],
     ['name' => 'Pricing', 'visitors' => 0,   'pct' => 0],
 ];
-$zeroHtml = $render(true, [$two[0]]);
+$zeroHtml = $render(10, [$two[0]]);
 fwc_assert(substr_count($zeroHtml, 'slimstat-funnel-bar-fill" data-zero') === 1, 'a zero-visitor step renders the fill with data-zero (muted, not brand)', $failures);
 fwc_assert(substr_count($zeroHtml, 'class="slimstat-funnel-bar-fill" style=') === 1, 'the non-zero step fill has no data-zero (brand color)', $failures);
 wp_slimstat_db::$result = [ // restore for any later assertions
     ['name' => 'Home',    'visitors' => 200, 'pct' => 100],
     ['name' => 'Pricing', 'visitors' => 34,  'pct' => 17.0],
 ];
+
+// --- compute budget: at most N chains built, and nothing dropped (D40) -------
+//
+// The renderer runs on whatever request draws the widget, including an anonymous
+// frontend pageview via [slimstat f=widget w=slim_p9_02]. Each funnel is a temp-table
+// chain, so the count computed per render is bounded — but a funnel past the bound
+// must still be LISTED, or the widget silently shows 2 of 5 funnels.
+$five = [];
+for ($i = 0; $i < 5; $i++) {
+    $five[] = ['id' => $i + 1, 'name' => 'Funnel ' . ($i + 1), 'steps' => [['name' => 'Home'], ['name' => 'Pricing']]];
+}
+
+$GLOBALS['fwc_widget_budget'] = 2;
+$capped = $render(10, $five);
+
+fwc_assert(wp_slimstat_db::$calls === 2, 'a budget of 2 builds exactly 2 funnel chains, not 5 (got ' . wp_slimstat_db::$calls . ')', $failures);
+fwc_assert(substr_count($capped, 'slimstat-funnel-deferred') === 3, 'the other 3 funnels render as deferred panels', $failures);
+for ($i = 1; $i <= 5; $i++) {
+    fwc_assert(strpos($capped, 'Funnel ' . $i) !== false, "funnel {$i} is still listed by name past the budget", $failures);
+}
+// A deferred panel must keep the ARIA wiring its tab points at, or the tab strip's
+// aria-controls references an element that does not exist.
+fwc_assert(substr_count($capped, 'role="tabpanel"') === 5, 'every panel, deferred or not, carries role="tabpanel"', $failures);
+// Every aria-controls the tab strip emits must resolve to a panel id that exists.
+preg_match_all('/aria-controls="([^"]+)"/', $capped, $controls);
+$dangling = array_values(array_filter(
+    $controls[1],
+    static fn(string $id): bool => strpos($capped, 'id="' . $id . '"') === false
+));
+fwc_assert($dangling === [], 'no tab points at a panel id that does not exist (got: ' . implode(', ', $dangling) . ')', $failures);
+// And the budget must not fire when it is not exceeded.
+$GLOBALS['fwc_widget_budget'] = 10;
+$uncapped = $render(10, $five);
+fwc_assert(wp_slimstat_db::$calls === 5, 'a budget above the funnel count computes all of them (got ' . wp_slimstat_db::$calls . ')', $failures);
+fwc_assert(strpos($uncapped, 'slimstat-funnel-deferred') === false, 'nothing is deferred when the budget is not exceeded', $failures);
+$GLOBALS['fwc_widget_budget'] = null;
 
 // --- styling de-cramp + tab strip (goals-funnels.css uses tokens, no tight values) ---
 $css = (string) file_get_contents($plugin_root . '/admin/assets/css/goals-funnels.css');

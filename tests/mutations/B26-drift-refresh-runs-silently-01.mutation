@@ -1,0 +1,26 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    the refresh eval loads the admin class and reports that it ran
+rationale: Exactly what cell 7a pass 4 ran. Every `wpc eval` is its own process and admin/index.php is loaded on admin requests only, so naming wp_slimstat_admin:: there is a fatal — swallowed by `2>/dev/null`. The refresh never happened, the stale-record leg failed with `stored 'none'`, and 'none' is also what a healed record looks like: the right colour for the wrong reason. A silent eval is not evidence that it ran.
+---
+diff --git a/tests/docker/rehearse-upgrade.sh b/tests/docker/rehearse-upgrade.sh
+index f142f0bc..cad8f485 100755
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -838,13 +838,10 @@ FP_CORE_1=$(fingerprint_core)
+ # option unread. It failed the leg below with `stored 'none'` — the right colour for the wrong
+ # reason, which is the failure mode this whole cell keeps finding. The sentinel is what tells the
+ # two apart. Run 65 cell 7a pass 4, PITFALLS 137.
+-DRIFT_REFRESHED=$(wpc eval '
+-  require_once WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php";
++wpc eval '
+   delete_transient(wp_slimstat_admin::COLUMN_DRIFT_CHECK_TRANSIENT);
+   wp_slimstat_admin::refresh_column_drift_notice();
+-  echo "refreshed";' 2>/dev/null | tr -d '[:space:]')
+-[ "$DRIFT_REFRESHED" = "refreshed" ] && check "the drift record was re-derived, as an admin_init would" 0 \
+-  || check "the drift record was re-derived, as an admin_init would" 1 "the refresh did not run — ${DRIFT_REFRESHED:-no output at all}"
++' >/dev/null 2>&1
+ 
+ # Observed HERE, not read back from the option, and the difference is the whole point: on an arm
+ # that never drifted there is no option at all, and refresh_column_drift_notice() returns early

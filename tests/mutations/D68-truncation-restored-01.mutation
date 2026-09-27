@@ -1,0 +1,20 @@
+target:    src/Tracker/Session.php
+gate:      php tests/anonymous-identity-test.php
+kind:      name-only
+expect:    still truncates a hash with hexdec()
+rationale: Restores the 32-bit identity — hexdec of the HMAC's first 8 hex chars — while a COMMENT keeps the full-width formula verbatim, so any check that reads comments still sees the correct code. The gate blanks comments before scanning, and hexdec in this file exists only inside the truncation, so its presence IS the defect: ~50% collision odds at 77k cookieless visitors, and after G4 a collision is one person's subject-access export carrying another person's browsing history.
+---
+diff --git a/src/Tracker/Session.php b/src/Tracker/Session.php
+--- a/src/Tracker/Session.php
++++ b/src/Tracker/Session.php
+@@ -311,7 +311,9 @@
+ 			$identity = $daily_salt . '|' . $client_ip . '|' . $user_agent;
+ 		}
+ 
+-		return bin2hex(substr(hash_hmac('sha256', $identity, self::getSecureKey(), true), 0, 16));
++		// bin2hex(substr(hash_hmac('sha256', $identity, self::getSecureKey(), true), 0, 16));
++		$hash = hash_hmac('sha256', $identity, self::getSecureKey());
++		return str_pad(dechex(abs((int) hexdec(substr($hash, 0, 8)))), 32, '0', STR_PAD_LEFT);
+ 	}
+ 
+ 	/**

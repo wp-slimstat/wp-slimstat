@@ -1,0 +1,17 @@
+target:    .github/workflows/ci.yml
+gate:      php tests/perf-gate-integrity-test.php
+kind:      restore-defect
+expect:    does not NEGATE the contains()
+rationale: The half a version list cannot express. Same line, same two versions, opposite lane set: continue-on-error is FALSE where a lane blocks, so dropping the `!` blocks the six interior version-drift lanes and softens the committed baseline and the newest WordPress -- precisely the two the flip exists to make blocking. A check that only compared the list would report this as correct.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -657,7 +657,7 @@
+         # everything, dropping either version, or reverting to a bare `true` all
+         # fail that gate. §7 used to match only the literal `continue-on-error:
+         # true`, so before this commit it would have matched nothing here.
+-        continue-on-error: ${{ !contains(fromJSON('["6.4","7.1"]'), matrix.wp) }}
++        continue-on-error: ${{ contains(fromJSON('["6.4","7.1"]'), matrix.wp) }}
+         env:
+           # wp-env creates a fresh WordPress with default admin credentials.
+           # Override WP_ADMIN_USER / WP_ADMIN_PASS in global-setup.ts.

@@ -1,0 +1,14 @@
+{
+  "unit": {
+    "junit": "build/junit-unit.xml",
+    "tests": 414,
+    "assertions": 1000,
+    "incomplete_max": 0
+  },
+  "integration": {
+    "junit": "build/junit-integration.xml",
+    "tests": 158,
+    "assertions": 387,
+    "incomplete_max": 0
+  }
+}

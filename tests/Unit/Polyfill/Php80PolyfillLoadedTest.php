@@ -25,7 +25,7 @@ class Php80PolyfillLoadedTest extends TestCase
         // but the production load lives in wp-slimstat.php. Belt and suspenders:
         // require the bootstrap directly so the test is independent of the autoloader
         // wiring.
-        require_once dirname(__DIR__, 3) . '/src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php';
+        require_once dirname(__DIR__, 3) . '/src/Dependencies/veronalabs/browscap-php/src/Symfony/Polyfill/Php80/bootstrap.php';
 
         $this->assertTrue(
             function_exists($fn),
@@ -36,7 +36,7 @@ class Php80PolyfillLoadedTest extends TestCase
     /** @return array<string,array{0:string}> */
     public static function polyfilledFunctionProvider(): array
     {
-        // These 7 are defined in src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php
+        // These 7 are defined in the generated Symfony/Polyfill/Php80 bootstrap.
         // behind `if (!function_exists(...))` guards.
         return [
             'fdiv'                => ['fdiv'],
@@ -51,7 +51,7 @@ class Php80PolyfillLoadedTest extends TestCase
 
     public function test_str_contains_semantics_match_native(): void
     {
-        require_once dirname(__DIR__, 3) . '/src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php';
+        require_once dirname(__DIR__, 3) . '/src/Dependencies/veronalabs/browscap-php/src/Symfony/Polyfill/Php80/bootstrap.php';
 
         $this->assertTrue(str_contains('hello world', 'world'));
         $this->assertFalse(str_contains('hello world', 'xyz'));

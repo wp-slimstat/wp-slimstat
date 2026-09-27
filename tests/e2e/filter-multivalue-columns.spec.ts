@@ -238,8 +238,7 @@ test.describe('Filter operator: equals auto-upgrade for multi-value columns', ()
     );
 
     // The page should show our seeded row
-    const pageContent = await page.content();
-    expect(pageContent).toContain(`${MARKER}-outbound`);
+    await expect(page.locator('#slim_p1_08')).toContainText(`${MARKER}-outbound`);
   });
 
   test('notes equals filter returns results', async ({ page }) => {
@@ -253,8 +252,7 @@ test.describe('Filter operator: equals auto-upgrade for multi-value columns', ()
       { waitUntil: 'domcontentloaded' }
     );
 
-    const pageContent = await page.content();
-    expect(pageContent).toContain(`${MARKER}-notes`);
+    await expect(page.locator('#slim_p1_08')).toContainText(`${MARKER}-notes`);
   });
 
   test('category equals filter returns results', async ({ page }) => {
@@ -269,8 +267,7 @@ test.describe('Filter operator: equals auto-upgrade for multi-value columns', ()
       { waitUntil: 'domcontentloaded' }
     );
 
-    const pageContent = await page.content();
-    expect(pageContent).toContain(`${MARKER}-cat`);
+    await expect(page.locator('#slim_p1_08')).toContainText(`${MARKER}-cat`);
   });
 
   test('browser equals filter still works normally', async ({ page }) => {
@@ -284,7 +281,6 @@ test.describe('Filter operator: equals auto-upgrade for multi-value columns', ()
       { waitUntil: 'domcontentloaded' }
     );
 
-    const pageContent = await page.content();
-    expect(pageContent).toContain(`${MARKER}-browser`);
+    await expect(page.locator('#slim_p1_08')).toContainText(`${MARKER}-browser`);
   });
 });

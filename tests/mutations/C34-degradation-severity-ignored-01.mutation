@@ -1,0 +1,17 @@
+target:    admin/index.php
+gate:      php tests/degradation-notice-honesty-test.php
+kind:      guard-removal
+expect:    does not read the recorded severity
+rationale: Stop reading the severity the call site recorded and hard-code LOAD, which silently routes every operational record back into the red "reinstall the plugin" notice while leaving the two-notice structure standing. This is the shape the first fix took - severity reconstructed renderer-side - and it is worth pinning because it looks correct: the warning branch is still there, it is just unreachable. A gate that only checked the branch existed would pass.
+---
+--- a/admin/index.php
++++ b/admin/index.php
+@@ -4195,7 +4195,7 @@
+             // at runtime. record_degradation() is told which it is at the catch block that
+             // knows. Legacy records written before that parameter existed default to LOAD,
+             // which is what they all were; they age out within DEGRADATION_TTL anyway.
+-            $severity = isset($record['severity']) ? (string) $record['severity'] : wp_slimstat::DEGRADATION_LOAD;
++            $severity = wp_slimstat::DEGRADATION_LOAD;
+ 
+             if (wp_slimstat::DEGRADATION_OPERATIONAL === $severity) {
+                 $operational_items .= $item;

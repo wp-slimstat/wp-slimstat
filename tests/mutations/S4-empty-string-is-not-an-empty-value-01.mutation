@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    class 'ok' carrying the empty string is refused
+rationale: Drops the empty string from the three values the capture calls `empty`, so an `ok` envelope carrying '' is accepted and compared as a value. Only the [] spelling had ever been asserted. NULL, the empty string and no rows are three answers, and this file's whole job is to refuse an envelope whose class and value disagree rather than to re-derive the class.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -72,7 +72,7 @@ ANSWER_CLASSES = CAPTURE_CLASSES + ORACLE_ONLY_CLASSES
+ # The three values slimstat_capture() treats as `empty`, listed here so check_envelope() can
+ # refuse an envelope whose class and value disagree. Copied deliberately as a CHECK of the other
+ # side's branch, never as a re-implementation of it: nothing here classifies, it only refuses.
+-EMPTY_VALUES = ([], None, "")
++EMPTY_VALUES = ([], None)
+ 
+ # A contract's defaults. S5 will supply real ones per report (`report-contracts.json`); until it
+ # does, every caller passes what it knows and inherits the rest.

@@ -1,0 +1,17 @@
+target:    tests/docker/build-packet.py
+gate:      composer test:seal-negative
+kind:      construct-removal
+expect:    T12 expected exit 5 and 'seal-literal'
+rationale: Stops handing the audit this run's sealed literals. Every structural rule still applies and the packet still builds, so the only observable difference is an _arm_fingerprint VALUE surviving into the packet - the string that identified the OLD arm of R20260824-a51bf2 on sight. Deliberately not covered by a generic hex rule: the same capture carries Unix timestamps that any such rule reads as refs, which is why the literals exist at all.
+---
+--- a/tests/docker/build-packet.py
++++ b/tests/docker/build-packet.py
+@@ -72,7 +72,7 @@
+                                       sort_keys=True,separators=(",",":"))+"\n")
+ sealed_literals.chmod(0o600)
+ audit=Path(__file__).with_name("scrub-audit.sh")
+-result=subprocess.run([str(audit),str(run/"packet"),"--literals",str(sealed_literals)],check=False)
++result=subprocess.run([str(audit),str(run/"packet")],check=False)
+ if result.returncode:
+     shutil.rmtree(run/"packet"); raise SystemExit(result.returncode)
+ 

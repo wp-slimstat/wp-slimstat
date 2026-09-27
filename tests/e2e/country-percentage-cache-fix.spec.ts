@@ -51,7 +51,7 @@ async function insertCountryRows(
   }
 }
 
-/** Clear all wp_slimstat_cache transients to prevent stale data */
+/** Clear live wp_slimstat_query transients to prevent stale data */
 async function clearTransients(): Promise<void> {
   await getPool().execute(
     "DELETE FROM wp_options WHERE option_name LIKE '_transient_wp_slimstat_%' OR option_name LIKE '_transient_timeout_wp_slimstat_%'",
@@ -61,7 +61,7 @@ async function clearTransients(): Promise<void> {
 /** Count transients that were SET (evidence of caching) */
 async function countCacheTransients(): Promise<number> {
   const [rows] = (await getPool().execute(
-    "SELECT COUNT(*) as cnt FROM wp_options WHERE option_name LIKE '_transient_wp_slimstat_cache_%'",
+    "SELECT COUNT(*) as cnt FROM wp_options WHERE option_name LIKE '_transient_wp_slimstat_query_%'",
   )) as any;
   return parseInt(rows[0].cnt, 10);
 }
@@ -92,13 +92,12 @@ async function extractListPercentages(page: Page): Promise<{ name: string; pct: 
   );
 }
 
-/** Read the sidebar Pageviews metric from slimview1 */
-async function readSidebarPageviews(page: Page): Promise<number> {
-  const text = await page.$eval(
-    '#slim_p2_01 p:first-child span',
-    (el) => el.textContent?.trim() || '0',
-  );
-  return parseInt(text.replace(/,/g, ''), 10);
+/** Read the shipping Pageviews metric in At a Glance on the Overview page. */
+async function readOverviewPageviews(page: Page): Promise<number> {
+  await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, { waitUntil: 'domcontentloaded' });
+  const metric = page.locator('#slim_p1_03 .inside p').filter({ hasText: /^Pageviews\s/ });
+  await expect(metric).toBeVisible();
+  return parseInt((await metric.locator('span').first().innerText()).replace(/,/g, ''), 10);
 }
 
 // ─── Test lifecycle ──────────────────────────────────────────────────────────
@@ -287,7 +286,7 @@ test.describe('Country percentage cache fix (#270)', () => {
 
   // ── Scenario 6: Dashboard sidebar pageviews matches data ───────────────
 
-  test('sidebar pageviews count is consistent with country data', async ({ page }) => {
+  test('Overview pageviews count is consistent with country data', async ({ page }) => {
     const now = Math.floor(Date.now() / 1000);
     const oneHourAgo = now - 3600;
 
@@ -299,14 +298,14 @@ test.describe('Country percentage cache fix (#270)', () => {
     });
     await page.waitForSelector('.country-bar', { timeout: 15000 });
 
-    const sidebarPv = await readSidebarPageviews(page);
     const mapPcts = await extractMapPercentages(page);
+    const overviewPv = await readOverviewPageviews(page);
     const totalPct = mapPcts.reduce((sum, { pct }) => sum + pct, 0);
 
-    // Sidebar pageviews should be ≥ 15 (our inserted rows)
-    expect(sidebarPv).toBeGreaterThanOrEqual(15);
+    // Overview pageviews should be ≥ 15 (our inserted rows)
+    expect(overviewPv).toBeGreaterThanOrEqual(15);
 
-    // Total percentage should be ≤ 100% (sidebar = total, map = visible top N)
+    // Total percentage should be ≤ 100% (overview = total, map = visible top N)
     expect(totalPct).toBeLessThanOrEqual(100.01);
   });
 

@@ -9,6 +9,16 @@
  * Body: key=<key>&value=<value>       — set a key
  * Body: key=<key>&delete=1            — delete a key
  */
+/**
+ * Guarded by SLIMSTAT_E2E_TESTING, like every other helper here. Ungated, this exposes an admin-ajax endpoint that rewrites arbitrary
+ * slimstat_options keys.
+ * The file reaching wp-content/mu-plugins is not consent to run it: a helper
+ * gets there by an interrupted test run as easily as a deliberate one.
+ */
+if (!defined('SLIMSTAT_E2E_TESTING') || !SLIMSTAT_E2E_TESTING) {
+    return;
+}
+
 add_action('wp_ajax_test_set_slimstat_option', function () {
     if (!current_user_can('manage_options')) {
         wp_send_json_error('forbidden');

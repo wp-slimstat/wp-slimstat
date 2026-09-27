@@ -1,0 +1,17 @@
+target:    tests/docker/lib.sh
+gate:      php tests/rehearsal-column-control-test.php
+kind:      restore-defect
+expect:    an empty second set contains nothing
+rationale: BSD sed does not append the newline the input lacks, and `read` returns false on an unterminated final line without running the body, so the LAST column of the difference silently disappears. This was the real defect, found by this file on its first run: the control reported 'identical' for a pair that differed in exactly one column whenever that column sorted last. A difference that under-reports is a control that passes vintage-mismatched corpora -- the one thing it exists to refuse.
+---
+--- a/tests/docker/lib.sh
++++ b/tests/docker/lib.sh
+@@ -153,7 +153,7 @@
+   # lacks, and `read` returns false on a final unterminated line WITHOUT running the body, so the
+   # LAST column silently dropped out of every difference. Caught by the empty-second-set case in
+   # tests/rehearsal-column-control-test.php, which is why that case is there. PITFALLS 131.
+-  printf '%s\n' "$1" | tr ',' '\n' | sed '/^$/d' | while IFS= read -r c; do
++  printf '%s' "$1" | tr ',' '\n' | sed '/^$/d' | while IFS= read -r c; do
+     case "$haystack" in
+       *",$c,"*) : ;;
+       *)        printf '%s\n' "$c" ;;

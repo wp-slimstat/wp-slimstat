@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    two different texts are a difference verdict
+rationale: Every non-numeric scalar answer - a version, a date, a status string - compares clean no matter what it says. Reached by no plant for the whole of S4.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -393,7 +393,7 @@ def compare_scalar(a, b, places=None):
+     sa, sb = _text(a), _text(b)
+     if sa == sb:
+         return _diff(EQUAL, "string-exact", "scalar", "identical text")
+-    return _diff(DIFFER, "string-exact", "scalar", "%r != %r" % (sa, sb), a=sa, b=sb)
++    return _diff(EQUAL, "string-exact", "scalar", "%r != %r" % (sa, sb), a=sa, b=sb)
+ 
+ 
+ def _text(value):

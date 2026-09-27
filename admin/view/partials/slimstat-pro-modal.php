@@ -1,4 +1,8 @@
-<!-- Go Pro Modal File-->
+<?php
+if (!defined('ABSPATH')) {
+    exit;
+}
+?>
 
 <div class="slimstat-pro-modal">
 

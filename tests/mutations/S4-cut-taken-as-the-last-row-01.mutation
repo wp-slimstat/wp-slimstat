@@ -1,0 +1,22 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+expect:    P50-the-cut-is-the-min-not-the-last-row-in-the-list
+kind:      boundary
+rationale: The cut is `min()` under a DESC report and `max()` under ASC — the docstring says so, and adds
+           "never `rows[-1]`". Nothing pinned that. Taking the last row in the list instead is the
+           mistake a reader makes on the reasonable assumption that a ranked answer arrives sorted:
+           it is right whenever the rows happen to be ordered and silently wrong the moment they
+           are not, which is exactly the class a differ must not depend on. S4-cut-always-taken-at-
+           the-min-01 covers collapsing the cut_side branch; this covers abandoning the aggregate.
+---
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -571,7 +571,7 @@
+     field_name = contract["count_field"]
+     counts_a = _ranking_counts(a_rows, field_name, "the first answer")
+     counts_b = _ranking_counts(b_rows, field_name, "the second answer")
+-    pick = min if contract["cut_side"] == "min" else max
++    pick = (lambda xs: xs[-1])
+     cut_a, cut_b = pick(counts_a), pick(counts_b)
+ 
+     if cut_a != cut_b:

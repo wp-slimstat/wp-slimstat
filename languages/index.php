@@ -597,6 +597,7 @@ class wp_slimstat_i18n
                 'e-315' => __('Pageview not tracked: platform matched an exclusion rule.', 'wp-slimstat'),
                 'e-316' => __('Pageview not tracked: the slimstat_filter_pageview_stat filter returned empty.', 'wp-slimstat'),
                 'e-317' => __('Pageview not tracked: visitor identified as a spammer.', 'wp-slimstat'),
+                'e-429' => __('Pageview not tracked: too many requests from this address in a short time.', 'wp-slimstat'),
             ];
 
             // set_transient( 'slimstat_dynamic_strings', self::$dynamic_strings, 86400 );

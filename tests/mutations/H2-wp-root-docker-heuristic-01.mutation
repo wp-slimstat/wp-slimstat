@@ -1,0 +1,18 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:e2e-harness-contract
+kind:      restore-defect
+expect:    still selects a container by exclusion
+rationale: Restores selection of the WordPress container by what it is NOT. wp-env runs two sites -- development on 8888 and tests on 8889 -- and the browser talks to tests; `head -1` returned whichever container Docker created first. Note what this mutation deliberately does NOT remove: `npx wp-env install-path` is still called above it, so the install-path clause is satisfied and only the exclusion clause can fire. Every debug.log assertion in the suite is negative, so pointing WP_ROOT at the wrong site does not fail anything -- it passes, having read a file belonging to a different WordPress.
+---
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -441,7 +441,7 @@
+             echo "Without it every filesystem assertion reads a path under / and passes vacuously."
+             exit 1
+           fi
+-          WP_ROOT="${INSTALL_PATH}/tests-WordPress"
++          WP_ROOT=$(docker ps --format "{{.Names}}" | grep -v "cli" | head -1)
+           echo "Resolved WP_ROOT=$WP_ROOT"
+ 
+           # Grant runner user write access to wp-config.php and mu-plugins

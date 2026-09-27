@@ -3,17 +3,77 @@ declare(strict_types=1);
 
 namespace SlimStat\Migration;
 
-use SlimStat\Components\View;
-use wpdb;
+use SlimStat\Utils\OptionClaim;
+use SlimStat\Schema\Schema;
 
 class MigrationManager
 {
     private const OPTION_STATUS = 'slimstat_migration_status';
 
+    private const OPTION_COMPLETED = 'slimstat_migration_completed';
+
+    /**
+     * Single-flight claim for runAll(). Not autoloaded: it is written on the admin path,
+     * lives for the duration of one run, and joining `alloptions` for that would invalidate
+     * the blob for every request on the site.
+     */
+    private const OPTION_RUN_CLAIM = 'slimstat_migration_run_claim';
+
     private const OPTION_DISMISSED = 'slimstat_migration_dismissed';
+
+    /**
+     * How long the probe's answer stays good.
+     *
+     * Everything that can change the answer — running a migration, dismissing the notice,
+     * undismissing it — calls forgetProbe(), so the cache is correct by invalidation rather
+     * than by expiry. The TTL only bounds the one case invalidation cannot see: an admin
+     * adding or dropping an index outside this UI.
+     */
+    private const PROBE_TTL = 12 * HOUR_IN_SECONDS;
+
+    private const TRANSIENT_PROBE = 'slimstat_migration_probe';
+
+    /**
+     * The OFFERED set's cache, separate from TRANSIENT_PROBE because it answers a different
+     * question. needsMigration() asks "is anything OWED"; this asks "what is on the menu". Folding
+     * them into one key would mean invalidating one invalidates the other, which is true today by
+     * coincidence and would stop being true the moment either gains its own trigger.
+     */
+    private const TRANSIENT_OFFERED = 'slimstat_migration_offered';
 
     /** @var array<int, MigrationInterface> */
     private $migrations = [];
+
+    /** Per-request memo — needsMigration() is asked twice per admin page load. */
+    private $needsMemo;
+
+    /**
+     * Per-request memo for getOfferedMigrations().
+     *
+     * On a NORMAL admin page this is asked once, from registerPage() on admin_menu. Its real
+     * payoff is the migration screen itself, where registerPage(), enqueueAssets() and
+     * renderPage() all ask — and the unreachable-database path, where the transient is
+     * deliberately not written and only this stops the probe repeating.
+     */
+    private $offeredMemo;
+
+    /** @var \wpdb|null */
+    private $runConnection;
+
+    /** @var string */
+    private $runLock = '';
+
+    /** @var string */
+    private $runToken = '';
+
+    /** @var mixed */
+    private $reconnectRetries;
+
+    /** @var string */
+    private $runRefusal = '';
+
+    /** @var bool */
+    private $runContended = false;
 
     /**
      * @return array<int, MigrationInterface>
@@ -29,7 +89,104 @@ class MigrationManager
      */
     public function getRequiredMigrations(): array
     {
-        return array_filter($this->migrations, fn($migration) => $migration->shouldRun());
+        return array_filter(
+            $this->migrations,
+            fn($migration) => !$migration->isOptional() && $migration->shouldRun()
+        );
+    }
+
+    /**
+     * Migrations that are OFFERED rather than owed, and have work to do.
+     *
+     * The other half of getRequiredMigrations(), and it exists because the first version of this
+     * seam had no such method — the admin screen renders exclusively from the *required* set, so
+     * excluding an optional migration from that set removed it from the UI entirely. "Opt-in"
+     * silently meant "gone": no menu item, no row, and `getDescription()`'s new "Optional…" copy
+     * unreachable in every locale. The unit test that was supposed to catch this asserted
+     * against `getMigrations()`, which no rendering path calls.
+     *
+     * @return array<int, MigrationInterface>
+     */
+    public function getOfferedMigrations(): array
+    {
+        if (null !== $this->offeredMemo) {
+            return $this->offeredMemo;
+        }
+
+        // Cached for the same reason needsMigration() is. Reached from registerPage() on
+        // admin_menu — so every admin page load pays it — and twice more on the migration
+        // screen itself (enqueueAssets, renderPage). maybeShowNotice() on admin_notices asks
+        // needsMigration(), NOT this; the "twice per admin page" line belongs to that method
+        // and was copied here without re-checking. What makes this one expensive is that the
+        // guard is
+        // `!needsMigration() && [] === getOfferedMigrations()`, whose LEFT operand is a negation:
+        // it is TRUE exactly when nothing is owed. So the right side runs precisely in the healthy
+        // steady state, on every admin page, forever. (`&&` short-circuits normally; what makes
+        // this expensive is which side the negation puts first, not the operator.)
+        //
+        // Counted cost per call on a fully-backfilled install: SIX information_schema.COLUMNS
+        // aggregates from ConvertTablesToUtf8mb4 (one per declared table), then from
+        // AddUserAgentDimension three SHOW COLUMNS — Schema::columnState() memoises nothing, so
+        // wp_slim_stats is asked twice — and finally `SELECT 1 FROM wp_slim_stats WHERE ua_id
+        // IS NULL LIMIT 1`. TEN queries, and the last is the expensive one: `ua_id` is declared
+        // among the manifest's columns and in none of its indexes, so once every row is keyed
+        // that predicate matches nothing and LIMIT 1 saves nothing — it scans the fact table.
+        //
+        // (In the other steady state — offered but never run — !factColumnExists() short-
+        // circuits at the first SHOW COLUMNS, so it is seven.) information_schema is cheap on
+        // MySQL 8's data dictionary and slow on 5.6/5.7, both inside the declared floor.
+        //
+        // IDS, not instances. A transient is serialised, and migrations hold a live wpdb handle;
+        // storing objects would either fail or resurrect a stale connection. The ids are mapped
+        // back through the registry below, so the cache describes WHICH are offered and the
+        // objects always come from this request. An id the registry no longer declares is
+        // therefore ignored rather than fatal — a migration removed by an update stops matching.
+        //
+        // NOT keyed on migrationSetFingerprint(), deliberately, and it inherits the limitation
+        // that buys: a migration ADDED by an update stays invisible until this expires, up to
+        // PROBE_TTL. needsMigration()'s transient has exactly the same property, and keying only
+        // one of the two would make them disagree about how fresh they are — a difference nothing
+        // explains and the next reader takes for a bug. If it is worth closing, both move together.
+        $cached = get_transient(self::TRANSIENT_OFFERED);
+
+        if (is_array($cached)) {
+            $ids = array_flip($cached);
+
+            return $this->offeredMemo = array_filter(
+                $this->migrations,
+                static fn($migration) => $migration->isOptional() && isset($ids[$migration->getId()])
+            );
+        }
+
+        $offered     = [];
+        $unavailable = false;
+
+        foreach ($this->migrations as $key => $migration) {
+            if (!$migration->isOptional()) {
+                continue;
+            }
+
+            if ($migration->shouldRun()) {
+                $offered[$key] = $migration;
+            }
+
+            $unavailable = $unavailable
+                || (method_exists($migration, 'probeUnavailable') && $migration->probeUnavailable());
+        }
+
+        // Never persist "I could not look" as "nothing to offer" — the same rule needsMigration()
+        // states, and for the same reason: this cache lives twelve hours and only run/dismiss
+        // clears it, so caching an unreachable database would hide the offered steps for half a
+        // day after the admin fixed the configuration that broke it.
+        if (!$unavailable) {
+            set_transient(
+                self::TRANSIENT_OFFERED,
+                array_values(array_map(static fn($migration) => $migration->getId(), $offered)),
+                self::PROBE_TTL
+            );
+        }
+
+        return $this->offeredMemo = $offered;
     }
 
     public function register(MigrationInterface $migration): void
@@ -37,29 +194,125 @@ class MigrationManager
         $this->migrations[] = $migration;
     }
 
+    /**
+     * Is anything outstanding?
+     *
+     * Asking is not free: every index migration answers shouldRun() with its own
+     * `SHOW INDEX`, and this is consulted twice per admin page load — once to decide
+     * whether to register the Migration page, once to decide whether to show the notice.
+     * Measured unguarded on the reference install: **18 queries and 24.7 ms on every
+     * admin page**, which is the same defect class that was just removed from the admin
+     * bar. So the answer is memoised per request and the negative is cached across
+     * requests.
+     */
     public function needsMigration(): bool
     {
-        if ('yes' === get_option(self::OPTION_DISMISSED)) {
+        // Before the memo and the transient, deliberately. Consulted after them, a 12 h
+        // cached "dirty" would outlive the switch being thrown and the notice would keep
+        // offering a button that must not be pressed.
+        if (MigrationService::migrationsDisabled()) {
             return false;
         }
 
-        foreach ($this->migrations as $migration) {
-            if ($migration->shouldRun()) {
-                return true;
-            }
+        if (null !== $this->needsMemo) {
+            return $this->needsMemo;
         }
 
-		return false;
+        // S8 — dismissal is keyed to the SET that was dismissed, not to the literal 'yes'.
+        // needsMigration() short-circuits here, so a bare flag meant any migration added in
+        // v6.1 never announced itself on a site that completed v6.0's — a
+        // forward-compatibility hole in the exact mechanism the star-schema programme rides
+        // on. A changed set produces a different fingerprint and re-arms the notice by
+        // construction, with no upgrade step to remember.
+        if ($this->migrationSetFingerprint() === get_option(self::OPTION_DISMISSED)) {
+            return $this->needsMemo = false;
+        }
+
+        $cached = get_transient(self::TRANSIENT_PROBE);
+        if ('clean' === $cached || 'dirty' === $cached) {
+            return $this->needsMemo = ('dirty' === $cached);
+        }
+
+        $needs       = false;
+        $unavailable = false;
+        foreach ($this->migrations as $migration) {
+            // An OFFERED migration never makes the answer true. It is listed on the screen and
+            // runnable by name; what it must not do is put a notice on every admin page asking
+            // for a fact-table rebuild that Run 9 measured as buying nothing yet.
+            if ($migration->isOptional()) {
+                continue;
+            }
+
+            if ($migration->shouldRun()) {
+                $needs = true;
+                break;
+            }
+            // A probe that could not reach the database answers "nothing to do" — the
+            // safe answer, but not a KNOWN one.
+            $unavailable = $unavailable
+                || (method_exists($migration, 'probeUnavailable') && $migration->probeUnavailable());
+        }
+
+        // Never persist "I could not look" as "nothing to do". This cache has a
+        // twelve-hour life and only run/dismiss/reset clear it, so caching an
+        // unreachable database would hide the migration screen for half a day after
+        // the admin fixed the very configuration that broke it — with no way to force
+        // a re-probe.
+        if (!$unavailable) {
+            set_transient(self::TRANSIENT_PROBE, $needs ? 'dirty' : 'clean', self::PROBE_TTL);
+        }
+
+        return $this->needsMemo = $needs;
+    }
+
+    /**
+     * Drop both the per-request memo and the cached negative.
+     *
+     * Anything that changes what the probe would answer — running a migration, dismissing
+     * the notice, undismissing it — has to call this, or the UI reports the previous state.
+     */
+    public function forgetProbe(bool $migrationSucceeded = false): void
+    {
+        $this->needsMemo   = null;
+        $this->offeredMemo = null;
+        delete_transient(self::TRANSIENT_PROBE);
+        delete_transient(self::TRANSIENT_OFFERED);
+        if ($migrationSucceeded) {
+            // Keep the recorded drift until the next ordinary admin observation verifies it.
+            delete_transient(Schema::COLUMN_DRIFT_CHECK_TRANSIENT);
+        }
+    }
+
+    /**
+     * Fingerprint of the registered migration set.
+     *
+     * Built from getId(), never getName(): the latter is __()-wrapped, so keying on it would
+     * make a site-language change look like a new set and re-announce every migration (C34
+     * records the same defect in the per-migration checkpoints). Sorted so registration
+     * order cannot change the answer.
+     */
+    private function migrationSetFingerprint(): string
+    {
+        $ids = [];
+        foreach ($this->migrations as $migration) {
+            $ids[] = $migration->getId();
+        }
+
+        sort($ids);
+
+        return md5(implode('|', $ids));
     }
 
     public function dismissNotice(): void
     {
-        update_option(self::OPTION_DISMISSED, 'yes', false);
+        update_option(self::OPTION_DISMISSED, $this->migrationSetFingerprint(), false);
+        $this->forgetProbe();
     }
 
     public function resetDismissal(): void
     {
         delete_option(self::OPTION_DISMISSED);
+        $this->forgetProbe();
     }
 
     public function getStatus(): array
@@ -68,21 +321,243 @@ class MigrationManager
         return is_array($status) ? $status : [];
     }
 
+    /**
+     * Migrations known to have completed at least once, independent of the last attempt.
+     * Existing true statuses are accepted for backwards compatibility. A false/missing
+     * historical status cannot prove completion and is deliberately not guessed from schema.
+     *
+     * @return string[]
+     */
+    public static function completedMigrationIds(): array
+    {
+        $completed = [];
+        foreach ([self::OPTION_COMPLETED, self::OPTION_STATUS] as $option) {
+            $status = get_option($option, []);
+            foreach (is_array($status) ? $status : [] as $id => $ok) {
+                if (true === $ok && is_string($id)) {
+                    $completed[$id] = true;
+                }
+            }
+        }
+        return array_keys($completed);
+    }
+
+    /** Preserve legacy completion before a latest-result write can replace it. */
+    private static function rememberCompletedMigrations(array $results): void
+    {
+        $completed = array_fill_keys(self::completedMigrationIds(), true);
+        foreach ($results as $id => $ok) {
+            if (true === $ok && is_string($id)) {
+                $completed[$id] = true;
+            }
+        }
+        if ([] !== $completed) {
+            update_option(self::OPTION_COMPLETED, $completed, false);
+        }
+    }
+
+    /** Acquire the server-side lock on the same session that runs the DDL. */
+    private function claimRun(): bool
+    {
+        $db              = MigrationService::analyticsConnection();
+        $this->runLock   = 'wpss_migrate_' . md5($db->__get('dbname') . '|' . $GLOBALS['wpdb']->prefix);
+        $this->reconnectRetries = $db->__get('reconnect_retries');
+        $this->runToken         = bin2hex(random_bytes(16));
+        $result          = $db->get_var($db->prepare('SELECT GET_LOCK(%s, 0)', $this->runLock));
+        if (1 !== $result && '1' !== $result) {
+            $this->runContended = 0 === $result || '0' === $result;
+            $this->runRefusal = $this->runContended
+                ? __('Another migration is already running. Try again in a moment.', 'wp-slimstat')
+                : __('Could not acquire the database migration lock. Check the database connection and try again.', 'wp-slimstat');
+            return false;
+        }
+
+        $this->runConnection = $db;
+        $ready = false;
+        try {
+            $db->__set('reconnect_retries', 0);
+            update_option(self::OPTION_RUN_CLAIM, $this->runToken, false);
+            $this->runRefusal   = '';
+            $this->runContended = false;
+            $ready = true;
+        } finally {
+            if (!$ready) {
+                $this->releaseRun();
+            }
+        }
+
+        return true;
+    }
+
+    /** The AJAX layer uses this to distinguish contention from a broken lock query. */
+    public function getRunRefusal(): string
+    {
+        return $this->runRefusal;
+    }
+
+    public function isRunContended(): bool
+    {
+        return $this->runContended;
+    }
+
+    /**
+     * Confirm that this exact database session still owns the named lock.
+     *
+     * @phpstan-impure
+     */
+    private function ownsRunLock(): bool
+    {
+        if (!$this->runConnection) {
+            return false;
+        }
+
+        $result = $this->runConnection->get_var($this->runConnection->prepare(
+            'SELECT IS_USED_LOCK(%s) = CONNECTION_ID()',
+            $this->runLock
+        ));
+
+        if (1 === $result || '1' === $result) {
+            return true;
+        }
+
+        $this->runRefusal   = __('The database migration lock was lost. No completion status was written.', 'wp-slimstat');
+        $this->runContended = false;
+        return false;
+    }
+
+    /** Release once, after all protected writes, and restore wpdb's reconnect policy. */
+    private function releaseRun(): void
+    {
+        $db = $this->runConnection;
+        if (!$db) {
+            return;
+        }
+
+        try {
+            if ($this->ownsRunLock()) {
+                OptionClaim::delete(self::OPTION_RUN_CLAIM, $this->runToken, 'no');
+            }
+        } finally {
+            try {
+                $db->get_var($db->prepare('SELECT RELEASE_LOCK(%s)', $this->runLock));
+            } finally {
+                $db->__set('reconnect_retries', $this->reconnectRetries);
+                $this->runConnection = null;
+            }
+        }
+    }
+
+    /**
+     * Run one migration by id, under the same single-flight claim as runAll().
+     *
+     * @return bool|null null when there is no such migration, ownership was refused, or the lock was lost.
+     */
+
+    public function runOne(string $id): ?bool
+    {
+        if (MigrationService::migrationsDisabled() || !$this->claimRun()) {
+            return null;
+        }
+
+        try {
+            $target = null;
+            foreach ($this->migrations as $migration) {
+                if ($migration->getId() === $id) {
+                    $target = $migration;
+                    break;
+                }
+            }
+
+            if (null === $target) {
+                return null;
+            }
+
+            if (!$this->ownsRunLock()) {
+                return null;
+            }
+
+            $ok = $target->run();
+
+            if (!$this->ownsRunLock()) {
+                return null;
+            }
+
+            $status = $this->getStatus();
+            self::rememberCompletedMigrations([$target->getId() => $ok]);
+            $status[$target->getId()] = $ok;
+            update_option(self::OPTION_STATUS, $status, false);
+
+            $this->forgetProbe($ok);
+
+            return $ok;
+        } finally {
+            $this->releaseRun();
+        }
+    }
+
     public function runAll(): array
     {
+        if (MigrationService::migrationsDisabled()) {
+            return [];
+        }
+
+        // X7 — single flight. manage_options is held by every subsite Administrator and the
+        // endpoint had no mutual exclusion, so N parallel POSTs gave N concurrent
+        // ALGORITHM=COPY rebuilds contending on the metadata lock, each holding a connection
+        // for lock_wait_timeout plus rebuild time. A losing caller is refused, not queued:
+        // waiting behind a multi-minute table rebuild is how a request becomes a timeout.
+        if (!$this->claimRun()) {
+            return [];
+        }
         $results = [];
-        foreach ($this->migrations as $migration) {
-            // Only run if needed, but always record status
-            $ok = !$migration->shouldRun() || $migration->run();
-            $results[$migration->getName()] = $ok;
-        }
 
-        update_option(self::OPTION_STATUS, $results, false);
-        if (!$this->needsMigration()) {
-            $this->dismissNotice();
-        }
+        try {
+            foreach ($this->migrations as $migration) {
+                // "Apply All" applies everything OWED. An offered migration is skipped and left
+                // out of the results entirely rather than recorded as true — writing `true` for
+                // something that did not run is how a status map starts lying, and this map is
+                // what the screen renders.
+                if ($migration->isOptional()) {
+                    continue;
+                }
 
-        return $results;
+                if (!$this->ownsRunLock()) {
+                    return [];
+                }
+
+                // An index can decline DDL because its definition is malformed or unreadable.
+                // Its idempotent run() distinguishes that refusal from a healthy existing index.
+                if ($migration instanceof AbstractIndexMigration) {
+                    $ok = $migration->run();
+                } elseif (!$migration->shouldRun()) {
+                    $ok = true;
+                } elseif (!$this->ownsRunLock()) {
+                    return [];
+                } else {
+                    $ok = $migration->run();
+                }
+                $results[$migration->getId()] = $ok;
+            }
+
+            if (!$this->ownsRunLock()) {
+                return [];
+            }
+
+            self::rememberCompletedMigrations($results);
+            update_option(self::OPTION_STATUS, $results, false);
+
+            // Re-probe against the database we just changed, not against the answer cached
+            // before we changed it.
+            $this->forgetProbe(in_array(true, $results, true));
+
+            if (!$this->needsMigration()) {
+                $this->dismissNotice();
+            }
+
+            return $results;
+        } finally {
+            $this->releaseRun();
+        }
     }
 
     /**

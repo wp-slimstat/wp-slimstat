@@ -16,14 +16,14 @@
  * report pages and assert the data is visible. No tracking settings needed.
  */
 import { test, expect, Page } from '@playwright/test';
-import { BASE_URL } from './helpers/env';
+import { ADMIN_PASS, ADMIN_USER, BASE_URL } from './helpers/env';
 import { getPool, closeDb, clearStatsTable } from './helpers/setup';
 
 /** Login if the page was redirected to wp-login.php */
 async function ensureLoggedIn(page: Page): Promise<void> {
   if (page.url().includes('wp-login.php')) {
-    await page.fill('#user_login', 'parhumm');
-    await page.fill('#user_pass', 'testpass123');
+    await page.fill('#user_login', ADMIN_USER);
+    await page.fill('#user_pass', ADMIN_PASS);
     await page.click('#wp-submit');
     await page.waitForURL('**/wp-admin/**', { timeout: 30_000 });
   }

@@ -15,6 +15,18 @@ use WpSlimstat\Tests\Unit\WpSlimstatTestCase;
 class UADetectorBotTest extends WpSlimstatTestCase
 {
     /** @test */
+    public function test_malformed_ua_os_header_is_ignored(): void
+    {
+        $_SERVER['HTTP_UA_OS'] = ['malformed'];
+        try {
+            $browser = \SlimStat\Utils\UADetector::get_browser('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130.0.0.0 Safari/537.36');
+            $this->assertIsArray($browser);
+        } finally {
+            unset($_SERVER['HTTP_UA_OS']);
+        }
+    }
+
+    /** @test */
     public function test_old_desktop_googlebot_detected_as_crawler(): void
     {
         $ua = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';

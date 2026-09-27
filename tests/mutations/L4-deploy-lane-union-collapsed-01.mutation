@@ -1,0 +1,17 @@
+target:    .github/expected-lanes.sh
+gate:      php tests/perf-gate-integrity-test.php
+kind:      restore-defect
+expect:    disagree about which lanes gate the deploy
+rationale: The half of the union that is observable today. Two independent things make a Tier 2 lane release-gating -- it runs the blocking escaping gate, or its own E2E step can fail the job -- and neither is a superset of the other by construction. Collapsing the union to the blocking family alone still names two real lanes and still reads as a derivation, but drops WP 7.0, whose escaping gate runs and whose E2E step is advisory: a tag on a commit whose XSS gate failed on 7.0 would find the required set green. Section 5b computes the same union through slimstat_ci_wp_lanes() and names the missing lane. The opposite collapse -- back to the escaping set alone -- is NOT observable today, because the blocking set {6.4, 7.1} is currently a subset of the escaping set; that direction is held by the derivation being read from both files at all, and becomes mutation-visible the moment the two sets diverge.
+---
+--- a/.github/expected-lanes.sh
++++ b/.github/expected-lanes.sh
+@@ -108,7 +108,7 @@
+ esac
+ 
+ # Union, deduplicated, in version order so the comparison in perf-gate §5b is order-stable.
+-tier2_wp=$(printf '%s\n%s\n' "$esc_wp" "$block_wp" | grep -E '^[0-9]+\.[0-9]+$' | sort -u -V)
++tier2_wp=$(printf '%s\n' "$block_wp" | grep -E '^[0-9]+\.[0-9]+$' | sort -u -V)
+ 
+ echo "Static analysis · PHPStan"
+ 

@@ -20,11 +20,29 @@
             var $li = $("<li/>", { id: "slimstat-step-" + s.id });
             $li.append($("<div/>", { class: "label", html: s.name + " — " + s.desc }));
             $li.append($("<span/>", { class: "status" }));
+            // An OFFERED step gets its own control and is skipped by "Start Migration".
+            // Without the button it would be listed and unstartable, which is how the first
+            // version of this shipped: excluded from the run loop and given nothing to replace
+            // it, so "optional" meant "visible and impossible".
+            if (s.optional) {
+                $li.addClass("slimstat-step-optional");
+                $li.append(
+                    $("<button/>", {
+                        class: "button slimstat-run-step",
+                        type: "button",
+                        "data-migration": s.id,
+                        text: SlimstatMigration.labels.runThisStep || "Run this step"
+                    })
+                );
+            }
             $ul.append($li);
         });
     }
     function setProgress(done, total) {
-        var pct = total ? Math.round((done / total) * 100) : 0;
+        // Multiply first, divide once. A progress bar is a percentage of two counts like any
+        // other, and Math.round of a value one ULP below the half rounds the wrong way in V8 the
+        // same as it does in PHP 8.4+. ADR-17; PITFALLS 72.
+        var pct = total ? Math.round((100 * done) / total) : 0;
         var $wrap = $(".slimstat-migration .progress");
         $(".slimstat-migration .bar").css("width", pct + "%");
         $("#slimstat-progress-percent").text(pct + "%");
@@ -56,8 +74,67 @@
         var label = $text.data("label-" + state) || "";
         if (label) $text.text(label);
     }
+    // IIFE SCOPE, not runAll()'s. runStep() is called by BOTH the run loop and the
+    // offered-step click handler, and that handler is a sibling of runAll() rather than
+    // inside it — declaring these helpers in runAll() made the click handler throw
+    // ReferenceError after it had already disabled the button and started the spinner, so
+    // the offered migration was unrunnable and said nothing. `node --check` passes on that,
+    // which is why a syntax gate could not see it.
+    // Both migration requests: same endpoint, same nonce, same budget. The per-step call
+    // is the one that matters — MigrationManager::runOne() is where the ALGORITHM=COPY
+    // rebuild happens, so it is the request that meets a proxy's 504, not the final sweep.
+    function postMigration(extra) {
+        return $.ajax({
+            url: SlimstatMigration.ajaxUrl,
+            type: "POST",
+            data: $.extend({ action: "slimstat_run_migrations", _ajax_nonce: SlimstatMigration.nonce }, extra || {}),
+            // Without a timeout the request never settles and the spinner reads as
+            // "still working" forever. 15 minutes is a rebuild budget, not a guess.
+            timeout: 15 * 60 * 1000
+        });
+    }
+
+    // Bounded on WALL CLOCK first, pass count second. "Keep going while the server says so"
+    // is a loop whose exit condition lives on the other end of the network, so it needs a
+    // bound on this side — and a pass count is not one: PASS_SECONDS bounds only the
+    // stamping loop, while a pass also pays its ALTER and its probes, and postMigration's
+    // own timeout is 15 minutes. 120 passes is therefore up to 30 hours, not the ~20
+    // minutes the count suggests. The clock is what makes the stated bound true.
+    var MAX_PASSES = 120;
+    var MAX_RETRY_MS = 20 * 60 * 1000;
+
+    function runStep(id, onSettled, pass, since) {
+        pass = pass || 1;
+        since = since || Date.now();
+
+        postMigration({ migration: id }).done(function (resp) {
+            var ok = !!(resp && resp.success);
+            var more = !!(resp && resp.data && resp.data.remaining);
+
+            if (ok && more && pass < MAX_PASSES && (Date.now() - since) < MAX_RETRY_MS) {
+                runStep(id, onSettled, pass + 1, since);
+                return;
+            }
+
+            onSettled(ok && !more, ok && more ? SlimstatMigration.labels.notComplete : null);
+        }).fail(function (xhr, textStatus) {
+            onSettled(null, transportMessage(xhr, textStatus));
+        });
+    }
+
+    function transportMessage(xhr, textStatus) {
+        if ("timeout" === textStatus) {
+            return SlimstatMigration.labels.timedOut;
+        }
+        return SlimstatMigration.labels.requestFailed + " (" + ((xhr && xhr.status) || textStatus) + ")";
+    }
     function runAll() {
-        var steps = (SlimstatMigration && SlimstatMigration.steps) || [];
+        // OWED ONLY. "Start Migration" applies what the site is owed; an offered step has its
+        // own button. Filtering here rather than in the loop keeps `total` and the progress
+        // bar honest — counting steps that will never run made the bar stop short of 100%.
+        var steps = ((SlimstatMigration && SlimstatMigration.steps) || []).filter(function (s) {
+            return !s.optional;
+        });
         var i = 0,
             done = 0,
             total = steps.length;
@@ -70,22 +147,37 @@
         var elapsedTimer = setInterval(function () {
             updateMetrics(done, total, startTs);
         }, 1000);
+
+        // A long backfill cannot finish inside one request, and it must not pretend to.
+        //
+        // The server now answers `remaining: true` when a step made progress but has more to
+        // do. Before that, a pass that stamped 500 tuples correctly and left 4,000 returned
+        // false, the UI painted it red as "Failed", and the admin was given no reason to think
+        // clicking again would help. Re-posting the SAME step is the whole fix: each pass takes
+        // and releases its own single-flight claim, so a stalled pass cannot deadlock the next.
+        //
+        // One exit for "the run is over". Badge, text and button state are decided here and
+        // nowhere else — two hand-written copies is how the else branch came to claim success.
+        function finishRun(state, message) {
+            updateStatus(message);
+            $("#slimstat-back-dashboard").show();
+            $("#slimstat-start-migration").toggle("error" === state);
+            $(".spinner").removeClass("is-active");
+            setStatusBadge(state);
+            setStatusText("error" === state ? "failed" : "done");
+            updateMetrics(done, total, startTs);
+            clearInterval(elapsedTimer);
+        }
+
         function next() {
             if (i >= total) {
                 // All individual steps completed, now run the final migration
-                $.post(SlimstatMigration.ajaxUrl, { action: "slimstat_run_migrations", _ajax_nonce: SlimstatMigration.nonce }, function (resp) {
+                postMigration().done(function (resp) {
                     var success = !!(resp && resp.success);
                     var data = resp && resp.data;
 
                     if (success && data && data.all_complete) {
-                        updateStatus(data.message || SlimstatMigration.labels.allFinished);
-                        $("#slimstat-back-dashboard").show();
-                        $("#slimstat-start-migration").hide();
-                        $(".spinner").removeClass("is-active");
-                        setStatusBadge("success");
-                        setStatusText("done");
-                        updateMetrics(done, total, startTs);
-                        clearInterval(elapsedTimer);
+                        finishRun("success", data.message || SlimstatMigration.labels.allFinished);
 
                         // Show completion message and redirect after a delay
                         setTimeout(function () {
@@ -93,23 +185,28 @@
                             window.location.href = $("#slimstat-back-dashboard").attr("href") || "admin.php?page=" + ((wp_slimstat_admin && wp_slimstat_admin.main_menu_slug) || "slimview1");
                         }, 2000);
                     } else {
-                        updateStatus(SlimstatMigration.labels.allFinished);
-                        $("#slimstat-back-dashboard").show();
-                        $("#slimstat-start-migration").hide();
-                        $(".spinner").removeClass("is-active");
-                        setStatusBadge("success");
-                        setStatusText("done");
-                        updateMetrics(done, total, startTs);
-                        clearInterval(elapsedTimer);
+                        // Reached exactly when the run did not complete.
+                        finishRun("error", (data && data.message) || SlimstatMigration.labels.notComplete);
                     }
+                }).fail(function (xhr, textStatus) {
+                    finishRun("error", transportMessage(xhr, textStatus));
                 });
                 return;
             }
             var step = steps[i];
             var $row = $("#slimstat-step-" + step.id + " .status");
             $row.html('<span style="color:#0073aa;">' + SlimstatMigration.labels.inProgress + '</span> <span class="spinner is-active"></span>');
-            $.post(SlimstatMigration.ajaxUrl, { action: "slimstat_run_migrations", _ajax_nonce: SlimstatMigration.nonce, migration: step.id }, function (resp) {
-                var ok = !!(resp && resp.success);
+            runStep(step.id, function (ok, message) {
+                if (null === ok) {
+                    $row.html('<span style="color:red;">' + SlimstatMigration.labels.failed + "</span>");
+                    // Deliberately does NOT call next(). A transport failure means this step's
+                    // outcome is unknown — it may still be running server-side — and starting
+                    // the next rebuild concurrently with one that may be alive is the exact
+                    // contention the single-flight claim exists to prevent.
+                    finishRun("error", message);
+                    return;
+                }
+
                 $row.html(ok ? '<span style="color:green;">' + SlimstatMigration.labels.done + "</span>" : '<span style="color:red;">' + SlimstatMigration.labels.failed + "</span>");
                 done += ok ? 1 : 0;
                 setProgress(done, total);
@@ -120,7 +217,7 @@
                     $("#slimstat-status-note")
                         .removeClass("notice-info")
                         .addClass("notice-error")
-                        .text(SlimstatMigration.labels.failedHelp || "A step failed. Please check logs and retry.");
+                        .text(message || SlimstatMigration.labels.failedHelp || "A step failed. Please check logs and retry.");
                 }
                 i++;
                 next();
@@ -142,6 +239,42 @@
             $(this).prop("disabled", true);
             $(this).find(".spinner").addClass("is-active");
             runAll();
+        });
+
+        // One OFFERED step, started deliberately by the admin. Posts the same endpoint with the
+        // same nonce and the same 15-minute budget as a step inside the run loop — the work is
+        // identical, only the decision to do it differs.
+        $(document).on("click", ".slimstat-run-step", function (e) {
+            e.preventDefault();
+
+            var $btn = $(this).prop("disabled", true);
+            var id = $btn.data("migration");
+            var $status = $("#slimstat-step-" + id + " .status");
+
+            $status.html(
+                '<span style="color:#0073aa;">' + SlimstatMigration.labels.inProgress + "</span> " +
+                '<span class="spinner is-active"></span>'
+            );
+
+            // Same runner as a step inside the run loop. The offered steps are the two that
+            // rebuild whole tables, so they are the ones most likely to need several passes —
+            // running them through a second, simpler request handler is how the two paths
+            // would drift.
+            runStep(id, function (ok, message) {
+                if (null === ok || !ok) {
+                    $status.html(
+                        '<span style="color:red;">' + SlimstatMigration.labels.failed + "</span> " +
+                        (message ? '<span style="color:#666;">' + message + "</span>" : "")
+                    );
+                    $btn.prop("disabled", false);
+                    return;
+                }
+
+                $status.html('<span style="color:green;">' + SlimstatMigration.labels.done + "</span>");
+                // Re-enabled only on failure, so a completed step cannot be started twice by
+                // a second click while the page still shows it.
+                $btn.prop("disabled", true);
+            });
         });
 
         // Notice dismissal

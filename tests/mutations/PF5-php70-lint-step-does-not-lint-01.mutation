@@ -1,0 +1,17 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:php-floor
+kind:      guard-removal
+expect:    does not run `php -l`
+rationale: Keeps the php:7.0 container step but runs `php -v` in it; the step still exists and names the file, so only the `php -l` assertion in section 5 can catch it.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -131,7 +131,7 @@
+         # Only an interpreter says what parses (PITFALLS 116). Pinned by tests/php-floor-test.php
+         # §5; one lane, since the answer does not depend on the host PHP. Alpine: 30 MB, not 130.
+         if: ${{ matrix.php == '7.4' }}
+-        run: docker run --rm -v "${PWD}:/p:ro" -w /p php:7.0-cli-alpine php -l wp-slimstat.php
++        run: docker run --rm -v "${PWD}:/p:ro" -w /p php:7.0-cli-alpine php -v
+ 
+       - name: Python for the cross-language encoder gate
+         # test:source-level now includes test:fingerprint-v2-py, so python3 is a hard

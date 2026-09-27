@@ -1,0 +1,19 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+expect:    P24-a-dropped-row-is-a-difference
+kind:      guard-removal
+rationale: The other half of the same conjunct. Kept separate from its sibling for the same reason the
+           two pin mutations are separate: this one is killed by P24 (a dropped row IS a
+           difference) and the other by P49, so one entry would defend one plant.
+---
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -565,7 +565,7 @@
+     limit = contract["limit"]
+     if limit is None:
+         return compare_rows(a_rows, b_rows, contract)
+-    if len(a_rows) != limit or len(b_rows) != limit:
++    if len(a_rows) != limit:
+         return compare_rows(a_rows, b_rows, contract)
+ 
+     field_name = contract["count_field"]

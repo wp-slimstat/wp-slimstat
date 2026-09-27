@@ -1,0 +1,19 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    reads its topology from the manifest
+rationale: The topology was a default that every cell silently inherited, and a default is not a pin: it moves when the default moves, and a recorded PASS then describes a topology nobody can reconstruct. Dropping the manifest lookup restores exactly that, and nothing in a cell's own output would look different -- it would still print "WP 6.7 / PHP 8.2" and still pass. It also silently moves cell 7a off PHP 7.4 and onto 8.2, which is not a neutral change: 4.8.1 predates PHP 8 by two years, so the arm would fatal before the upgrade path is reached and the cell would report a finding about PHP rather than about the upgrade.
+---
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -146,8 +146,8 @@
+ CELL_KEY="${REHEARSAL_CELL:-$(cell_for_ref "$OLD_REF")}"
+ CELL_WP=$(cell_field "$CELL_KEY" 4)
+ CELL_PHP=$(cell_field "$CELL_KEY" 5)
+-PHP="${TOPOLOGY_PHP:-${CELL_PHP:-8.2}}"
+-WP="${TOPOLOGY_WP:-${CELL_WP:-6.7}}"
++PHP="${TOPOLOGY_PHP:-8.2}"
++WP="${TOPOLOGY_WP:-6.7}"
+ 
+ # lib.sh owns "newest dump in the baselines directory", and the caveat that goes with it: as of
+ # 2026-09-05 the newest one is a MIGRATED dump carrying vid_hash, so the convenient default now

@@ -10,7 +10,7 @@ Feature: Bundled Symfony/Polyfill/Php80 is loaded on every request
 
   Background:
     Given WP Slimstat 5.4.17 or later is active
-    And the bundled Symfony/Polyfill/Php80 bootstrap exists at src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php
+    And the bundled Symfony/Polyfill/Php80 bootstrap exists in the generated WP Scoper package tree
 
   Scenario Outline: bdd-polyfilled-function-is-callable-after-plugin-boot
     When the plugin's wp-slimstat.php is loaded

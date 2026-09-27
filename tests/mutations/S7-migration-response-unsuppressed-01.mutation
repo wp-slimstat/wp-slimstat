@@ -1,0 +1,17 @@
+target:    src/Migration/Admin/MigrationAdmin.php
+gate:      php tests/migration-ui-honesty-test.php
+kind:      guard-removal
+expect:    does not suppress wpdb errors around the run
+rationale: Stop suppressing wpdb errors around the migration run. wpdb prints an HTML error block whenever show_errors is on - which it is whenever WP_DEBUG and WP_DEBUG_DISPLAY are - and that echo lands BEFORE wp_send_json_success(). The body becomes HTML-then-JSON, jQuery's .done() receives undefined, and a migration that SUCCEEDED reports as failed. It bites precisely the installs whose owners turned debugging on to find out why something was wrong.
+---
+--- a/src/Migration/Admin/MigrationAdmin.php
++++ b/src/Migration/Admin/MigrationAdmin.php
+@@ -294,7 +294,7 @@
+ 		// filter returning something that is not a wpdb — which this would otherwise call
+ 		// suppress_errors() on, fatally, inside the AJAX handler.
+ 		$analytics  = \SlimStat\Migration\MigrationService::analyticsConnection();
+-		$suppressed = $analytics->suppress_errors(true);
++		$suppressed = false;
+ 
+ 		try {
+ 			if ($only) {

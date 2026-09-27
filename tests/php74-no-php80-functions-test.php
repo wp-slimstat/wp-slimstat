@@ -21,7 +21,7 @@
  *
  * Source-level regression: PHP 8.0+ stdlib functions in own code.
  *
- * As of v5.4.17 the Mozart-scoped Symfony/Polyfill/Php80 bootstrap is loaded
+ * As of v5.4.17 the scoped Symfony/Polyfill/Php80 bootstrap is loaded
  * from wp-slimstat.php, so the 7 PHP 8.0 stdlib functions it polyfills are
  * safe to use in own code. This test:
  *
@@ -47,8 +47,9 @@ if (false === $boot) {
     fwrite(STDERR, "FAIL: cannot read wp-slimstat.php\n");
     exit(1);
 }
-if (!preg_match('#require_once\s+__DIR__\s*\.\s*[\'"]/src/Dependencies/Symfony/Polyfill/Php80/bootstrap\.php[\'"]#', $boot)) {
-    fwrite(STDERR, "FAIL: wp-slimstat.php must `require_once __DIR__ . '/src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php';`\n");
+if (false === strpos($boot, "/src/Dependencies/veronalabs/browscap-php/src/Symfony/Polyfill/")
+    || !preg_match('#require_once\s+\$slimstat_dependency_root\s*\.\s*[\'"]Php80/bootstrap\.php[\'"]#', $boot)) {
+    fwrite(STDERR, "FAIL: wp-slimstat.php must load the generated Symfony/Polyfill/Php80 bootstrap.\n");
     fwrite(STDERR, "      Without it, str_contains/str_starts_with/etc. fatal on PHP 7.4.\n");
     exit(1);
 }
@@ -56,8 +57,16 @@ if (!preg_match('#require_once\s+__DIR__\s*\.\s*[\'"]/src/Dependencies/Symfony/P
 // ── 2. Scan own code for stdlib functions NOT covered by the bundled polyfill ─
 
 // Symfony/Polyfill/Php80 covers these 7 (verified in
-// src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php). They are safe to use
+// the generated Symfony/Polyfill/Php80 bootstrap). They are safe to use
 // in own code, so they are NOT in $forbidden_functions.
+// NOT read from the shared helper, and the reason is that this file does not use it as a rule.
+// The allowance here IS the absence of these names from $forbidden_functions below; $polyfilled
+// only supplies a sentence on the failure path. An earlier version imported the library for it
+// and justified the import with "two copies would let a Symfony bump widen the allowance while
+// leaving the ban short" — true of php80-syntax-scan-test.php, which BANS them, and not of this
+// file, which bans nothing with it. The import also put this file in both halves of the
+// opted-in/raw-scanner partition source-scan-strength-test.php asserts. A local list feeding one
+// diagnostic string is the smaller thing.
 $polyfilled = ['fdiv', 'preg_last_error_msg', 'str_contains', 'str_starts_with', 'str_ends_with', 'get_debug_type', 'get_resource_id'];
 
 // PHP 8.1+ stdlib functions with no PHP 7.4 fallback in the bundled polyfill.
@@ -105,7 +114,13 @@ foreach ($files as $file) {
     $contents = file_get_contents($file);
     if (false === $contents) continue;
     foreach ($forbidden_functions as $fn) {
-        $pattern = '/(?<![>:$\\\\])\b' . preg_quote($fn, '/') . '\s*\(/';
+        // The lookbehind used to exclude a preceding backslash outright, which silently
+        // exempted the ROOT-QUALIFIED spelling: `\str_contains(` is the same global function
+        // and just as fatal on the 7.4 floor, and this scan could not see it. Now the leading
+        // `\` is part of the match and only a NAMESPACED call is excluded — in `Foo\str_contains(`
+        // the backslash is preceded by a word character, and starting at the name instead is
+        // blocked by the `\\` still in the class. `->fn(`, `::fn(` and `$fn(` stay excluded.
+        $pattern = '/(?<![\w>:$\\\\])\\\\?' . preg_quote($fn, '/') . '\s*\(/';
         if (!preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE)) continue;
         foreach ($matches[0] as [$match, $offset]) {
             $line_no = substr_count($contents, "\n", 0, $offset) + 1;

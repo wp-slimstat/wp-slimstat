@@ -65,6 +65,20 @@ export function removeWpConfigLine(line: string): void {
 
 // ─── MU-Plugin manifest ───────────────────────────────────────────
 
+/**
+ * Deploy a mu-plugin over whatever is already there.
+ *
+ * `fs.copyFileSync` keeps the source mode and cannot overwrite a read-only
+ * destination (EACCES). A checkout whose files are mode 444 — a pinned
+ * qualification checkout, for instance — therefore made every install after
+ * `installAllTestMuPlugins()` fail, taking the whole spec file with it.
+ */
+export function deployMuPlugin(src: string, dest: string): void {
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.rmSync(dest, { force: true });
+  fs.copyFileSync(src, dest);
+}
+
 interface MuPluginEntry { sourceFile: string; deployedFile: string; }
 
 const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
@@ -78,12 +92,14 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
   { sourceFile: 'version-floor-test-mu-plugin.php', deployedFile: 'version-floor-test-mu-plugin.php' },
   { sourceFile: 'early-textdomain-mu-plugin.php', deployedFile: 'early-textdomain-mu-plugin.php' },
   { sourceFile: 'mail-sink-mu-plugin.php', deployedFile: 'mail-sink-mu-plugin.php' },
+  { sourceFile: 'delayed-tracker-response-mu-plugin.php', deployedFile: 'delayed-tracker-response-mu-plugin.php' },
   { sourceFile: 'rewrite-flush-mu-plugin.php', deployedFile: 'rewrite-flush-mu-plugin.php' },
   { sourceFile: 'plugin-lifecycle-mu-plugin.php', deployedFile: 'plugin-lifecycle-mu-plugin.php' },
   { sourceFile: 'custom-db-simulator-mu-plugin.php', deployedFile: 'custom-db-simulator-mu-plugin.php' },
   { sourceFile: 'calendar-ext-simulator-mu-plugin.php', deployedFile: 'calendar-ext-simulator-mu-plugin.php' },
   { sourceFile: 'browscap-unzip-blocker-mu-plugin.php', deployedFile: 'browscap-unzip-blocker-mu-plugin.php' },
   { sourceFile: 'fileinfo-disabler-mu-plugin.php', deployedFile: 'fileinfo-disabler-mu-plugin.php' },
+  { sourceFile: 'google-maps-key-mu-plugin.php', deployedFile: 'google-maps-key-mu-plugin.php' },
 ];
 
 // ─── Generic MU-Plugin install/uninstall by name ──────────────────
@@ -91,8 +107,7 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
 export function installMuPluginByName(name: string): void {
   const entry = MU_PLUGIN_MANIFEST.find((e) => e.sourceFile === name);
   if (!entry) throw new Error(`MU-Plugin "${name}" not found in manifest`);
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
-  fs.copyFileSync(path.join(__dirname, entry.sourceFile), path.join(MU_PLUGINS, entry.deployedFile));
+  deployMuPlugin(path.join(__dirname, entry.sourceFile), path.join(MU_PLUGINS, entry.deployedFile));
 }
 
 export function uninstallMuPluginByName(name: string): void {
@@ -115,9 +130,8 @@ function isGlobalMuPluginsManaged(): boolean {
 }
 
 export function installAllTestMuPlugins(): void {
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
   for (const entry of MU_PLUGIN_MANIFEST) {
-    fs.copyFileSync(path.join(__dirname, entry.sourceFile), path.join(MU_PLUGINS, entry.deployedFile));
+    deployMuPlugin(path.join(__dirname, entry.sourceFile), path.join(MU_PLUGINS, entry.deployedFile));
   }
   fs.writeFileSync(GLOBAL_MU_SENTINEL, '', 'utf8');
 }
@@ -133,8 +147,7 @@ export function uninstallAllTestMuPlugins(): void {
 // ─── MU-Plugin manager (legacy) ───────────────────────────────────
 
 export function installMuPlugin(): void {
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
-  fs.copyFileSync(LOGGER_SRC, LOGGER_DEST);
+  deployMuPlugin(LOGGER_SRC, LOGGER_DEST);
 }
 
 export function uninstallMuPlugin(): void {
@@ -145,8 +158,7 @@ export function uninstallMuPlugin(): void {
 // ─── Nonce helper MU-Plugin (legacy) ─────────────────────────────
 
 export function installNonceHelper(): void {
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
-  fs.copyFileSync(NONCE_HELPER_SRC, NONCE_HELPER_DEST);
+  deployMuPlugin(NONCE_HELPER_SRC, NONCE_HELPER_DEST);
 }
 
 export function uninstallNonceHelper(): void {
@@ -196,6 +208,67 @@ export function getPool(): mysql.Pool {
     pool = mysql.createPool(MYSQL_CONFIG);
   }
   return pool;
+}
+
+/**
+ * Make sure a WordPress user exists with this login and password, and return its ID.
+ *
+ * A spec that logs in as a named user was, until Run 65, betting on that user existing —
+ * `gerlando` exists on one developer's LocalWP install and on nothing else, so ten tests in
+ * user-overview-login-tracking spent 45 s each waiting for a wp-admin URL that a failed login
+ * never produced (H-LOGIN, the second-largest family of the 132). The ID matters as much as
+ * the login: the login notes those specs seed carry `[user:N]`, and N was hardcoded to the ID
+ * the user happened to have on that one machine.
+ *
+ * The password is stored as a bare MD5. WordPress has accepted that as a legacy hash since
+ * before phpass and rehashes it on the first successful login, which is exactly what we want:
+ * no PHP process is needed to create a usable account, and the row self-upgrades in place.
+ */
+export async function ensureWpUser(
+  login: string,
+  password: string,
+  role: string = 'administrator'
+): Promise<number> {
+  const pool = getPool();
+  const [existing] = (await pool.execute(
+    'SELECT ID FROM wp_users WHERE user_login = ?',
+    [login]
+  )) as any;
+
+  let id: number;
+  if (existing.length > 0) {
+    id = existing[0].ID;
+    // Reset the password rather than trusting it: an account left over from an earlier run
+    // (or from a developer's own install) can carry any hash at all, and a wrong one fails
+    // exactly like a missing user.
+    await pool.execute('UPDATE wp_users SET user_pass = MD5(?) WHERE ID = ?', [password, id]);
+  } else {
+    const [result] = (await pool.execute(
+      `INSERT INTO wp_users (user_login, user_pass, user_nicename, user_email, user_registered, display_name)
+       VALUES (?, MD5(?), ?, ?, NOW(), ?)`,
+      [login, password, login, `${login}@e2e.invalid`, login]
+    )) as any;
+    id = result.insertId;
+  }
+
+  const caps = `a:1:{s:${role.length}:"${role}";b:1;}`;
+  const level = 'administrator' === role ? '10' : '0';
+  for (const [key, value] of [
+    ['wp_capabilities', caps],
+    ['wp_user_level', level],
+    ['nickname', login],
+  ]) {
+    // Delete-then-insert, not ON DUPLICATE KEY UPDATE: wp_usermeta's (user_id, meta_key)
+    // pair carries no unique index, so the upsert clause never fires and every run would
+    // add a second wp_capabilities row instead of replacing the first.
+    await pool.execute('DELETE FROM wp_usermeta WHERE user_id = ? AND meta_key = ?', [id, key]);
+    await pool.execute(
+      'INSERT INTO wp_usermeta (user_id, meta_key, meta_value) VALUES (?, ?, ?)',
+      [id, key, value]
+    );
+  }
+
+  return id;
 }
 
 export async function closeDb(): Promise<void> {
@@ -320,8 +393,7 @@ export function disableE2eTesting(): void {
 }
 
 export function installCronFrontendShim(): void {
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
-  fs.copyFileSync(CRON_SHIM_SRC, CRON_SHIM_DEST);
+  deployMuPlugin(CRON_SHIM_SRC, CRON_SHIM_DEST);
   injectWpConfigLine(E2E_TESTING_LINE);
 }
 
@@ -362,8 +434,7 @@ const OPTION_MUTATOR_DEST = path.join(MU_PLUGINS, 'option-mutator-mu-plugin.php'
 const BASE_URL = ENV_BASE_URL;
 
 export function installOptionMutator(): void {
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
-  fs.copyFileSync(OPTION_MUTATOR_SRC, OPTION_MUTATOR_DEST);
+  deployMuPlugin(OPTION_MUTATOR_SRC, OPTION_MUTATOR_DEST);
 }
 
 export function uninstallOptionMutator(): void {
@@ -434,11 +505,21 @@ export async function deleteSlimstatOption(_page: import('@playwright/test').Pag
 /**
  * Set multiple slimstat options in a single DB roundtrip.
  * Reads the serialized options once, updates all keys, writes back once.
+ *
+ * This took a `page` first argument for its whole life and never used it. Nothing type-checks the
+ * suite — Playwright transpiles without tsc — so `setSlimstatOptions({ add_posts_column: 'on' })`
+ * put the options object into `_page`, left `opts` undefined, and `Object.assign(current,
+ * undefined)` wrote the settings back untouched without a word. The spec that did it
+ * (php80-posts-column-interval-flip) then failed on the column it thought it had switched on, and
+ * was carried as a product failure through a whole qualification round. The parameter is gone, so
+ * that call is now the correct one; the guard below catches the next shape of the same mistake.
  */
 export async function setSlimstatOptions(
-  _page: import('@playwright/test').Page,
   opts: Record<string, string>,
 ): Promise<void> {
+  if (!opts || typeof opts !== 'object' || Array.isArray(opts) || Object.keys(opts).length === 0) {
+    throw new Error(`setSlimstatOptions() needs a non-empty options object, got: ${JSON.stringify(opts)}`);
+  }
   const pool = getPool();
   const [rows] = await pool.execute(
     "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'"
@@ -521,6 +602,23 @@ export async function clearStatsTable(): Promise<void> {
   await pool.execute("TRUNCATE TABLE wp_slim_stats");
   await pool.execute("TRUNCATE TABLE wp_slim_events");
   await pool.execute("SET FOREIGN_KEY_CHECKS = 1");
+  // Every cache derived from wp_slim_stats must go with the rows, or a spec that
+  // truncates and re-seeds reads the pre-truncate answer. admin/index.php:3276
+  // online_count() caches to the next minute boundary, so a `0` written while the
+  // table was empty outlives the seeding of the very rows the assertion is about --
+  // that is production-bug-regression.spec.ts:237 failing with `Received: 0` in
+  // ~600ms while its sibling, which runs the same SQL directly, passes.
+  //
+  // Named families only. slimstat_matomo_searchengine and
+  // slimstat_notification_fetch_lock cache/limit *outbound network* calls, and
+  // slimstat_migration_offered / slimstat_migration_probe are migration state --
+  // dropping any of those makes the suite noisier, not cleaner. Both
+  // `slimstat_query_*` (admin/view/wp-slimstat-db.php:551) and
+  // `wp_slimstat_query_*` (src/Utils/Query.php:847) exist; the earlier pattern
+  // matched only the second.
+  await pool.execute(
+    "DELETE FROM wp_options WHERE option_name REGEXP '^_transient_(timeout_)?(wp_)?slimstat_(adminbar_|chart_data_|query_|resource_titles)'"
+  );
 }
 
 /**
@@ -713,23 +811,82 @@ export async function waitForTrackerId(page: import('@playwright/test').Page): P
 // ─── Event row helpers ───────────────────────────────────────────
 
 /**
- * Poll wp_slim_events for a row matching the given stat id.
- * Returns the first match or null on timeout.
+ * Append an anchor whose click is tracked but does not navigate.
+ *
+ * The capture-phase preventDefault stops navigation without stopping propagation,
+ * so SlimStat's body-level click delegation still fires exactly as it would for a
+ * real visitor — which using an href the browser refuses to follow would not.
+ */
+export async function injectTrackedLink(
+  page: import('@playwright/test').Page,
+  opts: { id: string; href: string; className?: string; text?: string },
+): Promise<void> {
+  await page.evaluate(
+    ({ id, href, className, text }) => {
+      const a = document.createElement('a');
+      a.id = id;
+      a.href = href;
+      if (className) a.className = className;
+      // Never empty: an anchor with no text has no box, so Playwright correctly
+      // refuses to click it and the test times out on an invisible element.
+      a.textContent = text;
+      document.body.appendChild(a);
+      a.addEventListener('click', (e) => e.preventDefault(), { capture: true });
+    },
+    { id: opts.id, href: opts.href, className: opts.className ?? '', text: opts.text || opts.id },
+  );
+}
+
+export type EventRow = {
+  event_id: number;
+  id: number;
+  position: string | null;
+  notes: string | null;
+  dt: number;
+};
+
+/** Every wp_slim_events row for a pageview, oldest first. */
+async function getEventRows(statId: number): Promise<EventRow[]> {
+  const [rows] = await getPool().execute(
+    'SELECT event_id, id, position, notes, dt FROM wp_slim_events WHERE id = ? ORDER BY event_id ASC',
+    [statId],
+  ) as any;
+  return rows;
+}
+
+/**
+ * Poll until a pageview has at least `count` event rows, then return them all.
+ *
+ * Returning the whole set matters: a caller that only ever sees the first row
+ * cannot tell "one user action recorded once" from "one user action recorded
+ * twice", and the click and submit delegations can both fire for a single click
+ * on a submit button. Returns whatever it has at the deadline, so callers assert
+ * on a shortfall or an excess rather than on a timeout.
+ */
+export async function waitForEventRows(
+  statId: number,
+  count = 1,
+  timeoutMs = 20_000,
+): Promise<EventRow[]> {
+  const deadline = Date.now() + timeoutMs;
+  let rows = await getEventRows(statId);
+  while (rows.length < count && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 250));
+    rows = await getEventRows(statId);
+  }
+  return rows;
+}
+
+/**
+ * Poll wp_slim_events for the newest row matching the given stat id.
+ * Returns null on timeout.
  */
 export async function waitForEventRow(
   statId: number,
   timeoutMs = 20_000,
-): Promise<{ id: number; position: string | null; notes: string | null; dt: number } | null> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const [rows] = await getPool().execute(
-      'SELECT id, position, notes, dt FROM wp_slim_events WHERE id = ? ORDER BY event_id DESC LIMIT 1',
-      [statId],
-    ) as any;
-    if (rows.length > 0) return rows[0];
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  return null;
+): Promise<EventRow | null> {
+  const rows = await waitForEventRows(statId, 1, timeoutMs);
+  return rows.length ? rows[rows.length - 1] : null;
 }
 
 /**
@@ -784,7 +941,7 @@ export async function waitForStatWithIp(marker: string, timeoutMs = 10_000, inte
 // ─── Anonymous visit helper ──────────────────────────────────────
 
 export async function visitAsAnonymous(browser: import('@playwright/test').Browser, url: string): Promise<import('@playwright/test').Page> {
-  const context = await browser.newContext();
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const page = await context.newPage();
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   return page;

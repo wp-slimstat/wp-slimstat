@@ -1,0 +1,17 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      php tests/goals-args-scope-test.php
+kind:      restore-defect
+expect:    funnels: no scoped query carries the caller's WHERE
+rationale: The funnel twin of D58's minimal form - get_funnels_raw() extracts the WHERE and drops it at the get_funnel_results() call. Without this mutation, reverting the funnel threading would pass every composer gate (the review that added the funnel half of the gate found exactly that hole) and only the on-demand docker cell could notice. Path-prefixed expect pins the funnel assertion, not its goal sibling.
+---
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -2699,7 +2699,7 @@
+             if (empty($funnel['name']) || empty($funnel['steps'])) {
+                 continue;
+             }
+-            $step_results = self::get_funnel_results($funnel, $extra_where);
++            $step_results = self::get_funnel_results($funnel);
+             foreach ($step_results as $i => $step) {
+                 $results[] = [
+                     'funnel_name' => $funnel['name'],

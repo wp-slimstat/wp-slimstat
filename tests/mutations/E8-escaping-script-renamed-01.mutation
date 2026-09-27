@@ -1,0 +1,17 @@
+target:    composer.json
+gate:      composer test:perf-gate-integrity
+kind:      introduce-defect
+expect:    `test:reports-escaping` script no longer invokes
+rationale: Points the composer script at a non-existent file while the CI step and the script's own description keep the real path; only the key-scoped check fires.
+---
+--- a/composer.json
++++ b/composer.json
+@@ -74,7 +74,7 @@
+     "test:lazy-migration": "php tests/lazy-migration-test.php",
+     "test:content-type-attachment": "php tests/content-type-attachment-test.php",
+     "test:rest-controller": "php tests/tracking-rest-controller-test.php",
+-    "test:reports-escaping": "php tests/reports-output-escaping-test.php",
++    "test:reports-escaping": "php tests/reports-escaping-test.php",
+     "test:fingerprint-sanitize": "php tests/fingerprint-sanitization-test.php",
+     "test:gdpr-consent": "php tests/gdpr-consent-cookie-test.php",
+     "test:user-exclusion": "php tests/user-exclusion-processor-test.php",

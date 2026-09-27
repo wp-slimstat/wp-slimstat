@@ -23,15 +23,15 @@ import {
   clearStatsTable,
   closeDb,
 } from './helpers/setup';
-import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
+import { ADMIN_PASS, ADMIN_USER, BASE_URL, MYSQL_CONFIG } from './helpers/env';
 
 const COOKIE_DOMAIN = new URL(BASE_URL).hostname;
 
 /** Re-authenticate if the page was redirected to wp-login.php */
 async function ensureAdminLoggedIn(page: import('@playwright/test').Page): Promise<void> {
   if (page.url().includes('wp-login.php')) {
-    const user = process.env.WP_ADMIN_USER || 'parhumm';
-    const pass = process.env.WP_ADMIN_PASS || 'testpass123';
+    const user = ADMIN_USER;
+    const pass = ADMIN_PASS;
     await page.fill('#user_login', user);
     await page.fill('#user_pass', pass);
     await page.click('#wp-submit');
@@ -114,7 +114,7 @@ test.describe('Production Bug Regressions (v5.4.7 QA)', () => {
 
     // Set the problematic value: 'slimstat' (not 'slimstat_banner')
     // Before the fix, this caused PHP to block cookies → visit_id=0
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'on',
       consent_integration: 'slimstat',
       use_slimstat_banner: 'off',
@@ -169,7 +169,7 @@ test.describe('Production Bug Regressions (v5.4.7 QA)', () => {
 
   test('Bug 1&2: online count > 0 after tracked pageview', async ({ page, browser }) => {
     await clearStatsTable();
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'off',
       javascript_mode: 'on',
       set_tracker_cookie: 'on',
@@ -274,7 +274,7 @@ test.describe('Production Bug Regressions (v5.4.7 QA)', () => {
     page,
     browser,
   }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'off',
       javascript_mode: 'on',
       set_tracker_cookie: 'on',

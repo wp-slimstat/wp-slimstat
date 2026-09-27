@@ -1,0 +1,13 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:ci-comment-metrics
+kind:      introduce-defect
+expect:    9000 known stale mutation registry entries
+rationale: A stale total parked four words from its noun. The pattern was `(\d+)\s+entries` with one literal gap, so an adjective hid the number entirely; Pro's twin was repaired to allow two words and a reviewer walked past that too. The gap is now any run of non-numeric words WITHIN ONE SENTENCE. 9000 deliberately: an injected count the FLOOR could one day reach becomes TRUE on a bump and reports SURVIVED.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -172,3 +172,3 @@
+         # beneath it explained why they had been spelled out. It is the sentence that decides
+-        # when to narrow the run, so it is the worst one in the file to be wrong.
++        # when to narrow the run, so it is the worst one in the file to be wrong. It has 9000 known stale mutation registry entries.
+         #

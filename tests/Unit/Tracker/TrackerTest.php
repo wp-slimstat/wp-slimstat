@@ -4,17 +4,44 @@ declare(strict_types=1);
 namespace WpSlimstat\Tests\Unit\Tracker;
 
 use Brain\Monkey\Functions;
+use Mockery;
 use WpSlimstat\Tests\Unit\WpSlimstatTestCase;
 
 /**
  * Unit tests for SlimStat\Tracker\Tracker static methods.
  *
- * Only the input-validation and sanitization paths that execute BEFORE any
- * Query builder call are covered here.  Database-touching paths require a full
- * WP integration environment and are left as TODO.
+ * Sanitization reaches the real query builder through a recording database handle.
+ * Live database behavior is covered by the runtime qualification harness.
  */
 class TrackerTest extends WpSlimstatTestCase
 {
+    private $originalDb;
+    private $originalAnalyticsDb;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->originalDb = $GLOBALS['wpdb'] ?? null;
+        $this->originalAnalyticsDb = \wp_slimstat::$wpdb;
+    }
+
+    protected function tearDown(): void
+    {
+        $GLOBALS['wpdb'] = $this->originalDb;
+        \wp_slimstat::$wpdb = $this->originalAnalyticsDb;
+        parent::tearDown();
+    }
+
+    private function expectInsert($value, $result = 1, $error = ''): void
+    {
+        $db = Mockery::mock('wpdb');
+        $db->last_error = $error;
+        $db->insert_id = 7;
+        $db->shouldReceive('prepare')->once()->with(Mockery::type('string'), $value)->andReturn('prepared insert');
+        $db->shouldReceive('query')->once()->with('prepared insert')->andReturn($result);
+        $GLOBALS['wpdb'] = \wp_slimstat::$wpdb = $db;
+    }
+
     // -----------------------------------------------------------------------
     // _insert_row — early-exit guards
     // -----------------------------------------------------------------------
@@ -61,18 +88,8 @@ class TrackerTest extends WpSlimstatTestCase
         Functions\expect('sanitize_text_field')
             ->never();
 
-        // Query::insert will be called after sanitization — stub it out so no DB is needed.
-        // We use a passthrough approach: alias the static call via a lightweight shim.
-        // Because Query is a concrete class without an interface we cannot mock it here.
-        // This test therefore validates the sanitizer routing only and will fail at the
-        // Query::insert() call — which is acceptable; the assertion fires first.
-        // @todo Introduce a QueryFactory seam or interface to allow full isolation.
-        try {
-            \SlimStat\Tracker\Tracker::_insert_row(['resource' => $resourceUrl], 'slim_stats');
-        } catch (\Throwable $e) {
-            // Query builder throws because there is no DB in unit scope — expected.
-        }
-        // Brain Monkey tearDown verifies the ->once() expectation; no assertion needed here.
+        $this->expectInsert($sanitizedUrl);
+        $this->assertSame(7, \SlimStat\Tracker\Tracker::_insert_row(['resource' => $resourceUrl], 'slim_stats'));
     }
 
     /**
@@ -94,12 +111,31 @@ class TrackerTest extends WpSlimstatTestCase
         Functions\expect('sanitize_url')
             ->never();
 
-        try {
-            \SlimStat\Tracker\Tracker::_insert_row(['browser' => $browserValue], 'slim_stats');
-        } catch (\Throwable $e) {
-            // Query builder throws without a DB — expected.
+        $this->expectInsert($browserValue);
+        $this->assertSame(7, \SlimStat\Tracker\Tracker::_insert_row(['browser' => $browserValue], 'slim_stats'));
+    }
+
+    public function test_external_insert_error_cannot_reuse_previous_success_id(): void
+    {
+        Functions\when('sanitize_text_field')->returnArg();
+        $this->expectInsert('Chrome', false, 'external database is read only');
+        $GLOBALS['wpdb'] = (object) ['last_error' => ''];
+        $result = \SlimStat\Tracker\Storage::insertRow(['browser' => 'Chrome'], 'slim_stats');
+        $this->assertTrue($result->isFailed());
+        $this->assertSame('external database is read only', $result->error());
+    }
+
+    public function test_missing_column_probe_uses_each_external_connection(): void
+    {
+        Functions\when('sanitize_text_field')->returnArg();
+        foreach ([1, 2] as $connection) {
+            $this->expectInsert('Chrome', false, "Unknown column 'browser'");
+            \wp_slimstat::$wpdb->shouldReceive('suppress_errors')->once()->with(true)->andReturn(false);
+            \wp_slimstat::$wpdb->shouldReceive('suppress_errors')->once()->with(false);
+            \wp_slimstat::$wpdb->shouldReceive('get_col')->once()->with('SHOW COLUMNS FROM `external_stats`')->andReturn(['resource']);
+            $GLOBALS['wpdb'] = (object) ['last_error' => ''];
+            $this->assertTrue(\SlimStat\Tracker\Storage::insertRow(['browser' => 'Chrome'], 'external_stats')->isFailed());
         }
-        // Brain Monkey tearDown verifies the ->once() expectation; no assertion needed here.
     }
 
     // -----------------------------------------------------------------------

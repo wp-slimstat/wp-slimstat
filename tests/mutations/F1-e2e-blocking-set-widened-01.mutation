@@ -1,0 +1,17 @@
+target:    .github/workflows/ci.yml
+gate:      php tests/perf-gate-integrity-test.php
+kind:      restore-defect
+expect:    the derived blocking set is [6.4, 7.1]
+rationale: The reason perf-gate-integrity §7 had to be widened in the same commit as the flip. The line still reads as a flip -- an expression, a version list, matrix.wp -- but every lane is soft again, so the Tier 2 job goes back to concluding success over a red suite. Nothing else in the repository reads that list, and §7 derives the set it must equal from .wp-env.json's core and the newest matrix lane rather than from a retyped pair, so this stays killed when the matrix gains a version.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -657,7 +657,7 @@
+         # everything, dropping either version, or reverting to a bare `true` all
+         # fail that gate. §7 used to match only the literal `continue-on-error:
+         # true`, so before this commit it would have matched nothing here.
+-        continue-on-error: ${{ !contains(fromJSON('["6.4","7.1"]'), matrix.wp) }}
++        continue-on-error: ${{ !contains(fromJSON('["5.6","5.9","6.0","6.4","6.6","6.9","7.0","7.1"]'), matrix.wp) }}
+         env:
+           # wp-env creates a fresh WordPress with default admin credentials.
+           # Override WP_ADMIN_USER / WP_ADMIN_PASS in global-setup.ts.

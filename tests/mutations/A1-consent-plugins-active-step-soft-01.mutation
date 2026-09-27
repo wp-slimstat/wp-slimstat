@@ -1,0 +1,16 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:consent-plugins-active-step
+kind:      guard-removal
+expect:    does not `exit 1` when a plugin is inactive
+rationale: Keeps the runtime activation check but drops its exit 1; the step still names both slugs, so only the fails-the-lane assertion can fire.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -495,7 +495,6 @@
+               echo "::error::${slug} is not active on this lane. Every spec that gates on it"
+               echo "::error::will self-skip, and the quarantine census built from this run"
+               echo "::error::would measure CI setup rather than test health."
+-              exit 1
+             fi
+           done
+ 

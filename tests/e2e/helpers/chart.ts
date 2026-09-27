@@ -4,11 +4,84 @@
  * Provides WP-CLI AJAX simulation, DB seeding, data extractors, and
  * timestamp helpers used across all chart-related test files.
  */
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getPool } from './setup';
-import { WP_ROOT, BASE_URL } from './env';
+import { WP_ROOT, PLUGIN_DIR, BASE_URL } from './env';
+
+// ─── Where WP-CLI actually lives ────────────────────────────────────────────
+//
+// These helpers used to shell out to `wp ... --path="${WP_ROOT}"` unconditionally. That is
+// right locally and wrong in CI, where WordPress runs inside wp-env's Docker container and
+// the runner has neither a `wp` binary nor a WordPress install at WP_ROOT. Measured on the
+// WP 6.4 lane: the first ~25 chart specs died at the harness, before any product assertion,
+// with `WP-CLI chart call failed: Command failed: wp eval-file ...`. Each failure counts
+// twice (attempt + retry), which hit maxFailures:50 and ABORTED the run with 624 of 748
+// specs never executed — while the job still reported success, because the E2E step is
+// continue-on-error.
+//
+// So the call site declares WHAT it wants and this decides HOW to run it.
+const WP_CLI_DOCKER_CONTAINER = process.env.WP_CLI_DOCKER_CONTAINER || '';
+if (WP_CLI_DOCKER_CONTAINER && !/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(WP_CLI_DOCKER_CONTAINER)) {
+  throw new Error('WP_CLI_DOCKER_CONTAINER contains invalid characters');
+}
+const IN_CONTAINER = process.env.CI === 'true' || process.env.USE_WP_ENV === '1' || Boolean(WP_CLI_DOCKER_CONTAINER);
+
+/** The plugin's mount point inside wp-env's containers (basename of the checkout). */
+const CONTAINER_PLUGIN_DIR = '/var/www/html/wp-content/plugins/wp-slimstat';
+
+function wpCli(args: string, timeout = 30_000): string {
+  // `--path` is meaningless inside the container (WP is at the image's own root) and
+  // required outside it.
+  const command = WP_CLI_DOCKER_CONTAINER
+    ? `docker exec ${WP_CLI_DOCKER_CONTAINER} wp ${args} --allow-root`
+    : IN_CONTAINER
+      ? `npx wp-env run tests-cli -- wp ${args}`
+      : `wp ${args} --path="${WP_ROOT}"`;
+
+  return execSync(command, { encoding: 'utf8', timeout });
+}
+
+/**
+ * Write a scratch PHP file and return its host and WP-CLI paths. wp-env sees the mounted
+ * plugin path; an explicitly named Docker container receives the file through docker cp.
+ */
+function writeScratchPhp(name: string, code: string): { hostPath: string; cliPath: string } {
+  const dir = path.join(PLUGIN_DIR, 'tests', 'e2e', '.tmp');
+  fs.mkdirSync(dir, { recursive: true });
+
+  const hostPath = path.join(dir, name);
+  fs.writeFileSync(hostPath, code);
+
+  return {
+    hostPath,
+    cliPath: WP_CLI_DOCKER_CONTAINER ? `/tmp/${name}` : IN_CONTAINER ? `${CONTAINER_PLUGIN_DIR}/tests/e2e/.tmp/${name}` : hostPath,
+  };
+}
+
+function runScratchPhp(file: { hostPath: string; cliPath: string }): string {
+  if (WP_CLI_DOCKER_CONTAINER) {
+    execFileSync('docker', ['cp', file.hostPath, `${WP_CLI_DOCKER_CONTAINER}:${file.cliPath}`]);
+  }
+  try {
+    return wpCli(`eval-file "${file.cliPath}"`);
+  } finally {
+    if (WP_CLI_DOCKER_CONTAINER) {
+      execFileSync('docker', ['exec', WP_CLI_DOCKER_CONTAINER, 'rm', '-f', file.cliPath]);
+    }
+  }
+}
+
+/** Execute an isolated WP fixture through the same checked container routing as charts. */
+export function runWordPressFixture(code: string): string {
+  const file = writeScratchPhp(`fixture-${process.pid}-${Date.now()}.php`, code);
+  try {
+    return runScratchPhp(file);
+  } finally {
+    fs.unlinkSync(file.hostPath);
+  }
+}
 
 // ─── HTTP-driven AJAX helpers (used by browser-context specs) ───────────────
 
@@ -44,7 +117,7 @@ export async function getChartNonce(page: import('@playwright/test').Page): Prom
  * Returns parsed JSON response with { success, data: { data: { datasets, labels, ... } } }.
  */
 export function fetchChartData(startTs: number, endTs: number, granularity: string): any {
-  const tmpFile = path.join('/tmp', `slimstat-chart-${Date.now()}.php`);
+  const scratchName = `slimstat-chart-${Date.now()}.php`;
   const phpCode = `<?php
 wp_set_current_user(get_users(['role' => 'administrator', 'number' => 1])[0]->ID);
 
@@ -76,13 +149,10 @@ try {
 echo \$output;
 `;
 
-  fs.writeFileSync(tmpFile, phpCode);
+  const scratch = writeScratchPhp(scratchName, phpCode);
 
   try {
-    const raw = execSync(`wp eval-file "${tmpFile}" --path="${WP_ROOT}" 2>/dev/null`, {
-      encoding: 'utf8',
-      timeout: 30_000,
-    });
+    const raw = runScratchPhp(scratch);
     const parsed = extractJson(raw);
     if (parsed) return parsed;
     throw new Error(`No JSON in output: ${raw.substring(0, 300)}`);
@@ -93,7 +163,7 @@ echo \$output;
     }
     throw new Error(`WP-CLI chart call failed: ${e.message}`);
   } finally {
-    try { fs.unlinkSync(tmpFile); } catch {}
+    try { fs.unlinkSync(scratch.hostPath); } catch {}
   }
 }
 
@@ -119,6 +189,28 @@ function extractJson(raw: string): any {
 }
 
 // ─── DB helpers ──────────────────────────────────────────────────────────────
+
+/**
+ * A "today" timestamp far enough back that Chart's live-end quantisation cannot
+ * hide it.
+ *
+ * Chart::fetchChartData() floors a today-inclusive range end to the previous
+ * CACHE_LIVE_BUCKET_SECONDS (60s) boundary before building the WHERE clause, so
+ * that the cache key stops moving every second (Chart.php:245-270). The last
+ * <60s of the window is therefore invisible **on purpose**. insertRows() spreads
+ * `count` rows over `count` seconds, so a seed at now-60 put up to 4 of 5 rows
+ * past that floored end whenever the run happened to start in the last three
+ * seconds of a minute -- a ~5%-per-run flake that reads as "today shows zero is
+ * back" and is nothing of the kind. 300s clears the bucket, the row spread and
+ * any clock skew between the runner and the database, and still lands in today's
+ * bucket at every granularity.
+ *
+ * Seed "today" with this, never with a raw offset, in any spec that asserts an
+ * exact chart total.
+ */
+export function liveSafeTodayTs(now: number = Math.floor(Date.now() / 1000)): number {
+  return now - 300;
+}
 
 /**
  * Insert `count` rows at a specific UTC timestamp, each with a distinct resource.
@@ -217,16 +309,9 @@ export function mostRecentDayOfWeek(dayOfWeek: number, refTs: number): number {
 // ─── WP option helpers ──────────────────────────────────────────────────────
 
 export function setStartOfWeek(value: number): void {
-  execSync(
-    `wp option update start_of_week ${value} --path="${WP_ROOT}" 2>/dev/null`,
-    { encoding: 'utf8', timeout: 10_000 }
-  );
+  wpCli(`option update start_of_week ${value}`, 10_000);
 }
 
 export function getStartOfWeek(): number {
-  const raw = execSync(
-    `wp option get start_of_week --path="${WP_ROOT}" 2>/dev/null`,
-    { encoding: 'utf8', timeout: 10_000 }
-  );
-  return parseInt(raw.trim(), 10);
+  return parseInt(wpCli('option get start_of_week', 10_000).trim(), 10);
 }

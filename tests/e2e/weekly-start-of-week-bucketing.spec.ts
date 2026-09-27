@@ -16,7 +16,7 @@ import { getPool, snapshotOption, restoreOption } from './helpers/setup';
 import {
   fetchChartData, insertRows, clearTestData,
   sumV1, getV1, getLabels,
-  setStartOfWeek, getStartOfWeek, mostRecentDayOfWeek,
+  setStartOfWeek, getStartOfWeek, mostRecentDayOfWeek, liveSafeTodayTs,
 } from './helpers/chart';
 
 // ─── Test suite ──────────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
   test('weekly chart with start_of_week=0 (Sunday): today visible in current week', async () => {
     setStartOfWeek(0);
 
-    const todayTs = now - 60;
+    const todayTs = liveSafeTodayTs(now);
     const lastWeekTs = now - 7 * day;
 
     await insertRows(todayTs, 5, 'sow0-today');
@@ -75,7 +75,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
   test('weekly chart with start_of_week=1 (Monday): today visible (no regression)', async () => {
     setStartOfWeek(1);
 
-    const todayTs = now - 60;
+    const todayTs = liveSafeTodayTs(now);
     const lastWeekTs = now - 7 * day;
 
     await insertRows(todayTs, 4, 'sow1-today');
@@ -100,7 +100,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
   test('weekly chart with start_of_week=6 (Saturday): today visible', async () => {
     setStartOfWeek(6);
 
-    const todayTs = now - 60;
+    const todayTs = liveSafeTodayTs(now);
     const twoWeeksAgoTs = now - 14 * day;
 
     await insertRows(todayTs, 3, 'sow6-today');
@@ -125,7 +125,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
   test('daily vs weekly totals match when start_of_week=0', async () => {
     setStartOfWeek(0);
 
-    const todayTs = now - 60;
+    const todayTs = liveSafeTodayTs(now);
     const lastWeekTs = now - 7 * day;
     const twoWeeksAgoTs = now - 14 * day;
 

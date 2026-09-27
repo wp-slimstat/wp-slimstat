@@ -12,6 +12,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { BASE_URL } from './helpers/env';
+import { requireProBooted } from './helpers/pro-state';
 
 test.describe('AC-221: Admin Bar Chart Consistency', () => {
   test.setTimeout(60_000);
@@ -29,13 +30,10 @@ test.describe('AC-221: Admin Bar Chart Consistency', () => {
       return bar?.is_pro === true || bar?.is_pro === '1';
     });
 
-    if (!isPro) {
-      // Free users get decorative placeholder data in admin bar chart.
-      // The chart shows fake values for visual appeal, not real analytics.
-      // This is expected behavior — skip the data comparison.
-      test.skip(true, 'Pro not active — admin bar chart shows decorative placeholder data (expected)');
-      return;
-    }
+    // Skips only where Pro is genuinely absent (Free CI lanes); an installed Pro that
+    // failed to boot fails here by name rather than passing as "free behaviour".
+    await requireProBooted(page);
+    expect(isPro, 'SlimStatAdminBar.is_pro must be true once Pro has booted').toBe(true);
 
     // 2. Extract chart bar data-count values from the admin bar CSS chart
     const adminBarData = await page.evaluate(() => {
@@ -143,10 +141,8 @@ test.describe('AC-221: Admin Bar Chart Consistency', () => {
       return bar?.is_pro === true || bar?.is_pro === '1';
     });
 
-    if (!isPro) {
-      test.skip(true, 'Pro not active — cannot verify LiveAnalyticsReport usage');
-      return;
-    }
+    await requireProBooted(page);
+    expect(isPro, 'SlimStatAdminBar.is_pro must be true once Pro has booted').toBe(true);
 
     // When Pro is active, the admin bar chart should show real data from
     // LiveAnalyticsReport::get_users_chart_data(), not the fake placeholder array.
@@ -175,6 +171,9 @@ test.describe('AC-221: Admin Bar Chart Consistency', () => {
     });
 
     if (isPro) {
+      // NAMED DISPOSITION: the only Pro-related skip the suite keeps. This test asserts
+      // FREE behaviour (the decorative placeholder chart), so it is meaningless with Pro
+      // booted; it is not a Pro spec skipping on a missing Pro.
       test.skip(true, 'Pro is active — this test validates free-user behavior');
       return;
     }

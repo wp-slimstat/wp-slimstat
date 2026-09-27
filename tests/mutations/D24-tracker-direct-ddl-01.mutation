@@ -1,0 +1,16 @@
+target:    src/Tracker/Processor.php
+gate:      php tests/tracker-repair-gate-test.php
+kind:      guard-removal
+expect:    the tracking path calls init_environment() directly
+rationale: D24/D25 requires that every DDL recovery from the tracking path goes through the gated entry point. This calls init_environment() directly from process(). The gate MUST see it — and before I1 it did not, because the assertion also required repairSchemaOnce() to be absent, which it never is.
+---
+--- a/src/Tracker/Processor.php
++++ b/src/Tracker/Processor.php
+@@ -752,6 +752,7 @@ class Processor
+             }
+         }
+ 
++        \wp_slimstat_admin::init_environment();
+         $write = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
+ 
+         // The error is passed rather than re-read from $wpdb->last_error: insertRow() can

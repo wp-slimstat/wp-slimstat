@@ -1,0 +1,23 @@
+target:    src/Migration/Migrations/AddVisitIdentity.php
+gate:      composer test:upgrade-index-convergence
+kind:      guard-removal
+expect:    never calls reconcileColumnIndexes
+rationale: Removes the index-reconciliation call and LEAVES THE COMMENT that describes it, which is the point rather than an accident. `idx_vid_hash_dt` is declared in the manifest over a column AddVisitIdentity adds, so Schema::ensure() skips it on the upgrade pass -- and the same request stamps the new version, so ensure() does not run again until the next release. No admin-facing path offers it either: get_index_definitions() hardcodes six action/index pairs and this is not one. So without this call every UPGRADED install runs the anonymous reuse probe as an unindexed 30-minute range scan on the fact table, per anonymous pageview, while every FRESH install has had the index since CREATE TABLE -- C39's fresh/upgraded divergence reopened through the skip mechanism. Because the surviving comment still contains the string `reconcileColumnIndexes`, this mutation ALSO pins that the gate reads tokens rather than raw text: a preg_match over the source would be satisfied by the comment and report green on the defect. Two further perturbations were verified red by hand and are NOT registered separately, because this one file cannot hold three variants: a wrong COLUMN argument (`'no_such_column'`) and a wrong TABLE argument (`'slim_events'`). Both were GREEN until review, because the gate recorded slot 0 and discarded slot 1.
+---
+--- a/src/Migration/Migrations/AddVisitIdentity.php
++++ b/src/Migration/Migrations/AddVisitIdentity.php
+@@ -103,14 +103,10 @@
+         //
+         // slim_stats_archive gets no call at all: it declares the same index set with
+         // `reconcile => false`, so a call would return at the guard on every possible run — and
+         // would quietly start building the archive's whole declared index set on cold storage the
+         // day E1 flips that flag.
+-        if ($live) {
+-            $this->reconcileColumnIndexes('slim_stats', 'vid_hash', 'add_visit_identity');
+-        }
+-
+         // Short-circuit preserved: the archive ALTER is attempted only when the live one landed.
+         $ok = $live && $this->addManifestColumn('slim_stats_archive', 'vid_hash', 'add_visit_identity');
+ 
+         if ($ok) {
+ 
