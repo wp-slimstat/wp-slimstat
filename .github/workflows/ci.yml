@@ -526,9 +526,11 @@ jobs:
           npx wp-env run tests-cli -- wp plugin deactivate wp-slimstat 2>/dev/null || true
           npx wp-env run tests-cli -- wp plugin activate wp-slimstat
           npx wp-env run tests-cli -- wp user update admin --user_pass=password
-          # wp-env creates only `admin`; the permission specs need a real author.
+          # wp-env creates only `admin`; permission specs also need author/subscriber roles.
           npx wp-env run tests-cli -- wp user create "$WP_AUTHOR_USER" "$WP_AUTHOR_USER@example.com" \
             --role=author --user_pass="$WP_AUTHOR_PASS"
+          npx wp-env run tests-cli -- wp user create e2e_subscriber e2e_subscriber@example.com \
+            --role=subscriber --user_pass=password
           npx wp-env run tests-cli -- wp eval '
             include_once(WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php");
             wp_slimstat_admin::init_tables($GLOBALS["wpdb"]);
