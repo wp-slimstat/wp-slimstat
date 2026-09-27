@@ -1139,6 +1139,7 @@ $capture_windowed('recent_searchterms_pinned', static function () {
 $capture_windowed('top_username_pinned', static function () {
     return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_top', [[
         'columns' => 'username',
+        'where' => "username IS NOT NULL AND username <> ''",
     ]]));
 });
 
@@ -1275,7 +1276,7 @@ $grouped_page_shapes = [
     'slim_p4_16_top_not_found' => [
         'columns' => 'resource', 'where' => 'content_type LIKE "%404%"',
     ],
-    'slim_p4_18_top_authors' => ['columns' => 'author'],
+    'slim_p4_18_top_authors' => ['columns' => 'author', 'where' => "author IS NOT NULL AND author <> ''"],
     'slim_p4_19_top_tags' => [
         'columns' => 'category', 'where' => '(content_type LIKE "%tag%")',
     ],

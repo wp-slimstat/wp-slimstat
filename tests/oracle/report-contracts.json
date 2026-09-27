@@ -403,6 +403,7 @@
       "family": "pages",
       "kind": "top_dimension",
       "dimension": "author",
+      "require_nonempty": true,
       "limit_setting": "limit_results",
       "default_limit": 200,
       "equality": "ascii_ci"
@@ -672,6 +673,7 @@
       "title": "Top Known Visitors",
       "family": "top",
       "dimension": "username",
+      "where": [["username", "not_in", [null, ""]]],
       "grain": [
         "blog_id"
       ],

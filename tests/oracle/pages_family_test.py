@@ -72,6 +72,12 @@ assert grouped_dimensions([
 ], 10, 20, ("browser", "browser_version"), 200, "browser_type", 1) == [
     {"browser": "Bot", "browser_version": "1", "counthits": "2"},
 ]
+authors = contracts["slim_p4_18_top_authors"]
+assert grouped_values([
+    {"author": value, "dt": 10} for value in [None, None, b"", b"", b"deleted-account"]
+], 10, 20, authors["dimension"], 1, require_nonempty=authors["require_nonempty"]) == [
+    {"author": "deleted-account", "counthits": "1"},
+]
 assert filtered_recent(rows, 10, 40, "resource", 200, "feeds") == []
 assert recent_outbound([
     {"outbound_resource": b"https://a;;;https://b", "dt": 10, "dt_out": 30},

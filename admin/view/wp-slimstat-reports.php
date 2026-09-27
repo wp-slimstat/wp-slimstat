@@ -201,6 +201,7 @@ class wp_slimstat_reports
                 'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'username',
+                    'where'   => "username IS NOT NULL AND username <> ''",
                     'raw'     => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
@@ -783,6 +784,7 @@ class wp_slimstat_reports
                 'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'author',
+                    'where'   => "author IS NOT NULL AND author <> ''",
                     'raw'     => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],

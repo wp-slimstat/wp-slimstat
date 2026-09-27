@@ -53,7 +53,7 @@ $pageContracts = [
     'slim_p4_15_recent_categories'      => ['recent_dimension', ['get_top', 'TRIM( TRAILING "/" FROM resource )', 'resource', '(content_type = "category")', 'MAX(dt) DESC', 'MAX(dt) AS dt']],
     'slim_p4_152_recent_tags'            => ['recent_dimension', ['get_top', 'TRIM( TRAILING "/" FROM resource )', 'resource', '(content_type = "tag")', 'MAX(dt) DESC', 'MAX(dt) AS dt']],
     'slim_p4_16_top_not_found'           => ['top_dimension', ['get_top', 'resource', 'content_type LIKE "%404%"']],
-    'slim_p4_18_top_authors'             => ['top_dimension', ['get_top', 'author']],
+    'slim_p4_18_top_authors'             => ['top_dimension', ['get_top', 'author', "author IS NOT NULL AND author <> ''"]],
     'slim_p4_19_top_tags'                => ['top_dimension', ['get_top', 'category', '(content_type LIKE "%tag%")']],
     'slim_p4_20_recent_downloads'        => ['recent_downloads', ['get_top', 'resource', 'content_type = "download"', 'MAX(dt) DESC', 'MAX(dt) AS dt']],
     'slim_p4_24_exit_pages'              => ['exit_pages', ['get_top_aggr', 'visit_id', 'resource', 'MAX']],
@@ -181,6 +181,15 @@ foreach ($reports as $key => $contract) {
                                 : ('goals' === $family
                                 ? ['raw', 'wp_slimstat_db', 'slim_p9_01' === $id ? 'get_goals_raw' : 'get_funnels_raw']
                                 : [])))))));
+    if ('top_username_pinned' === $key) {
+        $requiredStrings[] = "username IS NOT NULL AND username <> ''";
+        if ([['username', 'not_in', [null, '']]] !== ($contract['where'] ?? null)) {
+            $failures[] = "{$key}: oracle must exclude NULL and empty usernames";
+        }
+    }
+    if ('slim_p4_18_top_authors' === $key && true !== ($contract['require_nonempty'] ?? null)) {
+        $failures[] = "{$key}: oracle must exclude NULL and empty authors";
+    }
     if (!$requiredStrings) {
         $failures[] = "{$key}: unknown oracle family " . var_export($family, true);
     }

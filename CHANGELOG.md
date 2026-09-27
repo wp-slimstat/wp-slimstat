@@ -9,7 +9,8 @@
 * Sites that had "Enable CDN" switched on start recording again. That option pointed the tracker at a URL that does not exist until the version is published on WordPress.org, so those sites were recording nothing; their traffic reappears from the moment of the update.
 * Archived events start appearing: events now archive before their parent rows are deleted.
 * The weekly chart's "previous period" total now matches the bars it draws. The comparison window was longer than the current one by the current window's time of day, so the total counted hits that appeared in no bar. Previous-period totals go down slightly, the percentage-change headline goes up, and previous-period labels move to the same week grid the values were always on.
-* Date ranges straddling midnight stop collapsing multi-column groups.
+* Date ranges straddling midnight stop collapsing multi-column groups, keeping browser versions, bot versions and screen resolutions distinct.
+* Top Known Visitors and Top Authors exclude missing names instead of displaying them as Guest, including in Pro exports and email reports.
 * Form-submit, tel: and mailto: goals start working; one press produces exactly one hit.
 * Funnels: silent zeros fixed (temp-table collation/width); overlapping steps stop double-counting, so some funnel numbers go DOWN to their true value; an errored chain is never cached.
 * "Currently Online" honours the date filter.

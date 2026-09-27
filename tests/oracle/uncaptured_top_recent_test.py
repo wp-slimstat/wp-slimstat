@@ -3,6 +3,8 @@
 
 from families.recent import filtered_recent
 from families.top import rank_current, rank_top
+import json
+from pathlib import Path
 
 
 rows = [
@@ -13,6 +15,11 @@ rows = [
     {'id': 3, 'blog_id': 1, 'ip': None, 'username': '', 'searchterms': '_',
      'language': None, 'referer': '/r3', 'resource': '/c', 'dt_out': 295, 'dt': 200},
 ]
+
+known = json.loads(Path(__file__).with_name('report-contracts.json').read_text())['reports']['top_username_pinned']
+assert rank_top(rows, known['dimension'], where=known['where'], start=90, end=300,
+                equality=known['equality']) == [
+    {'blog_id': 1, 'username': 'alice', 'counthits': 1}]
 
 assert rank_top(rows, 'searchterms', limit=200,
                 where=[('searchterms', 'not_in', (None, '', '_'))], start=90, end=300,
