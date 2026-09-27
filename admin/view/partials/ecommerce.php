@@ -21,10 +21,10 @@ $setup = static function ($label) {
 };
 ?>
 <div class="ss-ec" data-ecommerce>
-	<header class="ss-ec-heading">
+	<div class="ss-ec-heading">
 		<div><p class="ss-ec-eyebrow"><?php esc_html_e('YOUR STORE, IN FOCUS', 'wp-slimstat'); ?></p><h1><?php esc_html_e('Ecommerce', 'wp-slimstat'); ?></h1><p><?php esc_html_e('See what earns revenue. Find the next thing to improve.', 'wp-slimstat'); ?></p></div>
 		<a href="#" class="button refresh" aria-label="<?php esc_attr_e('Refresh Ecommerce reports', 'wp-slimstat'); ?>"><?php esc_html_e('Refresh', 'wp-slimstat'); ?></a>
-	</header>
+	</div>
 	<?php if (!$available) : ?>
 		<div class="ss-ec-state"><span class="dashicons dashicons-cart" aria-hidden="true"></span><h2><?php esc_html_e('Bring your store into focus', 'wp-slimstat'); ?></h2><p><?php esc_html_e('Activate WooCommerce 8.3 or later on 64-bit PHP to connect orders with your SlimStat traffic. Existing traffic reports continue to work.', 'wp-slimstat'); ?></p><?php if (current_user_can('activate_plugins')) : ?><a class="button" href="<?php echo esc_url(admin_url('plugins.php')); ?>"><?php esc_html_e('Manage plugins', 'wp-slimstat'); ?></a><?php endif; ?></div>
 	<?php elseif (!Integration::ready()) : ?>
