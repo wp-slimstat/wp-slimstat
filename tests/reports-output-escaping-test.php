@@ -178,6 +178,14 @@ if (!function_exists('is_rtl')) {
     }
 }
 
+// Historical analytics names need not have a current WordPress account.
+if (!function_exists('get_user_by')) {
+    function get_user_by($field, $value)
+    {
+        return false;
+    }
+}
+
 if (!class_exists('wp_slimstat')) {
     class wp_slimstat
     {
@@ -347,7 +355,7 @@ class TestDataProvider
 
 require_once __DIR__ . '/../admin/view/wp-slimstat-reports.php';
 
-function render_column(string $column, string $value): string
+function render_column(string $column, ?string $value): string
 {
     $test_data = [
         [$column => $value, 'counthits' => 1],
@@ -373,6 +381,19 @@ function extract_href(string $html): string
     }
 
     return '';
+}
+
+// A nonempty numeric name must survive rendering, while genuinely missing names stay Guest.
+foreach (['username', 'author'] as $column) {
+    foreach (['0', 'historical-name', '', null] as $name) {
+        $html = render_column($column, $name);
+        if (null === $name || '' === $name) {
+            assert_contains('Guest', $html, "$column: missing identity stays Guest outside known-only reports");
+        } else {
+            assert_not_contains('Guest', $html, "$column: nonempty identity must not become Guest");
+            assert_contains('>' . $name . ' (Unknown)', $html, "$column: historical name is preserved");
+        }
+    }
 }
 
 // Test 1: Clean fingerprint value passes through the default case.
