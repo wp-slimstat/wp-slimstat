@@ -201,6 +201,7 @@ class wp_slimstat_reports
                 'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'username',
+                    'where'   => "username IS NOT NULL AND username <> ''",
                     'raw'     => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
@@ -799,6 +800,7 @@ class wp_slimstat_reports
                 'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'author',
+                    'where'   => "author IS NOT NULL AND author <> ''",
                     'raw'     => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
@@ -1538,7 +1540,7 @@ class wp_slimstat_reports
                         break;
 
                     case 'username':
-                        if (!empty($results[$i]['username'])) {
+                        if (isset($results[$i]['username']) && '' !== $results[$i]['username']) {
                             $element_custom_value = get_user_by('login', $results[$i]['username']);
                             if ($element_custom_value) {
                                 $element_value = "<a href='" . esc_url(get_author_posts_url($element_custom_value->ID)) . "' class=\"slimstat-author-link\" title='" . esc_attr($element_custom_value->user_login) . "'>";
@@ -1566,7 +1568,7 @@ class wp_slimstat_reports
                         break;
                     case 'author': // Backward compatibility
                         $author_username = is_array($results[$i]) && isset($results[$i]['author']) ? $results[$i]['author'] : '';
-                        if ($author_username) {
+                        if ('' !== $author_username) {
                             $author = get_user_by('login', $author_username);
                             if ($author) {
                                 $author_id     = $author ? $author->ID : 0;
