@@ -208,7 +208,8 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         // Written out, not derived. Deriving it from the manifest would make it true by
         // construction and it would stop catching anything — so a new table is REQUIRED to
         // update this number deliberately, which is the point.
-        $this->assertCount(19, $report['present']);
+        // Ecommerce enabled: three projection indexes; the opt-in visit index is unmanaged here.
+        $this->assertCount(22, $report['present']);
 
         // One patterned SHOW TABLES for ALL tables, then per RECONCILED table one SHOW INDEX and
         // one SHOW COLUMNS: 1 + 4 + 4 (slim_events, slim_events_archive, slim_stats,
@@ -230,11 +231,23 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         // always discarded; that is still gone. If this number rises again, ask those same two
         // questions before changing it.
         $this->assertCount(
-            10,
+            12,
             $this->probes,
             'a healthy install must cost one table probe plus one index probe and one column '
                 . 'probe per reconciled table: ' . implode(' | ', $this->probes)
         );
+    }
+
+    public function testCommerceIsNotCreatedOrIndexedBeforeOptIn(): void
+    {
+        [$tables, $indexes] = $this->healthy();
+        $tables = array_values(array_diff($tables, ['wp_slim_ecommerce']));
+        $indexes['wp_slim_stats'] = array_values(array_diff($indexes['wp_slim_stats'], ['idx_ecommerce_visit']));
+        $report = Schema::ensure($this->db($tables, $indexes), 'wp_', static fn() => 'utf8mb4_unicode_ci');
+        $this->assertSame([], $this->queries, 'ordinary sites incur no Ecommerce DDL');
+        $this->assertSame([], $report['failed']);
+        $this->assertCount(19, $report['present']);
+        $this->assertCount(10, $this->probes, 'ordinary sites retain the original schema probe budget');
     }
 
     public function testCollationIsNotResolvedWhenNothingNeedsCreating(): void

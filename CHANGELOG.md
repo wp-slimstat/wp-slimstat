@@ -1,5 +1,9 @@
 = 6.0.0 - 2026-09-15 =
 
+**Ecommerce**
+* Add a revenue-first WooCommerce dashboard with net sales, orders, comparisons, products, acquisition coverage and a consented purchase journey. Currency, refunds and unmatched orders have explicit definitions.
+* Keep order synchronization in bounded background jobs, support HPOS and legacy storage, and integrate native dates, filters, saved segments, privacy erasure and retention. Setup is opt-in; see [the Ecommerce guide](docs/ecommerce.md).
+
 **UTM and channel reports**
 * Build and copy campaign URLs directly from the UTM report. The local builder validates required tags, preserves existing URL parameters and fragments, and supports campaign names or IDs.
 * Campaign and channel totals now expand into source breakdowns, with exact totals under result caps, compact optional tags, blue share bars, highlighted open rows, and layouts that adapt to narrow dashboard widgets and mobile screens.

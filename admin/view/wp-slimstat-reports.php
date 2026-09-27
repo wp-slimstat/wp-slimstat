@@ -10,6 +10,7 @@ class wp_slimstat_reports
         'slimview4' => [],
         'slimview5' => [],
         'slimview6' => [],
+        'slimview7' => [],
         'dashboard' => [],
         'inactive'  => [],
     ];
@@ -935,6 +936,15 @@ class wp_slimstat_reports
             ],
 
             // Goals & Funnels reports
+            'slim_p10_01' => [
+                'title' => __('Ecommerce', 'wp-slimstat'),
+                'callback' => [\SlimStat\Ecommerce\Report::class, 'render'],
+                'callback_args' => [],
+                'classes' => ['full-width', 'slimstat-ecommerce-box'],
+                'locations' => ['slimview7'],
+                'pinned' => true,
+                'postbox_config' => ['hide_header' => true, 'no_border' => true, 'no_background' => true],
+            ],
             'slim_p9_01' => [
                 'title'         => __('Goals', 'wp-slimstat'),
                 'callback'      => [self::class, 'show_goals'],

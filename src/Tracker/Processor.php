@@ -27,6 +27,27 @@ class Processor
      */
     public const REFERER_ALLOWED_SCHEMES = ['http', 'https', 'android-app'];
 
+    /** Shared exclusion check for pageviews and consented commerce events. */
+    public static function isIpExcluded(string $ip, string $otherIp): bool
+    {
+        foreach (\wp_slimstat::string_to_array(\wp_slimstat::$settings['ignore_ip']) as $ipRange) {
+            $ipToIgnore = $ipRange;
+            if (false !== strpos($ipToIgnore, '/')) {
+                [$ipToIgnore, $cidr_mask] = explode('/', trim($ipToIgnore));
+            } else {
+                $cidr_mask = Utils::getMaskLength($ipToIgnore);
+            }
+
+            $longMaskedToIgnore  = substr(Utils::dtrPton($ipToIgnore), 0, $cidr_mask);
+            $longMaskedUserIp    = substr(Utils::dtrPton($ip), 0, $cidr_mask);
+            $longMaskedUserOther = substr(Utils::dtrPton($otherIp), 0, $cidr_mask);
+            if ($longMaskedUserIp === $longMaskedToIgnore || $longMaskedUserOther === $longMaskedToIgnore) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Check if the current WordPress user should be excluded from tracking.
      *
@@ -141,21 +162,9 @@ class Processor
             return Utils::logError(202);
         }
 
-        foreach (\wp_slimstat::string_to_array(\wp_slimstat::$settings['ignore_ip']) as $ipRange) {
-            $ipToIgnore = $ipRange;
-            if (false !== strpos($ipToIgnore, '/')) {
-                [$ipToIgnore, $cidr_mask] = explode('/', trim($ipToIgnore));
-            } else {
-                $cidr_mask = Utils::getMaskLength($ipToIgnore);
-            }
-
-            $longMaskedToIgnore  = substr(Utils::dtrPton($ipToIgnore), 0, $cidr_mask);
-            $longMaskedUserIp    = substr(Utils::dtrPton($stat['ip']), 0, $cidr_mask);
-            $longMaskedUserOther = substr(Utils::dtrPton($stat['other_ip']), 0, $cidr_mask);
-            if ($longMaskedUserIp === $longMaskedToIgnore || $longMaskedUserOther === $longMaskedToIgnore) {
-                Query::setProcessingTimestamp(null);
-                return Utils::logError(304);
-            }
+        if (self::isIpExcluded($stat['ip'], $stat['other_ip'])) {
+            Query::setProcessingTimestamp(null);
+            return Utils::logError(304);
         }
 
         // Store original IP for GeoIP lookup (before hashing)

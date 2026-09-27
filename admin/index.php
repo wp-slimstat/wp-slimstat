@@ -132,6 +132,13 @@ class wp_slimstat_admin
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_view'],
             ],
+            'slimview7' => [
+                'is_report_group' => true,
+                'show_in_sidebar' => \SlimStat\Ecommerce\Report::canView(),
+                'title' => __('Ecommerce', 'wp-slimstat'),
+                'capability' => 'can_view',
+                'callback' => [self::class, 'wp_slimstat_include_view'],
+            ],
             'slimemail' => [
                 'is_report_group' => false,
                 'show_in_sidebar' => true,
@@ -549,8 +556,16 @@ class wp_slimstat_admin
      */
     public static function deactivate()
     {
+        $commerce = get_option('slimstat_ecommerce_state', []);
+        if (!empty($commerce['version'])) {
+            $commerce['needs_rebuild'] = true;
+            update_option('slimstat_ecommerce_state', $commerce, false);
+        }
         foreach (require SLIMSTAT_DIR . '/src/cron-hooks.php' as $hook) {
             wp_clear_scheduled_hook($hook);
+        }
+        if (function_exists('as_unschedule_all_actions')) {
+            as_unschedule_all_actions('', [], 'slimstat-ecommerce');
         }
     }
 
@@ -1512,6 +1527,10 @@ class wp_slimstat_admin
         // Report widgets can be moved to any SlimStat screen through Customize.
         wp_enqueue_style('wp-slimstat-tokens', plugins_url('/admin/assets/css/tokens.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
         wp_enqueue_style('wp-slimstat-acquisition', plugins_url('/admin/assets/css/acquisition.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
+
+        if ('slimview7' === self::$current_screen || false !== strpos(implode(',', (array) self::$meta_user_reports), 'slim_p10_01')) {
+            wp_enqueue_style('wp-slimstat-ecommerce', plugins_url('/admin/assets/css/ecommerce.css', __DIR__), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
+        }
 
 		// Goals & Funnels CSS — only loaded on screens that actually render those reports.
 		// Honors slimlayout/Customize drag by inspecting the user's resolved report layout.

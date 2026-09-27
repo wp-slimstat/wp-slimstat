@@ -51,7 +51,14 @@ foreach ($settings as $name => $value) {
 update_option($fixture_key, $fixture, false);
 foreach ($settings as $name => $value) update_option($name, $value);
 foreach (['cart', 'checkout'] as $page) {
-    $id = wp_insert_post(['post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'QA ' . $page, 'post_name' => $fixture_run . '-' . $page, 'post_content' => '[woocommerce_' . $page . ']'], true);
+    $content = '[woocommerce_' . $page . ']';
+    if (!empty($fixture_blocks)) {
+        // Use the installed WC version's own default blocks in this disposable fixture.
+        $method = new ReflectionMethod(WC_Install::class, 'get_' . $page . '_block_content');
+        $method->setAccessible(true);
+        $content = $method->invoke(null);
+    }
+    $id = wp_insert_post(['post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'QA ' . $page, 'post_name' => $fixture_run . '-' . $page, 'post_content' => $content], true);
     if (is_wp_error($id)) throw new RuntimeException($id->get_error_message());
     $fixture['posts'][] = $id;
     update_option($fixture_key, $fixture, false);

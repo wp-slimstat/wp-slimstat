@@ -499,6 +499,10 @@ class wp_slimstat
         // Init the plugin functionality
         add_action('init', [self::class, 'init_plugin']);
 
+        if (class_exists('WooCommerce') || \SlimStat\Ecommerce\Integration::ready()) {
+            \SlimStat\Ecommerce\Integration::boot();
+        }
+
         // REST API Support
         add_action('rest_api_init', [self::class, 'register_rest_route']);
 

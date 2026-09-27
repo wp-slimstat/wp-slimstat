@@ -241,6 +241,12 @@ class DataEraser
 	 */
 	public static function anonymizeByIp($ip_address, $page = 1)
 	{
+		if (\SlimStat\Ecommerce\Integration::ready()) {
+			$commerce = \SlimStat\Ecommerce\Integration::erase($ip_address, $page, 'ip');
+			if (!$commerce['done']) {
+				return $commerce;
+			}
+		}
 		$number    = 500; // Process 500 records per page
 		$page      = (int) $page;
 		$offset    = ($page - 1) * $number;

@@ -98,6 +98,45 @@ final class Schema
      * @var array<string,array<string,mixed>>
      */
     private const TABLES = [
+        // Rebuildable WooCommerce projection. Created only by Ecommerce setup;
+        // declaring it here keeps inventory, recovery and uninstall consistent.
+        'slim_ecommerce' => [
+            'on_demand' => true,
+            'columns' => [
+                'order_id'    => 'BIGINT UNSIGNED NOT NULL',
+                'item_id'     => 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+                'kind'        => 'TINYINT UNSIGNED NOT NULL DEFAULT 0',
+                'dt'          => 'BIGINT NOT NULL DEFAULT 0',
+                'created_utc' => 'BIGINT NOT NULL DEFAULT 0',
+                'currency'    => "VARCHAR(8) NOT NULL DEFAULT ''",
+                'status'      => "VARCHAR(32) NOT NULL DEFAULT ''",
+                'stat_id'     => 'INT UNSIGNED DEFAULT NULL',
+                'erased'      => 'TINYINT UNSIGNED NOT NULL DEFAULT 0',
+                'product_id'  => 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+                'label'       => "VARCHAR(255) NOT NULL DEFAULT ''",
+                'customer'    => 'TINYINT UNSIGNED NOT NULL DEFAULT 0',
+                'channel'     => "VARCHAR(32) NOT NULL DEFAULT ''",
+                'source'      => "VARCHAR(191) NOT NULL DEFAULT ''",
+                'campaign'    => "VARCHAR(191) NOT NULL DEFAULT ''",
+                'net'         => 'DECIMAL(26,6) NOT NULL DEFAULT 0',
+                'refund'      => 'DECIMAL(26,6) NOT NULL DEFAULT 0',
+                'discount'    => 'DECIMAL(26,6) NOT NULL DEFAULT 0',
+                'tax'         => 'DECIMAL(26,6) NOT NULL DEFAULT 0',
+                'shipping'    => 'DECIMAL(26,6) NOT NULL DEFAULT 0',
+                'quantity'    => 'DECIMAL(20,6) NOT NULL DEFAULT 0',
+            ],
+            'primary' => 'order_id, item_id',
+            'foreign_key' => [
+                'name' => 'fk_{prefix}slim_ecommerce_stat',
+                'column' => 'stat_id', 'references' => 'slim_stats', 'on' => 'id',
+                'delete' => 'SET NULL',
+            ],
+            'indexes' => [
+                'idx_ecommerce_period' => 'kind, currency, dt',
+                'idx_ecommerce_stat'   => 'stat_id',
+                'idx_ecommerce_retention' => 'dt',
+            ],
+        ],
         'slim_events' => [
             'columns' => [
                 'event_id'          => 'INT(10) NOT NULL AUTO_INCREMENT',
@@ -291,7 +330,9 @@ final class Schema
                 // AddVisitIdentity migration has added its column — ensure() skips an
                 // index whose columns are missing (reported, not errored) until then.
                 'idx_vid_hash_dt'                   => 'vid_hash, dt',
+                'idx_ecommerce_visit'               => 'visit_id, dt, id',
             ],
+            'on_demand_indexes' => ['idx_ecommerce_visit'],
         ],
 
         'slim_stats_archive' => [
@@ -646,7 +687,7 @@ final class Schema
         $found = [];
 
         foreach (array_keys(self::indexes($suffix)) as $name) {
-            if (null !== self::optionalIndexGroup($name)) {
+            if (null !== self::optionalIndexGroup($name) || self::isOnDemandIndex($suffix, $name)) {
                 continue;
             }
             if (in_array($column, self::indexColumnNames($suffix, $name), true)) {
@@ -694,14 +735,13 @@ final class Schema
      */
     private static function wantedIndexes(string $suffix, array $disabledGroups): array
     {
-        if ($disabledGroups === []) {
-            return self::indexes($suffix);
-        }
-
         $off    = array_flip($disabledGroups);
         $wanted = [];
 
         foreach (self::indexes($suffix) as $name => $columns) {
+            if (self::isOnDemandIndex($suffix, $name)) {
+                continue;
+            }
             $group = self::optionalIndexGroup($name);
             if (null === $group || !isset($off[$group])) {
                 $wanted[$name] = $columns;
@@ -709,6 +749,14 @@ final class Schema
         }
 
         return $wanted;
+    }
+
+    /** Optional integrations build these explicitly, never on unrelated admin requests. */
+    private static function isOnDemandIndex(string $suffix, string $name): bool
+    {
+        $definition = self::table($suffix);
+        $definition = isset($definition['like']) ? self::table($definition['like']) : $definition;
+        return in_array($name, $definition['on_demand_indexes'] ?? [], true);
     }
 
     public static function engine(): string
@@ -808,11 +856,12 @@ final class Schema
         if (isset($def['foreign_key'])) {
             $fk      = $def['foreign_key'];
             $lines[] = sprintf(
-                'CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s) ON UPDATE CASCADE ON DELETE CASCADE',
+                'CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s) ON UPDATE CASCADE ON DELETE %s',
                 self::resolve($fk['name'], $prefix),
                 $fk['column'],
                 $prefix . $fk['references'],
-                $fk['on']
+                $fk['on'],
+                $fk['delete'] ?? 'CASCADE'
             );
         }
 
@@ -993,6 +1042,10 @@ final class Schema
         foreach (self::creationOrder() as $suffix) {
             $table = $prefix . $suffix;
 
+            if (!empty(self::TABLES[$suffix]['on_demand']) && !isset($existing[$table])) {
+                continue;
+            }
+
             if (!isset($existing[$table])) {
                 $resolved = $resolved ?? (string) $collation();
                 $db->query(self::createTableSql($suffix, $prefix, $resolved, $disabledGroups));
@@ -1150,6 +1203,9 @@ final class Schema
         $drift = ['missing' => [], 'narrow' => []];
 
         foreach (self::tables() as $suffix) {
+            if (!empty(self::TABLES[$suffix]['on_demand']) && !self::tableExists($db, $prefix . $suffix)) {
+                continue;
+            }
             // NO reconciles() GUARD, deliberately. `reconcile => false` is a DDL policy — it says
             // ensure() must not build indexes on this table — and it has no business suppressing
             // OBSERVATION, which is read-only by construction here. Excluding non-reconciling
@@ -1352,7 +1408,7 @@ final class Schema
     }
 
     /** Compare ordinary ascending, non-unique BTREE indexes declared in the manifest. */
-    private static function indexMatches(array $rows, string $definition): bool
+    public static function indexMatches(array $rows, string $definition): bool
     {
         $expected = [];
         foreach (explode(',', $definition) as $part) {
