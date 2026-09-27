@@ -1,5 +1,18 @@
 <?php
 /**
+ * @package wp-slimstat
+ * @license GPL-2.0-or-later
+ *
+ * Copyright (C) 2026 VeronaLabs <info@veronalabs.com>
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or any later version.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See <https://www.gnu.org/licenses/> for the full license.
+ */
+/**
  * Known visitors and authors exclude missing identities before grouping and limiting.
  * Runs the registered callbacks and real Query split/merge against an in-memory database.
  * Run: php tests/known-identity-reports-test.php
@@ -48,26 +61,44 @@ $GLOBALS['wpdb'] = wp_slimstat::$wpdb = new class($sqlite) {
     }
 };
 
-// Evaluate only the requested literal registration, not a duplicate of its callback args.
+// Read the registered literal callback args without executing source expressions.
+// These two reports use scalar strings and a raw callback tuple; reject other shapes.
 $tokens = token_get_all(file_get_contents(dirname(__DIR__) . '/admin/view/wp-slimstat-reports.php'));
-$report = Closure::bind(static function ($id) use ($tokens) {
+$report = static function ($id) use ($tokens) {
     $found = false;
+    $callback = false;
     $depth = 0;
-    $expression = '';
+    $json = '';
     foreach ($tokens as $token) {
         if (!$found) {
             $found = is_array($token) && T_CONSTANT_ENCAPSED_STRING === $token[0] && "'{$id}'" === $token[1];
             continue;
         }
-        if ('[' === $token) { $depth++; }
-        if ($depth > 0) { $expression .= is_array($token) ? $token[1] : $token; }
-        if (']' === $token && 0 === --$depth) {
-            $registration = eval('return ' . $expression . ';');
-            return $registration['callback_args'];
+        if (!$callback) {
+            $callback = is_array($token) && T_CONSTANT_ENCAPSED_STRING === $token[0] && "'callback_args'" === $token[1];
+            continue;
+        }
+        if ('[' === $token) {
+            $json .= 0 === $depth++ ? '{' : '[';
+        } elseif (']' === $token) {
+            $json = rtrim($json, ',') . (0 === --$depth ? '}' : ']');
+            if (0 === $depth) { return json_decode($json, true, 512, JSON_THROW_ON_ERROR); }
+        } elseif (0 === $depth || (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true))) {
+            continue;
+        } elseif (',' === $token) {
+            $json .= ',';
+        } elseif (is_array($token) && T_DOUBLE_ARROW === $token[0] && 1 === $depth) {
+            $json .= ':';
+        } elseif (is_array($token) && T_CONSTANT_ENCAPSED_STRING === $token[0]) {
+            $body = substr($token[1], 1, -1);
+            $value = '"' === $token[1][0] ? stripcslashes($body) : str_replace(["\\\\", "\\'"], ["\\", "'"], $body);
+            $json .= json_encode($value, JSON_THROW_ON_ERROR);
+        } else {
+            throw new RuntimeException('Unsupported callback argument in ' . $id);
         }
     }
     throw new RuntimeException('Missing registration: ' . $id);
-}, null, wp_slimstat_reports::class);
+};
 
 // Missing identities dominate both halves; named commenters and deleted accounts remain valid.
 foreach ([172799, 172800] as $dt) {
