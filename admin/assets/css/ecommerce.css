@@ -144,8 +144,7 @@
 /* Native date, segment and filter controls retain their original handlers. */
 .wrap-slimstat .ss-ec-controls { position: sticky; top: 32px; z-index: 90; padding: 10px 0; background: var(--ss-surface-tint); border-bottom: 1px solid var(--ss-border); }
 .wrap-slimstat .ss-ec-controls #slimstat-filters-form { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
-.wrap-slimstat .ss-ec-controls #slimstat-date-filters { float: none; margin: 0; padding: 0; order: -3; background: none; }
-.wrap-slimstat .ss-ec-controls .slimstat-date-range-btn { background: var(--ss-surface); color: var(--ss-text-body); border: 1px solid var(--ss-border); border-radius: var(--ss-radius-xs); min-height: 36px; font-size: 12px; box-shadow: none; }
+.wrap-slimstat .ss-ec-controls #slimstat-date-filters { float: none; margin: 0; margin-inline-start: auto; padding: 0; order: 3; }
 .wrap-slimstat .ss-ec-controls #slimstat-filters { order: 5; width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 0; }
 .wrap-slimstat .ss-ec-controls #slimstat-filters .form-field { margin: 0; padding: 0; }
 .wrap-slimstat .ss-ec-controls #slimstat-filters :is(input,select) { min-height: 36px; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-xs); font-size: 12px; }
@@ -168,7 +167,6 @@
 /* Override the legacy report shell's heading and absolute date positions. */
 .wrap-slimstat .slimstat-ecommerce-box .ss-ec h3 { display: block !important; padding: 0; border: 0; background: none; font-size: 15px; font-weight: 600; letter-spacing: 0; }
 .wrap-slimstat .ss-ec-controls #slimstat-date-filters { position: static; width: auto; }
-.wrap-slimstat .ss-ec-controls .datepicker-badge-elements { color: var(--ss-text-body); }
 .wrap-slimstat .ss-ec-controls #slimstat-filters-form { height: auto; min-height: 36px; }
 .ss-ec-rankings, .ss-ec-report-empty { min-height: 160px; }
 @media (max-width: 680px) { .ss-ec-rankings { min-height: 0; padding-bottom: 12px; } .ss-ec-report-empty { min-height: 120px; } }

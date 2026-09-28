@@ -939,7 +939,7 @@ class wp_slimstat_reports
             'slim_p10_01' => [
                 'title' => __('Ecommerce', 'wp-slimstat'),
                 'callback' => [\SlimStat\Ecommerce\Report::class, 'render'],
-                'callback_args' => [],
+                'callback_args' => ['raw' => [\SlimStat\Ecommerce\Report::class, 'raw']],
                 'classes' => ['full-width', 'slimstat-ecommerce-box'],
                 'locations' => ['slimview7'],
                 'pinned' => true,

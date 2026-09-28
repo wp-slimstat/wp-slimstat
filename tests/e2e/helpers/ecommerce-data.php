@@ -20,6 +20,10 @@ if ('cleanup' === $mode) {
 		Integration::sync($id);
 	}
 	foreach ($fixture['products'] ?? [] as $id) { wp_delete_post($id, true); }
+	if (!empty($fixture['customer'])) {
+		require_once ABSPATH . 'wp-admin/includes/user.php';
+		wp_delete_user($fixture['customer']);
+	}
 	foreach ($fixture['stats'] ?? [] as $id) {
 		Integration::db()->delete($GLOBALS['wpdb']->prefix . 'slim_stats', ['id' => $id]);
 	}
@@ -37,11 +41,21 @@ if ('seed' === $mode) {
 	$state['complete'] = true;
 	update_option(Integration::STATE, $state, false);
 	$start = (int) floor((wp_slimstat::now() - 10 * DAY_IN_SECONDS) / DAY_IN_SECONDS) * DAY_IN_SECONDS;
-	$fixture = ['orders' => [], 'products' => [], 'stats' => [], 'start' => $start, 'end' => $start + DAY_IN_SECONDS - 1];
+	$fixture = ['orders' => [], 'products' => [], 'stats' => [], 'start' => $start, 'end' => $start + DAY_IN_SECONDS - 1,
+		'expected' => ['USD' => ['net' => '115.00', 'orders' => 4, 'aov' => '28.75', 'refunds' => '60.00', 'discounts' => '20.00', 'tax' => '14.00', 'shipping' => '5.00', 'product_net' => '110.00', 'net_units' => 3, 'linked_orders' => 2],
+			'EUR' => ['net' => '200.00', 'orders' => 1], 'google_USD' => ['net' => '65.00', 'orders' => 2],
+			'journey' => ['visits' => 120, 'products' => 120, 'carts' => 1, 'checkouts' => 1, 'buyers' => 1, 'completed' => 1],
+			'previous_USD' => ['net' => '20.00', 'orders' => 1], 'coupon_discount' => '20.00']];
 	update_option($key, $fixture, false);
 	$product = new WC_Product_Simple();
 	$product->set_name('Ecommerce fixture product'); $product->set_virtual(true); $product->set_regular_price('50'); $product->save();
 	$fixture['products'][] = $product->get_id(); update_option($key, $fixture, false);
+	$parent = new WC_Product_Variable(); $parent->set_name('Ecommerce fixture variations'); $parent->save();
+	$fixture['products'][] = $parent->get_id(); update_option($key, $fixture, false);
+	$variation = new WC_Product_Variation(); $variation->set_parent_id($parent->get_id()); $variation->set_regular_price('50'); $variation->set_virtual(true); $variation->save();
+	$fixture['products'][] = $variation->get_id(); update_option($key, $fixture, false);
+	$customer = new WC_Customer(); $customer->set_username('ec-fixture-' . wp_generate_password(8, false)); $customer->set_email('ec-fixture-' . $parent->get_id() . '@example.test'); $customer->set_password(wp_generate_password()); $customer->save();
+	$fixture['customer'] = $customer->get_id(); update_option($key, $fixture, false);
 	$utc = static function ($wall) { return (new DateTimeImmutable(gmdate('Y-m-d H:i:s', $wall), wp_timezone()))->getTimestamp(); };
 	$make = static function ($total, $status, $currency, $when) use (&$fixture, $key, $product, $utc) {
 		$order = new WC_Order(); $order->set_status($status); $order->set_currency($currency);
@@ -53,12 +67,18 @@ if ('seed' === $mode) {
 	};
 	$a = $make('114', 'processing', 'USD', $start + 120);
 	$item = current($a->get_items()); $item->set_quantity(2); $item->set_subtotal('100'); $item->set_total('80'); $item->save();
+	$fee = new WC_Order_Item_Fee(); $fee->set_name('Fixture service fee'); $fee->set_amount('5'); $fee->set_total('5'); $a->add_item($fee);
+	$shipping = new WC_Order_Item_Shipping(); $shipping->set_method_title('Fixture delivery'); $shipping->set_total('10'); $a->add_item($shipping);
+	$coupon = new WC_Order_Item_Coupon(); $coupon->set_code('fixture-spring'); $coupon->set_discount('20'); $a->add_item($coupon);
+	$tax = new WC_Order_Item_Tax(); $tax->set_label('Fixture tax'); $tax->set_tax_total('19'); $a->add_item($tax);
 	$a->set_discount_total('20'); $a->set_shipping_total('10'); $a->set_cart_tax('19'); $a->save();
 	$refund = new WC_Order_Refund(); $refund->set_parent_id($a->get_id()); $refund->set_currency('USD'); $refund->set_amount('30');
 	$refund->set_cart_tax('-5'); $refund->set_shipping_total('-5'); $refund->set_total('-30');
 	$line = new WC_Order_Item_Product(); $line->set_product($product); $line->set_quantity(-1); $line->set_subtotal('-20'); $line->set_total('-20'); $line->add_meta_data('_refunded_item_id', $item->get_id()); $refund->add_item($line); $refund->save();
 	$fixture['refund'] = $refund->get_id();
 	$b = $make('50', 'completed', 'USD', $start + 180);
+	$variantItem = current($b->get_items()); $variantItem->set_product($variation); $variantItem->save();
+	$b->set_customer_id($customer->get_id());
 	$b->update_meta_data('_wc_order_attribution_source_type', 'utm'); $b->update_meta_data('_wc_order_attribution_utm_source', 'newsletter'); $b->update_meta_data('_wc_order_attribution_utm_medium', 'email'); $b->save();
 	$c = $make('30', 'completed', 'USD', $start + 200);
 	$full = new WC_Order_Refund(); $full->set_parent_id($c->get_id()); $full->set_currency('USD'); $full->set_amount('30'); $full->set_total('-30');
@@ -67,6 +87,7 @@ if ('seed' === $mode) {
 	$make('999', 'cancelled', 'USD', $start + 220);
 	$make('200', 'completed', 'EUR', $start + 240);
 	$f = $make('0', 'processing', 'USD', $start + 260);
+	$f->set_customer_id($customer->get_id()); $f->save();
 	$g = $make('25', 'on-hold', 'USD', $start + 280);
 	$fixture['hold'] = $g->get_id();
 	$make('20', 'completed', 'USD', $start - 1800);
@@ -184,6 +205,20 @@ if ('safety' === $mode) {
 	$cookie = $_COOKIE; $server = $_SERVER; $user = get_current_user_id();
 	$hold = wc_get_order($fixture['hold']); $entry = $fixture['stats'][0];
 	try {
+		$url = '/checkout/order-received/7/?utm_source=fixture&key=wc_order_private#thanks';
+		$written = \SlimStat\Tracker\Storage::insertRow(['dt' => wp_slimstat::now(), 'resource' => $url, 'referer' => home_url($url)], $stats);
+		$redactedId = $written->id();
+		try {
+			$stored = $db->get_row($db->prepare("SELECT resource,referer FROM {$stats} WHERE id=%d", $redactedId), ARRAY_A);
+			$same('/checkout/order-received/7/?utm_source=fixture#thanks', $stored['resource'], 'Receipt access key removed on insert, campaign and fragment preserved');
+			$same(false, strpos($stored['referer'], 'wc_order_') !== false, 'Receipt access key removed from referrer');
+			\SlimStat\Tracker\Storage::updateRow(['id' => $redactedId, 'resource' => '/receipt/?key=wc_order_%70rivate&x=1', 'outbound_resource' => home_url($url)]);
+			$stored = $db->get_row($db->prepare("SELECT resource,outbound_resource FROM {$stats} WHERE id=%d", $redactedId), ARRAY_A);
+			$same('/receipt/?x=1', $stored['resource'], 'URL updates cannot reintroduce encoded receipt keys');
+			$same(false, strpos($stored['outbound_resource'], 'wc_order_') !== false, 'Outbound append redacts receipt key');
+			\SlimStat\Tracker\Storage::updateRow(['id' => $redactedId, 'resource' => '/search/?key=ordinary&x=1']);
+			$same('/search/?key=ordinary&x=1', $db->get_var($db->prepare("SELECT resource FROM {$stats} WHERE id=%d", $redactedId)), 'Unrelated key parameters remain intact');
+		} finally { $db->delete($stats, ['id' => $redactedId]); }
 		foreach (['admin' => true, 'e2e_author' => false, 'e2e_subscriber' => false] as $login => $allowed) {
 			$account = get_user_by('login', $login); if (!$account) { throw new RuntimeException('Missing fixture role: ' . $login); }
 			wp_set_current_user($account->ID);

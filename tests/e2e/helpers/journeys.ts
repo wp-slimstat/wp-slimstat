@@ -14,7 +14,7 @@ export async function waitForTracking(page: Page, runId: string, expectedCount: 
   await expect.poll(async () => (await getCorrelatedRows(runId)).length).toBeGreaterThanOrEqual(expectedCount);
 }
 
-export async function shopperJourney(page: Page, runId: string, store: { product: string; email: string }, blocks = false): Promise<{ orderUrl: string }> {
+export async function shopperJourney(page: Page, runId: string, store: { product: string; email: string }, blocks = false, tracked = true): Promise<{ orderUrl: string }> {
   // Keep correlation on real redirects without changing any tracker inputs.
   await page.addInitScript(id => {
     const url = new URL(location.href);
@@ -24,13 +24,13 @@ export async function shopperJourney(page: Page, runId: string, store: { product
   await page.goto(store.product, { waitUntil: 'networkidle' });
   const cookieAccept = page.getByRole('button', { name: 'Accept All', exact: true });
   if (await cookieAccept.isVisible()) await cookieAccept.click();
-  await waitForTracking(page, runId, 1);
+  if (tracked) await waitForTracking(page, runId, 1);
   await page.locator('button.single_add_to_cart_button').click();
   await expect(page.locator(blocks ? '.wp-block-woocommerce-cart' : '.woocommerce-cart-form')).toBeVisible();
-  await waitForTracking(page, runId, 2);
+  if (tracked) await waitForTracking(page, runId, 2);
   await page.locator(blocks ? '.wc-block-cart__submit-button' : 'a.checkout-button').click();
   await expect(page.locator(blocks ? '.wc-block-checkout__form' : 'form.checkout')).toBeVisible();
-  await waitForTracking(page, runId, 3);
+  if (tracked) await waitForTracking(page, runId, 3);
   if (blocks) {
     await page.locator('#email').fill(store.email);
     const country = page.locator('#billing-country');
@@ -60,7 +60,7 @@ export async function shopperJourney(page: Page, runId: string, store: { product
   await page.locator('#place_order').click();
   }
   await expect(page).toHaveURL(/order-received/);
-  await expect(page.getByText('Thank you. Your order has been received.', { exact: true })).toBeVisible();
-  await waitForTracking(page, runId, 4);
+  await expect(page.getByText(/^Thank you\. Your order has been (received|fulfilled)\.$/)).toBeVisible();
+  if (tracked) await waitForTracking(page, runId, 4);
   return { orderUrl: page.url() };
 }

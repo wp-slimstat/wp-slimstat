@@ -1,6 +1,8 @@
 = 6.0.0 - 2026-09-15 =
 
 **Ecommerce**
+* Isolate report caches and setup by analytics database, exclude expired visits from purchase-rate cohorts, and provide scoped summaries for native exports and scheduled Pro email. Restore the shared date picker appearance.
+* Remove WooCommerce order-access keys from newly stored page URLs, referrers and URL updates. Existing historical records are not rewritten automatically.
 * Refine Ecommerce with interactive metric charts, calendar aggregation, tabbed revenue rankings, inline drill-downs and compact coverage guidance. Preserve native filters and scoped exports.
 * Add a revenue-first WooCommerce dashboard with net sales, orders, comparisons, products, acquisition coverage and a consented purchase journey. Currency, refunds and unmatched orders have explicit definitions.
 * Keep order synchronization in bounded background jobs, support HPOS and legacy storage, and integrate native dates, filters, saved segments, privacy erasure and retention. Setup is opt-in; see [the Ecommerce guide](docs/ecommerce.md).

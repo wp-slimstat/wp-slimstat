@@ -100,6 +100,7 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
   { sourceFile: 'browscap-unzip-blocker-mu-plugin.php', deployedFile: 'browscap-unzip-blocker-mu-plugin.php' },
   { sourceFile: 'fileinfo-disabler-mu-plugin.php', deployedFile: 'fileinfo-disabler-mu-plugin.php' },
   { sourceFile: 'google-maps-key-mu-plugin.php', deployedFile: 'google-maps-key-mu-plugin.php' },
+  { sourceFile: 'ecommerce-gateway-mu-plugin.php', deployedFile: 'ecommerce-gateway-mu-plugin.php' },
 ];
 
 // ─── Generic MU-Plugin install/uninstall by name ──────────────────

@@ -151,7 +151,7 @@ final class Report
 	private function journey(): array
 	{
 		$db = Integration::db();
-		$start = (int) $this->range['start'];
+		$start = max((int) $this->range['start'], Integration::retentionStart());
 		$end = (int) $this->range['end'];
 		$events = $GLOBALS['wpdb']->prefix . 'slim_events';
 		$cohort = $db->prepare("SELECT p.visit_id FROM {$this->stats} p WHERE p.dt BETWEEN %d AND %d AND p.visit_id > 0 AND p.browser_type IN (0,2) AND p.notes LIKE %s AND ({$this->scope}) GROUP BY p.visit_id", $start, $end, '%[ec:eligible]%');
@@ -198,11 +198,12 @@ final class Report
 		$result = ['interval' => $interval, 'current' => [], 'previous' => []];
 		foreach (['current' => 0, 'previous' => $span] as $period => $offset) {
 			$from = $start - $offset; $to = $end - $offset;
+			$retainedFrom = max($from, Integration::retentionStart());
 			$where = $this->where($from, $to);
 			$orderBucket = $bucket('e.dt', $offset); $visitBucket = $bucket('p.dt', $offset);
 			$money = count($bins) === 1 ? [array_key_first($bins) => $data[$period]] : array_column($this->query("SELECT {$orderBucket} bucket, SUM(e.net) net, COUNT(*) orders FROM {$this->table} e {$this->join} WHERE {$where} GROUP BY bucket"), null, 'bucket');
 			// Distinct visits per bucket, not summed daily rates. Multiple purchases count once.
-			$cohort = "SELECT {$visitBucket} bucket, p.visit_id FROM {$this->stats} p WHERE p.dt BETWEEN {$from} AND {$to} AND p.visit_id > 0 AND p.browser_type IN (0,2) AND p.notes LIKE '%[ec:eligible]%' AND ({$this->scope}) GROUP BY bucket, p.visit_id";
+			$cohort = "SELECT {$visitBucket} bucket, p.visit_id FROM {$this->stats} p WHERE p.dt BETWEEN {$retainedFrom} AND {$to} AND p.visit_id > 0 AND p.browser_type IN (0,2) AND p.notes LIKE '%[ec:eligible]%' AND ({$this->scope}) GROUP BY bucket, p.visit_id";
 			$purchasesWhere = $this->where($from, $to, 0, false);
 			$purchases = "SELECT {$orderBucket} bucket, s.visit_id FROM {$this->table} e INNER JOIN {$this->stats} s ON s.id = e.stat_id WHERE {$purchasesWhere} GROUP BY bucket, s.visit_id";
 			$visits = count($bins) === 1 && 'current' === $period ? [array_key_first($bins) => $data['journey']] : array_column($this->query("SELECT c.bucket, COUNT(*) visits, COUNT(b.visit_id) buyers FROM ({$cohort}) c LEFT JOIN ({$purchases}) b ON b.bucket = c.bucket AND b.visit_id = c.visit_id GROUP BY c.bucket"), null, 'bucket');
@@ -225,10 +226,13 @@ final class Report
 		return $result;
 	}
 
-	/** Cached complete response; scope includes edition, dates, filters, currency and mutations. */
-	public function data(string $interval = 'auto'): array
+	/** Validate freshness once for HTML, email and dimension-only downloads. */
+	public function context(): array
 	{
 		$state = get_option(Integration::STATE, []);
+		if (!Integration::ready()) {
+			throw new \RuntimeException(__('Set up Ecommerce for the current analytics database before loading reports.', 'wp-slimstat'));
+		}
 		if (!empty($state['needs_rebuild'])) {
 			throw new \RuntimeException(__('SlimStat was deactivated and may have missed order changes. Rebuild Ecommerce reports to reconcile with WooCommerce.', 'wp-slimstat'));
 		}
@@ -238,6 +242,16 @@ final class Report
 		if ($this->range['start'] > $this->range['end']) {
 			throw new \RuntimeException(__('This date range is in the future. Choose a period with observed activity.', 'wp-slimstat'));
 		}
+		return ['currency' => $this->currency, 'range' => [(int) $this->range['start'], (int) $this->range['end']],
+			'provisional' => empty($state['complete']) || !empty($state['error']),
+			'retention_limited' => $this->range['start'] < Integration::retentionStart()];
+	}
+
+	/** Cached response; email omits interactive rankings/series that it does not render. */
+	public function data(string $interval = 'auto', bool $details = true): array
+	{
+		$this->context();
+		$state = get_option(Integration::STATE, []);
 		$extra = array_values(array_intersect(['campaign', 'landing', 'device', 'customer', 'coupon'], (array) apply_filters('slimstat_ecommerce_dimensions', [])));
 		$days = ($this->range['end'] - $this->range['start']) / DAY_IN_SECONDS;
 		$interval = in_array($interval, ['daily', 'weekly', 'monthly'], true) ? $interval : ($days > 730 ? 'monthly' : ($days > 62 ? 'weekly' : 'daily'));
@@ -245,7 +259,7 @@ final class Report
 		if ($days > 366 && 'daily' === $interval) { $interval = 'weekly'; }
 		if ($days > 2562) { $interval = 'monthly'; }
 		$key = 'slimstat_ec_' . md5(wp_json_encode([
-			$this->requestedRange, $this->currency, $this->scope, $extra, $this->acquisition, get_current_blog_id(), 2,
+			$this->requestedRange, $this->currency, $this->scope, $extra, $this->acquisition, get_current_blog_id(), Acquisition::readinessKey(), $details, 3,
 		]));
 		$signature = [get_option('slimstat_ecommerce_generation', ''), $state, \wp_slimstat::$settings['auto_purge'] ?? 420];
 		$cached = get_transient($key);
@@ -262,11 +276,12 @@ final class Report
 				'currencies' => $this->query("SELECT DISTINCT currency FROM {$this->table} WHERE kind = 0 AND currency <> '' ORDER BY currency"),
 				'journey' => $this->journey(), 'groups' => [],
 			];
-			foreach (array_merge(['channel', 'product', 'source'], $extra) as $dimension) {
+			foreach ($details ? array_merge(['channel', 'product', 'source'], $extra) : [] as $dimension) {
 				$data['groups'][$dimension] = $this->rows($dimension);
 			}
 			set_transient($key, ['signature' => $signature, 'data' => $data], MINUTE_IN_SECONDS);
 		}
+		if (!$details) { return $data; }
 		// Interval changes reuse summaries/rankings and query only their own trend.
 		$this->range['start'] = $data['range'][0]; $this->range['end'] = $data['range'][1];
 		$seriesKey = $key . '_' . $interval . '_' . (int) get_option('start_of_week', 1);
@@ -278,6 +293,44 @@ final class Report
 			set_transient($seriesKey, ['signature' => $signature, 'range' => $data['range'], 'data' => $data['series']], MINUTE_IN_SECONDS);
 		}
 		return $data;
+	}
+
+	/** Plain native metric/value rows. Email context is supplied only by the trusted scheduler. */
+	public static function raw(array $args = []): array
+	{
+		if (empty($args['email']) && !self::canView()) { return []; }
+		if (!Integration::available() || !Integration::ready()) {
+			return [['metric' => __('Data quality', 'wp-slimstat'), 'value' => __('Ecommerce is unavailable. Activate WooCommerce and set up reporting.', 'wp-slimstat')]];
+		}
+		$columns = \wp_slimstat_db::$filters_normalized['columns'];
+		// Native export's transport filters are not analytical segments.
+		unset(\wp_slimstat_db::$filters_normalized['columns']['addon_e2e_id'], \wp_slimstat_db::$filters_normalized['columns']['addon_e2e_nonce']);
+		try {
+			$data = (new self())->data('auto', false);
+			$state = get_option(Integration::STATE, []);
+			$orders = (int) $data['current']['orders']; $journey = $data['journey'];
+			$money = static function ($amount) use ($data) { return html_entity_decode(wp_strip_all_tags(self::money($amount, $data['currency'])), ENT_QUOTES, 'UTF-8'); };
+			$quality = empty($state['complete']) || !empty($state['error']) ? __('Provisional: synchronization is incomplete or needs attention.', 'wp-slimstat') : __('WooCommerce totals; attribution covers retained tracked visits only.', 'wp-slimstat');
+			if ($data['range'][0] < Integration::retentionStart()) { $quality .= ' ' . __('Part of this period is outside analytics retention.', 'wp-slimstat'); }
+			$values = [
+				__('Reporting period', 'wp-slimstat') => self::date('Y-m-d H:i', $data['range'][0]) . ' – ' . self::date('Y-m-d H:i', $data['range'][1]) . ' (' . wp_timezone_string() . ')',
+				__('Currency', 'wp-slimstat') => $data['currency'], __('Data quality', 'wp-slimstat') => $quality,
+				__('Net sales', 'wp-slimstat') => $money($data['current']['net']), __('Orders', 'wp-slimstat') => number_format_i18n($orders),
+				__('Average order value', 'wp-slimstat') => $orders ? $money((float) $data['current']['net'] / $orders) : __('Unavailable', 'wp-slimstat'),
+				__('Tracked purchase rate', 'wp-slimstat') => $journey['visits'] >= 100 ? number_format_i18n(100 * $journey['buyers'] / $journey['visits'], 2) . '%' : __('Insufficient observations', 'wp-slimstat'),
+				__('Tracked buying / eligible visits', 'wp-slimstat') => $journey['buyers'] . ' / ' . $journey['visits'],
+				__('Linked / included orders', 'wp-slimstat') => $data['current']['matched'] . ' / ' . $orders,
+				__('Scope', 'wp-slimstat') => $data['filtered'] ? __('Selected traffic filters; unlinked orders excluded.', 'wp-slimstat') : __('All included orders in this currency and period.', 'wp-slimstat'),
+				__('Basis', 'wp-slimstat') => __('Order-created cohort; refunds revise original orders; net sales exclude tax and shipping.', 'wp-slimstat'),
+			];
+			$rows = [];
+			foreach ($values as $metric => $value) { $rows[] = compact('metric', 'value'); }
+			return $rows;
+		} catch (\Throwable $error) {
+			return [['metric' => __('Data quality', 'wp-slimstat'), 'value' => __('Ecommerce could not be loaded. Review its reporting setup and selected filters.', 'wp-slimstat')]];
+		} finally {
+			\wp_slimstat_db::$filters_normalized['columns'] = $columns;
+		}
 	}
 
 	/** Native report callback; async loading, manual refresh and shared filters remain native. */

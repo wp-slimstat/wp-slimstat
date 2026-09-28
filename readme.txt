@@ -121,6 +121,7 @@ Deleting the plugin no longer erases your analytics. Data is now kept by default
 == Changelog ==
 
 = 6.0.0 - 2026-09-15 =
+* Improve Ecommerce database isolation, retention accuracy and native dates; remove order-access keys from new analytics URLs.
 
 * Explore Ecommerce through selectable metric charts, tabbed revenue rankings and clearer tracking coverage.
 

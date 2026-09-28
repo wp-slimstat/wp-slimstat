@@ -19,6 +19,9 @@ class Storage
 		}
 
 		foreach ($data as $key => $value) {
+			if (is_string($value) && in_array($key, ['resource', 'referer', 'outbound_resource'], true)) {
+				$value = self::redactOrderKey($value);
+			}
 			$data[$key] = 0 === strpos($key, 'utm_') || 'traffic_source' === $key
 				? Acquisition::clean($value)
 				: ('resource' == $key ? sanitize_url($value) : sanitize_text_field($value));
@@ -72,6 +75,16 @@ class Storage
 		}
 
 		return $result;
+	}
+
+	/** WooCommerce receipt keys grant order access; they are never analytics dimensions. */
+	private static function redactOrderKey(string $url): string
+	{
+		if (false === strpos($url, '?')) { return $url; }
+		$query = [];
+		parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+		return isset($query['key']) && is_string($query['key']) && 0 === strpos($query['key'], 'wc_order_')
+			? remove_query_arg('key', $url) : $url;
 	}
 
 	/**
@@ -195,6 +208,9 @@ class Storage
 		// overwrite the row with raw HTML. Run before array_filter so values that
 		// sanitize to '' get dropped along with originals.
 		foreach ($data as $key => $value) {
+			if (is_string($value) && in_array($key, ['resource', 'referer', 'outbound_resource'], true)) {
+				$value = self::redactOrderKey($value);
+			}
 			if (is_array($value)) {
 				$data[$key] = array_map('sanitize_text_field', $value);
 			} elseif ('resource' === $key || 'outbound_resource' === $key) {

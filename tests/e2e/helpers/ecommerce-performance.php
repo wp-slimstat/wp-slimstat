@@ -32,6 +32,8 @@ try {
         if (false === $db->query("INSERT INTO {$stats} (visit_id,dt,browser_type,resource,notes,traffic_channel,traffic_source,utm_campaign) VALUES " . implode(',', $visits))
             || false === $db->query("INSERT INTO {$table} (order_id,item_id,kind,dt,currency,status,net,channel,source,campaign) VALUES " . implode(',', $orders))) { throw new RuntimeException('Benchmark insertion failed.'); }
     }
+    $db->query("INSERT INTO {$table} (order_id,item_id,kind,dt,currency,status,net,product_id,label,discount) SELECT order_id,1,1,dt,currency,status,net,1+MOD(order_id-{$base},100),CONCAT('Product ',1+MOD(order_id-{$base},100)),0 FROM {$table} WHERE order_id >= {$base} AND kind=0");
+    $db->query("INSERT INTO {$table} (order_id,item_id,kind,dt,currency,status,net,product_id,label,discount) SELECT order_id,2,2,dt,currency,status,0,0,'QA coupon',1 FROM {$table} WHERE order_id >= {$base} AND kind=0 AND MOD(order_id-{$base},5)=0");
     // All synthetic orders deliberately have a known visit, exercising the expensive join path.
     $db->query("UPDATE {$table} e INNER JOIN {$stats} s ON s.visit_id = e.order_id SET e.stat_id = s.id WHERE e.order_id >= {$base}");
     $seedSeconds = microtime(true) - $insertStart;
@@ -64,7 +66,16 @@ try {
     foreach (['cold', 'warm', 'filtered'] as $mode) {
         $times = array_map(static function ($run) use ($mode) { return $run[$mode]['milliseconds']; }, $runs); sort($times); $medians[$mode] = $times[(int) floor(count($times) / 2)];
     }
+    $exports = [];
+    foreach (['dashboard_then_dimension', 'dimension_only'] as $mode) {
+        Integration::invalidate(); $queryStart = $db->num_queries; $exportStart = microtime(true);
+        $report = new Report();
+        if ('dashboard_then_dimension' === $mode) { $report->data(); } else { $report->context(); }
+        $rows = $report->rows('product', 1000);
+        if (count($rows) !== 100 || (float) array_sum(array_column($rows, 'net')) !== (float) ($count * 10)) { throw new RuntimeException('Product fan-out/export reconciliation failed.'); }
+        $exports[$mode] = ['milliseconds' => round((microtime(true)-$exportStart)*1000,2),'queries'=>$db->num_queries-$queryStart,'rows'=>count($rows)];
+    }
     $narrow = $db->get_results("EXPLAIN SELECT SUM(net) FROM {$table} WHERE kind=0 AND currency='USD' AND dt BETWEEN {$start} AND " . ($start + 100), ARRAY_A);
     $plans = $db->get_results("EXPLAIN SELECT SUM(net) FROM {$table} WHERE kind=0 AND currency='USD' AND dt BETWEEN {$start} AND " . ($start + DAY_IN_SECONDS - 1), ARRAY_A);
-    echo wp_json_encode(['dataset' => ['orders' => $count, 'pageviews' => $count, 'days' => $days], 'query_profile' => $profile ?? [], 'seed_seconds' => round($seedSeconds, 2), 'peak_php_mb' => round(memory_get_peak_usage(true) / 1048576, 1), 'report_memory_delta_mb' => round((memory_get_usage(true) - $memoryBefore) / 1048576, 1), 'runs' => $runs, 'median_ms' => $medians, 'aggregate_plan' => $plans, 'narrow_plan' => $narrow]);
+    echo wp_json_encode(['exports' => $exports, 'dataset' => ['orders' => $count, 'product_rows'=>$count,'coupon_rows'=>$count/5,'pageviews' => $count, 'days' => $days], 'query_profile' => $profile ?? [], 'seed_seconds' => round($seedSeconds, 2), 'peak_php_mb' => round(memory_get_peak_usage(true) / 1048576, 1), 'report_memory_delta_mb' => round((memory_get_usage(true) - $memoryBefore) / 1048576, 1), 'runs' => $runs, 'median_ms' => $medians, 'aggregate_plan' => $plans, 'narrow_plan' => $narrow]);
 } finally { $cleanup(); }

@@ -12,6 +12,10 @@ if ($fixture_mode === 'cleanup') {
         foreach ($fixture['posts'] as $post_id) {
             wp_delete_post($post_id, true);
         }
+        if (!empty($fixture['customer'])) {
+            require_once ABSPATH . 'wp-admin/includes/user.php';
+            wp_delete_user($fixture['customer']);
+        }
         foreach ($fixture['options'] as $name => $old) {
             if ($old['exists']) update_option($name, $old['value']);
             else delete_option($name);
@@ -73,4 +77,10 @@ $product->set_sku($fixture_run);
 $product->save();
 $fixture['posts'][] = $product->get_id();
 update_option($fixture_key, $fixture, false);
-echo wp_json_encode(['product' => get_permalink($product->get_id()), 'cart' => wc_get_cart_url(), 'checkout' => wc_get_checkout_url(), 'email' => $fixture['email'], 'version' => WC_VERSION]);
+if (!empty($fixture_customer)) {
+    $customer = wp_insert_user(['user_login' => $fixture_run, 'user_pass' => 'fixture-only-password', 'user_email' => $fixture['email'], 'role' => 'customer']);
+    if (is_wp_error($customer)) throw new RuntimeException($customer->get_error_message());
+    $fixture['customer'] = $customer;
+    update_option($fixture_key, $fixture, false);
+}
+echo wp_json_encode(['product' => get_permalink($product->get_id()), 'cart' => wc_get_cart_url(), 'checkout' => wc_get_checkout_url(), 'email' => $fixture['email'], 'version' => WC_VERSION, 'customer' => $fixture['customer'] ?? 0]);

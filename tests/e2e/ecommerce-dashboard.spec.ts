@@ -197,7 +197,15 @@ test('Ecommerce Free is useful alone and WooCommerce deactivation is safe @wooco
     expect(await page.locator('script[src*="ecommerce.js"]').count()).toBe(0);
     const privacy = runWordPressFixture("<?php echo isset(apply_filters('wp_privacy_personal_data_erasers', [])['slimstat-ecommerce']) ? 'registered' : 'missing';");
     expect(privacy).toBe('registered');
+    expect(runWordPressFixture("<?php SlimStat\\Ecommerce\\Integration::sync(0); SlimStat\\Ecommerce\\Integration::import(); do_action('slimstat_ecommerce_sync', 0); do_action('slimstat_ecommerce_import'); echo 'safe';")).toBe('safe');
+    // A genuinely missing plugin directory and no commerce setup, on disposable wp-env only.
+    runWordPressFixture("<?php if (DB_NAME !== 'tests-wordpress') throw new RuntimeException('Disposable database required'); update_option('slimstat_ec_absent_backup',get_option('slimstat_ecommerce_state')); delete_option('slimstat_ecommerce_state'); if (!rename(WP_PLUGIN_DIR.'/woocommerce', WP_PLUGIN_DIR.'/woocommerce-audit-absent')) throw new RuntimeException('Cannot isolate WooCommerce');");
+    await page.goto('/wp-admin/admin.php?page=slimview7');
+    await expect(page.locator('[data-ecommerce]')).toContainText('Activate WooCommerce');
+    expect(runWordPressFixture("<?php echo function_exists('wc_get_orders') ? 'loaded' : 'absent';")).toBe('absent');
+    expect((await page.request.get('/')).status()).toBe(200);
   } finally {
+    runWordPressFixture("<?php if (is_dir(WP_PLUGIN_DIR.'/woocommerce-audit-absent')) rename(WP_PLUGIN_DIR.'/woocommerce-audit-absent',WP_PLUGIN_DIR.'/woocommerce'); $s=get_option('slimstat_ec_absent_backup',null); if(null!==$s){update_option('slimstat_ecommerce_state',$s,false);delete_option('slimstat_ec_absent_backup');}");
     runWordPressFixture("<?php activate_plugin('woocommerce/woocommerce.php');");
     if (proWasActive) runWordPressFixture("<?php activate_plugin('wp-slimstat-pro/wp-slimstat-pro.php');");
   }
@@ -220,5 +228,31 @@ test('Ecommerce setup is visible, protected and repeatable in the native report 
     await expect(page.getByRole('button', { name: 'Rebuild reports', exact: true })).toBeVisible();
   } finally {
     runWordPressFixture("<?php update_option('slimstat_ecommerce_state', get_option('slimstat_ec_setup_test_backup', []), false); delete_option('slimstat_ec_setup_test_backup');");
+  }
+});
+
+test('Ecommerce uses the native date control and preserves filters through keyboard presets @woocommerce', async ({ page }, testInfo) => {
+  const style = async () => page.locator('.slimstat-date-range-btn').evaluate(el => {
+    const s = getComputedStyle(el); return {background:s.backgroundColor,color:s.color,font:s.fontSize,radius:s.borderRadius,height:el.getBoundingClientRect().height};
+  });
+  await page.goto('/wp-admin/admin.php?page=slimview3');
+  await expect(page.locator('.slimstat-date-range-btn')).toBeVisible();
+  const native = await style();
+  await page.goto('/wp-admin/admin.php?page=slimview7&fs[utm_source]=equals%20google');
+  await expect(page.locator('[data-ecommerce] [data-metric=net]')).toBeVisible();
+  expect(await style()).toEqual(native);
+  await page.locator('.slimstat-date-range-btn').focus(); await page.keyboard.press('Enter');
+  const picker = page.locator('.daterangepicker:visible'); await expect(picker).toBeVisible();
+  const yesterday = await page.evaluate(() => (window as any).SlimStatDatePicker.strings.yesterday);
+  await picker.locator('.ranges li').filter({hasText:yesterday}).click();
+  await expect(page.locator('.slimstat-date-range-btn')).toContainText(yesterday);
+  await expect(page.locator('#slimstat-current-filters')).toContainText('google');
+  await expect(page.locator('[data-ecommerce]')).toContainText('Traffic filters are active');
+  for (const width of [1440,390]) {
+    await page.setViewportSize({width,height:900}); await page.locator('.slimstat-date-range-btn').click();
+    await expect(picker).toBeVisible();
+    const box = await picker.boundingBox(); expect(box!.x).toBeGreaterThanOrEqual(0); expect(box!.x+box!.width).toBeLessThanOrEqual(width+1);
+    await page.screenshot({path:testInfo.outputPath(`native-datepicker-${width}.png`),fullPage:true});
+    await page.locator('[data-ecommerce] h2').first().click();
   }
 });

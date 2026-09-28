@@ -4,6 +4,7 @@ namespace SlimStat\Ecommerce;
 
 use SlimStat\Migration\MigrationService;
 use SlimStat\Schema\Schema;
+use SlimStat\Tracker\Acquisition;
 use SlimStat\Tracker\Processor;
 use SlimStat\Tracker\Storage;
 use SlimStat\Tracker\Utils;
@@ -72,7 +73,9 @@ final class Integration
 
 	public static function ready(): bool
 	{
-		return self::VERSION === (int) (get_option(self::STATE, [])['version'] ?? 0);
+		$state = get_option(self::STATE, []);
+		return self::VERSION === (int) ($state['version'] ?? 0)
+			&& (!isset($state['database']) || $state['database'] === Acquisition::readinessKey());
 	}
 
 	/** HPOS, Blocks checkout and Action Scheduler APIs used by this integration. */
@@ -137,7 +140,7 @@ final class Integration
 			$state = array_merge($state, [
 				'version' => self::VERSION, 'started' => $state['started'] ?? \wp_slimstat::now(),
 				'cursor' => 0, 'ceiling' => max((int) ($last[0] ?? 0), (int) $db->get_var('SELECT MAX(order_id) FROM ' . self::table())), 'imported' => 0,
-				'complete' => false, 'error' => false, 'failed_order' => 0, 'needs_rebuild' => false, 'timezone' => wp_timezone_string(),
+				'complete' => false, 'error' => false, 'failed_order' => 0, 'needs_rebuild' => false, 'timezone' => wp_timezone_string(), 'database' => Acquisition::readinessKey(),
 			]);
 			update_option(self::STATE, $state, false);
 			self::invalidate();
