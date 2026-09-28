@@ -104,7 +104,7 @@ if (count($tracked) - count($package) < 200) {
 
 // ── 3. The runtime non-negotiables ship ─────────────────────────────────────────────────
 $package_set = array_flip($package);
-foreach (['wp-slimstat.php', 'uninstall.php', 'readme.txt', 'src/Schema/Schema.php', 'admin/index.php'] as $required) {
+foreach (['composer.json', 'wp-slimstat.php', 'uninstall.php', 'readme.txt', 'src/Schema/Schema.php', 'admin/index.php'] as $required) {
     if (!isset($package_set[$required])) {
         $failures[] = sprintf('the simulated package lacks `%s`; either .distignore excludes it or it '
             . 'is no longer tracked, and the ZIP would be broken on arrival', $required);

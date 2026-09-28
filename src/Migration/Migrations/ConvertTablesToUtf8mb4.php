@@ -248,6 +248,7 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
         return $this->shouldRunCache = ([] !== $this->pendingTables());
     }
 
+    // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Charset migration uses a validated collation and core-prefix table; DDL must operate on fresh schema state.
     public function run(): bool
     {
         $collation = $this->targetCollation();
@@ -310,6 +311,7 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
 
         return $ok;
     }
+    // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
     public function getDiagnostics(): array
     {

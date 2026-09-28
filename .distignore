@@ -21,7 +21,6 @@
 .php-cs-fixer.dist.php
 pint.json
 rector.php
-composer.json
 composer.lock
 package.json
 package-lock.json
@@ -57,3 +56,6 @@ security.md
 
 # Private Symfony Windows interactive-console helper; no plugin entrypoint uses it.
 /src/Dependencies/veronalabs/browscap-php/src/Symfony/Component/Console/Resources/bin/hiddeninput.exe
+
+# Developer report specification; available in the source repository.
+ACQUISITION-REPORTS.md

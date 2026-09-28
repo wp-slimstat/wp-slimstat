@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -42,7 +43,7 @@ echo '<input type="submit" value="' . esc_attr__('Apply', 'wp-slimstat') . '" cl
 
 $saved_filters = get_option('slimstat_filters', []);
 if (!empty($saved_filters)) {
-    echo '<a href="#" id="slimstat-load-saved-filters" class="button-secondary noslimstat" title="Saved Filters">' . esc_html__('Saved Filters', 'wp-slimstat') . '</a>';
+    echo '<a href="#" id="slimstat-load-saved-filters" class="button-secondary noslimstat" title="' . esc_attr__('Saved Filters', 'wp-slimstat') . '">' . esc_html__('Saved Filters', 'wp-slimstat') . '</a>';
 }
 ?></fieldset><!-- #slimstat-filters -->
 
@@ -125,6 +126,7 @@ if (PHP_VERSION_ID >= 70100 && !file_exists(wp_slimstat::$upload_dir . '/browsca
 if ('on' == wp_slimstat::$settings['enable_browscap'] && !\SlimStat\Services\Browscap::has_fileinfo() && 'on' == wp_slimstat::$settings['notice_browscap_fileinfo']) {
     wp_slimstat_admin::show_message(
         sprintf(
+            /* translators: 1: opening code tag, 2: closing code tag, 3: opening settings link, 4: closing link tag. */
             __("Slimstat's Browscap browser-detection library requires the PHP %1\$sfileinfo%2\$s extension, which is not enabled on your server. Browser detection has been safely disabled to keep tracking working — ask your host to enable %1\$sfileinfo%2\$s, or %3\$sturn off the Browscap Library%4\$s in the settings to hide this notice.", 'wp-slimstat'),
             '<code>',
             '</code>',

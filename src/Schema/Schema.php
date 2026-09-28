@@ -217,7 +217,9 @@ final class Schema
         'slim_meta' => [
             'columns' => [
                 // 191, not 256: the PRIMARY KEY must fit 767 index bytes under utf8mb4.
+                // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Schema column declaration for the indexed SlimStat metadata table, not a WP_Meta_Query.
                 'meta_key'   => 'VARCHAR(191) NOT NULL',
+                // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Schema column declaration for the indexed SlimStat metadata table, not a WP_Meta_Query.
                 'meta_value' => 'VARCHAR(2048) DEFAULT NULL',
                 // For a lease row this is the expiry epoch; for identity rows it is unused.
                 'dt'         => 'INT(10) UNSIGNED NOT NULL DEFAULT 0',

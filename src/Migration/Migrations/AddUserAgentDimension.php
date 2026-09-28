@@ -179,6 +179,7 @@ class AddUserAgentDimension extends AbstractMigration
      * by table size. That is the property that makes this affordable to re-run each time
      * staleness re-offers the migration (there is no cron — see the class docblock).
      */
+    // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Bounded migration binds all user-agent values; interpolated identifiers come from the core prefix and schema manifest.
     private function backfill(): bool
     {
         $stats     = $this->tablePrefix() . 'slim_stats';
@@ -303,6 +304,7 @@ class AddUserAgentDimension extends AbstractMigration
         // can re-post the same step until it is done.
         return true;
     }
+    // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
     /**
      * The string the surrogate key is derived from.
@@ -334,6 +336,7 @@ class AddUserAgentDimension extends AbstractMigration
         return $this->columnExists('slim_stats', 'ua_id');
     }
 
+    // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fresh migration probe over a core-prefix table; no request values enter the identifier.
     private function dimensionIsBehind(): bool
     {
         if (!$this->factColumnExists()) {
@@ -348,6 +351,7 @@ class AddUserAgentDimension extends AbstractMigration
 
         return !$this->probeFailed() && null !== $pending;
     }
+    // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
     /** @return array<int,array{key:string,exists:bool,table:string,columns:string}> */
     public function getDiagnostics(): array

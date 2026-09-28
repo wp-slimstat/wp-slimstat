@@ -29,3 +29,13 @@ if (!in_array('moment', $registered['slimstat-daterangepicker'] ?? [], true)
     exit(1);
 }
 echo "PASS: date picker uses WordPress Moment in dependency order\n";
+
+// Exercise the tracker scheduling call after registration; WordPress resolves dependency order.
+$tracker = slimstat_function_body(file_get_contents(__DIR__ . '/../wp-slimstat.php'), 'enqueue_tracker');
+function wp_script_add_data($handle, $key, $value) { $GLOBALS['pcp_script_data'][$handle][$key] = $value; }
+$start = strpos($tracker, "wp_script_add_data(");
+$end = strpos($tracker, "wp_enqueue_script('wp_slimstat');", $start ?: 0);
+if ($start === false || $end === false) { throw new RuntimeException('Tracker defer scheduling missing'); }
+eval(substr($tracker, $start, $end - $start));
+if (($GLOBALS['pcp_script_data']['wp_slimstat']['strategy'] ?? '') !== 'defer') { throw new RuntimeException('Tracker must request native ordered defer'); }
+echo "PASS: tracker requests native ordered defer\n";

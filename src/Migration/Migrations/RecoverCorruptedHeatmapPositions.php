@@ -56,6 +56,7 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
         return __('Attempts to restore comma-separated heatmap positions for historical rows when a single screen-width-compatible split exists.', 'wp-slimstat');
     }
 
+    // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Bounded heatmap migration uses core-prefix tables, generated CASE placeholders and bound IDs/positions; the base SQL supplies the third placeholder.
     public function run(): bool
     {
         $events_table = $this->tablePrefix() . 'slim_events';
@@ -169,6 +170,7 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
 
         return true;
     }
+    // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
     /**
      * Record how far the scan has reached, if that is further than last time.
@@ -199,6 +201,7 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
         return (int) \get_option(self::OPTION_WATERMARK, 0);
     }
 
+    // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Core-prefix table identifiers and a bound pattern in a fresh migration probe.
     public function shouldRun(): bool
     {
         if ($this->shouldRunCache !== null) {
@@ -238,6 +241,7 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
 
         return $this->shouldRunCache;
     }
+    // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
     public function getDiagnostics(): array
     {

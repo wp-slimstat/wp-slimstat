@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 /**
  * Funnel bars — renders per-step visitor bars + drop-off indicators.
  *
@@ -64,7 +65,7 @@ $step_one_visitors = (int) ($steps[0]['visitors'] ?? 0);
                      aria-valuenow="<?php echo esc_attr((string) (int) $pct); ?>"
                      aria-valuetext="<?php echo esc_attr($pct_label . '%'); ?>"
                      aria-label="<?php echo esc_attr(sprintf(
-                         /* translators: 1: step name, 2: visitors */
+                         /* translators: 1: step name, 2: visitor count */
                          __('%1$s: %2$s visitors', 'wp-slimstat'),
                          (string) ($step['name'] ?? ''),
                          number_format_i18n($visitors)

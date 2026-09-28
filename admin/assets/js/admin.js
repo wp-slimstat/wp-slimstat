@@ -23,10 +23,10 @@ jQuery(document).on("click", "#slimstat-clear-cache", function (e) {
             dataType: "json",
         })
         .done(function (result) {
-            alert(result.data || "Cache cleared!");
+            alert(result.data || window.wpSlimstatI18n.__("Cache cleared!", "wp-slimstat"));
         })
         .fail(function (xhr) {
-            alert("Cache clear failed!");
+            alert(window.wpSlimstatI18n.__("Cache clear failed!", "wp-slimstat"));
         })
         .always(function () {
             $btn.prop("disabled", false);

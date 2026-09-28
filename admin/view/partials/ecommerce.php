@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 /** Revenue-first dashboard; calculations live in Ecommerce\Report. @license GPL-2.0-or-later */
 if (!defined('ABSPATH')) { exit; }
 use SlimStat\Ecommerce\Integration;

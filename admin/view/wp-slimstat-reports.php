@@ -1055,6 +1055,7 @@ class wp_slimstat_reports
         do_action('wp_slimstat_reports_init');
 
         // We store page titles in a transient for improved performance
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
         if (empty($_REQUEST['page']) || !in_array($_REQUEST['page'], ['slimlayout', 'slimadddons'])) {
             self::$resource_titles = get_transient('slimstat_resource_titles');
             if (false === self::$resource_titles) {

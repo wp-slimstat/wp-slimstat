@@ -160,6 +160,7 @@ class GDPRService
 	private function translateString(string $value, string $name): string
 	{
 		// WPML and WPML-compatible plugins (including Polylang with WPML API)
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML compatibility API requires this exact external hook name.
 		$translated = apply_filters('wpml_translate_single_string', $value, 'wp-slimstat', $name);
 		if ($translated !== $value) {
 			return $translated;

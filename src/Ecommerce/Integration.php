@@ -370,6 +370,7 @@ final class Integration
 			(int) $cookie, $now - max(1, (int) (\wp_slimstat::$settings['session_duration'] ?? 1800)), $now, '%[ec:eligible]%'
 		), ARRAY_A);
 		// A stale cookie from an earlier allowed page must not bypass an excluded checkout.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Type-checked below and compared only against URL/exclusion rules; never output, stored or interpolated into SQL.
 		$ref = $_SERVER['HTTP_REFERER'] ?? '';
 		$refPath = is_string($ref) ? wp_parse_url($ref, PHP_URL_PATH) : null;
 		if (!$row || !is_string($refPath) || wp_parse_url($ref, PHP_URL_HOST) !== wp_parse_url(home_url(), PHP_URL_HOST)
@@ -380,10 +381,12 @@ final class Integration
 		foreach (['referer' => 'ignore_referers', 'content_type' => 'ignore_content_types', 'browser' => 'ignore_browsers', 'platform' => 'ignore_platforms', 'country' => 'ignore_countries'] as $column => $setting) {
 			if (Utils::isBlacklisted($row[$column] ?? '', \wp_slimstat::$settings[$setting] ?? '')) { return null; }
 		}
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Type-checked below and compared only against URL/exclusion rules; never output, stored or interpolated into SQL.
 		$agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 		if (!is_string($agent) || Utils::isBlacklisted($agent, \wp_slimstat::$settings['ignore_browsers'] ?? '')) { return null; }
 		$browser = \SlimStat\Services\Browscap::apply_bot_safety_net(['user_agent' => $agent, 'browser_type' => 0]);
 		if (1 === $browser['browser_type'] || \SlimStat\Tracker\Acquisition::aiAgent($agent)) { return null; }
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Type-checked below and compared only against URL/exclusion rules; never output, stored or interpolated into SQL.
 		$prefetch = $_SERVER['HTTP_X_MOZ'] ?? ''; $purpose = $_SERVER['HTTP_X_PURPOSE'] ?? '';
 		if (!is_string($prefetch) || !is_string($purpose)
 			|| ('on' === (\wp_slimstat::$settings['ignore_prefetch'] ?? 'on')

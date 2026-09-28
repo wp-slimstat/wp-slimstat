@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 /**
  * Funnels card — modern admin layout for the Funnels section of slimview6.
  *
@@ -203,7 +204,7 @@ $template_cards = [
         <?php if ($at_max) : ?>
             <p class="slimstat-gf-hint">
                 <?php echo esc_html(sprintf(
-                    /* translators: 1: configured funnels, 2: max funnels */
+                    /* translators: 1: configured items, 2: item limit */
                     __('%1$d of %2$d used · at limit', 'wp-slimstat'),
                     $funnel_count,
                     $max_funnels

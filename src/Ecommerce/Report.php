@@ -365,6 +365,7 @@ final class Report
 		$available = Integration::available();
 		if ($available && Integration::ready()) {
 			try {
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only aggregation selector; canView gates the report and the AJAX route checks its nonce.
 				$interval = isset($_POST['ecommerce_interval']) && is_string($_POST['ecommerce_interval']) ? sanitize_key(wp_unslash($_POST['ecommerce_interval'])) : 'auto';
 				$data = (new self())->data($interval);
 			} catch (\Throwable $exception) {

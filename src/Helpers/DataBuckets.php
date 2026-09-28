@@ -57,6 +57,7 @@ class DataBuckets
      *
      * @return int
      */
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Connection-specific timezone offset is memoized for the request; no WordPress API exposes the external database offset.
     public static function serverTimezoneOffset(): int
     {
         static $offset = null;
@@ -68,6 +69,7 @@ class DataBuckets
 
         return $offset;
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
     public function __construct(string $labelFormat, string $gran, int $start, int $end, int $prevStart, int $prevEnd, array $totals = [])
     {

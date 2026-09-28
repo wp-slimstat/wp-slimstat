@@ -72,6 +72,7 @@ class GeoService
 
     public function getUserIP()
     {
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Validate raw IP format first; only a valid address is then unslashed and sanitized.
         if (!empty($_SERVER['REMOTE_ADDR']) && false !== filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP)) {
             return sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
         }

@@ -222,6 +222,7 @@ class Processor
             return Utils::logError(305);
         }
 
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
         $http_referer = $_SERVER['HTTP_REFERER'] ?? '';
         // Ajax explicitly supplies an empty referrer for direct visits. Its HTTP header
         // identifies the tracked page, not that page's source; only fall back when absent.
@@ -262,6 +263,7 @@ class Processor
             }
         }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Public analytics observation, not an admin mutation; caller enforces tracking consent/exclusions and signed visit IDs. Input shape is checked before unslashing and context-specific sanitization below.
         $posted_search = $_POST['s'] ?? '';
         if (empty($stat['searchterms']) && is_string($posted_search) && '' !== $posted_search) {
             $stat['searchterms'] = sanitize_text_field(str_replace('\\', '', wp_unslash($posted_search)));
@@ -294,6 +296,7 @@ class Processor
             $stat['notes'][] = 'results:' . intval($GLOBALS['wp_query']->found_posts);
         }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Public analytics observation, not an admin mutation; caller enforces tracking consent/exclusions and signed visit IDs. Input shape is checked before unslashing and context-specific sanitization below.
         $admin_page = $_GET['page'] ?? '';
         $admin_page = is_string($admin_page) ? sanitize_text_field(wp_unslash($admin_page)) : '';
         if ((isset($stat['resource']) && ($stat['resource'] !== '' && $stat['resource'] !== '0') && false !== strpos($stat['resource'], 'wp-admin/admin-ajax.php')) || ('' !== $admin_page && false !== strpos($admin_page, 'slimview'))) {
@@ -352,11 +355,13 @@ class Processor
                 $stat['username'] = $spam_comment->comment_author;
                 $stat['email']    = $spam_comment->comment_author_email;
             } else {
+                // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
                 $comment_author = $_COOKIE['comment_author_' . COOKIEHASH] ?? '';
                 if (is_string($comment_author) && '' !== $comment_author) {
                     $stat['username'] = sanitize_user(wp_unslash($comment_author));
                 }
 
+                // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
                 $comment_email = $_COOKIE['comment_author_email_' . COOKIEHASH] ?? '';
                 if (is_string($comment_email) && '' !== $comment_email) {
                     $stat['email'] = sanitize_email(wp_unslash($comment_email));
@@ -410,8 +415,10 @@ class Processor
             }
         }
 
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
         $x_moz = $_SERVER['HTTP_X_MOZ'] ?? '';
         $x_moz = is_string($x_moz) ? sanitize_text_field(wp_unslash($x_moz)) : '';
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
         $x_purpose = $_SERVER['HTTP_X_PURPOSE'] ?? '';
         $x_purpose = is_string($x_purpose) ? sanitize_text_field(wp_unslash($x_purpose)) : '';
         if ('prefetch' === strtolower($x_moz) || 'preview' === strtolower($x_purpose)) {
@@ -499,6 +506,7 @@ class Processor
 				// Allow explicit visit_id from client to target original anonymous record
 				// Security: Only accept visit_id with valid checksum to prevent targeting arbitrary records
 				$requestedVisitId = 0;
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Public analytics observation, not an admin mutation; caller enforces tracking consent/exclusions and signed visit IDs. Input shape is checked before unslashing and context-specific sanitization below.
 				$requestedVisitIdRaw = $_REQUEST['visit_id'] ?? '';
 				if (is_scalar($requestedVisitIdRaw) && '' !== (string) $requestedVisitIdRaw) {
 					$visitIdRaw = sanitize_text_field(wp_unslash((string) $requestedVisitIdRaw));

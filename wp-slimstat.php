@@ -276,6 +276,7 @@ class wp_slimstat
         }
 
         // Load all the settings
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Read-only page/date/presentation selection; no privileged mutation is performed by this input. String page value only selects network/site settings and is never rendered or stored.
         if (is_network_admin() && (!isset($_GET['page']) || !is_string($_GET['page']) || false === strpos(wp_unslash($_GET['page']), 'slimview'))) {
             self::$settings = get_site_option('slimstat_options', []);
         } else {
@@ -534,7 +535,8 @@ class wp_slimstat
      */
     public static function load_textdomain()
     {
-        load_plugin_textdomain('wp-slimstat', false, '/wp-slimstat/languages');
+        // phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- Keep bundled translations available on the supported WordPress 5.6 floor and renamed plugin directories.
+        load_plugin_textdomain('wp-slimstat', false, dirname(plugin_basename(__FILE__)) . '/languages');
     }
 
     /**
@@ -584,6 +586,7 @@ class wp_slimstat
 
         // Log when debug is enabled
         if (defined('WP_DEBUG') && WP_DEBUG) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Diagnostic logging is guarded by WP_DEBUG; normal production requests do not log here.
             error_log(sprintf('[WP SLIMSTAT] [%s]: %s', $log_level, $message));
         }
     }
@@ -1760,6 +1763,7 @@ class wp_slimstat
             wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), $dependencies, $local_script_version, true);
         }
 
+        wp_script_add_data('wp_slimstat', 'strategy', 'defer');
         wp_enqueue_script('wp_slimstat');
 
         /**
@@ -1880,6 +1884,7 @@ class wp_slimstat
     /**
      * Removes old entries from the main table and performs other daily tasks
      */
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Retention uses core-prefix tables, manifest-intersected columns and bound cutoffs; archive/delete operations require fresh state.
     public static function wp_slimstat_purge()
     {
         $autopurge_interval = intval(self::$settings['auto_purge']);
@@ -2170,6 +2175,7 @@ class wp_slimstat
         // case is the one that raises, which is the direction a health signal has to fail.
         self::update_option(self::LAST_PURGE_OK_OPTION, self::now(), false);
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
     /**
      * Has the purge gone too long without a successful run?
@@ -2945,20 +2951,24 @@ if (empty(wp_slimstat::$wpdb) && isset($GLOBALS['wpdb'])) {
 // Ok, let's go, Sparky!
 if (function_exists('add_action')) {
     // Since we use sendBeacon, this function sends raw POST data, which does not populate the $_POST variable automatically
-    $http_content_type = isset($_SERVER['HTTP_CONTENT_TYPE']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_CONTENT_TYPE'])) : '';
-    $content_type = isset($_SERVER['CONTENT_TYPE']) ? sanitize_text_field(wp_unslash($_SERVER['CONTENT_TYPE'])) : '';
-    if ((!empty($http_content_type) || !empty($content_type)) && [] === $_POST) {
+    $slimstat_http_content_type = isset($_SERVER['HTTP_CONTENT_TYPE']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_CONTENT_TYPE'])) : '';
+    $slimstat_content_type = isset($_SERVER['CONTENT_TYPE']) ? sanitize_text_field(wp_unslash($_SERVER['CONTENT_TYPE'])) : '';
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Beacon body routing only; the tracker validates consent, exclusions, payload and signed identities before writes.
+    if ((!empty($slimstat_http_content_type) || !empty($slimstat_content_type)) && [] === $_POST) {
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Required for reading php://input stream
-        $raw_post_string = file_get_contents('php://input');
-        parse_str($raw_post_string, wp_slimstat::$raw_post_array);
+        $slimstat_raw_post_string = file_get_contents('php://input');
+        parse_str($slimstat_raw_post_string, wp_slimstat::$raw_post_array);
 
         // Sanitize the action key from the raw body before using it
         if (!empty(wp_slimstat::$raw_post_array['action'])) {
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- This is the already-prefixed wp_slimstat class static property, not an unprefixed global variable.
             wp_slimstat::$raw_post_array['action'] = sanitize_key(
                 wp_unslash(wp_slimstat::$raw_post_array['action'])
             );
         }
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Beacon body routing only; the tracker validates consent, exclusions, payload and signed identities before writes.
     } elseif ([] !== $_POST) {
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound,WordPress.Security.NonceVerification.Missing -- Beacon body routing only; the tracker validates consent, exclusions, payload and signed identities before writes.
         wp_slimstat::$raw_post_array = $_POST;
     }
 
@@ -2967,6 +2977,7 @@ if (function_exists('add_action')) {
 
         // This is needed because admin-ajax.php is reading $_REQUEST to fire the corresponding action
         // Use a hardcoded literal instead of passing the user-supplied value
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Beacon body routing only; the tracker validates consent, exclusions, payload and signed identities before writes.
         if (empty($_POST['action'])) {
             $_POST['action'] = 'slimtrack';
         }
@@ -3024,6 +3035,7 @@ if (function_exists('add_action')) {
 
 add_action('wp_ajax_slimstat_clear_cache', 'wp_slimstat_clear_cache_handler');
 
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Authorized cache invalidation deletes plugin transient families on the WordPress connection; result caching is inapplicable.
 function wp_slimstat_clear_cache_handler()
 {
     if (!current_user_can('manage_options')) {
@@ -3050,3 +3062,4 @@ function wp_slimstat_clear_cache_handler()
     /* translators: %d: number of cache items cleared. */
     wp_send_json_success(sprintf(__('Slimstat cache cleared (%d items)', 'wp-slimstat'), $count));
 }
+// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching

@@ -224,6 +224,7 @@ class ConsentChangeRestController implements RestControllerInterface
 		}
 
 		// 1. Tracking cookie — most stable, persists across pageviews for the same visitor
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Type-checked cookie is unslashed then hashed for a cache key only; it is never rendered or used in SQL.
 		$tracking_cookie = $_COOKIE['slimstat_tracking_code'] ?? '';
 		$tracking_cookie = is_string($tracking_cookie) ? wp_unslash($tracking_cookie) : '';
 		if (!empty($tracking_cookie)) {

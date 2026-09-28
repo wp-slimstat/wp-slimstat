@@ -38,4 +38,18 @@ class DateRangeHelperCompatTest extends WpSlimstatTestCase
         $this->assertSame(-2, $filters['interval']);
         $this->assertSame('2026-03-30', $filters['strtotime']);
     }
+    public function test_calendar_uses_wordpress_locale_names(): void
+    {
+        $old = $GLOBALS['wp_locale'] ?? null;
+        $GLOBALS['wp_locale'] = (object) ['weekday_abbrev' => ['Sunday' => 'So', 'Monday' => 'Mo'], 'month' => ['01' => 'Januar', '02' => 'Februar']];
+        \Brain\Monkey\Functions\when('__')->returnArg();
+        try {
+            $strings = \SlimStat\Components\DateRangeHelper::get_localized_strings();
+            $this->assertSame(['So', 'Mo'], $strings['weekdays']);
+            $this->assertSame(['Januar', 'Februar'], $strings['months']);
+        } finally {
+            $GLOBALS['wp_locale'] = $old;
+        }
+    }
+
 }

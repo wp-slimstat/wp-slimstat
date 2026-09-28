@@ -68,7 +68,9 @@ class Chart
         }
 
         $args = isset($_POST['args']) && is_string($_POST['args'])
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Decode JSON before validating chart arguments; granularity is checked against the fixed allowlist.
             ? json_decode(wp_unslash($_POST['args']), true) : null;
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Decode JSON before validating chart arguments; granularity is checked against the fixed allowlist.
         $granularity = $_POST['granularity'] ?? 'daily';
         if (!is_string($granularity) || !in_array($granularity, self::GRANULARITIES, true)) {
             wp_send_json_error(['message' => __('Invalid granularity', 'wp-slimstat')]);
@@ -215,7 +217,9 @@ class Chart
 
     private function detectGranularity(array $args): string
     {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
         if (!empty($_REQUEST['granularity']) && in_array($_REQUEST['granularity'], self::GRANULARITIES, true)) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
             return sanitize_text_field(wp_unslash($_REQUEST['granularity']));
         }
 

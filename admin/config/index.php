@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 
 if (!defined('ABSPATH')) {
     exit;
@@ -774,6 +775,7 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
         if (!is_array($_POST['options'])) {
             wp_die(esc_html__('Invalid settings data.', 'wp-slimstat'));
         }
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce/capability checked above; settings are shape-checked and sanitized per control type below.
         $posted_options = wp_unslash($_POST['options']);
         foreach ($posted_options as $slug => $value) {
             // Unknown/custom payloads belong to extension hooks. Built-in controls
@@ -806,6 +808,7 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
                 $slimstat_deleted = true;
                 foreach (['DELETE te FROM %sslim_events te', 'OPTIMIZE TABLE %sslim_events', 'DELETE t1 FROM %sslim_stats t1', 'OPTIMIZE TABLE %sslim_stats'] as $slimstat_statement) {
                     // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Trusted core table prefix and schema-manifest identifiers; dynamic values are bound on the analytics connection.
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Nonce/capability-protected maintenance uses core-prefix and manifest identifiers; schema probes and mutations require fresh state.
                     if (false === wp_slimstat::$wpdb->query(sprintf($slimstat_statement, $GLOBALS['wpdb']->prefix))) {
                         $slimstat_deleted = false;
                     // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
@@ -859,12 +862,14 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
                     }
                     if ('on' === $posted_options['db_indexes']) {
                         // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Trusted core table prefix and schema-manifest identifiers; dynamic values are bound on the analytics connection.
+                        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Nonce/capability-protected maintenance uses core-prefix and manifest identifiers; schema probes and mutations require fresh state.
                         if ($slimstat_malformed || ($slimstat_missing && false === wp_slimstat::$wpdb->query(\SlimStat\Schema\Schema::createIndexSql($slimstat_suffix, $slimstat_index, $slimstat_prefix)))) {
                             $slimstat_indexes_changed = false;
                         // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                             break;
                         }
                     // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Trusted core table prefix and schema-manifest identifiers; dynamic values are bound on the analytics connection.
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange -- Nonce/capability-protected maintenance uses core-prefix and manifest identifiers; schema probes and mutations require fresh state.
                     } elseif (!$slimstat_missing && false === wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %s DROP INDEX %s', $slimstat_prefix . $slimstat_suffix, $slimstat_resolved))) {
                         $slimstat_indexes_changed = false;
                     // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
@@ -1009,6 +1014,7 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
             }
 
             // WPML registration
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML compatibility API requires this exact external hook name.
             do_action('wpml_register_single_string', 'wp-slimstat', $name, $value);
 
             // Native Polylang registration
@@ -1034,6 +1040,7 @@ $index_names = [
 $missing_indexes = [];
 foreach ($index_names as $idx) {
     // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Trusted core table prefix and schema-manifest identifiers; dynamic values are bound on the analytics connection.
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Nonce/capability-protected maintenance uses core-prefix and manifest identifiers; schema probes and mutations require fresh state.
     $exists = wp_slimstat::$wpdb->get_results(wp_slimstat::$wpdb->prepare("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = %s", $idx));
     // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
     if (empty($exists)) {

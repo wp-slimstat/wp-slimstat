@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 /**
  * Goals card — modern admin layout for the Goals section of slimview6.
  *
@@ -176,7 +177,7 @@ $show_upsell = $at_max && !$is_pro;
     <?php elseif ($at_max && $is_pro) : ?>
         <p class="slimstat-gf-hint">
             <?php echo esc_html(sprintf(
-                /* translators: 1: active goals, 2: max goals */
+                /* translators: 1: configured items, 2: item limit */
                 __('%1$d of %2$d used · at limit', 'wp-slimstat'),
                 $active_count,
                 $max_goals

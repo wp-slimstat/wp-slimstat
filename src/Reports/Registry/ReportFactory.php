@@ -129,6 +129,7 @@ class ReportFactory {
 			} catch ( \Exception $e ) {
 				// Log error but continue
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Diagnostic logging is guarded by WP_DEBUG; normal production requests do not log here.
 					error_log( 'Failed to create report: ' . $e->getMessage() );
 				}
 			}

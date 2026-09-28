@@ -195,7 +195,11 @@ class DateRangeHelper
      */
     public static function get_localized_strings()
     {
+        global $wp_locale;
+
         return [
+            'weekdays' => array_values($wp_locale->weekday_abbrev),
+            'months' => array_values($wp_locale->month),
             'today' => __('Today', 'wp-slimstat'),
             'yesterday' => __('Yesterday', 'wp-slimstat'),
             'this_week' => __('This week', 'wp-slimstat'),
@@ -275,7 +279,9 @@ class DateRangeHelper
         $defaults = self::get_range_by_preset('last_30_days');
 
         // Check URL parameters - prioritize type parameter
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
         if (isset($_GET['type']) && is_string($_GET['type'])) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
             $type = sanitize_key(wp_unslash($_GET['type']));
             if ($type !== 'custom') {
                 $preset_range = self::get_range_by_preset($type);
@@ -290,8 +296,11 @@ class DateRangeHelper
         }
         
         // Check from/to parameters if no valid type parameter
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
         if (isset($_GET['from'], $_GET['to']) && is_string($_GET['from']) && is_string($_GET['to'])) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
             $from_date = sanitize_text_field(wp_unslash($_GET['from']));
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
             $to_date = sanitize_text_field(wp_unslash($_GET['to']));
             
             // Validate date format before processing

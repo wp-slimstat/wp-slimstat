@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -12,11 +13,13 @@ if (!empty($_POST['licenses']) && isset($_POST['slimstat_update_licenses']) && i
     if (!is_array($_POST['licenses'])) {
         wp_die(esc_html__('Invalid license data.', 'wp-slimstat'));
     }
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- License array shape is checked before per-key sanitization; request URL is unslashed and escaped with esc_url before output.
     foreach ($_POST['licenses'] as $a_license_slug => $a_license_key) {
         if (!is_string($a_license_slug) || !preg_match('/^[a-zA-Z0-9_-]+$/D', $a_license_slug) || !is_string($a_license_key)) {
             wp_die(esc_html__('Invalid license data.', 'wp-slimstat'));
         }
     }
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- License array shape is checked before per-key sanitization; request URL is unslashed and escaped with esc_url before output.
     foreach (wp_unslash($_POST['licenses']) as $a_license_slug => $a_license_key) {
         wp_slimstat::$settings['addon_licenses'][$a_license_slug] = sanitize_title($a_license_key);
     }
@@ -66,7 +69,7 @@ if (!is_array($list_addons)) {
 if (empty($_GET['force_refresh'])) {
     echo ' ';
     /* translators: %s: current settings page URL, before the force-refresh parameter. */
-    echo wp_kses_post(sprintf(__('This list is refreshed once daily: <a href="%s&amp;force_refresh=true" class="noslimstat">click here</a> to clear the cache.', 'wp-slimstat'), esc_url(isset($_SERVER['REQUEST_URI']) && is_string($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : '')));
+    echo wp_kses_post(sprintf(__('This list is refreshed once daily: <a href="%s&amp;force_refresh=true" class="noslimstat">click here</a> to clear the cache.', 'wp-slimstat'), esc_url(isset($_SERVER['REQUEST_URI']) && is_string($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : ''))); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- License array shape is checked before per-key sanitization; request URL is unslashed and escaped with esc_url before output.
 }
 
 if (!empty($error_message)) {
