@@ -25,6 +25,13 @@ final class Report
 			&& (current_user_can('view_woocommerce_reports') || current_user_can('manage_options'));
 	}
 
+	/** @return never */
+	private static function fail(string $message)
+	{
+		// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
+		throw new \RuntimeException($message);
+	}
+
 	public function __construct()
 	{
 		$this->range = \wp_slimstat_db::$filters_normalized['utime'];
@@ -36,21 +43,15 @@ final class Report
 		$this->currency = (string) (\wp_slimstat_db::$filters_normalized['columns'][self::CURRENCY_FILTER][1] ?? get_woocommerce_currency());
 		if (!preg_match('/\A[A-Z0-9]{3,8}\z/', $this->currency)
 			|| 'equals' !== (\wp_slimstat_db::$filters_normalized['columns'][self::CURRENCY_FILTER][0] ?? 'equals')) {
-			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
-			throw new \RuntimeException(__('Choose a valid order currency.', 'wp-slimstat'));
-			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
+			self::fail(__('Choose a valid order currency.', 'wp-slimstat'));
 		}
 		foreach (array_keys(\wp_slimstat_db::$filters_normalized['columns'] ?? []) as $key) {
 			if (false !== strpos($key, 'addon_') && self::CURRENCY_FILTER !== $key) {
-				// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
-				throw new \RuntimeException(__('This addon filter cannot be applied to Ecommerce. Remove it to load this report.', 'wp-slimstat'));
-				// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
+				self::fail(__('This addon filter cannot be applied to Ecommerce. Remove it to load this report.', 'wp-slimstat'));
 			}
 		}
 		if (NetworkMerge::isMerging()) {
-			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
-			throw new \RuntimeException(__('Ecommerce reports use one store at a time. Open the store dashboard to review its revenue.', 'wp-slimstat'));
-			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
+			self::fail(__('Ecommerce reports use one store at a time. Open the store dashboard to review its revenue.', 'wp-slimstat'));
 		}
 		$this->table = Integration::table();
 		$this->stats = $GLOBALS['wpdb']->prefix . 'slim_stats';
@@ -200,9 +201,7 @@ final class Report
 			$bins[$key] = [$cursor, min($end, $next - 1), $cursor !== ('monthly' === $interval ? strtotime(gmdate('Y-m-01', $cursor) . ' UTC') : ('weekly' === $interval ? $key * WEEK_IN_SECONDS - $shift : $day)) || $next - 1 > $end];
 			$cursor = $next;
 		}
-		// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
-		if ($cursor <= $end) { throw new \RuntimeException(__('Choose a shorter period to explore Ecommerce trends (up to 366 monthly points).', 'wp-slimstat')); }
-		// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
+		if ($cursor <= $end) { self::fail(__('Choose a shorter period to explore Ecommerce trends (up to 366 monthly points).', 'wp-slimstat')); }
 		$result = ['interval' => $interval, 'current' => [], 'previous' => []];
 		foreach (['current' => 0, 'previous' => $span] as $period => $offset) {
 			$from = $start - $offset; $to = $end - $offset;
@@ -239,24 +238,16 @@ final class Report
 	{
 		$state = get_option(Integration::STATE, []);
 		if (!Integration::ready()) {
-			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
-			throw new \RuntimeException(__('Set up Ecommerce for the current analytics database before loading reports.', 'wp-slimstat'));
-			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
+			self::fail(__('Set up Ecommerce for the current analytics database before loading reports.', 'wp-slimstat'));
 		}
 		if (!empty($state['needs_rebuild'])) {
-			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
-			throw new \RuntimeException(__('SlimStat was deactivated and may have missed order changes. Rebuild Ecommerce reports to reconcile with WooCommerce.', 'wp-slimstat'));
-			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
+			self::fail(__('SlimStat was deactivated and may have missed order changes. Rebuild Ecommerce reports to reconcile with WooCommerce.', 'wp-slimstat'));
 		}
 		if (($state['timezone'] ?? '') !== wp_timezone_string()) {
-			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
-			throw new \RuntimeException(__('The store timezone changed. Rebuild Ecommerce reports to align order dates with the date picker.', 'wp-slimstat'));
-			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
+			self::fail(__('The store timezone changed. Rebuild Ecommerce reports to align order dates with the date picker.', 'wp-slimstat'));
 		}
 		if ($this->range['start'] > $this->range['end']) {
-			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
-			throw new \RuntimeException(__('This date range is in the future. Choose a period with observed activity.', 'wp-slimstat'));
-			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
+			self::fail(__('This date range is in the future. Choose a period with observed activity.', 'wp-slimstat'));
 		}
 		return ['currency' => $this->currency, 'range' => [(int) $this->range['start'], (int) $this->range['end']],
 			'provisional' => empty($state['complete']) || !empty($state['error']),

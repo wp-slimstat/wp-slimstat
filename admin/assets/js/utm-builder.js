@@ -15,11 +15,16 @@
         status.textContent = '';
         website.setCustomValidity('');
         for (const field of tags) {
-            field.setCustomValidity(Array.from(field.value.trim()).length > 191
-                ? __('Use no more than 191 characters per tag.', 'wp-slimstat')
-                : /[<>\x00-\x1f\x7f]/.test(field.value)
-                ? __('Use plain text without HTML or control characters.', 'wp-slimstat')
-                : (field.required && !field.value.trim() ? __('Enter a value for this required field.', 'wp-slimstat') : ''));
+            const value = field.value.trim();
+            let message = '';
+            if (Array.from(value).length > 191) {
+                message = __('Use no more than 191 characters per tag.', 'wp-slimstat');
+            } else if (/[<>\x00-\x1f\x7f]/.test(field.value)) {
+                message = __('Use plain text without HTML or control characters.', 'wp-slimstat');
+            } else if (field.required && !value) {
+                message = __('Enter a value for this required field.', 'wp-slimstat');
+            }
+            field.setCustomValidity(message);
         }
         if (!form.elements.utm_campaign.value.trim() && !form.elements.utm_id.value.trim()) {
             form.elements.utm_campaign.setCustomValidity(__('Enter a campaign name or campaign ID.', 'wp-slimstat'));

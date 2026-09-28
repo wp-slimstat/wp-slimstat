@@ -41,6 +41,7 @@ $setup = static function ($label) {
 		$provisional = empty($state['complete']) || !empty($state['error']);
 		$retained = Integration::retentionStart() <= $data['previous_range'][0];
 		$money = static function ($amount) use ($currency) { return wp_kses_post(Report::money($amount, $currency)); };
+		$plainMoney = static function ($amount) use ($currency) { return html_entity_decode(wp_strip_all_tags(Report::money($amount, $currency)), ENT_QUOTES, 'UTF-8'); };
 		$delta = static function ($value, $before) use ($retained, $provisional) {
 			if (!$retained || $provisional) { return __('Comparison incomplete', 'wp-slimstat'); }
 			if ((float) $before <= 0) { return __('No positive comparison baseline', 'wp-slimstat'); }
@@ -57,7 +58,11 @@ $setup = static function ($label) {
 		foreach (['current', 'previous'] as $period) {
 			foreach ($series[$period] as &$point) {
 				foreach (array_keys($metrics) as $metric) {
-					$point['formatted'][$metric] = null === $point[$metric] ? __('Not available', 'wp-slimstat') : (in_array($metric, ['net', 'aov'], true) ? html_entity_decode(wp_strip_all_tags(Report::money($point[$metric], $currency)), ENT_QUOTES, 'UTF-8') : number_format_i18n($point[$metric], 'rate' === $metric ? 2 : 0) . ('rate' === $metric ? '%' : ''));
+					$value = $point[$metric];
+					if (null === $value) { $value = __('Not available', 'wp-slimstat'); }
+					elseif ('net' === $metric || 'aov' === $metric) { $value = $plainMoney($value); }
+					else { $value = 'rate' === $metric ? number_format_i18n($value, 2) . '%' : number_format_i18n($value); }
+					$point['formatted'][$metric] = $value;
 				}
 			}
 			unset($point);
@@ -117,7 +122,7 @@ $setup = static function ($label) {
 						<?php if (!$rows) : ?><div class="ss-ec-report-empty"><strong><?php esc_html_e('No results for this view', 'wp-slimstat'); ?></strong><p><?php esc_html_e('Try a different period or remove a filter to explore more activity.', 'wp-slimstat'); ?></p></div><?php else : ?>
 						<ol class="ss-ec-rankings">
 						<?php foreach ($rows as $rowIndex => $row) : $shown += (float) $row[$measure]; ?>
-							<li data-rank-index="<?php echo esc_attr($rowIndex); ?>" data-rank-value="<?php echo esc_attr((string) (float) $row[$measure]); ?>" data-rank-orders="<?php echo esc_attr($row['orders']); ?>" data-rank-money="<?php echo esc_attr(html_entity_decode(wp_strip_all_tags(Report::money($row[$measure], $currency)), ENT_QUOTES, 'UTF-8')); ?>" <?php if ($rowIndex >= 5) { echo 'hidden'; } ?>>
+							<li data-rank-index="<?php echo esc_attr($rowIndex); ?>" data-rank-value="<?php echo esc_attr((string) (float) $row[$measure]); ?>" data-rank-orders="<?php echo esc_attr($row['orders']); ?>" data-rank-money="<?php echo esc_attr($plainMoney($row[$measure])); ?>" <?php if ($rowIndex >= 5) { echo 'hidden'; } ?>>
 								<span class="ss-ec-rank-bar" style="--ss-ec-share:<?php echo esc_attr((string) ($ceiling ? 100 * abs((float) $row[$measure]) / $ceiling : 0)); ?>%" aria-hidden="true"></span><span class="ss-ec-rank-name"><?php echo esc_html(Report::label($dimension, $row)); ?></span><strong class="ss-ec-rank-value"><?php echo wp_kses_post($money($row[$measure])); ?></strong>
 								<?php $filterColumns = ['channel' => 'traffic_channel', 'source' => 'traffic_source', 'campaign' => 'utm_campaign']; if (isset($filterColumns[$dimension]) && (int) $row['matched'] > 0 && '' !== (string) $row['dimension']) : ?><a class="slimstat-filter-link ss-ec-row-filter" href="<?php echo esc_url(wp_slimstat_reports::fs_url($filterColumns[$dimension] . ' equals ' . rawurlencode($row['dimension']))); ?>" aria-label="<?php echo esc_attr(sprintf(/* translators: %s: the acquisition dimension value. */ __('Filter tracked visits by %s; unlinked orders will be excluded', 'wp-slimstat'), Report::label($dimension, $row))); ?>"><span class="dashicons dashicons-filter" aria-hidden="true"></span></a><?php endif; ?>
 							</li>
