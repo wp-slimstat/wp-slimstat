@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import { runWordPressFixture } from './helpers/chart';
 import { shopperJourney, getCorrelatedRows, waitForTracking } from './helpers/journeys';
 import { BASE_URL } from './helpers/env';
-import { clearStatsTable, closeDb, snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions } from './helpers/setup';
+import { clearStatsTable, closeDb, fillAndConfirm, snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions } from './helpers/setup';
 
 const source = readFileSync(new URL('./helpers/woocommerce-store.php', import.meta.url), 'utf8').replace(/^<\?php\s*/, '');
 const wp = (code: string) => JSON.parse(runWordPressFixture(`<?php ${code}`));
@@ -62,8 +62,10 @@ for (const mode of modes) test(`Ecommerce live ${mode}: expected observations re
       return route.continue();
     });
     if (mode === 'account-repeat') {
-      await shopper.goto('/wp-login.php'); await shopper.locator('#user_login').fill(run); await shopper.locator('#user_pass').fill('fixture-only-password');
-      await Promise.all([shopper.waitForURL(url => !url.pathname.includes('wp-login.php')), shopper.locator('#wp-submit').click()]);
+      await shopper.goto('/wp-login.php');
+      await fillAndConfirm(shopper, '#user_login', run); await fillAndConfirm(shopper, '#user_pass', 'fixture-only-password');
+      await expect(shopper.locator('#user_login')).toHaveValue(run);
+      await Promise.all([shopper.waitForURL(url => !url.pathname.includes('wp-login.php'), {timeout:30_000}), shopper.locator('#wp-submit').click()]);
     }
     const tagged = new URL(store.product); tagged.searchParams.set('utm_source', 'google'); tagged.searchParams.set('utm_medium', 'cpc'); tagged.searchParams.set('utm_campaign', run);
     store.product = tagged.href;
