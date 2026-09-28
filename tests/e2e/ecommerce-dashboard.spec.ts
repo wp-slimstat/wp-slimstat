@@ -40,6 +40,11 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     const sourcePanel = dashboard.getByRole('tabpanel', { name: 'Sources', exact: true });
     await sourcePanel.getByRole('button', { name: 'View report' }).click();
     await expect(sourcePanel.getByRole('table')).toBeVisible();
+    await sourcePanel.getByRole('button', { name: 'Reverse sort order' }).click();
+    const rankedSources = await sourcePanel.locator('.ss-ec-rank-name').allTextContents();
+    expect(await sourcePanel.locator('tbody th').allTextContents()).toEqual(rankedSources);
+    await sourcePanel.getByLabel('Sort these results').selectOption('orders');
+    expect(await sourcePanel.locator('tbody th').allTextContents()).toEqual(await sourcePanel.locator('.ss-ec-rank-name').allTextContents());
     await page.keyboard.press('Escape');
     await expect(sourcePanel.getByRole('button', { name: 'View report' })).toBeFocused();
     await expect(sourcePanel.getByRole('table')).not.toBeVisible();

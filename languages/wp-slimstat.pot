@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-28T02:09:59+00:00\n"
+"POT-Creation-Date: 2026-09-28T02:26:24+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -2185,7 +2185,7 @@ msgid "Tracked purchase rate"
 msgstr ""
 
 #: admin/view/partials/ecommerce.php:53
-#: admin/assets/js/ecommerce.js:121
+#: admin/assets/js/ecommerce.js:124
 #, php-format,js-format
 msgid "%1$s buying / %2$s eligible visits"
 msgstr ""
@@ -2314,12 +2314,12 @@ msgid "Not enough observations to draw this trend. Try a wider interval or revie
 msgstr ""
 
 #: admin/view/partials/ecommerce.php:91
-#: admin/assets/js/ecommerce.js:91
+#: admin/assets/js/ecommerce.js:93
 msgid "Selected period"
 msgstr ""
 
 #: admin/view/partials/ecommerce.php:91
-#: admin/assets/js/ecommerce.js:97
+#: admin/assets/js/ecommerce.js:99
 msgid "Previous period"
 msgstr ""
 
@@ -2407,11 +2407,11 @@ msgid "Top 10"
 msgstr ""
 
 #: admin/view/partials/ecommerce.php:115
-msgid "Ranked by discounts"
+msgid "Top by discounts"
 msgstr ""
 
 #: admin/view/partials/ecommerce.php:115
-msgid "Ranked by net sales"
+msgid "Top by net sales"
 msgstr ""
 
 #: admin/view/partials/ecommerce.php:115
@@ -8229,51 +8229,51 @@ msgstr ""
 msgid "Close report"
 msgstr ""
 
-#: admin/assets/js/ecommerce.js:56
+#: admin/assets/js/ecommerce.js:58
 msgid "Partial interval"
 msgstr ""
 
-#: admin/assets/js/ecommerce.js:56
+#: admin/assets/js/ecommerce.js:58
 msgid "Provisional"
 msgstr ""
 
-#: admin/assets/js/ecommerce.js:144
+#: admin/assets/js/ecommerce.js:147
 msgid "Filters"
 msgstr ""
 
-#: admin/assets/js/ecommerce.js:148
+#: admin/assets/js/ecommerce.js:151
 msgid "Ready to refresh"
 msgstr ""
 
-#: admin/assets/js/ecommerce.js:149
+#: admin/assets/js/ecommerce.js:152
 msgid "Filter dimension"
 msgstr ""
 
-#: admin/assets/js/ecommerce.js:150
+#: admin/assets/js/ecommerce.js:153
 msgid "Filter operator"
 msgstr ""
 
-#: admin/assets/js/ecommerce.js:151
+#: admin/assets/js/ecommerce.js:154
 msgid "Filter value"
 msgstr ""
 
-#: admin/assets/js/ecommerce.js:175
+#: admin/assets/js/ecommerce.js:178
 msgid "Retry"
 msgstr ""
 
-#: admin/assets/js/ecommerce.js:185
+#: admin/assets/js/ecommerce.js:188
 msgid "Could not refresh. Any displayed figures are from the previous response. Retry to get current data."
 msgstr ""
 
-#: admin/assets/js/ecommerce.js:202
+#: admin/assets/js/ecommerce.js:205
 msgid "Updating reports…"
 msgstr ""
 
-#: admin/assets/js/ecommerce.js:211
+#: admin/assets/js/ecommerce.js:214
 msgid "Reports refreshed"
 msgstr ""
 
-#: admin/assets/js/ecommerce.js:241
+#: admin/assets/js/ecommerce.js:246
 msgid "CSV download requested for the current report and filters."
 msgstr ""
 

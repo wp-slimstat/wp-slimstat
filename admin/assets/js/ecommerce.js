@@ -45,6 +45,8 @@
         rows.sort((a, b) => (value(b) - value(a)) * (ascending ? -1 : 1));
         rows.forEach((row, index) => {
             row.parentElement.append(row);
+            const detail = panel.querySelector('tr[data-rank-index="' + row.dataset.rankIndex + '"]');
+            if (detail) detail.parentElement.append(detail);
             row.hidden = index >= 5 && !state.expanded[panel.dataset.dimension];
             row.querySelector('.ss-ec-rank-value').textContent = metric === 'orders' ? Number(row.dataset.rankOrders).toLocaleString(document.documentElement.lang) : row.dataset.rankMoney;
             row.querySelector('.ss-ec-rank-bar').style.setProperty('--ss-ec-share', (max ? 100 * Math.abs(value(row)) / max : 0) + '%');
