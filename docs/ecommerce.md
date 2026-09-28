@@ -19,6 +19,22 @@ Audience: a store owner reviewing performance inside their normal daytime WordPr
 
 One Ecommerce page: performance → revenue drivers → observed journey → next investigation. Details and definitions expand inline. Tables stay usable on mobile through compact columns and labelled horizontal scrolling; functionality is not hidden behind “use desktop.” Values, signs and labels carry meaning independently of color. No new frontend framework or runtime dependency.
 
+### Interactive exploration (28 September refinement)
+
+Select Net sales, Orders, Average order value or Tracked purchase rate to change the chart. The bundled Chart.js renders one unit at a time, with an optional dashed previous-period series and an exact-value table. Daily, weekly and monthly buckets use the site calendar; weeks honor WordPress's configured first weekday. Previous points cover corresponding elapsed windows, with their actual dates in the tooltip/table. The default becomes weekly beyond 62 days and monthly beyond 730 days. Fine intervals are bounded to 366 points; very long ranges require a shorter selection. Future dates are excluded. Partial intervals are explicitly labeled and use lighter bars or triangular line points. Expired history is unavailable, not a measured zero.
+
+Each rate point recomputes distinct eligible and buying visits within that interval. A visit active on two days can appear in both daily points, but appears only once in a weekly/monthly point spanning those days. Never sum daily rates or distinct visits to obtain a period rate. Points with fewer than 100 eligible visits are gaps; AOV without orders is also unavailable. Incomplete imports and missing comparison history suppress headline percentage changes.
+
+Acquisition, Shopping, Audience and Landing pages group the existing edition-specific dimensions. Five rows are initially visible; View report expands up to ten ranked results and their exact breakdown inline. Metric selection and reverse sorting apply to these leading results, not an unbounded new ranking. Pro CSV exports still include up to 1,000 results with the current dates, currency and traffic filters. Categories and new/returning customer inference are not introduced.
+
+Row filter buttons are shown only for supported acquisition dimensions with retained visit associations. Applying one selects tracked visits through SlimStat's native global filters, excluding unlinked orders. Shared dates and saved segments retain their existing behavior. Arrow keys navigate tabs; Escape closes report expansion/disclosures and restores focus. The native toolbar remains sticky below the WordPress admin bar. No new database tables, migrations or storefront tracking are required for this refinement.
+
+Sync, retention and attribution details share one expandable status panel. Serious synchronization failures remain visible in its summary; figures are labeled provisional. A journey without observed shopping steps shows an explanatory unavailable state, never a fabricated abandonment funnel. Investigations use the existing explicit coverage/refund/journey rules and open the relevant report or status detail.
+
+Chart metric, comparison and tab changes make no requests. Interval changes reuse cached summaries and rankings; only uncached trend data is queried. The Ecommerce refresh path cancels obsolete requests, deduplicates identical in-flight requests and retains existing content while updating. Failed requests retain and label the previous response and offer retry. Assets remain scoped to screens containing Ecommerce.
+
+Chart implementation references: [Chart.js tooltips](https://www.chartjs.org/docs/latest/configuration/tooltip.html) and [accessible alternatives](https://www.chartjs.org/docs/latest/general/accessibility.html).
+
 ## Metric contract
 
 - **Order cohort:** standard WooCommerce `shop_order` records created inside the selected site-calendar window. Included statuses: `processing`, `completed`, `refunded`. Pending, on-hold, failed, cancelled, checkout-draft and trash do not contribute sales. A processing order is an accepted order, not a guarantee of gateway settlement (e.g. cash on delivery). Custom statuses are not silently classified as paid.

@@ -1530,6 +1530,9 @@ class wp_slimstat_admin
 
         if ('slimview7' === self::$current_screen || false !== strpos(implode(',', (array) self::$meta_user_reports), 'slim_p10_01')) {
             wp_enqueue_style('wp-slimstat-ecommerce', plugins_url('/admin/assets/css/ecommerce.css', __DIR__), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
+            wp_enqueue_script('slimstat_chartjs', plugins_url('/admin/assets/js/chartjs/chart.min.js', __DIR__), [], '4.2.1', true);
+            wp_enqueue_script('slimstat-ecommerce', plugins_url('/admin/assets/js/ecommerce.js', __DIR__), ['slimstat_admin', 'slimstat_chartjs'], SLIMSTAT_ANALYTICS_VERSION, true);
+            wp_set_script_translations('slimstat-ecommerce', 'wp-slimstat');
         }
 
 		// Goals & Funnels CSS — only loaded on screens that actually render those reports.

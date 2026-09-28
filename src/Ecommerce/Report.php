@@ -136,9 +136,13 @@ final class Report
 		$limit = max(1, min(1000, $limit));
 		$where = $this->where((int) $this->range['start'], (int) $this->range['end'], $kind);
 		$order = 'coupon' === $dimension ? 'discount' : 'net';
+		// Summary facts have exactly one row per order (item_id = 0). Only item
+		// dimensions need distinct-order aggregation across multiple line items.
+		$count = 0 === $kind ? 'COUNT(*)' : 'COUNT(DISTINCT e.order_id)';
+		$matched = 0 === $kind ? 'COUNT(CASE WHEN s.id IS NOT NULL THEN 1 END)' : 'COUNT(DISTINCT CASE WHEN s.id IS NOT NULL THEN e.order_id END)';
 		return $this->query("SELECT {$expression} dimension, MAX(e.label) label, SUM(e.net) net,
-			COUNT(DISTINCT e.order_id) orders, SUM(e.quantity) quantity, SUM(e.refund) refund, SUM(e.discount) discount,
-			COUNT(DISTINCT CASE WHEN s.id IS NOT NULL THEN e.order_id END) matched
+			{$count} orders, SUM(e.quantity) quantity, SUM(e.refund) refund, SUM(e.discount) discount,
+			{$matched} matched
 			FROM {$this->table} e {$this->join} WHERE {$where}
 			GROUP BY {$expression} ORDER BY {$order} DESC, dimension LIMIT {$limit}");
 	}
@@ -164,8 +168,65 @@ final class Report
 		return array_map('intval', $result[0]);
 	}
 
+	/** Calendar buckets in SlimStat wall time. Previous points cover equal elapsed windows. */
+	private function series(string $interval, array $state, array $data): array
+	{
+		$start = (int) $this->range['start']; $end = (int) $this->range['end'];
+		$span = $end - $start + 1;
+		$weekStart = (int) get_option('start_of_week', 1);
+		$shift = ((4 - $weekStart + 7) % 7) * DAY_IN_SECONDS;
+		$bucket = static function (string $column, int $offset) use ($interval, $shift): string {
+			$time = "({$column} + {$offset})";
+			if ('monthly' === $interval) { return "EXTRACT(YEAR_MONTH FROM DATE_ADD('1970-01-01', INTERVAL {$time} SECOND))"; }
+			return 'weekly' === $interval ? "FLOOR(({$time} + {$shift}) / 604800)" : "FLOOR({$time} / 86400)";
+		};
+		$bins = [];
+		$cursor = $start;
+		while ($cursor <= $end && count($bins) < 366) {
+			$day = (int) floor($cursor / DAY_IN_SECONDS) * DAY_IN_SECONDS;
+			if ('monthly' === $interval) {
+				$next = (new \DateTimeImmutable(gmdate('Y-m-01', $cursor), new \DateTimeZone('UTC')))->modify('+1 month')->getTimestamp();
+				$key = (int) gmdate('Ym', $cursor);
+			} elseif ('weekly' === $interval) {
+				$key = (int) floor(($cursor + $shift) / WEEK_IN_SECONDS);
+				$next = ($key + 1) * WEEK_IN_SECONDS - $shift;
+			} else { $key = (int) floor($cursor / DAY_IN_SECONDS); $next = $day + DAY_IN_SECONDS; }
+			$bins[$key] = [$cursor, min($end, $next - 1), $cursor !== ('monthly' === $interval ? strtotime(gmdate('Y-m-01', $cursor) . ' UTC') : ('weekly' === $interval ? $key * WEEK_IN_SECONDS - $shift : $day)) || $next - 1 > $end];
+			$cursor = $next;
+		}
+		if ($cursor <= $end) { throw new \RuntimeException(__('Choose a shorter period to explore Ecommerce trends (up to 366 monthly points).', 'wp-slimstat')); }
+		$result = ['interval' => $interval, 'current' => [], 'previous' => []];
+		foreach (['current' => 0, 'previous' => $span] as $period => $offset) {
+			$from = $start - $offset; $to = $end - $offset;
+			$where = $this->where($from, $to);
+			$orderBucket = $bucket('e.dt', $offset); $visitBucket = $bucket('p.dt', $offset);
+			$money = count($bins) === 1 ? [array_key_first($bins) => $data[$period]] : array_column($this->query("SELECT {$orderBucket} bucket, SUM(e.net) net, COUNT(*) orders FROM {$this->table} e {$this->join} WHERE {$where} GROUP BY bucket"), null, 'bucket');
+			// Distinct visits per bucket, not summed daily rates. Multiple purchases count once.
+			$cohort = "SELECT {$visitBucket} bucket, p.visit_id FROM {$this->stats} p WHERE p.dt BETWEEN {$from} AND {$to} AND p.visit_id > 0 AND p.browser_type IN (0,2) AND p.notes LIKE '%[ec:eligible]%' AND ({$this->scope}) GROUP BY bucket, p.visit_id";
+			$purchasesWhere = $this->where($from, $to, 0, false);
+			$purchases = "SELECT {$orderBucket} bucket, s.visit_id FROM {$this->table} e INNER JOIN {$this->stats} s ON s.id = e.stat_id WHERE {$purchasesWhere} GROUP BY bucket, s.visit_id";
+			$visits = count($bins) === 1 && 'current' === $period ? [array_key_first($bins) => $data['journey']] : array_column($this->query("SELECT c.bucket, COUNT(*) visits, COUNT(b.visit_id) buyers FROM ({$cohort}) c LEFT JOIN ({$purchases}) b ON b.bucket = c.bucket AND b.visit_id = c.visit_id GROUP BY c.bucket"), null, 'bucket');
+			foreach ($bins as $key => [$first, $last, $partial]) {
+				$first -= $offset; $last -= $offset;
+				$unavailable = $last < Integration::retentionStart();
+				$net = $unavailable ? null : (float) ($money[$key]['net'] ?? 0);
+				$orders = $unavailable ? null : (int) ($money[$key]['orders'] ?? 0);
+				$count = (int) ($visits[$key]['visits'] ?? 0); $buyers = (int) ($visits[$key]['buyers'] ?? 0);
+				$result[$period][] = [
+					'start' => $first, 'end' => $last, 'label' => self::date('M j, Y H:i', $first) . ' – ' . self::date('M j, Y H:i', $last),
+					'short' => self::date('M j', $first), 'net' => $net, 'orders' => $orders,
+					'aov' => $orders ? $net / $orders : null, 'visits' => $count, 'buyers' => $buyers,
+					'rate' => !$unavailable && $count >= 100 ? 100 * $buyers / $count : null,
+					'partial' => $partial || $first < Integration::retentionStart(),
+					'provisional' => empty($state['complete']) || !empty($state['error']),
+				];
+			}
+		}
+		return $result;
+	}
+
 	/** Cached complete response; scope includes edition, dates, filters, currency and mutations. */
-	public function data(): array
+	public function data(string $interval = 'auto'): array
 	{
 		$state = get_option(Integration::STATE, []);
 		if (!empty($state['needs_rebuild'])) {
@@ -178,31 +239,44 @@ final class Report
 			throw new \RuntimeException(__('This date range is in the future. Choose a period with observed activity.', 'wp-slimstat'));
 		}
 		$extra = array_values(array_intersect(['campaign', 'landing', 'device', 'customer', 'coupon'], (array) apply_filters('slimstat_ecommerce_dimensions', [])));
+		$days = ($this->range['end'] - $this->range['start']) / DAY_IN_SECONDS;
+		$interval = in_array($interval, ['daily', 'weekly', 'monthly'], true) ? $interval : ($days > 730 ? 'monthly' : ($days > 62 ? 'weekly' : 'daily'));
+		// Bound response size even for a manually requested all-time range.
+		if ($days > 366 && 'daily' === $interval) { $interval = 'weekly'; }
+		if ($days > 2562) { $interval = 'monthly'; }
 		$key = 'slimstat_ec_' . md5(wp_json_encode([
-			$this->requestedRange, $this->currency, $this->scope, $extra, $this->acquisition, get_current_blog_id(),
+			$this->requestedRange, $this->currency, $this->scope, $extra, $this->acquisition, get_current_blog_id(), 2,
 		]));
 		$signature = [get_option('slimstat_ecommerce_generation', ''), $state, \wp_slimstat::$settings['auto_purge'] ?? 420];
 		$cached = get_transient($key);
 		if (is_array($cached) && ($cached['signature'] ?? []) === $signature) {
-			return $cached['data'];
+			$data = $cached['data'];
+		} else {
+			$start = (int) $this->range['start'];
+			$end = (int) $this->range['end'];
+			$span = $end - $start + 1;
+			$data = [
+				'currency' => $this->currency, 'range' => [$start, $end], 'previous_range' => [$start - $span, $start - 1],
+				'current' => $this->summary($start, $end), 'previous' => $this->summary($start - $span, $start - 1),
+				'filtered' => '1=1' !== $this->scope,
+				'currencies' => $this->query("SELECT DISTINCT currency FROM {$this->table} WHERE kind = 0 AND currency <> '' ORDER BY currency"),
+				'journey' => $this->journey(), 'groups' => [],
+			];
+			foreach (array_merge(['channel', 'product', 'source'], $extra) as $dimension) {
+				$data['groups'][$dimension] = $this->rows($dimension);
+			}
+			set_transient($key, ['signature' => $signature, 'data' => $data], MINUTE_IN_SECONDS);
 		}
-		$start = (int) $this->range['start'];
-		$end = (int) $this->range['end'];
-		$span = $end - $start + 1;
-		$bucket = max(DAY_IN_SECONDS, (int) ceil($span / (62 * DAY_IN_SECONDS)) * DAY_IN_SECONDS);
-		$where = $this->where($start, $end);
-		$data = [
-			'currency' => $this->currency, 'range' => [$start, $end], 'previous_range' => [$start - $span, $start - 1],
-			'current' => $this->summary($start, $end), 'previous' => $this->summary($start - $span, $start - 1),
-			'bucket' => $bucket, 'filtered' => '1=1' !== $this->scope,
-			'currencies' => $this->query("SELECT DISTINCT currency FROM {$this->table} WHERE kind = 0 AND currency <> '' ORDER BY currency"),
-			'trend' => $this->query("SELECT FLOOR((e.dt - {$start}) / {$bucket}) bucket, SUM(e.net) net, COUNT(*) orders FROM {$this->table} e {$this->join} WHERE {$where} GROUP BY bucket ORDER BY bucket"),
-			'journey' => $this->journey(), 'groups' => [],
-		];
-		foreach (array_merge(['channel', 'product', 'source'], $extra) as $dimension) {
-			$data['groups'][$dimension] = $this->rows($dimension);
+		// Interval changes reuse summaries/rankings and query only their own trend.
+		$this->range['start'] = $data['range'][0]; $this->range['end'] = $data['range'][1];
+		$seriesKey = $key . '_' . $interval . '_' . (int) get_option('start_of_week', 1);
+		$cachedSeries = get_transient($seriesKey);
+		if (is_array($cachedSeries) && ($cachedSeries['signature'] ?? []) === $signature && ($cachedSeries['range'] ?? []) === $data['range']) {
+			$data['series'] = $cachedSeries['data'];
+		} else {
+			$data['series'] = $this->series($interval, $state, $data);
+			set_transient($seriesKey, ['signature' => $signature, 'range' => $data['range'], 'data' => $data['series']], MINUTE_IN_SECONDS);
 		}
-		set_transient($key, ['signature' => $signature, 'data' => $data], MINUTE_IN_SECONDS);
 		return $data;
 	}
 
@@ -222,7 +296,8 @@ final class Report
 		$available = Integration::available();
 		if ($available && Integration::ready()) {
 			try {
-				$data = (new self())->data();
+				$interval = isset($_POST['ecommerce_interval']) && is_string($_POST['ecommerce_interval']) ? sanitize_key(wp_unslash($_POST['ecommerce_interval'])) : 'auto';
+				$data = (new self())->data($interval);
 			} catch (\Throwable $exception) {
 				$error = $exception instanceof \RuntimeException ? $exception->getMessage() : __('Ecommerce data could not be loaded. Check reporting setup and the database connection, then retry.', 'wp-slimstat');
 			}

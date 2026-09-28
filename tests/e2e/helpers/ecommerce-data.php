@@ -114,6 +114,10 @@ $same('110.000000', $data['current']['product_net'], 'Item refund allocation');
 $same('3.000000', $data['current']['quantity'], 'Net units');
 $same('2', $data['current']['matched'], 'Association retained after repeated sync');
 $same('20.000000', $data['previous']['net'], 'Previous equal window');
+$same(115.0, array_sum(array_column($data['series']['current'], 'net')), 'Chart reconciles current sales');
+$same(20.0, array_sum(array_column($data['series']['previous'], 'net')), 'Chart reconciles previous sales');
+$same(120, array_sum(array_column($data['series']['current'], 'visits')), 'Chart eligible visit denominator');
+$same(1, array_sum(array_column($data['series']['current'], 'buyers')), 'Chart counts buying visits once');
 $same(['visits' => 120, 'products' => 120, 'carts' => 1, 'checkouts' => 1, 'buyers' => 1, 'completed' => 1], $data['journey'], 'Ordered journey and distinct converting visits');
 $same(115000000, array_sum(array_map(static function ($row) { return Money::units($row['net']); }, $data['groups']['channel'])), 'Channel reconciliation');
 wp_slimstat_db::$filters_normalized['columns']['utm_source'] = ['equals', 'google'];
@@ -126,6 +130,51 @@ $euros = (new Report())->data();
 $same('200.000000', $euros['current']['net'], 'Currency isolation');
 $same('1', $euros['current']['orders'], 'EUR order count');
 $same(0, $euros['journey']['buyers'], 'Currency-scoped purchase numerator');
+
+if ('chart' === $mode) {
+	$db = Integration::db(); $added = []; $oldRange = wp_slimstat_db::$filters_normalized['utime'];
+	$oldWeek = get_option('start_of_week');
+	try {
+		wp_slimstat_db::$filters_normalized['columns'] = [Report::CURRENCY_FILTER => ['equals', 'USD']];
+		foreach (range(0, 119) as $i) {
+			$db->insert($GLOBALS['wpdb']->prefix . 'slim_stats', ['dt' => $fixture['start'] + DAY_IN_SECONDS + 10, 'visit_id' => 1900000000 + $i, 'browser_type' => 0, 'resource' => '/ecommerce-fixture/next-day', 'notes' => '[ec:eligible][ec:product]']);
+			$added[] = (int) $db->insert_id;
+		}
+		wp_slimstat_db::$filters_normalized['utime']['end'] += DAY_IN_SECONDS;
+		Integration::invalidate();
+		$daily = (new Report())->data('daily');
+		$same(2, count($daily['series']['current']), 'Two daily intervals');
+		$same(120, $daily['journey']['visits'], 'Overall visits remain distinct');
+		$same(240, array_sum(array_column($daily['series']['current'], 'visits')), 'A visit active on both days appears in both daily intervals');
+		$same(0.0, (float) $daily['series']['current'][1]['rate'], 'Measured zero purchases is a valid zero rate');
+		$same(null, $daily['series']['current'][1]['aov'], 'No orders is unavailable AOV, not zero');
+		$monthly = (new Report())->data('monthly');
+		$same(120, $monthly['series']['current'][0]['visits'], 'Month recomputes distinct visits instead of summing daily counts');
+		$same(100 / 120, $monthly['series']['current'][0]['rate'], 'Month recomputes rate from its own cohort');
+		$same(115.0, $monthly['series']['current'][0]['net'], 'Month reconciles revenue');
+		$same(true, $monthly['series']['current'][0]['partial'], 'Mid-month range explicitly partial');
+		foreach ([0, 1, 6] as $weekStart) {
+			update_option('start_of_week', $weekStart); Integration::invalidate();
+			$weekly = (new Report())->data('weekly');
+			$same(115.0, array_sum(array_column($weekly['series']['current'], 'net')), 'Week total reconciles');
+			foreach (array_slice($weekly['series']['current'], 1) as $point) { $same((string) $weekStart, gmdate('w', $point['start']), 'Week uses configured start day'); }
+		}
+		wp_slimstat_db::$filters_normalized['utime'] = ['start' => strtotime('2024-02-28 UTC'), 'end' => strtotime('2024-03-02 UTC') - 1];
+		$leap = (new Report())->data('monthly');
+		$same(2, count($leap['series']['current']), 'Leap month boundary creates two calendar buckets');
+		$same(strtotime('2024-03-01 UTC') - 1, $leap['series']['current'][0]['end'], 'Leap February includes the 29th');
+		$same(null, $leap['series']['current'][0]['net'], 'Expired historical data is unavailable, not zero');
+		wp_slimstat_db::$filters_normalized['utime'] = $oldRange;
+		wp_slimstat_db::$filters_normalized['utime']['start'] -= 400 * DAY_IN_SECONDS;
+		$bounded = (new Report())->data('daily');
+		$same('weekly', $bounded['series']['interval'], 'Long daily request chooses bounded weekly aggregation');
+		$same(true, count($bounded['series']['current']) <= 366, 'Chart workload stays bounded');
+	} finally {
+		foreach ($added as $id) { $db->delete($GLOBALS['wpdb']->prefix . 'slim_stats', ['id' => $id]); }
+		wp_slimstat_db::$filters_normalized['utime'] = $oldRange;
+		update_option('start_of_week', $oldWeek); Integration::invalidate();
+	}
+}
 
 if ('safety' === $mode) {
 	require_once WP_PLUGIN_DIR . '/wp-slimstat/admin/index.php';

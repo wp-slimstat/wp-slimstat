@@ -1708,6 +1708,9 @@ var SlimStatAdmin = {
 
     refresh_report: function (id, opts) {
         opts = opts || {};
+        if (id === 'slim_p10_01' && window.SlimStatEcommerce) {
+            return function () { return window.SlimStatEcommerce.refresh(opts); };
+        }
         return function () {
             var inner_content = "#" + id + " .inside";
             var defer = jQuery.Deferred();

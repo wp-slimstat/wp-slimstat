@@ -1,6 +1,7 @@
 = 6.0.0 - 2026-09-15 =
 
 **Ecommerce**
+* Refine Ecommerce with interactive metric charts, calendar aggregation, tabbed revenue rankings, inline drill-downs and compact coverage guidance. Preserve native filters and scoped exports.
 * Add a revenue-first WooCommerce dashboard with net sales, orders, comparisons, products, acquisition coverage and a consented purchase journey. Currency, refunds and unmatched orders have explicit definitions.
 * Keep order synchronization in bounded background jobs, support HPOS and legacy storage, and integrate native dates, filters, saved segments, privacy erasure and retention. Setup is opt-in; see [the Ecommerce guide](docs/ecommerce.md).
 
