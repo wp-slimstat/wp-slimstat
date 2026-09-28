@@ -447,11 +447,13 @@ final class Schema
     public static function tableName(string $suffix, string $prefix): string
     {
         if (!isset(self::TABLES[$suffix])) {
+            // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
             throw new \InvalidArgumentException(sprintf(
                 "unknown table suffix '%s' — the manifest declares: %s",
                 $suffix,
                 implode(', ', self::tables())
             ));
+            // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
         }
 
         return $prefix . $suffix;
@@ -602,11 +604,13 @@ final class Schema
     public static function hasColumn(wpdb $db, string $suffix, string $prefix, string $column): bool
     {
         if (!isset(self::columns($suffix)[$column])) {
+            // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
             throw new \InvalidArgumentException(sprintf(
                 "column '%s' is not declared on '%s' in the manifest",
                 $column,
                 $suffix
             ));
+            // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
         }
 
         return !in_array($column, self::columnState($db, $suffix, $prefix)['missing'], true);
@@ -932,7 +936,9 @@ final class Schema
         $clauses = [];
         foreach ($names as $column) {
             if (!isset($columns[$column])) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \InvalidArgumentException(sprintf('Schema: no column "%s" declared on %s.', $column, $suffix));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
             $clauses[] = 'ADD COLUMN ' . self::columnSql($column, $columns[$column]);
         }
@@ -960,12 +966,14 @@ final class Schema
     public static function dropColumnSql(string $suffix, string $column, string $prefix): string
     {
         if (isset(self::columns($suffix)[$column])) {
+            // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
             throw new \InvalidArgumentException(sprintf(
                 'Schema: refusing to drop "%s" from %s — the manifest still declares it, so an '
                     . 'upgraded install would lose a column every fresh install is born with.',
                 $column,
                 $suffix
             ));
+            // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
         }
 
         return sprintf('ALTER TABLE `%s` DROP COLUMN %s', $prefix . $suffix, $column);
@@ -1464,7 +1472,9 @@ final class Schema
             // Thrown, not defaulted. A typo'd suffix silently answering "no columns, no
             // indexes" is how a consumer comes to reconcile nothing and report success —
             // the vacuity shape this whole seam exists to remove.
+            // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
             throw new \InvalidArgumentException(sprintf('unknown SlimStat table "%s"', $suffix));
+            // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
         }
 
         return self::TABLES[$suffix];

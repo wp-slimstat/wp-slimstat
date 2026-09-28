@@ -62,6 +62,7 @@
     }
   },
   "scripts": {
+    "test:pcp-regressions": "php tests/pcp-core-assets-test.php && php tests/dbip-stream-failure-test.php",
     "post-install-cmd": "@scoper:ext-constants",
     "post-update-cmd": "@scoper:ext-constants",
     "scoper:ext-constants": "php build/scoper-ext-constants.php src/Dependencies",
@@ -260,6 +261,7 @@
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
+      "@test:pcp-regressions",
       "php tests/settings-maintenance-result-test.php",
       "@test:source-scan-strength",
       "@test:control-wiring",

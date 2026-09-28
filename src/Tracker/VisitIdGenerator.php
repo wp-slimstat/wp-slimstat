@@ -161,6 +161,7 @@ class VisitIdGenerator
         // connection exposes UPDATE's LAST_INSERT_ID without another query.
         $dbh = $wpdb->dbh ?? null;
         if ($dbh instanceof \mysqli) {
+            // phpcs:ignore WordPress.DB.RestrictedFunctions.mysql_mysqli_insert_id -- reads UPDATE LAST_INSERT_ID from the existing wpdb connection; wpdb::insert_id is stale for UPDATE.
             return (int) mysqli_insert_id($dbh);
         }
 

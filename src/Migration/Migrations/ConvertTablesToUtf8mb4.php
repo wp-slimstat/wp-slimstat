@@ -165,6 +165,7 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
         foreach (Schema::tables() as $suffix) {
             $table = $this->tablePrefix() . $suffix;
 
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Table name is a bound information_schema value, prepared on the analytics connection.
             $counts = $this->wpdb->get_row($this->wpdb->prepare(
                 "SELECT COUNT(*) AS total,
                         SUM(CASE WHEN CHARACTER_SET_NAME IS NOT NULL AND CHARACTER_SET_NAME <> 'utf8mb4'
@@ -173,6 +174,7 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s",
                 $table
             ), ARRAY_A);
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
             // An unreachable database is not an answer about any table. Report nothing
             // rather than four confident "nothing to do"s.

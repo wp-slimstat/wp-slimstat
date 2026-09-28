@@ -182,6 +182,7 @@ class Ajax
     {
         $result = self::process();
         Utils::sendTrackingHeaders('ajax', $result);
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- plain-text tracking protocol; HTML escaping would change the response bytes.
         echo $result;
         exit;
     }

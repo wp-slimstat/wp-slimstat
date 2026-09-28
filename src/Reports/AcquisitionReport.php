@@ -76,8 +76,10 @@ class AcquisitionReport
         }
         if (is_admin() && null !== $value && '' !== $value) {
             $url = \wp_slimstat_reports::fs_url($field . ' equals ' . rawurlencode($value) . '&&&start_from equals 0');
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- htmlspecialchars encodes quotes and existing entities to preserve literal stored tags.
             echo '<a class="slimstat-filter-link" href="' . esc_url($url) . '">' . htmlspecialchars($action ?? $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</a>';
         } else {
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- htmlspecialchars encodes quotes and existing entities to preserve literal stored tags.
             echo '<span class="slimstat-acquisition__muted">' . htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</span>';
         }
     }
@@ -216,12 +218,14 @@ class AcquisitionReport
                 $key = serialize([(int) ($row['blog_id'] ?? 0), $value]);
                 $groupRows = $byGroup[$key] ?? [];
                 $count = (int) $row['counthits'];
+                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- htmlspecialchars encodes quotes and existing entities to preserve literal stored tags.
                 echo '<details class="slimstat-acquisition__group"><summary><span class="slimstat-acquisition__identity"><span class="slimstat-acquisition__label">' . htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</span>';
                 $sources = array_unique(array_filter(array_column($groupRows, 'utm' === $mode ? 'utm_source' : 'traffic_source'), static function ($source) {
                     return null !== $source && '' !== $source;
                 }));
                 if ($sources) {
                     // A preview only: never infer the total number of sources from capped rows.
+                    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- htmlspecialchars encodes quotes and existing entities to preserve literal stored tags.
                     echo '<span class="slimstat-acquisition__preview">' . htmlspecialchars(implode(' · ', array_slice($sources, 0, 3)), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</span>';
                 }
                 if ($network) {

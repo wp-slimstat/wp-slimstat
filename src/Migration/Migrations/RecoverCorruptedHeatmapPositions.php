@@ -66,7 +66,7 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
             FROM {$events_table} e
             INNER JOIN {$stats_table} s ON e.id = s.id
             WHERE e.position IS NOT NULL
-              AND e.position NOT LIKE '%,%'
+              AND e.position NOT LIKE %s
               AND e.position REGEXP '^[0-9]+$'
               AND s.screen_width > 0";
 
@@ -76,14 +76,17 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
         $deadline = microtime(true) + self::PASS_SECONDS;
 
         do {
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and generated placeholders only; all event IDs, positions and wildcard values are bound.
             $rows = $this->wpdb->get_results(
                 $this->wpdb->prepare(
                     $base_sql . ' AND e.event_id > %d ORDER BY e.event_id ASC LIMIT %d',
+                    '%,%',
                     $cursor,
                     $batch_size
                 ),
                 ARRAY_A
             );
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
             if ($this->probeFailed()) {
                 $this->shouldRunCache = null;
@@ -118,6 +121,7 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
                 $id_placeholders = implode(',', array_fill(0, count($updates), '%d'));
                 $values = array_merge($values, array_keys($updates));
 
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and generated placeholders only; all event IDs, positions and wildcard values are bound.
                 // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- dynamic CASE count
                 $result = $this->wpdb->query(
                     $this->wpdb->prepare(
@@ -127,6 +131,7 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
                         $values
                     )
                 );
+                // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                 if ($result === false) {
                     // Persist what DID complete before giving up. The failing batch is
                     // deliberately NOT counted: its rows were offered but not corrected, and a
@@ -203,6 +208,7 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
         $events_table = $this->tablePrefix() . 'slim_events';
         $stats_table = $this->tablePrefix() . 'slim_stats';
 
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and generated placeholders only; all event IDs, positions and wildcard values are bound.
         // `e.event_id > watermark` is the whole fix, and it also makes the probe cheap: the
         // scan starts after everything already examined instead of re-reading the table.
         $result = $this->wpdb->get_var(
@@ -212,15 +218,17 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
             FROM {$events_table} e
             INNER JOIN {$stats_table} s ON e.id = s.id
             WHERE e.position IS NOT NULL
-              AND e.position NOT LIKE '%,%'
+              AND e.position NOT LIKE %s
               AND e.position REGEXP '^[0-9]+$'
               AND s.screen_width > 0
               AND e.event_id > %d
             LIMIT 1
             ",
+                '%,%',
                 $this->watermark()
             )
         );
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         if ($this->probeFailed()) {
             return false;

@@ -126,11 +126,13 @@ class PurgeArchive
     public static function copyableColumns($db, $prefix, $liveSuffix)
     {
         if (!isset(self::ARCHIVE_PAIRS[$liveSuffix])) {
+            // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
             throw new \InvalidArgumentException(sprintf(
                 "'%s' is not an archived table — this class knows: %s",
                 $liveSuffix,
                 implode(', ', array_keys(self::ARCHIVE_PAIRS))
             ));
+            // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
         }
 
         $pair     = self::ARCHIVE_PAIRS[$liveSuffix];

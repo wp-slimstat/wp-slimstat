@@ -184,8 +184,10 @@ class wp_slimstat_admin
         ];
         self::$screens_info = apply_filters('slimstat_screens_info', self::$screens_info);
 
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- SQL uses core-prefix/schema identifiers or allowlisted dimensions; dynamic filter values are prepared before execution.
         // If the plugin was network activated, the tables might not have been created for this specific site
         $table_list = wp_slimstat::$wpdb->get_results(wp_slimstat::$wpdb->prepare("SHOW TABLES LIKE %s", wp_slimstat::$wpdb->esc_like($GLOBALS['wpdb']->prefix . 'slim_stats')));
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         if (empty($table_list)) {
             self::init_environment();
         }
@@ -1316,9 +1318,11 @@ class wp_slimstat_admin
 
         // --- Updates for version 4.8.4.1 ---
         if (!$recover_settings && version_compare(wp_slimstat::$settings['version'], '4.8.4.1', '<')) {
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- SQL uses core-prefix/schema identifiers or allowlisted dimensions; dynamic filter values are prepared before execution.
             // Goodbye, browser plugins. Rendered from Schema, which refuses to drop anything the
             // manifest still declares — the same guard as the ADD side, pointing the other way.
             wp_slimstat::$wpdb->query(Schema::dropColumnSql('slim_stats', 'plugins', $GLOBALS['wpdb']->prefix));
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
             // Hello there, fingerprint and timezone offset.
             //
@@ -1688,11 +1692,8 @@ class wp_slimstat_admin
 
         if ($should_load_datepicker) {
 
-            // Enqueue moment.js
-            wp_enqueue_script('slimstat-moment', plugins_url('/admin/assets/js/daterangepicker/moment.min.js', __DIR__), [], '2.30.2', true);
-
             // Enqueue daterangepicker
-            wp_enqueue_script('slimstat-daterangepicker', plugins_url('/admin/assets/js/daterangepicker/daterangepicker.min.js', __DIR__), ['jquery', 'slimstat-moment'], '3.1.0', true);
+            wp_enqueue_script('slimstat-daterangepicker', plugins_url('/admin/assets/js/daterangepicker/daterangepicker.min.js', __DIR__), ['jquery', 'moment'], '3.1.0', true);
 
             // Enqueue our custom date picker
             wp_enqueue_script('slimstat-custom-datepicker', plugins_url('/admin/assets/js/daterangepicker/slimstat-daterangepicker.js', __DIR__), ['jquery', 'slimstat-daterangepicker'], SLIMSTAT_ANALYTICS_VERSION, true);
@@ -2296,12 +2297,14 @@ class wp_slimstat_admin
         $column = ('on' == wp_slimstat::$settings['posts_column_pageviews']) ? 'id' : 'ip';
         $where  = wp_slimstat_db::get_combined_where('(' . implode(' OR ', array_fill(1, count(self::$data_for_column['url']), 'resource LIKE %s ESCAPE 0x5c')) . ')', '*', true);
 
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- SQL uses core-prefix/schema identifiers or allowlisted dimensions; dynamic filter values are prepared before execution.
         $sql = wp_slimstat::$wpdb->prepare("
 			SELECT resource, COUNT( DISTINCT {$column} ) as counthits
 			FROM {$GLOBALS['wpdb']->prefix}slim_stats
 			WHERE " . $where . '
 			GROUP BY resource
 			LIMIT 0, ' . wp_slimstat_db::$filters_normalized['misc']['limit_results'], self::$data_for_column['sql']);
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         $results = wp_slimstat_db::get_results($sql);
 
@@ -3058,6 +3061,7 @@ class wp_slimstat_admin
 
         // Delete the owned link itself; never traverse into another directory.
         if (is_link($path) || !is_dir($path)) {
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- owned cache cleanup must return deletion success and unlink symlinks without traversing them.
             return unlink($path);
         }
 
@@ -3075,6 +3079,7 @@ class wp_slimstat_admin
             }
         }
 
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- removes the now-empty local cache directory; failure must be reported to the caller.
         return rmdir($path);
     }
 
@@ -3693,7 +3698,9 @@ class wp_slimstat_admin
         // Append LIKE filter when a server-side search term was supplied.
         if ($search !== '') {
             $like_pattern    = self::build_filter_search_like($dimension, $search);
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- SQL uses core-prefix/schema identifiers or allowlisted dimensions; dynamic filter values are prepared before execution.
             $where_clauses[] = wp_slimstat::$wpdb->prepare($safe_dimension . ' LIKE %s', $like_pattern);
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         }
 
         $where_sql = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
@@ -3711,9 +3718,11 @@ class wp_slimstat_admin
             $limit
         );
 
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- SQL uses core-prefix/schema identifiers or allowlisted dimensions; dynamic filter values are prepared before execution.
         // Execute query — use wp_slimstat::$wpdb so External DB addon
         // queries the correct database.
         $results = wp_slimstat::$wpdb->get_results($sql, ARRAY_A);
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         // Check for database errors
         if (wp_slimstat::$wpdb->last_error) {
@@ -3884,11 +3893,13 @@ class wp_slimstat_admin
             return $safe_dimension . ' ASC';
         }
         $prefix_like = wp_slimstat::$wpdb->esc_like($search) . '%';
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- SQL uses core-prefix/schema identifiers or allowlisted dimensions; dynamic filter values are prepared before execution.
         return wp_slimstat::$wpdb->prepare(
             'CASE WHEN ' . $safe_dimension . ' = %s THEN 0 WHEN ' . $safe_dimension . ' LIKE %s THEN 1 ELSE 2 END, ' . $safe_dimension . ' ASC',
             $search,
             $prefix_like
         );
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
     }
 
     /**
@@ -4346,10 +4357,12 @@ class wp_slimstat_admin
             wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
         }
 
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- SQL uses core-prefix/schema identifiers or allowlisted dimensions; dynamic filter values are prepared before execution.
         // Built from the manifest, not from the columns this handler was handed. The button and
         // the reconciler have to create the same object or the retry silently builds a shape
         // nothing else expects.
         $result = $wpdb->query(Schema::createIndexSql('slim_stats', $index_key, $prefix));
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         if (false !== $result) {
             update_option($option_key, 'yes');
             wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));

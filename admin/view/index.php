@@ -81,6 +81,7 @@ if (!empty($saved_filters)) {
             </fieldset><!-- .slimstat-date-filters -->
 
             <?php foreach (wp_slimstat_db::$filters_normalized['columns'] as $a_key => $a_details) : ?>
+                <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- htmlspecialchars preserves literal entities in the escaped attribute. ?>
                 <input type="hidden" name="fs[<?php echo esc_attr($a_key); ?>]" class="slimstat-post-filter" value="<?php echo htmlspecialchars($a_details[0] . ' ' . $a_details[1], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"/>
             <?php endforeach ?>
 

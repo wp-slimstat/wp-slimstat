@@ -407,12 +407,16 @@ class Chart
             // produce noisy logs or crash the AJAX handler instead of the
             // generic security rejection below.
             if (!is_string($args['chart_data']['where'])) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid chart filter expression.', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
             $normalized = self::normalizeSqlWhitespace($args['chart_data']['where']);
             $allowed    = self::getAllowedWhereClauses();
             if (!isset($allowed[$normalized])) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid chart filter expression.', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
             $canonical   = $allowed[$normalized]; // splice trusted text, never the user-derived $normalized
             // Wrap: allowlisted clauses may contain a top-level OR that would
@@ -592,11 +596,15 @@ class Chart
             $column = strtolower($matches[2]);
 
             if (!in_array($function, $allowedFunctions, true)) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid SQL function in chart data expression', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
 
             if (!in_array($column, $allowedColumns, true)) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid column name in chart data expression', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
 
             // Use esc_sql as additional protection (though column is whitelisted)
@@ -609,11 +617,15 @@ class Chart
             $column = strtolower($matches[2]);
 
             if (!in_array($function, $allowedFunctions, true)) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid SQL function in chart data expression', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
 
             if (!in_array($column, $allowedColumns, true)) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid column name in chart data expression', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
 
             // Use esc_sql as additional protection (though column is whitelisted)
@@ -621,7 +633,9 @@ class Chart
         }
 
         // If none of the patterns match, reject the expression
+        // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
         throw new \Exception(__('Invalid SQL expression in chart data. Only whitelisted aggregate functions on valid columns are allowed.', 'wp-slimstat'));
+        // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
     }
 
     /**

@@ -313,7 +313,9 @@ abstract class AbstractMigration implements MigrationInterface
 		}
 
 		$add     = \SlimStat\Schema\Schema::addColumnSql($suffix, $column, $this->tablePrefix());
+		// phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Schema builds DDL from its allowlisted manifest and the core table prefix; no request values are interpolated.
 		$altered = $this->wpdb->query($add . ', ALGORITHM=INPLACE, LOCK=NONE');
+		// phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
 		// The retry is reached only because the server REFUSED the online hint, so its
 		// reachable domain is the BLOCKING case — a MyISAM table (installs created before
@@ -333,7 +335,9 @@ abstract class AbstractMigration implements MigrationInterface
 		// diagnostics contract and migration.js with it, so it is post-beta work, recorded
 		// here rather than half-built.
 		if (false === $altered) {
+			// phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Schema builds DDL from its allowlisted manifest and the core table prefix; no request values are interpolated.
 			$altered = $this->wpdb->query($add);
+			// phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 		}
 
 		if (false === $altered) {
@@ -419,6 +423,7 @@ abstract class AbstractMigration implements MigrationInterface
 				continue;
 			}
 
+			// phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Schema builds DDL from its allowlisted manifest and the core table prefix; no request values are interpolated.
 			if (false === $this->wpdb->query(\SlimStat\Schema\Schema::createIndexSql($suffix, $index, $prefix))) {
 				\wp_slimstat::record_degradation(
 					$degradationKey,
@@ -431,6 +436,7 @@ abstract class AbstractMigration implements MigrationInterface
 					),
 					\wp_slimstat::DEGRADATION_OPERATIONAL
 				);
+			// phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 			}
 		}
 	}

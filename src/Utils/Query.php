@@ -691,7 +691,9 @@ class Query
 
                 break;
             default:
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new InvalidArgumentException('Unsupported operator: ' . $operator);
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
         }
 
         if ('' === $condition || '0' === $condition) {

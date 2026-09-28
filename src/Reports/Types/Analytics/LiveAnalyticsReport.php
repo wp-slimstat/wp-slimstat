@@ -235,7 +235,9 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			$window_start
 		);
 
+		// phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- SQL prepared above, including the time window and validated filters; the analytics connection may be external.
 		$count = (int) $wpdb->get_var( $sql );
+		// phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
 		return $count > 0 ? $count : 0;
 	}
@@ -398,7 +400,9 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			$window_start
 		);
 
+		// phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- SQL prepared above, including the time window and validated filters; the analytics connection may be external.
 		$results = $wpdb->get_results( $sql, ARRAY_A );
+		// phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 		$lookup  = [];
 		foreach ( (array) $results as $row ) {
 			$minute_timestamp = (int) ( $row['minute_timestamp'] ?? 0 );

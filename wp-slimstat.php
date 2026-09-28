@@ -1894,11 +1894,13 @@ class wp_slimstat
         $table_events         = $GLOBALS['wpdb']->prefix . 'slim_events';
         $table_events_archive = $GLOBALS['wpdb']->prefix . 'slim_events_archive';
 
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
         // Nothing to purge is the overwhelmingly common case: retention defaults to 420
         // days and this runs every 12 hours. Two indexed probes, then stop — the tick used
         // to continue into four full InnoDB table rebuilds regardless. (D1)
         $has_work = self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table_stats} WHERE dt < %d LIMIT 1", $days_ago))
             || self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table_events} WHERE dt < %d LIMIT 1", $days_ago));
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         if (!$has_work) {
             return;
@@ -2026,6 +2028,7 @@ class wp_slimstat
                 return;
             }
 
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
             // INSERT IGNORE, with event_id carried explicitly, so a run interrupted between
             // archiving and deleting is replayable: the next run re-copies the same rows
             // and MySQL ignores the ones already there. Without event_id there is no key to
@@ -2046,10 +2049,12 @@ class wp_slimstat
                     self::$wpdb->last_error,
                     self::DEGRADATION_OPERATIONAL
                 );
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                 return;
             }
         }
 
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
         // Delete the events explicitly rather than leaning on the cascade, so the set
         // removed is exactly the set archived, and so the behaviour is the same on an
         // install whose tables are MyISAM and silently ignore the foreign key.
@@ -2059,6 +2064,7 @@ class wp_slimstat
             $days_ago
         ))) {
             self::record_degradation('purge (deleting events)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             return;
         }
 
@@ -2102,6 +2108,7 @@ class wp_slimstat
                 return;
             }
 
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
             if (false === self::$wpdb->query(self::$wpdb->prepare(
                 "INSERT IGNORE INTO {$table_stats_archive} (" . implode(', ', $stats_columns) . ")
                  SELECT " . implode(', ', $stats_columns) . " FROM {$table_stats} WHERE dt < %d",
@@ -2112,6 +2119,7 @@ class wp_slimstat
                     self::$wpdb->last_error,
                     self::DEGRADATION_OPERATIONAL
                 );
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                 return;
             }
 
@@ -2142,8 +2150,12 @@ class wp_slimstat
 
         if ($rows_removed > 0 && (self::now() - $last_optimized) > 30 * DAY_IN_SECONDS) {
             self::update_option('slimstat_purge_optimized_at', self::now(), false);
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
             self::$wpdb->query('OPTIMIZE TABLE ' . $table_stats);
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
             self::$wpdb->query('OPTIMIZE TABLE ' . $table_events);
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         }
 
         // C34 — record that the purge SUCCEEDED, reached only by the path that completed.
@@ -2795,6 +2807,7 @@ class wp_slimstat
         /**
          * Create .htaccess to avoid public access.
          */
+        // phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_is_writable,WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fwrite,WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- local upload protection must also work in background jobs without interactive filesystem credentials.
         if (is_dir($upload_dir) && is_writable($upload_dir)) {
             $htaccess_file = path_join($upload_dir, '.htaccess');
 
@@ -2803,6 +2816,7 @@ class wp_slimstat
                 fclose($handle);
             }
         }
+        // phpcs:enable WordPress.WP.AlternativeFunctions.file_system_operations_is_writable,WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fwrite,WordPress.WP.AlternativeFunctions.file_system_operations_fclose
     }
 
     public static function get_schedule_interval($schedule)

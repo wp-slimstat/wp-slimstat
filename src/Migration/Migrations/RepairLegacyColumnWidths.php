@@ -26,7 +26,9 @@ class RepairLegacyColumnWidths extends AbstractMigration
     private function readColumns(string $suffix): ?array
     {
         $suppressed = $this->wpdb->suppress_errors(true);
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Identifiers are fixed migration columns/core prefix; lookup values are prepared and session timeout is integer-cast.
         $rows = $this->wpdb->get_results(sprintf('SHOW FULL COLUMNS FROM `%s`', $this->tablePrefix() . $suffix), ARRAY_A);
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         $failed = $this->probeFailed();
         $this->wpdb->suppress_errors($suppressed);
         if ($failed || !is_array($rows) || [] === $rows) { return null; }
@@ -57,10 +59,12 @@ class RepairLegacyColumnWidths extends AbstractMigration
                 }
             }
             if (!empty($state['pending'][$suffix])) {
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Identifiers are fixed migration columns/core prefix; lookup values are prepared and session timeout is integer-cast.
                 $engine = $this->wpdb->get_var($this->wpdb->prepare(
                     'SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
                     $this->tablePrefix() . $suffix
                 ));
+                // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                 if ($this->probeFailed() || 'innodb' !== strtolower((string) $engine)) {
                     $state['blocked'] = true;
                 }
@@ -105,8 +109,10 @@ class RepairLegacyColumnWidths extends AbstractMigration
                     break;
                 }
                 $first = false;
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Identifiers are fixed migration columns/core prefix; lookup values are prepared and session timeout is integer-cast.
                 if (false === $this->wpdb->query(Schema::widenLegacyColumnsSql($suffix, $this->tablePrefix(), $columns))) {
                     $ok = $this->fail('The server refused the online legacy width repair. No blocking fallback was attempted; review the database error before retrying.');
+                // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                     break;
                 }
                 $after = $this->readColumns($suffix);
@@ -124,8 +130,10 @@ class RepairLegacyColumnWidths extends AbstractMigration
             }
         } finally {
             $this->state = null;
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Identifiers are fixed migration columns/core prefix; lookup values are prepared and session timeout is integer-cast.
             if (false === $this->wpdb->query('SET SESSION lock_wait_timeout = ' . (int) $oldTimeout)) {
                 $ok = $this->fail('Legacy width repair could not restore the connection metadata-lock timeout.');
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             }
         }
         return $ok;

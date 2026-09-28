@@ -53,9 +53,13 @@ class AddAcquisitionColumns extends AbstractMigration
             $sql = Schema::addColumnsSql($suffix, $missing, $this->tablePrefix());
             $suppressed = $this->wpdb->suppress_errors(true);
             try {
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Schema validates columns against its manifest; only fixed DDL hints are appended.
                 $result = $this->wpdb->query($sql . ', ALGORITHM=INPLACE, LOCK=NONE');
+                // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                 if (false === $result) {
+                    // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Schema validates columns against its manifest; only fixed DDL hints are appended.
                     $result = $this->wpdb->query($sql);
+                    // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                 }
             } finally {
                 $this->wpdb->suppress_errors($suppressed);

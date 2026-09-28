@@ -326,20 +326,24 @@ class wp_slimstat_db
                 $_where = self::_get_sql_where(self::$filters_normalized['columns'], $_slim_stats_table_alias);
 
                 if ($_use_date_filters) {
+                    // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
                     // Use $wpdb->prepare() for all dynamic SQL values
                     $time_range_condition = $wpdb->prepare(
                         $dt_with_alias . ' BETWEEN %d AND %d',
                         intval(self::$filters_normalized['utime']['start']),
                         intval(self::$filters_normalized['utime']['end'])
                     );
+                    // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                 }
             } elseif ($_use_date_filters) {
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
                 // Use $wpdb->prepare() for all dynamic SQL values
                 $time_range_condition = $wpdb->prepare(
                     $dt_with_alias . ' BETWEEN %d AND %d',
                     intval(self::$filters_normalized['utime']['start']),
                     intval(self::$filters_normalized['utime']['end'])
                 );
+                // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             }
 
             // This could happen if we have custom filters (add-ons, third party tools)
@@ -357,12 +361,14 @@ class wp_slimstat_db
             }
 
             if ($_use_date_filters) {
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
                 // Use $wpdb->prepare() for all dynamic SQL values
                 $time_range_condition = $wpdb->prepare(
                     $dt_with_alias . ' BETWEEN %d AND %d',
                     intval(self::$filters_normalized['utime']['start']),
                     intval(self::$filters_normalized['utime']['end'])
                 );
+                // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             }
         }
 
@@ -395,7 +401,9 @@ class wp_slimstat_db
         // If where_param is provided and where contains %s or %d, use prepare
         if (null !== $where_params && (false !== strpos($_where, '%s') || false !== strpos($_where, '%d'))) {
             global $wpdb;
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
             $_where = is_array($where_params) ? $wpdb->prepare($_where, ...$where_params) : $wpdb->prepare($_where, $where_params);
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         }
 
         return $_where;
@@ -580,6 +588,7 @@ class wp_slimstat_db
             }
         }
 
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
         // Nothing here rewrites the SQL into the Query builder, and nothing may without an
         // ANCHORED parse. The converter this method carried matched `WHERE (.+?)` with every
         // following group optional, so the lazy quantifier captured exactly ONE character:
@@ -594,6 +603,7 @@ class wp_slimstat_db
         //
         // Execute on wp_slimstat::$wpdb so the External DB addon queries the correct database.
         $results = wp_slimstat::$wpdb->get_results($_sql, ARRAY_A);
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         // Write back what we read.
         //
@@ -712,7 +722,9 @@ class wp_slimstat_db
             self::maybe_enable_query_cache($query);
             return $query->getVar();
         } else {
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
             return wp_slimstat::$wpdb->get_var($_sql);
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         }
     }
 
@@ -1223,7 +1235,9 @@ class wp_slimstat_db
         $suffix = 'KB';
 
         $sql = wp_slimstat::$wpdb->prepare('SHOW TABLE STATUS LIKE %s', wp_slimstat::$wpdb->esc_like($GLOBALS['wpdb']->prefix . 'slim_stats'));
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
         $table_details = wp_slimstat::$wpdb->get_row($sql, 'ARRAY_A', 0);
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         $table_size = ($table_details['Data_length'] / 1024) + ($table_details['Index_length'] / 1024);
 
@@ -2283,12 +2297,14 @@ class wp_slimstat_db
      */
     private static function count_unique_visitors($from_clause, $where_clause, $alias = 't1')
     {
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
         return intval(wp_slimstat::$wpdb->get_var(sprintf(
             "SELECT COUNT(*) FROM (SELECT DISTINCT %s AS vid FROM %s WHERE %s) AS uv",
             self::visitor_id_expr($alias),
             $from_clause,
             $where_clause
         )));
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
     }
 
     /**
@@ -2693,7 +2709,9 @@ class wp_slimstat_db
             if (empty($step_where)) {
                 $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0, 'unreachable' => false];
                 $use_temp = false;
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
                 wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+                // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                 continue;
             }
 
@@ -2768,11 +2786,16 @@ class wp_slimstat_db
 
             // Lazy preflight: only drop stale temps on the first step that actually runs SQL.
             if (!$preflight) {
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
                 wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+                // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
                 wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
+                // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                 $preflight = true;
             }
 
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
             // Create the per-step temp table once, then count from it — avoids
             // running the grouped subquery twice for the same step.
             //
@@ -2799,6 +2822,7 @@ class wp_slimstat_db
             // merged into one visitor. None do on that dataset, but the derived column is
             // VARCHAR(256) and the question no longer arises. (D53, D16)
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             $created = wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_write (KEY(vid)) AS $select_sql");
 
             // If CREATE … AS SELECT failed (malformed step rule, STRICT-mode
@@ -2813,7 +2837,9 @@ class wp_slimstat_db
                 if ('on' == wp_slimstat::$settings['show_sql_debug'] && !empty(wp_slimstat::$wpdb->last_error)) {
                     self::$debug_message .= sprintf("<p class='debug'>Funnel step query failed: %s</p>", esc_html(wp_slimstat::$wpdb->last_error));
                 }
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
                 wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+                // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                 wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
                 $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0, 'unreachable' => false];
                 $had_error = true;
@@ -2826,8 +2852,10 @@ class wp_slimstat_db
                 $step1_count = $visitor_count;
             }
 
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
             // Swap: drop old READ, rename WRITE → READ for next iteration.
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             wp_slimstat::$wpdb->query("ALTER TABLE $temp_write RENAME TO $temp_read");
             $use_temp = ($visitor_count > 0);
 
@@ -2853,7 +2881,9 @@ class wp_slimstat_db
         }
 
         if ($preflight) {
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
         }
 

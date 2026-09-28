@@ -58,11 +58,15 @@ class ReportFactory {
 	 */
 	public function register_class( string $id, string $class ): void {
 		if ( ! class_exists( $class ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
 			throw new \InvalidArgumentException( "Class {$class} does not exist" );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if ( ! is_subclass_of( $class, ReportInterface::class ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
 			throw new \InvalidArgumentException( "Class {$class} must implement ReportInterface" );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$this->class_map[ $id ] = $class;
@@ -87,11 +91,15 @@ class ReportFactory {
 
 		// Validate class exists and implements interface
 		if ( ! class_exists( $class ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
 			throw new \InvalidArgumentException( "Class {$class} does not exist" );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		if ( ! is_subclass_of( $class, ReportInterface::class ) ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
 			throw new \InvalidArgumentException( "Class {$class} must implement ReportInterface" );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		// Create instance
@@ -157,7 +165,9 @@ class ReportFactory {
 
 			return $reflection->newInstanceArgs( $dependencies );
 		} catch ( \ReflectionException $e ) {
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
 			throw new \RuntimeException( "Failed to instantiate {$class}: " . $e->getMessage() );
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 	}
 
@@ -206,9 +216,11 @@ class ReportFactory {
 			}
 
 			// Cannot resolve
+			// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
 			throw new \RuntimeException(
 				"Cannot resolve dependency {$name} for class " . $constructor->getDeclaringClass()->getName()
 			);
+			// phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		return $dependencies;

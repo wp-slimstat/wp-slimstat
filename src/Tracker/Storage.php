@@ -82,7 +82,7 @@ class Storage
 	{
 		if (false === strpos($url, '?')) { return $url; }
 		$query = [];
-		parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+		parse_str((string) wp_parse_url($url, PHP_URL_QUERY), $query);
 		return isset($query['key']) && is_string($query['key']) && 0 === strpos($query['key'], 'wc_order_')
 			? remove_query_arg('key', $url) : $url;
 	}

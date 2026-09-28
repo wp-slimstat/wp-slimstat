@@ -180,7 +180,7 @@ class GeoService
         $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
         $dbPath  = $service->getProvider()->getDbPath();
         if (is_file($dbPath)) {
-            @unlink($dbPath);
+            wp_delete_file($dbPath);
         }
     }
 

@@ -73,7 +73,7 @@ $show_upsell = $at_max && !$is_pro;
                 $goal_id_attr  = esc_attr((string) ($goal['id'] ?? ''));
                 ?>
                 <li class="slimstat-gf-goal"
-                    data-goal-id="<?php echo $goal_id_attr; ?>"
+                    data-goal-id="<?php echo esc_attr($goal_id_attr); ?>"
                     data-active="<?php echo $goal_active ? 'true' : 'false'; ?>">
                     <div class="slimstat-gf-goal__head">
                         <h3 class="slimstat-gf-goal__name">
@@ -141,7 +141,7 @@ $show_upsell = $at_max && !$is_pro;
                         <button type="button"
                                 class="button-link slimstat-gf-goal-delete"
                                 data-action="delete-goal"
-                                data-goal-id="<?php echo $goal_id_attr; ?>"
+                                data-goal-id="<?php echo esc_attr($goal_id_attr); ?>"
                                 data-goal-name="<?php echo esc_attr($goal['name'] ?? ''); ?>">
                             <?php esc_html_e('Delete', 'wp-slimstat'); ?>
                         </button>

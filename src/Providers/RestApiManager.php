@@ -220,6 +220,7 @@ class RestApiManager
             $result = Tracker::slimtrack_ajax();
             // Output result and exit for adblock bypass requests
             \SlimStat\Tracker\Utils::sendTrackingHeaders('adblock_bypass', $result);
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- plain-text tracking protocol; HTML escaping would change the response bytes.
             echo $result;
             exit;
         }
