@@ -203,14 +203,14 @@ test('Ecommerce Free is useful alone and WooCommerce deactivation is safe @wooco
     const privacy = runWordPressFixture("<?php echo isset(apply_filters('wp_privacy_personal_data_erasers', [])['slimstat-ecommerce']) ? 'registered' : 'missing';");
     expect(privacy).toBe('registered');
     expect(runWordPressFixture("<?php SlimStat\\Ecommerce\\Integration::sync(0); SlimStat\\Ecommerce\\Integration::import(); do_action('slimstat_ecommerce_sync', 0); do_action('slimstat_ecommerce_import'); echo 'safe';")).toBe('safe');
-    // A genuinely missing plugin directory and no commerce setup, on disposable wp-env only.
-    runWordPressFixture("<?php if (DB_NAME !== 'tests-wordpress') throw new RuntimeException('Disposable database required'); update_option('slimstat_ec_absent_backup',get_option('slimstat_ecommerce_state')); delete_option('slimstat_ecommerce_state'); if (!rename(WP_PLUGIN_DIR.'/woocommerce', WP_PLUGIN_DIR.'/woocommerce-audit-absent')) throw new RuntimeException('Cannot isolate WooCommerce');");
+    // Remove the plugin entry point, not its directory: CI mounts that directory. Disposable wp-env only.
+    runWordPressFixture("<?php if (DB_NAME !== 'tests-wordpress') throw new RuntimeException('Disposable database required'); update_option('slimstat_ec_absent_backup',get_option('slimstat_ecommerce_state')); delete_option('slimstat_ecommerce_state'); if (!rename(WP_PLUGIN_DIR.'/woocommerce/woocommerce.php', WP_PLUGIN_DIR.'/woocommerce/woocommerce.php.audit-absent')) throw new RuntimeException('Cannot isolate WooCommerce');");
     await page.goto('/wp-admin/admin.php?page=slimview7');
     await expect(page.locator('[data-ecommerce]')).toContainText('Activate WooCommerce');
     expect(runWordPressFixture("<?php echo function_exists('wc_get_orders') ? 'loaded' : 'absent';")).toBe('absent');
     expect((await page.request.get('/')).status()).toBe(200);
   } finally {
-    runWordPressFixture("<?php if (is_dir(WP_PLUGIN_DIR.'/woocommerce-audit-absent')) rename(WP_PLUGIN_DIR.'/woocommerce-audit-absent',WP_PLUGIN_DIR.'/woocommerce'); $s=get_option('slimstat_ec_absent_backup',null); if(null!==$s){update_option('slimstat_ecommerce_state',$s,false);delete_option('slimstat_ec_absent_backup');}");
+    runWordPressFixture("<?php if (is_file(WP_PLUGIN_DIR.'/woocommerce/woocommerce.php.audit-absent') && !rename(WP_PLUGIN_DIR.'/woocommerce/woocommerce.php.audit-absent',WP_PLUGIN_DIR.'/woocommerce/woocommerce.php')) throw new RuntimeException('Cannot restore WooCommerce'); $s=get_option('slimstat_ec_absent_backup',null); if(null!==$s){update_option('slimstat_ecommerce_state',$s,false);delete_option('slimstat_ec_absent_backup');}");
     runWordPressFixture("<?php activate_plugin('woocommerce/woocommerce.php');");
     if (proWasActive) runWordPressFixture("<?php activate_plugin('wp-slimstat-pro/wp-slimstat-pro.php');");
   }

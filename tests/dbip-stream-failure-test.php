@@ -19,6 +19,7 @@ namespace SlimStat\Services\Geolocation\Provider {
         return \fwrite($stream, $chunk);
     }
     function gzread($stream, $size) {
+        if ('empty' === $GLOBALS['dbip_test_failure']) { return ''; }
         return 'read' === $GLOBALS['dbip_test_failure'] ? false : \gzread($stream, $size);
     }
     function rename($from, $to) { return 'rename' === $GLOBALS['dbip_test_failure'] ? false : \rename($from, $to); }
@@ -39,7 +40,7 @@ namespace {
     $database = $GLOBALS['dbip_test_dir'] . '/dbip-city-lite.mmdb';
     $provider = new \SlimStat\Services\Geolocation\Provider\DbIpProvider();
     try {
-        foreach (['write', 'short', 'read', 'rename', 'none'] as $failure) {
+        foreach (['write', 'short', 'read', 'empty', 'rename', 'none'] as $failure) {
             $GLOBALS['dbip_test_failure'] = $failure;
             file_put_contents($database, 'last valid database');
             $updated = $provider->updateDatabase();

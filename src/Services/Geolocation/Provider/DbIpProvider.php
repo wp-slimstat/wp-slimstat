@@ -120,7 +120,7 @@ class DbIpProvider extends AbstractGeoIPProvider
 					if ($out) {
 						// Stream copy to avoid loading the entire file in memory.
 						$ok = true;
-						while (!gzeof($gz)) {
+						do {
 							$chunk = gzread($gz, 8192);
 							if (false === $chunk || ('' === $chunk && !gzeof($gz))) {
 								$ok = false;
@@ -132,7 +132,7 @@ class DbIpProvider extends AbstractGeoIPProvider
 								$ok = false;
 								break;
 							}
-						}
+						} while (!gzeof($gz));
 
 						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- bounded local binary stream and atomic replacement; WP_Filesystem has no streaming API.
 						$ok = fclose($out) && $ok;
