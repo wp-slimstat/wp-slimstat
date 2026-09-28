@@ -76,7 +76,7 @@ if (!empty($saved_filters)) {
                             <span class="caret"></span>
                         </div>
                     </button>
-                    <input type="text" class="slimstat-date-range-input" style="display: none;" />
+                    <input type="text" class="slimstat-date-range-input" style="display: none;" data-start="<?php echo esc_attr(gmdate('Y-m-d', (int) wp_slimstat_db::$filters_normalized['utime']['start'])); ?>" data-end="<?php echo esc_attr(gmdate('Y-m-d', (int) wp_slimstat_db::$filters_normalized['utime']['end'])); ?>" />
                 </div>
             </fieldset><!-- .slimstat-date-filters -->
 

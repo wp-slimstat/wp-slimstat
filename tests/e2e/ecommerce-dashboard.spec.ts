@@ -82,6 +82,11 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     await page.locator('#slimstat-load-saved-filters').click();
     await page.locator('#slim_filters_overlay a.slimstat-filter-link').filter({ hasText: 'google' }).click();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('65.00');
+    const savedDates = await page.evaluate(() => {
+      const picker = (window as any).jQuery('.slimstat-date-range-input').data('daterangepicker');
+      return [picker.startDate.format('YYYY-MM-DD'), picker.endDate.format('YYYY-MM-DD')];
+    });
+    expect(savedDates).toEqual([day.toISOString().slice(0, 10), day.toISOString().slice(0, 10)]);
     await page.locator('.slimstat-date-range-btn').click();
     await page.evaluate(() => {
       const picker = (window as any).jQuery('.slimstat-date-range-input').data('daterangepicker');

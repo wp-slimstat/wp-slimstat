@@ -206,6 +206,19 @@ jQuery(document).ready(function($) {
             };
         }
 
+        // Saved filters use native fs[date] fields rather than from/to. The
+        // server has already resolved those fields and the site timezone.
+        const $resolved = $(CONFIG.SELECTORS.dateInput);
+        const resolvedStart = moment($resolved.attr('data-start'), CONFIG.SERVER_FORMAT, true);
+        const resolvedEnd = moment($resolved.attr('data-end'), CONFIG.SERVER_FORMAT, true);
+        if (resolvedStart.isValid() && resolvedEnd.isValid()) {
+            return {
+                startDate: normalizeDate(resolvedStart, validTimezone),
+                endDate: normalizeDate(resolvedEnd, validTimezone),
+                preset: 'custom'
+            };
+        }
+
         // Check sessionStorage for persisted date range (navigation between pages)
         const savedRange = sessionStorage.getItem('slimstat_date_range');
         if (savedRange) {
