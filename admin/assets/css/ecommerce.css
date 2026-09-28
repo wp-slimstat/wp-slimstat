@@ -175,3 +175,4 @@
 .wrap-slimstat .ss-ec .ss-ec-toast { position: fixed; z-index: 100; inset: auto 20px 20px auto; max-width: min(400px,calc(100vw - 40px)); padding: 10px 16px; background: var(--ss-surface); border: 1px solid var(--ss-border); border-radius: var(--ss-radius-sm); box-shadow: var(--ss-shadow-raised); font-size: 12px; color: var(--ss-text-body); }
 .ss-ec-rankings .is-negative .ss-ec-rank-bar { background: var(--ss-danger-bg-soft); }
 .ss-ec-rankings .is-negative .ss-ec-rank-value { color: var(--ss-danger-fg); }
+#slim_p10_01 .ss-ec p { word-break: normal; overflow-wrap: break-word; }

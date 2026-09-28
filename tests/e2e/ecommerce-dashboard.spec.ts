@@ -63,6 +63,7 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     await page.screenshot({ path: testInfo.outputPath('ecommerce-desktop.png'), fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(dashboard.locator('[data-metric=net]')).toBeVisible();
+    expect(await dashboard.locator('.ss-ec-chart-description').evaluate(el => getComputedStyle(el).wordBreak)).toBe('normal');
     expect(await dashboard.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath('ecommerce-mobile.png'), fullPage: true });
     params.set('fs[utm_source]', 'equals google');
