@@ -24,7 +24,10 @@ function evidence(run: string): any {
     wp_slimstat_db::$filters_normalized['utime']=['start'=>wp_slimstat::now()-3600,'end'=>wp_slimstat::now()];
     SlimStat\\Ecommerce\\Integration::invalidate(); $report=(new SlimStat\\Ecommerce\\Report())->data();
     $events=SlimStat\\Ecommerce\\Integration::db()->get_results("SELECT e.id,e.dt,e.notes,s.visit_id FROM {$GLOBALS['wpdb']->prefix}slim_events e JOIN {$GLOBALS['wpdb']->prefix}slim_stats s ON s.id=e.id WHERE e.notes='[ec:cart]'",ARRAY_A);
-    echo wp_json_encode(compact('saved','report','events'));
+    wp_slimstat_db::$filters_normalized['columns']=[];
+    $commerce=(new SlimStat\\Ecommerce\\Report())->data('auto',false)['current'];
+    $timeline=SlimStat\\Ecommerce\\Integration::db()->get_results("SELECT id,dt,notes FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE notes LIKE '%[ec:%' ORDER BY dt,id",ARRAY_A);
+    echo wp_json_encode(compact('saved','report','events','commerce','timeline'));
   `);
 }
 async function correlation(page: Page, run: string) {
@@ -92,6 +95,9 @@ for (const mode of modes) test(`Ecommerce live ${mode}: expected observations re
     const actual = evidence(run);
     await testInfo.attach('actual-observations', {body:JSON.stringify({expected,actual,rows,requests},null,2),contentType:'application/json'});
     expect(actual.saved).toHaveLength(expected.orders);
+    // Consent controls analytics association, never the authoritative commerce total.
+    expect(Number(actual.commerce.orders)).toBe(expected.orders);
+    expect(Number(actual.commerce.net)).toBe(expected.orders);
     for (const order of actual.saved) {
       expect(order.status).toBe('completed'); expect(Number(order.total)).toBe(1);
       expect(Number(order.projection.stat_id) > 0).toBe(!noTracking);
@@ -107,6 +113,16 @@ for (const mode of modes) test(`Ecommerce live ${mode}: expected observations re
       expect(Number(actual.report.current.net)).toBe(expected.orders);
       expect(Number(actual.report.current.orders)).toBe(expected.orders);
       expect(actual.events).toHaveLength(mode==='account-repeat'?2:1);
+      for (const event of actual.events) {
+        const origin = actual.timeline.find((row: any) => Number(row.id) === Number(event.id));
+        expect(origin.notes).toContain('[ec:product]');
+        expect(Number(event.dt)).toBeGreaterThanOrEqual(Number(origin.dt));
+      }
+      if (expected.checkouts) {
+        const checkout = actual.timeline.find((row: any) => row.notes.includes('[ec:checkout]'));
+        expect(Number(checkout.dt)).toBeGreaterThanOrEqual(Number(actual.events[0].dt));
+        if (purchase) expect(Number(actual.saved[0].projection.dt)).toBeGreaterThanOrEqual(Number(checkout.dt));
+      }
       expect(JSON.stringify(rows)).not.toContain('E2EPurchaseBuyer'); if (mode !== 'account-repeat') expect(JSON.stringify(rows)).not.toContain(store.email);
       expect(JSON.stringify(rows)).not.toContain('wc_order_');
       // Confirm the same live activity is visible through the authenticated dashboard request.
