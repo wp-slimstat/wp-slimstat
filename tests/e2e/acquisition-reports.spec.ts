@@ -343,6 +343,7 @@ test.describe('UTM and channel reports', () => {
       const utm = authorPage.locator('#slim_p3_04');
       await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('3 pageviews');
       await expect(utm).not.toContainText('Private campaign');
+      await expect(utm.getByRole('link', { name: 'View linked orders' })).toHaveCount(0);
     } finally { await author.close(); }
     const badNonce = await page.request.post('/wp-admin/admin-ajax.php', { form: { action: 'slimstat_load_report', report_id: 'slim_p3_04', security: 'invalid' } });
     expect(badNonce.status()).toBe(403);

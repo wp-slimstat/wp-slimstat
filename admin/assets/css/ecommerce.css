@@ -20,6 +20,11 @@
 .ss-ec .button-primary { background: var(--ss-brand-900); border-color: var(--ss-brand-900); color: var(--ss-surface); }
 .ss-ec .button:hover, .ss-ec-controls .button:hover { background: var(--ss-surface-tint); }
 .ss-ec .button-primary:hover { background: var(--ss-brand-700); color: var(--ss-surface); }
+.ss-ec-discover { margin-block: 24px; padding: 24px; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-sm); background: var(--ss-surface); }
+.ss-ec-discover p { max-width: 75ch; }
+.ss-ec-discover-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-block: 16px 4px; }
+.ss-ec-discover-actions .button { min-height: 44px; }
+.wrap-slimstat .ss-ec .ss-ec-report-question { margin-block: 4px 16px; font-size: 12px; }
 .ss-ec :is(select,.ss-ec-currency > summary) { color: var(--ss-text-body); background-color: var(--ss-surface); border: 1px solid var(--ss-border); border-radius: var(--ss-radius-xs); font-size: 12px; min-height: 32px; }
 .ss-ec select { padding-block: 0; padding-inline-start: 8px; }
 .ss-ec-heading, .ss-ec-toolbar, .ss-ec-chart figcaption, .ss-ec-card-heading, .ss-ec-rank-heading, .ss-ec-report-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

@@ -149,7 +149,7 @@ class AcquisitionReport
     private static function content(array $args): void
     {
         echo '<div class="slimstat-acquisition">';
-        if ('utm' === ($args['mode'] ?? '') && is_admin()) {
+        if (is_admin()) {
             echo '<a class="button slimstat-utm-builder-link" href="' . esc_url(admin_url('admin.php?page=slimview5#slimstat-utm-builder')) . '">' . esc_html__('Build a UTM link', 'wp-slimstat') . '</a>';
         }
         $ready = is_admin() ? Acquisition::checkSchema() : '1' === get_option(Acquisition::readinessKey(), '0');
@@ -164,6 +164,17 @@ class AcquisitionReport
         $mode = ($args['mode'] ?? '') === 'utm' ? 'utm' : 'channels';
         $fields = self::fields($mode);
         $groupField = array_key_first($fields);
+        // Navigation needs the complete scope; fs_url() contains only a filter delta.
+        $commerceFilters = null;
+        if (is_admin() && !NetworkMerge::isMerging() && \SlimStat\Ecommerce\Integration::available() && \SlimStat\Ecommerce\Report::canView()) {
+            $commerceFilters = [];
+            foreach (\wp_slimstat_db::$filters_normalized['columns'] ?? [] as $key => $filter) {
+                $commerceFilters[$key] = $filter[0] . ' ' . $filter[1];
+            }
+            foreach (\wp_slimstat_db::$filters_normalized['date'] ?? [] as $key => $value) {
+                $commerceFilters[$key] = 'equals ' . $value;
+            }
+        }
         $perPage = max(1, (int) \wp_slimstat::$settings['rows_to_show']);
         $start = max(0, (int) (\wp_slimstat_db::$filters_normalized['misc']['start_from'] ?? 0));
         $db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
@@ -199,6 +210,9 @@ class AcquisitionReport
             /* translators: %s: localized pageview count. */
             _n('%s pageview', '%s pageviews', $total, 'wp-slimstat'), number_format_i18n($total)
         )) . '</strong></div>';
+        echo '<p class="slimstat-acquisition__guide">' . esc_html('utm' === $mode
+            ? __('Which campaigns bring visitors? Expand a campaign to compare its sources and tags. Share is the percentage of all matching tagged pageviews.', 'wp-slimstat')
+            : __('Where does your traffic come from? Expand a channel to compare sources. Share is the percentage of all matching pageviews, including recorded bots and internal navigation.', 'wp-slimstat')) . '</p>';
 
         if (!$all) {
             echo '<p class="slimstat-acquisition__empty">' . esc_html('utm' === $mode
@@ -237,7 +251,14 @@ class AcquisitionReport
                 if (is_admin() && null !== $value && '' !== $value) {
                     echo '<div class="slimstat-acquisition__filter">';
                     self::value($groupField, $value, 'utm' === $mode ? __('Filter by this campaign', 'wp-slimstat') : __('Filter by this channel', 'wp-slimstat'));
+                    if (null !== $commerceFilters) {
+                        $url = add_query_arg(['page' => 'slimview7', 'fs' => urlencode_deep(array_merge($commerceFilters, [$groupField => 'equals ' . $value]))], admin_url('admin.php'));
+                        echo '<a class="noslimstat" href="' . esc_url($url) . '">' . esc_html__('View linked orders', 'wp-slimstat') . '</a>';
+                    }
                     echo '</div>';
+                    if (null !== $commerceFilters) {
+                        echo '<p class="slimstat-acquisition__note">' . esc_html__('Linked orders uses these dates and filters to find orders associated with matching tracked visits. Orders without a visit link are excluded; pageview share is not a purchase rate.', 'wp-slimstat') . '</p>';
+                    }
                 }
                 if ($groupRows) {
                     self::breakdown($groupRows, $fields, $total);

@@ -99,10 +99,30 @@ $setup = static function ($label) {
 			</figure>
 		</section>
 		<?php if (!$orders && !$provisional) : ?><p class="ss-ec-scope"><?php esc_html_e('No included orders in this period and currency. Try another date range or currency, or review pending and on-hold orders in WooCommerce.', 'wp-slimstat'); ?></p><?php endif; ?>
+		<section class="ss-ec-discover" aria-labelledby="ss-ec-discover-title">
+			<?php if (isset($data['groups']['campaign'])) : ?>
+				<h2 id="ss-ec-discover-title"><?php esc_html_e('Your Pro reports are ready', 'wp-slimstat'); ?></h2>
+				<p><?php esc_html_e('Start with a question. Explore the report, then use View report to see exact values and export your current selection.', 'wp-slimstat'); ?></p>
+				<div class="ss-ec-discover-actions">
+					<button type="button" class="button" data-open-report="campaign"><?php esc_html_e('Compare campaigns', 'wp-slimstat'); ?></button>
+					<button type="button" class="button" data-open-report="device"><?php esc_html_e('Explore devices', 'wp-slimstat'); ?></button>
+					<button type="button" class="button" data-open-report="coupon"><?php esc_html_e('Explore coupons', 'wp-slimstat'); ?></button>
+				</div>
+				<?php if (empty(wp_slimstat::$settings['slimstat_pro_license_status']) && current_user_can('manage_options')) : ?><p><a href="<?php echo esc_url(admin_url('admin.php?page=slimconfig&tab=8')); ?>"><?php esc_html_e('Activate your license', 'wp-slimstat'); ?></a> <?php esc_html_e('to receive Pro updates for this site.', 'wp-slimstat'); ?></p><?php endif; ?>
+			<?php elseif (!wp_slimstat::pro_is_installed()) : ?>
+				<h2 id="ss-ec-discover-title"><?php esc_html_e('Find your next revenue opportunity', 'wp-slimstat'); ?></h2>
+				<p><?php esc_html_e('Pro adds campaign and landing-page revenue, device and customer segments, coupon discounts, product refunds and CSV exports. Your overview, channels, sources and products are included in Free.', 'wp-slimstat'); ?></p>
+				<div class="ss-ec-discover-actions"><a class="button button-primary" href="<?php echo esc_url(current_user_can('manage_options') ? admin_url('admin.php?page=slimpro') : 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=plugin&utm_campaign=ecommerce'); ?>"><?php esc_html_e('Explore Ecommerce Pro', 'wp-slimstat'); ?></a><?php if (current_user_can('activate_plugins')) : ?><a href="<?php echo esc_url(admin_url('plugins.php')); ?>"><?php esc_html_e('Already have Pro? Activate the plugin', 'wp-slimstat'); ?></a><?php endif; ?></div>
+			<?php else : ?>
+				<h2 id="ss-ec-discover-title"><?php esc_html_e('Update Pro to explore more reports', 'wp-slimstat'); ?></h2>
+				<p><?php esc_html_e('Your installed Pro version has not enabled Ecommerce reports. Update both SlimStat plugins to compatible versions.', 'wp-slimstat'); ?></p>
+			<?php endif; ?>
+		</section>
 		<div class="ss-ec-section-heading"><h2><?php esc_html_e('Revenue drivers', 'wp-slimstat'); ?></h2><p><?php esc_html_e('Explore the leading contributions to your sales.', 'wp-slimstat'); ?></p></div>
 		<div class="ss-ec-grid">
 		<?php
 		$titles = ['channel' => __('Channels', 'wp-slimstat'), 'source' => __('Sources', 'wp-slimstat'), 'product' => __('Products', 'wp-slimstat'), 'campaign' => __('Campaigns', 'wp-slimstat'), 'landing' => __('Landing pages', 'wp-slimstat'), 'device' => __('Devices', 'wp-slimstat'), 'customer' => __('Customer segments', 'wp-slimstat'), 'coupon' => __('Coupons', 'wp-slimstat')];
+		$questions = ['channel' => __('Which channels contribute the most net sales?', 'wp-slimstat'), 'source' => __('Which sources contribute orders and revenue?', 'wp-slimstat'), 'product' => __('Which products contribute the most after refunds?', 'wp-slimstat'), 'campaign' => __('Which tagged campaigns contribute sales?', 'wp-slimstat'), 'landing' => __('Which entry pages are associated with sales?', 'wp-slimstat'), 'device' => __('How do sales differ across tracked devices?', 'wp-slimstat'), 'customer' => __('How do account and guest orders compare?', 'wp-slimstat'), 'coupon' => __('Which coupons account for the most discounts?', 'wp-slimstat')];
 		$cards = [__('Acquisition', 'wp-slimstat') => ['channel', 'source', 'campaign'], __('Shopping', 'wp-slimstat') => ['product', 'coupon'], __('Audience', 'wp-slimstat') => ['device', 'customer'], __('Landing pages', 'wp-slimstat') => ['landing']];
 		foreach ($cards as $title => $dimensions) :
 			$dimensions = array_values(array_intersect($dimensions, array_keys($data['groups'])));
@@ -118,6 +138,7 @@ $setup = static function ($label) {
 					$ceiling = $rows ? max(array_map(static function ($row) use ($measure) { return abs((float) $row[$measure]); }, $rows)) : 0;
 					?>
 					<div class="ss-ec-report" id="ss-ec-panel-<?php echo esc_attr($dimension); ?>" role="tabpanel" aria-labelledby="ss-ec-tab-<?php echo esc_attr($dimension); ?>" tabindex="0" data-dimension="<?php echo esc_attr($dimension); ?>" <?php if ($index) { echo 'hidden'; } ?>>
+						<p class="ss-ec-report-question"><?php echo esc_html($questions[$dimension]); ?></p>
 						<div class="ss-ec-rank-heading"><span><?php echo esc_html($isCoupon ? __('Top by discounts', 'wp-slimstat') : __('Top by net sales', 'wp-slimstat')); ?></span><label><span class="screen-reader-text"><?php esc_html_e('Sort these results', 'wp-slimstat'); ?></span><select data-rank-metric><option value="<?php echo esc_attr($measure); ?>"><?php echo esc_html($isCoupon ? __('Discounts', 'wp-slimstat') : __('Net sales', 'wp-slimstat')); ?></option><option value="orders"><?php esc_html_e('Orders', 'wp-slimstat'); ?></option></select><button type="button" class="ss-ec-icon-button" data-sort aria-label="<?php esc_attr_e('Reverse sort order', 'wp-slimstat'); ?>" aria-pressed="false"><span class="dashicons dashicons-sort" aria-hidden="true"></span></button></label></div>
 						<?php if (!$rows) : ?><div class="ss-ec-report-empty"><strong><?php esc_html_e('No results for this view', 'wp-slimstat'); ?></strong><p><?php esc_html_e('Try a different period or remove a filter to explore more activity.', 'wp-slimstat'); ?></p></div><?php else : ?>
 						<ol class="ss-ec-rankings">

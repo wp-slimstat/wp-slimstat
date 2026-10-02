@@ -2,7 +2,7 @@
 (function ($) {
     'use strict';
     const { __, sprintf } = window.wpSlimstatI18n;
-    let chart, request, requestKey, feedbackTimer, serial = 0;
+    let chart, request, requestKey, feedbackTimer, serial = 0, reportHashHandled = false;
     const state = { metric: 'net', interval: 'auto', compare: true, tabs: {}, expanded: {}, sort: {} };
     const root = () => document.querySelector('[data-ecommerce]');
     const announce = (message, visible = false) => {
@@ -156,6 +156,15 @@
         const compare = root() && root().querySelector('.ss-ec-compare');
         if (compare) { const old = controls.querySelector('.ss-ec-compare'); if (old) old.remove(); form.append(compare); }
     }
+    function openLinkedReport() {
+        if (reportHashHandled || !window.location.hash.startsWith('#ss-ec-panel-')) return;
+        const panel = document.getElementById(window.location.hash.slice(1));
+        if (!panel || !root()?.contains(panel) || !panel.matches('.ss-ec-report')) return;
+        reportHashHandled = true;
+        selectTab(document.getElementById(panel.getAttribute('aria-labelledby')), false);
+        panel.focus();
+    }
+    window.addEventListener('hashchange', () => { reportHashHandled = false; openLinkedReport(); });
     function init() {
         toolbar(); const dashboard = root(); if (!dashboard) return;
         const interval = dashboard.querySelector('[data-interval]'); if (interval) state.interval = interval.value;
@@ -169,6 +178,7 @@
             expand(panel, Boolean(state.expanded[panel.dataset.dimension]), false);
         });
         draw();
+        openLinkedReport();
     }
     function failedRefresh(inside) {
         if (!root()) {

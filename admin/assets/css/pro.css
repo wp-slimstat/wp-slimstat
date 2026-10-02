@@ -1,0 +1,37 @@
+.wrap-slimstat .ss-pro {
+    max-width: 1040px;
+    margin: 32px auto;
+    padding: 0 24px 32px;
+    color: var(--ss-text-body);
+    font: var(--ss-text-md)/1.6 var(--ss-font-modern);
+}
+.ss-pro .ss-pro-intro { padding-block: 16px 32px; }
+.ss-pro .ss-pro-eyebrow { color: var(--ss-brand-900); font-weight: 600; }
+.ss-pro h1 { max-width: 22ch; font-size: 32px; line-height: 1.2; margin: 12px 0 20px; }
+.ss-pro h2 { font-size: 22px; line-height: 1.3; margin-block: 0 20px; }
+.ss-pro p { max-width: 70ch; font: inherit; }
+.ss-pro .ss-pro-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-block: 24px 12px; }
+.ss-pro .ss-pro-actions .button { min-height: 44px; padding: 6px 18px; font-size: 14px; }
+.ss-pro .ss-pro-note { color: var(--ss-text-muted); font-size: 13px; }
+.ss-pro-table { overflow-x: auto; background: var(--ss-surface); border: 1px solid var(--ss-border); border-radius: var(--ss-radius-sm); }
+.ss-pro table { width: 100%; border-collapse: collapse; text-align: start; }
+.ss-pro th, .ss-pro td { width: 33.33%; min-width: 180px; padding: 20px; vertical-align: top; border-bottom: 1px solid var(--ss-border-soft); }
+.ss-pro th { font-weight: 600; text-align: start; }
+.ss-pro thead { background: var(--ss-surface-tint); }
+.ss-pro tbody tr:last-child > * { border-bottom: 0; }
+.ss-pro-column-label { display: none; }
+.ss-pro .ss-pro-setup { margin-block-start: 28px; border-block: 1px solid var(--ss-border); }
+.ss-pro-setup summary { padding-block: 18px; cursor: pointer; font-weight: 600; color: var(--ss-info-fg); }
+.ss-pro-setup ol { padding-inline-start: 24px; }
+.ss-pro-setup li { padding: 8px; }
+.ss-pro-setup li p { margin: 4px 0; color: var(--ss-text-muted); }
+.ss-pro :focus-visible { outline: 2px solid var(--ss-focus); outline-offset: 3px; }
+@media (max-width: 600px) {
+    .wrap-slimstat .ss-pro { padding-inline: 12px; margin-block: 20px; }
+    .ss-pro h1 { font-size: 28px; }
+    .ss-pro thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .ss-pro tbody tr { display: block; padding: 16px; border-bottom: 1px solid var(--ss-border); }
+    .ss-pro tbody tr:last-child { border-bottom: 0; }
+    .ss-pro tbody th, .ss-pro tbody td { display: block; width: auto; min-width: 0; padding: 6px 0; border: 0; }
+    .ss-pro-column-label { display: block; font-size: 12px; font-weight: 600; color: var(--ss-text-muted); margin-bottom: 4px; }
+}

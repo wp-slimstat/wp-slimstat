@@ -272,8 +272,17 @@
     background: var(--ss-surface-tint);
 }
 .wrap-slimstat .slimstat-acquisition__filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ss-space-3);
     color: var(--ss-text-muted);
     margin-block-end: var(--ss-space-3);
+}
+.wrap-slimstat .slimstat-acquisition__guide {
+    max-width: 70ch;
+    color: var(--ss-text-muted);
+    margin-block: 0 var(--ss-space-4);
+    line-height: 1.6;
 }
 .wrap-slimstat .slimstat-acquisition__filter a {
     display: inline-block;

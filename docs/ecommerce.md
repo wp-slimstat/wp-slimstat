@@ -35,6 +35,14 @@ Chart metric, comparison and tab changes make no requests. Interval changes reus
 
 Chart implementation references: [Chart.js tooltips](https://www.chartjs.org/docs/latest/configuration/tooltip.html) and [accessible alternatives](https://www.chartjs.org/docs/latest/general/accessibility.html).
 
+## Discovering and activating Pro
+
+The Ecommerce page explains what is included in Free and links to the Pro comparison page. That page offers a direct annual single-site checkout, a link to compare plans, and installation steps for existing customers. Pricing and payment stay on SlimStat's checkout; no checkout form or remote pricing request runs inside WordPress.
+
+After installing Pro, open **SlimStat → Pro → Manage your license**, paste the account license key and select **Save Changes**. Missing keys, rejected licenses and temporary verification failures have separate recovery messages. Saving retries the current key immediately. Pro customers see shortcuts to campaign, device and coupon reports instead of purchase prompts; **View report** opens exact values and CSV export.
+
+UTM and channel breakdowns include **View linked orders** for users with store reporting permission. The link preserves current dates and traffic filters, including literal campaign names. It excludes orders without a matching tracked visit. Traffic share still describes pageviews, not conversion or revenue share. Network-merged reports do not offer this store-specific link.
+
 ## Metric contract
 
 - **Order cohort:** standard WooCommerce `shop_order` records created inside the selected site-calendar window. Included statuses: `processing`, `completed`, `refunded`. Pending, on-hold, failed, cancelled, checkout-draft and trash do not contribute sales. A processing order is an accepted order, not a guarantee of gateway settlement (e.g. cash on delivery). Custom statuses are not silently classified as paid.

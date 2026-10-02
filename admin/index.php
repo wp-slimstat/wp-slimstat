@@ -72,15 +72,6 @@ class wp_slimstat_admin
     // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Fresh table existence check for network activation on the configured analytics connection; no request values enter SQL.
     public static function init()
     {
-        // Redirect to the pro settings
-        add_action('admin_menu', function () {
-            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
-            if (is_admin() && isset($_GET['page']) && 'slimpro' === $_GET['page'] && wp_slimstat::pro_is_installed()) {
-                wp_safe_redirect(admin_url('admin.php?page=slimconfig&tab=7'));
-                exit();
-            }
-        });
-
         // Action for reset layout
         add_action('admin_post_slimstat_reset_layout', ['wp_slimstat_admin', 'handle_reset_layout']);
         add_action('wp_ajax_meta-box-order', ['wp_slimstat_admin', 'save_network_layout'], 0);
@@ -1548,6 +1539,9 @@ class wp_slimstat_admin
         // Report widgets can be moved to any SlimStat screen through Customize.
         wp_enqueue_style('wp-slimstat-tokens', plugins_url('/admin/assets/css/tokens.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
         wp_enqueue_style('wp-slimstat-acquisition', plugins_url('/admin/assets/css/acquisition.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
+        if ('slimpro' === self::$current_screen) {
+            wp_enqueue_style('wp-slimstat-pro-overview', plugins_url('/admin/assets/css/pro.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
+        }
 
         if ('slimview7' === self::$current_screen || false !== strpos(implode(',', (array) self::$meta_user_reports), 'slim_p10_01')) {
             wp_enqueue_style('wp-slimstat-ecommerce', plugins_url('/admin/assets/css/ecommerce.css', __DIR__), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
