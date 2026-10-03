@@ -7,6 +7,7 @@ use SlimStat\Tracker\Tracker;
 use SlimStat\Controllers\Rest\ConsentChangeRestController;
 use SlimStat\Controllers\Rest\ConsentHealthRestController;
 use SlimStat\Controllers\Rest\GDPRBannerRestController;
+use SlimStat\Controllers\Rest\HeatmapRestController;
 use SlimStat\Controllers\Rest\TrackerHealthRestController;
 use SlimStat\Controllers\Rest\TrackingRestController;
 
@@ -54,6 +55,7 @@ class RestApiManager
             static function () { return new ConsentChangeRestController(); },
             static function () { return new ConsentHealthRestController(); },
             static function () { return new TrackerHealthRestController(); },
+            static function () { return new HeatmapRestController(); },
         ];
         foreach ($factories as $factory) {
             try {

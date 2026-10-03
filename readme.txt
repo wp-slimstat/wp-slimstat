@@ -120,6 +120,10 @@ Deleting the plugin no longer erases your analytics. Data is now kept by default
 
 == Changelog ==
 
+= 6.1.0 - Unreleased =
+* New Heatmaps page: every page with clicks, its pageviews, device split and recorded detail, from the admin menu or the admin bar.
+* Opt-in heatmap recording (clicks on any element, scroll depth, dead and rage clicks) for sites with SlimStat Pro, following consent, Do Not Track and retention settings.
+
 = 6.0.0 - 2026-09-15 =
 * Improve Ecommerce database isolation, retention accuracy and native dates; remove order-access keys from new analytics URLs.
 

@@ -26,6 +26,9 @@ final class Query
 	/** Upper bound on grouped rows returned to a viewer. */
 	public const MAX_POINTS = 20000;
 
+	/** Upper bound on rows in the Heatmaps page list. */
+	public const MAX_PAGES = 500;
+
 	/** A stored position a viewer may paint: digits,digits and not the 0,0 default. */
 	private const VALID_POSITION_SQL = "te.position REGEXP '^[0-9]{1,5},[0-9]{1,5}$' AND te.position NOT REGEXP '^0+,0+$'";
 
@@ -128,6 +131,130 @@ final class Query
 			$points[] = ['x' => $x, 'y' => $y, 'vw' => (int) $row['vw'], 'n' => (int) $row['n']] + self::element((string) $row['notes']);
 		}
 		return $points;
+	}
+
+	/**
+	 * The Heatmaps page list, cached until heatmap data changes, retention changes or
+	 * 12 hours pass. Legacy clicks keep arriving without a generation bump, so the page
+	 * offers Refresh.
+	 *
+	 * @param int $start Inclusive dt bound, in the dt column's local-time seconds.
+	 * @param int $end   Inclusive dt bound.
+	 * @return array{rows:array<int,array<string,mixed>>,updated:int}
+	 */
+	public static function cachedPages(int $start, int $end, string $device = '', bool $refresh = false): array
+	{
+		$key       = 'slimstat_hm_pages_' . md5((string) wp_json_encode([get_current_blog_id(), $start, $end, $device]));
+		$signature = [(string) get_option(Store::GENERATION, ''), \wp_slimstat::$settings['auto_purge'] ?? 0, Store::ready()];
+		$cached    = $refresh ? null : get_transient($key);
+		if (is_array($cached) && ($cached['signature'] ?? null) === $signature) {
+			return $cached['data'];
+		}
+		$data = ['rows' => self::pages($start, $end, $device), 'updated' => time()];
+		set_transient($key, ['signature' => $signature, 'data' => $data], 12 * HOUR_IN_SECONDS);
+		return $data;
+	}
+
+	/**
+	 * Pages with clicks in a range, sorted by clicks. Both layers are merged by page key,
+	 * and each pageview counts in exactly one: once capture began, a pageview with heatmap
+	 * rows is read from slim_heatmap only.
+	 *
+	 * @return array<int,array{page:string,clicks:int,desktop:int,tablet:int,mobile:int,dead:?int,rage:?int,scroll:?int,last:int,full:bool,pageviews:int,content_id:int}>
+	 */
+	public static function pages(int $start, int $end, string $device = ''): array
+	{
+		$db     = self::db();
+		$prefix = $GLOBALS['wpdb']->prefix;
+		$ready  = Store::ready();
+		$since  = (int) (get_option(Store::STATE, [])['since'] ?? 0);
+		$width  = "CAST(SUBSTRING_INDEX(t1.resolution,'x',1) AS UNSIGNED)";
+		$split  = [];
+		foreach (self::DEVICES as $name => [$low, $high]) {
+			$split[] = "SUM({$width} BETWEEN {$low} AND {$high}) {$name}";
+		}
+		// History before capture began skips the probe; after it, the probe is a primary-key seek.
+		$probe = $ready ? $db->prepare(' AND (te.dt < %d OR NOT EXISTS (SELECT 1 FROM ' . Store::table() . ' h WHERE h.id = te.id))', $since) : '';
+
+		$pages = [];
+		$add   = static function (string $page, array $row) use (&$pages): void {
+			if ('' === $page) {
+				return;
+			}
+			$entry = $pages[$page] ?? ['page' => $page, 'clicks' => 0, 'desktop' => 0, 'tablet' => 0, 'mobile' => 0, 'dead' => null, 'rage' => null, 'scroll' => null, 'last' => 0, 'full' => false, 'pageviews' => 0, 'content_id' => 0];
+			foreach (['clicks', 'desktop', 'tablet', 'mobile'] as $count) {
+				$entry[$count] += (int) $row[$count];
+			}
+			foreach (['dead', 'rage'] as $count) {
+				if (isset($row[$count])) {
+					$entry[$count] = (int) $entry[$count] + (int) $row[$count];
+				}
+			}
+			$entry['last'] = max($entry['last'], (int) $row['last']);
+			$pages[$page]  = $entry;
+		};
+
+		$legacy = self::rows($db->prepare('SELECT ' . self::pageKeySql('t1.resource') . ' page, COUNT(*) clicks, ' . implode(', ', $split) . ", MAX(te.dt) last
+			FROM {$prefix}slim_events te INNER JOIN {$prefix}slim_stats t1 ON te.id = t1.id
+			WHERE te.dt BETWEEN %d AND %d AND " . self::VALID_POSITION_SQL . ' AND ' . self::deviceWhere($device) . "{$probe}
+			GROUP BY page ORDER BY clicks DESC LIMIT " . self::MAX_PAGES, $start, $end));
+		foreach ($legacy as $row) {
+			$add((string) $row['page'], $row);
+		}
+
+		if ($ready) {
+			$table  = Store::table();
+			$code   = self::DEVICE_CODES[$device] ?? 0;
+			$on     = $code ? $db->prepare(' AND device = %d', $code) : '';
+			$clicks = self::rows($db->prepare("SELECT HEX(page) page, MIN(id) id, COUNT(*) clicks, SUM(device = 1) desktop, SUM(device = 2) tablet, SUM(device = 3) mobile,
+				SUM(flags & 2 > 0) dead, SUM(flags & 4 > 0) rage, MAX(dt) last
+				FROM {$table} WHERE kind = 0 AND dt BETWEEN %d AND %d{$on} GROUP BY page ORDER BY clicks DESC LIMIT " . self::MAX_PAGES, $start, $end));
+			$scroll = self::rows($db->prepare("SELECT HEX(page) page, ROUND(100 * AVG(LEAST(y / dh, 1))) depth
+				FROM {$table} WHERE kind = 1 AND dh > 0 AND dt BETWEEN %d AND %d{$on} GROUP BY page", $start, $end));
+			// Rows carry the page hash only; one sample pageview per page names it.
+			$paths = [];
+			if ($clicks) {
+				$ids = implode(',', array_map('intval', array_column($clicks, 'id')));
+				foreach (self::rows("SELECT id, resource FROM {$prefix}slim_stats WHERE id IN ({$ids})") as $row) {
+					$paths[(int) $row['id']] = self::pageKey((string) $row['resource']);
+				}
+			}
+			$byHash = [];
+			foreach ($clicks as $row) {
+				$page = $paths[(int) $row['id']] ?? '';
+				$add($page, $row);
+				$byHash[(string) $row['page']] = $page;
+			}
+			foreach ($scroll as $row) {
+				$page = $byHash[(string) $row['page']] ?? '';
+				if (isset($pages[$page])) {
+					$pages[$page]['scroll'] = (int) $row['depth'];
+					$pages[$page]['full']   = true;
+				}
+			}
+		}
+
+		uasort($pages, static function (array $a, array $b): int {
+			return $b['clicks'] <=> $a['clicks'] ?: strcmp($a['page'], $b['page']);
+		});
+		$pages = array_slice($pages, 0, self::MAX_PAGES, true);
+		if (!$pages) {
+			return [];
+		}
+
+		// ponytail: one OR'd range per page over idx_goal_queries; chunk it if 500 ranges ever exceed the range optimizer's memory.
+		$match = implode(' OR ', array_map(static function (string $page): string {
+			return '(' . self::pageWhere($page) . ')';
+		}, array_keys($pages)));
+		$views = self::rows('SELECT ' . self::pageKeySql('t1.resource') . " page, COUNT(*) n, MAX(t1.content_id) content_id FROM {$prefix}slim_stats t1
+			WHERE " . $db->prepare('t1.dt BETWEEN %d AND %d', $start, $end) . ' AND ' . self::deviceWhere($device) . " AND ({$match}) GROUP BY page");
+		foreach ($views as $row) {
+			if (isset($pages[$row['page']])) {
+				$pages[$row['page']]['pageviews']  = (int) $row['n'];
+				$pages[$row['page']]['content_id'] = (int) $row['content_id'];
+			}
+		}
+		return array_values($pages);
 	}
 
 	/**

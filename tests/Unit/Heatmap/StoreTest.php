@@ -296,4 +296,55 @@ class StoreTest extends WpSlimstatTestCase
 		}
 		self::assertFalse(Store::isPreview());
 	}
+
+	/** Delete and Retry need the nonce first, then manage_options; a refusal changes nothing. */
+	public function test_admin_actions_refuse_without_nonce_or_capability(): void
+	{
+		$GLOBALS['slimstat_test_options'][Store::STATE] = ['schema' => Store::SCHEMA, 'error' => 'x'];
+		$nonces = [];
+		$caps   = [];
+		$valid  = false;
+		Functions\when('wp_die')->alias(static function ($message, $code) {
+			throw new \RuntimeException('die ' . $code);
+		});
+		Functions\when('check_admin_referer')->alias(static function ($action) use (&$nonces, &$valid) {
+			$nonces[] = $action;
+			if (!$valid) {
+				throw new \RuntimeException('nonce');
+			}
+			return 1;
+		});
+		Functions\when('current_user_can')->alias(static function ($cap) use (&$caps) {
+			$caps[] = $cap;
+			return false;
+		});
+		foreach (['handleDelete' => ['slimstat_heatmap_delete', 'nonce'], 'handleRetry' => ['slimstat_heatmap_retry', 'nonce'], 'handleDelete ' => ['slimstat_heatmap_delete', 'die 403'], 'handleRetry ' => ['slimstat_heatmap_retry', 'die 403']] as $handler => [$action, $refusal]) {
+			$valid = 'die 403' === $refusal;
+			try {
+				Store::{trim($handler)}();
+				self::fail("{$handler} ran: {$refusal}");
+			} catch (\RuntimeException $e) {
+				self::assertSame($refusal, $e->getMessage());
+			}
+			self::assertSame($action, end($nonces));
+		}
+		self::assertSame(['manage_options', 'manage_options'], $caps, 'capability is checked only after a valid nonce');
+		self::assertSame([], $this->heatmapQueries());
+		self::assertSame('x', $GLOBALS['slimstat_test_options'][Store::STATE]['error'], 'the failure is still on record');
+	}
+
+	public function test_delete_all_empties_both_tables_or_reports_failure(): void
+	{
+		self::assertTrue(Store::deleteAll());
+		self::assertSame(['TRUNCATE TABLE wp_slim_heatmap', 'TRUNCATE TABLE wp_slim_heatmap_elements'], $this->heatmapQueries());
+		self::assertArrayHasKey(Store::GENERATION, $GLOBALS['slimstat_test_options'], 'cached lists are invalidated');
+
+		$this->queries = [];
+		unset($GLOBALS['slimstat_test_options'][Store::GENERATION]);
+		$this->result = false;
+		self::assertFalse(Store::deleteAll());
+		self::assertCount(1, $this->heatmapQueries(), 'stops at the first failure');
+		self::assertArrayHasKey('heatmap delete', \wp_slimstat::$degradations);
+		self::assertArrayNotHasKey(Store::GENERATION, $GLOBALS['slimstat_test_options']);
+	}
 }

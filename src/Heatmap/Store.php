@@ -49,6 +49,8 @@ final class Store
 		add_action('wp_slimstat_purge', [self::class, 'purge'], 20);
 		if (is_admin()) {
 			add_action('admin_init', [self::class, 'maybeSetup']);
+			add_action('admin_post_slimstat_heatmap_retry', [self::class, 'handleRetry']);
+			add_action('admin_post_slimstat_heatmap_delete', [self::class, 'handleDelete']);
 		}
 	}
 
@@ -376,6 +378,55 @@ final class Store
 			];
 		}
 		return ['data' => $data, 'done' => count($rows) < 500];
+	}
+
+	/** Retry on the Heatmaps status card: forget the recorded failure and set up again. */
+	public static function handleRetry(): void
+	{
+		check_admin_referer('slimstat_heatmap_retry');
+		if (!current_user_can('manage_options')) {
+			wp_die(esc_html__('You are not allowed to change heatmap tracking.', 'wp-slimstat'), 403);
+		}
+		$state = get_option(self::STATE, []);
+		unset($state['error']);
+		update_option(self::STATE, $state, false);
+		try {
+			self::setup();
+		} catch (\Throwable $error) {
+			// Recorded in the state; the status card shows it again.
+		}
+		self::backToList();
+	}
+
+	/** "Delete heatmap data": every full-tracking row. Link and button clicks in slim_events stay. */
+	public static function handleDelete(): void
+	{
+		check_admin_referer('slimstat_heatmap_delete');
+		if (!current_user_can('manage_options')) {
+			wp_die(esc_html__('You are not allowed to delete heatmap data.', 'wp-slimstat'), 403);
+		}
+		$deleted = self::ready() ? self::deleteAll() : true;
+		self::backToList(['deleted' => $deleted ? '1' : '0']);
+	}
+
+	public static function deleteAll(): bool
+	{
+		$db = Query::db();
+		foreach (array_reverse(self::TABLES) as $suffix) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery,WordPress.DB.DirectDatabaseQuery.SchemaChange -- Table name from the manifest; TRUNCATE of SlimStat's own on-demand table.
+			if (false === $db->query('TRUNCATE TABLE ' . self::table($suffix))) {
+				\wp_slimstat::record_degradation('heatmap delete', $db->last_error, \wp_slimstat::DEGRADATION_OPERATIONAL);
+				return false;
+			}
+		}
+		self::invalidate();
+		return true;
+	}
+
+	private static function backToList(array $args = []): void
+	{
+		wp_safe_redirect(add_query_arg($args, admin_url('admin.php?page=slimheatmap')));
+		exit;
 	}
 
 	/** Cache key for viewer reads; bumped on every write path that changes what they see. */

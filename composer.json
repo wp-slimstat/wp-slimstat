@@ -234,6 +234,7 @@
     "test:known-identity-reports": "php tests/known-identity-reports-test.php",
     "test:class-name-as-variable": "php tests/class-name-as-variable-scan-test.php",
     "test:consent-migration-gate": "php tests/consent-migration-gate-test.php",
+    "test:heatmap-copy": "php tests/heatmap-copy-test.php",
     "test:consent-api-optional": "php tests/consent-api-optional-test.php",
     "test:notes-migration-bounded": "php tests/notes-migration-bounded-test.php",
     "test:schema-ddl-gate": "php tests/schema-ddl-gate-test.php",
@@ -444,7 +445,8 @@
       "@test:consent-filter-context",
       "@test:settings-request-render",
       "@test:reset-layout-scope",
-      "@test:free-deploy-evidence"
+      "@test:free-deploy-evidence",
+      "@test:heatmap-copy"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit --log-junit build/junit-unit.xml",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php --log-junit build/junit-integration.xml",

@@ -132,6 +132,13 @@ class wp_slimstat_admin
                 'capability' => 'can_view',
                 'callback' => [self::class, 'wp_slimstat_include_view'],
             ],
+            'slimheatmap' => [
+                'is_report_group' => false,
+                'show_in_sidebar' => true,
+                'title'           => wp_slimstat::pro_is_installed() ? __('Heatmaps', 'wp-slimstat') : __('Heatmaps (pro)', 'wp-slimstat'),
+                'capability'      => 'can_view',
+                'callback'        => [self::class, 'wp_slimstat_include_heatmaps'],
+            ],
             'slimemail' => [
                 'is_report_group' => false,
                 'show_in_sidebar' => true,
@@ -1539,6 +1546,11 @@ class wp_slimstat_admin
         // Report widgets can be moved to any SlimStat screen through Customize.
         wp_enqueue_style('wp-slimstat-tokens', plugins_url('/admin/assets/css/tokens.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
         wp_enqueue_style('wp-slimstat-acquisition', plugins_url('/admin/assets/css/acquisition.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
+        if ('slimheatmap' === self::$current_screen) {
+            wp_enqueue_style('wp-slimstat-heatmaps', plugins_url('/admin/assets/css/heatmaps.css', __DIR__), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
+            wp_enqueue_script('slimstat-heatmaps', plugins_url('/admin/assets/js/heatmaps.js', __DIR__), ['wp-i18n', 'wp-api-fetch'], SLIMSTAT_ANALYTICS_VERSION, true);
+            wp_set_script_translations('slimstat-heatmaps', 'wp-slimstat');
+        }
         if ('slimpro' === self::$current_screen) {
             wp_enqueue_style('wp-slimstat-pro-overview', plugins_url('/admin/assets/css/pro.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
         }
@@ -2216,6 +2228,19 @@ class wp_slimstat_admin
             ]);
         }
 
+        // Heatmaps: no count here, so no lookup on every page load. On the site, the list opens on this page's row.
+        $heatmap_url = $view_url . 'slimheatmap';
+        if (!is_admin()) {
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- pageKeyFromUrl() decodes and sanitizes; the key only selects a highlighted row.
+            $heatmap_url = add_query_arg('highlight', rawurlencode(\SlimStat\Heatmap\Query::pageKeyFromUrl((string) ($_SERVER['REQUEST_URI'] ?? '/'))), $heatmap_url);
+        }
+        $GLOBALS['wp_admin_bar']->add_node([
+            'id'     => 'slimstat-heatmap',
+            'parent' => 'slimstat-header',
+            'title'  => esc_html__('Heatmap', 'wp-slimstat'),
+            'href'   => $heatmap_url,
+        ]);
+
         // Add footer node
         $footer_html = '<div class="slimstat-adminbar__footer">'
             . '<div class="slimstat-adminbar__footer-logo">'
@@ -2258,6 +2283,14 @@ class wp_slimstat_admin
     }
 
     // END: wp_slimstat_include_layout
+
+    /**
+     * Includes the Heatmaps page list
+     */
+    public static function wp_slimstat_include_heatmaps()
+    {
+        include(__DIR__ . '/view/heatmaps.php');
+    }
 
     /**
      * Includes the email report screen
@@ -4482,6 +4515,7 @@ class wp_slimstat_admin
             'purge (deleting events)'     => __('Retention: deleting events', 'wp-slimstat'),
             'purge (heatmap rows)'        => __('Retention: deleting heatmap clicks', 'wp-slimstat'),
             'heatmap insert'              => __('Tracking: saving heatmap clicks', 'wp-slimstat'),
+            'heatmap delete'              => __('Heatmaps: deleting heatmap data', 'wp-slimstat'),
             'purge (archiving pageviews)' => __('Retention: archiving pageviews', 'wp-slimstat'),
             'purge (deleting pageviews)'  => __('Retention: deleting pageviews', 'wp-slimstat'),
             'purge (archive schema)'      => __('Retention: archive table columns', 'wp-slimstat'),

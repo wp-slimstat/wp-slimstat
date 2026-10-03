@@ -1,0 +1,224 @@
+/* Heatmaps page list: one REST read per range and device; search, sort and paging stay in the browser. GPL-2.0-or-later. */
+(function () {
+    'use strict';
+    const config = window.SlimStatHeatmaps;
+    const root = document.querySelector('.ss-hm');
+    if (!config || !root || !window.wp || !wp.apiFetch) return;
+    const { __, _n, sprintf } = wp.i18n;
+    const PER_PAGE = 25;
+    const form = root.querySelector('.ss-hm-toolbar');
+    const table = root.querySelector('.ss-hm-table');
+    const body = table.tBodies[0];
+    const empty = root.querySelector('.ss-hm-empty');
+    const pager = root.querySelector('.ss-hm-pager');
+    const updated = root.querySelector('.ss-hm-updated');
+    const number = new Intl.NumberFormat(document.documentElement.lang || undefined, { maximumFractionDigits: 2 });
+    const state = { rows: [], sort: 'clicks', dir: -1, page: 0, updated: 0, highlight: new URLSearchParams(location.search).get('highlight') || '' };
+    let request = 0;
+
+    function el(tag, attrs, children) {
+        const node = document.createElement(tag);
+        Object.keys(attrs || {}).forEach((key) => node.setAttribute(key, attrs[key]));
+        (children || []).forEach((child) => node.append(child));
+        return node;
+    }
+
+    const sortValue = {
+        page: (r) => r.page,
+        cpp: (r) => (r.pageviews ? r.clicks / r.pageviews : 0),
+        devices: (r) => (r.clicks ? r.devices[2] / r.clicks : 0),
+        scroll: (r) => (null === r.scroll ? -1 : r.scroll),
+        dead: (r) => (null === r.dead ? -1 : r.dead + r.rage),
+        full: (r) => (r.full ? 1 : 0),
+    };
+
+    function visibleRows() {
+        const q = form.q.value.trim().toLowerCase();
+        const value = sortValue[state.sort] || ((r) => r[state.sort]);
+        return state.rows
+            .filter((r) => !q || r.page.toLowerCase().includes(q))
+            .sort((a, b) => {
+                const x = value(a);
+                const y = value(b);
+                return (x < y ? -1 : x > y ? 1 : 0) * state.dir || b.clicks - a.clicks;
+            });
+    }
+
+    function openRow(row) {
+        if (row.url) {
+            location.href = row.url;
+            return;
+        }
+        const dialog = document.getElementById('ss-hm-locked');
+        if (!dialog) return;
+        const heading = dialog.querySelector('[data-heading]');
+        if (heading) {
+            /* translators: %s: page address, e.g. /pricing */
+            heading.textContent = sprintf(__('Heatmap for %s is ready', 'wp-slimstat'), row.page);
+            dialog.querySelector('[data-body]').textContent = sprintf(
+                /* translators: %s: number of clicks */
+                _n('%s click recorded in this range. SlimStat Pro shows where visitors click, what they miss and how far they scroll.', '%s clicks recorded in this range. SlimStat Pro shows where visitors click, what they miss and how far they scroll.', row.clicks, 'wp-slimstat'),
+                number.format(row.clicks)
+            );
+        }
+        dialog.showModal();
+    }
+
+    function devices(row) {
+        const names = [__('Desktop', 'wp-slimstat'), __('Tablet', 'wp-slimstat'), __('Mobile', 'wp-slimstat')];
+        const label = names.map((name, i) => name + ' ' + number.format(row.devices[i])).join(', ');
+        const bar = el('span', { class: 'ss-hm-devices', role: 'img', 'aria-label': label, title: label });
+        row.devices.forEach((n, i) => {
+            if (n) bar.append(el('span', { class: 'ss-hm-device-' + i, style: 'flex-grow:' + n }));
+        });
+        return bar;
+    }
+
+    function rowNode(row) {
+        const action = row.url
+            ? el('a', { class: 'button', href: row.url }, [__('View heatmap', 'wp-slimstat')])
+            : el('button', { type: 'button', class: 'button' }, [
+                  el('span', { class: 'dashicons dashicons-lock', 'aria-hidden': 'true' }),
+                  __('View heatmap', 'wp-slimstat'),
+                  el('span', { class: 'ss-hm-pro' }, [__('Pro', 'wp-slimstat')]),
+              ]);
+        if (!row.url) action.addEventListener('click', () => openRow(row));
+        const page = el('td', {}, row.title ? [el('strong', {}, [row.title]), el('span', { class: 'ss-hm-path' }, [row.page])] : [el('span', { class: 'ss-hm-path' }, [row.page])]);
+        const dead = null === row.dead ? '' : sprintf(
+            /* translators: 1: dead clicks, 2: rage clicks */
+            __('%1$s dead · %2$s rage', 'wp-slimstat'), number.format(row.dead), number.format(row.rage)
+        );
+        const tr = el('tr', { class: row.page === state.highlight ? 'is-highlighted' : '' }, [
+            page,
+            el('td', { class: 'num' }, [number.format(row.clicks)]),
+            el('td', { class: 'num' }, [number.format(row.pageviews)]),
+            el('td', { class: 'num' }, [row.pageviews ? number.format(row.clicks / row.pageviews) : '']),
+            el('td', {}, [devices(row)]),
+            el('td', { class: 'num' }, [null === row.scroll ? '' : row.scroll + '%']),
+            el('td', {}, [dead]),
+            el('td', {}, [row.lastText]),
+            el('td', {}, [el('span', { class: 'ss-hm-badge' + (row.full ? ' is-full' : '') }, [row.full ? __('All clicks + scroll', 'wp-slimstat') : __('Links & buttons', 'wp-slimstat')])]),
+            el('td', {}, [action]),
+        ]);
+        // The whole row opens it too; the button stays the keyboard path.
+        tr.addEventListener('click', (e) => {
+            if (!e.target.closest('a,button')) openRow(row);
+        });
+        return tr;
+    }
+
+    function showEmpty(text, buttons) {
+        empty.replaceChildren(el('p', {}, [text]));
+        (buttons || []).forEach(([label, handler]) => {
+            const button = el('button', { type: 'button', class: 'button' }, [label]);
+            button.addEventListener('click', handler);
+            empty.append(button);
+        });
+        empty.hidden = false;
+    }
+
+    function render() {
+        const rows = visibleRows();
+        const pages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
+        state.page = Math.min(state.page, pages - 1);
+        body.replaceChildren(...rows.slice(state.page * PER_PAGE, (state.page + 1) * PER_PAGE).map(rowNode));
+        table.setAttribute('aria-busy', 'false');
+        table.hidden = !rows.length;
+        empty.hidden = true;
+        if (!state.rows.length) {
+            showEmpty(
+                __('No clicks recorded in this date range. SlimStat records link and button clicks on every tracked page; a page appears here after its first click.', 'wp-slimstat'),
+                '90' === form.range.value ? [] : [[__('Use last 90 days', 'wp-slimstat'), () => { form.range.value = '90'; load(); }]]
+            );
+        } else if (!rows.length) {
+            /* translators: %s: the search text */
+            showEmpty(sprintf(__('No pages match "%s". Search checks page addresses, like /pricing.', 'wp-slimstat'), form.q.value.trim()));
+        }
+        pager.hidden = pages < 2;
+        /* translators: 1: current page number, 2: total pages */
+        pager.querySelector('span').textContent = sprintf(__('Page %1$d of %2$d', 'wp-slimstat'), state.page + 1, pages);
+        pager.querySelector('[data-step="-1"]').disabled = 0 === state.page;
+        pager.querySelector('[data-step="1"]').disabled = state.page >= pages - 1;
+        const minutes = Math.floor((Date.now() / 1000 - state.updated) / 60);
+        updated.textContent = state.updated ? (minutes < 1 ? __('Updated just now', 'wp-slimstat') : sprintf(
+            /* translators: %d: minutes since the list was computed */
+            _n('Updated %d min ago', 'Updated %d min ago', minutes, 'wp-slimstat'), minutes
+        )) : '';
+    }
+
+    function load(refresh) {
+        const id = ++request;
+        const params = new URLSearchParams({ device: form.device.value });
+        if ('custom' === form.range.value) {
+            if (form.from.value) params.set('from', form.from.value);
+            if (form.to.value) params.set('to', form.to.value);
+        } else {
+            params.set('days', form.range.value);
+        }
+        if (refresh) params.set('refresh', '1');
+        table.setAttribute('aria-busy', 'true');
+        table.classList.add('is-loading');
+        wp.apiFetch({ path: config.route + '?' + params })
+            .then((data) => {
+                if (id !== request) return;
+                state.rows = data.rows;
+                state.updated = data.updated;
+                form.from.value = data.from;
+                form.to.value = data.to;
+                if (state.highlight) {
+                    const index = visibleRows().findIndex((r) => r.page === state.highlight);
+                    if (index >= 0) state.page = Math.floor(index / PER_PAGE);
+                }
+                render();
+                const mark = body.querySelector('.is-highlighted');
+                if (mark) mark.scrollIntoView({ block: 'center' });
+            })
+            .catch((error) => {
+                if (id !== request) return;
+                table.hidden = true;
+                pager.hidden = true;
+                showEmpty((error && error.message) || __('Heatmap data could not be loaded. Try a shorter date range, then retry.', 'wp-slimstat'), [[__('Retry', 'wp-slimstat'), () => load()]]);
+            })
+            .finally(() => {
+                if (id === request) table.classList.remove('is-loading');
+            });
+    }
+
+    form.addEventListener('change', (e) => {
+        if ('q' === e.target.name) return;
+        root.querySelector('.ss-hm-custom').hidden = 'custom' !== form.range.value;
+        if ('custom' !== form.range.value || ('from' === e.target.name || 'to' === e.target.name)) {
+            state.page = 0;
+            load();
+        }
+    });
+    form.q.addEventListener('input', () => {
+        state.page = 0;
+        render();
+    });
+    root.querySelector('.ss-hm-refresh').addEventListener('click', () => load(true));
+    pager.addEventListener('click', (e) => {
+        const step = e.target.closest('[data-step]');
+        if (!step) return;
+        state.page += Number(step.dataset.step);
+        render();
+        table.scrollIntoView({ block: 'start' });
+    });
+    table.tHead.addEventListener('click', (e) => {
+        const th = e.target.closest('th[data-sort]');
+        if (!th) return;
+        const key = th.dataset.sort;
+        state.dir = key === state.sort ? -state.dir : 'page' === key ? 1 : -1;
+        state.sort = key;
+        table.tHead.querySelectorAll('th[data-sort]').forEach((cell) => {
+            if (cell === th) cell.setAttribute('aria-sort', state.dir > 0 ? 'ascending' : 'descending');
+            else cell.removeAttribute('aria-sort');
+        });
+        render();
+    });
+    root.querySelectorAll('[data-dialog]').forEach((button) => {
+        button.addEventListener('click', () => document.getElementById(button.dataset.dialog).showModal());
+    });
+
+    load();
+})();
