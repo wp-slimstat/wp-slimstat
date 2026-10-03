@@ -1615,6 +1615,10 @@ class wp_slimstat
      */
     public static function enqueue_tracker()
     {
+        if (\SlimStat\Heatmap\Store::isPreview()) {
+            return false;
+        }
+
         // Use the new unified tracking method setting
         $method = self::$settings['tracking_request_method'] ?? 'rest';
 
@@ -1737,6 +1741,12 @@ class wp_slimstat
 
         if ('on' === self::$settings['slimstat_debug'] || (defined('WP_DEBUG') && WP_DEBUG)) {
             $params['slimstat_debug'] = 'on';
+        }
+
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Only reduced to a page key and wildcard-matched; pageKeyFromUrl() sanitizes.
+        $heatmap = \SlimStat\Heatmap\Store::params((string) ($_SERVER['REQUEST_URI'] ?? ''));
+        if (null !== $heatmap) {
+            $params['hm'] = $heatmap;
         }
 
         $params = apply_filters('slimstat_js_params', $params);

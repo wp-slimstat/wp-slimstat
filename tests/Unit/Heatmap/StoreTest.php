@@ -270,4 +270,30 @@ class StoreTest extends WpSlimstatTestCase
 		$this->expectExceptionMessage('Cannot add or update a child row');
 		Store::ingest(42, $this->batch([[0, 1, 0, 1, 1, 1, 1]]));
 	}
+
+	/** The tracker gets hm only where capture would be stored; a preview frame gets nothing. */
+	public function test_tracker_params_only_where_capture_is_stored(): void
+	{
+		$this->readyToIngest('main');
+		Functions\when('has_filter')->justReturn(true);
+		\wp_slimstat::$settings['heatmap_rate']  = 2500;
+		\wp_slimstat::$settings['heatmap_pages'] = '/pricing*, /about';
+		self::assertSame(['l' => 'main', 'r' => 2500], Store::params('/about?ref=nav#team'));
+
+		$cases = [
+			'page not listed' => static fn() => \wp_slimstat::$settings['heatmap_pages'] = '/pricing*',
+			'rate zero'       => static fn() => \wp_slimstat::$settings['heatmap_rate'] = 0,
+			'no viewer'       => static fn() => Functions\when('has_filter')->justReturn(false),
+			'tables missing'  => static fn() => $GLOBALS['slimstat_test_options'] = [],
+			'preview frame'   => static fn() => $_GET['slimstat_heatmap'] = 'nonce',
+		];
+		foreach ($cases as $label => $arrange) {
+			$this->readyToIngest('main');
+			Functions\when('has_filter')->justReturn(true);
+			$arrange();
+			self::assertNull(Store::params('/about'), $label);
+			unset($_GET['slimstat_heatmap']);
+		}
+		self::assertFalse(Store::isPreview());
+	}
 }

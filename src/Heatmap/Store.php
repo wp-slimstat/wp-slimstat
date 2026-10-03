@@ -148,6 +148,32 @@ final class Store
 		}
 	}
 
+	/** A heatmap viewer's preview frame: never tracked, no tracker enqueued. */
+	public static function isPreview(): bool
+	{
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Presence check only; the viewer verifies the nonce.
+		return isset($_GET['slimstat_heatmap']);
+	}
+
+	/**
+	 * The tracker's hm param for this request, or null when no capture code should run.
+	 * Cached HTML is per URL, so the page-list check here is safe behind page caches.
+	 *
+	 * @return array{l: string, r: int}|null
+	 */
+	public static function params(string $requestUri): ?array
+	{
+		$rate = max(0, min(10000, (int) (\wp_slimstat::$settings['heatmap_rate'] ?? 10000)));
+		if (0 === $rate || self::isPreview() || !self::capturing() || !self::ready()) {
+			return null;
+		}
+		$pages = trim((string) (\wp_slimstat::$settings['heatmap_pages'] ?? ''));
+		if ('' !== $pages && !Utils::isBlacklisted(Query::pageKeyFromUrl($requestUri), $pages)) {
+			return null;
+		}
+		return ['l' => self::level(), 'r' => $rate];
+	}
+
 	/**
 	 * Store one capture batch for a verified pageview id. Every gate is re-checked here,
 	 * because a cached page can carry a stale hm param. Page, device and date come from the

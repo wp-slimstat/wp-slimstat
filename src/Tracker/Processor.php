@@ -313,7 +313,7 @@ class Processor
         // getExcludedUser() returns the WP_User if excluded, null otherwise,
         // so we can reuse the resolved user object for PII collection below.
         $excludedUser = self::getExcludedUser();
-        if ($excludedUser !== null) {
+        if ($excludedUser !== null || \SlimStat\Heatmap\Store::isPreview()) {
             Query::setProcessingTimestamp(null);
             return Utils::logError(309);
         }
