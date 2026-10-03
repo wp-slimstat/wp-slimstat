@@ -567,7 +567,7 @@ class wp_slimstat_admin
             wp_clear_scheduled_hook($hook);
         }
         if (function_exists('as_unschedule_all_actions')) {
-            as_unschedule_all_actions('', [], 'slimstat-ecommerce');
+            as_unschedule_all_actions('', [], \SlimStat\Ecommerce\Integration::GROUP);
         }
     }
 
@@ -1543,7 +1543,9 @@ class wp_slimstat_admin
             wp_enqueue_style('wp-slimstat-pro-overview', plugins_url('/admin/assets/css/pro.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
         }
 
-        if ('slimview7' === self::$current_screen || false !== strpos(implode(',', (array) self::$meta_user_reports), 'slim_p10_01')) {
+        // Same per-screen layout lookup as needs_goals_funnels_assets(): only where the widget renders.
+        $ecommerce_screen = 'index.php' === ($GLOBALS['pagenow'] ?? '') ? 'dashboard' : self::$current_screen;
+        if ('slimview7' === self::$current_screen || (class_exists('wp_slimstat_reports', false) && in_array('slim_p10_01', (array) (wp_slimstat_reports::$user_reports[$ecommerce_screen] ?? []), true))) {
             wp_enqueue_style('wp-slimstat-ecommerce', plugins_url('/admin/assets/css/ecommerce.css', __DIR__), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
             wp_enqueue_script('slimstat_chartjs', plugins_url('/admin/assets/js/chartjs/chart.min.js', __DIR__), [], '4.2.1', true);
             wp_enqueue_script('slimstat-ecommerce', plugins_url('/admin/assets/js/ecommerce.js', __DIR__), ['slimstat_admin', 'slimstat_chartjs'], SLIMSTAT_ANALYTICS_VERSION, true);

@@ -316,14 +316,13 @@ final class Report
 			$data = (new self())->data('auto', false);
 			$state = get_option(Integration::STATE, []);
 			$orders = (int) $data['current']['orders']; $journey = $data['journey'];
-			$money = static function ($amount) use ($data) { return html_entity_decode(wp_strip_all_tags(self::money($amount, $data['currency'])), ENT_QUOTES, 'UTF-8'); };
 			$quality = empty($state['complete']) || !empty($state['error']) ? __('Provisional: synchronization is incomplete or needs attention.', 'wp-slimstat') : __('WooCommerce totals; attribution covers retained tracked visits only.', 'wp-slimstat');
 			if ($data['range'][0] < Integration::retentionStart()) { $quality .= ' ' . __('Part of this period is outside analytics retention.', 'wp-slimstat'); }
 			$values = [
 				__('Reporting period', 'wp-slimstat') => self::date('Y-m-d H:i', $data['range'][0]) . ' – ' . self::date('Y-m-d H:i', $data['range'][1]) . ' (' . wp_timezone_string() . ')',
 				__('Currency', 'wp-slimstat') => $data['currency'], __('Data quality', 'wp-slimstat') => $quality,
-				__('Net sales', 'wp-slimstat') => $money($data['current']['net']), __('Orders', 'wp-slimstat') => number_format_i18n($orders),
-				__('Average order value', 'wp-slimstat') => $orders ? $money((float) $data['current']['net'] / $orders) : __('Unavailable', 'wp-slimstat'),
+				__('Net sales', 'wp-slimstat') => self::plainMoney($data['current']['net'], $data['currency']), __('Orders', 'wp-slimstat') => number_format_i18n($orders),
+				__('Average order value', 'wp-slimstat') => $orders ? self::plainMoney((float) $data['current']['net'] / $orders, $data['currency']) : __('Unavailable', 'wp-slimstat'),
 				__('Tracked purchase rate', 'wp-slimstat') => $journey['visits'] >= 100 ? number_format_i18n(100 * $journey['buyers'] / $journey['visits'], 2) . '%' : __('Insufficient observations', 'wp-slimstat'),
 				__('Tracked buying / eligible visits', 'wp-slimstat') => $journey['buyers'] . ' / ' . $journey['visits'],
 				__('Linked / included orders', 'wp-slimstat') => $data['current']['matched'] . ' / ' . $orders,
@@ -373,6 +372,12 @@ final class Report
 	public static function money($amount, string $currency): string
 	{
 		return wc_price($amount, ['currency' => $currency]);
+	}
+
+	/** money() as plain text, for chart labels, data attributes and email/CSV cells. */
+	public static function plainMoney($amount, string $currency): string
+	{
+		return html_entity_decode(wp_strip_all_tags(self::money($amount, $currency)), ENT_QUOTES, 'UTF-8');
 	}
 
 	/** Localized labels for SlimStat's already-local wall timestamps, without a second offset. */

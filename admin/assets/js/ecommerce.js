@@ -76,8 +76,9 @@
         tbody.replaceChildren();
         series.current.forEach((point, i) => {
             const before = series.previous[i], row = document.createElement('tr');
-            const entries = [point.label + (pointNote(point) ? ' · ' + pointNote(point) : ''), point.formatted[metric]];
-            if (state.compare) entries.push(before.label + (pointNote(before) ? ' · ' + pointNote(before) : ''), before.formatted[metric]);
+            const label = p => { const note = pointNote(p); return note ? p.label + ' · ' + note : p.label; };
+            const entries = [label(point), point.formatted[metric]];
+            if (state.compare) entries.push(label(before), before.formatted[metric]);
             entries.forEach((text, col) => {
                 const cell = document.createElement(col ? 'td' : 'th');
                 if (!col) cell.scope = 'row'; cell.textContent = text; row.append(cell);
