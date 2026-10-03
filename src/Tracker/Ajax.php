@@ -332,6 +332,15 @@ class Ajax
                 }
             }
 
+            // Heatmap batch for this verified pageview; it never stops the hit.
+            if (!empty($data_js['hm']) && is_string($data_js['hm'])) {
+                try {
+                    \SlimStat\Heatmap\Store::ingest((int) $stat['id'], $data_js['hm']);
+                } catch (\Throwable $e) {
+                    \wp_slimstat::record_degradation('heatmap insert', $e->getMessage(), \wp_slimstat::DEGRADATION_OPERATIONAL);
+                }
+            }
+
             if (empty($data_js['pos'])) {
                 // Security: Validate and sanitize resource URL from JavaScript data
                 // This ensures we track the correct page for navigation requests while preventing injection attacks

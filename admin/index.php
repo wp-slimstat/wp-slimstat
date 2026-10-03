@@ -4481,6 +4481,7 @@ class wp_slimstat_admin
             'purge (archiving events)'    => __('Retention: archiving events', 'wp-slimstat'),
             'purge (deleting events)'     => __('Retention: deleting events', 'wp-slimstat'),
             'purge (heatmap rows)'        => __('Retention: deleting heatmap clicks', 'wp-slimstat'),
+            'heatmap insert'              => __('Tracking: saving heatmap clicks', 'wp-slimstat'),
             'purge (archiving pageviews)' => __('Retention: archiving pageviews', 'wp-slimstat'),
             'purge (deleting pageviews)'  => __('Retention: deleting pageviews', 'wp-slimstat'),
             'purge (archive schema)'      => __('Retention: archive table columns', 'wp-slimstat'),

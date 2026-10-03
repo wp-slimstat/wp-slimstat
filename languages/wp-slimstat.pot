@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-03T12:04:44+00:00\n"
+"POT-Creation-Date: 2026-10-03T12:12:11+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -1852,120 +1852,124 @@ msgid "Retention: deleting heatmap clicks"
 msgstr ""
 
 #: admin/index.php:4484
-msgid "Retention: archiving pageviews"
+msgid "Tracking: saving heatmap clicks"
 msgstr ""
 
 #: admin/index.php:4485
-msgid "Retention: deleting pageviews"
+msgid "Retention: archiving pageviews"
 msgstr ""
 
 #: admin/index.php:4486
+msgid "Retention: deleting pageviews"
+msgstr ""
+
+#: admin/index.php:4487
 msgid "Retention: archive table columns"
 msgstr ""
 
-#: admin/index.php:4490
+#: admin/index.php:4491
 msgid "Retention has not completed recently"
 msgstr ""
 
-#: admin/index.php:4534
+#: admin/index.php:4535
 msgid "Slimstat Analytics is running with reduced functionality."
 msgstr ""
 
-#: admin/index.php:4535
+#: admin/index.php:4536
 msgid "These features failed to load and were disabled so the rest of your site keeps working. This usually means an interrupted update or a stale server cache — reinstalling the plugin and flushing your PHP opcache normally clears it."
 msgstr ""
 
-#: admin/index.php:4543
+#: admin/index.php:4544
 msgid "Slimstat Analytics reported a problem while running."
 msgstr ""
 
-#: admin/index.php:4544
+#: admin/index.php:4545
 msgid "Tracking and reports kept working. These are maintenance tasks that did not complete — some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check Slimstat > Migrations and Settings > Maintenance."
 msgstr ""
 
-#: admin/index.php:4580
+#: admin/index.php:4581
 msgid "Currently Online Reports"
 msgstr ""
 
-#: admin/index.php:4581
+#: admin/index.php:4582
 msgid "Index on <code>dt_out</code>"
 msgstr ""
 
-#: admin/index.php:4585
+#: admin/index.php:4586
 msgid "World Map & Country Reports"
 msgstr ""
 
-#: admin/index.php:4586
+#: admin/index.php:4587
 msgid "Index on <code>country</code> and <code>dt</code>"
 msgstr ""
 
-#: admin/index.php:4590
+#: admin/index.php:4591
 msgid "Screen Resolution Reports"
 msgstr ""
 
-#: admin/index.php:4591
+#: admin/index.php:4592
 msgid "Index on <code>dt</code>, <code>screen_width</code>, <code>screen_height</code>"
 msgstr ""
 
-#: admin/index.php:4595
+#: admin/index.php:4596
 msgid "Browser Reports"
 msgstr ""
 
-#: admin/index.php:4596
+#: admin/index.php:4597
 msgid "Index on <code>dt</code>, <code>browser</code>, <code>browser_version</code>"
 msgstr ""
 
-#: admin/index.php:4600
+#: admin/index.php:4601
 msgid "Platform Reports"
 msgstr ""
 
-#: admin/index.php:4601
+#: admin/index.php:4602
 msgid "Index on <code>dt</code>, <code>platform</code>"
 msgstr ""
 
-#: admin/index.php:4605
+#: admin/index.php:4606
 msgid "Visitor Counter Performance"
 msgstr ""
 
-#: admin/index.php:4606
+#: admin/index.php:4607
 msgid "Index on <code>dt</code>, <code>visit_id</code>"
 msgstr ""
 
-#: admin/index.php:4626
+#: admin/index.php:4627
 #: admin/view/index.php:42
 #: src/Components/DateRangeHelper.php:216
 msgid "Apply"
 msgstr ""
 
-#: admin/index.php:4642
+#: admin/index.php:4643
 msgid "Improve SlimStat Report Performance"
 msgstr ""
 
-#: admin/index.php:4643
+#: admin/index.php:4644
 msgid "To speed up SlimStat reports, please apply the following database optimizations. These changes are safe and will not affect your data."
 msgstr ""
 
-#: admin/index.php:4661
+#: admin/index.php:4662
 msgid "Apply All"
 msgstr ""
 
-#: admin/index.php:4662
+#: admin/index.php:4663
 msgid "Do not close this tab until all optimizations are complete."
 msgstr ""
 
-#: admin/index.php:4689
+#: admin/index.php:4690
 msgid "Please wait for SlimStat optimizations to finish."
 msgstr ""
 
-#: admin/index.php:4697
+#: admin/index.php:4698
 msgid "In progress..."
 msgstr ""
 
-#: admin/index.php:4705
+#: admin/index.php:4706
 msgid "Done!"
 msgstr ""
 
-#: admin/index.php:4709
+#: admin/index.php:4710
 msgid "Error: "
 msgstr ""
 
@@ -4201,7 +4205,7 @@ msgid "Event ID"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:151
-#: src/Heatmap/Store.php:216
+#: src/Heatmap/Store.php:338
 msgid "Type"
 msgstr ""
 
@@ -4976,12 +4980,12 @@ msgid "Guest"
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:1777
-#: src/Heatmap/Store.php:215
+#: src/Heatmap/Store.php:337
 msgid "Page"
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:1777
-#: src/Heatmap/Store.php:214
+#: src/Heatmap/Store.php:336
 msgid "Date"
 msgstr ""
 
@@ -7609,26 +7613,26 @@ msgstr ""
 msgid "Exception occurred: [Code %1$d] %2$s at %3$s:%4$d"
 msgstr ""
 
-#: src/Heatmap/Query.php:156
+#: src/Heatmap/Query.php:159
 msgid "Heatmap data could not be loaded. Try a shorter date range, then retry."
 msgstr ""
 
-#: src/Heatmap/Store.php:165
-#: src/Heatmap/Store.php:192
-#: src/Heatmap/Store.php:225
+#: src/Heatmap/Store.php:287
+#: src/Heatmap/Store.php:314
+#: src/Heatmap/Store.php:347
 msgid "SlimStat Heatmap clicks"
 msgstr ""
 
-#: src/Heatmap/Store.php:216
-#: src/Heatmap/Store.php:219
+#: src/Heatmap/Store.php:338
+#: src/Heatmap/Store.php:341
 msgid "Scroll depth"
 msgstr ""
 
-#: src/Heatmap/Store.php:216
+#: src/Heatmap/Store.php:338
 msgid "Click"
 msgstr ""
 
-#: src/Heatmap/Store.php:221
+#: src/Heatmap/Store.php:343
 msgid "Element"
 msgstr ""
 

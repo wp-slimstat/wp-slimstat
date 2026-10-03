@@ -20,6 +20,9 @@ final class Query
 		'mobile'  => [1, 767],
 	];
 
+	/** slim_heatmap.device codes; 0 is an unknown width. */
+	public const DEVICE_CODES = ['desktop' => 1, 'tablet' => 2, 'mobile' => 3];
+
 	/** Upper bound on grouped rows returned to a viewer. */
 	public const MAX_POINTS = 20000;
 

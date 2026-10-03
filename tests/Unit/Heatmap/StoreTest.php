@@ -16,6 +16,9 @@ class StoreTest extends WpSlimstatTestCase
 
 	private array $settings = [];
 
+	/** @var array|null The pageview row ingest looks up. */
+	private $view = ['resource' => '/about?ref=nav', 'dt' => 1700000000];
+
 	protected function setUp(): void
 	{
 		parent::setUp();
@@ -37,7 +40,8 @@ class StoreTest extends WpSlimstatTestCase
 		$db->users   = 'wp_users';
 		$db->shouldReceive('suppress_errors')->andReturn(false);
 		$db->shouldReceive('get_var')->andReturn('utf8mb4_unicode_ci');
-		$db->shouldReceive('prepare')->andReturnUsing(static fn($sql, ...$args) => vsprintf(str_replace(['%s', '%d'], ["'%s'", '%d'], $sql), $args));
+		$db->shouldReceive('get_row')->andReturnUsing(fn() => $this->view);
+		$db->shouldReceive('prepare')->andReturnUsing(static fn($sql, ...$args) => vsprintf(str_replace(['%s', '%d'], ["'%s'", '%d'], $sql), is_array($args[0] ?? null) ? $args[0] : $args));
 		$db->shouldReceive('query')->andReturnUsing(function ($sql) {
 			$this->queries[] = $sql;
 			return 0 === strpos($sql, 'INSERT INTO `wp_options`') || 0 === strpos($sql, 'DELETE FROM `wp_options`') ? 1 : $this->result;
@@ -51,6 +55,7 @@ class StoreTest extends WpSlimstatTestCase
 		\wp_slimstat::$settings = $this->settings;
 		\wp_slimstat::$wpdb     = null;
 		$GLOBALS['slimstat_test_options'] = [];
+		unset($_SERVER['HTTP_DNT']);
 		parent::tearDown();
 	}
 
@@ -146,5 +151,123 @@ class StoreTest extends WpSlimstatTestCase
 		self::assertSame("DELETE h FROM wp_slim_heatmap h INNER JOIN wp_slim_stats s ON s.id = h.id WHERE s.email = 'o'neil@example.com'", $this->heatmapQueries()[0]);
 		self::assertTrue($result['items_removed']);
 		self::assertTrue($result['done']);
+	}
+
+	private function readyToIngest(string $level = 'full'): void
+	{
+		$this->stubCommonWpFunctions();
+		\wp_slimstat::$settings = array_merge(\wp_slimstat::$settings, [
+			'heatmap_capture' => $level,
+			'heatmap_rate'    => 10000,
+			'heatmap_pages'   => '',
+			'gdpr_enabled'    => 'off',
+			'do_not_track'    => 'on',
+		]);
+		$GLOBALS['slimstat_test_options'] = [Store::STATE => ['schema' => Store::SCHEMA]];
+	}
+
+	private function batch(array $rows, array $selectors = [], ?array $scroll = null): string
+	{
+		return json_encode(['v' => 1, 'vw' => 1280, 'vh' => 720, 's' => $selectors, 'r' => $rows] + (null === $scroll ? [] : ['sc' => $scroll]));
+	}
+
+	/** Each gate the tracker applies is applied again here: a cached page can carry a stale hm. */
+	public function test_ingest_refuses_batches_the_site_would_not_record(): void
+	{
+		$good  = $this->batch([[0, 1, 0, 5000, 5000, 100, 200]], [['#buy', 'Buy']]);
+		$cases = [
+			'capture off'     => [static fn() => \wp_slimstat::$settings['heatmap_capture'] = 'off', 42, $good],
+			'tables missing'  => [static fn() => $GLOBALS['slimstat_test_options'] = [], 42, $good],
+			'no pageview id'  => [static fn() => null, 0, $good],
+			'oversized'       => [static fn() => null, 42, json_encode(['r' => [], 'pad' => str_repeat('x', Store::MAX_BYTES)])],
+			'not json'        => [static fn() => null, 42, '{"r":'],
+			'too deep'        => [static fn() => null, 42, '{"r":[[[1]]]}'],
+			'sampled out'     => [static fn() => \wp_slimstat::$settings['heatmap_rate'] = 42, 42, $good],
+			'do not track'    => [static fn() => $_SERVER['HTTP_DNT'] = '1', 42, $good],
+			'page not listed' => [static fn() => \wp_slimstat::$settings['heatmap_pages'] = '/pricing*, /shop', 42, $good],
+			'pageview gone'   => [fn() => $this->view = null, 42, $good],
+		];
+		foreach ($cases as $label => [$arrange, $id, $raw]) {
+			$this->readyToIngest();
+			$this->view    = ['resource' => '/about?ref=nav', 'dt' => 1700000000];
+			$this->queries = [];
+			unset($_SERVER['HTTP_DNT']);
+			$arrange();
+			self::assertSame(0, Store::ingest($id, $raw), $label);
+			self::assertSame([], $this->heatmapQueries(), $label);
+		}
+
+		// The same batch with every gate open is stored, so each refusal above is the gate's doing.
+		$this->readyToIngest();
+		$this->view = ['resource' => '/about?ref=nav', 'dt' => 1700000000];
+		\wp_slimstat::$settings['heatmap_pages'] = '/pricing*, /about';
+		self::assertSame(1, Store::ingest(42, $good));
+	}
+
+	/** Page, date and device are the server's; the client's numbers are clamped; bad selectors drop. */
+	public function test_ingest_writes_server_facts_and_clamps_client_numbers(): void
+	{
+		$this->readyToIngest();
+		$raw = $this->batch(
+			[
+				[0, Store::FLAG_INTERACTIVE, 0, 2500, 9999999, 100, 200],
+				[999, 255, 1, -4, 5000, 'x', 99999999],
+				[2, 0, 7, 1, 1, 1, 1],
+				['bad row'],
+			],
+			[['div.cta > a#buy', 'Buy now'], ['a[href="x"]', 'Bad']],
+			[3000, 99999999]
+		);
+
+		self::assertSame(4, Store::ingest(42, $raw));
+		[$insert, $elements] = $this->heatmapQueries();
+
+		$page = bin2hex(substr(md5('/about', true), 0, 8));
+		$sel  = bin2hex(substr(md5('div.cta > a#buy', true), 0, 8));
+		$head = "(42, %d, %d, UNHEX('$page'), 1700000000, 1, 1280, 720, ";
+		$rows = [
+			sprintf($head, 0, 0) . "0, 100, 200, UNHEX('$sel'), 2500, 10000, 1)",
+			sprintf($head, 0, 199) . '0, 0, 16777215, NULL, 0, 5000, 7)',
+			sprintf($head, 0, 2) . '0, 1, 1, NULL, 1, 1, 0)',
+			sprintf($head, 1, 0) . '16777215, 0, 3000, NULL, 0, 0, 0)',
+		];
+		self::assertSame(
+			'INSERT INTO wp_slim_heatmap (id, kind, seq, page, dt, device, vw, vh, dh, x, y, sel, rx, ry, flags) VALUES '
+			. implode(', ', $rows)
+			. ' ON DUPLICATE KEY UPDATE y = GREATEST(y, VALUES(y)), dh = GREATEST(dh, VALUES(dh))',
+			$insert
+		);
+		self::assertSame("INSERT IGNORE INTO wp_slim_heatmap_elements (sel, selector, label) VALUES (UNHEX('$sel'), 'div.cta > a#buy', 'Buy now')", $elements);
+	}
+
+	/** Main level keeps clicks on interactive elements only, no scroll, no labels from plain text. */
+	public function test_main_level_keeps_interactive_clicks_only(): void
+	{
+		$this->readyToIngest('main');
+		$raw = $this->batch([[0, Store::FLAG_INTERACTIVE, 0, 1, 1, 1, 1], [1, Store::FLAG_DEAD, 1, 1, 1, 1, 1]], [['#buy', 'Buy'], ['p', 'Private text']], [100, 900]);
+
+		self::assertSame(1, Store::ingest(42, $raw));
+		[$insert, $elements] = $this->heatmapQueries();
+		self::assertSame(1, substr_count($insert, '(42, '), 'one click row, no scroll row');
+		self::assertStringNotContainsString('Private text', $elements);
+
+		// Full level stores the dead click, but its element keeps no label.
+		$this->readyToIngest('full');
+		$this->queries = [];
+		self::assertSame(3, Store::ingest(42, $raw));
+		self::assertStringContainsString("'p', '')", $this->heatmapQueries()[1]);
+	}
+
+	/** Form posts arrive slashed by WordPress; the batch still decodes. A write failure throws. */
+	public function test_slashed_batch_decodes_and_write_failure_throws(): void
+	{
+		$this->readyToIngest();
+		self::assertSame(1, Store::ingest(42, addslashes($this->batch([[0, 1, 0, 1, 1, 1, 1]], [['#buy', 'Say "hi"']]))));
+		self::assertStringContainsString("'Say \"hi\"'", $this->heatmapQueries()[1]);
+
+		$this->result = false;
+		$GLOBALS['wpdb']->last_error = 'Cannot add or update a child row';
+		$this->expectExceptionMessage('Cannot add or update a child row');
+		Store::ingest(42, $this->batch([[0, 1, 0, 1, 1, 1, 1]]));
 	}
 }
