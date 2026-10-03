@@ -98,6 +98,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		}
 
 		// Get the selected metric from request or default to 'users'
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
 		$selected_metric = sanitize_text_field( wp_unslash( $_GET['metric'] ?? $_POST['metric'] ?? 'users' ) );
 
 		// Validate metric
@@ -197,6 +198,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * @param int $window_seconds Number of seconds to look back.
 	 * @return int
 	 */
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Core-prefix table and prepared report_scope predicate; live counts are memoized by get_data for this report instance and scope.
 	private function get_sessions_count_within_window( int $window_seconds ): int {
 		$wpdb = \wp_slimstat::$wpdb;
 		$scope = \wp_slimstat::report_scope();
@@ -235,10 +237,13 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			$window_start
 		);
 
+		// phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- SQL prepared above, including the time window and validated filters; the analytics connection may be external.
 		$count = (int) $wpdb->get_var( $sql );
+		// phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
 		return $count > 0 ? $count : 0;
 	}
+	// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 	/**
 	 * Generate chart labels for 30-minute window
@@ -314,6 +319,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 *
 	 * @return array Chart data
 	 */
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Integer minute series, core-prefix table and prepared report_scope predicate; this method owns the scoped, minute-aligned transient cache.
 	public function get_users_chart_data(): array {
 		$wpdb = \wp_slimstat::$wpdb;
 		$scope = \wp_slimstat::report_scope();
@@ -398,7 +404,9 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			$window_start
 		);
 
+		// phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- SQL prepared above, including the time window and validated filters; the analytics connection may be external.
 		$results = $wpdb->get_results( $sql, ARRAY_A );
+		// phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 		$lookup  = [];
 		foreach ( (array) $results as $row ) {
 			$minute_timestamp = (int) ( $row['minute_timestamp'] ?? 0 );
@@ -430,6 +438,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 
 		return $formatted;
 	}
+	// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 
 	/**

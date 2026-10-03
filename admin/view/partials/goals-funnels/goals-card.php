@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 /**
  * Goals card — modern admin layout for the Goals section of slimview6.
  *
@@ -73,7 +74,7 @@ $show_upsell = $at_max && !$is_pro;
                 $goal_id_attr  = esc_attr((string) ($goal['id'] ?? ''));
                 ?>
                 <li class="slimstat-gf-goal"
-                    data-goal-id="<?php echo $goal_id_attr; ?>"
+                    data-goal-id="<?php echo esc_attr($goal_id_attr); ?>"
                     data-active="<?php echo $goal_active ? 'true' : 'false'; ?>">
                     <div class="slimstat-gf-goal__head">
                         <h3 class="slimstat-gf-goal__name">
@@ -141,7 +142,7 @@ $show_upsell = $at_max && !$is_pro;
                         <button type="button"
                                 class="button-link slimstat-gf-goal-delete"
                                 data-action="delete-goal"
-                                data-goal-id="<?php echo $goal_id_attr; ?>"
+                                data-goal-id="<?php echo esc_attr($goal_id_attr); ?>"
                                 data-goal-name="<?php echo esc_attr($goal['name'] ?? ''); ?>">
                             <?php esc_html_e('Delete', 'wp-slimstat'); ?>
                         </button>
@@ -176,7 +177,7 @@ $show_upsell = $at_max && !$is_pro;
     <?php elseif ($at_max && $is_pro) : ?>
         <p class="slimstat-gf-hint">
             <?php echo esc_html(sprintf(
-                /* translators: 1: active goals, 2: max goals */
+                /* translators: 1: configured items, 2: item limit */
                 __('%1$d of %2$d used · at limit', 'wp-slimstat'),
                 $active_count,
                 $max_goals

@@ -1,9 +1,11 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
 $is_dashboard = empty($_REQUEST['page']) || 'slimview1' != $_REQUEST['page'];
 
 // Load the search engines list to mark pageviews accordingly

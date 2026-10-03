@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -42,7 +43,7 @@ echo '<input type="submit" value="' . esc_attr__('Apply', 'wp-slimstat') . '" cl
 
 $saved_filters = get_option('slimstat_filters', []);
 if (!empty($saved_filters)) {
-    echo '<a href="#" id="slimstat-load-saved-filters" class="button-secondary noslimstat" title="Saved Filters">' . esc_html__('Saved Filters', 'wp-slimstat') . '</a>';
+    echo '<a href="#" id="slimstat-load-saved-filters" class="button-secondary noslimstat" title="' . esc_attr__('Saved Filters', 'wp-slimstat') . '">' . esc_html__('Saved Filters', 'wp-slimstat') . '</a>';
 }
 ?></fieldset><!-- #slimstat-filters -->
 
@@ -76,16 +77,17 @@ if (!empty($saved_filters)) {
                             <span class="caret"></span>
                         </div>
                     </button>
-                    <input type="text" class="slimstat-date-range-input" style="display: none;" />
+                    <input type="text" class="slimstat-date-range-input" style="display: none;" data-start="<?php echo esc_attr(gmdate('Y-m-d', (int) wp_slimstat_db::$filters_normalized['utime']['start'])); ?>" data-end="<?php echo esc_attr(gmdate('Y-m-d', (int) wp_slimstat_db::$filters_normalized['utime']['end'])); ?>" />
                 </div>
             </fieldset><!-- .slimstat-date-filters -->
 
             <?php foreach (wp_slimstat_db::$filters_normalized['columns'] as $a_key => $a_details) : ?>
-                <input type="hidden" name="fs[<?php echo esc_attr($a_key); ?>]" class="slimstat-post-filter" value="<?php echo esc_attr($a_details[0] . ' ' . $a_details[1]) ?>"/>
+                <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- htmlspecialchars preserves literal entities in the escaped attribute. ?>
+                <input type="hidden" name="fs[<?php echo esc_attr($a_key); ?>]" class="slimstat-post-filter" value="<?php echo htmlspecialchars($a_details[0] . ' ' . $a_details[1], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"/>
             <?php endforeach ?>
 
             <?php foreach (wp_slimstat_db::$filters_normalized['date'] as $a_key => $a_value) : if (!empty($a_value)) : ?>
-                <input type="hidden" name="fs[<?php echo esc_attr($a_key); ?>]" class="slimstat-post-filter" value="equals <?php echo esc_attr($a_value) ?>"/>
+                <input type="hidden" name="fs[<?php echo esc_attr($a_key); ?>]" class="slimstat-post-filter slimstat-date-filter" value="equals <?php echo esc_attr($a_value) ?>"/>
             <?php endif;
             endforeach; ?>
 
@@ -124,6 +126,7 @@ if (PHP_VERSION_ID >= 70100 && !file_exists(wp_slimstat::$upload_dir . '/browsca
 if ('on' == wp_slimstat::$settings['enable_browscap'] && !\SlimStat\Services\Browscap::has_fileinfo() && 'on' == wp_slimstat::$settings['notice_browscap_fileinfo']) {
     wp_slimstat_admin::show_message(
         sprintf(
+            /* translators: 1: opening code tag, 2: closing code tag, 3: opening settings link, 4: closing link tag. */
             __("Slimstat's Browscap browser-detection library requires the PHP %1\$sfileinfo%2\$s extension, which is not enabled on your server. Browser detection has been safely disabled to keep tracking working — ask your host to enable %1\$sfileinfo%2\$s, or %3\$sturn off the Browscap Library%4\$s in the settings to hide this notice.", 'wp-slimstat'),
             '<code>',
             '</code>',
@@ -160,6 +163,10 @@ if (!empty($filters_html)) {
                 <p class="slimstat-gf-pageintro__lead"><?php echo esc_html($current_screen_info['lead']); ?></p>
             </div>
         <?php endif; ?>
+
+        <?php if ('slimview5' === wp_slimstat_admin::$current_screen) {
+            wp_slimstat_admin::get_template('utm-builder');
+        } ?>
 
         <div class="meta-box-sortables">
             <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo esc_attr(wp_create_nonce('meta-box-order')) ?>"/></form><?php

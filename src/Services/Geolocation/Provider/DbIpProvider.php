@@ -15,6 +15,7 @@ class DbIpProvider extends AbstractGeoIPProvider
 		$this->ensureDirExists($dir);
 		$this->dbPath = $dir . '/' . $this->dbName;
 		// Primary: official npm package via jsDelivr; fallbacks handled in updateDatabase()
+		// phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- downloads a GeoIP data file for local lookups, never executable code or browser assets.
 		$this->dbUrl = 'https://cdn.jsdelivr.net/npm/dbip-city-lite/dbip-city-lite.mmdb.gz';
 	}
 
@@ -55,6 +56,7 @@ class DbIpProvider extends AbstractGeoIPProvider
 		// Stream download the DB-IP database (.mmdb.gz), auto-detect gzip, and validate the resulting mmdb
 		$urls = [
 			// Primary npm package via jsDelivr
+			// phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- downloads a GeoIP data file for local lookups, never executable code or browser assets.
 			'https://cdn.jsdelivr.net/npm/dbip-city-lite/dbip-city-lite.mmdb.gz',
 		];
 
@@ -84,21 +86,24 @@ class DbIpProvider extends AbstractGeoIPProvider
 			$response = wp_remote_get($url, $args);
 			$code     = is_wp_error($response) ? 0 : wp_remote_retrieve_response_code($response);
 			if (is_wp_error($response) || 200 !== $code) {
-				@unlink($tmp);
+				wp_delete_file($tmp);
 				continue;
 			}
 
 			// Validate non-empty file
 			$size = @filesize($tmp);
 			if (!$size || $size < 1024 * 1024) { // < 1MB likely an error page
-				@unlink($tmp);
+				wp_delete_file($tmp);
 				continue;
 			}
 
 			// Detect gzip magic bytes
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- bounded local binary stream and atomic replacement; WP_Filesystem has no streaming API.
 			$fh    = @fopen($tmp, 'rb');
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread -- bounded local binary stream and atomic replacement; WP_Filesystem has no streaming API.
 			$magic = $fh ? @fread($fh, 2) : '';
 			if ($fh) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- bounded local binary stream and atomic replacement; WP_Filesystem has no streaming API.
 				@fclose($fh);
 			}
 
@@ -110,20 +115,27 @@ class DbIpProvider extends AbstractGeoIPProvider
 			if ($isGz && function_exists('gzopen')) {
 				$gz = @gzopen($tmp, 'rb');
 				if ($gz) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- bounded local binary stream and atomic replacement; WP_Filesystem has no streaming API.
 					$out = @fopen($destTmp, 'wb');
 					if ($out) {
-						// Stream copy to avoid loading the entire file in memory
-						while (!gzeof($gz)) {
+						// Stream copy to avoid loading the entire file in memory.
+						$ok = true;
+						do {
 							$chunk = gzread($gz, 8192);
-							if (false === $chunk) {
+							if (false === $chunk || ('' === $chunk && !gzeof($gz))) {
+								$ok = false;
 								break;
 							}
 
-							fwrite($out, $chunk);
-						}
+							// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- bounded local binary stream and atomic replacement; WP_Filesystem has no streaming API.
+							if (strlen($chunk) !== fwrite($out, $chunk)) {
+								$ok = false;
+								break;
+							}
+						} while (!gzeof($gz));
 
-						fclose($out);
-						$ok = true;
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- bounded local binary stream and atomic replacement; WP_Filesystem has no streaming API.
+						$ok = fclose($out) && $ok;
 					}
 
 					gzclose($gz);
@@ -133,17 +145,17 @@ class DbIpProvider extends AbstractGeoIPProvider
 				$ok = @copy($tmp, $destTmp);
 			}
 
-			@unlink($tmp);
+			wp_delete_file($tmp);
 
 			if (!$ok) {
-				@unlink($destTmp);
+				wp_delete_file($destTmp);
 				continue;
 			}
 
 			// Basic sanity: resulting file should be > 5MB
 			$outSize = @filesize($destTmp);
 			if (!$outSize || $outSize < 5 * 1024 * 1024) {
-				@unlink($destTmp);
+				wp_delete_file($destTmp);
 				continue;
 			}
 
@@ -158,13 +170,13 @@ class DbIpProvider extends AbstractGeoIPProvider
 				$valid = false;
 			}
 
-			if ($valid) {
-				// Atomically move into place
-				@rename($destTmp, $this->dbPath);
+			// A refused replacement must leave the previous database intact and report failure.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- bounded local binary stream and atomic replacement; WP_Filesystem has no streaming API.
+			if ($valid && @rename($destTmp, $this->dbPath)) {
 				return true;
 			}
 
-			@unlink($destTmp);
+			wp_delete_file($destTmp);
 		}
 
 		return false;

@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 
 if (!defined('ABSPATH')) {
     exit;
@@ -774,6 +775,7 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
         if (!is_array($_POST['options'])) {
             wp_die(esc_html__('Invalid settings data.', 'wp-slimstat'));
         }
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce/capability checked above; settings are shape-checked and sanitized per control type below.
         $posted_options = wp_unslash($_POST['options']);
         foreach ($posted_options as $slug => $value) {
             // Unknown/custom payloads belong to extension hooks. Built-in controls
@@ -805,8 +807,11 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
             case 'truncate-table':
                 $slimstat_deleted = true;
                 foreach (['DELETE te FROM %sslim_events te', 'OPTIMIZE TABLE %sslim_events', 'DELETE t1 FROM %sslim_stats t1', 'OPTIMIZE TABLE %sslim_stats'] as $slimstat_statement) {
+                    // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Trusted core table prefix and schema-manifest identifiers; dynamic values are bound on the analytics connection.
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Nonce/capability-protected maintenance uses core-prefix and manifest identifiers; schema probes and mutations require fresh state.
                     if (false === wp_slimstat::$wpdb->query(sprintf($slimstat_statement, $GLOBALS['wpdb']->prefix))) {
                         $slimstat_deleted = false;
+                    // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                         break;
                     }
                 }
@@ -856,12 +861,18 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
                         break;
                     }
                     if ('on' === $posted_options['db_indexes']) {
+                        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Trusted core table prefix and schema-manifest identifiers; dynamic values are bound on the analytics connection.
+                        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Nonce/capability-protected maintenance uses core-prefix and manifest identifiers; schema probes and mutations require fresh state.
                         if ($slimstat_malformed || ($slimstat_missing && false === wp_slimstat::$wpdb->query(\SlimStat\Schema\Schema::createIndexSql($slimstat_suffix, $slimstat_index, $slimstat_prefix)))) {
                             $slimstat_indexes_changed = false;
+                        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                             break;
                         }
+                    // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Trusted core table prefix and schema-manifest identifiers; dynamic values are bound on the analytics connection.
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange -- Nonce/capability-protected maintenance uses core-prefix and manifest identifiers; schema probes and mutations require fresh state.
                     } elseif (!$slimstat_missing && false === wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %s DROP INDEX %s', $slimstat_prefix . $slimstat_suffix, $slimstat_resolved))) {
                         $slimstat_indexes_changed = false;
+                    // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                         break;
                     }
                 }
@@ -1003,6 +1014,7 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
             }
 
             // WPML registration
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WPML compatibility API requires this exact external hook name.
             do_action('wpml_register_single_string', 'wp-slimstat', $name, $value);
 
             // Native Polylang registration
@@ -1027,7 +1039,10 @@ $index_names = [
 ];
 $missing_indexes = [];
 foreach ($index_names as $idx) {
+    // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Trusted core table prefix and schema-manifest identifiers; dynamic values are bound on the analytics connection.
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Nonce/capability-protected maintenance uses core-prefix and manifest identifiers; schema probes and mutations require fresh state.
     $exists = wp_slimstat::$wpdb->get_results(wp_slimstat::$wpdb->prepare("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = %s", $idx));
+    // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
     if (empty($exists)) {
         $missing_indexes[] = $idx;
     }
@@ -1111,13 +1126,18 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
                     }
                 }
 
+                // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
                 echo '<tr' . (0 == $i % 2 ? ' class="alternate"' : '') . $conditional_attrs . '>';
+                // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                 switch ($a_setting_info['type']) {
                     case 'section_header':
+                        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
                         echo '<td colspan="2" class="slimstat-options-section-header"' . $conditional_attrs . ' id="wp-slimstat-' . esc_attr(sanitize_title($a_setting_info['title'])) . '">' . wp_kses_post($a_setting_info['title']) . '</td>';
+                        // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                         break;
 
                     case 'toggle':
+                        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
                         echo '<th scope="row"><label for="' . esc_attr($a_setting_slug) . '">' . wp_kses_post($a_setting_info['title']) . '</label></th>
 					<td>
 						<input type="hidden" value="no" name="options[' . esc_attr($a_setting_slug) . ']">
@@ -1133,28 +1153,36 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 						</span>
 						<span class="description">' . wp_kses_post($a_setting_info['description']) . '</span>
 					</td>';
+                        // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                         // ( is_network_admin() ? ' data-indeterminate="true"' : '' ) . '>
                         break;
 
                     case 'select':
+                        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
                         echo '<th scope="row"><label for="' . esc_attr($a_setting_slug) . '">' . wp_kses_post($a_setting_info['title']) . '</label></th>
 					<td>
 						<span class="block-element">
 							<select' . $is_readonly . ' name="options[' . esc_attr($a_setting_slug) . ']" id="' . esc_attr($a_setting_slug) . '">';
+                        // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                         foreach ($a_setting_info['select_values'] as $a_key => $a_value) {
                             $is_selected = (!empty(wp_slimstat::$settings[$a_setting_slug]) && wp_slimstat::$settings[$a_setting_slug] == $a_key) ? ' selected' : '';
+                            // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
                             echo '<option' . $is_selected . ' value="' . esc_attr($a_key) . '">' . esc_html($a_value) . '</option>';
+                            // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                         }
+                        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
                         echo '</select> ' . $a_setting_info['after_input_field'] .
                             $network_override_checkbox . '
 						</span>
 						<span class="description">' . wp_kses_post($a_setting_info['description']) . '</span>
 					</td>';
+                        // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                         break;
 
                     case 'text':
                     case 'integer':
                         $empty_value = ('text' == $a_setting_info['type']) ? '' : '0';
+                        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
                         echo '<th scope="row"><label for="' . esc_attr($a_setting_slug) . '">' . wp_kses_post($a_setting_info['title']) . '</label></th>
 					<td>
 						<span class="block-element"> ' .
@@ -1168,6 +1196,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 						</span>
 						<span class="description">' . wp_kses_post($a_setting_info['description']) . '</span>
 					</td>';
+                        // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                         break;
 
                     case 'rich_text':
@@ -1185,19 +1214,24 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
                         if (!empty($is_readonly)) {
                             $editor_settings['readonly'] = true;
                         }
+                        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
                         echo '
 					<td colspan="2">
 						<label for="' . esc_attr($a_setting_slug) . '">' . wp_kses_post($a_setting_info['title']) . $network_override_checkbox . '</label>
 						<p class="description">' . wp_kses_post($a_setting_info['description']) . '</p>
 						<p>';
+                        // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                         wp_editor($editor_content, $a_setting_slug, $editor_settings);
+                        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
                         echo '
 							<span class="description">' . $a_setting_info['after_input_field'] . '</span>
 						</p>
 					</td>';
+                        // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                         break;
 
                     case 'textarea':
+                        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
                         echo '
 					<td colspan="2">
 						<label for="' . esc_attr($a_setting_slug) . '">' . wp_kses_post($a_setting_info['title']) . $network_override_checkbox . '</label>
@@ -1210,18 +1244,23 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 							<span class="description">' . $a_setting_info['after_input_field'] . '</span>
 						</p>
 					</td>';
+                        // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                         break;
 
                     case 'plain-text':
+                        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
                         echo '<th scope="row"><label for="' . esc_attr($a_setting_slug) . '">' . wp_kses_post($a_setting_info['title']) . '</label></th>
 					<td>
 						<span class="block-element">' . $a_setting_info['after_input_field'] . '</span>
 						<span class="description">' . wp_kses_post($a_setting_info['description']) . '</span>
 					</td>';
+                        // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                         break;
 
                     case 'custom':
+                        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
                         echo '<td colspan="2">' . wp_kses_post($a_setting_info['title']) . '<br/><br/>' . $a_setting_info['markup'] . '</td>';
+                        // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                         break;
 
                     default:

@@ -148,14 +148,17 @@ class RestApiManager
     private static function prepareAdblockTrackingResponse(): void
     {
         if (!defined('DONOTCACHEPAGE')) {
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- Third-party page/object/database cache opt-out contracts require these exact constant names.
             define('DONOTCACHEPAGE', true);
         }
 
         if (!defined('DONOTCACHEOBJECT')) {
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- Third-party page/object/database cache opt-out contracts require these exact constant names.
             define('DONOTCACHEOBJECT', true);
         }
 
         if (!defined('DONOTCACHEDB')) {
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- Third-party page/object/database cache opt-out contracts require these exact constant names.
             define('DONOTCACHEDB', true);
         }
 
@@ -178,6 +181,7 @@ class RestApiManager
 
         self::prepareAdblockTrackingResponse();
 
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- HTTP method is type-checked, unslashed and compared to POST before handling the request.
         $request_method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         if (!is_string($request_method) || 'POST' !== strtoupper(wp_unslash($request_method))) {
             status_header(405);
@@ -220,6 +224,7 @@ class RestApiManager
             $result = Tracker::slimtrack_ajax();
             // Output result and exit for adblock bypass requests
             \SlimStat\Tracker\Utils::sendTrackingHeaders('adblock_bypass', $result);
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- plain-text tracking protocol; HTML escaping would change the response bytes.
             echo $result;
             exit;
         }

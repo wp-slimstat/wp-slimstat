@@ -182,6 +182,7 @@ class Ajax
     {
         $result = self::process();
         Utils::sendTrackingHeaders('ajax', $result);
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- plain-text tracking protocol; HTML escaping would change the response bytes.
         echo $result;
         exit;
     }
@@ -200,6 +201,7 @@ class Ajax
             return Utils::logError(204);
         }
 
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
         $remote_ip = $_SERVER['REMOTE_ADDR'] ?? '';
         $remote_ip = is_string($remote_ip) ? sanitize_text_field(wp_unslash($remote_ip)) : '';
         if (!empty($remote_ip) && self::isRateLimited($remote_ip)) {
@@ -311,11 +313,13 @@ class Ajax
                     $stat['email']    = $GLOBALS['current_user']->data->user_email;
                     $stat['notes'][]  = 'user:' . $GLOBALS['current_user']->data->ID;
                 } elseif (isset($_COOKIE['comment_author_' . COOKIEHASH])) {
+                    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
                     $comment_author = $_COOKIE['comment_author_' . COOKIEHASH] ?? '';
                     if (is_string($comment_author) && '' !== $comment_author) {
                         $stat['username'] = sanitize_user(wp_unslash($comment_author));
                     }
 
+                    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
                     $comment_email = $_COOKIE['comment_author_email_' . COOKIEHASH] ?? '';
                     if (is_string($comment_email) && '' !== $comment_email) {
                         $stat['email'] = sanitize_email(wp_unslash($comment_email));

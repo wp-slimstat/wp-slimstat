@@ -6,24 +6,19 @@ rationale: Strips the budget from the one REQUIRED migration that walks rows to 
 ---
 --- a/src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php
 +++ b/src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php
-@@ -36,10 +36,8 @@
-      * exhaustion, so on an events table too large to finish inside `max_execution_time` the
+@@ -37,7 +37,6 @@
       * request simply died. Ten seconds is `AddUserAgentDimension::PASS_SECONDS`, which is the one
       * value in this subsystem that has been run against a real corpus.
       */
 -    private const PASS_SECONDS = 10;
--
+ 
      private ?bool $shouldRunCache = null;
  
-     public function getId(): string
-     {
-@@ -72,9 +70,8 @@
- 
+@@ -73,7 +72,6 @@
          $batch_size = 1000;
          $cursor = $this->watermark();
          $examined = $cursor;
 -        $deadline = microtime(true) + self::PASS_SECONDS;
  
          do {
-             $rows = $this->wpdb->get_results(
-                 $this->wpdb->prepare(
+             // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and generated placeholders only; all event IDs, positions and wildcard values are bound.

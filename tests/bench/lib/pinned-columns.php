@@ -12,7 +12,7 @@
 // it calls no WordPress function at require time, so a bench script and the PHP-only CI lanes
 // can both read it.
 //
-// PINNING = the v5-era set. `vid_hash` and `ua_id` are v6 migrations; including them would make
+// PINNING = the v5-era set. Identity, user-agent and acquisition fields are v6 additions; including them would make
 // the fingerprint of an unmigrated corpus differ from a migrated one for a reason that is not a
 // data difference. Excluding them also happens to remove the only BINARY columns in either
 // table, which is why ENCODING_V1 needs no BINARY rule — that is a consequence of the exclusion,
@@ -32,7 +32,7 @@ if (!function_exists('slimstat_fp2_pinned_columns')) {
      */
     function slimstat_fp2_v6_added_columns()
     {
-        return ['vid_hash', 'ua_id'];
+        return ['vid_hash', 'ua_id', 'traffic_channel', 'traffic_source', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'utm_id'];
     }
 
     /**

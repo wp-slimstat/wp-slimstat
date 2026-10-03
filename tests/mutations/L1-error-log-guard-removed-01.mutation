@@ -6,11 +6,12 @@ rationale: Removes the WP_DEBUG guard from one existing site, census unchanged, 
 ---
 --- a/src/Tracker/VisitIdGenerator.php
 +++ b/src/Tracker/VisitIdGenerator.php
-@@ -245,8 +245,6 @@
+@@ -228,9 +228,6 @@
              return;
          }
  
 -        if (defined('WP_DEBUG') && WP_DEBUG) {
+-            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Diagnostic logging is guarded by WP_DEBUG; normal production requests do not log here.
 -            error_log('[WP SLIMSTAT] [ERROR]: ' . $message);
 -        }
 +        error_log('[WP SLIMSTAT] [ERROR]: ' . $message);

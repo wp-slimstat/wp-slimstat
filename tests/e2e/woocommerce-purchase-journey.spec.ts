@@ -23,23 +23,24 @@ import { getCorrelatedRows, shopperJourney } from './helpers/journeys';
 import { clearStatsTable, closeDb, installMuPluginByName, uninstallMuPluginByName, snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions } from './helpers/setup';
 
 const fixtureSource = readFileSync(new URL('./helpers/woocommerce-store.php', import.meta.url), 'utf8').replace(/^<\?php\s*/, '');
-function fixture(mode: 'seed' | 'cleanup', runId: string): any {
-  return JSON.parse(runWordPressFixture(`<?php\n$fixture_mode = '${mode}'; $fixture_run = '${runId}';\n${fixtureSource}`));
+function fixture(mode: 'seed' | 'cleanup', runId: string, blocks = false): any {
+  return JSON.parse(runWordPressFixture(`<?php\n$fixture_mode = '${mode}'; $fixture_run = '${runId}'; $fixture_blocks = ${blocks ? 'true' : 'false'};\n${fixtureSource}`));
 }
 
-test('WooCommerce purchase preserves session, attribution and excludes checkout PII from analytics @woocommerce', async ({ page, browser }, testInfo) => {
+for (const blocks of [false, true]) test(`WooCommerce ${blocks ? 'Blocks' : 'classic'} purchase preserves session, attribution and excludes checkout PII from analytics @woocommerce`, async ({ page, browser }, testInfo) => {
   const runId = `woo-journey-${Date.now()}`;
   await snapshotSlimstatOptions();
   installMuPluginByName('mail-sink-mu-plugin.php');
   const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   try {
     // Missing WooCommerce is an explicit prerequisite failure, never excluded shipping coverage.
-    const store = fixture('seed', runId);
+    const store = fixture('seed', runId, blocks);
+    runWordPressFixture('<?php SlimStat\\Ecommerce\\Integration::setup(); SlimStat\\Ecommerce\\Integration::import();');
     await testInfo.attach('woocommerce-version', { body: store.version, contentType: 'text/plain' });
     await clearStatsTable();
     await setSlimstatOptions({ gdpr_enabled: 'off', javascript_mode: 'on', set_tracker_cookie: 'on', tracking_request_method: 'ajax', track_same_domain_referers: 'on', ignore_wp_users: 'no', ignore_bots: 'off' });
     const shopper = await context.newPage();
-    const result = await shopperJourney(shopper, runId, store);
+    const result = await shopperJourney(shopper, runId, store, blocks);
     const rows = await getCorrelatedRows(runId);
     await testInfo.attach('purchase-evidence', { body: JSON.stringify({ result, rows }, null, 2), contentType: 'application/json' });
     expect(rows.length).toBeGreaterThanOrEqual(4);
@@ -65,6 +66,29 @@ test('WooCommerce purchase preserves session, attribution and excludes checkout 
     expect(savedOrder).toHaveLength(1);
     expect(savedOrder[0].status).toBe('on-hold');
     expect(Number(savedOrder[0].total)).toBe(1);
+    const commerce = JSON.parse(runWordPressFixture(`<?php
+      add_filter('pre_wp_mail', '__return_true');
+      $order = wc_get_orders(['billing_email' => '${runId}@example.test', 'limit' => 1])[0];
+      SlimStat\\Ecommerce\\Integration::sync($order->get_id());
+      $db = SlimStat\\Ecommerce\\Integration::db();
+      $table = SlimStat\\Ecommerce\\Integration::table();
+      $before = $db->get_row($db->prepare("SELECT stat_id, status FROM {$table} WHERE order_id = %d AND item_id = 0", $order->get_id()), ARRAY_A);
+      $order->update_status('completed');
+      SlimStat\\Ecommerce\\Integration::sync($order->get_id());
+      $after = $db->get_row($db->prepare("SELECT stat_id, status, net FROM {$table} WHERE order_id = %d AND item_id = 0", $order->get_id()), ARRAY_A);
+      $events = $db->get_var("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_events WHERE notes = '[ec:cart]'");
+      echo wp_json_encode(compact('before', 'after', 'events'));
+    `));
+    expect(Number(commerce.before.stat_id)).toBeGreaterThan(0);
+    expect(commerce.before.status).toBe('on-hold');
+    expect(commerce.after.stat_id).toBe(commerce.before.stat_id);
+    expect(commerce.after.status).toBe('completed');
+    expect(Number(commerce.after.net)).toBe(1);
+    expect(Number(commerce.events)).toBeGreaterThan(0);
+    expect(rows.some(row => row.notes.includes('[ec:product]'))).toBe(true);
+    expect(checkout?.notes).toContain('[ec:checkout]');
+    expect(order?.notes).not.toContain('[ec:checkout]');
+    await testInfo.attach('commerce-order-association', { body: JSON.stringify(commerce), contentType: 'application/json' });
   } finally {
     // Cleanup first, browser teardown last. Once a test has timed out, every Playwright
     // call rejects immediately with "Test ended" -- so a context.close() standing in front

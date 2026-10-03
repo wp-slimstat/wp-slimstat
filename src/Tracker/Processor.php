@@ -27,6 +27,27 @@ class Processor
      */
     public const REFERER_ALLOWED_SCHEMES = ['http', 'https', 'android-app'];
 
+    /** Shared exclusion check for pageviews and consented commerce events. */
+    public static function isIpExcluded(string $ip, string $otherIp): bool
+    {
+        foreach (\wp_slimstat::string_to_array(\wp_slimstat::$settings['ignore_ip']) as $ipRange) {
+            $ipToIgnore = $ipRange;
+            if (false !== strpos($ipToIgnore, '/')) {
+                [$ipToIgnore, $cidr_mask] = explode('/', trim($ipToIgnore));
+            } else {
+                $cidr_mask = Utils::getMaskLength($ipToIgnore);
+            }
+
+            $longMaskedToIgnore  = substr(Utils::dtrPton($ipToIgnore), 0, $cidr_mask);
+            $longMaskedUserIp    = substr(Utils::dtrPton($ip), 0, $cidr_mask);
+            $longMaskedUserOther = substr(Utils::dtrPton($otherIp), 0, $cidr_mask);
+            if ($longMaskedUserIp === $longMaskedToIgnore || $longMaskedUserOther === $longMaskedToIgnore) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Check if the current WordPress user should be excluded from tracking.
      *
@@ -141,21 +162,9 @@ class Processor
             return Utils::logError(202);
         }
 
-        foreach (\wp_slimstat::string_to_array(\wp_slimstat::$settings['ignore_ip']) as $ipRange) {
-            $ipToIgnore = $ipRange;
-            if (false !== strpos($ipToIgnore, '/')) {
-                [$ipToIgnore, $cidr_mask] = explode('/', trim($ipToIgnore));
-            } else {
-                $cidr_mask = Utils::getMaskLength($ipToIgnore);
-            }
-
-            $longMaskedToIgnore  = substr(Utils::dtrPton($ipToIgnore), 0, $cidr_mask);
-            $longMaskedUserIp    = substr(Utils::dtrPton($stat['ip']), 0, $cidr_mask);
-            $longMaskedUserOther = substr(Utils::dtrPton($stat['other_ip']), 0, $cidr_mask);
-            if ($longMaskedUserIp === $longMaskedToIgnore || $longMaskedUserOther === $longMaskedToIgnore) {
-                Query::setProcessingTimestamp(null);
-                return Utils::logError(304);
-            }
+        if (self::isIpExcluded($stat['ip'], $stat['other_ip'])) {
+            Query::setProcessingTimestamp(null);
+            return Utils::logError(304);
         }
 
         // Store original IP for GeoIP lookup (before hashing)
@@ -194,6 +203,8 @@ class Processor
             $stat['resource'] = \wp_slimstat::get_request_uri();
         }
 
+        // Capture campaign values BEFORE legacy URL decoding changes encoded delimiters.
+        $acquisitionParams = Acquisition::parameters((string) $stat['resource']);
         $stat['resource'] = sanitize_text_field(urldecode($stat['resource']));
         $stat['resource'] = preg_replace_callback('/[^\x20-\x7E]/', function ($m) {
             return '%' . bin2hex($m[0]);
@@ -211,8 +222,11 @@ class Processor
             return Utils::logError(305);
         }
 
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
         $http_referer = $_SERVER['HTTP_REFERER'] ?? '';
-        if (empty($stat['referer']) && is_string($http_referer) && '' !== $http_referer) {
+        // Ajax explicitly supplies an empty referrer for direct visits. Its HTTP header
+        // identifies the tracked page, not that page's source; only fall back when absent.
+        if (!isset($stat['referer']) && is_string($http_referer) && '' !== $http_referer) {
             // sanitize_url() with android-app added to the allow-list: app-scheme referers
             // (android-app://com.google.android.googlequicksearchbox/, Google Discover) survive,
             // disallowed schemes (javascript:, data:) are emptied at the boundary, and — unlike
@@ -222,6 +236,7 @@ class Processor
         }
 
 
+        $acquisitionReferer = $stat['referer'] ?? '';
         if (!empty($stat['referer'])) {
             $parsed_url = wp_parse_url($stat['referer'] ?? '');
             if (!$parsed_url) {
@@ -248,6 +263,7 @@ class Processor
             }
         }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Public analytics observation, not an admin mutation; caller enforces tracking consent/exclusions and signed visit IDs. Input shape is checked before unslashing and context-specific sanitization below.
         $posted_search = $_POST['s'] ?? '';
         if (empty($stat['searchterms']) && is_string($posted_search) && '' !== $posted_search) {
             $stat['searchterms'] = sanitize_text_field(str_replace('\\', '', wp_unslash($posted_search)));
@@ -280,6 +296,7 @@ class Processor
             $stat['notes'][] = 'results:' . intval($GLOBALS['wp_query']->found_posts);
         }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Public analytics observation, not an admin mutation; caller enforces tracking consent/exclusions and signed visit IDs. Input shape is checked before unslashing and context-specific sanitization below.
         $admin_page = $_GET['page'] ?? '';
         $admin_page = is_string($admin_page) ? sanitize_text_field(wp_unslash($admin_page)) : '';
         if ((isset($stat['resource']) && ($stat['resource'] !== '' && $stat['resource'] !== '0') && false !== strpos($stat['resource'], 'wp-admin/admin-ajax.php')) || ('' !== $admin_page && false !== strpos($admin_page, 'slimview'))) {
@@ -338,11 +355,13 @@ class Processor
                 $stat['username'] = $spam_comment->comment_author;
                 $stat['email']    = $spam_comment->comment_author_email;
             } else {
+                // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
                 $comment_author = $_COOKIE['comment_author_' . COOKIEHASH] ?? '';
                 if (is_string($comment_author) && '' !== $comment_author) {
                     $stat['username'] = sanitize_user(wp_unslash($comment_author));
                 }
 
+                // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
                 $comment_email = $_COOKIE['comment_author_email_' . COOKIEHASH] ?? '';
                 if (is_string($comment_email) && '' !== $comment_email) {
                     $stat['email'] = sanitize_email(wp_unslash($comment_email));
@@ -396,8 +415,10 @@ class Processor
             }
         }
 
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
         $x_moz = $_SERVER['HTTP_X_MOZ'] ?? '';
         $x_moz = is_string($x_moz) ? sanitize_text_field(wp_unslash($x_moz)) : '';
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
         $x_purpose = $_SERVER['HTTP_X_PURPOSE'] ?? '';
         $x_purpose = is_string($x_purpose) ? sanitize_text_field(wp_unslash($x_purpose)) : '';
         if ('prefetch' === strtolower($x_moz) || 'preview' === strtolower($x_purpose)) {
@@ -410,6 +431,9 @@ class Processor
         }
 
         $browser = Browscap::get_browser();
+        if (Acquisition::aiAgent((string) $browser['user_agent'])) {
+            $browser['browser_type'] = 1;
+        }
         if ('on' == \wp_slimstat::$settings['ignore_bots'] && 1 == $browser['browser_type']) {
             Query::setProcessingTimestamp(null);
             return Utils::logError(313);
@@ -426,6 +450,15 @@ class Processor
         }
 
         $stat += $browser;
+        if ('1' === get_option(Acquisition::readinessKey(), '0')) {
+            $stat = array_merge($stat, array_intersect_key($acquisitionParams, array_flip(Acquisition::UTM_FIELDS)), Acquisition::classify(
+                $acquisitionParams,
+                (string) $acquisitionReferer,
+                (string) $browser['user_agent'],
+                (int) $browser['browser_type'],
+                home_url()
+            ));
+        }
 
         // Update stat before ensureVisitId (which may need to read it)
         \wp_slimstat::set_stat($stat);
@@ -454,7 +487,9 @@ class Processor
             $stat['notes'] = '[' . implode('][', $stat['notes']) . ']';
         }
 
-        $stat = array_filter($stat);
+        $stat = array_filter($stat, static function ($value, $key) {
+            return in_array($key, Acquisition::COLUMNS, true) ? null !== $value && '' !== $value : (bool) $value;
+        }, ARRAY_FILTER_USE_BOTH);
 
         // Update before insert
         \wp_slimstat::set_stat($stat);
@@ -471,6 +506,7 @@ class Processor
 				// Allow explicit visit_id from client to target original anonymous record
 				// Security: Only accept visit_id with valid checksum to prevent targeting arbitrary records
 				$requestedVisitId = 0;
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Public analytics observation, not an admin mutation; caller enforces tracking consent/exclusions and signed visit IDs. Input shape is checked before unslashing and context-specific sanitization below.
 				$requestedVisitIdRaw = $_REQUEST['visit_id'] ?? '';
 				if (is_scalar($requestedVisitIdRaw) && '' !== (string) $requestedVisitIdRaw) {
 					$visitIdRaw = sanitize_text_field(wp_unslash((string) $requestedVisitIdRaw));

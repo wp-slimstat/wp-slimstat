@@ -19,7 +19,12 @@ class Storage
 		}
 
 		foreach ($data as $key => $value) {
-			$data[$key] = 'resource' == $key ? sanitize_url($value) : sanitize_text_field($value);
+			if (is_string($value) && in_array($key, ['resource', 'referer', 'outbound_resource'], true)) {
+				$value = self::redactOrderKey($value);
+			}
+			$data[$key] = 0 === strpos($key, 'utm_') || 'traffic_source' === $key
+				? Acquisition::clean($value)
+				: ('resource' == $key ? sanitize_url($value) : sanitize_text_field($value));
 		}
 
 		// vid_hash travels through $stat as 32 hex chars — the one spelling that survives
@@ -60,12 +65,26 @@ class Storage
 			// retry would be the identical failing statement. array_intersect_key can only
 			// shrink, hence `<`.
 			if ($writable !== [] && count($writable) < count($data)) {
+				// A restored pre-upgrade table must not pay this failed insert on every hit.
+				if (preg_grep('/^(utm_|traffic_)/', array_diff(array_keys($data), $present))) {
+					update_option(Acquisition::readinessKey(), '0', true);
+				}
 				self::recordColumnDegradation($table, array_diff(array_keys($data), $present));
 				$result = self::write($table, $writable);
 			}
 		}
 
 		return $result;
+	}
+
+	/** WooCommerce receipt keys grant order access; they are never analytics dimensions. */
+	private static function redactOrderKey(string $url): string
+	{
+		if (false === strpos($url, '?')) { return $url; }
+		$query = [];
+		parse_str((string) wp_parse_url($url, PHP_URL_QUERY), $query);
+		return isset($query['key']) && is_string($query['key']) && 0 === strpos($query['key'], 'wc_order_')
+			? remove_query_arg('key', $url) : $url;
 	}
 
 	/**
@@ -189,6 +208,9 @@ class Storage
 		// overwrite the row with raw HTML. Run before array_filter so values that
 		// sanitize to '' get dropped along with originals.
 		foreach ($data as $key => $value) {
+			if (is_string($value) && in_array($key, ['resource', 'referer', 'outbound_resource'], true)) {
+				$value = self::redactOrderKey($value);
+			}
 			if (is_array($value)) {
 				$data[$key] = array_map('sanitize_text_field', $value);
 			} elseif ('resource' === $key || 'outbound_resource' === $key) {

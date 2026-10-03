@@ -16,6 +16,8 @@ import {
   clearStatsTable,
   setSlimstatSetting,
   snapshotSlimstatOptions,
+  snapshotOption,
+  restoreOption,
   restoreSlimstatOptions,
   installHeaderInjector,
   uninstallHeaderInjector,
@@ -77,6 +79,10 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     try { execSync(`rm -rf "${path.join(WP_ROOT, 'wp-content/cache/wp-rocket')}"`, { stdio: 'ignore' }); } catch {}
     installCptMuPlugin();
     await snapshotSlimstatOptions();
+    // New WordPress sites disable attachment pages; these cases require a real
+    // attachment template, not its redirect to a deliberately nonexistent file.
+    await snapshotOption('wp_attachment_pages_enabled');
+    await getPool().execute("INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('wp_attachment_pages_enabled', '1', 'yes') ON DUPLICATE KEY UPDATE option_value='1'");
     // Ensure server-side tracking is on.
     // The migration block (wp-slimstat.php:282-293) forces javascript_mode='on'
     // for sites upgraded from < 5.4.7. Set _migration_5460 to current version
@@ -92,6 +98,7 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
 
   test.afterAll(async () => {
     await restoreSlimstatOptions();
+    await restoreOption('wp_attachment_pages_enabled');
     uninstallCptMuPlugin();
     restoreWpConfig();
     await closeDb();

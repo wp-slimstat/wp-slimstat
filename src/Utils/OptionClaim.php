@@ -33,6 +33,7 @@ final class OptionClaim
      * @param string $autoload 'yes' or 'no' — drives cache invalidation, see flush().
      * @return bool True when THIS caller created it.
      */
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Atomic lease creation uses bound values and invalidates option caches; cached reads would break exclusion.
     public static function insert($name, $value, $autoload = 'no')
     {
         global $wpdb;
@@ -54,6 +55,7 @@ final class OptionClaim
 
         return (bool) $won;
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
     /**
      * Replace the row, but only if it still holds exactly what the caller read.
@@ -68,6 +70,7 @@ final class OptionClaim
      * @param string $autoload 'yes' or 'no' — must match how the row was created.
      * @return bool True when THIS caller swapped it.
      */
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Atomic lease compare-and-swap uses bound values and invalidates option caches.
     public static function compareAndSwap($name, $expected, $value, $autoload = 'no')
     {
         global $wpdb;
@@ -90,8 +93,10 @@ final class OptionClaim
 
         return (bool) $won;
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
     /** Delete only the row still owned by this caller. */
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Atomic owner-checked lease deletion uses bound values and invalidates option caches.
     public static function delete($name, $value, $autoload = 'no')
     {
         global $wpdb;
@@ -110,6 +115,7 @@ final class OptionClaim
 
         return (bool) $deleted;
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
     /**
      * Drop the caches the row was just written behind the back of.

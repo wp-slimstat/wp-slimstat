@@ -1,5 +1,21 @@
 = 6.0.0 - 2026-09-15 =
 
+**Ecommerce**
+* Isolate report caches and setup by analytics database, exclude expired visits from purchase-rate cohorts, and provide scoped summaries for native exports and scheduled Pro email. Restore the shared date picker appearance.
+* Remove WooCommerce order-access keys from newly stored page URLs, referrers and URL updates. Existing historical records are not rewritten automatically.
+* Refine Ecommerce with interactive metric charts, calendar aggregation, tabbed revenue rankings, inline drill-downs and compact coverage guidance. Preserve native filters and scoped exports.
+* Add a revenue-first WooCommerce dashboard with net sales, orders, comparisons, products, acquisition coverage and a consented purchase journey. Currency, refunds and unmatched orders have explicit definitions.
+* Keep order synchronization in bounded background jobs, support HPOS and legacy storage, and integrate native dates, filters, saved segments, privacy erasure and retention. Setup is opt-in; see [the Ecommerce guide](docs/ecommerce.md).
+
+**UTM and channel reports**
+* Build and copy campaign URLs directly from the UTM report. The local builder validates required tags, preserves existing URL parameters and fragments, and supports campaign names or IDs.
+* Campaign and channel totals now expand into source breakdowns, with exact totals under result caps, compact optional tags, blue share bars, highlighted open rows, and layouts that adapt to narrow dashboard widgets and mobile screens.
+* Direct JavaScript-tracked visits retain their empty browser referrer instead of being mistaken for internal navigation from the tracking request's HTTP header.
+* Traffic Sources now includes UTM Campaigns and Channels, with pageview counts, shares, filters and accessible tables. Campaign tags preserve their case and encoded values.
+* Channels distinguish AI assistant referrals, AI crawlers and user-requested AI fetches, alongside search, social, email, paid and other sources. Classification respects bot exclusions; missing evidence is shown explicitly.
+* Date changes retain active filters, saved segments retain selected dates, and literal campaign values (including HTML entities and backslashes) remain intact and inert across forms, AJAX, summaries and shortcodes. Public report widgets avoid acquisition schema probes.
+* Upgrades add nullable attribution fields through the Migration screen. Existing pageviews remain unattributed; new tracking uses the existing date indexes without per-hit schema queries.
+
 **Performance — measured, not estimated**
 * Admin charts read about half as many database rows: totals now ride the same query as their buckets. Measured on the weekly chart over the 150,000-row reference bench corpus, as deterministic counters rather than timings: rows read 304,454 -> 152,227 and sort work 212,301 -> 106,141. That change alone leaves report output byte-identical; the separate previous-period correction below does move two numbers, on purpose.
 * The tracking path stopped writing diagnostics into wp_options: 62% fewer option writes per stored pageview (2.83 -> 1.07), 96% fewer per refused bot (1.75 -> 0.07).

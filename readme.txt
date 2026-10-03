@@ -20,6 +20,7 @@ See the whole story the moment it happens: who's on your site right now, where t
 Best part: privacy isn't a setting you have to hunt for. Anonymized IPs, Do Not Track, a consent banner, and scheduled data cleanup are GDPR-ready from the first activation. Thousands of WordPress sites already trust SlimStat to keep their analytics honest, fast, and entirely their own.
 
 = Main Features =
+* **Ecommerce** — Reconcile WooCommerce net sales, orders, products and acquisition in one page, with tracking coverage, an observed purchase journey and practical investigations. Optional setup; WooCommerce 8.3+ required.
 * **Real-time access log** — Your site's pulse, live. Watch each visit land the instant it happens: the page, the spot on the map, the search or link that sent them, how quickly your server replied, human or bot.
 * **Complete access log** — Every visit in one searchable table. Drill into the full history and break it down by date, country, browser, OS, referrer, search term, or content type to answer the questions the summary charts can't.
 * **Goals & funnels** — Turn raw traffic into answers. Define a goal to measure a conversion (a WooCommerce sale, a signup, a key pageview) and see uniques, totals, and conversion rate. Or chain steps into a funnel to spot exactly where visitors drop off. One goal is free; up to five goals and full funnels unlock with Pro.
@@ -37,6 +38,7 @@ Best part: privacy isn't a setting you have to hunt for. Anonymized IPs, Do Not 
 * **Cache-friendly** — Plays nicely with W3 Total Cache, WP Super Cache, Cloudflare, and most caching plugins.
 
 = Pro Pack Features =
+* **Ecommerce depth** — Campaigns, landing pages, devices, guest/account segments, coupons, product refunds and filtered aggregate CSV export.
 Love the free plugin? Pro is for sites that live by their numbers. It adds the heavier tools without changing a thing about how SlimStat respects your data:
 
 * **Email reports** — Wake up to the numbers that matter. Schedule the reports you care about and have them land in your inbox as clean HTML tables, with the columns laid out your way.
@@ -119,6 +121,9 @@ Deleting the plugin no longer erases your analytics. Data is now kept by default
 == Changelog ==
 
 = 6.0.0 - 2026-09-15 =
+* Improve Ecommerce database isolation, retention accuracy and native dates; remove order-access keys from new analytics URLs.
+
+* Explore Ecommerce through selectable metric charts, tabbed revenue rankings and clearer tracking coverage.
 
 **Performance — measured, not estimated**
 * Admin charts read about half as many database rows: totals now ride the same query as their buckets. Measured on the weekly chart over the 150,000-row reference bench corpus, as deterministic counters rather than timings: rows read 304,454 -> 152,227 and sort work 212,301 -> 106,141. That change alone leaves report output byte-identical; the separate previous-period correction below does move two numbers, on purpose.

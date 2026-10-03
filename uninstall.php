@@ -102,6 +102,9 @@ function slimstat_uninstall_cron()
     foreach (require __DIR__ . '/src/cron-hooks.php' as $hook) {
         wp_clear_scheduled_hook($hook);
     }
+    if (function_exists('as_unschedule_all_actions')) {
+        as_unschedule_all_actions('', [], 'slimstat-ecommerce');
+    }
 }
 
 /**

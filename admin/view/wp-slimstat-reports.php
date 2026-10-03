@@ -10,6 +10,7 @@ class wp_slimstat_reports
         'slimview4' => [],
         'slimview5' => [],
         'slimview6' => [],
+        'slimview7' => [],
         'dashboard' => [],
         'inactive'  => [],
     ];
@@ -560,6 +561,22 @@ class wp_slimstat_reports
                 'locations' => ['slimview3'],
             ],
 
+            'slim_p3_03' => [
+                'title' => __('Channels', 'wp-slimstat'),
+                'callback' => [\SlimStat\Reports\AcquisitionReport::class, 'render'],
+                'callback_args' => ['mode' => 'channels', 'raw' => [\SlimStat\Reports\AcquisitionReport::class, 'rows']],
+                'classes' => ['extralarge', 'slimstat-acquisition-box'],
+                'locations' => ['slimview5'],
+                'tooltip' => __('Pageview sources, classified from campaign tags, referring sites and user agents. AI referrals and automated requests are reported separately.', 'wp-slimstat'),
+            ],
+            'slim_p3_04' => [
+                'title' => __('UTM Campaigns', 'wp-slimstat'),
+                'callback' => [\SlimStat\Reports\AcquisitionReport::class, 'render'],
+                'callback_args' => ['mode' => 'utm', 'raw' => [\SlimStat\Reports\AcquisitionReport::class, 'rows']],
+                'classes' => ['extralarge', 'slimstat-acquisition-box'],
+                'locations' => ['slimview5'],
+                'tooltip' => __('Compare tagged pageviews by campaign, source and medium. Campaign values are case-sensitive; missing values are shown explicitly.', 'wp-slimstat'),
+            ],
             'slim_p3_01' => [
                 'title'         => __('Traffic Sources', 'wp-slimstat'),
                 'callback'      => [self::class, 'show_chart'],
@@ -919,6 +936,15 @@ class wp_slimstat_reports
             ],
 
             // Goals & Funnels reports
+            'slim_p10_01' => [
+                'title' => __('Ecommerce', 'wp-slimstat'),
+                'callback' => [\SlimStat\Ecommerce\Report::class, 'render'],
+                'callback_args' => ['raw' => [\SlimStat\Ecommerce\Report::class, 'raw']],
+                'classes' => ['full-width', 'slimstat-ecommerce-box'],
+                'locations' => ['slimview7'],
+                'pinned' => true,
+                'postbox_config' => ['hide_header' => true, 'no_border' => true, 'no_background' => true],
+            ],
             'slim_p9_01' => [
                 'title'         => __('Goals', 'wp-slimstat'),
                 'callback'      => [self::class, 'show_goals'],
@@ -1029,6 +1055,7 @@ class wp_slimstat_reports
         do_action('wp_slimstat_reports_init');
 
         // We store page titles in a transient for improved performance
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
         if (empty($_REQUEST['page']) || !in_array($_REQUEST['page'], ['slimlayout', 'slimadddons'])) {
             self::$resource_titles = get_transient('slimstat_resource_titles');
             if (false === self::$resource_titles) {
@@ -2691,7 +2718,9 @@ class wp_slimstat_reports
                     continue;
                 }
 
-                $a_filter_value_no_slashes = in_array($a_filter_details[0], wp_slimstat_db::$valueless_operators, true) ? '' : htmlentities(str_replace('\\', '', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
+                $filter_value = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label
+                    ? $a_filter_details[1] : str_replace('\\', '', $a_filter_details[1]);
+                $a_filter_value_no_slashes = in_array($a_filter_details[0], wp_slimstat_db::$valueless_operators, true) ? '' : htmlentities($filter_value, ENT_QUOTES, 'UTF-8');
                 $filters_html .= '<li>' . strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]) . ' ' . esc_html(wp_slimstat_db::$operator_names[$a_filter_details[0]] ?? str_replace('_', ' ', $a_filter_details[0])) . sprintf(" %s <a class='slimstat-filter-link slimstat-font-cancel' title='", $a_filter_value_no_slashes) . htmlentities(__('Remove filter for', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . ' ' . wp_slimstat_db::$columns_names[$a_filter_label][0] . "' href='" . self::fs_url($a_filter_label . ' equals ') . "'></a></li>";
             }
         }
@@ -2747,7 +2776,9 @@ class wp_slimstat_reports
         // Columns
         if (!empty($fn['columns'])) {
             foreach ($fn['columns'] as $a_key => $a_filter) {
-                $request_uri .= sprintf('&amp;fs%%5B%s%%5D=', $a_key) . urlencode($a_filter[0] . ' ' . str_replace('=', '%3D', $a_filter[1]));
+                $value = 0 === strpos($a_key, 'utm_') || 'traffic_source' === $a_key
+                    ? $a_filter[1] : str_replace('=', '%3D', $a_filter[1]);
+                $request_uri .= sprintf('&amp;fs%%5B%s%%5D=', $a_key) . urlencode($a_filter[0] . ' ' . $value);
             }
         }
 

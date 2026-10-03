@@ -158,7 +158,9 @@ class MigrationAdmin
 	private function isSlimStatPage($screen): bool
 	{
 		// Check if it's a SlimStat page by looking at the page parameter
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
 		if (isset($_GET['page'])) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
 			$page = sanitize_text_field(wp_unslash($_GET['page']));
 			// SlimStat pages start with 'slim' (slimview1, slimview2, slimconfig, etc.)
 			if (strpos($page, 'slim') === 0) {
@@ -303,6 +305,7 @@ class MigrationAdmin
 		// disabled_functions and under PHP-FPM's request_terminate_timeout, so it is asked for
 		// here and NOT relied on: the real bound is the per-pass deadline inside the backfill.
 		if (function_exists('set_time_limit')) {
+			// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- Authorized migration batches enforce their own deadline; set_time_limit availability is checked above.
 			@set_time_limit(0);
 		}
 

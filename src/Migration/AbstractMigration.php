@@ -292,6 +292,22 @@ abstract class AbstractMigration implements MigrationInterface
 	}
 
 	/**
+	 * Online DDL first; the bare retry runs only when the server refuses the hint.
+	 *
+	 * @return int|bool wpdb::query() result.
+	 */
+	protected function alterOnline(string $sql)
+	{
+		// phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Schema builds DDL from its allowlisted manifest and the core table prefix; no request values are interpolated.
+		$result = $this->wpdb->query($sql . ', ALGORITHM=INPLACE, LOCK=NONE');
+		if (false === $result) {
+			$result = $this->wpdb->query($sql);
+		}
+		// phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
+		return $result;
+	}
+
+	/**
 	 * Add one manifest-declared column: ALTER from the manifest, INPLACE first,
 	 * bare retry, degradation on failure.
 	 *
@@ -313,9 +329,7 @@ abstract class AbstractMigration implements MigrationInterface
 		}
 
 		$add     = \SlimStat\Schema\Schema::addColumnSql($suffix, $column, $this->tablePrefix());
-		$altered = $this->wpdb->query($add . ', ALGORITHM=INPLACE, LOCK=NONE');
-
-		// The retry is reached only because the server REFUSED the online hint, so its
+		// alterOnline()'s retry is reached only because the server REFUSED the online hint, so its
 		// reachable domain is the BLOCKING case — a MyISAM table (installs created before
 		// Schema::ENGINE pinned InnoDB still have them) copies under a write lock, and on a
 		// tracking table blocked writes are dropped pageviews.
@@ -332,9 +346,7 @@ abstract class AbstractMigration implements MigrationInterface
 		// the pause — which means an engine probe feeding getDiagnostics(). That widens the
 		// diagnostics contract and migration.js with it, so it is post-beta work, recorded
 		// here rather than half-built.
-		if (false === $altered) {
-			$altered = $this->wpdb->query($add);
-		}
+		$altered = $this->alterOnline($add);
 
 		if (false === $altered) {
 			\wp_slimstat::record_degradation(
@@ -419,6 +431,7 @@ abstract class AbstractMigration implements MigrationInterface
 				continue;
 			}
 
+			// phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Schema builds DDL from its allowlisted manifest and the core table prefix; no request values are interpolated.
 			if (false === $this->wpdb->query(\SlimStat\Schema\Schema::createIndexSql($suffix, $index, $prefix))) {
 				\wp_slimstat::record_degradation(
 					$degradationKey,
@@ -431,6 +444,7 @@ abstract class AbstractMigration implements MigrationInterface
 					),
 					\wp_slimstat::DEGRADATION_OPERATIONAL
 				);
+			// phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 			}
 		}
 	}

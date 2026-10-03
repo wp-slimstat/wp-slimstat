@@ -179,11 +179,13 @@ class AddUserAgentDimension extends AbstractMigration
      * by table size. That is the property that makes this affordable to re-run each time
      * staleness re-offers the migration (there is no cron — see the class docblock).
      */
+    // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Bounded migration binds all user-agent values; interpolated identifiers come from the core prefix and schema manifest.
     private function backfill(): bool
     {
         $stats     = $this->tablePrefix() . 'slim_stats';
         $dimension = $this->tablePrefix() . 'slim_user_agents';
 
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers, fixed columns and integer batch limit; every user-agent value is prepared on the analytics connection.
         $rows = $this->wpdb->get_results(
             "SELECT DISTINCT browser, browser_version, browser_type, platform
                FROM `{$stats}`
@@ -191,6 +193,7 @@ class AddUserAgentDimension extends AbstractMigration
               LIMIT " . self::BATCH,
             ARRAY_A
         );
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         if ($this->probeFailed()) {
             return false;
@@ -214,6 +217,7 @@ class AddUserAgentDimension extends AbstractMigration
             $natural = $this->naturalKey($row);
             $key     = SurrogateKey::for($natural);
 
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers, fixed columns and integer batch limit; every user-agent value is prepared on the analytics connection.
             // INSERT IGNORE: if two passes race, or a previous run already inserted this tuple,
             // the loser is a no-op. No read, no lock, no retry — the same property that makes
             // the derived key worth having.
@@ -229,6 +233,7 @@ class AddUserAgentDimension extends AbstractMigration
                 time()
             ))) {
                 return false;
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             }
 
             // Stamp every fact row sharing this tuple. Bounded by the tuple, not the table.
@@ -259,11 +264,13 @@ class AddUserAgentDimension extends AbstractMigration
                 $args[]  = $value;
             }
 
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers, fixed columns and integer batch limit; every user-agent value is prepared on the analytics connection.
             if (false === $this->wpdb->query($this->wpdb->prepare(
                 "UPDATE `{$stats}` SET ua_id = %s WHERE " . implode(' AND ', $where),
                 $args
             ))) {
                 return false;
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             }
 
             $stamped += max(0, (int) $this->wpdb->rows_affected);
@@ -297,6 +304,7 @@ class AddUserAgentDimension extends AbstractMigration
         // can re-post the same step until it is done.
         return true;
     }
+    // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
     /**
      * The string the surrogate key is derived from.
@@ -328,6 +336,7 @@ class AddUserAgentDimension extends AbstractMigration
         return $this->columnExists('slim_stats', 'ua_id');
     }
 
+    // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fresh migration probe over a core-prefix table; no request values enter the identifier.
     private function dimensionIsBehind(): bool
     {
         if (!$this->factColumnExists()) {
@@ -342,6 +351,7 @@ class AddUserAgentDimension extends AbstractMigration
 
         return !$this->probeFailed() && null !== $pending;
     }
+    // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
     /** @return array<int,array{key:string,exists:bool,table:string,columns:string}> */
     public function getDiagnostics(): array

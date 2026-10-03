@@ -123,6 +123,7 @@ class Tracker
     {
         $ip_array = ['', ''];
 
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
         $remote_addr = $_SERVER['REMOTE_ADDR'] ?? '';
         $remote_addr = is_string($remote_addr) ? sanitize_text_field(wp_unslash($remote_addr)) : '';
         if (false !== filter_var($remote_addr, FILTER_VALIDATE_IP)) {
@@ -132,6 +133,7 @@ class Tracker
         // CF-Connecting-IP is handled separately via Utils::getCfClientIp() with CF-Ray validation.
         $originating_ip_headers = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
         foreach ($originating_ip_headers as $a_header) {
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
             $header_value = $_SERVER[$a_header] ?? '';
             if (is_string($header_value) && '' !== $header_value) {
                 $header_value = sanitize_text_field(wp_unslash($header_value));

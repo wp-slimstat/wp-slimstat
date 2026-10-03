@@ -62,6 +62,7 @@
     }
   },
   "scripts": {
+    "test:pcp-regressions": "php tests/pcp-core-assets-test.php && php tests/dbip-stream-failure-test.php",
     "post-install-cmd": "@scoper:ext-constants",
     "post-update-cmd": "@scoper:ext-constants",
     "scoper:ext-constants": "php build/scoper-ext-constants.php src/Dependencies",
@@ -260,6 +261,7 @@
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
+      "@test:pcp-regressions",
       "php tests/settings-maintenance-result-test.php",
       "@test:source-scan-strength",
       "@test:control-wiring",
@@ -459,9 +461,11 @@
     "test:reset-layout-scope": "php tests/reset-layout-scope-test.php",
     "test:free-deploy-evidence": "python3 tests/free-deploy-evidence-test.py",
     "test:settings-cache-family-wp": "wp eval-file tests/settings-cache-family-wp-test.php",
-    "test:date-i18n-filter-suspension-wp": "wp eval-file tests/date-i18n-filter-suspension-wp-test.php"
+    "test:date-i18n-filter-suspension-wp": "wp eval-file tests/date-i18n-filter-suspension-wp-test.php",
+    "test:acquisition-network": "wp eval-file tests/acquisition-network-test.php"
   },
   "scripts-descriptions": {
+    "test:acquisition-network": "Live two-site Free/Pro query check. Point WP-CLI at an isolated multisite database named test_acquisition_network_*; refuses other databases. Requires Pro, which the public CI lane cannot install.",
     "test:reports-escaping": "XSS gate over the report render path. Needs a live WordPress, so it is not in test:source-level; its CI home is the Tier 2 wp-env lane (.github/workflows/ci.yml), because membership of test:all meant it ran in no job at all. Locally it needs the DB socket passed to PHP — see CLAUDE.md."
   }
 }

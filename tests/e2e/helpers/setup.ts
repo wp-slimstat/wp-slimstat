@@ -100,6 +100,7 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
   { sourceFile: 'browscap-unzip-blocker-mu-plugin.php', deployedFile: 'browscap-unzip-blocker-mu-plugin.php' },
   { sourceFile: 'fileinfo-disabler-mu-plugin.php', deployedFile: 'fileinfo-disabler-mu-plugin.php' },
   { sourceFile: 'google-maps-key-mu-plugin.php', deployedFile: 'google-maps-key-mu-plugin.php' },
+  { sourceFile: 'ecommerce-gateway-mu-plugin.php', deployedFile: 'ecommerce-gateway-mu-plugin.php' },
 ];
 
 // ─── Generic MU-Plugin install/uninstall by name ──────────────────
@@ -1048,4 +1049,24 @@ export function installCptMuPlugin(): void {
 export function uninstallCptMuPlugin(): void {
   if (isGlobalMuPluginsManaged()) return;
   if (fs.existsSync(CPT_MU_PLUGIN_PATH)) fs.unlinkSync(CPT_MU_PLUGIN_PATH);
+}
+
+/**
+ * Fill a login field and prove it kept the value.
+ *
+ * The login page enqueues the profile password scripts, and one of them clears
+ * `#user_pass` shortly after load: a bare `page.fill()` lands before that clear
+ * roughly one run in three on a warm LocalWP, and the form then submits with an
+ * empty password. What that looks like downstream is the login page again with
+ * no `#login_error` at all — indistinguishable, in the diagnosis JSON, from a
+ * cookie or redirect problem, which is how it cost an afternoon. Re-fill instead
+ * of raising the timeout: the field is not slow, it is being emptied.
+ */
+export async function fillAndConfirm(page: import('@playwright/test').Page, selector: string, value: string): Promise<void> {
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    await page.fill(selector, value);
+    await page.waitForTimeout(200);
+    if (await page.inputValue(selector) === value) return;
+  }
+  throw new Error(`${selector} would not hold its value after 5 attempts — something on the login page is clearing it`);
 }
