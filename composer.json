@@ -461,6 +461,7 @@
     "test:reset-layout-scope": "php tests/reset-layout-scope-test.php",
     "test:free-deploy-evidence": "python3 tests/free-deploy-evidence-test.py",
     "test:settings-cache-family-wp": "wp eval-file tests/settings-cache-family-wp-test.php",
+    "test:heatmap-legacy-oracle-wp": "wp eval-file tests/heatmap-legacy-oracle-wp-test.php",
     "test:date-i18n-filter-suspension-wp": "wp eval-file tests/date-i18n-filter-suspension-wp-test.php",
     "test:acquisition-network": "wp eval-file tests/acquisition-network-test.php"
   },

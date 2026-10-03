@@ -206,7 +206,7 @@ test.describe('Heatmap position sanitization', () => {
     expect(event!.position).toBe('320,480');
   });
 
-  test('default position 0,0 is preserved', async ({ page }) => {
+  test('default position 0,0 is stored as no position', async ({ page }) => {
     const marker = `heatmap-pos-origin-${Date.now()}`;
     await setSlimstatOptions({ gdpr_enabled: 'off', tracking_request_method: 'rest' });
 
@@ -226,8 +226,9 @@ test.describe('Heatmap position sanitization', () => {
     expect(response.status()).toBe(200);
 
     const event = await waitForEventRow(stat!.id, 10_000);
+    // The event row is still written; only the fake top-left coordinate is dropped.
     expect(event).not.toBeNull();
-    expect(event!.position).toBe('0,0');
+    expect(event!.position).toBe('');
   });
 
   test('heatmap endpoint excludes corrupted positions and returns x/y/value entries', async ({ page }) => {

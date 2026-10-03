@@ -115,6 +115,11 @@ class Ajax
         if ($position !== '' && !preg_match('/^\d{1,5},\d{1,5}$/', $position)) {
             return '';
         }
+        // "0,0" is the tracker's default when a click has no coordinates (keyboard,
+        // form submit, synthetic). Storing it painted a false top-left hotspot.
+        if (preg_match('/^0+,0+$/', $position)) {
+            return '';
+        }
         return $position;
     }
 
