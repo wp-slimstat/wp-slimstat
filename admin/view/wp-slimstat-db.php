@@ -2172,6 +2172,24 @@ class wp_slimstat_db
         return '' === $extra_where ? $where : $where . ' AND (' . $extra_where . ')';
     }
 
+    /**
+     * Pageviews from visits that reached (or didn't reach) a goal between $start and $end, as a
+     * WHERE on slim_stats alias t1. Pro's heatmap Visitors filter; the goal rule stays here.
+     * '1=0' when the goal can't be evaluated.
+     */
+    public static function goal_visits_where($goal, $converted, $start, $end)
+    {
+        $is_event = 'event_notes' === ($goal['dimension'] ?? '');
+        $where    = self::build_goal_where($goal, $is_event ? 'ge' : 'g1');
+        if ('' === $where) {
+            return '1=0';
+        }
+        $from = $GLOBALS['wpdb']->prefix . 'slim_stats g1' . ($is_event ? ' INNER JOIN ' . $GLOBALS['wpdb']->prefix . 'slim_events ge ON ge.id = g1.id' : '');
+
+        return 't1.visit_id ' . ($converted ? 'IN' : 'NOT IN') . " (SELECT g1.visit_id FROM {$from} WHERE {$where} AND g1.visit_id > 0 AND "
+            . $GLOBALS['wpdb']->prepare('g1.dt BETWEEN %d AND %d)', $start, $end);
+    }
+
     private static function build_goal_where($goal, $alias = '')
     {
         // Read keys defensively: legacy/malformed stored goals or funnel steps

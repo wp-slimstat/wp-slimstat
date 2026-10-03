@@ -217,6 +217,25 @@ class QueryBuilderTest extends WpSlimstatTestCase
         $this->assertStringNotContainsString('%s', $valueless);
     }
 
+    /** Heatmap Visitors filter: pageviews from visits that did, or didn't, reach a goal in the range. */
+    public function test_goal_visits_where_scopes_pageviews_by_conversion(): void
+    {
+        $goal = ['dimension' => 'resource', 'operator' => 'equals', 'value' => '/thanks'];
+
+        $this->assertSame(
+            "t1.visit_id IN (SELECT g1.visit_id FROM wp_slim_stats g1 WHERE g1.resource = '/thanks' AND g1.visit_id > 0 AND g1.dt BETWEEN 100 AND 200)",
+            \wp_slimstat_db::goal_visits_where($goal, true, 100, 200)
+        );
+        $this->assertStringStartsWith('t1.visit_id NOT IN (SELECT g1.visit_id ', \wp_slimstat_db::goal_visits_where($goal, false, 100, 200));
+
+        $event = \wp_slimstat_db::goal_visits_where(['dimension' => 'event_notes', 'operator' => 'contains', 'value' => 'buy'], true, 1, 2);
+        $this->assertStringContainsString('FROM wp_slim_stats g1 INNER JOIN wp_slim_events ge ON ge.id = g1.id WHERE ge.notes LIKE', $event);
+
+        // A goal that can't be evaluated matches no pageviews either way, never all of them.
+        $this->assertSame('1=0', \wp_slimstat_db::goal_visits_where(['dimension' => 'resource', 'operator' => 'equals', 'value' => ''], true, 1, 2));
+        $this->assertSame('1=0', \wp_slimstat_db::goal_visits_where(['dimension' => 'resource', 'operator' => 'equals', 'value' => ''], false, 1, 2));
+    }
+
     /**
      * @test
      */
