@@ -118,7 +118,7 @@ final class Query
 		$prefix = $GLOBALS['wpdb']->prefix;
 		$rows   = self::rows("SELECT te.notes, te.position, CAST(SUBSTRING_INDEX(t1.resolution,'x',1) AS UNSIGNED) vw, COUNT(*) n
 			FROM {$prefix}slim_events te INNER JOIN {$prefix}slim_stats t1 ON te.id = t1.id
-			WHERE " . self::pageWhere($pageKey) . ' AND ' . self::deviceWhere($device) . ' AND ' . self::VALID_POSITION_SQL . " AND ({$scope})
+			WHERE " . self::pageWhere($pageKey) . ' AND ' . self::deviceWhere($device) . ' AND ' . self::VALID_POSITION_SQL . self::legacyProbe() . " AND ({$scope})
 			GROUP BY te.notes, te.position, vw ORDER BY n DESC LIMIT " . self::MAX_POINTS);
 
 		$points = [];
@@ -163,14 +163,7 @@ final class Query
 		$db     = self::db();
 		$prefix = $GLOBALS['wpdb']->prefix;
 		$ready  = Store::ready();
-		$since  = (int) (get_option(Store::STATE, [])['since'] ?? 0);
-		$width  = "CAST(SUBSTRING_INDEX(t1.resolution,'x',1) AS UNSIGNED)";
-		$split  = [];
-		foreach (self::DEVICES as $name => [$low, $high]) {
-			$split[] = "SUM({$width} BETWEEN {$low} AND {$high}) {$name}";
-		}
-		// History before capture began skips the probe; after it, the probe is a primary-key seek.
-		$probe = $ready ? $db->prepare(' AND (te.dt < %d OR NOT EXISTS (SELECT 1 FROM ' . Store::table() . ' h WHERE h.id = te.id))', $since) : '';
+		$probe  = self::legacyProbe();
 
 		$pages = [];
 		$add   = static function (string $page, array $row) use (&$pages): void {
@@ -190,7 +183,7 @@ final class Query
 			$pages[$page]  = $entry;
 		};
 
-		$legacy = self::rows($db->prepare('SELECT ' . self::pageKeySql('t1.resource') . ' page, COUNT(*) clicks, ' . implode(', ', $split) . ", MAX(te.dt) last
+		$legacy = self::rows($db->prepare('SELECT ' . self::pageKeySql('t1.resource') . ' page, COUNT(*) clicks, ' . self::deviceSplit() . ", MAX(te.dt) last
 			FROM {$prefix}slim_events te INNER JOIN {$prefix}slim_stats t1 ON te.id = t1.id
 			WHERE te.dt BETWEEN %d AND %d AND " . self::VALID_POSITION_SQL . ' AND ' . self::deviceWhere($device) . "{$probe}
 			GROUP BY page ORDER BY clicks DESC LIMIT " . self::MAX_PAGES, $start, $end));
@@ -254,6 +247,122 @@ final class Query
 	}
 
 	/**
+	 * Clicks on one page from slim_heatmap, grouped by element and a 20x20 grid over it.
+	 * rx/ry come back as the grid cell's centre (0..10000 of the element box).
+	 *
+	 * @param int    $start Inclusive dt bound.
+	 * @param int    $end   Inclusive dt bound.
+	 * @param string $scope Prepared WHERE on slim_stats alias t1 (report filters); '1=1' skips the join.
+	 * @return array<int,array{s:string,l:string,rx:int,ry:int,x:int,y:int,vw:int,n:int,d:int,r:int,f:int}>
+	 */
+	public static function clickBins(string $pageKey, string $device, int $start, int $end, string $scope = '1=1'): array
+	{
+		if (!Store::ready()) {
+			return [];
+		}
+		$rows = self::rows('SELECT e.selector, e.label, b.* FROM (SELECT h.sel, h.rx DIV 500 bx, h.ry DIV 500 `by`, ROUND(AVG(h.x)) x, ROUND(AVG(h.y)) y, ROUND(AVG(h.vw)) vw,
+			COUNT(*) n, SUM(h.flags & 2 > 0) dead, SUM(h.flags & 4 > 0) rage, SUM(h.seq = 0) first
+			' . self::heatmapFrom($pageKey, $device, $start, $end, $scope) . ' AND h.kind = 0
+			GROUP BY h.sel, bx, `by` ORDER BY n DESC LIMIT ' . self::MAX_POINTS . ') b LEFT JOIN ' . Store::table('slim_heatmap_elements') . ' e ON e.sel = b.sel');
+
+		$bins = [];
+		foreach ($rows as $row) {
+			$bins[] = [
+				's'  => (string) $row['selector'],
+				'l'  => (string) $row['label'],
+				'rx' => (int) $row['bx'] * 500 + 250,
+				'ry' => (int) $row['by'] * 500 + 250,
+				'x'  => (int) $row['x'],
+				'y'  => (int) $row['y'],
+				'vw' => (int) $row['vw'],
+				'n'  => (int) $row['n'],
+				'd'  => (int) $row['dead'],
+				'r'  => (int) $row['rage'],
+				'f'  => (int) $row['first'],
+			];
+		}
+		return $bins;
+	}
+
+	/**
+	 * How far down one page visitors scrolled: reach[p] is the percentage of pageviews that
+	 * saw p% of the page, half the deepest point at least half of them saw, fold the average
+	 * share visible without scrolling.
+	 *
+	 * @return array{views:int,reach:int[],half:int,fold:int}
+	 */
+	public static function scrollReach(string $pageKey, string $device, int $start, int $end, string $scope = '1=1'): array
+	{
+		$empty = ['views' => 0, 'reach' => [], 'half' => 0, 'fold' => 0];
+		if (!Store::ready()) {
+			return $empty;
+		}
+		$rows = self::rows('SELECT LEAST(100, FLOOR(100 * h.y / h.dh)) band, COUNT(*) n, 100 * AVG(LEAST(h.vh / h.dh, 1)) fold
+			' . self::heatmapFrom($pageKey, $device, $start, $end, $scope) . ' AND h.kind = 1 AND h.dh > 0 GROUP BY band');
+
+		$stopped = array_fill(0, 101, 0);
+		$views   = 0;
+		$fold    = 0.0;
+		foreach ($rows as $row) {
+			$stopped[max(0, min(100, (int) $row['band']))] += (int) $row['n'];
+			$views += (int) $row['n'];
+			$fold  += (float) $row['fold'] * (int) $row['n'];
+		}
+		if (!$views) {
+			return $empty;
+		}
+		$reach = [];
+		$left  = $views;
+		$half  = 0;
+		for ($p = 0; $p <= 100; $p++) {
+			$reach[$p] = (int) round(100 * $left / $views);
+			if (2 * $left >= $views) {
+				$half = $p;
+			}
+			$left -= $stopped[$p];
+		}
+		return ['views' => $views, 'reach' => $reach, 'half' => $half, 'fold' => (int) round($fold / $views)];
+	}
+
+	/** Average scroll depth per device, for the device-gap insight. @return array<string,int> */
+	public static function scrollByDevice(string $pageKey, int $start, int $end, string $scope = '1=1'): array
+	{
+		if (!Store::ready()) {
+			return [];
+		}
+		$names = array_flip(self::DEVICE_CODES);
+		$depth = [];
+		foreach (self::rows('SELECT h.device, ROUND(100 * AVG(LEAST(h.y / h.dh, 1))) depth
+			' . self::heatmapFrom($pageKey, '', $start, $end, $scope) . ' AND h.kind = 1 AND h.dh > 0 GROUP BY h.device') as $row) {
+			if (isset($names[(int) $row['device']])) {
+				$depth[$names[(int) $row['device']]] = (int) $row['depth'];
+			}
+		}
+		return $depth;
+	}
+
+	/**
+	 * Pageviews of one page in a range: per device, and how many came before full
+	 * tracking began (those have link clicks only).
+	 *
+	 * @return array{views:int,desktop:int,tablet:int,mobile:int,older:int,content_id:int}
+	 */
+	public static function deviceViews(string $pageKey, int $start, int $end, string $scope = '1=1'): array
+	{
+		$db    = self::db();
+		$since = Store::ready() ? (int) (get_option(Store::STATE, [])['since'] ?? 0) : PHP_INT_MAX;
+		$row   = self::rows($db->prepare('SELECT COUNT(*) views, ' . self::deviceSplit() . ', SUM(t1.dt < %d) older, MAX(t1.content_id) content_id
+			FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats t1
+			WHERE t1.dt BETWEEN %d AND %d AND ', $since, $start, $end) . self::pageWhere($pageKey) . " AND ({$scope})")[0] ?? [];
+
+		$views = [];
+		foreach (['views', 'desktop', 'tablet', 'mobile', 'older', 'content_id'] as $key) {
+			$views[$key] = (int) ($row[$key] ?? 0);
+		}
+		return $views;
+	}
+
+	/**
 	 * What identifies the clicked element in a legacy note: its id, else its text.
 	 * Notes are cut at 256 bytes, so a truncated JSON object still yields its id.
 	 *
@@ -268,6 +377,41 @@ final class Query
 		$id   = is_string($note['id'] ?? null) && preg_match('/\A[A-Za-z][\w\-:.]{0,127}\z/', $note['id']) ? $note['id'] : '';
 		$text = is_string($note['text'] ?? null) ? trim(preg_replace('/\s+/', ' ', $note['text'])) : '';
 		return ['id' => $id, 'text' => mb_substr($text, 0, 80)];
+	}
+
+	/**
+	 * Each pageview is read by one layer: once capture began, a pageview with heatmap rows
+	 * is not legacy. History before capture skips the probe; after it, it is a primary-key seek.
+	 */
+	private static function legacyProbe(): string
+	{
+		if (!Store::ready()) {
+			return '';
+		}
+		return self::db()->prepare(' AND (te.dt < %d OR NOT EXISTS (SELECT 1 FROM ' . Store::table() . ' h WHERE h.id = te.id))', (int) (get_option(Store::STATE, [])['since'] ?? 0));
+	}
+
+	/** SUM columns counting t1 pageviews per device bucket. */
+	private static function deviceSplit(): string
+	{
+		$width = "CAST(SUBSTRING_INDEX(t1.resolution,'x',1) AS UNSIGNED)";
+		$split = [];
+		foreach (self::DEVICES as $name => [$low, $high]) {
+			$split[] = "SUM({$width} BETWEEN {$low} AND {$high}) {$name}";
+		}
+		return implode(', ', $split);
+	}
+
+	/** FROM/WHERE over slim_heatmap alias h for one page, device and range; joins t1 only for report filters. */
+	private static function heatmapFrom(string $pageKey, string $device, int $start, int $end, string $scope): string
+	{
+		$db   = self::db();
+		$sql  = 'FROM ' . Store::table() . ' h';
+		$sql .= '1=1' === $scope ? '' : ' INNER JOIN ' . $GLOBALS['wpdb']->prefix . 'slim_stats t1 ON t1.id = h.id';
+		$sql .= $db->prepare(' WHERE h.page = UNHEX(%s) AND h.dt BETWEEN %d AND %d', \SlimStat\Schema\SurrogateKey::hex($pageKey), $start, $end);
+		$code = self::DEVICE_CODES[$device] ?? 0;
+		$sql .= $code ? $db->prepare(' AND h.device = %d', $code) : '';
+		return $sql . ('1=1' === $scope ? '' : " AND ({$scope})");
 	}
 
 	/** Database errors surface as errors, never as an empty heatmap. */

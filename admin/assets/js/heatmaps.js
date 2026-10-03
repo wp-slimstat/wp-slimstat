@@ -3,7 +3,8 @@
     'use strict';
     const config = window.SlimStatHeatmaps;
     const root = document.querySelector('.ss-hm');
-    if (!config || !root || !window.wp || !wp.apiFetch) return;
+    // The page viewer replaces the list on the same screen.
+    if (!config || !root || !root.querySelector('.ss-hm-table') || !window.wp || !wp.apiFetch) return;
     const { __, _n, sprintf } = wp.i18n;
     const PER_PAGE = 25;
     const form = root.querySelector('.ss-hm-toolbar');

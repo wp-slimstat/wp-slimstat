@@ -4,12 +4,16 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use SlimStat\Heatmap\Query;
 use SlimStat\Heatmap\Store;
 
 $is_pro   = wp_slimstat::pro_is_installed();
 $viewer   = has_filter('slimstat_heatmap_row_url');
 $is_admin = current_user_can('manage_options');
 $state    = get_option(Store::STATE, []);
+// One page's heatmap (Pro) replaces the list. The key reaches only prepared queries and escaped output.
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Read-only view selector; pageKey() normalises it.
+$page_key = $viewer && isset($_GET['heatmap']) ? Query::pageKey((string) wp_unslash($_GET['heatmap'])) : '';
 $error    = 'off' !== Store::level() ? (string) ($state['error'] ?? '') : '';
 
 wp_localize_script('slimstat-heatmaps', 'SlimStatHeatmaps', [
@@ -47,6 +51,7 @@ if ('' !== $error) {
 <div class="wrap-slimstat slimstat-heatmaps">
     <?php wp_slimstat_admin::get_template('header', ['is_pro' => $is_pro]); ?>
     <div class="ss-hm">
+        <?php if ('' === $page_key) : ?>
         <div class="ss-hm-intro">
             <h1><?php esc_html_e('Heatmaps', 'wp-slimstat'); ?></h1>
             <p>
@@ -57,6 +62,7 @@ if ('' !== $error) {
                 ?>
             </p>
         </div>
+        <?php endif; ?>
 
         <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only notice after the nonce-checked delete redirect. ?>
         <?php if (isset($_GET['deleted'])) : ?>
@@ -86,6 +92,16 @@ if ('' !== $error) {
             </div>
         <?php endif; ?>
 
+        <?php if ('' !== $page_key) : ?>
+            <?php
+            /**
+             * Renders one page's heatmap. Pro hooks it; the list below is skipped.
+             *
+             * @param string $page_key Page key, as Query::pageKey() returns it.
+             */
+            do_action('slimstat_heatmap_viewer', $page_key);
+            ?>
+        <?php else : ?>
 
         <?php do_action('slimstat_heatmap_content'); ?>
 
@@ -194,6 +210,7 @@ if ('' !== $error) {
                     <?php endif; ?>
                 </form>
             </dialog>
+        <?php endif; ?>
         <?php endif; ?>
     </div>
 </div>

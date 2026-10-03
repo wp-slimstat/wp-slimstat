@@ -2228,11 +2228,13 @@ class wp_slimstat_admin
             ]);
         }
 
-        // Heatmaps: no count here, so no lookup on every page load. On the site, the list opens on this page's row.
+        // Heatmaps: no count here, so no lookup on every page load. On the site, the link opens this page's
+        // heatmap where Pro provides one, else the list on this page's row.
         $heatmap_url = $view_url . 'slimheatmap';
         if (!is_admin()) {
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- pageKeyFromUrl() decodes and sanitizes; the key only selects a highlighted row.
-            $heatmap_url = add_query_arg('highlight', rawurlencode(\SlimStat\Heatmap\Query::pageKeyFromUrl((string) ($_SERVER['REQUEST_URI'] ?? '/'))), $heatmap_url);
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- pageKeyFromUrl() decodes and sanitizes; the key only selects a page.
+            $page_key    = \SlimStat\Heatmap\Query::pageKeyFromUrl((string) ($_SERVER['REQUEST_URI'] ?? '/'));
+            $heatmap_url = (string) apply_filters('slimstat_heatmap_row_url', '', $page_key) ?: add_query_arg('highlight', rawurlencode($page_key), $heatmap_url);
         }
         // Add footer node
         $footer_html = '<div class="slimstat-adminbar__footer">'

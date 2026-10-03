@@ -21,19 +21,42 @@ class HeatmapRestController implements RestControllerInterface
 {
     public function register_routes(): void
     {
-        $date = ['type' => 'string', 'pattern' => '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'];
         register_rest_route('slimstat/v1', '/heatmap/pages', [
             'methods'             => 'GET',
             'callback'            => [$this, 'pages'],
             'permission_callback' => [self::class, 'canView'],
-            'args'                => [
-                'from'    => $date,
-                'to'      => $date,
-                'days'    => ['type' => 'integer', 'minimum' => 1, 'maximum' => 3660, 'default' => 30],
-                'device'  => ['type' => 'string', 'enum' => ['', 'desktop', 'tablet', 'mobile'], 'default' => ''],
-                'refresh' => ['type' => 'boolean', 'default' => false],
-            ],
+            'args'                => self::rangeArgs() + ['refresh' => ['type' => 'boolean', 'default' => false]],
         ]);
+    }
+
+    /** Date range and device arguments, shared with Pro's page viewer route. */
+    public static function rangeArgs(): array
+    {
+        $date = ['type' => 'string', 'pattern' => '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'];
+        return [
+            'from'   => $date,
+            'to'     => $date,
+            'days'   => ['type' => 'integer', 'minimum' => 1, 'maximum' => 3660, 'default' => 30],
+            'device' => ['type' => 'string', 'enum' => ['', 'desktop', 'tablet', 'mobile'], 'default' => ''],
+        ];
+    }
+
+    /**
+     * dt holds local wall-clock seconds, so day bounds are taken in UTC.
+     * A custom range sends from and to; a preset sends days, ending today.
+     *
+     * @return array{from:string,to:string,start:int,end:int}|\WP_Error
+     */
+    public static function range(\WP_REST_Request $request)
+    {
+        $to    = (string) ($request['to'] ?: gmdate('Y-m-d', \wp_slimstat::now()));
+        $from  = (string) ($request['from'] ?: gmdate('Y-m-d', strtotime($to . ' UTC') - ((int) $request['days'] - 1) * DAY_IN_SECONDS));
+        $start = strtotime($from . ' 00:00:00 UTC');
+        $end   = strtotime($to . ' 23:59:59 UTC');
+        if (false === $start || false === $end || $start > $end) {
+            return new \WP_Error('slimstat_heatmap_range', __('Choose a start date on or before the end date.', 'wp-slimstat'), ['status' => 400]);
+        }
+        return ['from' => $from, 'to' => $to, 'start' => $start, 'end' => $end];
     }
 
     /** The same gate as every SlimStat report screen. */
@@ -44,18 +67,13 @@ class HeatmapRestController implements RestControllerInterface
 
     public function pages(\WP_REST_Request $request)
     {
-        // dt holds local wall-clock seconds, so day bounds are taken in UTC.
-        // A custom range sends from and to; a preset sends days, ending today.
-        $to   = (string) ($request['to'] ?: gmdate('Y-m-d', \wp_slimstat::now()));
-        $from = (string) ($request['from'] ?: gmdate('Y-m-d', strtotime($to . ' UTC') - ((int) $request['days'] - 1) * DAY_IN_SECONDS));
-        $start = strtotime($from . ' 00:00:00 UTC');
-        $end   = strtotime($to . ' 23:59:59 UTC');
-        if (false === $start || false === $end || $start > $end) {
-            return new \WP_Error('slimstat_heatmap_range', __('Choose a start date on or before the end date.', 'wp-slimstat'), ['status' => 400]);
+        $range = self::range($request);
+        if (is_wp_error($range)) {
+            return $range;
         }
 
         try {
-            $data = Query::cachedPages($start, $end, (string) $request['device'], (bool) $request['refresh']);
+            $data = Query::cachedPages($range['start'], $range['end'], (string) $request['device'], (bool) $request['refresh']);
         } catch (\Throwable $e) {
             return new \WP_Error('slimstat_heatmap_read', $e->getMessage(), ['status' => 500]);
         }
@@ -84,6 +102,6 @@ class HeatmapRestController implements RestControllerInterface
             ];
         }
 
-        return rest_ensure_response(['from' => $from, 'to' => $to, 'updated' => $data['updated'], 'rows' => $rows]);
+        return rest_ensure_response(['from' => $range['from'], 'to' => $range['to'], 'updated' => $data['updated'], 'rows' => $rows]);
     }
 }
