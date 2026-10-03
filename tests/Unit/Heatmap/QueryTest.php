@@ -2,10 +2,11 @@
 /** @license GPL-2.0-or-later */
 namespace WpSlimstat\Tests\Unit\Heatmap;
 
-use PHPUnit\Framework\TestCase;
+use Brain\Monkey\Functions;
 use SlimStat\Heatmap\Query;
+use WpSlimstat\Tests\Unit\WpSlimstatTestCase;
 
-class QueryTest extends TestCase
+class QueryTest extends WpSlimstatTestCase
 {
 	/** D2: devices come from the numeric width, never a string comparison of "WxH". */
 	public function test_device_buckets_compare_widths_as_numbers(): void
@@ -42,6 +43,15 @@ class QueryTest extends TestCase
 			self::assertSame($key, Query::pageKey($resource), $resource);
 		}
 		self::assertNotSame(Query::pageKey('/about-us'), Query::pageKey('/about'));
+	}
+
+	/** The overlay sends location's percent-encoded path; it must match the key ingest stored. */
+	public function test_page_key_from_browser_url_matches_stored_resource(): void
+	{
+		Functions\when('sanitize_text_field')->returnArg();
+		self::assertSame('/caf%c3%a9/', Query::pageKeyFromUrl('/caf%C3%A9/?utm=x'));
+		self::assertSame('/about us', Query::pageKeyFromUrl('/about%20us#team'));
+		self::assertSame('/?p=12', Query::pageKeyFromUrl('/?p=12&replytocom=4'));
 	}
 
 	public function test_element_identity_comes_from_legacy_notes(): void
