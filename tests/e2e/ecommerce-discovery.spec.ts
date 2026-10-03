@@ -30,6 +30,15 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     expect(new URL(await checkout.getAttribute('href') || '').pathname).toBe('/checkout/wp-slimstat-pro');
     expect(new URL(await checkout.getAttribute('href') || '').searchParams.get('tier')).toBe('1-site');
     await expect(checkout).toHaveAttribute('rel', /noopener/);
+    expect(new URL(await checkout.getAttribute('href') || '').searchParams.get('utm_content')).toBe('hero');
+    const features = page.locator('.ss-pro-feature h3');
+    await expect(features).toHaveCount(11);
+    await expect(features.first()).toHaveText('Ecommerce Pro');
+    await expect(page.locator('#ss-pro-live .ss-pro-lede')).toHaveText(/right now|next visitor arrives/);
+    const footer = new URL(await page.getByRole('link', { name: 'Upgrade to SlimStat Pro' }).getAttribute('href') || '');
+    expect(footer.pathname).toBe('/checkout/wp-slimstat-pro');
+    expect(footer.searchParams.get('utm_content')).toBe('footer');
+    await expect(page.getByText('Will I lose my existing reports or settings?')).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath('pro-discovery-desktop.png'), fullPage: true, animations: 'disabled' });
     await page.getByText('Already purchased Pro?', { exact: true }).click();
     await expect(page.getByRole('link', { name: 'Download Pro from your account' })).toBeVisible();
@@ -81,6 +90,10 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await expect(page.getByText(/Save Changes to verify/)).toBeVisible();
     await page.goto('/wp-admin/admin.php?page=slimpro');
     await expect(page.getByRole('heading', { name: 'Your next insight starts here' })).toBeVisible();
+    await expect(page.getByText('Pro is active on this site')).toBeVisible();
+    await expect(page.locator('.ss-pro-feature h3')).toHaveCount(11);
+    await expect(page.getByRole('link', { name: 'Upgrade to SlimStat Pro' })).toHaveCount(0);
+    await expect(page.getByText('Will I lose my existing reports or settings?')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Get Pro for one site' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Upload Pro in WordPress' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Set up email reports' })).toBeVisible();

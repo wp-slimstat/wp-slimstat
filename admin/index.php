@@ -3265,7 +3265,7 @@ class wp_slimstat_admin
      * @return array{sessions:int,sessions_yesterday:int,views:int,views_yesterday:int,referrals:int,referrals_yesterday:int}
      */
     // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Core table prefix and prepared report_scope predicate; aggregate is cached by site and scope above and stored below.
-    private static function adminbar_today_stats()
+    public static function adminbar_today_stats()
     {
         $scope = wp_slimstat::report_scope();
         $transient_key = 'slimstat_adminbar_today_' . get_current_blog_id() . '_' . $scope['cache'];
