@@ -1,12 +1,15 @@
+/* Ink blue in WordPress's own action hue: the brand red reads as an error notice in wp-admin. */
 .wrap-slimstat .ss-pro {
-    --ss-pro-ink: oklch(0.24 0.02 15);
-    --ss-pro-muted: oklch(0.45 0.02 15);
-    --ss-pro-line: oklch(0.91 0.012 15);
-    --ss-pro-accent: oklch(0.50 0.19 18);
-    --ss-pro-accent-hover: oklch(0.43 0.17 18);
-    --ss-pro-on-accent: oklch(0.99 0.004 15);
-    --ss-pro-tint: oklch(0.975 0.012 15);
-    --ss-pro-band: oklch(0.95 0.028 15);
+    --ss-pro-ink: oklch(0.25 0.025 255);
+    --ss-pro-muted: oklch(0.47 0.025 255);
+    --ss-pro-line: oklch(0.915 0.01 255);
+    --ss-pro-accent: oklch(0.47 0.13 255);
+    --ss-pro-accent-hover: oklch(0.40 0.12 255);
+    --ss-pro-on-accent: oklch(0.99 0.004 255);
+    --ss-pro-tint: oklch(0.975 0.01 255);
+    --ss-pro-band: oklch(0.955 0.022 255);
+    --ss-pro-chip: oklch(0.935 0.035 255);
+    --ss-pro-star: oklch(0.64 0.13 70);
     --ss-pro-ease: cubic-bezier(0.25, 1, 0.5, 1);
     max-width: 1120px;
     margin: 32px auto;
@@ -16,14 +19,16 @@
 }
 @supports not (color: oklch(0 0 0)) {
     .wrap-slimstat .ss-pro {
-        --ss-pro-ink: #2b1e20;
-        --ss-pro-muted: #5f5052;
-        --ss-pro-line: #ece2e3;
-        --ss-pro-accent: var(--ss-brand-900);
-        --ss-pro-accent-hover: #941333;
-        --ss-pro-on-accent: #fffcfc;
-        --ss-pro-tint: #fcf7f7;
-        --ss-pro-band: #f9eced;
+        --ss-pro-ink: #1a222e;
+        --ss-pro-muted: #525c69;
+        --ss-pro-line: #dfe3ea;
+        --ss-pro-accent: #1e5ba1;
+        --ss-pro-accent-hover: #0e4786;
+        --ss-pro-on-accent: #fafcfe;
+        --ss-pro-tint: #f2f7fe;
+        --ss-pro-band: #e7f1ff;
+        --ss-pro-chip: #daebff;
+        --ss-pro-star: #be7c1c;
     }
 }
 .ss-pro p { max-width: 68ch; margin: 0; font: inherit; }
@@ -44,7 +49,7 @@
 .ss-pro .ss-pro-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--ss-pro-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .ss-pro .ss-pro-link:hover { color: var(--ss-pro-accent); }
 .ss-pro .ss-pro-proof { margin-block-start: 20px; color: var(--ss-pro-muted); font-size: 13px; }
-.ss-pro-proof span { color: var(--ss-pro-accent); }
+.ss-pro-proof span { color: var(--ss-pro-star); }
 .ss-pro .ss-pro-badge { display: inline-flex; align-items: center; gap: 6px; margin-block-end: 16px; padding: 4px 14px 4px 8px; border-radius: var(--ss-radius-pill); background: var(--ss-surface); color: var(--ss-success-fg); font-size: 13px; font-weight: 600; }
 .ss-pro-badge .dashicons { animation: ss-pro-pop var(--ss-duration-slow) var(--ss-pro-ease) 0.35s both; }
 .ss-pro-toc { padding: 24px; background: var(--ss-surface); border-radius: var(--ss-radius-md); box-shadow: var(--ss-shadow-card); }
@@ -67,8 +72,9 @@
 .ss-pro-delta > span:not(.dashicons) { color: var(--ss-pro-muted); }
 .ss-pro-delta b { margin-inline-end: 6px; padding: 1px 8px; border-radius: var(--ss-radius-pill); background: var(--ss-surface-tint); font-size: 11px; font-weight: 600; }
 .ss-pro-delta .is-pro { color: var(--ss-pro-ink); font-weight: 600; }
-.ss-pro-delta .is-pro b { background: var(--ss-pro-accent); color: var(--ss-pro-on-accent); }
-.ss-pro-arrow { width: 16px; height: 16px; margin-inline-end: 8px; font-size: 16px; vertical-align: -3px; color: var(--ss-pro-accent); transition: translate var(--ss-duration-fast) var(--ss-pro-ease); }
+/* A solid accent fill means "act"; the Pro side of each comparison is a tint. */
+.ss-pro-delta .is-pro b { background: var(--ss-pro-chip); color: var(--ss-pro-accent-hover); }
+.ss-pro-arrow { width: 16px; height: 16px; margin-inline-end: 8px; font-size: 16px; vertical-align: -3px; color: var(--ss-pro-muted); transition: translate var(--ss-duration-fast) var(--ss-pro-ease); }
 .ss-pro-feature:hover .ss-pro-arrow { translate: 2px 0; }
 .rtl .ss-pro-arrow { scale: -1 1; }
 .rtl .ss-pro-feature:hover .ss-pro-arrow { translate: -2px 0; }
