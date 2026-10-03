@@ -504,6 +504,8 @@ class wp_slimstat
             \SlimStat\Ecommerce\Integration::boot();
         }
 
+        \SlimStat\Heatmap\Store::boot();
+
         // REST API Support
         add_action('rest_api_init', [self::class, 'register_rest_route']);
 
@@ -1385,6 +1387,8 @@ class wp_slimstat
     {
         $defaults = self::init_options();
         $defaults['geolocation_provider'] = 'dbip';
+        // Heatmaps start on for new installs only; init_options() keeps upgrades opted out.
+        $defaults['heatmap_capture'] = 'full';
         return $defaults;
     }
 
@@ -1425,6 +1429,12 @@ class wp_slimstat
             // General - Database
             'auto_purge'        => 420,
             'auto_purge_delete' => 'on',
+
+            // Heatmaps (6.1.0): off | main | full; rate in 1/10,000 of pageviews; pages is a
+            // wildcard list like the permalink exclusions, empty for all pages.
+            'heatmap_capture' => 'off',
+            'heatmap_rate'    => 10000,
+            'heatmap_pages'   => '',
 
             // Tracker
             // -----------------------------------------------------------------------
@@ -2265,6 +2275,10 @@ class wp_slimstat
 
         if ('on' !== (self::$settings['ignore_wp_users'] ?? 'off')) {
             $content .= '<li>' . __('User Information: If you are logged in, your username and email may be associated with your visits (only with consent when GDPR mode is enabled).', 'wp-slimstat') . '</li>';
+        }
+
+        if (\SlimStat\Heatmap\Store::capturing()) {
+            $content .= '<li>' . __('Heatmaps: Where visitors click on links, buttons and other page elements, and how far they scroll. What you type is never recorded.', 'wp-slimstat') . '</li>';
         }
 
         $content .= '</ul>';

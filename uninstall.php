@@ -547,6 +547,10 @@ delete_option('slimstat_migration_run_claim');
 delete_option('slimstat_migration_dismissed');
 // Minted by RecoverCorruptedHeatmapPositions as its examined-watermark.
 delete_option('slimstat_heatmap_recovery_watermark');
+// SlimStat\Heatmap\Store: STATE, GENERATION and the setup CLAIM. Its tables come from the manifest.
+delete_option('slimstat_heatmap_state');
+delete_option('slimstat_heatmap_generation');
+delete_option('slimstat_heatmap_setup');
 
     // Goals & Funnels (5.5.0+): admin-configured records + cache-version key.
     delete_option('slimstat_goals');

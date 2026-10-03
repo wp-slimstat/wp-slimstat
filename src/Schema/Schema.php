@@ -137,6 +137,50 @@ final class Schema
                 'idx_ecommerce_retention' => 'dt',
             ],
         ],
+        // Heatmap capture (6.1.0). Created only when heatmap tracking is enabled; rows are
+        // purged and erased with their pageview, never archived. One row per click (kind 0)
+        // plus one scroll row (kind 1) per captured pageview; (id, kind, seq) collapses retries.
+        'slim_heatmap' => [
+            'on_demand' => true,
+            'columns' => [
+                'id'     => 'INT UNSIGNED NOT NULL',
+                'kind'   => 'TINYINT UNSIGNED NOT NULL DEFAULT 0',
+                'seq'    => 'SMALLINT UNSIGNED NOT NULL DEFAULT 0',
+                'page'   => 'BINARY(8) NOT NULL',
+                'dt'     => 'INT UNSIGNED NOT NULL DEFAULT 0',
+                'device' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0',
+                'vw'     => 'SMALLINT UNSIGNED NOT NULL DEFAULT 0',
+                'vh'     => 'SMALLINT UNSIGNED NOT NULL DEFAULT 0',
+                'dh'     => 'MEDIUMINT UNSIGNED NOT NULL DEFAULT 0',
+                'x'      => 'SMALLINT UNSIGNED NOT NULL DEFAULT 0',
+                'y'      => 'MEDIUMINT UNSIGNED NOT NULL DEFAULT 0',
+                'sel'    => 'BINARY(8) DEFAULT NULL',
+                'rx'     => 'SMALLINT UNSIGNED NOT NULL DEFAULT 0',
+                'ry'     => 'SMALLINT UNSIGNED NOT NULL DEFAULT 0',
+                'flags'  => 'TINYINT UNSIGNED NOT NULL DEFAULT 0',
+            ],
+            'primary' => 'id, kind, seq',
+            'foreign_key' => [
+                'name' => 'fk_{prefix}slim_heatmap_id',
+                'column' => 'id', 'references' => 'slim_stats', 'on' => 'id',
+            ],
+            'indexes' => [
+                'idx_heatmap_page' => 'page, kind, device, dt',
+                'idx_heatmap_list' => 'kind, dt, page, flags',
+            ],
+        ],
+        // Element dictionary for slim_heatmap.sel. Bounded by site structure, never purged.
+        // ponytail: no orphan cleanup; add one if a site grows this past ~100k rows.
+        'slim_heatmap_elements' => [
+            'on_demand' => true,
+            'columns' => [
+                'sel'      => 'BINARY(8) NOT NULL',
+                'selector' => "VARCHAR(255) NOT NULL DEFAULT ''",
+                'label'    => "VARCHAR(64) NOT NULL DEFAULT ''",
+            ],
+            'primary' => 'sel',
+            'indexes' => [],
+        ],
         'slim_events' => [
             'columns' => [
                 'event_id'          => 'INT(10) NOT NULL AUTO_INCREMENT',
