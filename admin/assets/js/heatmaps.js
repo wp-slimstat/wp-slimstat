@@ -64,42 +64,57 @@
         dialog.showModal();
     }
 
+    // A neutral split bar plus the leading device in words; the full split is the tooltip.
     function devices(row) {
         const names = [__('Desktop', 'wp-slimstat'), __('Tablet', 'wp-slimstat'), __('Mobile', 'wp-slimstat')];
         const label = names.map((name, i) => name + ' ' + number.format(row.devices[i])).join(', ');
-        const bar = el('span', { class: 'ss-hm-devices', role: 'img', 'aria-label': label, title: label });
+        const bar = el('span', { class: 'ss-hm-devices', 'aria-hidden': 'true' });
         row.devices.forEach((n, i) => {
             if (n) bar.append(el('span', { class: 'ss-hm-device-' + i, style: 'flex-grow:' + n }));
         });
-        return bar;
+        const top = row.devices.indexOf(Math.max(...row.devices));
+        const share = row.clicks ? Math.round((row.devices[top] / row.clicks) * 100) : 0;
+        return el('span', { class: 'ss-hm-device', title: label }, [
+            bar,
+            el('span', {}, [sprintf(
+                /* translators: 1: device name, 2: its share of clicks in percent */
+                __('%1$s %2$s%%', 'wp-slimstat'), names[top], share
+            )]),
+            el('span', { class: 'screen-reader-text' }, [label]),
+        ]);
     }
 
-    function rowNode(row) {
+    function rowNode(row, shown) {
         const action = row.url
-            ? el('a', { class: 'button', href: row.url }, [__('View heatmap', 'wp-slimstat')])
-            : el('button', { type: 'button', class: 'button' }, [
+            ? el('a', { class: 'button button-small', href: row.url }, [__('View heatmap', 'wp-slimstat')])
+            : el('button', { type: 'button', class: 'button button-small ss-hm-locked', title: __('Available in SlimStat Pro', 'wp-slimstat') }, [
                   el('span', { class: 'dashicons dashicons-lock', 'aria-hidden': 'true' }),
                   __('View heatmap', 'wp-slimstat'),
-                  el('span', { class: 'ss-hm-pro' }, [__('Pro', 'wp-slimstat')]),
+                  el('span', { class: 'screen-reader-text' }, [__('(Pro)', 'wp-slimstat')]),
               ]);
         if (!row.url) action.addEventListener('click', () => openRow(row));
-        const page = el('td', {}, row.title ? [el('strong', {}, [row.title]), el('span', { class: 'ss-hm-path' }, [row.page])] : [el('span', { class: 'ss-hm-path' }, [row.page])]);
+        // No post title (archives, search, 404): the address is the name.
+        const page = el('td', { class: 'ss-hm-page' }, row.title ? [el('strong', {}, [row.title]), el('span', { class: 'ss-hm-path' }, [row.page])] : [el('strong', {}, [row.page])]);
         const dead = null === row.dead ? '' : sprintf(
             /* translators: 1: dead clicks, 2: rage clicks */
             __('%1$s dead · %2$s rage', 'wp-slimstat'), number.format(row.dead), number.format(row.rage)
         );
         const tr = el('tr', { class: row.page === state.highlight ? 'is-highlighted' : '' }, [
             page,
-            el('td', { class: 'num' }, [number.format(row.clicks)]),
+            // Heat dot: share of the hottest page in the range; sqrt keeps quiet pages visible.
+            el('td', { class: 'num' }, [
+                el('span', { class: 'ss-hm-heat', style: '--heat:' + Math.max(12, Math.round(Math.sqrt(row.clicks / shown.max) * 100)) + '%', 'aria-hidden': 'true' }),
+                number.format(row.clicks),
+            ]),
             el('td', { class: 'num' }, [number.format(row.pageviews)]),
             el('td', { class: 'num' }, [row.pageviews ? number.format(row.clicks / row.pageviews) : '']),
             el('td', {}, [devices(row)]),
-            el('td', { class: 'num' }, [null === row.scroll ? '' : row.scroll + '%']),
-            el('td', {}, [dead]),
-            el('td', {}, [row.lastText]),
-            el('td', {}, [el('span', { class: 'ss-hm-badge' + (row.full ? ' is-full' : '') }, [row.full ? __('All clicks + scroll', 'wp-slimstat') : __('Links & buttons', 'wp-slimstat')])]),
-            el('td', {}, [action]),
-        ]);
+            shown.scroll && el('td', { class: 'num' }, [null === row.scroll ? '' : row.scroll + '%']),
+            shown.dead && el('td', {}, [dead]),
+            el('td', { class: 'ss-hm-nowrap' }, [row.lastText]),
+            shown.full && el('td', {}, [el('span', { class: 'ss-hm-badge' + (row.full ? ' is-full' : '') }, [row.full ? __('All clicks + scroll', 'wp-slimstat') : __('Links & buttons', 'wp-slimstat')])]),
+            el('td', { class: 'ss-hm-action' }, [action]),
+        ].filter(Boolean));
         // The whole row opens it too; the button stays the keyboard path.
         tr.addEventListener('click', (e) => {
             if (!e.target.closest('a,button')) openRow(row);
@@ -107,13 +122,14 @@
         return tr;
     }
 
-    function showEmpty(text, buttons) {
-        empty.replaceChildren(el('p', {}, [text]));
+    function showEmpty(text, buttons, art) {
+        const copy = el('div', {}, [el('p', {}, [text])]);
         (buttons || []).forEach(([label, handler]) => {
             const button = el('button', { type: 'button', class: 'button' }, [label]);
             button.addEventListener('click', handler);
-            empty.append(button);
+            copy.append(button);
         });
+        empty.replaceChildren(...(art ? [document.getElementById('ss-hm-demo').content.cloneNode(true)] : []), copy);
         empty.hidden = false;
     }
 
@@ -121,14 +137,30 @@
         const rows = visibleRows();
         const pages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
         state.page = Math.min(state.page, pages - 1);
-        body.replaceChildren(...rows.slice(state.page * PER_PAGE, (state.page + 1) * PER_PAGE).map(rowNode));
+        // Columns only full tracking fills stay hidden until some row in the range has them.
+        const shown = {
+            scroll: state.rows.some((r) => null !== r.scroll),
+            dead: state.rows.some((r) => null !== r.dead),
+            full: state.rows.some((r) => r.full),
+            max: Math.max(1, ...state.rows.map((r) => r.clicks)),
+        };
+        ['scroll', 'dead', 'full'].forEach((key) => {
+            table.tHead.querySelector('th[data-sort="' + key + '"]').hidden = !shown[key];
+        });
+        body.replaceChildren(...rows.slice(state.page * PER_PAGE, (state.page + 1) * PER_PAGE).map((row) => rowNode(row, shown)));
         table.setAttribute('aria-busy', 'false');
         table.hidden = !rows.length;
         empty.hidden = true;
         if (!state.rows.length) {
+            const buttons = [];
+            if (form.device.value) buttons.push([__('Show all devices', 'wp-slimstat'), () => { form.device.value = ''; load(); }]);
+            if ('90' !== form.range.value) buttons.push([__('Use last 90 days', 'wp-slimstat'), () => { form.range.value = '90'; load(); }]);
             showEmpty(
-                __('No clicks recorded in this date range. SlimStat records link and button clicks on every tracked page; a page appears here after its first click.', 'wp-slimstat'),
-                '90' === form.range.value ? [] : [[__('Use last 90 days', 'wp-slimstat'), () => { form.range.value = '90'; load(); }]]
+                form.device.value
+                    ? __('No clicks recorded on this device in this date range.', 'wp-slimstat')
+                    : __('No clicks recorded in this date range. SlimStat records link and button clicks on every tracked page; a page appears here after its first click.', 'wp-slimstat'),
+                buttons,
+                true
             );
         } else if (!rows.length) {
             /* translators: %s: the search text */

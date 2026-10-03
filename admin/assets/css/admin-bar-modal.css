@@ -439,18 +439,32 @@
     display: inline-flex !important;
     align-items: center !important;
     gap: 5px !important;
-    padding: 6px 10px !important;
+    padding: 6px 8px !important;
+    white-space: nowrap !important;
     border-radius: 6px !important;
     transition: all 0.2s ease !important;
     background: transparent !important;
 }
 
-#wpadminbar .slimstat-adminbar__footer-link:hover {
+#wpadminbar .slimstat-adminbar__footer-links {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+}
+
+#wpadminbar .slimstat-adminbar__footer-link:hover,
+#wpadminbar .slimstat-adminbar__footer-link:focus-visible {
     color: #FFFFFF !important;
     background: rgba(255,255,255,0.08) !important;
 }
 
+#wpadminbar .slimstat-adminbar__footer-link:focus-visible {
+    outline: 2px solid #72AEE6 !important;
+    outline-offset: 1px !important;
+}
+
 #wpadminbar .slimstat-adminbar__footer-link .dashicons {
+    font-family: dashicons !important;
     font-size: 14px !important;
     width: 14px !important;
     height: 14px !important;

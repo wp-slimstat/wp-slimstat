@@ -2234,13 +2234,6 @@ class wp_slimstat_admin
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- pageKeyFromUrl() decodes and sanitizes; the key only selects a highlighted row.
             $heatmap_url = add_query_arg('highlight', rawurlencode(\SlimStat\Heatmap\Query::pageKeyFromUrl((string) ($_SERVER['REQUEST_URI'] ?? '/'))), $heatmap_url);
         }
-        $GLOBALS['wp_admin_bar']->add_node([
-            'id'     => 'slimstat-heatmap',
-            'parent' => 'slimstat-header',
-            'title'  => esc_html__('Heatmap', 'wp-slimstat'),
-            'href'   => $heatmap_url,
-        ]);
-
         // Add footer node
         $footer_html = '<div class="slimstat-adminbar__footer">'
             . '<div class="slimstat-adminbar__footer-logo">'
@@ -2249,10 +2242,15 @@ class wp_slimstat_admin
             . '</svg>'
             . '<span class="slimstat-adminbar__footer-brand">SlimStat</span>'
             . '</div>'
+            . '<div class="slimstat-adminbar__footer-links">'
+            . '<a href="' . esc_url($heatmap_url) . '" class="slimstat-adminbar__footer-link">'
+            . '<span class="dashicons dashicons-location" aria-hidden="true"></span> '
+            . (is_admin() ? esc_html__('Heatmaps', 'wp-slimstat') : esc_html__('Page heatmap', 'wp-slimstat'))
+            . '</a>'
             . '<a href="' . esc_url($overview_url) . '" class="slimstat-adminbar__footer-link">'
             . esc_html__('Explore Details', 'wp-slimstat')
             . ' <span class="dashicons dashicons-external" style="font-size:12px"></span>'
-            . '</a></div>';
+            . '</a></div></div>';
 
         $GLOBALS['wp_admin_bar']->add_node([
             'id'     => 'slimstat-adminbar-footer',

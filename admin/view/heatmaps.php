@@ -47,7 +47,16 @@ if ('' !== $error) {
 <div class="wrap-slimstat slimstat-heatmaps">
     <?php wp_slimstat_admin::get_template('header', ['is_pro' => $is_pro]); ?>
     <div class="ss-hm">
-        <h1><?php esc_html_e('Heatmaps', 'wp-slimstat'); ?></h1>
+        <div class="ss-hm-intro">
+            <h1><?php esc_html_e('Heatmaps', 'wp-slimstat'); ?></h1>
+            <p>
+                <?php
+                echo $viewer
+                    ? esc_html__('See where visitors click on each page and how far they scroll.', 'wp-slimstat')
+                    : esc_html__('See where visitors click on each page. This list uses the link and button clicks SlimStat already records.', 'wp-slimstat');
+                ?>
+            </p>
+        </div>
 
         <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only notice after the nonce-checked delete redirect. ?>
         <?php if (isset($_GET['deleted'])) : ?>
@@ -77,21 +86,6 @@ if ('' !== $error) {
             </div>
         <?php endif; ?>
 
-        <?php if (!$viewer) : ?>
-            <div class="ss-hm-strip">
-                <svg class="ss-hm-demo" viewBox="0 0 120 72" aria-hidden="true" focusable="false">
-                    <rect x="1" y="1" width="118" height="70" rx="6" class="ss-hm-demo-page"/>
-                    <rect x="10" y="10" width="44" height="6" rx="3" class="ss-hm-demo-line"/>
-                    <rect x="10" y="22" width="70" height="4" rx="2" class="ss-hm-demo-line"/>
-                    <rect x="10" y="30" width="60" height="4" rx="2" class="ss-hm-demo-line"/>
-                    <rect x="10" y="44" width="30" height="10" rx="5" class="ss-hm-demo-button"/>
-                    <circle cx="25" cy="49" r="10" class="ss-hm-demo-spot"/>
-                    <circle cx="96" cy="13" r="7" class="ss-hm-demo-spot ss-hm-demo-spot--2"/>
-                    <circle cx="70" cy="58" r="5" class="ss-hm-demo-spot ss-hm-demo-spot--3"/>
-                </svg>
-                <p><?php esc_html_e('A heatmap shows where visitors click on a page. Below are your pages with the link and button clicks SlimStat already records.', 'wp-slimstat'); ?></p>
-            </div>
-        <?php endif; ?>
 
         <?php do_action('slimstat_heatmap_content'); ?>
 
@@ -146,6 +140,18 @@ if ('' !== $error) {
             </table>
         </div>
         <div class="ss-hm-empty" hidden role="status"></div>
+        <template id="ss-hm-demo">
+            <svg class="ss-hm-demo" viewBox="0 0 120 72" aria-hidden="true" focusable="false">
+                <rect x="1" y="1" width="118" height="70" rx="6" class="ss-hm-demo-page"/>
+                <rect x="10" y="10" width="44" height="6" rx="3" class="ss-hm-demo-line"/>
+                <rect x="10" y="22" width="70" height="4" rx="2" class="ss-hm-demo-line"/>
+                <rect x="10" y="30" width="60" height="4" rx="2" class="ss-hm-demo-line"/>
+                <rect x="10" y="44" width="30" height="10" rx="5" class="ss-hm-demo-button"/>
+                <circle cx="25" cy="49" r="10" class="ss-hm-demo-spot"/>
+                <circle cx="96" cy="13" r="7" class="ss-hm-demo-spot ss-hm-demo-spot--2"/>
+                <circle cx="70" cy="58" r="5" class="ss-hm-demo-spot ss-hm-demo-spot--3"/>
+            </svg>
+        </template>
         <nav class="ss-hm-pager" hidden aria-label="<?php esc_attr_e('Pages of results', 'wp-slimstat'); ?>">
             <button type="button" class="button" data-step="-1"><?php esc_html_e('Previous', 'wp-slimstat'); ?></button>
             <span></span>

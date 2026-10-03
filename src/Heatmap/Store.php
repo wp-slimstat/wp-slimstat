@@ -321,7 +321,7 @@ final class Store
 	{
 		$db    = Query::db();
 		$table = self::table();
-		$stats = $GLOBALS['wpdb']->prefix . 'slim_stats';
+		$stats = self::table('slim_stats');
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery -- Table names from the prefix; the email is prepared.
 		$deleted = $db->query($db->prepare("DELETE h FROM {$table} h INNER JOIN {$stats} s ON s.id = h.id WHERE s.email = %s", $email));
 		if (false === $deleted) {
@@ -351,7 +351,7 @@ final class Store
 		$db       = Query::db();
 		$table    = self::table();
 		$elements = self::table('slim_heatmap_elements');
-		$stats    = $GLOBALS['wpdb']->prefix . 'slim_stats';
+		$stats    = self::table('slim_stats');
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery -- Table names from the prefix; values are prepared.
 		$rows = $db->get_results($db->prepare("SELECT h.id, h.kind, h.seq, h.dt, h.y, h.dh, s.resource, e.label FROM {$table} h INNER JOIN {$stats} s ON s.id = h.id LEFT JOIN {$elements} e ON e.sel = h.sel WHERE s.email = %s ORDER BY h.id, h.kind, h.seq LIMIT 500 OFFSET %d", $email, max(0, (int) $page - 1) * 500), ARRAY_A);
 		if ('' !== (string) $db->last_error || !is_array($rows)) {

@@ -68,15 +68,11 @@ final class Query
 
 	/**
 	 * Page key for a browser URL path (location.pathname + search), stored the way the
-	 * tracker stores `resource`: decoded, sanitised, non-ASCII bytes as lowercase %xx.
-	 * Mirrors Tracker\Processor; a drift shows up as an empty overlay on non-ASCII URLs.
+	 * tracker stores `resource`.
 	 */
 	public static function pageKeyFromUrl(string $url): string
 	{
-		$resource = preg_replace_callback('/[^\x20-\x7E]/', static function ($m) {
-			return '%' . bin2hex($m[0]);
-		}, sanitize_text_field(urldecode($url)));
-		return self::pageKey((string) $resource);
+		return self::pageKey(\SlimStat\Tracker\Processor::sanitizeResource($url));
 	}
 
 	/** SQL twin of pageKey() over a resource column. */

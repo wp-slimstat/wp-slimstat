@@ -1959,7 +1959,7 @@ if (!window.requestIdleCallback) {
     var HM_INTERACTIVE = "a,button,input,select,textarea,label,summary,[role=button],[onclick]";
     var HM_UNSTABLE = /\d{3,}|^(is|has|js)-|active|hover|focus|open|current|selected|visible|hidden/;
     var heatmap = null; // { id, key: checksummed id, seq, sel: {selector: index}, s: [], r: [], maxY }
-    var heatmapSeq = {}; // id -> next seq; the id can blink out (stale-id recovery) and come back
+    var heatmapSeq = {}; // last id -> next seq; the id can blink out (stale-id recovery) and come back
     var recentClicks = [];
 
     function heatmapParams() {
@@ -2137,6 +2137,7 @@ if (!window.requestIdleCallback) {
     function heatmapFlush(final) {
         if (!heatmap || !heatmap.id) return;
         var batch = heatmap;
+        heatmapSeq = {}; // an earlier pageview's id never returns, so one entry is enough
         heatmapSeq[batch.id] = batch.seq;
         var raw = takeHeatmap(batch.id, final);
         if (raw) SlimStat.send_to_server("action=slimtrack&id=" + batch.key + raw, true, { priority: "normal" });

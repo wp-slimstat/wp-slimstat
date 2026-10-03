@@ -48,6 +48,14 @@ class Processor
         return false;
     }
 
+    /** A request URI as stored in `resource`: decoded, sanitised, non-ASCII bytes as lowercase %xx. */
+    public static function sanitizeResource(string $uri): string
+    {
+        return (string) preg_replace_callback('/[^\x20-\x7E]/', static function ($m) {
+            return '%' . bin2hex($m[0]);
+        }, sanitize_text_field(urldecode($uri)));
+    }
+
     /**
      * Check if the current WordPress user should be excluded from tracking.
      *
@@ -205,10 +213,7 @@ class Processor
 
         // Capture campaign values BEFORE legacy URL decoding changes encoded delimiters.
         $acquisitionParams = Acquisition::parameters((string) $stat['resource']);
-        $stat['resource'] = sanitize_text_field(urldecode($stat['resource']));
-        $stat['resource'] = preg_replace_callback('/[^\x20-\x7E]/', function ($m) {
-            return '%' . bin2hex($m[0]);
-        }, $stat['resource']);
+        $stat['resource'] = self::sanitizeResource((string) $stat['resource']);
         $parsed_url = wp_parse_url($stat['resource'] ?? '');
         if (!$parsed_url) {
             Query::setProcessingTimestamp(null);
