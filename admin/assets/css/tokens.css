@@ -150,3 +150,15 @@
         --ss-duration-slow: 0s;
     }
 }
+
+/* ─── Shared page layout (every SlimStat screen loads this file) ─── */
+
+/* WordPress pads #wpcontent on the start side only; mirror it so nothing touches the viewport edge. */
+.wrap-slimstat {
+    margin-inline-end: 20px;
+}
+@media screen and (max-width: 782px) {
+    .wrap-slimstat {
+        margin-inline-end: 10px;
+    }
+}
