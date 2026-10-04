@@ -20,6 +20,7 @@ wp_localize_script('slimstat-heatmaps', 'SlimStatHeatmaps', [
     'route' => '/slimstat/v1/heatmap/pages',
     // Free: rows open the Pro modal. Pro without the row filter is an older Pro: ask to update.
     'mode'  => $viewer ? 'pro' : ($is_pro ? 'update' : 'free'),
+    'home'  => home_url('/'),
 ]);
 
 $columns = [
@@ -58,7 +59,7 @@ if ('' !== $error) {
                 <?php
                 echo $viewer
                     ? esc_html__('See where visitors click on each page and how far they scroll.', 'wp-slimstat')
-                    : esc_html__('See where visitors click on each page. This list uses the link and button clicks SlimStat already records.', 'wp-slimstat');
+                    : esc_html__('See which pages get clicks, from the link and button clicks SlimStat already records. SlimStat Pro opens each page\'s click and scroll heatmap.', 'wp-slimstat');
                 ?>
             </p>
         </div>

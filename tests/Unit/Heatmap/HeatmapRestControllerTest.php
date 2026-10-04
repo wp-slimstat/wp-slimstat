@@ -82,6 +82,7 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 		self::assertSame('', $free['rows'][0]['url'], 'Free: no viewer, the row opens the Pro dialog');
 		self::assertSame('About us', $free['rows'][0]['title']);
 		self::assertSame([3, 1, 4], $free['rows'][0]['devices']);
+		self::assertTrue($free['ever'], 'rows in range: the site has clicks, no extra query (no wpdb here)');
 
 		Functions\when('apply_filters')->alias(static fn($hook, $url, $page) => 'slimstat_heatmap_row_url' === $hook ? 'https://example.test/view?page=' . rawurlencode($page) : $url);
 		$pro = (new HeatmapRestController())->pages($request);

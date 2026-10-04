@@ -74,6 +74,8 @@ class HeatmapRestController implements RestControllerInterface
 
         try {
             $data = Query::cachedPages($range['start'], $range['end'], (string) $request['device'], (bool) $request['refresh']);
+            // Empty list: "never recorded a click" gets its own message.
+            $ever = $data['rows'] || Query::anyClicks();
         } catch (\Throwable $e) {
             return new \WP_Error('slimstat_heatmap_read', $e->getMessage(), ['status' => 500]);
         }
@@ -102,6 +104,6 @@ class HeatmapRestController implements RestControllerInterface
             ];
         }
 
-        return rest_ensure_response(['from' => $range['from'], 'to' => $range['to'], 'updated' => $data['updated'], 'rows' => $rows]);
+        return rest_ensure_response(['from' => $range['from'], 'to' => $range['to'], 'updated' => $data['updated'], 'rows' => $rows, 'ever' => $ever]);
     }
 }

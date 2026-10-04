@@ -167,7 +167,8 @@ final class Query
 
 		$pages = [];
 		$add   = static function (string $page, array $row) use (&$pages): void {
-			if ('' === $page) {
+			// The login screen is WordPress's, not a page of the site.
+			if ('' === $page || '/wp-login.php' === substr($page, -13)) {
 				return;
 			}
 			$entry = $pages[$page] ?? ['page' => $page, 'clicks' => 0, 'desktop' => 0, 'tablet' => 0, 'mobile' => 0, 'dead' => null, 'rage' => null, 'scroll' => null, 'last' => 0, 'full' => false, 'pageviews' => 0, 'content_id' => 0];
@@ -244,6 +245,16 @@ final class Query
 			}
 		}
 		return array_values($pages);
+	}
+
+	/** Whether this site has ever recorded a click: an empty list then means "not yet", not "not in this range". */
+	public static function anyClicks(): bool
+	{
+		$prefix = $GLOBALS['wpdb']->prefix;
+		if (self::rows("SELECT 1 FROM {$prefix}slim_events te WHERE " . self::VALID_POSITION_SQL . ' LIMIT 1')) {
+			return true;
+		}
+		return Store::ready() && (bool) self::rows('SELECT 1 FROM ' . Store::table() . ' WHERE kind = 0 LIMIT 1');
 	}
 
 	/**

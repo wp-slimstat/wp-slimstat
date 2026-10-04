@@ -83,6 +83,28 @@ class PagesTest extends WpSlimstatTestCase
 		self::assertSame(0, $rows[1]['pageviews'], 'a page with no pageview row stays 0');
 	}
 
+	public function test_the_login_screen_is_not_a_heatmap_page(): void
+	{
+		$this->canned['slim_events te'][] = ['page' => '/wp-login.php', 'clicks' => '9', 'desktop' => '9', 'tablet' => '0', 'mobile' => '0', 'last' => '250'];
+		$this->canned['slim_events te'][] = ['page' => '/blog/wp-login.php', 'clicks' => '9', 'desktop' => '9', 'tablet' => '0', 'mobile' => '0', 'last' => '250'];
+
+		self::assertSame(['/about', '/'], array_column(Query::pages(1, 999), 'page'), 'WordPress in a subdirectory too');
+	}
+
+	public function test_any_clicks_tells_a_never_tracked_site_from_an_empty_range(): void
+	{
+		$this->canned = ['slim_events te' => [['1' => '1']]];
+		self::assertTrue(Query::anyClicks(), 'an old link click counts');
+
+		$this->canned = [];
+		self::assertFalse(Query::anyClicks());
+		self::assertStringNotContainsString('slim_heatmap', implode("\n", $this->queries), 'no table yet, not read');
+
+		$this->ready();
+		$this->canned = ['kind = 0' => [['1' => '1']]];
+		self::assertTrue(Query::anyClicks(), 'a full-tracking click counts');
+	}
+
 	public function test_both_layers_merge_by_page_key_and_a_pageview_counts_once(): void
 	{
 		$this->ready(100);

@@ -14,7 +14,9 @@
     const pager = root.querySelector('.ss-hm-pager');
     const updated = root.querySelector('.ss-hm-updated');
     const number = new Intl.NumberFormat(document.documentElement.lang || undefined, { maximumFractionDigits: 2 });
-    const state = { rows: [], sort: 'clicks', dir: -1, page: 0, updated: 0, highlight: new URLSearchParams(location.search).get('highlight') || '' };
+    // An empty cell says so instead of looking like a rendering gap.
+    const NONE = '\u2014';
+    const state = { rows: [], ever: true, sort: 'clicks', dir: -1, page: 0, updated: 0, highlight: new URLSearchParams(location.search).get('highlight') || '' };
     let request = 0;
 
     function el(tag, attrs, children) {
@@ -96,7 +98,7 @@
         if (!row.url) action.addEventListener('click', () => openRow(row));
         // No post title (archives, search, 404): the address is the name.
         const page = el('td', { class: 'ss-hm-page' }, row.title ? [el('strong', {}, [row.title]), el('span', { class: 'ss-hm-path' }, [row.page])] : [el('strong', {}, [row.page])]);
-        const dead = null === row.dead ? '' : sprintf(
+        const dead = null === row.dead ? NONE : sprintf(
             /* translators: 1: dead clicks, 2: rage clicks */
             __('%1$s dead · %2$s rage', 'wp-slimstat'), number.format(row.dead), number.format(row.rage)
         );
@@ -108,12 +110,12 @@
                 number.format(row.clicks),
             ]),
             el('td', { class: 'num' }, [number.format(row.pageviews)]),
-            el('td', { class: 'num' }, [row.pageviews ? number.format(row.clicks / row.pageviews) : '']),
+            el('td', { class: 'num' }, [row.pageviews ? number.format(row.clicks / row.pageviews) : NONE]),
             el('td', {}, [devices(row)]),
-            shown.scroll && el('td', { class: 'num' }, [null === row.scroll ? '' : row.scroll + '%']),
+            shown.scroll && el('td', { class: 'num' }, [null === row.scroll ? NONE : row.scroll + '%']),
             shown.dead && el('td', {}, [dead]),
             el('td', { class: 'ss-hm-nowrap' }, [row.lastText]),
-            shown.full && el('td', {}, [el('span', { class: 'ss-hm-badge' + (row.full ? ' is-full' : '') }, [row.full ? __('All clicks + scroll', 'wp-slimstat') : __('Links & buttons', 'wp-slimstat')])]),
+            shown.full && el('td', {}, [el('span', { class: 'ss-hm-badge' + (row.full ? ' is-full' : '') }, [row.full ? __('All clicks + scroll', 'wp-slimstat') : __('Link and button clicks', 'wp-slimstat')])]),
             el('td', { class: 'ss-hm-action' }, [action]),
         ].filter(Boolean));
         // The whole row opens it too; the button stays the keyboard path.
@@ -139,10 +141,11 @@
         const pages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
         state.page = Math.min(state.page, pages - 1);
         // Columns only full tracking fills stay hidden until some row in the range has them.
+        // Without Pro there is one tracking level, so no Tracking column to tell them apart.
         const shown = {
             scroll: state.rows.some((r) => null !== r.scroll),
             dead: state.rows.some((r) => null !== r.dead),
-            full: state.rows.some((r) => r.full),
+            full: 'pro' === config.mode && state.rows.some((r) => r.full),
             max: Math.max(1, ...state.rows.map((r) => r.clicks)),
         };
         ['scroll', 'dead', 'full'].forEach((key) => {
@@ -152,7 +155,15 @@
         table.setAttribute('aria-busy', 'false');
         table.hidden = !rows.length;
         empty.hidden = true;
-        if (!state.rows.length) {
+        const remove = root.querySelector('.ss-hm-delete');
+        if (remove) remove.hidden = !state.ever;
+        if (!state.ever) {
+            showEmpty(
+                __('No clicks recorded on this site yet. SlimStat records link and button clicks on every tracked page. Open your homepage, click a link, then select Refresh.', 'wp-slimstat'),
+                [[__('Open your homepage', 'wp-slimstat'), () => window.open(config.home, '_blank', 'noopener')]],
+                true
+            );
+        } else if (!state.rows.length) {
             const buttons = [];
             if (form.device.value) buttons.push([__('Show all devices', 'wp-slimstat'), () => { form.device.value = ''; load(); }]);
             if ('90' !== form.range.value) buttons.push([__('Use last 90 days', 'wp-slimstat'), () => { form.range.value = '90'; load(); }]);
@@ -195,6 +206,7 @@
             .then((data) => {
                 if (id !== request) return;
                 state.rows = data.rows;
+                state.ever = false !== data.ever;
                 state.updated = data.updated;
                 form.from.value = data.from;
                 form.to.value = data.to;

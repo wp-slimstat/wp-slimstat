@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-03T12:41:07+00:00\n"
+"POT-Creation-Date: 2026-10-04T14:37:15+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -1110,8 +1110,9 @@ msgid "Ecommerce"
 msgstr ""
 
 #: admin/index.php:138
-#: admin/view/heatmaps.php:50
-#: admin/view/heatmaps.php:174
+#: admin/index.php:2250
+#: admin/view/heatmaps.php:57
+#: admin/view/heatmaps.php:197
 #: admin/view/upgrade-pro.php:34
 msgid "Heatmaps"
 msgstr ""
@@ -1239,10 +1240,8 @@ msgstr ""
 msgid "Unlock SlimStat Pro"
 msgstr ""
 
-#: admin/index.php:2240
-#: admin/view/partials/slimstat-pro-modal.php:54
-#: admin/view/partials/slimstat-pro-modal.php:57
-msgid "Heatmap"
+#: admin/index.php:2250
+msgid "Page heatmap"
 msgstr ""
 
 #: admin/index.php:2253
@@ -2063,25 +2062,25 @@ msgstr ""
 msgid "Email Report Configuration"
 msgstr ""
 
-#: admin/view/heatmaps.php:22
+#: admin/view/heatmaps.php:27
 #: admin/view/wp-slimstat-reports.php:1777
 #: src/Heatmap/Store.php:365
 msgid "Page"
 msgstr ""
 
-#: admin/view/heatmaps.php:22
+#: admin/view/heatmaps.php:27
 msgid "Page title and address."
 msgstr ""
 
-#: admin/view/heatmaps.php:23
+#: admin/view/heatmaps.php:28
 msgid "Clicks"
 msgstr ""
 
-#: admin/view/heatmaps.php:23
+#: admin/view/heatmaps.php:28
 msgid "Clicks recorded on this page in the date range."
 msgstr ""
 
-#: admin/view/heatmaps.php:24
+#: admin/view/heatmaps.php:29
 #: admin/view/wp-slimstat-db.php:1446
 #: admin/view/wp-slimstat-db.php:1943
 #: admin/view/wp-slimstat-reports.php:48
@@ -2093,208 +2092,212 @@ msgstr ""
 msgid "Pageviews"
 msgstr ""
 
-#: admin/view/heatmaps.php:24
+#: admin/view/heatmaps.php:29
 msgid "Pageviews of this page in the date range."
 msgstr ""
 
-#: admin/view/heatmaps.php:25
+#: admin/view/heatmaps.php:30
 msgid "Clicks per pageview"
 msgstr ""
 
-#: admin/view/heatmaps.php:25
+#: admin/view/heatmaps.php:30
 msgid "Average clicks each pageview of this page received."
 msgstr ""
 
-#: admin/view/heatmaps.php:26
+#: admin/view/heatmaps.php:31
 #: admin/view/partials/ecommerce.php:123
 msgid "Devices"
 msgstr ""
 
-#: admin/view/heatmaps.php:26
+#: admin/view/heatmaps.php:31
 msgid "Clicks by device: desktop, tablet and mobile."
 msgstr ""
 
-#: admin/view/heatmaps.php:27
+#: admin/view/heatmaps.php:32
 #: src/Heatmap/Store.php:366
 #: src/Heatmap/Store.php:369
 msgid "Scroll depth"
 msgstr ""
 
-#: admin/view/heatmaps.php:27
+#: admin/view/heatmaps.php:32
 msgid "How far down the page visitors scrolled, on average. Needs full tracking."
 msgstr ""
 
-#: admin/view/heatmaps.php:28
+#: admin/view/heatmaps.php:33
 msgid "Dead & rage"
 msgstr ""
 
-#: admin/view/heatmaps.php:28
+#: admin/view/heatmaps.php:33
 msgid "Dead clicks: clicks on things that aren't links or buttons. Rage clicks: 3 or more quick clicks in the same spot."
 msgstr ""
 
-#: admin/view/heatmaps.php:29
+#: admin/view/heatmaps.php:34
 msgid "Last click"
 msgstr ""
 
-#: admin/view/heatmaps.php:29
+#: admin/view/heatmaps.php:34
 msgid "Date of the most recent click on this page."
 msgstr ""
 
-#: admin/view/heatmaps.php:30
+#: admin/view/heatmaps.php:35
 msgid "Tracking"
 msgstr ""
 
-#: admin/view/heatmaps.php:30
+#: admin/view/heatmaps.php:35
 msgid "What the data covers: all clicks and scroll depth, or link and button clicks only."
 msgstr ""
 
-#: admin/view/heatmaps.php:36
+#: admin/view/heatmaps.php:41
 msgid "the database user is not allowed to create tables"
 msgstr ""
 
-#: admin/view/heatmaps.php:37
+#: admin/view/heatmaps.php:42
 msgid "Ask your host to give the database user CREATE permission."
 msgstr ""
 
-#: admin/view/heatmaps.php:39
+#: admin/view/heatmaps.php:44
 msgid "the database server is out of space"
 msgstr ""
 
-#: admin/view/heatmaps.php:40
+#: admin/view/heatmaps.php:45
 msgid "The database server is out of space; contact your host."
 msgstr ""
 
-#: admin/view/heatmaps.php:42
+#: admin/view/heatmaps.php:47
 msgid "the database returned an error"
 msgstr ""
 
-#: admin/view/heatmaps.php:55
+#: admin/view/heatmaps.php:61
+msgid "See where visitors click on each page and how far they scroll."
+msgstr ""
+
+#: admin/view/heatmaps.php:62
+msgid "See which pages get clicks, from the link and button clicks SlimStat already records. SlimStat Pro opens each page's click and scroll heatmap."
+msgstr ""
+
+#: admin/view/heatmaps.php:71
 msgid "Heatmap data deleted. Link and button click history is kept."
 msgstr ""
 
-#: admin/view/heatmaps.php:55
+#: admin/view/heatmaps.php:71
 msgid "Heatmap data could not be deleted. Try again in a minute."
 msgstr ""
 
 #. translators: 1: why the heatmap tables could not be created, 2: what to do about it (may be empty).
-#: admin/view/heatmaps.php:64
+#: admin/view/heatmaps.php:80
 #, php-format
 msgid "Heatmap tables could not be created: %1$s. %2$s Link and button click history still works."
 msgstr ""
 
 #. translators: 1: linked order count, 2: included order count.
-#: admin/view/heatmaps.php:68
+#: admin/view/heatmaps.php:84
 #: admin/view/partials/ecommerce.php:77
 msgid "Details"
 msgstr ""
 
-#: admin/view/heatmaps.php:74
+#: admin/view/heatmaps.php:90
 #: admin/assets/js/ecommerce.js:189
-#: admin/assets/js/heatmaps.js:180
+#: admin/assets/js/heatmaps.js:225
 msgid "Retry"
 msgstr ""
 
-#: admin/view/heatmaps.php:92
-msgid "A heatmap shows where visitors click on a page. Below are your pages with the link and button clicks SlimStat already records."
-msgstr ""
-
-#: admin/view/heatmaps.php:100
+#: admin/view/heatmaps.php:111
 msgid "Date range"
 msgstr ""
 
-#: admin/view/heatmaps.php:102
+#: admin/view/heatmaps.php:113
 msgid "Last 7 days"
 msgstr ""
 
-#: admin/view/heatmaps.php:103
+#: admin/view/heatmaps.php:114
 msgid "Last 30 days"
 msgstr ""
 
-#: admin/view/heatmaps.php:104
+#: admin/view/heatmaps.php:115
 msgid "Last 90 days"
 msgstr ""
 
-#: admin/view/heatmaps.php:105
+#: admin/view/heatmaps.php:116
 msgid "Custom"
 msgstr ""
 
-#: admin/view/heatmaps.php:109
+#: admin/view/heatmaps.php:120
 msgid "From"
 msgstr ""
 
-#: admin/view/heatmaps.php:110
+#: admin/view/heatmaps.php:121
 msgid "To"
 msgstr ""
 
-#: admin/view/heatmaps.php:113
+#: admin/view/heatmaps.php:124
 msgid "Device"
 msgstr ""
 
-#: admin/view/heatmaps.php:115
+#: admin/view/heatmaps.php:126
 msgid "All devices"
 msgstr ""
 
-#: admin/view/heatmaps.php:116
+#: admin/view/heatmaps.php:127
 #: src/Ecommerce/Report.php:400
-#: admin/assets/js/heatmaps.js:68
+#: admin/assets/js/heatmaps.js:72
 msgid "Desktop"
 msgstr ""
 
-#: admin/view/heatmaps.php:117
+#: admin/view/heatmaps.php:128
 #: src/Ecommerce/Report.php:401
-#: admin/assets/js/heatmaps.js:68
+#: admin/assets/js/heatmaps.js:72
 msgid "Tablet"
 msgstr ""
 
-#: admin/view/heatmaps.php:118
+#: admin/view/heatmaps.php:129
 #: src/Ecommerce/Report.php:400
-#: admin/assets/js/heatmaps.js:68
+#: admin/assets/js/heatmaps.js:72
 msgid "Mobile"
 msgstr ""
 
-#: admin/view/heatmaps.php:122
+#: admin/view/heatmaps.php:133
 msgid "Search pages"
 msgstr ""
 
-#: admin/view/heatmaps.php:123
+#: admin/view/heatmaps.php:134
 msgid "Search pages, e.g. /pricing"
 msgstr ""
 
-#: admin/view/heatmaps.php:126
+#: admin/view/heatmaps.php:137
 #: admin/view/partials/ecommerce.php:27
 #: admin/view/wp-slimstat-reports.php:1113
 #: src/Reports/Abstracts/AbstractReport.php:277
 msgid "Refresh"
 msgstr ""
 
-#: admin/view/heatmaps.php:138
+#: admin/view/heatmaps.php:149
 msgid "Actions"
 msgstr ""
 
-#: admin/view/heatmaps.php:149
+#: admin/view/heatmaps.php:172
 msgid "Pages of results"
 msgstr ""
 
-#: admin/view/heatmaps.php:150
+#: admin/view/heatmaps.php:173
 #: src/Reports/AcquisitionReport.php:284
 msgid "Previous"
 msgstr ""
 
-#: admin/view/heatmaps.php:152
+#: admin/view/heatmaps.php:175
 #: src/Reports/AcquisitionReport.php:287
 msgid "Next"
 msgstr ""
 
-#: admin/view/heatmaps.php:156
-#: admin/view/heatmaps.php:163
+#: admin/view/heatmaps.php:179
+#: admin/view/heatmaps.php:186
 msgid "Delete heatmap data"
 msgstr ""
 
-#: admin/view/heatmaps.php:159
+#: admin/view/heatmaps.php:182
 msgid "Delete all full-tracking heatmap data? Link and button click history is kept. This can't be undone."
 msgstr ""
 
-#: admin/view/heatmaps.php:164
+#: admin/view/heatmaps.php:187
 #: admin/view/partials/goals-funnels/confirm-sheet.php:31
 #: admin/view/partials/goals-funnels/funnel-builder.php:61
 #: admin/view/partials/goals-funnels/goal-drawer.php:91
@@ -2303,24 +2306,24 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: admin/view/heatmaps.php:175
+#: admin/view/heatmaps.php:198
 msgid "Update SlimStat Pro to open heatmaps here. The on-page heatmap keeps working until you do."
 msgstr ""
 
-#: admin/view/heatmaps.php:177
+#: admin/view/heatmaps.php:200
 msgid "Go to Plugins"
 msgstr ""
 
-#: admin/view/heatmaps.php:178
-#: admin/view/heatmaps.php:185
+#: admin/view/heatmaps.php:201
+#: admin/view/heatmaps.php:208
 msgid "Not now"
 msgstr ""
 
-#: admin/view/heatmaps.php:184
+#: admin/view/heatmaps.php:207
 msgid "Get SlimStat Pro"
 msgstr ""
 
-#: admin/view/heatmaps.php:187
+#: admin/view/heatmaps.php:210
 msgid "Already have Pro? Install it"
 msgstr ""
 
@@ -3577,6 +3580,11 @@ msgstr ""
 msgid "Export to Excel"
 msgstr ""
 
+#: admin/view/partials/slimstat-pro-modal.php:54
+#: admin/view/partials/slimstat-pro-modal.php:57
+msgid "Heatmap"
+msgstr ""
+
 #: admin/view/partials/slimstat-pro-modal.php:58
 msgid "Display a heatmap layer of the most clicked areas on your website."
 msgstr ""
@@ -4110,7 +4118,6 @@ msgid "Free"
 msgstr ""
 
 #: admin/view/upgrade-pro.php:102
-#: admin/assets/js/heatmaps.js:83
 msgid "Pro"
 msgstr ""
 
@@ -7498,7 +7505,7 @@ msgid "Tracking is turned off, but it looks like the client-side code is still a
 msgstr ""
 
 #: languages/index.php:581
-#: src/Tracker/Processor.php:392
+#: src/Tracker/Processor.php:397
 msgid "GeoIP database file is missing or corrupt. Please go to Settings -> Tracker and click on the \"Update Database\" button to download a fresh copy."
 msgstr ""
 
@@ -7686,7 +7693,7 @@ msgstr ""
 msgid "Consent denied."
 msgstr ""
 
-#: src/Controllers/Rest/HeatmapRestController.php:54
+#: src/Controllers/Rest/HeatmapRestController.php:57
 msgid "Choose a start date on or before the end date."
 msgstr ""
 
@@ -7840,8 +7847,8 @@ msgstr ""
 msgid "Exception occurred: [Code %1$d] %2$s at %3$s:%4$d"
 msgstr ""
 
-#: src/Heatmap/Query.php:286
-#: admin/assets/js/heatmaps.js:180
+#: src/Heatmap/Query.php:437
+#: admin/assets/js/heatmaps.js:225
 msgid "Heatmap data could not be loaded. Try a shorter date range, then retry."
 msgstr ""
 
@@ -8767,7 +8774,7 @@ msgid "Unassigned"
 msgstr ""
 
 #. translators: %s: referring URL rejected as an attempted XSS injection.
-#: src/Tracker/Processor.php:249
+#: src/Tracker/Processor.php:254
 #, php-format
 msgid "Attempted XSS Injection: %s"
 msgstr ""
@@ -9375,64 +9382,94 @@ msgid "Reorder step, position %1$d of %2$d"
 msgstr ""
 
 #. translators: %s: page address, e.g. /pricing
-#: admin/assets/js/heatmaps.js:57
+#: admin/assets/js/heatmaps.js:60
 #, js-format
 msgid "Heatmap for %s is ready"
 msgstr ""
 
 #. translators: %s: number of clicks
-#: admin/assets/js/heatmaps.js:60
+#: admin/assets/js/heatmaps.js:63
 #, js-format
 msgid "%s click recorded in this range. SlimStat Pro shows where visitors click, what they miss and how far they scroll."
 msgid_plural "%s clicks recorded in this range. SlimStat Pro shows where visitors click, what they miss and how far they scroll."
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/assets/js/heatmaps.js:79
-#: admin/assets/js/heatmaps.js:82
+#. translators: 1: device name, 2: its share of clicks in percent
+#: admin/assets/js/heatmaps.js:84
+#, js-format
+msgid "%1$s %2$s%%"
+msgstr ""
+
+#: admin/assets/js/heatmaps.js:92
+#: admin/assets/js/heatmaps.js:95
 msgid "View heatmap"
 msgstr ""
 
+#: admin/assets/js/heatmaps.js:93
+msgid "Available in SlimStat Pro"
+msgstr ""
+
+#: admin/assets/js/heatmaps.js:96
+msgid "(Pro)"
+msgstr ""
+
 #. translators: 1: dead clicks, 2: rage clicks
-#: admin/assets/js/heatmaps.js:89
+#: admin/assets/js/heatmaps.js:103
 #, js-format
 msgid "%1$s dead · %2$s rage"
 msgstr ""
 
-#: admin/assets/js/heatmaps.js:100
+#: admin/assets/js/heatmaps.js:118
 msgid "All clicks + scroll"
 msgstr ""
 
-#: admin/assets/js/heatmaps.js:100
-msgid "Links & buttons"
+#: admin/assets/js/heatmaps.js:118
+msgid "Link and button clicks"
 msgstr ""
 
-#: admin/assets/js/heatmaps.js:130
-msgid "No clicks recorded in this date range. SlimStat records link and button clicks on every tracked page; a page appears here after its first click."
+#: admin/assets/js/heatmaps.js:162
+msgid "No clicks recorded on this site yet. SlimStat records link and button clicks on every tracked page. Open your homepage, click a link, then select Refresh."
 msgstr ""
 
-#: admin/assets/js/heatmaps.js:131
+#: admin/assets/js/heatmaps.js:163
+msgid "Open your homepage"
+msgstr ""
+
+#: admin/assets/js/heatmaps.js:168
+msgid "Show all devices"
+msgstr ""
+
+#: admin/assets/js/heatmaps.js:169
 msgid "Use last 90 days"
 msgstr ""
 
+#: admin/assets/js/heatmaps.js:172
+msgid "No clicks recorded on this device in this date range."
+msgstr ""
+
+#: admin/assets/js/heatmaps.js:173
+msgid "No clicks recorded in this date range. SlimStat records link and button clicks on every tracked page; a page appears here after its first click."
+msgstr ""
+
 #. translators: %s: the search text
-#: admin/assets/js/heatmaps.js:135
+#: admin/assets/js/heatmaps.js:179
 #, js-format
 msgid "No pages match \"%s\". Search checks page addresses, like /pricing."
 msgstr ""
 
 #. translators: 1: current page number, 2: total pages
-#: admin/assets/js/heatmaps.js:139
+#: admin/assets/js/heatmaps.js:183
 #, js-format
 msgid "Page %1$d of %2$d"
 msgstr ""
 
-#: admin/assets/js/heatmaps.js:143
+#: admin/assets/js/heatmaps.js:187
 msgid "Updated just now"
 msgstr ""
 
 #. translators: %d: minutes since the list was computed
-#: admin/assets/js/heatmaps.js:145
+#: admin/assets/js/heatmaps.js:189
 #, js-format
 msgid "Updated %d min ago"
 msgid_plural "Updated %d min ago"
