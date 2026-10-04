@@ -15,8 +15,6 @@
                 feedbackTimer = setTimeout(() => { target.classList.remove('ss-ec-toast'); target.classList.add('screen-reader-text'); }, 4000);
             }
         }
-        const status = document.querySelector('.ss-ec-refresh-status');
-        if (status) status.textContent = message;
     };
     function selectTab(tab, focus) {
         const card = tab.closest('.ss-ec-card');
@@ -130,32 +128,10 @@
                 },
                 scales: {
                     x: { grid: { display: false }, border: { display: false }, ticks: { color: text, maxTicksLimit: 8, maxRotation: 0, font: { size: 11 } } },
-                    y: { beginAtZero: true, suggestedMax: metric === 'rate' ? 1 : undefined, border: { display: false }, grid: { color: colors.getPropertyValue('--ss-border-soft').trim() }, ticks: { color: text, maxTicksLimit: 5, precision: metric === 'rate' ? 2 : 0, // matches the label's digits, so no two ticks read the same callback: v => Number(v).toLocaleString(document.documentElement.lang, { maximumFractionDigits: metric === 'rate' ? 2 : 0 }) + (metric === 'rate' ? '%' : ''), font: { size: 11 } } },
+                    y: { beginAtZero: true, suggestedMax: metric === 'rate' ? 1 : undefined, border: { display: false }, grid: { color: colors.getPropertyValue('--ss-border-soft').trim() }, ticks: { color: text, maxTicksLimit: 5, precision: metric === 'rate' ? 2 : 0, /* matches the label's digits, so no two ticks read the same */ callback: v => Number(v).toLocaleString(document.documentElement.lang, { maximumFractionDigits: metric === 'rate' ? 2 : 0 }) + (metric === 'rate' ? '%' : ''), font: { size: 11 } } },
                 },
             },
         });
-    }
-    function toolbar() {
-        if (new URL(location.href).searchParams.get('page') !== 'slimview7') return;
-        const form = document.getElementById('slimstat-filters-form'); if (!form) return;
-        let controls = document.querySelector('.ss-ec-controls');
-        if (!controls) {
-            controls = document.createElement('div'); controls.className = 'ss-ec-controls';
-            form.before(controls); controls.append(form);
-            const chips = document.getElementById('slimstat-current-filters'); if (chips) controls.append(chips);
-            const filters = document.getElementById('slimstat-filters'); filters.hidden = true;
-            const toggle = document.createElement('button'); toggle.type = 'button'; toggle.className = 'button';
-            toggle.textContent = __('Filters', 'wp-slimstat'); toggle.setAttribute('aria-expanded', 'false'); toggle.setAttribute('aria-controls', filters.id);
-            toggle.addEventListener('click', () => { filters.hidden = !filters.hidden; toggle.setAttribute('aria-expanded', String(!filters.hidden)); if (!filters.hidden) filters.querySelector('select').focus(); });
-            form.append(toggle);
-            const saved = document.getElementById('slimstat-load-saved-filters'); if (saved) form.append(saved);
-            const status = document.createElement('span'); status.className = 'ss-ec-refresh-status'; status.textContent = __('Ready to refresh', 'wp-slimstat'); form.append(status);
-            document.getElementById('slimstat-filter-name').setAttribute('aria-label', __('Filter dimension', 'wp-slimstat'));
-            document.getElementById('slimstat-filter-operator').setAttribute('aria-label', __('Filter operator', 'wp-slimstat'));
-            document.getElementById('slimstat-filter-value').setAttribute('aria-label', __('Filter value', 'wp-slimstat'));
-        }
-        const compare = root() && root().querySelector('.ss-ec-compare');
-        if (compare) { const old = controls.querySelector('.ss-ec-compare'); if (old) old.remove(); form.append(compare); }
     }
     function openLinkedReport() {
         if (reportHashHandled || !window.location.hash.startsWith('#ss-ec-panel-')) return;
@@ -165,9 +141,15 @@
         selectTab(document.getElementById(panel.getAttribute('aria-labelledby')), false);
         panel.focus();
     }
+    setInterval(() => {
+        const updated = root()?.querySelector('.ss-ec-updated'); if (!updated) return;
+        const minutes = Math.floor((Date.now() - updated.dataset.at) / 60000);
+        updated.textContent = minutes < 1 ? __('Updated just now', 'wp-slimstat') : sprintf(__('Updated %d min ago', 'wp-slimstat'), minutes);
+    }, 30000);
     window.addEventListener('hashchange', () => { reportHashHandled = false; openLinkedReport(); });
     function init() {
-        toolbar(); const dashboard = root(); if (!dashboard) return;
+        const dashboard = root(); if (!dashboard) return;
+        const updated = dashboard.querySelector('.ss-ec-updated'); if (updated) updated.dataset.at = Date.now();
         const interval = dashboard.querySelector('[data-interval]'); if (interval) state.interval = interval.value;
         dashboard.querySelectorAll('.ss-ec-card').forEach(card => {
             const tab = document.getElementById(state.tabs[card.getAttribute('aria-label')]);

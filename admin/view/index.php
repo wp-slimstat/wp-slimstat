@@ -15,20 +15,20 @@ use SlimStat\Components\DateRangeHelper;
 
         <form action="<?php echo esc_url(wp_slimstat_reports::fs_url()); ?>" method="post" id="slimstat-filters-form">
             <fieldset id="slimstat-filters"><?php
-                $filter_name_html = '<div class="form-field"><select name="f" id="slimstat-filter-name"><option value="" disabled selected>' . esc_html__('Dimension', 'wp-slimstat') . '</option>';
+                $filter_name_html = '<div class="form-field"><select name="f" id="slimstat-filter-name" aria-label="' . esc_attr__('Filter dimension', 'wp-slimstat') . '"><option value="" disabled selected>' . esc_html__('Dimension', 'wp-slimstat') . '</option>';
 foreach (wp_slimstat_db::$columns_names as $a_filter_label => $a_filter_info) {
     $filter_name_html .= sprintf("<option value='%s'>%s</option>", esc_attr($a_filter_label), esc_html($a_filter_info[0]));
 }
 $filter_name_html .= '</select></div>';
 
-$filter_operator_html = '<div class="form-field"><select name="o" id="slimstat-filter-operator">';
+$filter_operator_html = '<div class="form-field"><select name="o" id="slimstat-filter-operator" aria-label="' . esc_attr__('Filter operator', 'wp-slimstat') . '">';
 foreach (wp_slimstat_db::$operator_names as $a_operator_label => $a_operator_name) {
     $filter_operator_html .= sprintf("<option value='%s'>%s</option>", esc_attr($a_operator_label), esc_html($a_operator_name));
 }
 $filter_operator_html .= '</select></div>';
 
 $filter_value_html = '<div class="form-field">
-    <input type="text" class="text" name="v" id="slimstat-filter-value" value="" size="20">
+    <input type="text" class="text" name="v" id="slimstat-filter-value" value="" size="20" aria-label="' . esc_attr__('Filter value', 'wp-slimstat') . '">
 </div>';
 
 if ('on' == wp_slimstat::$settings['enable_sov']) {

@@ -24,7 +24,7 @@ $setup = static function ($label) {
 <div class="ss-ec" data-ecommerce>
 	<div class="ss-ec-heading">
 		<div><h1><?php esc_html_e('Ecommerce', 'wp-slimstat'); ?></h1><p><?php esc_html_e('Your revenue. The reasons behind it. A clearer next step.', 'wp-slimstat'); ?></p></div>
-		<a href="#" class="button refresh" aria-label="<?php esc_attr_e('Refresh Ecommerce reports', 'wp-slimstat'); ?>"><span class="dashicons dashicons-update" aria-hidden="true"></span><?php esc_html_e('Refresh', 'wp-slimstat'); ?></a>
+		<div class="ss-ec-refresh-line"><span class="ss-ec-updated"><?php esc_html_e('Updated just now', 'wp-slimstat'); ?></span> · <a href="#" class="refresh" aria-label="<?php esc_attr_e('Refresh Ecommerce reports', 'wp-slimstat'); ?>"><?php esc_html_e('Refresh', 'wp-slimstat'); ?></a></div>
 	</div>
 	<p class="ss-ec-feedback screen-reader-text" role="status" aria-live="polite"></p>
 	<?php if (!$available) : ?>
@@ -69,7 +69,7 @@ $setup = static function ($label) {
 		?>
 		<div class="ss-ec-toolbar">
 			<span><?php esc_html_e('Order creation date', 'wp-slimstat'); ?></span>
-			<details class="ss-ec-currency"><summary><?php echo esc_html($currency); ?> <span class="screen-reader-text"><?php esc_html_e('Choose currency', 'wp-slimstat'); ?></span></summary><div><?php foreach ($data['currencies'] as $row) : ?><a class="slimstat-filter-link" href="<?php echo esc_url(wp_slimstat_reports::fs_url(Report::CURRENCY_FILTER . ' equals ' . rawurlencode($row['currency']))); ?>" <?php if ($currency === $row['currency']) { echo 'aria-current="true"'; } ?>><?php echo esc_html($row['currency']); ?></a><?php endforeach; ?></div></details>
+			<details class="ss-ec-currency"><summary><?php echo esc_html(sprintf(/* translators: %s: currency code, e.g. USD */ __('Currency: %s', 'wp-slimstat'), $currency)); ?></summary><div><?php foreach ($data['currencies'] as $row) : ?><a class="slimstat-filter-link" href="<?php echo esc_url(wp_slimstat_reports::fs_url(Report::CURRENCY_FILTER . ' equals ' . rawurlencode($row['currency']))); ?>" <?php if ($currency === $row['currency']) { echo 'aria-current="true"'; } ?>><?php echo esc_html($row['currency']); ?></a><?php endforeach; ?></div></details>
 			<label class="ss-ec-compare"><input type="checkbox" data-compare checked> <?php esc_html_e('Compare previous period', 'wp-slimstat'); ?></label>
 			<a href="#ss-ec-definitions" class="noslimstat"><?php esc_html_e('Metric definitions', 'wp-slimstat'); ?></a>
 		</div>
@@ -131,7 +131,7 @@ $setup = static function ($label) {
 			?>
 			<section class="ss-ec-card" aria-label="<?php echo esc_attr($title); ?>">
 				<div class="ss-ec-card-heading"><h3><?php echo esc_html($title); ?></h3><span class="ss-ec-card-hint"><?php esc_html_e('Top 10', 'wp-slimstat'); ?></span></div>
-				<div class="ss-ec-tabs" role="tablist" aria-label="<?php echo esc_attr($title); ?>"><?php foreach ($dimensions as $index => $dimension) : ?><button type="button" role="tab" id="ss-ec-tab-<?php echo esc_attr($dimension); ?>" aria-controls="ss-ec-panel-<?php echo esc_attr($dimension); ?>" aria-selected="<?php echo 0 === $index ? 'true' : 'false'; ?>" tabindex="<?php echo 0 === $index ? '0' : '-1'; ?>"><?php echo esc_html($titles[$dimension]); ?></button><?php endforeach; ?></div>
+				<div class="ss-ec-tabs" role="tablist" aria-label="<?php echo esc_attr($title); ?>"<?php echo 1 === count($dimensions) ? ' hidden' : ''; ?>><?php foreach ($dimensions as $index => $dimension) : ?><button type="button" role="tab" id="ss-ec-tab-<?php echo esc_attr($dimension); ?>" aria-controls="ss-ec-panel-<?php echo esc_attr($dimension); ?>" aria-selected="<?php echo 0 === $index ? 'true' : 'false'; ?>" tabindex="<?php echo 0 === $index ? '0' : '-1'; ?>"><?php echo esc_html($titles[$dimension]); ?></button><?php endforeach; ?></div>
 				<?php foreach ($dimensions as $index => $dimension) :
 					$rows = $data['groups'][$dimension]; $isCoupon = 'coupon' === $dimension;
 					$productDetails = 'product' === $dimension && apply_filters('slimstat_ecommerce_product_details', false);
@@ -140,7 +140,7 @@ $setup = static function ($label) {
 					?>
 					<div class="ss-ec-report" id="ss-ec-panel-<?php echo esc_attr($dimension); ?>" role="tabpanel" aria-labelledby="ss-ec-tab-<?php echo esc_attr($dimension); ?>" tabindex="0" data-dimension="<?php echo esc_attr($dimension); ?>" <?php if ($index) { echo 'hidden'; } ?>>
 						<p class="ss-ec-report-question"><?php echo esc_html($questions[$dimension]); ?></p>
-						<div class="ss-ec-rank-heading"><span><?php echo esc_html($isCoupon ? __('Top by discounts', 'wp-slimstat') : __('Top by net sales', 'wp-slimstat')); ?></span><label><span class="screen-reader-text"><?php esc_html_e('Sort these results', 'wp-slimstat'); ?></span><select data-rank-metric><option value="<?php echo esc_attr($measure); ?>"><?php echo esc_html($isCoupon ? __('Discounts', 'wp-slimstat') : __('Net sales', 'wp-slimstat')); ?></option><option value="orders"><?php esc_html_e('Orders', 'wp-slimstat'); ?></option></select><button type="button" class="ss-ec-icon-button" data-sort aria-label="<?php esc_attr_e('Reverse sort order', 'wp-slimstat'); ?>" aria-pressed="false"><span class="dashicons dashicons-sort" aria-hidden="true"></span></button></label></div>
+						<div class="ss-ec-rank-heading"><span><?php echo esc_html($isCoupon ? __('Top by discounts', 'wp-slimstat') : __('Top by net sales', 'wp-slimstat')); ?></span><label><span class="screen-reader-text"><?php esc_html_e('Sort these results', 'wp-slimstat'); ?></span><select data-rank-metric><option value="<?php echo esc_attr($measure); ?>"><?php echo esc_html($isCoupon ? __('Discounts', 'wp-slimstat') : __('Net sales', 'wp-slimstat')); ?></option><option value="orders"><?php esc_html_e('Orders', 'wp-slimstat'); ?></option></select><button type="button" class="ss-ec-icon-button" data-sort aria-label="<?php esc_attr_e('Reverse sort order', 'wp-slimstat'); ?>" aria-pressed="false"><span class="dashicons dashicons-arrow-down-alt" aria-hidden="true"></span></button></label></div>
 						<?php if (!$rows) : ?><div class="ss-ec-report-empty"><strong><?php esc_html_e('No results for this view', 'wp-slimstat'); ?></strong><p><?php esc_html_e('Try a different period or remove a filter to explore more activity.', 'wp-slimstat'); ?></p></div><?php else : ?>
 						<ol class="ss-ec-rankings">
 						<?php foreach ($rows as $rowIndex => $row) : $shown += (float) $row[$measure]; ?>

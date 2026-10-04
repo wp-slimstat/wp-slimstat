@@ -124,9 +124,7 @@ test('Ecommerce explains incomplete, empty and loading states and keeps the newe
     await page.goto(`/wp-admin/admin.php?${params}`);
     const dashboard = page.locator('[data-ecommerce]');
     await expect(dashboard.locator('[data-metric=net]')).toContainText('115.00');
-    await page.getByRole('button', { name: 'Filters', exact: true }).click();
     await expect(page.getByLabel('Filter dimension')).toBeVisible();
-    await page.getByRole('button', { name: 'Filters', exact: true }).click();
     await dashboard.getByRole('tabpanel', { name: 'Channels', exact: true }).getByLabel('Sort these results').selectOption('orders');
     await expect(dashboard.locator('[data-dimension=channel] .ss-ec-rank-value').first()).toHaveText('2');
     await dashboard.locator('[data-dimension=channel] [data-sort]').click();

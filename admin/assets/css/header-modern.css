@@ -293,4 +293,5 @@
 }
 .backdrop-container{
     margin-top: 0px !important;
+    background-color: transparent; /* show WordPress's admin grey, not a second one */
 }
