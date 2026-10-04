@@ -71,6 +71,15 @@ final class Integration
 		return Schema::tableName('slim_ecommerce', $GLOBALS['wpdb']->prefix);
 	}
 
+	/**
+	 * Figures are provisional only while the import runs. A failed order after it
+	 * finished ($state['error']) is reported on its own; the totals stand.
+	 */
+	public static function provisional(array $state): bool
+	{
+		return empty($state['complete']);
+	}
+
 	public static function ready(): bool
 	{
 		$state = get_option(self::STATE, []);

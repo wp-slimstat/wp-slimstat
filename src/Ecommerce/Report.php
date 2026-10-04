@@ -226,7 +226,7 @@ final class Report
 					'aov' => $orders ? $net / $orders : null, 'visits' => $count, 'buyers' => $buyers,
 					'rate' => !$unavailable && $count >= 100 ? 100 * $buyers / $count : null,
 					'partial' => $partial || $first < Integration::retentionStart(),
-					'provisional' => empty($state['complete']) || !empty($state['error']),
+					'provisional' => Integration::provisional($state),
 				];
 			}
 		}
@@ -250,7 +250,7 @@ final class Report
 			self::fail(__('This date range is in the future. Choose a period with observed activity.', 'wp-slimstat'));
 		}
 		return ['currency' => $this->currency, 'range' => [(int) $this->range['start'], (int) $this->range['end']],
-			'provisional' => empty($state['complete']) || !empty($state['error']),
+			'provisional' => Integration::provisional($state),
 			'retention_limited' => $this->range['start'] < Integration::retentionStart()];
 	}
 
@@ -316,7 +316,7 @@ final class Report
 			$data = (new self())->data('auto', false);
 			$state = get_option(Integration::STATE, []);
 			$orders = (int) $data['current']['orders']; $journey = $data['journey'];
-			$quality = empty($state['complete']) || !empty($state['error']) ? __('Provisional: synchronization is incomplete or needs attention.', 'wp-slimstat') : __('WooCommerce totals; attribution covers retained tracked visits only.', 'wp-slimstat');
+			$quality = Integration::provisional($state) ? __('Provisional: synchronization is incomplete.', 'wp-slimstat') : (!empty($state['error']) ? __('Some orders could not be imported, so totals may miss them.', 'wp-slimstat') : __('WooCommerce totals; attribution covers retained tracked visits only.', 'wp-slimstat'));
 			if ($data['range'][0] < Integration::retentionStart()) { $quality .= ' ' . __('Part of this period is outside analytics retention.', 'wp-slimstat'); }
 			$values = [
 				__('Reporting period', 'wp-slimstat') => self::date('Y-m-d H:i', $data['range'][0]) . ' – ' . self::date('Y-m-d H:i', $data['range'][1]) . ' (' . wp_timezone_string() . ')',

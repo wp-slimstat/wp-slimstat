@@ -130,7 +130,7 @@
                 },
                 scales: {
                     x: { grid: { display: false }, border: { display: false }, ticks: { color: text, maxTicksLimit: 8, maxRotation: 0, font: { size: 11 } } },
-                    y: { beginAtZero: true, suggestedMax: metric === 'rate' ? 1 : undefined, border: { display: false }, grid: { color: colors.getPropertyValue('--ss-border-soft').trim() }, ticks: { color: text, maxTicksLimit: 5, precision: metric === 'orders' ? 0 : undefined, callback: v => Number(v).toLocaleString(document.documentElement.lang, { maximumFractionDigits: metric === 'rate' ? 2 : 0 }) + (metric === 'rate' ? '%' : ''), font: { size: 11 } } },
+                    y: { beginAtZero: true, suggestedMax: metric === 'rate' ? 1 : undefined, border: { display: false }, grid: { color: colors.getPropertyValue('--ss-border-soft').trim() }, ticks: { color: text, maxTicksLimit: 5, precision: metric === 'rate' ? 2 : 0, // matches the label's digits, so no two ticks read the same callback: v => Number(v).toLocaleString(document.documentElement.lang, { maximumFractionDigits: metric === 'rate' ? 2 : 0 }) + (metric === 'rate' ? '%' : ''), font: { size: 11 } } },
                 },
             },
         });

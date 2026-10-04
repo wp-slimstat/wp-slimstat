@@ -161,7 +161,18 @@ test('Ecommerce explains incomplete, empty and loading states and keeps the newe
       try { await (window as any).SlimStatEcommerce.refresh(); return true; } catch { return false; }
     })).toBe(true); // A failed Ecommerce request must not stop the native queue of other reports.
     await page.unroute('**/admin-ajax.php');
-    runWordPressFixture("<?php $state=get_option('slimstat_ecommerce_state'); $state['error']=true; $state['imported']=17; update_option('slimstat_ecommerce_state',$state,false);");
+    // Import finished, one order failed: say so and offer Retry, but the totals stand.
+    runWordPressFixture("<?php $state=get_option('slimstat_ecommerce_state'); $state['complete']=true; $state['error']=true; $state['failed_order']=4242; update_option('slimstat_ecommerce_state',$state,false);");
+    await dashboard.getByRole('link', { name: 'Refresh Ecommerce reports' }).click();
+    await expect(page.locator('#ss-ec-quality > summary')).toContainText('Some orders could not be imported');
+    await expect(page.locator('#ss-ec-quality > summary')).not.toContainText('provisional');
+    await expect(dashboard.getByText('Complete synchronization first', { exact: true })).toHaveCount(0);
+    await page.locator('#ss-ec-quality > summary').click();
+    await expect(page.locator('#ss-ec-quality')).toContainText('Order 4242 could not be synchronized');
+    await expect(dashboard.getByRole('button', { name: 'Retry import' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    // Import still running (and failing): figures are provisional until it completes.
+    runWordPressFixture("<?php $state=get_option('slimstat_ecommerce_state'); $state['complete']=false; $state['imported']=17; update_option('slimstat_ecommerce_state',$state,false);");
     await dashboard.getByRole('link', { name: 'Refresh Ecommerce reports' }).click();
     await expect(page.locator('#ss-ec-quality > summary')).toContainText('figures are provisional');
     await expect(dashboard.getByText('Complete synchronization first', { exact: true })).toBeVisible();
@@ -169,7 +180,7 @@ test('Ecommerce explains incomplete, empty and loading states and keeps the newe
     await expect(dashboard.getByRole('button', { name: 'Retry import' })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.locator('#ss-ec-quality')).not.toHaveAttribute('open');
-    runWordPressFixture("<?php $state=get_option('slimstat_ecommerce_state'); unset($state['error']); $state['complete']=true; update_option('slimstat_ecommerce_state',$state,false);");
+    runWordPressFixture("<?php $state=get_option('slimstat_ecommerce_state'); unset($state['error'], $state['failed_order']); $state['complete']=true; update_option('slimstat_ecommerce_state',$state,false);");
     const emptyDay = new Date((seed.start + 3 * 86400) * 1000).toISOString().slice(0, 10);
     params.set('from', emptyDay); params.set('to', emptyDay);
     await page.goto(`/wp-admin/admin.php?${params}`);
