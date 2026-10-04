@@ -41,7 +41,7 @@ if ($commerce) {
 $groups = [
     ['converts', __('Find what converts', 'wp-slimstat'), $goal_line, $converts],
     ['live', __('Watch visitors arrive', 'wp-slimstat'), $live_line, [
-        ['clock', __('Real-Time Report', 'wp-slimstat'), __('Follow visits as they happen, without reloading the page.', 'wp-slimstat'), __('Blurred preview', 'wp-slimstat'), __('Live chart, minute by minute', 'wp-slimstat')],
+        ['clock', __('Real-Time Report', 'wp-slimstat'), __('Follow visits as they happen, without reloading the page.', 'wp-slimstat'), __('Recent visits list', 'wp-slimstat'), __('Live chart, minute by minute', 'wp-slimstat')],
         ['chart-bar', __('Admin Bar Widget', 'wp-slimstat'), __('Check today\'s visitors and pageviews from any screen.', 'wp-slimstat'), __('Visitors online and sessions', 'wp-slimstat'), __('Adds views, referrals and the live chart', 'wp-slimstat')],
     ]],
     ['people', __('Know who is behind the numbers', 'wp-slimstat'), __('Connect visits to the registered users and networks behind them.', 'wp-slimstat'), [

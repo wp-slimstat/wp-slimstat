@@ -248,6 +248,10 @@ if (preg_match("/'(248|312|18|24)'/", $render)) {
 if (preg_match('/\[\s*3,\s*5,\s*4,\s*7/', $render) || strpos($render, 'blur') !== false) {
     $failures[] = 'add_menu_to_adminbar() still draws a fake or blurred chart/card for Free (F3)';
 }
+// The Free Real-time chart lost its blur too (F4); the Upgrade page must not promise one.
+if (stripos((string) file_get_contents(dirname(__DIR__) . '/admin/view/upgrade-pro.php'), 'blur') !== false) {
+    $failures[] = 'upgrade-pro.php still describes a blurred Free preview that no longer exists (F4, F6)';
+}
 if (!preg_match('/has_filter\(\s*\'admin_body_class\'/', $render)) {
     $failures[] = 'add_menu_to_adminbar() shows the Pro CTA outside SlimStat screens (F7)';
 }
