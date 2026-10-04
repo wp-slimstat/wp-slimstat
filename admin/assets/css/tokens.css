@@ -289,3 +289,26 @@ body .wrap-slimstat .button-secondary:hover {
 /* Pagination: "1–50 of 200+", refresh countdown as muted text (audit B10). */
 .pagination .refresh-countdown { color: var(--ss-text-secondary); font-style: normal; }
 .pagination .refresh-countdown .refresh-timer { font-style: normal; }
+
+/* Inline "Pro adds …" panel for Free: no blur, no modal (audit F1, F4). */
+.slimstat-pro-adds {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ss-space-3) var(--ss-space-4);
+    margin: var(--ss-space-4) 0;
+    padding: var(--ss-space-5);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-sm);
+    background: var(--ss-surface);
+}
+.slimstat-pro-adds p {
+    flex: 1 1 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    max-width: 72ch;
+    font-size: var(--ss-text-md);
+    color: var(--ss-text-primary);
+}
+.live-analytics-chart--locked .slimstat-pro-adds { margin: 0; border: 0; }

@@ -7,20 +7,16 @@ if (!defined('ABSPATH')) {
 $is_pro = wp_slimstat::pro_is_installed();
 
 if (!$is_pro) {
-    // For free users: show blurred content with modal
+    // Free: one inline panel, no blur and no modal (audit F1).
     ?>
-    <style>
-        .slimstat-pro-modal,
-        .slimstat-pro-modal-backdrop {
-            display: block !important;
-        }
-    </style>
-    <div class="backdrop-container">
-        <?php wp_slimstat_admin::get_template('slimstat-pro-modal'); ?>
-        <div class="wrap-slimstat upgrade-pro email-report-locked">
-            <?php wp_slimstat_admin::get_template('header', ['is_pro' => false, 'title' => __('Email Report', 'wp-slimstat')]); ?>
-            <img class="upgrade-pro-background" src="<?php echo esc_url(plugin_dir_url(__FILE__) . '../assets/images/email-report.png'); ?>">
-        </div>
+    <div class="wrap-slimstat">
+        <?php
+        wp_slimstat_admin::get_template('header', ['is_pro' => false, 'title' => __('Email Report', 'wp-slimstat')]);
+        wp_slimstat_admin::get_template('pro-adds', [
+            'text'     => __('Pro sends a daily, weekly or monthly summary of your top pages, sources and goals to your team.', 'wp-slimstat'),
+            'campaign' => 'email-report',
+        ]);
+        ?>
     </div>
     <?php
 } else {

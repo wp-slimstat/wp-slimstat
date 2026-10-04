@@ -96,27 +96,6 @@ $setup = static function ($label) {
 				<p class="ss-ec-comparison" data-comparison-content><?php echo esc_html(sprintf(/* translators: 1: previous period start date, 2: previous period end date. */ __('Compared with %1$s to %2$s (site time). Points align by elapsed time; partial intervals are labeled.', 'wp-slimstat'), Report::date('M j, Y H:i', $data['previous_range'][0]), Report::date('M j, Y H:i', $data['previous_range'][1]))); ?></p>
 			</figure>
 		</section>
-		<?php if ($orders || !isset($data['groups']['campaign'])) : // Pro's reports have nothing to show in a range without orders. ?>
-		<section class="ss-ec-discover" aria-labelledby="ss-ec-discover-title">
-			<?php if (isset($data['groups']['campaign'])) : ?>
-				<h2 id="ss-ec-discover-title"><?php esc_html_e('Your Pro reports are ready', 'wp-slimstat'); ?></h2>
-				<p><?php esc_html_e('Start with a question. Explore the report, then use View report to see exact values and export your current selection.', 'wp-slimstat'); ?></p>
-				<div class="ss-ec-discover-actions">
-					<button type="button" class="button" data-open-report="campaign"><?php esc_html_e('Compare campaigns', 'wp-slimstat'); ?></button>
-					<button type="button" class="button" data-open-report="device"><?php esc_html_e('Explore devices', 'wp-slimstat'); ?></button>
-					<button type="button" class="button" data-open-report="coupon"><?php esc_html_e('Explore coupons', 'wp-slimstat'); ?></button>
-				</div>
-				<?php if (empty(wp_slimstat::$settings['slimstat_pro_license_status']) && current_user_can('manage_options')) : ?><p><a href="<?php echo esc_url(admin_url('admin.php?page=slimconfig&tab=8')); ?>"><?php esc_html_e('Activate your license', 'wp-slimstat'); ?></a> <?php esc_html_e('to receive Pro updates for this site.', 'wp-slimstat'); ?></p><?php endif; ?>
-			<?php elseif (!wp_slimstat::pro_is_installed()) : ?>
-				<h2 id="ss-ec-discover-title"><?php esc_html_e('Find your next revenue opportunity', 'wp-slimstat'); ?></h2>
-				<p><?php esc_html_e('Pro adds campaign and landing-page revenue, device and customer segments, coupon discounts, product refunds and CSV exports. Your overview, channels, sources and products are included in Free.', 'wp-slimstat'); ?></p>
-				<div class="ss-ec-discover-actions"><a class="button button-primary" href="<?php echo esc_url(current_user_can('manage_options') ? admin_url('admin.php?page=slimpro') : 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=plugin&utm_campaign=ecommerce'); ?>"><?php esc_html_e('See what Pro adds to Ecommerce', 'wp-slimstat'); ?></a><?php if (current_user_can('activate_plugins')) : ?><a href="<?php echo esc_url(admin_url('plugins.php')); ?>"><?php esc_html_e('Already have Pro? Activate the plugin', 'wp-slimstat'); ?></a><?php endif; ?></div>
-			<?php else : ?>
-				<h2 id="ss-ec-discover-title"><?php esc_html_e('Update Pro to explore more reports', 'wp-slimstat'); ?></h2>
-				<p><?php esc_html_e('Your installed Pro version has not enabled Ecommerce reports. Update both SlimStat plugins to compatible versions.', 'wp-slimstat'); ?></p>
-			<?php endif; ?>
-		</section>
-		<?php endif; ?>
 		<div class="ss-ec-section-heading"><h2><?php esc_html_e('Revenue drivers', 'wp-slimstat'); ?></h2><p><?php esc_html_e('Explore the leading contributions to your sales.', 'wp-slimstat'); ?></p></div>
 		<?php if (!$orders) : // One line for the section, not one "No results" per card (audit E2). ?>
 		<p class="ss-ec-scope"><?php echo esc_html($provisional ? __('Orders are still importing. Revenue drivers fill in when synchronization completes.', 'wp-slimstat') : __('No WooCommerce orders in this period. Revenue drivers fill in after the first order from a tracked visit.', 'wp-slimstat')); ?></p>
@@ -166,6 +145,28 @@ $setup = static function ($label) {
 			</section>
 		<?php endforeach; ?>
 		</div>
+		<?php endif; ?>
+		<?php // Below Revenue drivers, not above (audit F5). ?>
+		<?php if ($orders || !isset($data['groups']['campaign'])) : // Pro's reports have nothing to show in a range without orders. ?>
+		<section class="ss-ec-discover" aria-labelledby="ss-ec-discover-title">
+			<?php if (isset($data['groups']['campaign'])) : ?>
+				<h2 id="ss-ec-discover-title"><?php esc_html_e('Your Pro reports are ready', 'wp-slimstat'); ?></h2>
+				<p><?php esc_html_e('Start with a question. Explore the report, then use View report to see exact values and export your current selection.', 'wp-slimstat'); ?></p>
+				<div class="ss-ec-discover-actions">
+					<button type="button" class="button" data-open-report="campaign"><?php esc_html_e('Compare campaigns', 'wp-slimstat'); ?></button>
+					<button type="button" class="button" data-open-report="device"><?php esc_html_e('Explore devices', 'wp-slimstat'); ?></button>
+					<button type="button" class="button" data-open-report="coupon"><?php esc_html_e('Explore coupons', 'wp-slimstat'); ?></button>
+				</div>
+				<?php if (empty(wp_slimstat::$settings['slimstat_pro_license_status']) && current_user_can('manage_options')) : ?><p><a href="<?php echo esc_url(admin_url('admin.php?page=slimconfig&tab=8')); ?>"><?php esc_html_e('Activate your license', 'wp-slimstat'); ?></a> <?php esc_html_e('to receive Pro updates for this site.', 'wp-slimstat'); ?></p><?php endif; ?>
+			<?php elseif (!wp_slimstat::pro_is_installed()) : ?>
+				<h2 id="ss-ec-discover-title"><?php esc_html_e('Find your next revenue opportunity', 'wp-slimstat'); ?></h2>
+				<p><?php esc_html_e('Pro adds campaign and landing-page revenue, device and customer segments, coupon discounts, product refunds and CSV exports. Your overview, channels, sources and products are included in Free.', 'wp-slimstat'); ?></p>
+				<div class="ss-ec-discover-actions"><a class="button button-primary" href="<?php echo esc_url(current_user_can('manage_options') ? admin_url('admin.php?page=slimpro') : 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=plugin&utm_campaign=ecommerce'); ?>"><?php esc_html_e('See what Pro adds to Ecommerce', 'wp-slimstat'); ?></a><?php if (current_user_can('activate_plugins')) : ?><a href="<?php echo esc_url(admin_url('plugins.php')); ?>"><?php esc_html_e('Already have Pro? Activate the plugin', 'wp-slimstat'); ?></a><?php endif; ?></div>
+			<?php else : ?>
+				<h2 id="ss-ec-discover-title"><?php esc_html_e('Update Pro to explore more reports', 'wp-slimstat'); ?></h2>
+				<p><?php esc_html_e('Your installed Pro version has not enabled Ecommerce reports. Update both SlimStat plugins to compatible versions.', 'wp-slimstat'); ?></p>
+			<?php endif; ?>
+		</section>
 		<?php endif; ?>
 		<section class="ss-ec-journey" id="ss-ec-journey"><div class="ss-ec-section-heading"><h2><?php esc_html_e('Purchase journey', 'wp-slimstat'); ?></h2><p><?php echo esc_html(sprintf(/* translators: 1: eligible visit count, 2: start date, 3: end date. */ __('Observed in %1$s eligible visits · %2$s to %3$s', 'wp-slimstat'), number_format_i18n($journey['visits']), Report::date('M j, Y', $data['range'][0]), Report::date('M j, Y', $data['range'][1]))); ?></p></div>
 			<?php if (!$journey['visits'] || !array_sum([$journey['products'], $journey['carts'], $journey['checkouts'], $journey['buyers']])) : ?>

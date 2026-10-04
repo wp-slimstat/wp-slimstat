@@ -534,9 +534,6 @@ class wp_slimstat_admin
      */
     public static function styling_admin_menu()
     {
-        if (!wp_slimstat::pro_is_installed()) {
-            echo '<style> a.wp-slimstat-upgrade-to-pro {background-color: #f22f46 !important;color: #fff !important;font-weight: 600 !important;} </style>';
-        }
         // The time-limited "New" badge on the Goals & Funnels item renders in the
         // global sidebar, so its style must load on every admin page (not just
         // slimview6). Tiny, so always emit it. (#20)
@@ -1943,14 +1940,6 @@ class wp_slimstat_admin
             }
         }
 
-        if (isset($submenu[$parent])) {
-            array_walk($submenu[$parent], function (&$item) {
-                if (isset($item[2]) && 'slimpro' === $item[2]) {
-                    $item[4] = isset($item[4]) ? $item[4] . ' wp-slimstat-upgrade-to-pro' : ' wp-slimstat-upgrade-to-pro';
-                }
-            });
-        }
-
         // Load styles and Javascript needed to make the reports look nice and interactive
         foreach ($new_entry as $a_entry) {
             add_action('load-' . $a_entry, [self::class, 'wp_slimstat_stylesheet']);
@@ -2094,17 +2083,15 @@ class wp_slimstat_admin
         // Determine premium status early (needed for chart data)
         $is_pro = wp_slimstat::pro_is_installed();
 
-        // Query minute-by-minute data for the CSS bar chart (30-minute window)
+        // Query minute-by-minute data for the CSS bar chart (30-minute window). Pro only:
+        // Free draws no chart rather than an invented one (audit F3).
         // Reuse LiveAnalyticsReport's session-spanning query for consistent data (#221)
+        $minute_data = [];
         if ($is_pro) {
             $live_report  = new \SlimStat\Reports\Types\Analytics\LiveAnalyticsReport();
             $chart_result = $live_report->get_users_chart_data();
             $minute_data  = $chart_result['data'];
             $max_count    = $chart_result['max_value'];
-        } else {
-            // Fake placeholder data for non-Pro users
-            $minute_data = [3, 5, 4, 7, 6, 8, 5, 9, 7, 6, 8, 10, 7, 5, 6, 8, 9, 7, 6, 5, 8, 10, 9, 7, 6, 8, 5, 7, 6, 8];
-            $max_count = 10;
         }
 
         // Build chart HTML
@@ -2155,13 +2142,18 @@ class wp_slimstat_admin
             'href'  => $overview_url,
         ]);
 
-        // Add stats grid node
-        // For non-Pro users, show fake data for Views and Referrals
-        $views_display = $is_pro ? number_format_i18n($views_today) : '248';
-        $views_yesterday_display = $is_pro ? number_format_i18n($views_yesterday) : '312';
-        $referrals_display = $is_pro ? number_format_i18n($referrals_today) : '18';
-        $referrals_yesterday_display = $is_pro ? number_format_i18n($referrals_yesterday) : '24';
-        $blur_class = $is_pro ? '' : ' slimstat-adminbar__stat-card--blur';
+        // Add stats grid node. Free shows a "Pro" badge where Views and Referrals would be (audit F3).
+        $pro_badge = '<span class="slimstat-adminbar__pro-badge">' . esc_html__('Pro', 'wp-slimstat') . '</span>';
+        $pro_stat  = static function ($id, $today, $yesterday) use ($is_pro, $pro_badge) {
+            if (!$is_pro) {
+                return '<div class="slimstat-adminbar__stat-count">' . $pro_badge . '</div>';
+            }
+            return '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-' . $id . '-count">' . number_format_i18n($today) . '</div>'
+                . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-' . $id . '-compare">'
+                /* translators: %s: formatted count for the previous day. */
+                . sprintf(esc_html__('%s yesterday', 'wp-slimstat'), number_format_i18n($yesterday))
+                . '</div>';
+        };
 
         $stats_html = '<div class="slimstat-adminbar__stats-grid">'
             // Online Users (top left)
@@ -2181,22 +2173,16 @@ class wp_slimstat_admin
             /* translators: %s: formatted count for the previous day. */
             . sprintf(esc_html__('%s yesterday', 'wp-slimstat'), number_format_i18n($sessions_yesterday))
             . '</div></div>'
-            // Views Today (bottom left) - blur for non-Pro
-            . '<div class="slimstat-adminbar__stat-card' . $blur_class . '">'
+            // Views Today (bottom left)
+            . '<div class="slimstat-adminbar__stat-card">'
             . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Views Today', 'wp-slimstat') . '</div>'
-            . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-views-count">' . $views_display . '</div>'
-            . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-views-compare">'
-            /* translators: %s: formatted count for the previous day. */
-            . sprintf(esc_html__('%s yesterday', 'wp-slimstat'), $views_yesterday_display)
-            . '</div></div>'
-            // Referrals Today (bottom right) - blur for non-Pro
-            . '<div class="slimstat-adminbar__stat-card' . $blur_class . '">'
+            . $pro_stat('views', $views_today, $views_yesterday)
+            . '</div>'
+            // Referrals Today (bottom right)
+            . '<div class="slimstat-adminbar__stat-card">'
             . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Referrals Today', 'wp-slimstat') . '</div>'
-            . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-referrals-count">' . $referrals_display . '</div>'
-            . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-referrals-compare">'
-            /* translators: %s: formatted count for the previous day. */
-            . sprintf(esc_html__('%s yesterday', 'wp-slimstat'), $referrals_yesterday_display)
-            . '</div></div>'
+            . $pro_stat('referrals', $referrals_today, $referrals_yesterday)
+            . '</div>'
             . '</div>';
 
         $GLOBALS['wp_admin_bar']->add_node([
@@ -2207,27 +2193,25 @@ class wp_slimstat_admin
         ]);
 
         // Add chart node
-        $chart_wrapper_class = $is_pro ? 'slimstat-adminbar__chart-container' : 'slimstat-adminbar__chart-container slimstat-adminbar__chart-blur';
-        $chart_html = '<div class="' . $chart_wrapper_class . '">'
-            . '<div class="slimstat-adminbar__chart-bars" id="slimstat-adminbar-chart-bars">' . $chart_bars . '</div>'
-            . '</div>';
+        if ($is_pro) {
+            $GLOBALS['wp_admin_bar']->add_node([
+                'id'     => 'slimstat-adminbar-chart',
+                'parent' => 'slimstat-header',
+                'title'  => '<div class="slimstat-adminbar__chart-container">'
+                    . '<div class="slimstat-adminbar__chart-bars" id="slimstat-adminbar-chart-bars">' . $chart_bars . '</div>'
+                    . '</div>',
+                'meta'   => ['class' => 'slimstat-adminbar__chart-wrapper'],
+            ]);
+        }
 
-        $GLOBALS['wp_admin_bar']->add_node([
-            'id'     => 'slimstat-adminbar-chart',
-            'parent' => 'slimstat-header',
-            'title'  => $chart_html,
-            'meta'   => ['class' => 'slimstat-adminbar__chart-wrapper'],
-        ]);
-
-        // Add CTA node (free users only)
-        if (!$is_pro) {
+        // Add CTA node: Free, and only on SlimStat screens, which add this body-class filter on load (audit F7).
+        if (!$is_pro && false !== has_filter('admin_body_class', [self::class, 'add_admin_body_class'])) {
             $cta_html = '<div class="slimstat-adminbar__cta">'
                 . '<div class="slimstat-adminbar__cta-text">'
-                . esc_html__('Pro adds the Real-time chart, heatmaps, email reports and more Ecommerce reports.', 'wp-slimstat')
-                . '</div>'
-                . '<a href="' . esc_url($upgrade_url) . '" target="_blank" class="slimstat-adminbar__cta-button">'
+                . esc_html__('Pro adds today\'s views, referrals and the live chart.', 'wp-slimstat')
+                . ' <a href="' . esc_url($upgrade_url) . '" target="_blank" class="slimstat-adminbar__cta-link">'
                 . esc_html__('Upgrade to Pro', 'wp-slimstat') . '</a>'
-                . '</div>';
+                . '</div></div>';
 
             $GLOBALS['wp_admin_bar']->add_node([
                 'id'     => 'slimstat-adminbar-cta',

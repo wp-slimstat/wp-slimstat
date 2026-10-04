@@ -79,17 +79,27 @@ test.describe('Admin Bar Realtime Refresh (#223/#224)', () => {
     });
     await page.waitForTimeout(3000);
 
-    // Core stat card IDs (always present for all users)
-    const requiredIds = [
-      'slimstat-adminbar-online-header',
-      'slimstat-adminbar-online-count',
-      'slimstat-adminbar-sessions-count',
-      'slimstat-adminbar-sessions-compare',
+    // Online and sessions for everyone; views and referrals only for Pro (Free shows a badge, audit F3)
+    const isPro = await page.evaluate(() => {
+      const bar = (window as any).SlimStatAdminBar;
+      return bar?.is_pro === true || bar?.is_pro === '1';
+    });
+    const proIds = [
       'slimstat-adminbar-views-count',
       'slimstat-adminbar-views-compare',
       'slimstat-adminbar-referrals-count',
       'slimstat-adminbar-referrals-compare',
     ];
+    const requiredIds = [
+      'slimstat-adminbar-online-header',
+      'slimstat-adminbar-online-count',
+      'slimstat-adminbar-sessions-count',
+      'slimstat-adminbar-sessions-compare',
+      ...(isPro ? proIds : []),
+    ];
+    if (!isPro) {
+      for (const id of proIds) await expect(page.locator(`#${id}`)).toHaveCount(0);
+    }
 
     for (const id of requiredIds) {
       const el = page.locator(`#${id}`);

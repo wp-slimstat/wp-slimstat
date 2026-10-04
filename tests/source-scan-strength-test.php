@@ -254,9 +254,9 @@ $fragment = 'try { risky(); } catch (\Throwable $e) { record("x"); }';
 ss_assert_same('a fragment with no open tag still tokenises as PHP', 1, count(slimstat_throwable_catch_bodies($fragment)));
 ss_assert_same('a fragment round-trips byte for byte through the blanker', $fragment, slimstat_blank_comments($fragment));
 
-// A whole FILE that opens with inline HTML must not be mistaken for a fragment. Two are
-// in this tree — admin/view/partials/header.php and slimstat-pro-modal.php both start
-// with an HTML comment. Mistaking one for a fragment prepends `<?php `, which lexes the
+// A whole FILE that opens with inline HTML must not be mistaken for a fragment. One is
+// in this tree — admin/view/partials/header.php starts
+// with an HTML comment. Mistaking it for a fragment prepends `<?php `, which lexes the
 // leading HTML as PHP: a single apostrophe there swallows the rest of the file into a
 // string literal, and then the blankers blank REAL CODE while the catch scanner reports
 // zero guards. Silent and fail-open, which is the hazard class this whole file exists to

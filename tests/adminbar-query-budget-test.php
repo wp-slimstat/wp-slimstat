@@ -237,6 +237,24 @@ if ($shared !== '') {
     }
 }
 
+// ── 4. Free shows no invented figures (audit F3, F7) ────────────────────────
+//
+// Free once rendered hard-coded 248/312/18/24 and a fixed chart series behind a CSS
+// blur, which read as hidden real data. Free shows what it really has; the upsell
+// line appears on SlimStat screens only, and the menu item carries no red fill.
+if (preg_match("/'(248|312|18|24)'/", $render)) {
+    $failures[] = 'add_menu_to_adminbar() renders a hard-coded placeholder figure for Free (F3)';
+}
+if (preg_match('/\[\s*3,\s*5,\s*4,\s*7/', $render) || strpos($render, 'blur') !== false) {
+    $failures[] = 'add_menu_to_adminbar() still draws a fake or blurred chart/card for Free (F3)';
+}
+if (!preg_match('/has_filter\(\s*\'admin_body_class\'/', $render)) {
+    $failures[] = 'add_menu_to_adminbar() shows the Pro CTA outside SlimStat screens (F7)';
+}
+if (stripos(slimstat_function_body($source, 'styling_admin_menu'), '#f22f46') !== false) {
+    $failures[] = 'styling_admin_menu() still paints the Upgrade menu item red (F7)';
+}
+
 // ── Report ─────────────────────────────────────────────────────────────────
 if ($failures !== []) {
     fwrite(STDERR, 'FAIL: adminbar query budget (' . count($failures) . " problem(s))\n");

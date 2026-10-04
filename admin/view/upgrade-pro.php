@@ -31,7 +31,7 @@ if ($goals > 0) {
 $ecommerce = ['cart', __('Ecommerce Pro', 'wp-slimstat'), __('Compare campaign and landing-page net sales, then explore devices, guest orders, coupons and refunds.', 'wp-slimstat'), __('Store totals and product revenue', 'wp-slimstat'), __('Campaign, device, coupon and refund reports', 'wp-slimstat'), $commerce ? __('Order attribution still depends on recorded visits, consent and available history. Pro does not recreate missing tracking data.', 'wp-slimstat') : __('For WooCommerce stores.', 'wp-slimstat')];
 $converts = [
     ['flag', __('Goals & Funnels', 'wp-slimstat'), __('See where visitors complete each step and where they drop off.', 'wp-slimstat'), __('1 goal, no funnels', 'wp-slimstat'), __('5 goals and 3 funnels', 'wp-slimstat')],
-    ['welcome-view-site', __('Heatmaps', 'wp-slimstat'), __('See which links and buttons visitors click on each page.', 'wp-slimstat'), __('Not available', 'wp-slimstat'), __('Click overlay on any page', 'wp-slimstat')],
+    ['welcome-view-site', __('Heatmaps', 'wp-slimstat'), __('See which links and buttons visitors click on each page.', 'wp-slimstat'), __('Page list with click counts', 'wp-slimstat'), __('Click overlay on any page', 'wp-slimstat')],
 ];
 if ($commerce) {
     array_unshift($converts, $ecommerce);
@@ -42,7 +42,7 @@ $groups = [
     ['converts', __('Find what converts', 'wp-slimstat'), $goal_line, $converts],
     ['live', __('Watch visitors arrive', 'wp-slimstat'), $live_line, [
         ['clock', __('Real-Time Report', 'wp-slimstat'), __('Follow visits as they happen, without reloading the page.', 'wp-slimstat'), __('Blurred preview', 'wp-slimstat'), __('Live chart, minute by minute', 'wp-slimstat')],
-        ['chart-bar', __('Admin Bar Widget', 'wp-slimstat'), __('Check today\'s visitors and pageviews from any screen.', 'wp-slimstat'), __('Placeholder figures', 'wp-slimstat'), __('Your real numbers on every screen', 'wp-slimstat')],
+        ['chart-bar', __('Admin Bar Widget', 'wp-slimstat'), __('Check today\'s visitors and pageviews from any screen.', 'wp-slimstat'), __('Visitors online and sessions', 'wp-slimstat'), __('Adds views, referrals and the live chart', 'wp-slimstat')],
     ]],
     ['people', __('Know who is behind the numbers', 'wp-slimstat'), __('Connect visits to the registered users and networks behind them.', 'wp-slimstat'), [
         ['admin-users', __('User Overview', 'wp-slimstat'), __('See what each registered user viewed, and when.', 'wp-slimstat'), __('Not available', 'wp-slimstat'), __('Every registered user, with history', 'wp-slimstat')],
@@ -50,7 +50,7 @@ $groups = [
     ]],
     ['share', __('Share and own your data', 'wp-slimstat'), __('Send the evidence to your team and keep your data where you choose.', 'wp-slimstat'), [
         ['email-alt', __('Email Reports', 'wp-slimstat'), __('Send the reports you choose to your team on a schedule.', 'wp-slimstat'), __('Not available', 'wp-slimstat'), __('Daily, weekly or monthly', 'wp-slimstat')],
-        ['download', __('Data Export', 'wp-slimstat'), __('Download reports with your dates and filters.', 'wp-slimstat'), __('Button prompts an upgrade', 'wp-slimstat'), __('CSV, with an optional tab delimiter', 'wp-slimstat')],
+        ['download', __('Data Export', 'wp-slimstat'), __('Download reports with your dates and filters.', 'wp-slimstat'), __('Not available', 'wp-slimstat'), __('CSV, with an optional tab delimiter', 'wp-slimstat')],
         ['database', __('Custom Database', 'wp-slimstat'), __('Store your analytics in a separate database.', 'wp-slimstat'), __('WordPress database only', 'wp-slimstat'), __('Any MySQL-compatible database', 'wp-slimstat')],
         ['networking', __('Network Analytics', 'wp-slimstat'), __('Read every site in a multisite network together.', 'wp-slimstat'), __('One site at a time', 'wp-slimstat'), __('Aggregated across the network', 'wp-slimstat')],
     ]],
@@ -79,7 +79,7 @@ $groups = [
             <nav class="ss-pro-toc" aria-labelledby="ss-pro-toc-title">
                 <p id="ss-pro-toc-title"><?php echo esc_html($is_pro ? __('In your plan', 'wp-slimstat') : __('In Pro', 'wp-slimstat')); ?></p>
                 <ol>
-                    <?php foreach ($groups as $group) : ?><li><a href="#ss-pro-<?php echo esc_attr($group[0]); ?>"><?php echo esc_html($group[1]); ?></a><span><?php echo esc_html(number_format_i18n(count($group[3]))); ?></span></li><?php endforeach; ?>
+                    <?php foreach ($groups as $group) : ?><li><a href="#ss-pro-<?php echo esc_attr($group[0]); ?>"><?php echo esc_html($group[1]); ?></a><span><?php echo esc_html(sprintf(/* translators: %s: number of features in this group. */ _n('%s feature', '%s features', count($group[3]), 'wp-slimstat'), number_format_i18n(count($group[3])))); ?></span></li><?php endforeach; ?>
                 </ol>
             </nav>
         </header>

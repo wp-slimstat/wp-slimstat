@@ -129,14 +129,16 @@
     transform: translateY(-1px) !important;
 }
 
-#wpadminbar .slimstat-adminbar__stat-card--blur {
-    position: relative !important;
-}
-
-#wpadminbar .slimstat-adminbar__stat-card--blur .slimstat-adminbar__stat-count,
-#wpadminbar .slimstat-adminbar__stat-card--blur .slimstat-adminbar__stat-comparison {
-    filter: blur(5px) !important;
-    user-select: none !important;
+/* Free: a "Pro" badge where the value would be (audit F3). */
+#wpadminbar .slimstat-adminbar__pro-badge {
+    display: inline-block !important;
+    padding: 2px 8px !important;
+    border: 1px solid #8C9196 !important;
+    border-radius: 999px !important;
+    color: #C3C4C7 !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
 }
 
 #wpadminbar .slimstat-adminbar__stat-title {
@@ -326,66 +328,32 @@
     box-shadow: none !important;
 }
 
-/* Blur overlay for free users */
-#wpadminbar .slimstat-adminbar__chart-blur {
-    filter: blur(5px) !important;
-    pointer-events: none !important;
-    position: relative !important;
-    opacity: 0.7 !important;
-}
-
-#wpadminbar .slimstat-adminbar__chart-blur::after {
-    content: '' !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    background: rgba(29, 35, 39, 0.4) !important;
-    border-radius: 8px !important;
-}
-
 /* ---- CTA Banner ---- */
 #wpadminbar .slimstat-adminbar__cta {
-    padding: 18px 16px !important;
-    text-align: center !important;
+    padding: 12px 16px !important;
     border-top: 1px solid #3C4349 !important;
-    background: linear-gradient(180deg, rgba(75,110,245,0.08) 0%, rgba(75,110,245,0.03) 100%) !important;
     margin: 0 !important;
 }
 
 #wpadminbar .slimstat-adminbar__cta-text {
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    color: #E4E6E8 !important;
-    margin: 0 0 14px 0 !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    color: #C3C4C7 !important;
+    margin: 0 !important;
     padding: 0 !important;
     line-height: 1.5 !important;
 }
 
-#wpadminbar .slimstat-adminbar__cta-button {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 8px !important;
-    background: #F22F46 !important;
-    color: #FFFFFF !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    padding: 10px 24px !important;
-    border-radius: 8px !important;
-    text-decoration: none !important;
-    transition: all 0.2s ease !important;
-    border: none !important;
-    cursor: pointer !important;
-    box-shadow: none !important;
+#wpadminbar .slimstat-adminbar__cta-link {
+    display: inline !important;
+    padding: 0 !important;
+    color: #72AEE6 !important;
+    text-decoration: underline !important;
 }
 
-#wpadminbar .slimstat-adminbar__cta-button:hover {
-    background: #D9263C !important;
+#wpadminbar .slimstat-adminbar__cta-link:hover,
+#wpadminbar .slimstat-adminbar__cta-link:focus {
     color: #FFFFFF !important;
-    transform: translateY(-1px) !important;
-    box-shadow: none !important;
 }
 
 /* ---- Footer ---- */

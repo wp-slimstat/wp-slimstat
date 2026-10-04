@@ -140,9 +140,9 @@ function slimstat_tokenize(string $source, ?bool $is_file = null): array
     if (null === $is_file) {
         // Sniff: a whole file contains a real open-tag TOKEN. Anchoring on `^\s*<\?`
         // instead — the obvious test — is wrong for a file that opens with inline HTML,
-        // and two are in this tree (admin/view/partials/header.php and
-        // slimstat-pro-modal.php both start with an HTML comment). Those would be
-        // treated as fragments, get `<?php ` prepended, and have their leading HTML
+        // and one is in this tree (admin/view/partials/header.php starts
+        // with an HTML comment). It would be
+        // treated as a fragment, get `<?php ` prepended, and have its leading HTML
         // lexed as PHP: one apostrophe in that comment and everything after it becomes
         // a string literal, so the blankers would blank REAL CODE and the catch scanner
         // would return zero guards. Silent and fail-open — the exact hazard class this
