@@ -152,6 +152,7 @@ class wp_slimstat_reports
                     'more_select'      => 'MAX(dt) AS dt',
                     'use_date_filters' => false,
                     'raw'              => ['wp_slimstat_db', 'get_top'],
+                    'empty_title'      => __('No visitors in the last 5 minutes.', 'wp-slimstat'),
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview2', 'dashboard'],
@@ -268,6 +269,7 @@ class wp_slimstat_reports
                     'where'            => '((dt_out > ' . (date_i18n('U') - 300) . ') OR (dt > ' . (date_i18n('U') - 300) . ')) AND username <> "" AND username IS NOT NULL',
                     'use_date_filters' => false,
                     'raw'              => ['wp_slimstat_db', 'get_top'],
+                    'empty_title'      => __('No logged-in users in the last 5 minutes.', 'wp-slimstat'),
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview2', 'dashboard'],
@@ -1413,7 +1415,7 @@ class wp_slimstat_reports
             $count_page_results = count($results);
 
             if (0 == $count_page_results) {
-                self::empty_state($_args['empty_hint'] ?? '');
+                self::empty_state($_args['empty_hint'] ?? '', $_args['empty_title'] ?? '');
 
                 if (defined('DOING_AJAX') && DOING_AJAX) {
                     die();
@@ -1640,7 +1642,7 @@ class wp_slimstat_reports
                                 $element_value .= self::get_edit_profile_link($element_custom_value->ID);
                             } else {
                                 $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . sprintf("' class=\"avatar avatar-16 photo\" alt='Unknown'>%s (", esc_html($results[$i]['username'])) . __('Unknown', 'wp-slimstat') . ')</a>';
+                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . sprintf("' class=\"avatar avatar-16 photo\" alt='Unknown'>%s (", esc_html($results[$i]['username'])) . __('account deleted', 'wp-slimstat') . ')</a>';
                             }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
@@ -1668,7 +1670,7 @@ class wp_slimstat_reports
                                 $element_value .= self::get_edit_profile_link($author_id);
                             } else {
                                 $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt='Unknown'>" . esc_html($author_username) . ' (' . __('Unknown', 'wp-slimstat') . ')</a>';
+                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt='Unknown'>" . esc_html($author_username) . ' (' . __('account deleted', 'wp-slimstat') . ')</a>';
                             }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
@@ -1817,7 +1819,7 @@ class wp_slimstat_reports
         $count_page_results = count($results);
 
         if (0 == $count_page_results) {
-            self::empty_state($_args['empty_hint'] ?? '');
+            self::empty_state($_args['empty_hint'] ?? '', $_args['empty_title'] ?? '');
 
             if (defined('DOING_AJAX') && DOING_AJAX) {
                 die();
@@ -2483,7 +2485,7 @@ class wp_slimstat_reports
         $count_page_results = count($results);
 
         if (0 == $count_page_results) {
-            self::empty_state($_args['empty_hint'] ?? '');
+            self::empty_state($_args['empty_hint'] ?? '', $_args['empty_title'] ?? '');
 
             if (defined('DOING_AJAX') && DOING_AJAX) {
                 die();

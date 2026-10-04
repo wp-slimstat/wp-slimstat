@@ -255,6 +255,10 @@ if (stripos((string) file_get_contents(dirname(__DIR__) . '/admin/view/upgrade-p
 if (!preg_match('/has_filter\(\s*\'admin_body_class\'/', $render)) {
     $failures[] = 'add_menu_to_adminbar() shows the Pro CTA outside SlimStat screens (F7)';
 }
+// Screenshot QA §5: the 30-minute sparkline had no labels; its two ends say what they are.
+if (strpos($render, 'slimstat-adminbar__chart-axis') === false || strpos($render, "esc_html__('30 min ago', 'wp-slimstat')") === false) {
+    $failures[] = 'add_menu_to_adminbar() draws the sparkline without its "30 min ago" / "Now" axis labels (QA §5)';
+}
 if (stripos(slimstat_function_body($source, 'styling_admin_menu'), '#f22f46') !== false) {
     $failures[] = 'styling_admin_menu() still paints the Upgrade menu item red (F7)';
 }

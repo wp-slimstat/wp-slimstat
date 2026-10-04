@@ -189,6 +189,13 @@ wp_slimstat_reports::empty_state();
 ob_end_clean();
 es_assert(1 === wp_slimstat::$wpdb->queries, 'MAX(dt) runs once per request, not once per empty card', $failures);
 
+// A report that ignores the date range (the 5-minute online cards) must not say "this date range"
+// or offer "Last 90 days": each carries its own empty_title, and raw_results_to_html passes it.
+require_once __DIR__ . '/lib/source-scan.php';
+$reports_src = slimstat_blank_comments((string) file_get_contents(dirname(__DIR__) . '/admin/view/wp-slimstat-reports.php'));
+es_assert(substr_count($reports_src, "'use_date_filters' => false") === preg_match_all("/'empty_title'\s*=>/", $reports_src), 'every report without date filters has an empty_title', $failures);
+es_assert(false !== strpos($reports_src, "self::empty_state(\$_args['empty_hint'] ?? '', \$_args['empty_title'] ?? '')"), 'raw_results_to_html passes empty_title to empty_state()', $failures);
+
 // E7: the Get started card. Overview only, admins only, under 50 pageviews, until dismissed.
 $card = static function (int $count, string $screen = 'slimview2', bool $can = true, string $setting = 'on', bool $woo = false): string {
     $GLOBALS['es_can']                  = $can;

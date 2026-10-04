@@ -816,6 +816,19 @@ body {
   float: right;
 }
 
+/* A label that wraps keeps its count on the first line (screenshot QA §5); the float sat after the label. */
+[id^="slim_"] p.slimstat-tooltip-trigger:has(> .slimstat-count-pct) {
+  display: flex;
+  align-items: baseline;
+  column-gap: 0.3em;
+}
+
+[id^="slim_"] p span.slimstat-count-pct {
+  float: none;
+  flex-shrink: 0;
+  margin-inline-start: auto;
+}
+
 [id^="slim_"] p span.refresh-countdown {
   float: none;
 }

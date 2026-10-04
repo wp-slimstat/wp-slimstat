@@ -235,6 +235,15 @@
     padding: 8px !important;
 }
 
+#wpadminbar .slimstat-adminbar__chart-axis {
+    display: flex !important;
+    justify-content: space-between !important;
+    padding: 4px 8px 0 !important;
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+    color: #a7aaad !important;
+}
+
 #wpadminbar .slimstat-adminbar__chart-bar {
     flex: 1 !important;
     background: linear-gradient(180deg, #4a5058 0%, #3a4048 100%) !important;

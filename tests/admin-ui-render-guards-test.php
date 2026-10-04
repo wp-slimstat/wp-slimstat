@@ -102,6 +102,10 @@ $reports = read_or_die('admin/view/wp-slimstat-reports.php');
 check((bool) preg_match('/\$percent_metrics\s*=\s*\[__\(\'Bounce rate\', \'wp-slimstat\'\), __\(\'New Visitors Rate\', \'wp-slimstat\'\)\]/', $reports), 'C2: Bounce rate and New Visitors Rate are listed as percentages');
 check(false !== strpos($reports, 'in_array($a_result[\'metric\'], $percent_metrics, true) ? \'%\' : \'\''), 'C2: the summary renderer appends % to rate rows');
 check(false === strpos($rightnow, "__('SL'") && false === strpos($rightnow, "__('PS'"), 'B11: no SL/PS abbreviations in the Access Log');
+// QA §5: the count floated right AFTER the label, so a label that wrapped pushed its count onto
+// a line of its own. The row is flex instead; DOM order (which the parity harness reads) is kept.
+check((bool) preg_match('/p\.slimstat-tooltip-trigger:has\(>\s*\.slimstat-count-pct\)\s*\{[^}]*display:\s*flex/', $admincss), 'QA §5: a report row with a count is a flex row');
+check((bool) preg_match('/p span\.slimstat-count-pct\s*\{[^}]*float:\s*none[^}]*margin-inline-start:\s*auto/', $admincss), 'QA §5: the count stops floating and sits at the end of the first line');
 
 if ($failures > 0) {
     fwrite(STDERR, "{$failures} check(s) failed in admin-ui-render-guards-test.php\n");
