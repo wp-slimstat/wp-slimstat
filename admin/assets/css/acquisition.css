@@ -117,11 +117,11 @@
 }
 .wrap-slimstat .slimstat-acquisition meter::-webkit-meter-optimum-value {
     border-radius: var(--ss-radius-pill);
-    background: var(--ss-acquisition-accent);
+    background: var(--ss-chart-1);
 }
 .wrap-slimstat .slimstat-acquisition meter::-moz-meter-bar {
     border-radius: var(--ss-radius-pill);
-    background: var(--ss-acquisition-accent);
+    background: var(--ss-chart-1);
 }
 .wrap-slimstat .slimstat-acquisition__muted,
 .wrap-slimstat .slimstat-acquisition__note,

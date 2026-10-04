@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-04T18:33:44+00:00\n"
+"POT-Creation-Date: 2026-10-04T18:46:33+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -1076,15 +1076,27 @@ msgstr ""
 msgid "<strong>AdBlock browser extension detected.</strong> If you see this notice, it means that your browser is not loading our stylesheet and/or JavaScript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href=\"https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work\" target=\"_blank\">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets."
 msgstr ""
 
-#: admin/config/index.php:1163
+#: admin/config/index.php:1127
+msgid "Network-wide"
+msgstr ""
+
+#: admin/config/index.php:1130
+msgid "Network"
+msgstr ""
+
+#: admin/config/index.php:1130
+msgid "Site"
+msgstr ""
+
+#: admin/config/index.php:1169
 msgid "On"
 msgstr ""
 
-#: admin/config/index.php:1164
+#: admin/config/index.php:1169
 msgid "Off"
 msgstr ""
 
-#: admin/config/index.php:1287
+#: admin/config/index.php:1295
 msgid "Save Changes"
 msgstr ""
 
@@ -9216,48 +9228,48 @@ msgstr ""
 msgid "Cache clear failed!"
 msgstr ""
 
-#: admin/assets/js/admin.js:500
-#: admin/assets/js/admin.js:1236
+#: admin/assets/js/admin.js:490
+#: admin/assets/js/admin.js:1226
 msgid "Select value..."
 msgstr ""
 
-#: admin/assets/js/admin.js:501
+#: admin/assets/js/admin.js:491
 msgid "Search..."
 msgstr ""
 
-#: admin/assets/js/admin.js:502
+#: admin/assets/js/admin.js:492
 msgid "No results found"
 msgstr ""
 
-#: admin/assets/js/admin.js:503
-#: admin/assets/js/admin.js:1239
+#: admin/assets/js/admin.js:493
+#: admin/assets/js/admin.js:1229
 msgid "No matches. Select Apply to filter by this value."
 msgstr ""
 
-#: admin/assets/js/admin.js:504
+#: admin/assets/js/admin.js:494
 msgid "Loading..."
 msgstr ""
 
-#: admin/assets/js/admin.js:1198
-#: admin/assets/js/admin.js:1240
+#: admin/assets/js/admin.js:1188
+#: admin/assets/js/admin.js:1230
 msgid "Loading options..."
 msgstr ""
 
-#: admin/assets/js/admin.js:1227
+#: admin/assets/js/admin.js:1217
 msgid "No matching options found"
 msgstr ""
 
-#: admin/assets/js/admin.js:1231
+#: admin/assets/js/admin.js:1221
 msgid "No data in this time range"
 msgstr ""
 
-#: admin/assets/js/admin.js:1237
+#: admin/assets/js/admin.js:1227
 msgid "Search options..."
 msgstr ""
 
-#: admin/assets/js/admin.js:1254
-#: admin/assets/js/admin.js:1258
-#: admin/assets/js/admin.js:1263
+#: admin/assets/js/admin.js:1244
+#: admin/assets/js/admin.js:1248
+#: admin/assets/js/admin.js:1253
 msgid "Enter value..."
 msgstr ""
 

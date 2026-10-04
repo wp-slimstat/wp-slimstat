@@ -63,6 +63,11 @@
 
     --ss-info-fg: #2271b1;
 
+    /* Charts: one series palette on every screen (audit A9). The primary series and
+       categorical bars use chart-1; a comparison series is a neutral dashed line. */
+    --ss-chart-1: var(--ss-brand-500);
+    --ss-chart-compare: var(--ss-text-meta);
+
     /* Focus ring — WordPress-native blue, never the brand magenta (which reads
        as an error state and ignores the admin color scheme). */
     --ss-focus: var(--ss-info-fg);
@@ -215,3 +220,65 @@ body .wrap-slimstat .button-secondary:hover {
     color: var(--ss-text-secondary);
     font-size: var(--ss-text-base);
 }
+
+/* On/off: a native checkbox with role="switch", state text beside it (audit A10). */
+.wrap-slimstat input.slimstat-switch[type=checkbox] {
+    appearance: none;
+    position: relative;
+    width: 32px;
+    height: 18px;
+    margin: 0 var(--ss-space-1) 0 0;
+    border: 1px solid #8c8f94;
+    border-radius: 9px;
+    background: var(--ss-surface);
+    vertical-align: middle;
+    box-shadow: none;
+    cursor: pointer;
+}
+.wrap-slimstat input.slimstat-switch[type=checkbox]::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    margin: 0;
+    border-radius: 50%;
+    background: #8c8f94;
+    transition: transform 0.15s ease;
+}
+.wrap-slimstat input.slimstat-switch[type=checkbox]:checked {
+    border-color: var(--ss-brand-700);
+    background: var(--ss-brand-700);
+}
+.wrap-slimstat input.slimstat-switch[type=checkbox]:checked::before {
+    background: #fff;
+    transform: translateX(14px);
+}
+.wrap-slimstat input.slimstat-switch[aria-readonly=true] { opacity: 0.6; cursor: not-allowed; }
+.slimstat-switch__state { margin-right: var(--ss-space-3); vertical-align: middle; color: var(--ss-text-secondary); }
+.slimstat-switch__state::after { content: attr(data-off); }
+.slimstat-switch:checked + .slimstat-switch__state::after { content: attr(data-on); }
+[dir=rtl] .wrap-slimstat input.slimstat-switch[type=checkbox]:checked::before { transform: translateX(-14px); }
+[dir=rtl] .wrap-slimstat input.slimstat-switch[type=checkbox]::before { left: auto; right: 2px; }
+
+/* A choice between two named options: a segmented radio group (audit A10). */
+.slimstat-segmented { display: inline-flex; margin-right: var(--ss-space-3); vertical-align: middle; white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+/* The settings table's catch-all rule skips this group, so it sizes to its labels. */
+.slimstat-segmented label { position: relative; margin: 0; }
+.slimstat-segmented input[type=radio] { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.slimstat-segmented span {
+    display: inline-block;
+    padding: 3px 12px;
+    border: 1px solid #8c8f94;
+    background: var(--ss-surface);
+    color: var(--ss-text-body);
+    font-size: var(--ss-text-base);
+    line-height: 1.5;
+    cursor: pointer;
+}
+.slimstat-segmented label:first-child span { border-radius: var(--ss-radius-2xs) 0 0 var(--ss-radius-2xs); }
+.slimstat-segmented label:last-child span { margin-left: -1px; border-radius: 0 var(--ss-radius-2xs) var(--ss-radius-2xs) 0; }
+.slimstat-segmented input:checked + span { position: relative; border-color: var(--ss-brand-700); background: var(--ss-brand-700); color: #fff; }
+.slimstat-segmented input:focus-visible + span,
+.wrap-slimstat input.slimstat-switch:focus-visible { outline: 2px solid var(--wp-admin-theme-color, #2271b1); outline-offset: 2px; }

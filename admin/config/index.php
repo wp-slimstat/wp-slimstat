@@ -1117,14 +1117,17 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
                 $use_tag_list    = (('' === $is_readonly || '0' === $is_readonly) && !empty($a_setting_info['use_tag_list']) && true === $a_setting_info['use_tag_list']) ? ' slimstat-taglist' : '';
                 $use_code_editor = (('' === $is_readonly || '0' === $is_readonly) && !empty($a_setting_info['use_code_editor'])) ? ' data-code-editor="' . esc_attr($a_setting_info['use_code_editor']) . '"' : '';
 
+                // Native controls (audit A10): a checkbox with role="switch" and its state text beside it.
+                // Readonly (Network Analytics add-on) blocks the click instead of disabling the input,
+                // so the submitted value is still the current one, not the hidden "no".
+                $readonly_switch           = '' === $is_readonly ? '' : ' aria-readonly="true" onclick="return false"';
                 $network_override_checkbox = is_network_admin() ? '
 				<input type="hidden" value="no" name="options[addon_network_settings_' . esc_attr($a_setting_slug) . ']" id="addon_network_settings_' . esc_attr($a_setting_slug) . '">
-				<input class="slimstat-checkbox-toggle"
-					type="checkbox"
+				<input class="slimstat-switch" type="checkbox" role="switch"
+					aria-label="' . esc_attr__('Network-wide', 'wp-slimstat') . '"
 					name="options[addon_network_settings_' . esc_attr($a_setting_slug) . ']"' .
                     ((!empty(wp_slimstat::$settings['addon_network_settings_' . $a_setting_slug]) && 'on' == wp_slimstat::$settings['addon_network_settings_' . $a_setting_slug]) ? ' checked="checked"' : '') . '
-					id="addon_network_settings_' . esc_attr($a_setting_slug) . '"
-					data-size="mini" data-handle-width="50" data-on-color="warning" data-on-text="Network" data-off-text="Site">' : '';
+					id="addon_network_settings_' . esc_attr($a_setting_slug) . '"><span class="slimstat-switch__state" aria-hidden="true" data-on="' . esc_attr__('Network', 'wp-slimstat') . '" data-off="' . esc_attr__('Site', 'wp-slimstat') . '"></span>' : '';
 
                 // Build conditional data attributes
                 $conditional_attrs = '';
@@ -1150,24 +1153,29 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
                         break;
 
                     case 'toggle':
+                        $is_on = !empty(wp_slimstat::$settings[$a_setting_slug]) && 'on' == wp_slimstat::$settings[$a_setting_slug];
+                        if (!empty($a_setting_info['custom_label_on'])) {
+                            // A choice between two named options (Client/Server): a segmented radio group.
+                            // The "on" radio keeps the setting's id, so #slug:checked still means "on".
+                            $th      = '<th scope="row"><span id="' . esc_attr($a_setting_slug) . '-label">' . wp_kses_post($a_setting_info['title']) . '</span></th>';
+                            $control = '<span class="slimstat-segmented" role="radiogroup" aria-labelledby="' . esc_attr($a_setting_slug) . '-label">
+								<label><input type="radio" class="slimstat-checkbox-toggle" name="options[' . esc_attr($a_setting_slug) . ']" id="' . esc_attr($a_setting_slug) . '" value="on"' . ($is_on ? ' checked="checked"' : '') . $readonly_switch . '><span>' . esc_html($a_setting_info['custom_label_on']) . '</span></label>
+								<label><input type="radio" name="options[' . esc_attr($a_setting_slug) . ']" id="' . esc_attr($a_setting_slug) . '-off" value="no"' . ($is_on ? '' : ' checked="checked"') . $readonly_switch . '><span>' . esc_html($a_setting_info['custom_label_off']) . '</span></label>
+							</span>';
+                        } else {
+                            $th      = '<th scope="row"><label for="' . esc_attr($a_setting_slug) . '">' . wp_kses_post($a_setting_info['title']) . '</label></th>';
+                            $control = '<input class="slimstat-checkbox-toggle slimstat-switch" type="checkbox" role="switch"
+								name="options[' . esc_attr($a_setting_slug) . ']"
+								id="' . esc_attr($a_setting_slug) . '"' . ($is_on ? ' checked="checked"' : '') . $readonly_switch . '><span class="slimstat-switch__state" aria-hidden="true" data-on="' . esc_attr__('On', 'wp-slimstat') . '" data-off="' . esc_attr__('Off', 'wp-slimstat') . '"></span>';
+                        }
                         // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
-                        echo '<th scope="row"><label for="' . esc_attr($a_setting_slug) . '">' . wp_kses_post($a_setting_info['title']) . '</label></th>
+                        echo $th . '
 					<td>
 						<input type="hidden" value="no" name="options[' . esc_attr($a_setting_slug) . ']">
-						<span class="block-element">
-							<input class="slimstat-checkbox-toggle" type="checkbox"' . $is_readonly . '
-								name="options[' . esc_attr($a_setting_slug) . ']"
-								id="' . esc_attr($a_setting_slug) . '"
-								data-size="mini" data-handle-width="50" data-on-color="success"' .
-                            ((!empty(wp_slimstat::$settings[$a_setting_slug]) && 'on' == wp_slimstat::$settings[$a_setting_slug]) ? ' checked="checked"' : '') . '
-								data-on-text="' . esc_attr(empty($a_setting_info['custom_label_on']) ? __('On', 'wp-slimstat') : $a_setting_info['custom_label_on']) . '"
-								data-off-text="' . esc_attr(empty($a_setting_info['custom_label_off']) ? __('Off', 'wp-slimstat') : $a_setting_info['custom_label_off']) . '">' .
-                            $network_override_checkbox . '
-						</span>
+						<span class="block-element">' . $control . $network_override_checkbox . '</span>
 						<span class="description">' . wp_kses_post($a_setting_info['description']) . '</span>
 					</td>';
                         // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
-                        // ( is_network_admin() ? ' data-indeterminate="true"' : '' ) . '>
                         break;
 
                     case 'select':

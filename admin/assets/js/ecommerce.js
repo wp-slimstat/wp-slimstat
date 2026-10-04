@@ -84,13 +84,13 @@
             tbody.append(row);
         });
         const colors = getComputedStyle(dashboard);
-        const blue = colors.getPropertyValue('--ss-info-fg').trim();
-        const muted = colors.getPropertyValue('--ss-text-meta').trim();
+        const primary = colors.getPropertyValue('--ss-chart-1').trim();
+        const muted = colors.getPropertyValue('--ss-chart-compare').trim();
         const text = colors.getPropertyValue('--ss-text-muted').trim();
         const line = ['rate', 'aov'].includes(metric);
         const datasets = [{
             label: __('Selected period', 'wp-slimstat'), type: line ? 'line' : 'bar',
-            data: series.current.map(p => p[metric]), borderColor: blue, backgroundColor: line ? blue + '12' : series.current.map(p => p.partial ? blue + 'cc' : blue),
+            data: series.current.map(p => p[metric]), borderColor: primary, backgroundColor: line ? primary + '12' : series.current.map(p => p.partial ? primary + 'cc' : primary),
             borderWidth: line ? 2 : 0, borderRadius: 3, maxBarThickness: 38, fill: line, tension: 0,
             pointRadius: series.current.map(p => p.partial || series.current.length < 3 ? 4 : 0), pointStyle: series.current.map(p => p.partial ? 'triangle' : 'circle'), pointHitRadius: 12, spanGaps: false,
         }];
