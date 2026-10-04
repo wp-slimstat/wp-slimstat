@@ -98,10 +98,13 @@ test.describe('UTM link builder', () => {
     await page.locator('[name="utm_source"]').fill('draft');
     await page.evaluate(() => new Promise<void>(resolve => (window as any).SlimStatAdmin.refresh_report('slim_p3_04')().always(resolve)));
     await expect(page.locator('[name="utm_source"]')).toHaveValue('draft');
+    await expect(page.locator('#slim_p3_04 .slimstat-utm-builder-link')).toBeVisible();
     await page.locator('#slimstat-utm-builder > summary').focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('#slimstat-utm-builder')).not.toHaveAttribute('open');
+    await expect(page.locator('#slim_p3_04 .slimstat-utm-builder-link')).toBeFocused();
     await page.keyboard.press('Enter');
+    await expect(page.locator('[name="website"]')).toBeFocused();
     await expect(page.locator('[name="utm_source"]')).toHaveValue('draft');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => document.documentElement.dir = 'rtl');

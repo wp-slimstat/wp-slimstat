@@ -561,6 +561,15 @@ class wp_slimstat_reports
                 'locations' => ['slimview3'],
             ],
 
+            'slim_p3_02' => [
+                'title'         => __('Traffic Summary', 'wp-slimstat'),
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
+                    'raw' => ['wp_slimstat_db', 'get_traffic_sources_summary'],
+                ],
+                'classes'   => ['normal'],
+                'locations' => ['slimview5'],
+            ],
             'slim_p3_03' => [
                 'title' => __('Channels', 'wp-slimstat'),
                 'callback' => [\SlimStat\Reports\AcquisitionReport::class, 'render'],
@@ -596,16 +605,6 @@ class wp_slimstat_reports
                 'locations' => ['slimview5'],
                 'tooltip'   => $traffic_sources_chart_tooltip,
             ],
-            'slim_p3_02' => [
-                'title'         => __('Traffic Summary', 'wp-slimstat'),
-                'callback'      => [self::class, 'raw_results_to_html'],
-                'callback_args' => [
-                    'raw' => ['wp_slimstat_db', 'get_traffic_sources_summary'],
-                ],
-                'classes'   => ['normal'],
-                'locations' => ['slimview5'],
-            ],
-
             'slim_p4_01' => [
                 'title'         => __('Recent Outbound Links', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
@@ -1619,6 +1618,11 @@ class wp_slimstat_reports
                 // (both type=recent raw rows and type=top with more_select=MAX(dt) AS dt)
                 if (is_array($results[$i]) && isset($results[$i]['dt']) && $results[$i]['dt'] > 0) {
                     $row_details = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true) . ('' === $row_details || '0' === $row_details ? '' : '<br>') . $row_details;
+                    // A recent list is a log: without a visible time, five searches for one term read as a duplicate row.
+                    if (!empty($_args['type']) && 'recent' == $_args['type']) {
+                        /* translators: %s: human-readable time difference, e.g. 5 mins */
+                        $percentage = ' <span class="slimstat-count-pct slimstat-row-time">' . esc_html(sprintf(__('%s ago', 'wp-slimstat'), human_time_diff((int) $results[$i]['dt'], date_i18n('U')))) . '</span>';
+                    }
                 }
 
                 if (!empty($_args['type']) && 'top' == $_args['type']) {

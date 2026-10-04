@@ -89,15 +89,24 @@
             : __('Link selected. Use your browser’s Copy command.', 'wp-slimstat');
     });
 
+    let opener = null;
     function open() {
         panel.open = true;
         website.focus();
     }
     document.addEventListener('click', event => {
-        if (event.target.closest('a.slimstat-utm-builder-link')) {
+        const link = event.target.closest('a.slimstat-utm-builder-link');
+        if (link) {
             event.preventDefault();
+            opener = link.closest('.postbox')?.id;
             open();
         }
+    });
+    // Closed, the panel hides, so focus goes back to the button that opened it. Looked up
+    // by report, because refreshing a report replaces its button.
+    panel.addEventListener('toggle', () => {
+        if (panel.open) return;
+        (document.querySelector(`#${opener} a.slimstat-utm-builder-link`) || document.querySelector('a.slimstat-utm-builder-link'))?.focus();
     });
     window.addEventListener('hashchange', () => {
         if (window.location.hash === '#slimstat-utm-builder') open();

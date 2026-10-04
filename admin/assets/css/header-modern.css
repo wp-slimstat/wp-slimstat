@@ -295,3 +295,7 @@
     margin-top: 0px !important;
     background-color: transparent; /* show WordPress's admin grey, not a second one */
 }
+/* Chart.js centres the last x label on the last tick, so a long range label ends flush with the card edge. */
+.postbox.chart .slimstat-chart-wrap {
+    padding-inline-end: 20px;
+}

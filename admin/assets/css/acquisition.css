@@ -278,8 +278,11 @@
     color: var(--ss-text-muted);
     margin-block-end: var(--ss-space-3);
 }
-.wrap-slimstat .slimstat-acquisition__guide {
-    max-width: 70ch;
+.wrap-slimstat p.slimstat-acquisition__guide {
+    max-width: 72ch;
+    /* The legacy report body pads and underlines every paragraph as a list row (.inside p). */
+    padding: 0;
+    border: 0;
     color: var(--ss-text-muted);
     margin-block: 0 var(--ss-space-4);
     line-height: 1.6;
@@ -322,7 +325,12 @@
     .wrap-slimstat .slimstat-acquisition td.slimstat-acquisition__number { padding-block: var(--ss-space-5); }
 }
 
-/* The builder lives outside AJAX report bodies so refreshing a report keeps the draft. */
+/* The builder lives outside AJAX report bodies so refreshing a report keeps the draft.
+   The "Build a UTM link" buttons on the reports are its entry point; closed, it hides
+   (without JS, the link's #slimstat-utm-builder hash still shows it). */
+.wrap-slimstat .slimstat-utm-builder:not([open]):not(:target) {
+    display: none;
+}
 .wrap-slimstat .slimstat-utm-builder {
     margin-block: var(--ss-space-4);
     border: 1px solid var(--ss-border);
