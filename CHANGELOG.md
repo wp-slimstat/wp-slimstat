@@ -6,6 +6,13 @@
 * Heatmap rows live in their own tables, created on first use, purged with the site's retention setting, included in personal-data erasure and removed on uninstall when you choose to delete SlimStat data. Admins can delete all heatmap data from the Heatmaps page.
 * Existing link and button clicks keep their events reports and Goals unchanged and appear in the page list right away.
 
+**Admin interface**
+* One name and one voice across the admin: labels, buttons and messages follow a shared glossary, checked by a test on every translatable string.
+* Empty reports say why they are empty (nothing tracked yet, no match for the filters, or nothing in the date range) and what to do next. A Get started panel helps new sites record their first pageview.
+* Buttons, switches and segmented choices use native WordPress controls with one set of colors and the WordPress focus ring. Red glows, nested cards and side stripes are gone, and every report paginates the same way.
+* Free screens show what Pro adds honestly: no blurred mock reports or invented figures.
+* Clearer Migration, Settings, Customize and Access Log screens: Customize cards show a drag grip and keyboard-reachable buttons; Reset layout asks before it discards the layout; Access Log speed reads "Server … ms · Page … ms"; Bounce rate and New Visitors Rate show a % sign.
+
 = 6.0.0 - 2026-09-15 =
 
 **Ecommerce**
