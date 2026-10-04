@@ -46,23 +46,32 @@ class DateRangeHelper
     }
 
     /**
-     * Get date format for display
+     * The WordPress date format (Settings > General) as a moment.js format.
+     * Time and unsupported tokens are dropped; with no date token left, ISO dates.
      */
     public static function get_date_format()
     {
-        $wp_format = get_option('date_format', 'F j, Y');
-        
-        // Convert common PHP date formats to display format
-        $format_map = [
-            'F j, Y' => 'DD/MM/YYYY',
-            'Y-m-d' => 'YYYY-MM-DD',
-            'm/d/Y' => 'MM/DD/YYYY',
-            'd/m/Y' => 'DD/MM/YYYY',
-            'j F Y' => 'DD/MM/YYYY',
-            'M j, Y' => 'DD/MM/YYYY'
-        ];
-        
-        return $format_map[$wp_format] ?? 'DD/MM/YYYY';
+        $map = ['d' => 'DD', 'j' => 'D', 'D' => 'ddd', 'l' => 'dddd', 'N' => 'E', 'w' => 'd', 'W' => 'W', 'F' => 'MMMM', 'M' => 'MMM', 'm' => 'MM', 'n' => 'M', 'o' => 'GGGG', 'Y' => 'YYYY', 'y' => 'YY'];
+        $chars = preg_split('//u', (string) get_option('date_format', 'F j, Y'), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $format = '';
+        $dated = false;
+        for ($i = 0, $n = count($chars); $i < $n; $i++) {
+            $char = $chars[$i];
+            if ('\\' === $char) {
+                $format .= isset($chars[$i + 1]) ? '[' . $chars[++$i] . ']' : '';
+            } elseif ('j' === $char && 'S' === ($chars[$i + 1] ?? '')) {
+                $format .= 'Do';
+                $dated = true;
+                $i++;
+            } elseif (isset($map[$char])) {
+                $format .= $map[$char];
+                $dated = true;
+            } elseif (!ctype_alpha($char)) {
+                $format .= $char;
+            }
+        }
+
+        return $dated ? $format : 'YYYY-MM-DD';
     }
 
     /**
@@ -200,22 +209,23 @@ class DateRangeHelper
         return [
             'weekdays' => array_values($wp_locale->weekday_abbrev),
             'months' => array_values($wp_locale->month),
+            'months_short' => array_values($wp_locale->month_abbrev),
             'today' => __('Today', 'wp-slimstat'),
             'yesterday' => __('Yesterday', 'wp-slimstat'),
             'this_week' => __('This week', 'wp-slimstat'),
             'last_week' => __('Last week', 'wp-slimstat'),
-            'this_month' => __('This Month', 'wp-slimstat'),
-            'last_month' => __('Previous Month', 'wp-slimstat'),
-            'last_7_days' => __('Last 7 Days', 'wp-slimstat'),
-            'last_28_days' => __('Last 28 Days', 'wp-slimstat'),
-            'last_30_days' => __('Last 30 Days', 'wp-slimstat'),
-            'last_90_days' => __('Last 90 Days', 'wp-slimstat'),
-            'last_6_months' => __('Last 6 Months', 'wp-slimstat'),
-            'this_year' => __('This Year', 'wp-slimstat'),
-            'custom_range' => __('Custom Range', 'wp-slimstat'),
+            'this_month' => __('This month', 'wp-slimstat'),
+            'last_month' => __('Last month', 'wp-slimstat'),
+            'last_7_days' => __('Last 7 days', 'wp-slimstat'),
+            'last_28_days' => __('Last 28 days', 'wp-slimstat'),
+            'last_30_days' => __('Last 30 days', 'wp-slimstat'),
+            'last_90_days' => __('Last 90 days', 'wp-slimstat'),
+            'last_6_months' => __('Last 6 months', 'wp-slimstat'),
+            'this_year' => __('This year', 'wp-slimstat'),
+            'custom_range' => __('Custom range', 'wp-slimstat'),
             'apply' => __('Apply', 'wp-slimstat'),
             'cancel' => __('Cancel', 'wp-slimstat'),
-            'clear_cache' => __('Clear Cache', 'wp-slimstat'),
+            'clear_cache' => __('Clear cache', 'wp-slimstat'),
             'clearing' => __('Clearing...', 'wp-slimstat'),
             'cleared' => __('Cleared!', 'wp-slimstat'),
             'error' => __('Error', 'wp-slimstat')

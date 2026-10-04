@@ -44,7 +44,7 @@ jQuery(document).ready(function($) {
             daterangepicker: 'slimstat-daterangepicker',
             active: 'active'
         },
-        DATE_FORMAT: 'DD/MM/YYYY',
+        DATE_FORMAT: SlimStatDatePicker.options?.date_format || 'YYYY-MM-DD',
         SERVER_FORMAT: 'YYYY-MM-DD'
     };
 
@@ -57,6 +57,9 @@ jQuery(document).ready(function($) {
     // Initialize moment locale with WordPress week start
     if (typeof moment !== 'undefined') {
         moment.updateLocale(moment.locale(), {
+            // Month names in the site language, for formats such as "F j, Y".
+            months: SlimStatDatePicker.strings.months,
+            monthsShort: SlimStatDatePicker.strings.months_short,
             week: {
                 dow: startOfWeek
             }
@@ -425,6 +428,16 @@ jQuery(document).ready(function($) {
         const ranges = getPresetRanges();
         const currentRange = getCurrentDateRange();
 
+        // A range resolved from the URL or a saved filter can still be a preset; name it
+        // as the picker will highlight it, not "Custom range".
+        if (currentRange.preset === 'custom') {
+            const day = (date) => moment(date).format(CONFIG.SERVER_FORMAT);
+            const match = Object.keys(ranges).find((key) => day(ranges[key][0]) === day(currentRange.startDate) && day(ranges[key][1]) === day(currentRange.endDate));
+            if (match) {
+                currentRange.preset = detectPresetType(match);
+            }
+        }
+
         // Click handler for button
         $button.on('click', function(e) {
             e.preventDefault();
@@ -527,15 +540,11 @@ jQuery(document).ready(function($) {
                 }
             });
 
-            // Inject Clear Cache button under the preset ranges list (only once per open)
-            const $ranges = picker.container.find('.ranges');
-            if ($ranges.length && picker.container.find(CONFIG.SELECTORS.clearCacheBtn).length === 0) {
-                const $clearWrap = $('<div class="slimstat-clear-cache-wrap" style="padding:8px 12px 12px;">');
+            // Clear cache is an action, not a range: it sits in a footer below the presets and calendars.
+            if (picker.container.find(CONFIG.SELECTORS.clearCacheBtn).length === 0) {
                 const $clearBtn = $('<button type="button" class="button button-secondary" id="slimstat-clear-cache"></button>')
                     .text(SlimStatDatePicker.strings.clear_cache);
-                $clearWrap.append($clearBtn);
-                // Place it after the ranges list
-                $ranges.append($clearWrap);
+                picker.container.append($('<div class="slimstat-clear-cache-wrap">').append($clearBtn));
             }
 
             // No footer buttons needed - preset ranges auto-apply, custom ranges use built-in Apply/Cancel

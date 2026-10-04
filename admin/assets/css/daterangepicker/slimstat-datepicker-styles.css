@@ -254,3 +254,17 @@
     display: flex;
     align-items: center;
 }
+/* Days from the neighbouring month repeat the range ends; keep the marker on the real day only. */
+.slimstat-daterangepicker td.off.active::after {
+    display: none;
+}
+
+.slimstat-daterangepicker td.off.active {
+    color: var(--color-drp-border);
+}
+
+.slimstat-daterangepicker .slimstat-clear-cache-wrap {
+    clear: both;
+    padding: 8px 12px;
+    border-top: 1px solid var(--slimstat-border);
+}

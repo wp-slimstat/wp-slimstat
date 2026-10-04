@@ -403,7 +403,7 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
     await waitForChartInitialized(page);
     await setGranularity(page, 'daily');
     await page.locator('.slimstat-date-range-btn').click();
-    await page.locator('.daterangepicker:visible .ranges li').filter({ hasText: /^Last 28 Days$/ }).click();
+    await page.locator('.daterangepicker:visible .ranges li').filter({ hasText: /^Last 28 days$/ }).click();
     await expect(page).toHaveURL(/type=last_28_days/);
     await waitForChartInitialized(page);
     await page.reload({ waitUntil: 'networkidle' });

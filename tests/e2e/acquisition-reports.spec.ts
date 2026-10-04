@@ -265,7 +265,7 @@ test.describe('UTM and channel reports', () => {
       await page.evaluate(() => {
         const picker = (window as any).jQuery('.slimstat-date-range-input').data('daterangepicker');
         picker.setEndDate((window as any).moment());
-        picker.chosenLabel = 'Custom Range';
+        picker.chosenLabel = 'Custom range';
         picker.clickApply();
       });
       await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('3 pageviews');
