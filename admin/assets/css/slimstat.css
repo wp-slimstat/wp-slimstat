@@ -533,7 +533,7 @@ body.index-php {
 /* Bar chart peak highlighting */
 .chart-bar .bar-peak {
     background: linear-gradient(135deg, #e8294c 0%, #ff6b7d 100%) !important;
-    box-shadow: 0 4px 12px rgba(232, 41, 76, 0.3) !important;
+    box-shadow: none !important;
     transform: scaleY(1.1);
     z-index: 10;
 }

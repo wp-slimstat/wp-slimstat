@@ -1168,6 +1168,9 @@ body.slimstat-admin-page {
 /* Settings */
 .CodeMirror {
   height: auto !important;
+  min-height: 7.5em; /* about 5 lines (audit C8) */
+  border: 1px solid #8c8f94;
+  border-radius: 4px;
 }
 } /* end body.slimstat-admin-page WP-standard-class scope */
 
@@ -3086,6 +3089,7 @@ body.slimstat-admin-page {
 
       .form-table {
         margin-top: 0;
+        border: 0;
         border-radius: 0;
 
         tr:first-of-type .slimstat-options-section-header {

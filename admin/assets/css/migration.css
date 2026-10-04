@@ -198,10 +198,6 @@ body.slimstat_page_migration .updated {
 }
 
 /* Migration notice (dashboard and SlimStat screens) - WordPress standard styles */
-.slimstat-migration-notice {
-    border-left-color: #0073aa !important;
-}
-
 .slimstat-migration-notice .dashicons-update {
     color: #0073aa;
 }

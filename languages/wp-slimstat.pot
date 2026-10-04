@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-04T18:46:33+00:00\n"
+"POT-Creation-Date: 2026-10-04T18:57:33+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -5206,9 +5206,11 @@ msgid "Top Cities"
 msgstr ""
 
 #. translators: 1: first displayed row, 2: last displayed row, 3: total row count.
+#. translators: 1: first row, 2: last row, 3: displayed result count.
 #: admin/view/wp-slimstat-reports.php:1200
+#: src/Reports/AcquisitionReport.php:283
 #, php-format
-msgid "Showing %1$s - %2$s of %3$s"
+msgid "%1$s–%2$s of %3$s"
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:1203
@@ -8406,12 +8408,6 @@ msgstr ""
 
 #: src/Reports/AcquisitionReport.php:280
 msgid "Report pages"
-msgstr ""
-
-#. translators: 1: first row, 2: last row, 3: displayed result count.
-#: src/Reports/AcquisitionReport.php:283
-#, php-format
-msgid "%1$s–%2$s of %3$s"
 msgstr ""
 
 #: src/Reports/AcquisitionReport.php:293

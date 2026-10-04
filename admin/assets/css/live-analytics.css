@@ -462,22 +462,13 @@
     cursor: not-allowed;
 }
 
+/* Selected KPI: a tint and a red value, no side stripe (audit C3). */
 .clickable-metric.active {
-    background: linear-gradient(90deg, rgba(231, 41, 75, 0) 0%, rgba(231, 41, 75, 0.03) 100%);
+    background: color-mix(in srgb, var(--ss-brand-500, #e8294c) 6%, var(--ss-surface, #fff));
 }
 
-.clickable-metric.active::after {
-    content: "";
-    position: absolute;
-    width: 2px;
-    height: 98px;
-    right: 0;
-    top: 0;
-    background: #e7294b;
-    flex: none;
-    order: 1;
-    flex-grow: 0;
-    z-index: 1;
+.live-analytics-container .clickable-metric.active .metric-value {
+    color: var(--ss-brand-700, #dc3232) !important;
 }
 
 .clickable-metric.active .metric-label,

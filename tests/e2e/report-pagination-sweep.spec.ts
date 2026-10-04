@@ -4,7 +4,7 @@
  * Seeds diverse analytics data, then visits every slimview page and clicks
  * the next-page arrow on every multi-page report. Verifies:
  *   - No empty state (p.nodata) after pagination
- *   - "Showing X-Y" range advances
+ *   - "X–Y of Z" range advances
  *   - Access Log last-page works
  *
  * Runs in CI as part of Tier 2 E2E. Uses a wide custom date range so seeded
@@ -117,7 +117,7 @@ async function testReportPagination(
 ): Promise<{ passed: boolean; error?: string }> {
   // Get page-1 showing text
   const p1Text = await page.evaluate((id: string) => {
-    const m = jQuery(`#${id} .pagination`).text().match(/Showing\s+([\d,]+)\s*-/);
+    const m = jQuery(`#${id} .pagination`).text().match(/([\d,]+)–[\d,]+ of/);
     return m ? m[1] : null;
   }, reportId);
 
@@ -132,9 +132,9 @@ async function testReportPagination(
     return { passed: false, error: 'Got the empty state on page 2' };
   }
 
-  // Check that "Showing" range advanced
+  // Check that "X–Y" range advanced
   const p2Start = await page.evaluate((id: string) => {
-    const m = jQuery(`#${id} .pagination`).text().match(/Showing\s+([\d,]+)\s*-/);
+    const m = jQuery(`#${id} .pagination`).text().match(/([\d,]+)–[\d,]+ of/);
     return m ? m[1] : null;
   }, reportId);
 

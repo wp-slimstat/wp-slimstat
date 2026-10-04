@@ -125,7 +125,7 @@
 
 #wpadminbar .slimstat-adminbar__stat-card:hover {
     border-color: #4B6EF5 !important;
-    box-shadow: 0 4px 12px rgba(75,110,245,0.15) !important;
+    box-shadow: none !important;
     transform: translateY(-1px) !important;
 }
 
@@ -180,8 +180,7 @@
     border-radius: 50% !important;
     vertical-align: middle !important;
     margin-left: 6px !important;
-    box-shadow: 0 0 8px rgba(24,164,86,0.6) !important;
-    animation: slimstat-glow 2s ease-in-out infinite !important;
+    box-shadow: none !important;
 }
 
 #wpadminbar .slimstat-adminbar__realtime-badge {
@@ -197,7 +196,7 @@
     margin-top: 6px !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
-    box-shadow: 0 2px 8px rgba(24,164,86,0.3) !important;
+    box-shadow: none !important;
 }
 
 #wpadminbar .slimstat-adminbar__realtime-pulse {
@@ -212,11 +211,6 @@
 @keyframes slimstat-pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.4; transform: scale(0.85); }
-}
-
-@keyframes slimstat-glow {
-    0%, 100% { box-shadow: 0 0 8px rgba(24,164,86,0.6); }
-    50% { box-shadow: 0 0 16px rgba(24,164,86,0.9); }
 }
 
 /* ---- CSS Bar Chart ---- */
@@ -329,7 +323,7 @@
 
 #wpadminbar .slimstat-adminbar__chart-bar--peak {
     background: linear-gradient(180deg, #F22F46 0%, #D91E36 100%) !important;
-    box-shadow: 0 0 12px rgba(242,47,70,0.4) !important;
+    box-shadow: none !important;
 }
 
 /* Blur overlay for free users */
@@ -384,14 +378,14 @@
     transition: all 0.2s ease !important;
     border: none !important;
     cursor: pointer !important;
-    box-shadow: 0 4px 14px rgba(242,47,70,0.35) !important;
+    box-shadow: none !important;
 }
 
 #wpadminbar .slimstat-adminbar__cta-button:hover {
     background: #D9263C !important;
     color: #FFFFFF !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 6px 20px rgba(242,47,70,0.45) !important;
+    box-shadow: none !important;
 }
 
 /* ---- Footer ---- */

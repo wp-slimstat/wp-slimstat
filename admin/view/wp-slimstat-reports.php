@@ -1197,10 +1197,10 @@ class wp_slimstat_reports
         }
 
         $pagination = '<p class="pagination">' . sprintf(/* translators: 1: first displayed row, 2: last displayed row, 3: total row count. */
-                __('Showing %1$s - %2$s of %3$s', 'wp-slimstat'), number_format_i18n($effective_start + 1), number_format_i18n($endpoint), number_format_i18n($_count_all_results) . (($_count_all_results == wp_slimstat::$settings['limit_results']) ? '+' : ''));
+                __('%1$s–%2$s of %3$s', 'wp-slimstat'), number_format_i18n($effective_start + 1), number_format_i18n($endpoint), number_format_i18n($_count_all_results) . (($_count_all_results == wp_slimstat::$settings['limit_results']) ? '+' : ''));
 
         if ($_show_refresh_countdown && wp_slimstat::$settings['refresh_interval'] > 0 && wp_slimstat_db::$filters_normalized['utime']['end'] >= date_i18n('U') - 300) {
-            $pagination .= ' <span class="refresh-countdown">[' . __('Refresh in', 'wp-slimstat') . ' <i class="refresh-timer"></i>]</span>';
+            $pagination .= ' <span class="refresh-countdown">' . __('Refresh in', 'wp-slimstat') . ' <i class="refresh-timer"></i></span>';
         }
 
         return $pagination . ($pagination_buttons . '</p>');
