@@ -47,6 +47,7 @@
     --ss-border: #e2e4e7;
     --ss-border-soft: #ebebeb;
     --ss-border-tooltip: #e0e0e0;
+    --ss-border-control: #8c8f94; /* WordPress form-control border */
 
     /* ─── Color — semantic ─── */
     --ss-success-fg: #087a37; /* AA text on white and the success tint */
@@ -190,7 +191,7 @@ body .wrap-slimstat .button-primary:focus {
 body .wrap-slimstat .button:not(.button-primary),
 body .wrap-slimstat .button-secondary {
     background: var(--ss-surface);
-    border-color: #8c8f94;
+    border-color: var(--ss-border-control);
     border-radius: var(--ss-radius-2xs);
     color: var(--ss-text-body);
 }
@@ -228,7 +229,7 @@ body .wrap-slimstat .button-secondary:hover {
     width: 32px;
     height: 18px;
     margin: 0 var(--ss-space-1) 0 0;
-    border: 1px solid #8c8f94;
+    border: 1px solid var(--ss-border-control);
     border-radius: 9px;
     background: var(--ss-surface);
     vertical-align: middle;
@@ -244,7 +245,7 @@ body .wrap-slimstat .button-secondary:hover {
     height: 12px;
     margin: 0;
     border-radius: 50%;
-    background: #8c8f94;
+    background: var(--ss-border-control);
     transition: transform 0.15s ease;
 }
 .wrap-slimstat input.slimstat-switch[type=checkbox]:checked {
@@ -270,7 +271,7 @@ body .wrap-slimstat .button-secondary:hover {
 .slimstat-segmented span {
     display: inline-block;
     padding: 3px 12px;
-    border: 1px solid #8c8f94;
+    border: 1px solid var(--ss-border-control);
     background: var(--ss-surface);
     color: var(--ss-text-body);
     font-size: var(--ss-text-base);
