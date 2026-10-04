@@ -21,7 +21,7 @@ class AddAcquisitionColumns extends AbstractMigration
 
     public function getDescription(): string
     {
-        return __('Adds campaign and channel fields to the analytics table and archive. Each table may be rebuilt; the time depends on its size and your database server. Servers without online ALTER support may pause tracking writes. Existing pageviews remain unchanged and appear as Not attributed. Attribution starts after setup completes.', 'wp-slimstat');
+        return __('Adds campaign and channel fields to the analytics table and archive. Each table may be rebuilt; the time depends on its size and your database server. Servers without online ALTER support may pause tracking writes. Existing pageviews remain unchanged and appear as Unassigned. Attribution starts after setup completes.', 'wp-slimstat');
     }
 
     // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fresh schema probe uses a stripped core prefix and fixed table suffix.

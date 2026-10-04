@@ -135,7 +135,7 @@ try {
     AcquisitionReport::render(['mode' => 'utm']);
     $emptyTagHtml = ob_get_clean();
     remove_filter('query', $countAggregate);
-    $check(false !== strpos($emptyTagHtml, 'class="slimstat-acquisition__label">Not set</span>'), 'An empty campaign gets a readable summary label');
+    $check(false !== strpos($emptyTagHtml, 'class="slimstat-acquisition__label">Unassigned</span>'), 'An empty campaign gets a readable summary label');
     $check(3 === $aggregateQueries, 'Report uses three aggregate queries, independent of group count');
     $check(0 === $schemaQueries, 'Public reports use the readiness marker without probing the schema');
     $db->query("UPDATE `{$testPrefix}slim_stats` SET utm_campaign = NULL WHERE utm_source = 'private'");

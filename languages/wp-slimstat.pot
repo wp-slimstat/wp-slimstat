@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-04T14:43:28+00:00\n"
+"POT-Creation-Date: 2026-10-04T14:50:59+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -132,13 +132,13 @@ msgstr ""
 
 #: admin/config/index.php:88
 #: admin/view/wp-slimstat-db.php:143
-#: admin/view/wp-slimstat-db.php:1987
-#: admin/view/wp-slimstat-db.php:1994
-#: admin/view/wp-slimstat-db.php:2001
-#: admin/view/wp-slimstat-db.php:2008
-#: admin/view/wp-slimstat-db.php:2015
-#: admin/view/wp-slimstat-db.php:2022
-#: admin/view/wp-slimstat-db.php:2029
+#: admin/view/wp-slimstat-db.php:1995
+#: admin/view/wp-slimstat-db.php:2002
+#: admin/view/wp-slimstat-db.php:2009
+#: admin/view/wp-slimstat-db.php:2016
+#: admin/view/wp-slimstat-db.php:2023
+#: admin/view/wp-slimstat-db.php:2030
+#: admin/view/wp-slimstat-db.php:2037
 msgid "Hits"
 msgstr ""
 
@@ -662,7 +662,7 @@ msgid "If enabled, visits from users identified as spammers by third-party tools
 msgstr ""
 
 #: admin/config/index.php:514
-#: admin/view/wp-slimstat-db.php:2092
+#: admin/view/wp-slimstat-db.php:2100
 msgid "Bots"
 msgstr ""
 
@@ -2082,7 +2082,7 @@ msgstr ""
 
 #: admin/view/heatmaps.php:29
 #: admin/view/wp-slimstat-db.php:1446
-#: admin/view/wp-slimstat-db.php:1943
+#: admin/view/wp-slimstat-db.php:1951
 #: admin/view/wp-slimstat-reports.php:48
 #: admin/view/wp-slimstat-reports.php:117
 #: admin/view/wp-slimstat-reports.php:126
@@ -4495,7 +4495,7 @@ msgid "Offset"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:1448
-#: admin/view/wp-slimstat-db.php:1945
+#: admin/view/wp-slimstat-db.php:1953
 msgid "A pageview is a request to load a single HTML page on your website."
 msgstr ""
 
@@ -4520,7 +4520,7 @@ msgid "Visitors who landed on your site after searching for a keyword on a searc
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:1461
-#: admin/view/wp-slimstat-db.php:2076
+#: admin/view/wp-slimstat-db.php:2084
 #: admin/view/wp-slimstat-reports.php:127
 #: admin/view/wp-slimstat-reports.php:307
 #: admin/view/wp-slimstat-reports.php:592
@@ -4546,180 +4546,180 @@ msgstr ""
 msgid "Yesterday"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1947
+#: admin/view/wp-slimstat-db.php:1955
 msgid "Unique Referrers"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1949
+#: admin/view/wp-slimstat-db.php:1957
 msgid "A referrer (or referring site) is a site that a visitor previously visited before following a link to your site."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1951
+#: admin/view/wp-slimstat-db.php:1959
 msgid "Direct Pageviews"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1953
+#: admin/view/wp-slimstat-db.php:1961
 msgid "Visitors who typed your website URL directly into their browser address bar. It can also refer to visitors who clicked on one of their bookmarked links, untagged links within emails, or links in documents that don't include tracking variables."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1955
+#: admin/view/wp-slimstat-db.php:1963
 msgid "From External SERP"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1957
+#: admin/view/wp-slimstat-db.php:1965
 msgid "Visitors who clicked on a link to your website listed on a search engine result page (SERP). This metric only counts visits coming from EXTERNAL search pages."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1959
+#: admin/view/wp-slimstat-db.php:1967
 msgid "Unique Landing Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1961
+#: admin/view/wp-slimstat-db.php:1969
 msgid "A landing page is the first page on your website that a visitors opens, also known as <em>entrance page</em>. For example, if they search for 'Brooklyn Office Space,' and they land on a page on your website, this page gets counted (for that visit) as a landing page."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1963
+#: admin/view/wp-slimstat-db.php:1971
 msgid "Bounce Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1965
+#: admin/view/wp-slimstat-db.php:1973
 msgid "Number of single-page visits tracked over the selected period of time."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1967
+#: admin/view/wp-slimstat-db.php:1975
 msgid "New Visitors Rate"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1969
+#: admin/view/wp-slimstat-db.php:1977
 msgid "Percentage of single-page visits, i.e. visits in which the person left your site from the entrance page."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1971
+#: admin/view/wp-slimstat-db.php:1979
 msgid "Currently from search engines"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1973
+#: admin/view/wp-slimstat-db.php:1981
 msgid "Visitors who clicked on a link to your website listed on a search engine result page (SERP), tracked in the last 5 minutes."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1985
+#: admin/view/wp-slimstat-db.php:1993
 msgid "0 - 30 seconds"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1992
+#: admin/view/wp-slimstat-db.php:2000
 msgid "31 - 60 seconds"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1999
+#: admin/view/wp-slimstat-db.php:2007
 msgid "1 - 3 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2006
+#: admin/view/wp-slimstat-db.php:2014
 msgid "3 - 5 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2013
+#: admin/view/wp-slimstat-db.php:2021
 msgid "5 - 7 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2020
+#: admin/view/wp-slimstat-db.php:2028
 msgid "7 - 10 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2027
+#: admin/view/wp-slimstat-db.php:2035
 msgid "More than 10 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2048
+#: admin/view/wp-slimstat-db.php:2056
 msgid "Average Visit Duration"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2072
+#: admin/view/wp-slimstat-db.php:2080
 #: admin/view/wp-slimstat-reports.php:306
 msgid "Visits"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2074
+#: admin/view/wp-slimstat-db.php:2082
 msgid "A visit is a group of pageviews within a 30-minute time span. Returning visitors are counted multiple times if they start a new visit."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2078
+#: admin/view/wp-slimstat-db.php:2086
 msgid "It includes only traffic generated by human visitors."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2080
+#: admin/view/wp-slimstat-db.php:2088
 msgid "Bounce rate"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2082
+#: admin/view/wp-slimstat-db.php:2090
 msgid "Total number of one-page visits divided by the total number of entries to a website. Please see the <a href=\"https://support.google.com/analytics/answer/1009409?hl=en\" target=\"_blank\">official Google docs</a> for more information."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2084
+#: admin/view/wp-slimstat-db.php:2092
 msgid "Known visitors"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2086
+#: admin/view/wp-slimstat-db.php:2094
 msgid "Visitors who have previously left a comment on your blog."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2088
+#: admin/view/wp-slimstat-db.php:2096
 msgid "Single-page Visits"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2090
+#: admin/view/wp-slimstat-db.php:2098
 msgid "Human users that generated one single page view on your website."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2095
+#: admin/view/wp-slimstat-db.php:2103
 msgid "Pageviews per visit"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2098
+#: admin/view/wp-slimstat-db.php:2106
 msgid "Longest visit"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2099
+#: admin/view/wp-slimstat-db.php:2107
 msgid "hits"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2117
+#: admin/view/wp-slimstat-db.php:2125
 msgid "Content Items"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2119
+#: admin/view/wp-slimstat-db.php:2127
 msgid "This value includes not only posts and pages, but any custom post type, regardless of their status."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2121
+#: admin/view/wp-slimstat-db.php:2129
 msgid "Posts"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2124
+#: admin/view/wp-slimstat-db.php:2132
 msgid "Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2127
+#: admin/view/wp-slimstat-db.php:2135
 msgid "Attachments"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2130
+#: admin/view/wp-slimstat-db.php:2138
 msgid "Revisions"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2133
+#: admin/view/wp-slimstat-db.php:2141
 msgid "Comments"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2136
+#: admin/view/wp-slimstat-db.php:2144
 msgid "Avg Comments per Post"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2139
+#: admin/view/wp-slimstat-db.php:2147
 msgid "Avg Server Latency"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2141
+#: admin/view/wp-slimstat-db.php:2149
 msgid "Latency is the amount of time it takes for the host server to receive and process a request for a page object. The amount of latency depends largely on how far away the user is from the server."
 msgstr ""
 
@@ -7840,7 +7840,11 @@ msgstr ""
 
 #: src/Ecommerce/Report.php:394
 #: src/Ecommerce/Report.php:404
-msgid "Unattributed"
+#: src/Reports/AcquisitionReport.php:73
+#: src/Reports/AcquisitionReport.php:75
+#: src/Reports/AcquisitionReport.php:231
+#: src/Tracker/Acquisition.php:97
+msgid "Unassigned"
 msgstr ""
 
 #: src/Ecommerce/Report.php:397
@@ -8026,7 +8030,7 @@ msgid "Enable UTM and channel reports"
 msgstr ""
 
 #: src/Migration/Migrations/AddAcquisitionColumns.php:24
-msgid "Adds campaign and channel fields to the analytics table and archive. Each table may be rebuilt; the time depends on its size and your database server. Servers without online ALTER support may pause tracking writes. Existing pageviews remain unchanged and appear as Not attributed. Attribution starts after setup completes."
+msgid "Adds campaign and channel fields to the analytics table and archive. Each table may be rebuilt; the time depends on its size and your database server. Servers without online ALTER support may pause tracking writes. Existing pageviews remain unchanged and appear as Unassigned. Attribution starts after setup completes."
 msgstr ""
 
 #: src/Migration/Migrations/AddUserAgentDimension.php:101
@@ -8196,16 +8200,6 @@ msgstr ""
 msgid "Term"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:73
-#: src/Reports/AcquisitionReport.php:231
-msgid "Not set"
-msgstr ""
-
-#: src/Reports/AcquisitionReport.php:75
-#: src/Reports/AcquisitionReport.php:231
-msgid "Not attributed"
-msgstr ""
-
 #: src/Reports/AcquisitionReport.php:97
 msgid "Source breakdown"
 msgstr ""
@@ -8308,11 +8302,11 @@ msgid "How to read this report"
 msgstr ""
 
 #: src/Reports/AcquisitionReport.php:296
-msgid "Campaign totals combine all sources and tags. Expand a campaign for each combination of tags on a recorded page URL, not a session or conversion. Values keep their original case. More tags reveals content, term and campaign ID when present. Not set means that tag was absent. Use consistent names and tag incoming links, not internal links."
+msgid "Campaign totals combine all sources and tags. Expand a campaign for each combination of tags on a recorded page URL, not a session or conversion. Values keep their original case. More tags reveals content, term and campaign ID when present. Unassigned means that tag was absent. Use consistent names and tag incoming links, not internal links."
 msgstr ""
 
 #: src/Reports/AcquisitionReport.php:297
-msgid "Channel totals combine all sources. Expand a channel for its source breakdown. These are pageview channels, not session attribution. Campaign tags take priority over referring sites. Internal navigation is separate. Direct / unknown means no usable source was sent; it can include untagged email, private messages or apps. Not attributed means the pageview predates report setup."
+msgid "Channel totals combine all sources. Expand a channel for its source breakdown. These are pageview channels, not session attribution. Campaign tags take priority over referring sites. Internal navigation is separate. Direct / unknown means no usable source was sent; it can include untagged email, private messages or apps. Unassigned means the pageview predates report setup."
 msgstr ""
 
 #: src/Reports/AcquisitionReport.php:299
@@ -8781,10 +8775,6 @@ msgstr ""
 
 #: src/Tracker/Acquisition.php:96
 msgid "Internal Navigation"
-msgstr ""
-
-#: src/Tracker/Acquisition.php:97
-msgid "Unassigned"
 msgstr ""
 
 #. translators: %s: referring URL rejected as an attempted XSS injection.

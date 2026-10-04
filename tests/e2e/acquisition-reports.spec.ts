@@ -139,7 +139,7 @@ test.describe('UTM and channel reports', () => {
     await expect(channels.locator('.slimstat-acquisition__group')).toHaveCount(6);
     await expect(channels.locator('.slimstat-acquisition__group[open]')).toHaveCount(0);
     await expect(channels.locator('.slimstat-acquisition__intro strong')).toHaveText('8 pageviews');
-    await expect(channels.locator('.slimstat-acquisition__label').filter({ hasText: /^Not attributed$/ })).toBeVisible();
+    await expect(channels.locator('.slimstat-acquisition__label').filter({ hasText: /^Unassigned$/ })).toBeVisible();
     await expect(channels.locator('.slimstat-acquisition__label').filter({ hasText: /^AI User-requested Fetches$/ })).toBeVisible();
     await expect(utm.locator('tbody tr')).toHaveCount(3);
     await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('4 pageviews');

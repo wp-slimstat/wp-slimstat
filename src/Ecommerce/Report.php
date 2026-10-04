@@ -391,7 +391,7 @@ final class Report
 	{
 		$value = (string) $row['dimension'];
 		if ('channel' === $dimension) {
-			return Acquisition::labels()[$value] ?? __('Unattributed', 'wp-slimstat');
+			return Acquisition::labels()[$value] ?? __('Unassigned', 'wp-slimstat');
 		}
 		if ('product' === $dimension) {
 			return $row['label'] ?: __('Deleted product', 'wp-slimstat');
@@ -401,6 +401,6 @@ final class Report
 			'tablet' => __('Tablet', 'wp-slimstat'), 'guest' => __('Guest checkout', 'wp-slimstat'),
 			'account' => __('Registered account', 'wp-slimstat'),
 		];
-		return '' === $value ? __('Unattributed', 'wp-slimstat') : (in_array($dimension, ['device', 'customer'], true) ? ($labels[$value] ?? $value) : $value);
+		return '' === $value ? __('Unassigned', 'wp-slimstat') : (in_array($dimension, ['device', 'customer'], true) ? ($labels[$value] ?? $value) : $value);
 	}
 }

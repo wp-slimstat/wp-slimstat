@@ -70,9 +70,9 @@ class AcquisitionReport
     private static function value(string $field, $value, ?string $action = null): void
     {
         // Stored tags are literal text: encode existing entities too, unlike esc_html().
-        $text = null === $value || '' === $value ? __('Not set', 'wp-slimstat') : $value;
+        $text = null === $value || '' === $value ? __('Unassigned', 'wp-slimstat') : $value;
         if ('traffic_channel' === $field) {
-            $text = Acquisition::labels()[$value ?? ''] ?? __('Not attributed', 'wp-slimstat');
+            $text = Acquisition::labels()[$value ?? ''] ?? __('Unassigned', 'wp-slimstat');
         }
         if (is_admin() && null !== $value && '' !== $value) {
             $url = \wp_slimstat_reports::fs_url($field . ' equals ' . rawurlencode($value) . '&&&start_from equals 0');
@@ -228,7 +228,7 @@ class AcquisitionReport
             echo '<div class="slimstat-acquisition__groups"><div class="slimstat-acquisition__columns" aria-hidden="true"><span>' . esc_html($fields[$groupField]) . '</span><span>' . esc_html__('Pageviews', 'wp-slimstat') . '</span><span>' . esc_html__('Share', 'wp-slimstat') . '</span></div>';
             foreach ($rows as $row) {
                 $value = $row[$groupField] ?? null;
-                $label = 'traffic_channel' === $groupField ? (Acquisition::labels()[$value ?? ''] ?? __('Not attributed', 'wp-slimstat')) : ('' !== ($value ?? '') ? $value : __('Not set', 'wp-slimstat'));
+                $label = 'traffic_channel' === $groupField ? (Acquisition::labels()[$value ?? ''] ?? __('Unassigned', 'wp-slimstat')) : ('' !== ($value ?? '') ? $value : __('Unassigned', 'wp-slimstat'));
                 $key = serialize([(int) ($row['blog_id'] ?? 0), $value]);
                 $groupRows = $byGroup[$key] ?? [];
                 $count = (int) $row['counthits'];
@@ -293,8 +293,8 @@ class AcquisitionReport
         }
         echo '<details class="slimstat-acquisition__help"><summary>' . esc_html__('How to read this report', 'wp-slimstat') . '</summary>';
         echo '<p>' . esc_html('utm' === $mode
-            ? __('Campaign totals combine all sources and tags. Expand a campaign for each combination of tags on a recorded page URL, not a session or conversion. Values keep their original case. More tags reveals content, term and campaign ID when present. Not set means that tag was absent. Use consistent names and tag incoming links, not internal links.', 'wp-slimstat')
-            : __('Channel totals combine all sources. Expand a channel for its source breakdown. These are pageview channels, not session attribution. Campaign tags take priority over referring sites. Internal navigation is separate. Direct / unknown means no usable source was sent; it can include untagged email, private messages or apps. Not attributed means the pageview predates report setup.', 'wp-slimstat')) . '</p>';
+            ? __('Campaign totals combine all sources and tags. Expand a campaign for each combination of tags on a recorded page URL, not a session or conversion. Values keep their original case. More tags reveals content, term and campaign ID when present. Unassigned means that tag was absent. Use consistent names and tag incoming links, not internal links.', 'wp-slimstat')
+            : __('Channel totals combine all sources. Expand a channel for its source breakdown. These are pageview channels, not session attribution. Campaign tags take priority over referring sites. Internal navigation is separate. Direct / unknown means no usable source was sent; it can include untagged email, private messages or apps. Unassigned means the pageview predates report setup.', 'wp-slimstat')) . '</p>';
         if ('channels' === $mode) {
             echo '<p>' . esc_html__('AI Assistants identifies referrals or tagged links from known assistants. AI Crawlers and AI User-requested Fetches identify automated requests by their claimed user agent, not verified identity. They appear only when your tracking settings collect them. Google AI Overviews cannot reliably be separated from Organic Search. Unknown tagged media appear as Unassigned.', 'wp-slimstat') . '</p>';
         } else {
