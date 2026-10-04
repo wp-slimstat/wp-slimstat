@@ -34,7 +34,7 @@ if (!empty($_GET['force_refresh']) || false === $response) {
     if (is_wp_error($response) || 200 != $response['response']['code']) {
         $error_message = is_wp_error($response) ? $response->get_error_message() : $response['response']['code'] . ' ' . $response['response']['message'];
         /* translators: %s: error message returned while retrieving the add-ons list. */
-        $error_message = sprintf(__('There was an error retrieving the add-ons list from the server. Please try again later. Error Message: %s', 'wp-slimstat'), $error_message);
+        $error_message = sprintf(__('There was an error retrieving the addons list from the server. Please try again later. Error Message: %s', 'wp-slimstat'), $error_message);
     } else {
         set_transient('wp_slimstat_addon_list', $response, 86400);
     }
@@ -59,13 +59,13 @@ if (is_array($list_addons)) {
     }
 }
 if (!is_array($list_addons)) {
-    $error_message = __('There was an error decoding the add-ons list from the server. Please try again later.', 'wp-slimstat');
+    $error_message = __('There was an error decoding the addons list from the server. Please try again later.', 'wp-slimstat');
 }
 ?>
 
 <div class="wrap-slimstat">
-    <h2><?php esc_html_e('Add-ons', 'wp-slimstat') ?></h2>
-    <p><?php echo wp_kses_post(__('Add-ons extend the functionality of Slimstat in many interesting ways. We offer both free and premium (paid) extensions. Each add-on can be installed as a separate plugin, which will receive regular updates via the WordPress Plugins panel. In order to be notified when a new version of a premium add-on is available, please enter the <strong>license key</strong> you received when you purchased it.', 'wp-slimstat')); ?><?php
+    <h2><?php esc_html_e('Addons', 'wp-slimstat') ?></h2>
+    <p><?php echo wp_kses_post(__('Addons extend SlimStat. We offer both free and paid extensions. Each addon can be installed as a separate plugin, which will receive regular updates via the WordPress Plugins panel. In order to be notified when a new version of a paid addon is available, enter the <strong>license key</strong> you received when you purchased it.', 'wp-slimstat')); ?><?php
 if (empty($_GET['force_refresh'])) {
     echo ' ';
     /* translators: %s: current settings page URL, before the force-refresh parameter. */
@@ -84,7 +84,7 @@ if (!empty($error_message)) {
         <table class="wp-list-table widefat plugins slimstat-addons" cellspacing="0">
             <thead>
             <tr>
-                <th scope="col" id="name" class="manage-column column-name"><?php esc_html_e('Add-on', 'wp-slimstat') ?></th>
+                <th scope="col" id="name" class="manage-column column-name"><?php esc_html_e('Addon', 'wp-slimstat') ?></th>
                 <th scope="col" id="description" class="manage-column column-description" style=""><?php esc_html_e('Description', 'wp-slimstat') ?></th>
             </tr>
             </thead>

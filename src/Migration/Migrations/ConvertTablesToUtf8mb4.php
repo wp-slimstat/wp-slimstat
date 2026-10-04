@@ -115,12 +115,21 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
         return __('Convert analytics tables to utf8mb4', 'wp-slimstat');
     }
 
+    public function getSummary(): string
+    {
+        return sprintf(
+            /* translators: %s: a measured cost, e.g. "about 12 seconds on a 440,000-row table (MySQL 8)". */
+            __('Lets the tables store emoji. Tracking pauses for %s on the largest table.', 'wp-slimstat'),
+            $this->measuredCostPhrase()
+        );
+    }
+
     public function getDescription(): string
     {
         return sprintf(
             /* translators: %s: a measured cost, e.g. "about 12 seconds on a 440,000-row table (MySQL 8)". */
             __(
-                'Converts the SlimStat tables from utf8 (3-byte) to utf8mb4 so they can store emoji and match the collation WordPress uses for users. This rebuilds each table and pauses tracking writes while it runs — %s for the largest of them.',
+                'Converts the SlimStat tables from utf8 (3-byte) to utf8mb4 so they can store emoji and match the collation WordPress uses for users. This rebuilds each table and pauses tracking writes while it runs: %s for the largest of them.',
                 'wp-slimstat'
             ),
             $this->measuredCostPhrase()

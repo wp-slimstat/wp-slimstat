@@ -57,7 +57,7 @@ $offered_migrations      = (isset($offered_migrations) && is_array($offered_migr
 
                     <?php // Present continuous under an "Idle" badge, on a page where nothing had started. ?>
                     <p class="slimstat-status-intro"><?php echo $offered_only
-                        ? esc_html__('Your database is up to date. The optional steps below are available but not needed — each one says what it does and what it costs before you start it.', 'wp-slimstat')
+                        ? esc_html__('Your database is up to date. The optional steps below are available but not needed. Each one says what it does and what it costs before you start it.', 'wp-slimstat')
                         : esc_html__('This will migrate your database to improve SlimStat performance and stability. Keep this page open until the process finishes. You can review each step below.', 'wp-slimstat'); ?></p>
 
                     <ul class="slimstat-status-metrics">
@@ -89,8 +89,8 @@ $offered_migrations      = (isset($offered_migrations) && is_array($offered_migr
                                 esc_html(
                                     /* translators: %d: number of optional migration steps. */
                                     _n(
-                                        'No migration is required. %d optional step is listed below — start it yourself when you are ready.',
-                                        'No migration is required. %d optional steps are listed below — start each one yourself when you are ready.',
+                                        'No migration is required. %d optional step is listed below. Start it yourself when you are ready.',
+                                        'No migration is required. %d optional steps are listed below. Start each one yourself when you are ready.',
                                         count($offered_migrations),
                                         'wp-slimstat'
                                     )

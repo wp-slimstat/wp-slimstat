@@ -131,6 +131,14 @@ body.slimstat_page_migration .updated {
     flex: 1 1 0;
     font-size: 14px;
 }
+.slimstat-migration #slimstat-migration-list li .label p {
+    margin: 4px 0 0;
+    max-width: 72ch;
+}
+.slimstat-migration #slimstat-migration-list li .label details {
+    margin-top: 4px;
+    color: #646970;
+}
 
 .slimstat-migration #slimstat-migration-list li .label code {
     background: #f6f7f7;

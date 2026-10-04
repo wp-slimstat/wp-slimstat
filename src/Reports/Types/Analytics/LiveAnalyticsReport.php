@@ -45,19 +45,19 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 */
 	protected function init(): void {
 		$this->id        = 'slim_live_analytics';
-		$this->title     = __( 'Live Analytics', 'wp-slimstat' );
+		$this->title     = __( 'Real-time', 'wp-slimstat' );
 		$this->locations = [ 'slimview1' ];
 		$this->classes   = [ 'full-width', 'live-analytics', 'realtime-report' ];
 		$this->tooltip   = $this->build_tooltip(
-			__( 'Live Analytics', 'wp-slimstat' ),
-			__( 'Real-time analytics with second-level accuracy showing current user activity and trends.', 'wp-slimstat' ),
+			__( 'Real-time', 'wp-slimstat' ),
+			__( 'Who is on the site now, and how that changed over the last 30 minutes.', 'wp-slimstat' ),
 			[
-				__( '• Users Live: Unique sessions active within the last 30 minutes', 'wp-slimstat' ),
-				__( '• Counters use the latest dt/dt_out data so long reads remain “online” until they go idle', 'wp-slimstat' ),
-				__( '• Deferred dt_out updates backfill past minutes so long reads remain visible on the chart', 'wp-slimstat' ),
-				__( '• Chart shows exact user count for each minute of the last 30 minutes', 'wp-slimstat' ),
-				__( '• Pages Live: Unique pages viewed in the last 30 minutes', 'wp-slimstat' ),
-				__( '• Countries Live: Number of countries with active users in the last 30 minutes', 'wp-slimstat' ),
+				__( '• Visitors online: unique sessions active in the last 30 minutes', 'wp-slimstat' ),
+				__( '• Counters use each visit’s last activity, so long reads stay online until they go idle', 'wp-slimstat' ),
+				__( '• Late activity updates fill in past minutes, so long reads stay on the chart', 'wp-slimstat' ),
+				__( '• The chart shows visitors online for each of the last 30 minutes', 'wp-slimstat' ),
+				__( '• Pages live: unique pages viewed in the last 30 minutes', 'wp-slimstat' ),
+				__( '• Countries live: countries with visitors online in the last 30 minutes', 'wp-slimstat' ),
 				__( '• Data refreshes every 10 seconds with a short-lived cache for stability', 'wp-slimstat' ),
 				__( '• Red bars highlight peak activity periods', 'wp-slimstat' ),
 			]

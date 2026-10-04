@@ -24,9 +24,10 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     const dashboard = page.locator('[data-ecommerce]');
     await expect(dashboard.locator('[data-metric=net]')).toContainText('115.00');
     await expect(dashboard.getByRole('heading', { name: 'Find your next revenue opportunity' })).toBeVisible();
-    await dashboard.getByRole('link', { name: 'Explore Ecommerce Pro' }).click();
+    await dashboard.getByRole('link', { name: 'See what Pro adds to Ecommerce' }).click();
     await expect(page.getByRole('heading', { name: 'Turn store activity into your next decision' })).toBeVisible();
-    const checkout = page.getByRole('link', { name: 'Get Pro for one site' });
+    const [checkout, footerCta] = [page.locator('.ss-pro-cta').first(), page.locator('.ss-pro-cta').last()];
+    await expect(page.getByRole('link', { name: 'Upgrade to Pro' })).toHaveCount(2);
     expect(new URL(await checkout.getAttribute('href') || '').pathname).toBe('/checkout/wp-slimstat-pro');
     expect(new URL(await checkout.getAttribute('href') || '').searchParams.get('tier')).toBe('1-site');
     await expect(checkout).toHaveAttribute('rel', /noopener/);
@@ -35,7 +36,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await expect(features).toHaveCount(11);
     await expect(features.first()).toHaveText('Ecommerce Pro');
     await expect(page.locator('#ss-pro-live .ss-pro-lede')).toHaveText(/right now|next visitor arrives/);
-    const footer = new URL(await page.getByRole('link', { name: 'Upgrade to SlimStat Pro' }).getAttribute('href') || '');
+    const footer = new URL(await footerCta.getAttribute('href') || '');
     expect(footer.pathname).toBe('/checkout/wp-slimstat-pro');
     expect(footer.searchParams.get('utm_content')).toBe('footer');
     await expect(page.getByText('Will I lose my existing reports or settings?')).toBeVisible();
@@ -77,7 +78,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await page.goto(`/wp-admin/admin.php?${scope}#ss-ec-panel-campaign`);
     await expect(dashboard.getByRole('tabpanel', { name: 'Campaigns', exact: true })).toBeVisible();
     await expect(dashboard.getByRole('heading', { name: 'Your Pro reports are ready' })).toBeVisible();
-    await expect(dashboard.getByRole('link', { name: 'Explore Ecommerce Pro' })).toHaveCount(0);
+    await expect(dashboard.getByRole('link', { name: 'See what Pro adds to Ecommerce' })).toHaveCount(0);
     await dashboard.getByRole('button', { name: 'Compare campaigns' }).click();
     const exportUrl = new URL(await dashboard.getByRole('tabpanel', { name: 'Campaigns', exact: true }).getByRole('link', { name: 'Export CSV' }).getAttribute('href') || '');
     expect(exportUrl.searchParams.get('fs[utm_campaign]')).toBe(`equals ${campaign}`);
@@ -89,12 +90,11 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await expect(page.getByText('Enter your license key', { exact: true })).toBeVisible();
     await expect(page.getByText(/Save Changes to verify/)).toBeVisible();
     await page.goto('/wp-admin/admin.php?page=slimpro');
-    await expect(page.getByRole('heading', { name: 'Your next insight starts here' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'What Pro adds to your reports' })).toBeVisible();
     await expect(page.getByText('Pro is active on this site')).toBeVisible();
     await expect(page.locator('.ss-pro-feature h3')).toHaveCount(11);
-    await expect(page.getByRole('link', { name: 'Upgrade to SlimStat Pro' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Upgrade to Pro' })).toHaveCount(0);
     await expect(page.getByText('Will I lose my existing reports or settings?')).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Get Pro for one site' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Upload Pro in WordPress' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Set up email reports' })).toBeVisible();
     await page.getByRole('link', { name: 'Compare campaign revenue' }).click();

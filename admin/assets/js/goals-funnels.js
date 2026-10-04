@@ -200,7 +200,7 @@
         $confirmSheet.find('[data-role="confirm-title"]').text(opts.title || __('Delete this?', 'wp-slimstat'));
         $confirmSheet.find('[data-role="confirm-body"]').text(opts.body || '');
         $confirmSheet.find('[data-role="confirm-warning"]').text(
-            opts.warning || __('Historical data stays — only the definition is removed. You can always rebuild it.', 'wp-slimstat')
+            opts.warning || __('Historical data stays. Only the definition is removed, and you can rebuild it.', 'wp-slimstat')
         );
         $confirmSheet.find('[data-role="confirm-cancel"]').text(opts.cancelLabel || __('Cancel', 'wp-slimstat'));
         $confirmSheet.find('[data-role="confirm-destructive"]').text(opts.destructiveLabel || __('Delete', 'wp-slimstat'));
@@ -333,7 +333,7 @@
             body:             goalName
                 ? sprintf(/* translators: %s: goal name. */ __('Delete "%s"?', 'wp-slimstat'), goalName)
                 : __('Delete this goal?', 'wp-slimstat'),
-            warning:          __('Historical data stays — only the goal definition is removed. You can always rebuild it.', 'wp-slimstat'),
+            warning:          __('Historical data stays. Only the goal definition is removed, and you can rebuild it.', 'wp-slimstat'),
             cancelLabel:      __('Keep goal', 'wp-slimstat'),
             destructiveLabel: __('Delete goal', 'wp-slimstat'),
             onConfirm: function () {
@@ -599,7 +599,7 @@
                 /* translators: %s is the funnel name */
                 ? sprintf(__('Delete "%s"?', 'wp-slimstat'), funnelName)
                 : __('Delete this funnel?', 'wp-slimstat'),
-            warning:          __('Historical data stays — only the funnel definition is removed. You can always rebuild it from the same goals.', 'wp-slimstat'),
+            warning:          __('Historical data stays. Only the funnel definition is removed, and you can rebuild it from the same goals.', 'wp-slimstat'),
             cancelLabel:      __('Keep funnel', 'wp-slimstat'),
             destructiveLabel: __('Delete funnel', 'wp-slimstat'),
             onConfirm: function () {
@@ -956,7 +956,7 @@
             searchPlaceholder: __('Search or type…', 'wp-slimstat'),
             // No "Apply" button here (unlike the filter bar) — a typed value is
             // saved as-is, so invite the user to type any value. (#1.1/#1.2)
-            noMatchesText:     __('No matches — type any value to use it.', 'wp-slimstat'),
+            noMatchesText:     __('No matches. Type any value to use it.', 'wp-slimstat'),
             noResultsText:     __('No matches', 'wp-slimstat'),
             loadingText:       __('Loading…', 'wp-slimstat'),
             // Wire server-side search so typed custom values are looked up per

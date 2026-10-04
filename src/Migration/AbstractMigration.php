@@ -154,6 +154,16 @@ abstract class AbstractMigration implements MigrationInterface
 	}
 
 	/**
+	 * Two lines for the migration screen: what the step does and what it costs. Empty means
+	 * the description is short enough to show as is; otherwise the description moves into a
+	 * "Details" disclosure under this summary.
+	 */
+	public function getSummary(): string
+	{
+		return '';
+	}
+
+	/**
 	 * What running this migration ACTUALLY cost, once, on a table someone measured — or null.
 	 *
 	 * A migration that says nothing to the admin about how long it takes leaves this alone. One

@@ -16,7 +16,7 @@ $already_seen = [];
         <hr class="wp-header-end">
 
         <p><?php
-            esc_html_e('You can drag and drop the placeholders here below from one widget area to another, to customize the layout of each report screen. You can place multiple charts on the same view, clone reports or move them to the Inactive Reports if you are not interested in that specific metric.', 'wp-slimstat');
+            esc_html_e('You can drag and drop the placeholders below from one widget area to another, to customize the layout of each report screen. You can place multiple charts on the same view, clone reports or move them to the Inactive Reports if you are not interested in that specific metric.', 'wp-slimstat');
 if (is_network_admin()) {
     echo ' ';
     esc_html_e('By using the network-wide customizer, all your users will see the same layout you define, and they will not be able to customize it further.', 'wp-slimstat');

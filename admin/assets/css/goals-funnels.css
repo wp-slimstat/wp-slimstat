@@ -130,6 +130,11 @@
     line-height: 1.4;
 }
 
+/* The empty state already says what a goal is; the subtitle above it repeated the same sentence. */
+.postbox:has([data-role="goals-empty"]) .slimstat-gf-postbox-subtitle {
+    display: none;
+}
+
 #slim_p9_01 .slimstat-header-buttons,
 #slim_p9_02 .slimstat-header-buttons {
     display: inline-flex;

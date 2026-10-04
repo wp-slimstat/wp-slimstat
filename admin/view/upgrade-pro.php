@@ -62,7 +62,7 @@ $groups = [
         <header class="ss-pro-hero ss-pro-reveal">
             <div>
                 <p class="ss-pro-eyebrow"><?php esc_html_e('SlimStat Pro', 'wp-slimstat'); ?></p>
-                <h1><?php echo esc_html($is_pro ? __('Your next insight starts here', 'wp-slimstat') : ($commerce ? __('Turn store activity into your next decision', 'wp-slimstat') : __('Turn traffic into your next decision', 'wp-slimstat'))); ?></h1>
+                <h1><?php echo esc_html($is_pro ? __('What Pro adds to your reports', 'wp-slimstat') : ($commerce ? __('Turn store activity into your next decision', 'wp-slimstat') : __('Turn traffic into your next decision', 'wp-slimstat'))); ?></h1>
                 <?php if ($is_pro) : ?><p class="ss-pro-badge"><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e('Pro is active on this site', 'wp-slimstat'); ?></p><?php endif; ?>
                 <p class="ss-pro-lead"><?php echo esc_html($is_pro ? __('Go deeper into the reports you already use. Compare what works, investigate what needs attention, and share the results with your team.', 'wp-slimstat') : $lead); ?></p>
                 <div class="ss-pro-actions">
@@ -70,7 +70,7 @@ $groups = [
                         <a class="button ss-pro-cta" href="<?php echo esc_url(admin_url('admin.php?page=slimconfig&tab=8')); ?>"><?php esc_html_e('Manage your license', 'wp-slimstat'); ?></a>
                         <?php if ($commerce && \SlimStat\Ecommerce\Report::canView()) : ?><a class="ss-pro-link" href="<?php echo esc_url(admin_url('admin.php?page=slimview7')); ?>"><?php esc_html_e('Open Ecommerce', 'wp-slimstat'); ?></a><?php endif; ?>
                     <?php else : ?>
-                        <a class="button ss-pro-cta" href="<?php echo esc_url(add_query_arg('utm_content', 'hero', $checkout)); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Get Pro for one site', 'wp-slimstat'); ?></a>
+                        <a class="button ss-pro-cta" href="<?php echo esc_url(add_query_arg('utm_content', 'hero', $checkout)); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Upgrade to Pro', 'wp-slimstat'); ?></a>
                         <a class="ss-pro-link" href="<?php echo esc_url($pricing); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Compare all plans', 'wp-slimstat'); ?></a>
                     <?php endif; ?>
                 </div>
@@ -117,7 +117,7 @@ $groups = [
                 <li><span class="dashicons dashicons-backup" aria-hidden="true"></span><?php esc_html_e('Your reports and settings carry over.', 'wp-slimstat'); ?></li>
             </ul>
             <div class="ss-pro-actions">
-                <a class="button ss-pro-cta" href="<?php echo esc_url(add_query_arg('utm_content', 'footer', $checkout)); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Upgrade to SlimStat Pro', 'wp-slimstat'); ?></a>
+                <a class="button ss-pro-cta" href="<?php echo esc_url(add_query_arg('utm_content', 'footer', $checkout)); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Upgrade to Pro', 'wp-slimstat'); ?></a>
                 <a class="ss-pro-link" href="<?php echo esc_url($pricing); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Compare all plans', 'wp-slimstat'); ?></a>
             </div>
             <p class="ss-pro-note"><?php esc_html_e('One-site annual license. Review current pricing, renewal terms and taxes at checkout. Checkout opens in a new tab so you can return to your reports.', 'wp-slimstat'); ?></p>

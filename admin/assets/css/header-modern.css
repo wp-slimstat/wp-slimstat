@@ -299,3 +299,14 @@
 .postbox.chart .slimstat-chart-wrap {
     padding-inline-end: 20px;
 }
+/* Last tracker message: a pageview skipped on purpose (bot, excluded IP) is a note, not a failure. */
+.slimstat-tracker-message:not(.is-note) {
+    font-weight: 600;
+}
+.slimstat-tracker-message.is-note {
+    color: var(--ss-text-secondary, #646970);
+}
+.slimstat-tracker-message.is-note + .slimstat-font-cancel:before {
+    filter: grayscale(1);
+    opacity: .6;
+}

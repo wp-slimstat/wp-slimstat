@@ -101,12 +101,21 @@ class AddUserAgentDimension extends AbstractMigration
         return __('Build the browser dimension', 'wp-slimstat');
     }
 
+    public function getSummary(): string
+    {
+        return sprintf(
+            /* translators: %s: a measured cost, e.g. "more than 8 minutes on a 440,000-row table (MySQL 8)". */
+            __('Groundwork for a future release: no report gets faster today. The slowest step here: %s.', 'wp-slimstat'),
+            $this->measuredCostPhrase()
+        );
+    }
+
     public function getDescription(): string
     {
         return sprintf(
             /* translators: %s: a measured cost, e.g. "more than 8 minutes on a 440,000-row table (MySQL 8)". */
             __(
-                'Optional. Adds a compact browser key to the analytics table AND to the archive table, and builds a lookup of browsers and platforms — groundwork for a future release. It does not make any report faster today, and it is by far the slowest step here: %s — and that run was stopped before it finished, so it is a minimum and not an estimate. On a larger table you may not be able to complete it from this screen at all. Your existing data is not modified, and reports keep working while it runs. Tracking normally keeps working too, but a server that cannot rebuild the table online will pause tracking writes for the whole rebuild, so on a large site prefer a quiet period.',
+                'Optional. Adds a compact browser key to the analytics table and to the archive table, and builds a lookup of browsers and platforms. It is groundwork for a future release. It does not make any report faster today, and it is by far the slowest step here: %s. That run was stopped before it finished, so it is a minimum and not an estimate. On a larger table you may not be able to complete it from this screen at all. Your existing data is not modified, and reports keep working while it runs. Tracking normally keeps working too, but a server that cannot rebuild the table online will pause tracking writes for the whole rebuild, so on a large site prefer a quiet period.',
                 'wp-slimstat'
             ),
             $this->measuredCostPhrase()

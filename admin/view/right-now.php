@@ -85,10 +85,10 @@ if (!$is_dashboard) {
     // the word it explains, instead of stranding apart from it. (#impeccable)
     echo '<p class="slimstat-access-log-legend">'
         . '<span class="slimstat-legend-item"><span class="little-color-box is-search-engine" title="' . esc_attr__('From search result page', 'wp-slimstat') . '"></span> ' . esc_html__('From search result page', 'wp-slimstat') . '</span>'
-        . '<span class="slimstat-legend-item"><span class="little-color-box is-known-visitor" title="' . esc_attr__('Has Left Comments', 'wp-slimstat') . '"></span> ' . esc_html__('Has Left Comments', 'wp-slimstat') . '</span>'
-        . '<span class="slimstat-legend-item"><span class="little-color-box is-known-user" title="' . esc_attr__('WP User', 'wp-slimstat') . '"></span> ' . esc_html__('WP User', 'wp-slimstat') . '</span>'
-        . '<span class="slimstat-legend-item"><span class="little-color-box is-direct" title="' . esc_attr__('Other Human', 'wp-slimstat') . '"></span> ' . esc_html__('Other Human', 'wp-slimstat') . '</span>'
-        . '<span class="slimstat-legend-item"><span class="little-color-box" title="' . esc_attr__('Bot or Crawler', 'wp-slimstat') . '"></span> ' . esc_html__('Bot or Crawler', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box is-known-visitor" title="' . esc_attr__('Has left comments', 'wp-slimstat') . '"></span> ' . esc_html__('Has left comments', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box is-known-user" title="' . esc_attr__('WordPress user', 'wp-slimstat') . '"></span> ' . esc_html__('WordPress user', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box is-direct" title="' . esc_attr__('Other human', 'wp-slimstat') . '"></span> ' . esc_html__('Other human', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box" title="' . esc_attr__('Bot or crawler', 'wp-slimstat') . '"></span> ' . esc_html__('Bot or crawler', 'wp-slimstat') . '</span>'
         . '</p>';
 }
 

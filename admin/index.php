@@ -135,14 +135,14 @@ class wp_slimstat_admin
             'slimheatmap' => [
                 'is_report_group' => false,
                 'show_in_sidebar' => true,
-                'title'           => wp_slimstat::pro_is_installed() ? __('Heatmaps', 'wp-slimstat') : __('Heatmaps (pro)', 'wp-slimstat'),
+                'title'           => __('Heatmaps', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_heatmaps'],
             ],
             'slimemail' => [
                 'is_report_group' => false,
                 'show_in_sidebar' => true,
-                'title'           => wp_slimstat::pro_is_installed() ? __('Email Report', 'wp-slimstat') : __('Email Report (pro)', 'wp-slimstat'),
+                'title'           => __('Email Report', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_email_report'],
             ],
@@ -534,7 +534,7 @@ class wp_slimstat_admin
         // The time-limited "New" badge on the Goals & Funnels item renders in the
         // global sidebar, so its style must load on every admin page (not just
         // slimview6). Tiny, so always emit it. (#20)
-        echo '<style> #adminmenu .slimstat-gf-new-badge {display:inline-block;margin-inline-start:6px;padding:0 6px;border-radius:9px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;font-size:9px;font-weight:600;line-height:16px;text-transform:uppercase;letter-spacing:.03em;vertical-align:middle;} </style>';
+        echo '<style> #adminmenu .slimstat-gf-new-badge {display:inline-block;margin-inline-start:6px;padding:0 6px;border-radius:9px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;font-size:9px;font-weight:600;line-height:16px;text-transform:uppercase;letter-spacing:.03em;vertical-align:middle;} #adminmenu .slimstat-menu-pro-badge {display:inline-block;margin-inline-start:6px;padding:0 5px;border:1px solid currentColor;border-radius:9px;font-size:9px;font-weight:600;line-height:14px;opacity:.85;vertical-align:middle;} </style>';
     }
 
     /**
@@ -1923,6 +1923,9 @@ class wp_slimstat_admin
                 if ('slimview6' === $a_screen_id) {
                     $menu_label .= self::goals_funnels_new_badge();
                 }
+                if (in_array($a_screen_id, ['slimheatmaps', 'slimemail'], true) && !wp_slimstat::pro_is_installed()) {
+                    $menu_label .= ' <span class="slimstat-menu-pro-badge">' . esc_html__('Pro', 'wp-slimstat') . '</span>';
+                }
                 $new_entry[] = add_submenu_page(
                     $parent,
                     $a_screen_info['title'],
@@ -2049,7 +2052,7 @@ class wp_slimstat_admin
                 'is_pro'    => wp_slimstat::pro_is_installed(),
                 'i18n'      => [
                     /* translators: %s: formatted count for the previous day. */
-                    'was_last_day' => esc_html__('was %s last day', 'wp-slimstat'),
+                    'was_last_day' => esc_html__('%s yesterday', 'wp-slimstat'),
                     'online_users' => esc_html__('Visitors online', 'wp-slimstat'),
                     'count_label'  => esc_html__('Count', 'wp-slimstat'),
                     'now'          => esc_html__('Now', 'wp-slimstat'),
@@ -2170,7 +2173,7 @@ class wp_slimstat_admin
             . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-sessions-count">' . number_format_i18n($sessions_today) . '</div>'
             . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-sessions-compare">'
             /* translators: %s: formatted count for the previous day. */
-            . sprintf(esc_html__('was %s last day', 'wp-slimstat'), number_format_i18n($sessions_yesterday))
+            . sprintf(esc_html__('%s yesterday', 'wp-slimstat'), number_format_i18n($sessions_yesterday))
             . '</div></div>'
             // Views Today (bottom left) - blur for non-Pro
             . '<div class="slimstat-adminbar__stat-card' . $blur_class . '">'
@@ -2178,7 +2181,7 @@ class wp_slimstat_admin
             . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-views-count">' . $views_display . '</div>'
             . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-views-compare">'
             /* translators: %s: formatted count for the previous day. */
-            . sprintf(esc_html__('was %s last day', 'wp-slimstat'), $views_yesterday_display)
+            . sprintf(esc_html__('%s yesterday', 'wp-slimstat'), $views_yesterday_display)
             . '</div></div>'
             // Referrals Today (bottom right) - blur for non-Pro
             . '<div class="slimstat-adminbar__stat-card' . $blur_class . '">'
@@ -2186,7 +2189,7 @@ class wp_slimstat_admin
             . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-referrals-count">' . $referrals_display . '</div>'
             . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-referrals-compare">'
             /* translators: %s: formatted count for the previous day. */
-            . sprintf(esc_html__('was %s last day', 'wp-slimstat'), $referrals_yesterday_display)
+            . sprintf(esc_html__('%s yesterday', 'wp-slimstat'), $referrals_yesterday_display)
             . '</div></div>'
             . '</div>';
 
@@ -2214,10 +2217,10 @@ class wp_slimstat_admin
         if (!$is_pro) {
             $cta_html = '<div class="slimstat-adminbar__cta">'
                 . '<div class="slimstat-adminbar__cta-text">'
-                . esc_html__('Unlock the Full Power of SlimStat Analytics', 'wp-slimstat')
+                . esc_html__('Pro adds the Real-time chart, heatmaps, email reports and more Ecommerce reports.', 'wp-slimstat')
                 . '</div>'
                 . '<a href="' . esc_url($upgrade_url) . '" target="_blank" class="slimstat-adminbar__cta-button">'
-                . esc_html__('Unlock SlimStat Pro', 'wp-slimstat') . '</a>'
+                . esc_html__('Upgrade to Pro', 'wp-slimstat') . '</a>'
                 . '</div>';
 
             $GLOBALS['wp_admin_bar']->add_node([
@@ -2250,8 +2253,8 @@ class wp_slimstat_admin
             . (is_admin() ? esc_html__('Heatmaps', 'wp-slimstat') : esc_html__('Page heatmap', 'wp-slimstat'))
             . '</a>'
             . '<a href="' . esc_url($overview_url) . '" class="slimstat-adminbar__footer-link">'
-            . esc_html__('Explore Details', 'wp-slimstat')
-            . ' <span class="dashicons dashicons-external" style="font-size:12px"></span>'
+            . esc_html__('Open Overview', 'wp-slimstat')
+            . ' <span class="dashicons dashicons-arrow-right-alt2" style="font-size:12px" aria-hidden="true"></span>'
             . '</a></div></div>';
 
         $GLOBALS['wp_admin_bar']->add_node([
@@ -4085,10 +4088,10 @@ class wp_slimstat_admin
 
 			if ($ok) {
                 update_option('slimstat_last_geoip_dl', time());
-                wp_send_json_success(__('GeoIP Database Successfully Updated!', 'wp-slimstat'));
+                wp_send_json_success(__('Geolocation database updated.', 'wp-slimstat'));
             } else {
                 // Log the error for debugging
-				$error_message = __('Failed to update GeoIP Database.', 'wp-slimstat');
+				$error_message = __('The geolocation database could not be updated.', 'wp-slimstat');
 				if ('maxmind' === $provider) {
 					$error_message .= ' ' . __('Please check your MaxMind license key and try again.', 'wp-slimstat');
 				}
@@ -4101,7 +4104,7 @@ class wp_slimstat_admin
             }
         } catch (\Throwable $exception) {
             \wp_slimstat::log('GeoIP update AJAX error: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ':' . $exception->getLine(), 'error');
-            wp_send_json_error(__('An unexpected error occurred while updating the GeoIP database.', 'wp-slimstat'));
+            wp_send_json_error(__('An unexpected error occurred while updating the geolocation database.', 'wp-slimstat'));
         }
     }
 
@@ -4126,12 +4129,12 @@ class wp_slimstat_admin
             }
             $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
             $exists  = file_exists($service->getProvider()->getDbPath());
-            $result  = [ 'notice' => $exists ? __('GeoIP Database is present and ready.', 'wp-slimstat') : __('GeoIP Database not found.', 'wp-slimstat') ];
+            $result  = [ 'notice' => $exists ? __('The geolocation database is ready.', 'wp-slimstat') : __('The geolocation database was not found.', 'wp-slimstat') ];
 
             wp_send_json_success($result['notice']);
         } catch (\Throwable $exception) {
             \wp_slimstat::log('GeoIP check AJAX error: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ':' . $exception->getLine(), 'error');
-            wp_send_json_error(__('An unexpected error occurred while checking the GeoIP database.', 'wp-slimstat'));
+            wp_send_json_error(__('An unexpected error occurred while checking the geolocation database.', 'wp-slimstat'));
         }
     }
 
@@ -4147,7 +4150,7 @@ class wp_slimstat_admin
                 'id'      => 'wp-slimstat-definitions',
                 'title'   => __('Definitions', 'wp-slimstat'),
                 'content' => '<ul>
-                    <li><b>' . __('Pageview', 'wp-slimstat') . '</b>: ' . __('A request to load a single HTML file ("page"). This should be contrasted with a "hit", which refers to a request for any file from a web server. Slimstat logs a pageview each time the tracking code is executed', 'wp-slimstat') . '</li>
+                    <li><b>' . __('Pageview', 'wp-slimstat') . '</b>: ' . __('A request to load a single HTML file ("page"). This should be contrasted with a "hit", which refers to a request for any file from a web server. SlimStat logs a pageview each time the tracking code is executed', 'wp-slimstat') . '</li>
                     <li><b>' . __('(Human) Visit', 'wp-slimstat') . '</b>: ' . __("A period of interaction between a visitor's browser and your website, ending when the browser is closed or when the user has been inactive on that site for 30 minutes", 'wp-slimstat') . '</li>
                     <li><b>' . __('Known Visitor', 'wp-slimstat') . '</b>: ' . __('Any user who has left a comment on your blog, and is thus identified by WordPress as a returning visitor', 'wp-slimstat') . '</li>
                     <li><b>' . __('Unique IP', 'wp-slimstat') . '</b>: ' . __('Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses; since this measurement looks only at the internet address a pageview came from, it is useful, but not perfect', 'wp-slimstat') . '</li>
@@ -4193,7 +4196,7 @@ class wp_slimstat_admin
                         <li><b>' . __('Resource Content Type', 'wp-slimstat') . '</b>: ' . __('post, page, cpt:<em>custom-post-type</em>, cpt:attachment, singular, post_type_archive, tag, taxonomy, category, date, author, archive, search, feed, home; please refer to the <a target="_blank" href="https://codex.wordpress.org/Conditional_Tags">Conditional Tags</a> manual page for more information', 'wp-slimstat') . '</li>
                         <li><b>' . __('Screen Resolution', 'wp-slimstat') . '</b>: ' . __('viewport width and height (1024x768, 800x600, ...)', 'wp-slimstat') . '</li>
                         <li><b>' . __('Visit ID', 'wp-slimstat') . '</b>: ' . __('generally used in conjunction with <em>is not empty</em>, identifies human visitors', 'wp-slimstat') . '</li>
-                        <li><b>' . __('Date Filters', 'wp-slimstat') . '</b>: ' . __('you can specify the timeframe by entering a number in the <em>interval</em> field; use -1 to indicate <em>to date</em> (i.e., day=1, month=1, year=blank, interval=-1 will set a year-to-date filter)', 'wp-slimstat') . '</li>
+                        <li><b>' . __('Date Filters', 'wp-slimstat') . '</b>: ' . __('you can specify the timeframe by entering a number in the <em>interval</em> field; use -1 to indicate <em>to date</em> (e.g. day=1, month=1, year=blank, interval=-1 will set a year-to-date filter)', 'wp-slimstat') . '</li>
                         <li><b>' . __('SERP Position', 'wp-slimstat') . '</b>: ' . __('set the filter to Referer contains cd=N&, where N is the position you are looking for', 'wp-slimstat') . '</li>
                 </ul>',
             ]
@@ -4321,7 +4324,7 @@ class wp_slimstat_admin
     public static function inject_goals_funnels_header_subtitle($_html = '', $_report_id = '')
     {
         if ('slim_p9_01' === $_report_id) {
-            return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('A Goal is one question you ask of your traffic.', 'wp-slimstat') . '</p>';
+            return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('A goal is one question you ask of your traffic.', 'wp-slimstat') . '</p>';
         }
         if ('slim_p9_02' === $_report_id) {
             return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('String 2 to 5 steps into a journey. A funnel shows the conversion rate and exact drop-off at each stage.', 'wp-slimstat') . '</p>';
@@ -4574,8 +4577,8 @@ class wp_slimstat_admin
         // true and the rest gets copy that is.
         if ('' !== $load_items) {
             self::show_message(
-                '<strong>' . esc_html__('Slimstat Analytics is running with reduced functionality.', 'wp-slimstat') . '</strong><br>' .
-                esc_html__('These features failed to load and were disabled so the rest of your site keeps working. This usually means an interrupted update or a stale server cache — reinstalling the plugin and flushing your PHP opcache normally clears it.', 'wp-slimstat') .
+                '<strong>' . esc_html__('SlimStat Analytics is running with reduced functionality.', 'wp-slimstat') . '</strong><br>' .
+                esc_html__('These features failed to load and were disabled so the rest of your site keeps working. This usually means an interrupted update or a stale server cache. Reinstalling the plugin and flushing your PHP opcache normally clears it.', 'wp-slimstat') .
                 '<ul class="ul-disc">' . $load_items . '</ul>',
                 'error'
             );
@@ -4583,8 +4586,8 @@ class wp_slimstat_admin
 
         if ('' !== $operational_items) {
             self::show_message(
-                '<strong>' . esc_html__('Slimstat Analytics reported a problem while running.', 'wp-slimstat') . '</strong><br>' .
-                esc_html__('Tracking and reports kept working. These are maintenance tasks that did not complete — some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check Slimstat > Migrations and Settings > Maintenance.', 'wp-slimstat') .
+                '<strong>' . esc_html__('SlimStat reported a problem while running.', 'wp-slimstat') . '</strong><br>' .
+                esc_html__('Tracking and reports kept working. These are maintenance tasks that did not complete, so some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check SlimStat > Migrations and Settings > Maintenance.', 'wp-slimstat') .
                 '<ul class="ul-disc">' . $operational_items . '</ul>',
                 'warning'
             );

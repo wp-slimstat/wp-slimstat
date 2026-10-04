@@ -48,8 +48,8 @@ class wp_slimstat_reports
         $pageviews_chart_tooltip = '<strong>' . __('Pageviews', 'wp-slimstat') . '</strong><br>'
             . __('Shows how many times your site’s pages have been viewed.', 'wp-slimstat')
             . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
-            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
-            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Pageviews” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
@@ -57,8 +57,8 @@ class wp_slimstat_reports
         $human_visits_chart_tooltip = '<strong>' . __('Human Visits', 'wp-slimstat') . '</strong><br>'
             . __('Track the number of real human visitors.', 'wp-slimstat')
             . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
-            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
-            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Visits” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
@@ -66,8 +66,8 @@ class wp_slimstat_reports
         $pages_with_outbound_links_chart_tooltip = '<strong>' . __('Pages with Outbound Links', 'wp-slimstat') . '</strong><br>'
             . __('Track how often visitors click outbound links on your site.', 'wp-slimstat')
             . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
-            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
-            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Outbound Links” or “Unique Outbound” to toggle each line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
@@ -75,8 +75,8 @@ class wp_slimstat_reports
         $search_terms_chart_tooltip = '<strong>' . __('Search Terms', 'wp-slimstat') . '</strong><br>'
             . __('See how many times users find your site via search engines.', 'wp-slimstat')
             . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
-            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
-            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Search Terms” or “Unique Terms” to toggle each line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
@@ -84,8 +84,8 @@ class wp_slimstat_reports
         $traffic_sources_chart_tooltip = '<strong>' . __('Traffic Sources', 'wp-slimstat') . '</strong><br>'
             . __('See how many visits come from each traffic source.', 'wp-slimstat')
             . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
-            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
-            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Domains” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
@@ -93,8 +93,8 @@ class wp_slimstat_reports
         $users_chart_tooltip = '<strong>' . __('Users', 'wp-slimstat') . '</strong><br>'
             . __('See how many users come to your site.', 'wp-slimstat')
             . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
-            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
-            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Users” or “Unique Users” to toggle each line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
@@ -110,7 +110,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['full-width', 'tall'],
                 'locations' => ['slimview1', 'dashboard'],
-                'tooltip'   => __('Color Codes', 'wp-slimstat') . '</strong><p><span class="little-color-box is-search-engine"></span> ' . __('From search result page', 'wp-slimstat') . '</p><p><span class="little-color-box is-known-visitor"></span> ' . __('Has Left Comments', 'wp-slimstat') . '</p><p><span class="little-color-box is-known-user"></span> ' . __('WP User', 'wp-slimstat') . '</p><p><span class="little-color-box is-direct"></span> ' . __('Other Human', 'wp-slimstat') . '</p><p><span class="little-color-box"></span> ' . __('Bot or Crawler', 'wp-slimstat') . '</p>',
+                'tooltip'   => __('Color codes', 'wp-slimstat') . '</strong><p><span class="little-color-box is-search-engine"></span> ' . __('From search result page', 'wp-slimstat') . '</p><p><span class="little-color-box is-known-visitor"></span> ' . __('Has left comments', 'wp-slimstat') . '</p><p><span class="little-color-box is-known-user"></span> ' . __('WordPress user', 'wp-slimstat') . '</p><p><span class="little-color-box is-direct"></span> ' . __('Other human', 'wp-slimstat') . '</p><p><span class="little-color-box"></span> ' . __('Bot or crawler', 'wp-slimstat') . '</p>',
             ],
 
             'slim_p1_01' => [
@@ -231,7 +231,7 @@ class wp_slimstat_reports
                 'classes' => ['normal'],
                 // 'color'         => '#fff7ed',
                 'locations' => ['slimview2', 'slimview3', 'slimview5', 'dashboard'],
-                'tooltip'   => __('You can configure Slimstat to not track specific Countries by setting the corresponding filter in Slimstat > Settings > Exclusions.', 'wp-slimstat'),
+                'tooltip'   => __('You can configure SlimStat to not track specific Countries by setting the corresponding filter in SlimStat > Settings > Exclusions.', 'wp-slimstat'),
             ],
             'slim_p1_15' => [
                 'title'         => __('Rankings', 'wp-slimstat'),
@@ -241,7 +241,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['inactive'],
-                'tooltip'   => __("Slimstat retrieves live information from Alexa, Facebook and Mozscape, to measures your site's rankings. Values are updated every 12 hours. Please enter your personal access ID in the settings to access your personalized Mozscape data.", 'wp-slimstat'),
+                'tooltip'   => __("SlimStat retrieves live information from Alexa, Facebook and Mozscape, to measures your site's rankings. Values are updated every 12 hours. Please enter your personal access ID in the settings to access your personalized Mozscape data.", 'wp-slimstat'),
             ],
             'slim_p1_17' => [
                 'title'         => __('Top Language Families', 'wp-slimstat'),
@@ -270,7 +270,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview2', 'dashboard'],
-                'tooltip'   => __('When visitors leave a comment on your blog, WordPress assigns them a cookie. Slimstat leverages this information to identify returning visitors. Please note that visitors also include registered users.', 'wp-slimstat'),
+                'tooltip'   => __('When visitors leave a comment on your blog, WordPress assigns them a cookie. SlimStat leverages this information to identify returning visitors. Please note that visitors also include registered users.', 'wp-slimstat'),
             ],
             'slim_p1_19_01' => [
                 'title'         => __('Search Terms', 'wp-slimstat'),
@@ -354,7 +354,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['extralarge'],
                 'locations' => ['inactive'],
-                'tooltip'   => __('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > Slimstat > Filters.', 'wp-slimstat'),
+                'tooltip'   => __('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > SlimStat > Filters.', 'wp-slimstat'),
             ],
             'slim_p2_06' => [
                 'title'         => __('Top Operating Systems', 'wp-slimstat'),
@@ -366,7 +366,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['inactive'],
-                'tooltip'   => __('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > Slimstat > Filters.', 'wp-slimstat'),
+                'tooltip'   => __('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > SlimStat > Filters.', 'wp-slimstat'),
             ],
             'slim_p2_07' => [
                 'title'         => __('Top Screen Resolutions', 'wp-slimstat'),
@@ -700,7 +700,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['large'],
                 'locations' => ['slimview4'],
-                'tooltip'   => __('You can configure Slimstat to track specific file extensions as downloads.', 'wp-slimstat'),
+                'tooltip'   => __('You can configure SlimStat to track specific file extensions as downloads.', 'wp-slimstat'),
             ],
             'slim_p4_10' => [
                 'title'         => __('Recent Custom Events', 'wp-slimstat'),
@@ -851,7 +851,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['inactive'],
-                'tooltip'   => __('Your content at a glance: posts, comments, pingbacks, etc. Please note that this report is not affected by the filters set here above.', 'wp-slimstat'),
+                'tooltip'   => __('Your content at a glance: posts, comments, pingbacks, etc. Please note that this report is not affected by the filters set above.', 'wp-slimstat'),
             ],
             'slim_p4_23' => [
                 'title'         => __('Top Bounce Pages', 'wp-slimstat'),
@@ -2145,7 +2145,7 @@ class wp_slimstat_reports
                 // aggregates are not computed on this request.
                 if ($remaining <= 0) {
                     echo '<td colspan="3" class="slimstat-goal-deferred">'
-                        . esc_html__('Not shown here — open the Goals report.', 'wp-slimstat')
+                        . esc_html__('Not shown here. Open the Goals report.', 'wp-slimstat')
                         . '</td></tr>';
                     continue;
                 }
@@ -2331,7 +2331,7 @@ class wp_slimstat_reports
                 // Listed, not dropped: the funnel stays discoverable without paying for
                 // its chain on this request.
                 echo '<p class="slimstat-funnel-summary">'
-                    . esc_html__('Not shown here — open the Funnels report.', 'wp-slimstat')
+                    . esc_html__('Not shown here. Open the Funnels report.', 'wp-slimstat')
                     . '</p></div>';
                 continue;
             }
@@ -2608,7 +2608,7 @@ class wp_slimstat_reports
                     }
                     if ($uses_db && $db_missing) {
                         /* translators: %s: URL of the geolocation settings section. */
-                        echo wp_kses_post(sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), esc_url($settings_url . '2#wp-slimstat-third-party-libraries')));
+                        echo wp_kses_post(sprintf(__("Geolocation is off, so reports show no countries or cities. <a href='%s' class='noslimstat'>Turn it on in Settings</a>.", 'wp-slimstat'), esc_url($settings_url . '2#wp-slimstat-third-party-libraries')));
                         echo '<br>';
                     }
                     ?>

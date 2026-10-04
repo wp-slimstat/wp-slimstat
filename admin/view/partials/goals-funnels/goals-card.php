@@ -43,7 +43,7 @@ $show_upsell = $at_max && !$is_pro;
                 <?php esc_html_e('Track a conversion like a signup, checkout, or pricing view. Each goal is one question you ask of your traffic.', 'wp-slimstat'); ?>
             </p>
             <p class="slimstat-gf-empty__note">
-                <?php esc_html_e('Goals are retroactive: each one measures your full visit history, with no warm-up period.', 'wp-slimstat'); ?>
+                <?php esc_html_e('Goals are retroactive: each one measures your full visit history, with no warm‑up period.', 'wp-slimstat'); ?>
             </p>
             <button type="button"
                     class="button button-primary slimstat-gf-cta"
@@ -100,7 +100,7 @@ $show_upsell = $at_max && !$is_pro;
                         <?php /* Paused goals are retained but not measured (both
                                  tiers) — show that plainly instead of numbers. On
                                  Free, all but the newest goal are auto-paused. (#11) */ ?>
-                        <p class="slimstat-gf-goal__nomatch"><?php esc_html_e('Paused — not being measured', 'wp-slimstat'); ?></p>
+                        <p class="slimstat-gf-goal__nomatch"><?php esc_html_e('Paused: not being measured', 'wp-slimstat'); ?></p>
                     <?php elseif (0 === $uniques && 0 === $total) : ?>
                         <?php /* Distinguish "active, no matches yet" from a broken
                                  rule — three zeros read as an error (FN-15). */ ?>

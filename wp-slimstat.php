@@ -570,7 +570,7 @@ class wp_slimstat
         ?>
         <div class="notice notice-warning">
             <p>
-                <strong><?php esc_html_e('SlimStat Analytics — IP Privacy Settings Reset', 'wp-slimstat'); ?></strong><br>
+                <strong><?php esc_html_e('SlimStat: IP privacy settings reset', 'wp-slimstat'); ?></strong><br>
                 <?php esc_html_e('This update restored full-IP storage (the 5.3.x default) by turning off IP anonymization and daily visitor hashing. If your site serves EU visitors, please review your Data Protection settings.', 'wp-slimstat'); ?>
                 &nbsp;<a href="<?php echo esc_url($settings_url); ?>"><?php esc_html_e('Review Settings → Data Protection', 'wp-slimstat'); ?></a>
             </p>
@@ -1218,11 +1218,11 @@ class wp_slimstat
             'permission_callback' => [self::class, 'rest_api_authorization'],
             'args'                => [
                 'token' => [
-                    'description' => __('You will need to specify a valid token to be able to query the data. Tokens are defined in Slimstat > Settings > Access Control.', 'wp-slimstat'),
+                    'description' => __('You will need to specify a valid token to be able to query the data. Tokens are defined in SlimStat > Settings > Access Control.', 'wp-slimstat'),
                     'type'        => 'string',
                 ],
                 'function' => [
-                    'description' => __('This parameter specifies the type of QUERY you would like to perform. Accepted funciton values include: count, count-all, recent, recent-all, top and top-all.', 'wp-slimstat'),
+                    'description' => __('This parameter specifies the type of query you would like to perform. Accepted function values include: count, count-all, recent, recent-all, top and top-all.', 'wp-slimstat'),
                     'type'        => 'string',
                     'enum'        => ['count', 'count-all', 'recent', 'recent-all', 'top', 'top-all'],
                 ],
@@ -1232,7 +1232,7 @@ class wp_slimstat
                     'enum'        => ['*', 'id', 'ip', 'username', 'email', 'country', 'referer', 'resource', 'searchterms', 'browser', 'platform', 'language', 'resolution', 'content_type', 'content_id', 'tz_offset', 'outbound_resource'],
                 ],
                 'filters' => [
-                    'description' => __('This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (i.e.: browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim', 'wp-slimstat')
+                    'description' => __('This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (e.g. browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim', 'wp-slimstat')
                         // The urlencoded example is kept out of the translatable string: %20/%26 read as
                         // printf placeholders to i18n tooling, and the example must not be translated anyway.
                         . ' (encoded: browser%20contains%20Chrome%26%26%26referer%20contains%20slim)',
@@ -3098,6 +3098,6 @@ function wp_slimstat_clear_cache_handler()
         $count++;
     }
     /* translators: %d: number of cache items cleared. */
-    wp_send_json_success(sprintf(__('Slimstat cache cleared (%d items)', 'wp-slimstat'), $count));
+    wp_send_json_success(sprintf(__('SlimStat cache cleared (%d items)', 'wp-slimstat'), $count));
 }
 // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching

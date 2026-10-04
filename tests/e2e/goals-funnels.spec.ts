@@ -108,7 +108,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(funnelCtas.first()).toHaveText(/Upgrade to Pro/);
 
         // No deprecated Pro labels on this view.
-        await expect(page.locator('#wpbody-content')).not.toContainText(/Unlock SlimStat Pro/);
+        await expect(page.locator('#wpbody-content')).not.toContainText(/Upgrade to Pro/);
     });
 
     // ─── State: Free × has-data ─────────────────────────────────
@@ -900,7 +900,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         // Goals hero subtitle (now under postbox <h3>, not inside the card).
         await expect(page.locator('#slim_p9_01 .slimstat-gf-postbox-subtitle'))
-            .toContainText('A Goal is one question you ask of your traffic');
+            .toContainText('A goal is one question you ask of your traffic');
 
         // Goals empty state.
         await expect(page.locator('[data-role="goals-empty"] .slimstat-gf-empty__title'))

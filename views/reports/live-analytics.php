@@ -65,7 +65,7 @@ $chart_id = 'live_chart_' . uniqid();
                         </svg>
 
 						</div>
-						<?php esc_html_e( 'Users live', 'wp-slimstat' ); ?>
+						<?php esc_html_e( 'Visitors online', 'wp-slimstat' ); ?>
 					</div>
 					<div class="metric-value users-value"><?php echo esc_html( $users_formatted ); ?></div>
 				</div>
@@ -118,7 +118,7 @@ $chart_id = 'live_chart_' . uniqid();
 							<span class="live-dot"></span>
 							<span class="live-text"><?php esc_html_e( 'LIVE', 'wp-slimstat' ); ?></span>
 						</span>
-						<h4><?php esc_html_e( 'Online users per minute', 'wp-slimstat' ); ?></h4>
+						<h4><?php esc_html_e( 'Visitors online per minute', 'wp-slimstat' ); ?></h4>
 					</div>
 				</div>
 				<div class="chart-container">
@@ -171,7 +171,7 @@ $chart_id = 'live_chart_' . uniqid();
 									<span class="live-dot"></span>
 									<span class="live-text"><?php esc_html_e( 'LIVE', 'wp-slimstat' ); ?></span>
 								</span>
-								<h4><?php esc_html_e( 'Online users per minute', 'wp-slimstat' ); ?></h4>
+								<h4><?php esc_html_e( 'Visitors online per minute', 'wp-slimstat' ); ?></h4>
 							</div>
 						</div>
 						<div class="chart-container">
@@ -182,7 +182,7 @@ $chart_id = 'live_chart_' . uniqid();
 					<div class="live-analytics-promo-overlay">
 						<h2 class="live-analytics-promo-heading">
 							<span class="live-analytics-promo-title">
-								<?php esc_html_e( 'Unlock the Full Power of SlimStat Analytics', 'wp-slimstat' ); ?>
+								<?php esc_html_e( 'Pro adds the per-minute Real-time chart.', 'wp-slimstat' ); ?>
 							</span>
 						</h2>
 						<a
@@ -190,7 +190,7 @@ $chart_id = 'live_chart_' . uniqid();
 							href="<?php echo esc_url( 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=barchart' ); ?>"
 							class="go-pro-button live-analytics-promo-button"
 						>
-							<?php esc_html_e( 'Unlock SlimStat Pro', 'wp-slimstat' ); ?>
+							<?php esc_html_e( 'Upgrade to Pro', 'wp-slimstat' ); ?>
 						</a>
 					</div>
 				</div>

@@ -75,7 +75,7 @@ check(
     'C8: legend is gated on !$is_dashboard (hidden in the compact widget)'
 );
 // All five categories and their swatch classes are present.
-foreach (['From search result page', 'Has Left Comments', 'WP User', 'Other Human', 'Bot or Crawler'] as $label) {
+foreach (['From search result page', 'Has left comments', 'WordPress user', 'Other human', 'Bot or crawler'] as $label) {
     check(false !== strpos($legendBlock, $label), "C8: legend has the \"{$label}\" category");
 }
 foreach (['is-search-engine', 'is-known-visitor', 'is-known-user', 'is-direct'] as $cls) {

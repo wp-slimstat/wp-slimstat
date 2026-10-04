@@ -228,7 +228,7 @@ test.describe('Issue #173: i18n catalog sync', () => {
     const bodyText = await page.locator('body').textContent() || '';
 
     // Known English strings should be present
-    expect(bodyText).toContain('Enable Tracking');
+    expect(bodyText).toContain('Enable tracking');
     expect(bodyText).toContain('Tracker');
 
     // No PHP runtime errors (match specific PHP error patterns, not generic "Warning:" which may appear in UI copy)

@@ -177,7 +177,7 @@ if (null === $noticeBody) {
 
     // ── The remedy sentence must be inside a branch ────────────────────────────────────
     // The defect was not the wording. It was that ONE wording was unconditional.
-    if (false === strpos($noticeBody, 'reinstalling the plugin')) {
+    if (false === stripos($noticeBody, 'reinstalling the plugin and flushing')) {
         $failures[] = 'the reinstall remedy has vanished from show_degradation_notice(); it is '
             . 'correct for the #325 load-failure class and should still be said to it';
     } elseif (!preg_match('/if\s*\([^)]*load_items[^)]*\)/', $noticeBody)) {
