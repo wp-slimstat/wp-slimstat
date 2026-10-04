@@ -294,6 +294,14 @@ class wp_slimstat
 
         self::$settings = array_merge(self::init_options(), self::$settings);
 
+        // Repair a lookup URL that an earlier release stored from Pro's runtime override.
+        $_repaired = \SlimStat\Utils\StoredSettings::withoutRuntimeOverrides(self::$settings);
+        if ($_repaired !== self::$settings) {
+            self::$settings = $_repaired;
+            self::update_option('slimstat_options', self::$settings);
+        }
+        unset($_repaired);
+
         // One-shot settings migration for installs that ran v5.4.0–v5.4.5. The logic lives in
         // SlimStat\Migration\LegacySettings5460 so the unit test exercises THIS code rather than
         // a transcription of it — the transcription had drifted from this block in three places,
@@ -1602,6 +1610,12 @@ class wp_slimstat
      */
     public static function update_option($_key = '', $_value = '', $_autoload = null)
     {
+        // Every save of the settings routes through here, so runtime overrides stop here once.
+        if ('slimstat_options' === $_key && is_array($_value)) {
+            $_stored = is_network_admin() ? get_site_option($_key) : get_option($_key);
+            $_value = \SlimStat\Utils\StoredSettings::withoutRuntimeOverrides($_value, is_array($_stored) ? $_stored : null);
+        }
+
         if (!is_network_admin()) {
             update_option($_key, $_value, $_autoload);
         } else {

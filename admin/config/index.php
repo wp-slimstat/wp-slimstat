@@ -398,7 +398,7 @@ $settings = [
             'ip_lookup_service' => [
                 'title'       => __('IP Geolocation', 'wp-slimstat'),
                 'type'        => 'text',
-                'description' => __('Customize the URL of the geolocation service to be used in the Access Log. Default value: <code>https://whatismyipaddress.com/ip/</code>', 'wp-slimstat'),
+                'description' => __('Customize the URL of the geolocation service to be used in the Access Log. Default value: <code>https://ip-api.com/#</code>', 'wp-slimstat'),
             ],
             'comparison_chart' => [
                 'title'       => __('Comparison Chart', 'wp-slimstat'),
