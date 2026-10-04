@@ -128,11 +128,11 @@ class GoalsFunnelsEmptyStateTest extends TestCase
     public function test_funnel_cta_card_is_styled_as_a_primary_button(): void
     {
         $css = file_get_contents($this->cssPath());
-        // The CTA reads as a solid (WP admin accent) button, not the tinted card.
+        // The CTA reads as a solid primary button (brand fill, audit A4), not the tinted card.
         $this->assertMatchesRegularExpression(
-            '/\.slimstat-gf-template-card--cta\s*\{[^}]*var\(--wp-admin-theme-color/s',
+            '/\.slimstat-gf-template-card--cta\s*\{[^}]*background:\s*var\(--ss-brand-700\)/s',
             $css,
-            'The --cta card must use the WP admin accent as its background'
+            'The --cta card must use the primary button colour as its background'
         );
         $this->assertStringNotContainsString('slimstat-gf-template-card--scratch', $css, 'Obsolete --scratch style must be removed');
     }

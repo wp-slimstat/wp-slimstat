@@ -16,10 +16,7 @@
 .ss-ec :is(a,button,summary,select,[tabindex]):focus-visible { outline: 2px solid var(--ss-focus); outline-offset: 3px; box-shadow: none; }
 .ss-ec button { font: inherit; cursor: pointer; }
 .ss-ec :is(button,a,summary,select) { -webkit-tap-highlight-color: transparent; }
-.ss-ec .button { display: inline-flex; gap: 6px; align-items: center; justify-content: center; min-height: 36px; padding: 0 12px; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-xs); background: var(--ss-surface); color: var(--ss-text-body); font-size: 12px; font-weight: 500; text-decoration: none; box-shadow: none; }
-.ss-ec .button-primary { background: var(--ss-brand-900); border-color: var(--ss-brand-900); color: var(--ss-surface); }
-.ss-ec .button:hover { background: var(--ss-surface-tint); }
-.ss-ec .button-primary:hover { background: var(--ss-brand-700); color: var(--ss-surface); }
+.ss-ec .button { display: inline-flex; gap: 6px; align-items: center; justify-content: center; min-height: 36px; padding: 0 12px; font-size: 12px; font-weight: 500; text-decoration: none; box-shadow: none; }
 .ss-ec-discover { margin-block: 24px; padding: 24px; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-sm); background: var(--ss-surface); }
 .ss-ec-discover p { max-width: 75ch; }
 .ss-ec-discover-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-block: 16px 4px; }
@@ -28,8 +25,7 @@
 .ss-ec :is(select,.ss-ec-currency > summary) { color: var(--ss-text-body); background-color: var(--ss-surface); border: 1px solid var(--ss-border); border-radius: var(--ss-radius-xs); font-size: 12px; min-height: 32px; }
 .ss-ec select { padding-block: 0; padding-inline-start: 8px; }
 .ss-ec-heading, .ss-ec-toolbar, .ss-ec-chart figcaption, .ss-ec-card-heading, .ss-ec-rank-heading, .ss-ec-report-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.ss-ec-heading { margin-bottom: 16px; }
-.ss-ec-heading p { font-size: 13px !important; }
+.ss-ec-heading { justify-content: flex-end; margin-bottom: 16px; }
 .ss-ec-refresh-line { flex-shrink: 0; font-size: 12px; color: var(--ss-text-muted); }
 .ss-ec-toolbar { justify-content: flex-start; flex-wrap: wrap; color: var(--ss-text-muted); font-size: 12px; margin: 12px 0; }
 .ss-ec-toolbar > a { margin-inline-start: auto; }
@@ -157,7 +153,7 @@
 .ss-ec-skeleton div:first-child { grid-column: 1/-1; min-height: 390px; }
 @media (max-width: 1100px) { .ss-ec-kpi { padding: 12px; } .ss-ec-kpi > strong { font-size: 26px; } .ss-ec-quality-summary { display: block; margin: 2px 0 0; } }
 @media (max-width: 782px) { .ss-ec-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); } }
-@media (max-width: 680px) { .ss-ec { padding-top: 16px; } .ss-ec-grid { grid-template-columns: minmax(0,1fr); } .ss-ec-heading h1 { font-size: 24px; } .ss-ec-heading p { max-width: 28ch; } .ss-ec-toolbar > a { margin-inline-start: 0; } .ss-ec-chart { padding: 16px; } .ss-ec-canvas { height: 205px; } .ss-ec-card-heading { padding: 16px 16px 10px; } .ss-ec-tabs { margin-inline: 16px; } .ss-ec-report { padding-inline: 16px; } .ss-ec-steps { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 22px 18px; } .ss-ec-steps li:nth-child(2)::after { content: none; } .ss-ec-definitions dl { grid-template-columns: minmax(0,1fr); gap: 8px; } .ss-ec-definitions dd { margin-bottom: 12px; } .ss-ec-state { padding: 20px; } .ss-ec-quality > summary { align-items: start; } .ss-ec-row-filter { width: 32px; height: 32px; } .ss-ec-tabs [role=tab] { min-height: 40px; } .ss-ec-actions ol { gap: 14px; } }
+@media (max-width: 680px) { .ss-ec { padding-top: 16px; } .ss-ec-grid { grid-template-columns: minmax(0,1fr); } .ss-ec-toolbar > a { margin-inline-start: 0; } .ss-ec-chart { padding: 16px; } .ss-ec-canvas { height: 205px; } .ss-ec-card-heading { padding: 16px 16px 10px; } .ss-ec-tabs { margin-inline: 16px; } .ss-ec-report { padding-inline: 16px; } .ss-ec-steps { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 22px 18px; } .ss-ec-steps li:nth-child(2)::after { content: none; } .ss-ec-definitions dl { grid-template-columns: minmax(0,1fr); gap: 8px; } .ss-ec-definitions dd { margin-bottom: 12px; } .ss-ec-state { padding: 20px; } .ss-ec-quality > summary { align-items: start; } .ss-ec-row-filter { width: 32px; height: 32px; } .ss-ec-tabs [role=tab] { min-height: 40px; } .ss-ec-actions ol { gap: 14px; } }
 @media (prefers-reduced-motion: reduce) { .wrap-slimstat .ss-ec * { transition: none; animation: none; scroll-behavior: auto; } }
 /* Override the legacy report shell's heading and absolute date positions. */
 .wrap-slimstat .slimstat-ecommerce-box .ss-ec h3 { display: block !important; padding: 0; border: 0; background: none; font-size: 15px; font-weight: 600; letter-spacing: 0; }

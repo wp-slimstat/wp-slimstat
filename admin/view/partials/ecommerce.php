@@ -23,7 +23,6 @@ $setup = static function ($label) {
 ?>
 <div class="ss-ec" data-ecommerce>
 	<div class="ss-ec-heading">
-		<div><h1><?php esc_html_e('Ecommerce', 'wp-slimstat'); ?></h1><p><?php esc_html_e('Sales, orders and the traffic that drove them.', 'wp-slimstat'); ?></p></div>
 		<div class="ss-ec-refresh-line"><span class="ss-ec-updated"><?php esc_html_e('Updated just now', 'wp-slimstat'); ?></span> · <a href="#" class="refresh" aria-label="<?php esc_attr_e('Refresh Ecommerce reports', 'wp-slimstat'); ?>"><?php esc_html_e('Refresh', 'wp-slimstat'); ?></a></div>
 	</div>
 	<p class="ss-ec-feedback screen-reader-text" role="status" aria-live="polite"></p>

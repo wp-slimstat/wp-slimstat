@@ -3109,24 +3109,6 @@ body.slimstat-admin-page {
     }
   }
 
-  .button-secondary {
-    background-color: white;
-    border-radius: 50px;
-    border: 1px solid $brand;
-    color: $brand;
-    padding: 0px 12px;
-    height: auto;
-  }
-
-  .button-primary {
-    background-color: $brand;
-    border-radius: 50px;
-    border: none;
-    color: white;
-    padding: 0px 12px;
-    height: auto;
-  }
-
   #datepicker-backdrop {
     width: 100vw;
     height: 100vh;
@@ -3183,26 +3165,6 @@ body.slimstat-admin-page {
     }
   }
 
-  .button-primary {
-    &.slimstat-settings-button {
-      background-color: $brand;
-      color: white;
-      border-radius: 50px;
-      border: none;
-      transition: 0.3s all ease-out;
-      padding-left: 12px;
-      padding-right: 12px;
-
-      [dir="rtl"] & {
-        padding-left: 12px;
-        padding-right: 12px;
-      }
-
-      &:hover {
-        background-color: black;
-      }
-    }
-  }
 
   h2 {
     color: black;
@@ -3314,10 +3276,6 @@ body.slimstat-admin-page {
         }
 
         .button-primary {
-          border: 1px solid $brand;
-          color: $brand;
-          background-color: white;
-          border-radius: 50px;
           max-width: 100%;
         }
 
@@ -3410,14 +3368,6 @@ body.slimstat-admin-page {
         }
       }
 
-      .submit {
-        .button-primary {
-          border: 1px solid $brand;
-          color: $brand;
-          background-color: white;
-          border-radius: 50px;
-        }
-      }
     }
   }
 

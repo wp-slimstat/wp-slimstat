@@ -27,8 +27,7 @@ $offered_migrations      = (isset($offered_migrations) && is_array($offered_migr
 
 <div class="backdrop-container">
     <div class="wrap-slimstat slimstat-migration">
-        <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]); ?>
-        <h2><?php echo esc_html__('SlimStat Database Migration', 'wp-slimstat'); ?></h2>
+        <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed(), 'title' => __('Database Migration', 'wp-slimstat')]); ?>
 
         <div class="meta-box-sortables">
             <div id="poststuff" style="width: 100%;">

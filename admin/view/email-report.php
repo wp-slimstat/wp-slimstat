@@ -18,7 +18,7 @@ if (!$is_pro) {
     <div class="backdrop-container">
         <?php wp_slimstat_admin::get_template('slimstat-pro-modal'); ?>
         <div class="wrap-slimstat upgrade-pro email-report-locked">
-            <?php wp_slimstat_admin::get_template('header', ['is_pro' => false]); ?>
+            <?php wp_slimstat_admin::get_template('header', ['is_pro' => false, 'title' => __('Email Report', 'wp-slimstat')]); ?>
             <img class="upgrade-pro-background" src="<?php echo esc_url(plugin_dir_url(__FILE__) . '../assets/images/email-report.png'); ?>">
         </div>
     </div>
@@ -28,8 +28,7 @@ if (!$is_pro) {
     ?>
     <div class="backdrop-container">
         <div class="wrap-slimstat slimstat-email-report">
-            <?php wp_slimstat_admin::get_template('header', ['is_pro' => true]); ?>
-            <h2><?php esc_html_e('Email Report Configuration', 'wp-slimstat'); ?></h2>
+            <?php wp_slimstat_admin::get_template('header', ['is_pro' => true, 'title' => __('Email Report', 'wp-slimstat')]); ?>
 
             <div class="slimstat-email-report-content">
                 <?php

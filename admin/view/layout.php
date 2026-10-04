@@ -10,9 +10,7 @@ $already_seen = [];
 
 <div class="backdrop-container ">
     <div class="wrap-slimstat slimstat-layout">
-        <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]); ?>
-
-        <h1 class="wp-heading-inline"><?php esc_html_e('Customize', 'wp-slimstat'); ?></h1>
+        <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed(), 'title' => __('Customize', 'wp-slimstat')]); ?>
         <hr class="wp-header-end">
 
         <p><?php

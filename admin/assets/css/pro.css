@@ -44,8 +44,7 @@
 .ss-pro .ss-pro-eyebrow { color: var(--ss-pro-accent); font-size: 13px; font-weight: 600; letter-spacing: 0.02em; }
 .ss-pro .ss-pro-lead { font-size: 18px; line-height: 1.55; }
 .ss-pro-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-block: 28px 0; }
-.ss-pro .button.ss-pro-cta { min-height: 44px; padding: 9px 22px; border: 1px solid var(--ss-pro-accent); border-radius: var(--ss-radius-sm); background: var(--ss-pro-accent); color: var(--ss-pro-on-accent); font-size: 15px; font-weight: 600; line-height: 1.6; box-shadow: none; }
-.ss-pro .button.ss-pro-cta:hover, .ss-pro .button.ss-pro-cta:focus { border-color: var(--ss-pro-accent-hover); background: var(--ss-pro-accent-hover); color: var(--ss-pro-on-accent); box-shadow: none; }
+.ss-pro .button.ss-pro-cta { min-height: 44px; padding: 9px 22px; font-size: 15px; font-weight: 600; line-height: 1.6; box-shadow: none; }
 .ss-pro .ss-pro-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--ss-pro-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .ss-pro .ss-pro-link:hover { color: var(--ss-pro-accent); }
 .ss-pro .ss-pro-proof { margin-block-start: 20px; color: var(--ss-pro-muted); font-size: 13px; }

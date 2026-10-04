@@ -54,20 +54,16 @@ if ('' !== $error) {
 ?>
 <div class="backdrop-container">
 <div class="wrap-slimstat slimstat-heatmaps">
-    <?php wp_slimstat_admin::get_template('header', ['is_pro' => $is_pro]); ?>
+    <?php
+    wp_slimstat_admin::get_template('header', [
+        'is_pro' => $is_pro,
+        'title'  => '' === $page_key ? __('Heatmaps', 'wp-slimstat') : '',
+        'lead'   => '' === $page_key ? ($viewer
+            ? __('See where visitors click on each page and how far they scroll.', 'wp-slimstat')
+            : __('See which pages get clicks, from the link and button clicks SlimStat already records. SlimStat Pro opens each page\'s click and scroll heatmap.', 'wp-slimstat')) : '',
+    ]);
+    ?>
     <div class="ss-hm">
-        <?php if ('' === $page_key) : ?>
-        <div class="ss-hm-intro">
-            <h1><?php esc_html_e('Heatmaps', 'wp-slimstat'); ?></h1>
-            <p>
-                <?php
-                echo $viewer
-                    ? esc_html__('See where visitors click on each page and how far they scroll.', 'wp-slimstat')
-                    : esc_html__('See which pages get clicks, from the link and button clicks SlimStat already records. SlimStat Pro opens each page\'s click and scroll heatmap.', 'wp-slimstat');
-                ?>
-            </p>
-        </div>
-        <?php endif; ?>
 
         <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only notice after the nonce-checked delete redirect. ?>
         <?php if (isset($_GET['deleted'])) : ?>
@@ -174,7 +170,7 @@ if ('' !== $error) {
         </nav>
 
         <?php if ($is_admin && Store::ready()) : ?>
-            <p class="ss-hm-delete"><button type="button" class="button" data-dialog="ss-hm-delete"><?php esc_html_e('Delete heatmap data', 'wp-slimstat'); ?></button></p>
+            <p class="ss-hm-delete"><button type="button" class="button-link button-link-delete" data-dialog="ss-hm-delete"><?php esc_html_e('Delete heatmap data', 'wp-slimstat'); ?></button></p>
             <dialog id="ss-hm-delete" class="ss-hm-dialog">
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                     <p><?php esc_html_e('Delete all full-tracking heatmap data? Link and button click history is kept. This can\'t be undone.', 'wp-slimstat'); ?></p>

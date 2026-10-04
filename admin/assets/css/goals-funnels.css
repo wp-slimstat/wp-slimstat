@@ -87,26 +87,6 @@
     margin: 0 auto var(--ss-space-5);
 }
 
-/* Page-level framing above the two postboxes (FN-13). WP-native, not a hero. */
-.slimstat-gf-pageintro {
-    margin: var(--ss-space-4) 0 var(--ss-space-5);
-    font-family: var(--ss-font-modern);
-}
-
-.slimstat-gf-pageintro__title {
-    margin: 0 0 var(--ss-space-1);
-    padding: 0;
-    font-size: var(--ss-text-xl);
-    font-weight: 700;
-    color: var(--ss-text-primary);
-}
-
-.slimstat-gf-pageintro__lead {
-    margin: 0;
-    color: var(--ss-text-secondary);
-    font-size: var(--ss-text-base);
-}
-
 .slimstat-gf-card {
     background: var(--ss-surface);
     border-radius: var(--ss-radius-lg);
@@ -753,12 +733,11 @@
 }
 
 /* The "+ Add funnel" entry is the primary call to action, not a prefab template,
-   so it reads as a solid blue button (matching the Goals empty-state CTA) while
-   still sitting in the template grid. Uses the WP admin accent so it respects the
-   user's color scheme; the grid stretches it to the height of the prefab cards. (#15) */
+   so it takes the primary button colour (audit A4) while still sitting in the
+   template grid; the grid stretches it to the height of the prefab cards. (#15) */
 .slimstat-gf-template-card--cta {
-    background: var(--wp-admin-theme-color, #2271b1);
-    border-color: var(--wp-admin-theme-color, #2271b1);
+    background: var(--ss-brand-700);
+    border-color: var(--ss-brand-700);
     align-items: center;
     justify-content: center;
     text-align: center;
@@ -769,8 +748,8 @@
 }
 
 .slimstat-gf-template-card--cta:hover {
-    border-color: var(--wp-admin-theme-color, #2271b1);
-    filter: brightness(0.94);
+    background: var(--ss-brand-900);
+    border-color: var(--ss-brand-900);
 }
 
 /* Skeleton (lazy tabs) */

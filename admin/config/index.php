@@ -746,13 +746,13 @@ $settings = [
             'delete_all_records' => [
                 'title'             => __('Data', 'wp-slimstat'),
                 'type'              => 'plain-text',
-                'after_input_field' => '<a class="button-primary" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=truncate-table&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '" onclick="return( confirm( \'' . esc_js(__('Delete all records from your database? This cannot be undone.', 'wp-slimstat')) . '\' ) )">' . esc_html__('Delete Records', 'wp-slimstat') . '</a>',
+                'after_input_field' => '<a class="button-link button-link-delete" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=truncate-table&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '" onclick="return( confirm( \'' . esc_js(__('Delete all records from your database? This cannot be undone.', 'wp-slimstat')) . '\' ) )">' . esc_html__('Delete Records', 'wp-slimstat') . '</a>',
                 'description'       => __('Delete all the information collected by SlimStat so far, but not the archived records (stored in <code>wp_slim_stats_archive</code>). This operation <strong>does not</strong> reset your settings and it can be undone by manually copying your records from the archive table, if you have the corresponding option enabled.', 'wp-slimstat'),
             ],
             'reset_all_settings' => [
                 'title'             => __('Settings', 'wp-slimstat'),
                 'type'              => 'plain-text',
-                'after_input_field' => '<a class="button-primary" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=reset-settings&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '" onclick="return( confirm( \'' . esc_js(__('Reset all settings to their defaults?', 'wp-slimstat')) . '\' ) )">' . esc_html__('Factory Reset', 'wp-slimstat') . '</a>',
+                'after_input_field' => '<a class="button-link button-link-delete" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=reset-settings&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '" onclick="return( confirm( \'' . esc_js(__('Reset all settings to their defaults?', 'wp-slimstat')) . '\' ) )">' . esc_html__('Factory Reset', 'wp-slimstat') . '</a>',
                 'description'       => __('Restore all the settings to their default value. This <strong>does not</strong> delete any records collected by the plugin.', 'wp-slimstat'),
             ],
             'delete_data_on_uninstall' => [
@@ -1078,7 +1078,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 ?>
 <div class="backdrop-container">
     <div class="wrap-slimstat slimstat-config">
-        <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]); ?>
+        <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed(), 'title' => __('Settings', 'wp-slimstat')]); ?>
         <ul class="nav-tabs">
             <?php echo wp_kses_post($tabs_html) ?>
         </ul>

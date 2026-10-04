@@ -129,6 +129,13 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
     </div>
 </div>
 
+<?php if (!empty($title)) : // One page heading on every screen, directly under the brand bar (audit A6). ?>
+<div class="slimstat-pageintro">
+    <h1 class="slimstat-pageintro__title"><?php echo esc_html($title); ?></h1>
+    <?php if (!empty($lead)) : ?><p class="slimstat-pageintro__lead"><?php echo esc_html($lead); ?></p><?php endif; ?>
+</div>
+<?php endif; ?>
+
 <?php
 if ($displayNotifications && class_exists(NotificationFactory::class)) {
     $notifications = NotificationFactory::getAllNotifications();

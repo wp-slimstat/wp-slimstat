@@ -67,7 +67,7 @@ $groups = [
                 <p class="ss-pro-lead"><?php echo esc_html($is_pro ? __('Go deeper into the reports you already use. Compare what works, investigate what needs attention, and share the results with your team.', 'wp-slimstat') : $lead); ?></p>
                 <div class="ss-pro-actions">
                     <?php if ($is_pro) : ?>
-                        <a class="button ss-pro-cta" href="<?php echo esc_url(admin_url('admin.php?page=slimconfig&tab=8')); ?>"><?php esc_html_e('Manage your license', 'wp-slimstat'); ?></a>
+                        <a class="button button-primary ss-pro-cta" href="<?php echo esc_url(admin_url('admin.php?page=slimconfig&tab=8')); ?>"><?php esc_html_e('Manage your license', 'wp-slimstat'); ?></a>
                         <?php if ($commerce && \SlimStat\Ecommerce\Report::canView()) : ?><a class="ss-pro-link" href="<?php echo esc_url(admin_url('admin.php?page=slimview7')); ?>"><?php esc_html_e('Open Ecommerce', 'wp-slimstat'); ?></a><?php endif; ?>
                     <?php else : ?>
                         <a class="button ss-pro-cta" href="<?php echo esc_url(add_query_arg('utm_content', 'hero', $checkout)); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Upgrade to Pro', 'wp-slimstat'); ?></a>
