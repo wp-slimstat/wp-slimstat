@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-04T15:02:11+00:00\n"
+"POT-Creation-Date: 2026-10-04T15:03:45+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -3584,13 +3584,16 @@ msgid "Email Reports"
 msgstr ""
 
 #: admin/view/partials/slimstat-pro-modal.php:38
-#: admin/view/partials/slimstat-pro-modal.php:48
 msgid "Receive your reports directly in your mailbox."
 msgstr ""
 
 #: admin/view/partials/slimstat-pro-modal.php:44
 #: admin/view/partials/slimstat-pro-modal.php:47
 msgid "Export to Excel"
+msgstr ""
+
+#: admin/view/partials/slimstat-pro-modal.php:48
+msgid "Download any report as a CSV file that opens in Excel or Google Sheets."
 msgstr ""
 
 #: admin/view/partials/slimstat-pro-modal.php:54

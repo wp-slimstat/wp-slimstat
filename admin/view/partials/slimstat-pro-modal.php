@@ -45,7 +45,7 @@ if (!defined('ABSPATH')) {
                 <div class="more-info-icon slimstat-tooltip-trigger corner">
                     <span class="slimstat-tooltip-content">
                         <strong><?php esc_html_e('Export to Excel', 'wp-slimstat'); ?></strong><br>
-                        <?php esc_html_e('Receive your reports directly in your mailbox.', 'wp-slimstat'); ?>
+                        <?php esc_html_e('Download any report as a CSV file that opens in Excel or Google Sheets.', 'wp-slimstat'); ?>
                     </span>
                 </div>
             </div>
