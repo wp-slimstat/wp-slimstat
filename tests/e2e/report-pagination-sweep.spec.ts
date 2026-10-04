@@ -3,7 +3,7 @@
  *
  * Seeds diverse analytics data, then visits every slimview page and clicks
  * the next-page arrow on every multi-page report. Verifies:
- *   - No "No data to display" after pagination
+ *   - No empty state (p.nodata) after pagination
  *   - "Showing X-Y" range advances
  *   - Access Log last-page works
  *
@@ -125,11 +125,11 @@ async function testReportPagination(
   await page.locator(`#${reportId} .pagination a.refresh.slimstat-font-angle-right`).first().click();
   await page.waitForTimeout(4000);
 
-  // Check for "No data to display"
+  // Check for the empty state (p.nodata)
   const hasNoData = await page.evaluate((id: string) =>
     jQuery(`#${id} .inside .nodata`).length > 0, reportId);
   if (hasNoData) {
-    return { passed: false, error: 'Got "No data to display" on page 2' };
+    return { passed: false, error: 'Got the empty state on page 2' };
   }
 
   // Check that "Showing" range advanced

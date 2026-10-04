@@ -97,7 +97,6 @@ $setup = static function ($label) {
 				<p class="ss-ec-comparison" data-comparison-content><?php echo esc_html(sprintf(/* translators: 1: previous period start date, 2: previous period end date. */ __('Compared with %1$s to %2$s (site time). Points align by elapsed time; partial intervals are labeled.', 'wp-slimstat'), Report::date('M j, Y H:i', $data['previous_range'][0]), Report::date('M j, Y H:i', $data['previous_range'][1]))); ?></p>
 			</figure>
 		</section>
-		<?php if (!$orders && !$provisional) : ?><p class="ss-ec-scope"><?php esc_html_e('No included orders in this period and currency. Try another date range or currency, or review pending and on-hold orders in WooCommerce.', 'wp-slimstat'); ?></p><?php endif; ?>
 		<?php if ($orders || !isset($data['groups']['campaign'])) : // Pro's reports have nothing to show in a range without orders. ?>
 		<section class="ss-ec-discover" aria-labelledby="ss-ec-discover-title">
 			<?php if (isset($data['groups']['campaign'])) : ?>
@@ -120,6 +119,9 @@ $setup = static function ($label) {
 		</section>
 		<?php endif; ?>
 		<div class="ss-ec-section-heading"><h2><?php esc_html_e('Revenue drivers', 'wp-slimstat'); ?></h2><p><?php esc_html_e('Explore the leading contributions to your sales.', 'wp-slimstat'); ?></p></div>
+		<?php if (!$orders) : // One line for the section, not one "No results" per card (audit E2). ?>
+		<p class="ss-ec-scope"><?php echo esc_html($provisional ? __('Orders are still importing. Revenue drivers fill in when synchronization completes.', 'wp-slimstat') : __('No WooCommerce orders in this period. Revenue drivers fill in after the first order from a tracked visit.', 'wp-slimstat')); ?></p>
+		<?php else : ?>
 		<div class="ss-ec-grid">
 		<?php
 		$titles = ['channel' => __('Channels', 'wp-slimstat'), 'source' => __('Sources', 'wp-slimstat'), 'product' => __('Products', 'wp-slimstat'), 'campaign' => __('Campaigns', 'wp-slimstat'), 'landing' => __('Landing pages', 'wp-slimstat'), 'device' => __('Devices', 'wp-slimstat'), 'customer' => __('Customer segments', 'wp-slimstat'), 'coupon' => __('Coupons', 'wp-slimstat')];
@@ -141,7 +143,7 @@ $setup = static function ($label) {
 					<div class="ss-ec-report" id="ss-ec-panel-<?php echo esc_attr($dimension); ?>" role="tabpanel" aria-labelledby="ss-ec-tab-<?php echo esc_attr($dimension); ?>" tabindex="0" data-dimension="<?php echo esc_attr($dimension); ?>" <?php if ($index) { echo 'hidden'; } ?>>
 						<p class="ss-ec-report-question"><?php echo esc_html($questions[$dimension]); ?></p>
 						<div class="ss-ec-rank-heading"><span><?php echo esc_html($isCoupon ? __('Top by discounts', 'wp-slimstat') : __('Top by net sales', 'wp-slimstat')); ?></span><label><span class="screen-reader-text"><?php esc_html_e('Sort these results', 'wp-slimstat'); ?></span><select data-rank-metric><option value="<?php echo esc_attr($measure); ?>"><?php echo esc_html($isCoupon ? __('Discounts', 'wp-slimstat') : __('Net sales', 'wp-slimstat')); ?></option><option value="orders"><?php esc_html_e('Orders', 'wp-slimstat'); ?></option></select><button type="button" class="ss-ec-icon-button" data-sort aria-label="<?php esc_attr_e('Reverse sort order', 'wp-slimstat'); ?>" aria-pressed="false"><span class="dashicons dashicons-arrow-down-alt" aria-hidden="true"></span></button></label></div>
-						<?php if (!$rows) : ?><div class="ss-ec-report-empty"><strong><?php esc_html_e('No results for this view', 'wp-slimstat'); ?></strong><p><?php esc_html_e('Try a different period or remove a filter to explore more activity.', 'wp-slimstat'); ?></p></div><?php else : ?>
+						<?php if (!$rows) : ?><div class="ss-ec-report-empty"><strong><?php esc_html_e('No results for this view', 'wp-slimstat'); ?></strong><?php if ($data['filtered']) : ?><p><?php esc_html_e('Try a different period or remove a filter to explore more activity.', 'wp-slimstat'); ?></p><?php endif; ?></div><?php else : ?>
 						<ol class="ss-ec-rankings">
 						<?php foreach ($rows as $rowIndex => $row) : $shown += (float) $row[$measure]; ?>
 							<li data-rank-index="<?php echo esc_attr($rowIndex); ?>" data-rank-value="<?php echo esc_attr((string) (float) $row[$measure]); ?>" data-rank-orders="<?php echo esc_attr($row['orders']); ?>" data-rank-money="<?php echo esc_attr(Report::plainMoney($row[$measure], $currency)); ?>" <?php if ($rowIndex >= 5) { echo 'hidden'; } ?>>
@@ -165,6 +167,7 @@ $setup = static function ($label) {
 			</section>
 		<?php endforeach; ?>
 		</div>
+		<?php endif; ?>
 		<section class="ss-ec-journey" id="ss-ec-journey"><div class="ss-ec-section-heading"><h2><?php esc_html_e('Purchase journey', 'wp-slimstat'); ?></h2><p><?php echo esc_html(sprintf(/* translators: 1: eligible visit count, 2: start date, 3: end date. */ __('Observed in %1$s eligible visits · %2$s to %3$s', 'wp-slimstat'), number_format_i18n($journey['visits']), Report::date('M j, Y', $data['range'][0]), Report::date('M j, Y', $data['range'][1]))); ?></p></div>
 			<?php if (!$journey['visits'] || !array_sum([$journey['products'], $journey['carts'], $journey['checkouts'], $journey['buyers']])) : ?>
 				<div class="ss-ec-journey-empty"><span class="dashicons dashicons-chart-line" aria-hidden="true"></span><div><h3><?php esc_html_e('Journey data is not available yet', 'wp-slimstat'); ?></h3><p><?php esc_html_e('No shopping steps were observed in eligible tracked visits in this period. Order history cannot reconstruct these steps or prove abandonment.', 'wp-slimstat'); ?></p><a href="<?php echo esc_url(admin_url('admin.php?page=slimconfig')); ?>"><?php esc_html_e('Review tracking settings', 'wp-slimstat'); ?></a></div></div>

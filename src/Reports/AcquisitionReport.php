@@ -217,7 +217,9 @@ class AcquisitionReport
         if (!$all) {
             echo '<p class="slimstat-acquisition__empty">' . esc_html('utm' === $mode
                 ? __('No tagged pageviews in this period. Add utm_source, utm_medium and utm_campaign to your incoming links, or choose another date range.', 'wp-slimstat')
-                : __('No pageviews match this period and these filters. Try a wider date range or clear a filter.', 'wp-slimstat')) . '</p>';
+                : (empty(\wp_slimstat_db::$filters_normalized['columns'])
+                    ? __('No pageviews in this period. Try a wider date range.', 'wp-slimstat')
+                    : __('No pageviews match this period and these filters. Try a wider date range or clear a filter.', 'wp-slimstat'))) . '</p>';
         } else {
             $network = NetworkMerge::isMerging();
             $byGroup = [];

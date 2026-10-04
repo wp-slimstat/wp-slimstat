@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-04T18:03:16+00:00\n"
+"POT-Creation-Date: 2026-10-04T18:18:54+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -17,7 +17,7 @@ msgstr ""
 #. Plugin Name of the plugin
 #: wp-slimstat.php
 #: wp-slimstat.php:457
-#: wp-slimstat.php:2286
+#: wp-slimstat.php:2287
 msgid "SlimStat Analytics"
 msgstr ""
 
@@ -148,12 +148,12 @@ msgstr ""
 #: admin/view/wp-slimstat-db.php:2024
 #: admin/view/wp-slimstat-db.php:2031
 #: admin/view/wp-slimstat-db.php:2038
-#: admin/view/wp-slimstat-reports.php:48
-#: admin/view/wp-slimstat-reports.php:117
-#: admin/view/wp-slimstat-reports.php:126
+#: admin/view/wp-slimstat-reports.php:49
+#: admin/view/wp-slimstat-reports.php:118
+#: admin/view/wp-slimstat-reports.php:127
 #: src/Reports/AcquisitionReport.php:101
-#: src/Reports/AcquisitionReport.php:228
-#: src/Reports/AcquisitionReport.php:248
+#: src/Reports/AcquisitionReport.php:230
+#: src/Reports/AcquisitionReport.php:250
 msgid "Pageviews"
 msgstr ""
 
@@ -404,7 +404,7 @@ msgid "Geolocation precision"
 msgstr ""
 
 #: admin/config/index.php:334
-#: admin/index.php:2562
+#: admin/index.php:2563
 #: src/Services/Privacy/DataExporter.php:135
 msgid "Country"
 msgstr ""
@@ -999,18 +999,18 @@ msgid "License"
 msgstr ""
 
 #: admin/config/index.php:784
-#: admin/index.php:597
-#: admin/index.php:607
-#: admin/index.php:640
-#: admin/index.php:4425
+#: admin/index.php:598
+#: admin/index.php:608
+#: admin/index.php:641
+#: admin/index.php:4426
 #: admin/view/addons.php:11
 msgid "Insufficient permissions."
 msgstr ""
 
 #: admin/config/index.php:789
 #: admin/config/index.php:799
-#: admin/index.php:647
-#: admin/index.php:651
+#: admin/index.php:648
+#: admin/index.php:652
 msgid "Invalid settings data."
 msgstr ""
 
@@ -1027,7 +1027,7 @@ msgid "Database maintenance failed. Some records may already have been deleted. 
 msgstr ""
 
 #: admin/config/index.php:848
-#: admin/index.php:592
+#: admin/index.php:593
 #: src/Migration/Admin/MigrationAdmin.php:209
 msgid "Sorry, you are not allowed to access this page."
 msgstr ""
@@ -1098,7 +1098,7 @@ msgid "Overview"
 msgstr ""
 
 #: admin/index.php:100
-#: admin/view/partials/ecommerce.php:127
+#: admin/view/partials/ecommerce.php:129
 msgid "Audience"
 msgstr ""
 
@@ -1107,8 +1107,8 @@ msgid "Site Analysis"
 msgstr ""
 
 #: admin/index.php:114
-#: admin/view/wp-slimstat-reports.php:84
-#: admin/view/wp-slimstat-reports.php:590
+#: admin/view/wp-slimstat-reports.php:85
+#: admin/view/wp-slimstat-reports.php:591
 msgid "Traffic Sources"
 msgstr ""
 
@@ -1123,12 +1123,12 @@ msgstr ""
 
 #: admin/index.php:131
 #: admin/view/partials/ecommerce.php:26
-#: admin/view/wp-slimstat-reports.php:939
+#: admin/view/wp-slimstat-reports.php:945
 msgid "Ecommerce"
 msgstr ""
 
 #: admin/index.php:138
-#: admin/index.php:2253
+#: admin/index.php:2254
 #: admin/view/heatmaps.php:61
 #: admin/view/heatmaps.php:195
 #: admin/view/partials/slimstat-pro-modal.php:51
@@ -1146,15 +1146,15 @@ msgid "Customize"
 msgstr ""
 
 #: admin/index.php:166
-#: admin/index.php:2223
-#: admin/index.php:4286
+#: admin/index.php:2224
+#: admin/index.php:4287
 #: admin/view/partials/goals-funnels/funnels-card.php:56
 #: admin/view/partials/goals-funnels/goals-card.php:172
 #: admin/view/partials/header.php:121
 #: admin/view/partials/slimstat-pro-modal.php:97
 #: admin/view/upgrade-pro.php:73
 #: admin/view/upgrade-pro.php:120
-#: admin/view/wp-slimstat-reports.php:2264
+#: admin/view/wp-slimstat-reports.php:2340
 #: views/reports/live-analytics.php:193
 msgid "Upgrade to Pro"
 msgstr ""
@@ -1167,851 +1167,851 @@ msgstr ""
 msgid "Inactive Reports"
 msgstr ""
 
-#: admin/index.php:557
+#: admin/index.php:558
 msgid "New"
 msgstr ""
 
-#: admin/index.php:661
+#: admin/index.php:662
 msgid "Settings could not be saved."
 msgstr ""
 
-#: admin/index.php:1772
+#: admin/index.php:1773
 #: views/components/notification/no-data.php:19
 msgid "You are up to date!"
 msgstr ""
 
-#: admin/index.php:1773
+#: admin/index.php:1774
 msgid "No notifications in your inbox."
 msgstr ""
 
-#: admin/index.php:1774
+#: admin/index.php:1775
 msgid "No dismissed notifications."
 msgstr ""
 
-#: admin/index.php:1887
-#: admin/index.php:1901
+#: admin/index.php:1888
+#: admin/index.php:1902
 msgid "SlimStat"
 msgstr ""
 
-#: admin/index.php:1927
+#: admin/index.php:1928
 #: admin/view/partials/header.php:111
 #: admin/view/upgrade-pro.php:102
 msgid "Pro"
 msgstr ""
 
 #. translators: %s: formatted count for the previous day.
-#: admin/index.php:2055
-#: admin/index.php:2176
-#: admin/index.php:2184
-#: admin/index.php:2192
+#: admin/index.php:2056
+#: admin/index.php:2177
+#: admin/index.php:2185
+#: admin/index.php:2193
 #, php-format
 msgid "%s yesterday"
 msgstr ""
 
-#: admin/index.php:2056
-#: admin/index.php:2133
+#: admin/index.php:2057
+#: admin/index.php:2134
 #: views/reports/live-analytics.php:68
 msgid "Visitors online"
 msgstr ""
 
-#: admin/index.php:2057
-#: admin/index.php:2134
-msgid "Count"
-msgstr ""
-
 #: admin/index.php:2058
-#: admin/index.php:2120
-#: src/Modules/Chart.php:180
-msgid "Now"
+#: admin/index.php:2135
+msgid "Count"
 msgstr ""
 
 #: admin/index.php:2059
 #: admin/index.php:2121
+#: src/Modules/Chart.php:180
+msgid "Now"
+msgstr ""
+
+#: admin/index.php:2060
+#: admin/index.php:2122
 msgid "min ago"
 msgstr ""
 
 #. translators: %s: formatted online visitor count inside its updating HTML span.
-#: admin/index.php:2148
+#: admin/index.php:2149
 #, php-format
 msgid "Online: %s"
 msgstr ""
 
-#: admin/index.php:2163
+#: admin/index.php:2164
 #: admin/view/partials/header.php:76
 msgid "Visitors online (last 30 min)"
 msgstr ""
 
-#: admin/index.php:2168
+#: admin/index.php:2169
 msgid "Realtime"
 msgstr ""
 
-#: admin/index.php:2172
+#: admin/index.php:2173
 msgid "Sessions Today"
 msgstr ""
 
-#: admin/index.php:2180
+#: admin/index.php:2181
 msgid "Views Today"
 msgstr ""
 
-#: admin/index.php:2188
+#: admin/index.php:2189
 msgid "Referrals Today"
 msgstr ""
 
-#: admin/index.php:2220
+#: admin/index.php:2221
 msgid "Pro adds the Real-time chart, heatmaps, email reports and more Ecommerce reports."
 msgstr ""
 
-#: admin/index.php:2253
+#: admin/index.php:2254
 msgid "Page heatmap"
 msgstr ""
 
-#: admin/index.php:2256
+#: admin/index.php:2257
 msgid "Open Overview"
 msgstr ""
 
 #. translators: %s: number of days in the reporting interval.
-#: admin/index.php:2395
+#: admin/index.php:2396
 #, php-format
 msgid "Pageviews in the last %s days"
 msgstr ""
 
 #. translators: %s: number of days in the reporting interval.
-#: admin/index.php:2395
+#: admin/index.php:2396
 msgid "Views"
 msgstr ""
 
 #. translators: %s: number of days in the reporting interval.
-#: admin/index.php:2398
+#: admin/index.php:2399
 #, php-format
 msgid "Unique IPs in the last %s days"
 msgstr ""
 
-#: admin/index.php:2558
+#: admin/index.php:2559
 msgid "Page URL"
 msgstr ""
 
-#: admin/index.php:2559
+#: admin/index.php:2560
 #: admin/view/right-now.php:314
 msgid "Content Type"
 msgstr ""
 
-#: admin/index.php:2560
+#: admin/index.php:2561
 msgid "Content ID"
 msgstr ""
 
-#: admin/index.php:2561
-#: admin/index.php:4160
-#: admin/index.php:4175
+#: admin/index.php:2562
+#: admin/index.php:4161
+#: admin/index.php:4176
 #: admin/view/right-now.php:275
 #: admin/view/wp-slimstat-db.php:63
-#: admin/view/wp-slimstat-reports.php:75
-#: admin/view/wp-slimstat-reports.php:276
-#: admin/view/wp-slimstat-reports.php:286
+#: admin/view/wp-slimstat-reports.php:76
+#: admin/view/wp-slimstat-reports.php:277
+#: admin/view/wp-slimstat-reports.php:287
 #: views/modules/chart-view.php:93
 msgid "Search Terms"
 msgstr ""
 
-#: admin/index.php:2563
-#: admin/index.php:4172
+#: admin/index.php:2564
+#: admin/index.php:4173
 #: admin/view/wp-slimstat-db.php:60
 #: src/Services/Privacy/DataExporter.php:113
 msgid "Browser"
 msgstr ""
 
-#: admin/index.php:2564
-#: admin/index.php:4177
+#: admin/index.php:2565
+#: admin/index.php:4178
 #: admin/view/wp-slimstat-db.php:65
 #: src/Services/Privacy/DataExporter.php:120
 msgid "Operating System"
 msgstr ""
 
-#: admin/index.php:2565
-#: admin/index.php:4179
+#: admin/index.php:2566
+#: admin/index.php:4180
 #: admin/view/wp-slimstat-db.php:67
 msgid "Referer"
 msgstr ""
 
-#: admin/index.php:2566
+#: admin/index.php:2567
 #: src/Services/Privacy/DataExporter.php:76
 msgid "Username"
 msgstr ""
 
-#: admin/index.php:2567
+#: admin/index.php:2568
 msgid "Event"
 msgstr ""
 
-#: admin/index.php:2691
-#: admin/index.php:2767
-#: admin/index.php:2797
-#: admin/index.php:2876
-#: admin/index.php:2977
-#: admin/index.php:3276
+#: admin/index.php:2692
+#: admin/index.php:2768
+#: admin/index.php:2798
+#: admin/index.php:2877
+#: admin/index.php:2978
+#: admin/index.php:3277
 #: src/Modules/Chart.php:67
 #: src/Reports/Types/Analytics/LiveAnalyticsReport.php:639
 msgid "Insufficient permissions"
 msgstr ""
 
-#: admin/index.php:2696
+#: admin/index.php:2697
 msgid "Invalid goal definition"
 msgstr ""
 
-#: admin/index.php:2725
+#: admin/index.php:2726
 msgid "Too many goals stored. Delete unused goals before adding more."
 msgstr ""
 
 #. translators: %d is the max goal count for the tier
-#: admin/index.php:2744
+#: admin/index.php:2745
 #, php-format
 msgid "Goal limit reached (%d). Upgrade to Pro for more goals."
 msgstr ""
 
-#: admin/index.php:2772
+#: admin/index.php:2773
 msgid "Invalid goal id"
 msgstr ""
 
-#: admin/index.php:2781
+#: admin/index.php:2782
 msgid "Goal not found"
 msgstr ""
 
-#: admin/index.php:2802
+#: admin/index.php:2803
 msgid "Funnels require SlimStat Pro"
 msgstr ""
 
-#: admin/index.php:2808
+#: admin/index.php:2809
 msgid "Funnels require 2-5 steps"
 msgstr ""
 
-#: admin/index.php:2815
+#: admin/index.php:2816
 msgid "Invalid step definition"
 msgstr ""
 
-#: admin/index.php:2832
+#: admin/index.php:2833
 msgid "Funnel name is required"
 msgstr ""
 
 #. translators: %d: maximum number of funnels allowed.
-#: admin/index.php:2854
+#: admin/index.php:2855
 #, php-format
 msgid "Funnel limit reached (%d)."
 msgstr ""
 
-#: admin/index.php:2881
+#: admin/index.php:2882
 msgid "Invalid funnel id"
 msgstr ""
 
-#: admin/index.php:2890
-#: admin/index.php:2923
+#: admin/index.php:2891
+#: admin/index.php:2924
 msgid "Funnel not found"
 msgstr ""
 
-#: admin/index.php:2982
+#: admin/index.php:2983
 msgid "Step is missing required fields"
 msgstr ""
 
-#: admin/index.php:3176
+#: admin/index.php:3177
 msgid "Invalid saved filter data."
 msgstr ""
 
-#: admin/index.php:3185
-#: admin/index.php:3189
-#: admin/index.php:3223
+#: admin/index.php:3186
+#: admin/index.php:3190
+#: admin/index.php:3224
 msgid "Invalid filter data."
 msgstr ""
 
-#: admin/index.php:3207
+#: admin/index.php:3208
 msgid "Already saved"
 msgstr ""
 
-#: admin/index.php:3215
+#: admin/index.php:3216
 msgid "Saved"
 msgstr ""
 
-#: admin/index.php:3252
+#: admin/index.php:3253
 msgid "Delete this filter"
 msgstr ""
 
-#: admin/index.php:4068
-#: admin/index.php:4116
+#: admin/index.php:4069
+#: admin/index.php:4117
 #: src/Migration/Admin/MigrationAdmin.php:293
 #: src/Migration/Admin/MigrationAdmin.php:409
 #: src/Migration/Admin/MigrationAdmin.php:436
-#: wp-slimstat.php:3080
+#: wp-slimstat.php:3081
 msgid "Permission denied"
 msgstr ""
 
-#: admin/index.php:4075
-#: admin/index.php:4123
+#: admin/index.php:4076
+#: admin/index.php:4124
 #: src/Services/GeoService.php:101
 #: src/Services/GeoService.php:127
 msgid "Geolocation is disabled."
 msgstr ""
 
-#: admin/index.php:4080
+#: admin/index.php:4081
 msgid "Cloudflare geolocation does not require a database."
 msgstr ""
 
-#: admin/index.php:4091
+#: admin/index.php:4092
 #: src/Services/GeoService.php:109
 msgid "Geolocation database updated."
 msgstr ""
 
-#: admin/index.php:4094
+#: admin/index.php:4095
 #: src/Services/GeoService.php:109
 msgid "The geolocation database could not be updated."
 msgstr ""
 
-#: admin/index.php:4096
+#: admin/index.php:4097
 msgid "Please check your MaxMind license key and try again."
 msgstr ""
 
 #. translators: %s: geolocation database error details.
-#: admin/index.php:4101
+#: admin/index.php:4102
 #, php-format
 msgid "Details: %s"
 msgstr ""
 
-#: admin/index.php:4107
+#: admin/index.php:4108
 msgid "An unexpected error occurred while updating the geolocation database."
 msgstr ""
 
-#: admin/index.php:4127
+#: admin/index.php:4128
 msgid "Cloudflare geolocation is active. No database to check."
 msgstr ""
 
-#: admin/index.php:4132
+#: admin/index.php:4133
 msgid "The geolocation database is ready."
 msgstr ""
 
-#: admin/index.php:4132
+#: admin/index.php:4133
 #: src/Services/GeoService.php:136
 msgid "The geolocation database was not found."
 msgstr ""
 
-#: admin/index.php:4137
+#: admin/index.php:4138
 msgid "An unexpected error occurred while checking the geolocation database."
 msgstr ""
 
-#: admin/index.php:4151
+#: admin/index.php:4152
 msgid "Definitions"
 msgstr ""
 
-#: admin/index.php:4153
+#: admin/index.php:4154
 msgid "Pageview"
 msgstr ""
 
-#: admin/index.php:4153
+#: admin/index.php:4154
 msgid "A request to load a single HTML file (\"page\"). This should be contrasted with a \"hit\", which refers to a request for any file from a web server. SlimStat logs a pageview each time the tracking code is executed"
 msgstr ""
 
-#: admin/index.php:4154
+#: admin/index.php:4155
 msgid "(Human) Visit"
 msgstr ""
 
-#: admin/index.php:4154
+#: admin/index.php:4155
 msgid "A period of interaction between a visitor's browser and your website, ending when the browser is closed or when the user has been inactive on that site for 30 minutes"
 msgstr ""
 
-#: admin/index.php:4155
+#: admin/index.php:4156
 msgid "Known Visitor"
 msgstr ""
 
-#: admin/index.php:4155
+#: admin/index.php:4156
 msgid "Any user who has left a comment on your blog, and is thus identified by WordPress as a returning visitor"
 msgstr ""
 
-#: admin/index.php:4156
+#: admin/index.php:4157
 msgid "Unique IP"
 msgstr ""
 
-#: admin/index.php:4156
+#: admin/index.php:4157
 msgid "Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses; since this measurement looks only at the internet address a pageview came from, it is useful, but not perfect"
 msgstr ""
 
-#: admin/index.php:4157
-#: admin/index.php:4195
+#: admin/index.php:4158
+#: admin/index.php:4196
 #: admin/view/right-now.php:209
 #: admin/view/wp-slimstat-db.php:93
 msgid "Originating IP"
 msgstr ""
 
-#: admin/index.php:4157
+#: admin/index.php:4158
 msgid "the originating IP address of a client connecting to a web server through an HTTP proxy or load balancer"
 msgstr ""
 
-#: admin/index.php:4158
+#: admin/index.php:4159
 msgid "Direct Traffic"
 msgstr ""
 
-#: admin/index.php:4158
+#: admin/index.php:4159
 msgid "All those people showing up to your Web site by typing in the URL of your Web site coming or from a bookmark; some people also call this \"default traffic\" or \"ambient traffic\""
 msgstr ""
 
-#: admin/index.php:4159
+#: admin/index.php:4160
 msgid "Search Engine"
 msgstr ""
 
-#: admin/index.php:4159
+#: admin/index.php:4160
 msgid "Google, Yahoo, MSN, Ask, others; this bucket will include both your organic as well as your paid (PPC/SEM) traffic, so be aware of that"
 msgstr ""
 
-#: admin/index.php:4160
-#: admin/index.php:4175
+#: admin/index.php:4161
+#: admin/index.php:4176
 msgid "Keywords used by your visitors to find your website on a search engine"
 msgstr ""
 
-#: admin/index.php:4161
+#: admin/index.php:4162
 msgid "SERP"
 msgstr ""
 
-#: admin/index.php:4161
+#: admin/index.php:4162
 msgid "Short for search engine results page, the Web page that a search engine returns with the results of its search. The value shown represents your rank (or position) within that list of results"
 msgstr ""
 
-#: admin/index.php:4162
+#: admin/index.php:4163
 #: admin/view/wp-slimstat-db.php:86
 #: src/Services/Privacy/DataExporter.php:105
 msgid "User Agent"
 msgstr ""
 
-#: admin/index.php:4162
+#: admin/index.php:4163
 msgid "Any program used for accessing a website; this includes browsers, robots, spiders and any other program that was used to retrieve information from the site"
 msgstr ""
 
-#: admin/index.php:4163
+#: admin/index.php:4164
 #: admin/view/wp-slimstat-db.php:78
 msgid "Outbound Link"
 msgstr ""
 
-#: admin/index.php:4163
+#: admin/index.php:4164
 msgid "A link from one domain to another is said to be outbound from its source anchor and inbound to its target. This report lists all the links to other websites followed by your visitors."
 msgstr ""
 
-#: admin/index.php:4170
+#: admin/index.php:4171
 msgid "Basic Filters"
 msgstr ""
 
-#: admin/index.php:4172
+#: admin/index.php:4173
 msgid "User agent (Firefox, Chrome, ...)"
 msgstr ""
 
-#: admin/index.php:4173
+#: admin/index.php:4174
 #: admin/view/wp-slimstat-db.php:61
 msgid "Country Code"
 msgstr ""
 
-#: admin/index.php:4173
+#: admin/index.php:4174
 msgid "2-letter code (us, ru, de, it, ...)"
 msgstr ""
 
-#: admin/index.php:4174
-#: admin/view/wp-slimstat-reports.php:1781
+#: admin/index.php:4175
+#: admin/view/wp-slimstat-reports.php:1857
 msgid "IP"
 msgstr ""
 
-#: admin/index.php:4174
+#: admin/index.php:4175
 msgid "Visitor's public IP address"
 msgstr ""
 
-#: admin/index.php:4176
+#: admin/index.php:4177
 msgid "Language Code"
 msgstr ""
 
-#: admin/index.php:4176
+#: admin/index.php:4177
 msgid "Please refer to this <a target=\"_blank\" href=\"https://msdn.microsoft.com/en-us/library/ee825488(v=cs.20).aspx\">language culture page</a> (first column) for more information"
 msgstr ""
 
-#: admin/index.php:4177
+#: admin/index.php:4178
 msgid "Accepts identifiers like win7, win98, macosx, ...; please refer to <a target=\"_blank\" href=\"https://php.net/manual/en/function.get-browser.php\">this manual page</a> for more information"
 msgstr ""
 
-#: admin/index.php:4178
+#: admin/index.php:4179
 #: admin/view/wp-slimstat-db.php:66
 msgid "Permalink"
 msgstr ""
 
-#: admin/index.php:4178
+#: admin/index.php:4179
 msgid "URL accessed on your site"
 msgstr ""
 
-#: admin/index.php:4179
+#: admin/index.php:4180
 msgid "Complete address of the referrer page"
 msgstr ""
 
-#: admin/index.php:4180
+#: admin/index.php:4181
 msgid "Visitor's Name"
 msgstr ""
 
-#: admin/index.php:4180
+#: admin/index.php:4181
 msgid "Visitors' names according to the cookie set by WordPress after they leave a comment"
 msgstr ""
 
-#: admin/index.php:4188
+#: admin/index.php:4189
 msgid "Advanced Filters"
 msgstr ""
 
-#: admin/index.php:4190
+#: admin/index.php:4191
 #: admin/view/wp-slimstat-db.php:84
 msgid "Browser Version"
 msgstr ""
 
-#: admin/index.php:4190
+#: admin/index.php:4191
 msgid "user agent version (9.0, 11, ...)"
 msgstr ""
 
-#: admin/index.php:4191
+#: admin/index.php:4192
 #: admin/view/wp-slimstat-db.php:85
 msgid "Browser Type"
 msgstr ""
 
-#: admin/index.php:4191
+#: admin/index.php:4192
 msgid "1 = search engine crawler, 2 = mobile device, 3 = syndication reader, 0 = all others"
 msgstr ""
 
-#: admin/index.php:4192
+#: admin/index.php:4193
 msgid "Pageview Attributes"
 msgstr ""
 
-#: admin/index.php:4192
+#: admin/index.php:4193
 msgid "this field is set to <em>[pre]</em> if the resource has been accessed through <a target=\"_blank\" href=\"https://developer.mozilla.org/en/Link_prefetching_FAQ\">Link Prefetching</a> or similar techniques"
 msgstr ""
 
-#: admin/index.php:4193
+#: admin/index.php:4194
 #: admin/view/wp-slimstat-db.php:91
 msgid "Post Author"
 msgstr ""
 
-#: admin/index.php:4193
+#: admin/index.php:4194
 msgid "author associated to that post/page when the resource was accessed"
 msgstr ""
 
-#: admin/index.php:4194
+#: admin/index.php:4195
 #: admin/view/wp-slimstat-db.php:92
 msgid "Post Category ID"
 msgstr ""
 
-#: admin/index.php:4194
+#: admin/index.php:4195
 msgid "ID of the category/term associated to the resource, when available"
 msgstr ""
 
-#: admin/index.php:4195
+#: admin/index.php:4196
 msgid "visitor's originating IP address, if available"
 msgstr ""
 
-#: admin/index.php:4196
+#: admin/index.php:4197
 #: admin/view/wp-slimstat-db.php:94
 msgid "Resource Content Type"
 msgstr ""
 
-#: admin/index.php:4196
+#: admin/index.php:4197
 msgid "post, page, cpt:<em>custom-post-type</em>, cpt:attachment, singular, post_type_archive, tag, taxonomy, category, date, author, archive, search, feed, home; please refer to the <a target=\"_blank\" href=\"https://codex.wordpress.org/Conditional_Tags\">Conditional Tags</a> manual page for more information"
 msgstr ""
 
-#: admin/index.php:4197
+#: admin/index.php:4198
 #: src/Services/Privacy/DataExporter.php:127
 msgid "Screen Resolution"
 msgstr ""
 
-#: admin/index.php:4197
+#: admin/index.php:4198
 msgid "viewport width and height (1024x768, 800x600, ...)"
 msgstr ""
 
-#: admin/index.php:4198
+#: admin/index.php:4199
 #: admin/view/wp-slimstat-db.php:99
 #: src/Services/Privacy/DataExporter.php:150
 msgid "Visit ID"
 msgstr ""
 
-#: admin/index.php:4198
+#: admin/index.php:4199
 msgid "generally used in conjunction with <em>is not empty</em>, identifies human visitors"
 msgstr ""
 
-#: admin/index.php:4199
+#: admin/index.php:4200
 msgid "Date Filters"
 msgstr ""
 
-#: admin/index.php:4199
+#: admin/index.php:4200
 msgid "you can specify the timeframe by entering a number in the <em>interval</em> field; use -1 to indicate <em>to date</em> (e.g. day=1, month=1, year=blank, interval=-1 will set a year-to-date filter)"
 msgstr ""
 
-#: admin/index.php:4200
+#: admin/index.php:4201
 msgid "SERP Position"
 msgstr ""
 
-#: admin/index.php:4200
+#: admin/index.php:4201
 msgid "set the filter to Referer contains cd=N&, where N is the position you are looking for"
 msgstr ""
 
-#: admin/index.php:4288
+#: admin/index.php:4289
 msgid "Export"
 msgstr ""
 
-#: admin/index.php:4327
+#: admin/index.php:4328
 msgid "A goal is one question you ask of your traffic."
 msgstr ""
 
-#: admin/index.php:4330
+#: admin/index.php:4331
 msgid "String 2 to 5 steps into a journey. A funnel shows the conversion rate and exact drop-off at each stage."
 msgstr ""
 
-#: admin/index.php:4435
+#: admin/index.php:4436
 msgid "Migrations are disabled by SLIMSTAT_DISABLE_MIGRATIONS in wp-config.php."
 msgstr ""
 
-#: admin/index.php:4445
+#: admin/index.php:4446
 msgid "Index already exists."
 msgstr ""
 
-#: admin/index.php:4456
+#: admin/index.php:4457
 msgid "Index added successfully."
 msgstr ""
 
-#: admin/index.php:4458
+#: admin/index.php:4459
 msgid "Unable to add index."
 msgstr ""
 
-#: admin/index.php:4495
+#: admin/index.php:4496
 msgid "Browser detection library"
 msgstr ""
 
-#: admin/index.php:4496
+#: admin/index.php:4497
 msgid "Upload directory setup"
 msgstr ""
 
-#: admin/index.php:4497
+#: admin/index.php:4498
 msgid "Daily IP-hash salt (privacy)"
 msgstr ""
 
-#: admin/index.php:4498
+#: admin/index.php:4499
 msgid "Ad-blocker bypass tracking"
 msgstr ""
 
-#: admin/index.php:4499
+#: admin/index.php:4500
 msgid "REST API tracking endpoints"
 msgstr ""
 
-#: admin/index.php:4500
+#: admin/index.php:4501
 msgid "Consent AJAX handlers"
 msgstr ""
 
-#: admin/index.php:4501
+#: admin/index.php:4502
 msgid "GDPR consent banner setup"
 msgstr ""
 
-#: admin/index.php:4502
+#: admin/index.php:4503
 msgid "GDPR consent banner assets"
 msgstr ""
 
-#: admin/index.php:4503
+#: admin/index.php:4504
 msgid "GDPR consent banner display"
 msgstr ""
 
-#: admin/index.php:4504
+#: admin/index.php:4505
 msgid "REST tracking controller"
 msgstr ""
 
-#: admin/index.php:4505
+#: admin/index.php:4506
 msgid "REST route registration"
 msgstr ""
 
-#: admin/index.php:4506
+#: admin/index.php:4507
 msgid "Consent banner status check"
 msgstr ""
 
-#: admin/index.php:4507
+#: admin/index.php:4508
 msgid "Plugin activation"
 msgstr ""
 
-#: admin/index.php:4508
+#: admin/index.php:4509
 msgid "Plugin deactivation"
 msgstr ""
 
-#: admin/index.php:4509
+#: admin/index.php:4510
 msgid "Setting up sites on this network"
 msgstr ""
 
-#: admin/index.php:4513
+#: admin/index.php:4514
 msgid "Database columns differ from this version"
 msgstr ""
 
-#: admin/index.php:4514
+#: admin/index.php:4515
 msgid "Database schema upgrade"
 msgstr ""
 
-#: admin/index.php:4515
+#: admin/index.php:4516
 msgid "Database repair during tracking"
 msgstr ""
 
-#: admin/index.php:4516
+#: admin/index.php:4517
 msgid "Notes format migration"
 msgstr ""
 
-#: admin/index.php:4517
+#: admin/index.php:4518
 msgid "Analytics settings recovery"
 msgstr ""
 
-#: admin/index.php:4518
+#: admin/index.php:4519
 msgid "Character-set conversion"
 msgstr ""
 
-#: admin/index.php:4519
+#: admin/index.php:4520
 msgid "Database unreachable during migration"
 msgstr ""
 
-#: admin/index.php:4520
+#: admin/index.php:4521
 msgid "Migration: visit identity column"
 msgstr ""
 
-#: admin/index.php:4521
+#: admin/index.php:4522
 msgid "Migration: legacy column widths"
 msgstr ""
 
-#: admin/index.php:4522
+#: admin/index.php:4523
 msgid "Migration: browser dimension column"
 msgstr ""
 
-#: admin/index.php:4523
+#: admin/index.php:4524
 msgid "Event could not be recorded"
 msgstr ""
 
-#: admin/index.php:4524
+#: admin/index.php:4525
 msgid "Cookieless visit grouping"
 msgstr ""
 
-#: admin/index.php:4525
+#: admin/index.php:4526
 msgid "Retention: archiving events"
 msgstr ""
 
-#: admin/index.php:4526
+#: admin/index.php:4527
 msgid "Retention: deleting events"
 msgstr ""
 
-#: admin/index.php:4527
+#: admin/index.php:4528
 msgid "Retention: deleting heatmap clicks"
 msgstr ""
 
-#: admin/index.php:4528
+#: admin/index.php:4529
 msgid "Tracking: saving heatmap clicks"
 msgstr ""
 
-#: admin/index.php:4529
+#: admin/index.php:4530
 msgid "Heatmaps: deleting heatmap data"
 msgstr ""
 
-#: admin/index.php:4530
+#: admin/index.php:4531
 msgid "Retention: archiving pageviews"
 msgstr ""
 
-#: admin/index.php:4531
+#: admin/index.php:4532
 msgid "Retention: deleting pageviews"
 msgstr ""
 
-#: admin/index.php:4532
+#: admin/index.php:4533
 msgid "Retention: archive table columns"
 msgstr ""
 
-#: admin/index.php:4536
+#: admin/index.php:4537
 msgid "Retention has not completed recently"
 msgstr ""
 
-#: admin/index.php:4580
+#: admin/index.php:4581
 msgid "SlimStat Analytics is running with reduced functionality."
 msgstr ""
 
-#: admin/index.php:4581
+#: admin/index.php:4582
 msgid "These features failed to load and were disabled so the rest of your site keeps working. This usually means an interrupted update or a stale server cache. Reinstalling the plugin and flushing your PHP opcache normally clears it."
 msgstr ""
 
-#: admin/index.php:4589
+#: admin/index.php:4590
 msgid "SlimStat reported a problem while running."
 msgstr ""
 
-#: admin/index.php:4590
+#: admin/index.php:4591
 msgid "Tracking and reports kept working. These are maintenance tasks that did not complete, so some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check SlimStat > Migrations and Settings > Maintenance."
 msgstr ""
 
-#: admin/index.php:4626
+#: admin/index.php:4627
 msgid "Currently Online Reports"
 msgstr ""
 
-#: admin/index.php:4627
+#: admin/index.php:4628
 msgid "Index on <code>dt_out</code>"
 msgstr ""
 
-#: admin/index.php:4631
+#: admin/index.php:4632
 msgid "World Map & Country Reports"
 msgstr ""
 
-#: admin/index.php:4632
+#: admin/index.php:4633
 msgid "Index on <code>country</code> and <code>dt</code>"
 msgstr ""
 
-#: admin/index.php:4636
+#: admin/index.php:4637
 msgid "Screen Resolution Reports"
 msgstr ""
 
-#: admin/index.php:4637
+#: admin/index.php:4638
 msgid "Index on <code>dt</code>, <code>screen_width</code>, <code>screen_height</code>"
 msgstr ""
 
-#: admin/index.php:4641
+#: admin/index.php:4642
 msgid "Browser Reports"
 msgstr ""
 
-#: admin/index.php:4642
+#: admin/index.php:4643
 msgid "Index on <code>dt</code>, <code>browser</code>, <code>browser_version</code>"
 msgstr ""
 
-#: admin/index.php:4646
+#: admin/index.php:4647
 msgid "Platform Reports"
 msgstr ""
 
-#: admin/index.php:4647
+#: admin/index.php:4648
 msgid "Index on <code>dt</code>, <code>platform</code>"
 msgstr ""
 
-#: admin/index.php:4651
+#: admin/index.php:4652
 msgid "Visitor Counter Performance"
 msgstr ""
 
-#: admin/index.php:4652
+#: admin/index.php:4653
 msgid "Index on <code>dt</code>, <code>visit_id</code>"
 msgstr ""
 
-#: admin/index.php:4672
+#: admin/index.php:4673
 #: admin/view/index.php:42
 #: src/Components/DateRangeHelper.php:226
 msgid "Apply"
 msgstr ""
 
-#: admin/index.php:4688
+#: admin/index.php:4689
 msgid "Improve SlimStat Report Performance"
 msgstr ""
 
-#: admin/index.php:4689
+#: admin/index.php:4690
 msgid "To speed up SlimStat reports, please apply the following database optimizations. These changes are safe and will not affect your data."
 msgstr ""
 
-#: admin/index.php:4707
+#: admin/index.php:4708
 msgid "Apply All"
 msgstr ""
 
-#: admin/index.php:4708
+#: admin/index.php:4709
 msgid "Do not close this tab until all optimizations are complete."
 msgstr ""
 
-#: admin/index.php:4735
+#: admin/index.php:4736
 msgid "Please wait for SlimStat optimizations to finish."
 msgstr ""
 
-#: admin/index.php:4743
+#: admin/index.php:4744
 msgid "In progress..."
 msgstr ""
 
-#: admin/index.php:4751
+#: admin/index.php:4752
 msgid "Done!"
 msgstr ""
 
-#: admin/index.php:4755
+#: admin/index.php:4756
 msgid "Error: "
 msgstr ""
 
@@ -2085,7 +2085,7 @@ msgid "Email Report Configuration"
 msgstr ""
 
 #: admin/view/heatmaps.php:31
-#: admin/view/wp-slimstat-reports.php:1781
+#: admin/view/wp-slimstat-reports.php:1857
 #: src/Heatmap/Store.php:365
 msgid "Page"
 msgstr ""
@@ -2115,7 +2115,7 @@ msgid "Average clicks each pageview of this page received."
 msgstr ""
 
 #: admin/view/heatmaps.php:35
-#: admin/view/partials/ecommerce.php:125
+#: admin/view/partials/ecommerce.php:127
 msgid "Devices"
 msgstr ""
 
@@ -2248,7 +2248,7 @@ msgstr ""
 
 #: admin/view/heatmaps.php:135
 #: admin/view/partials/ecommerce.php:27
-#: admin/view/wp-slimstat-reports.php:1112
+#: admin/view/wp-slimstat-reports.php:1118
 #: src/Reports/Abstracts/AbstractReport.php:277
 msgid "Refresh"
 msgstr ""
@@ -2262,12 +2262,12 @@ msgid "Pages of results"
 msgstr ""
 
 #: admin/view/heatmaps.php:171
-#: src/Reports/AcquisitionReport.php:284
+#: src/Reports/AcquisitionReport.php:286
 msgid "Previous"
 msgstr ""
 
 #: admin/view/heatmaps.php:173
-#: src/Reports/AcquisitionReport.php:287
+#: src/Reports/AcquisitionReport.php:289
 msgid "Next"
 msgstr ""
 
@@ -2334,7 +2334,7 @@ msgstr ""
 #. translators: %s: URL of the geolocation settings section.
 #: admin/view/index.php:84
 #: admin/view/index.php:88
-#: admin/view/wp-slimstat-reports.php:2611
+#: admin/view/wp-slimstat-reports.php:2687
 #, php-format
 msgid "Geolocation is off, so reports show no countries or cities. <a href='%s' class='noslimstat'>Turn it on in Settings</a>."
 msgstr ""
@@ -2432,7 +2432,7 @@ msgid "This report needs attention"
 msgstr ""
 
 #: admin/view/partials/ecommerce.php:35
-#: admin/view/partials/ecommerce.php:191
+#: admin/view/partials/ecommerce.php:194
 msgid "Rebuild reports"
 msgstr ""
 
@@ -2447,8 +2447,8 @@ msgstr ""
 #: admin/view/partials/ecommerce.php:51
 #: admin/view/partials/ecommerce.php:93
 #: admin/view/partials/ecommerce.php:96
-#: admin/view/partials/ecommerce.php:143
-#: admin/view/partials/ecommerce.php:158
+#: admin/view/partials/ecommerce.php:145
+#: admin/view/partials/ecommerce.php:160
 #: src/Ecommerce/Report.php:324
 msgid "Net sales"
 msgstr ""
@@ -2458,8 +2458,8 @@ msgid "Sales after discounts and refunds, excluding tax and shipping."
 msgstr ""
 
 #: admin/view/partials/ecommerce.php:52
-#: admin/view/partials/ecommerce.php:143
-#: admin/view/partials/ecommerce.php:158
+#: admin/view/partials/ecommerce.php:145
+#: admin/view/partials/ecommerce.php:160
 #: src/Ecommerce/Report.php:324
 msgid "Orders"
 msgstr ""
@@ -2469,7 +2469,7 @@ msgid "Processing, completed and refunded orders, by creation date."
 msgstr ""
 
 #: admin/view/partials/ecommerce.php:53
-#: admin/view/partials/ecommerce.php:187
+#: admin/view/partials/ecommerce.php:190
 #: src/Ecommerce/Report.php:325
 msgid "Average order value"
 msgstr ""
@@ -2487,7 +2487,7 @@ msgid "Net sales divided by included orders in each interval."
 msgstr ""
 
 #: admin/view/partials/ecommerce.php:54
-#: admin/view/partials/ecommerce.php:188
+#: admin/view/partials/ecommerce.php:191
 #: src/Ecommerce/Report.php:326
 msgid "Tracked purchase rate"
 msgstr ""
@@ -2679,289 +2679,293 @@ msgstr ""
 msgid "Compared with %1$s to %2$s (site time). Points align by elapsed time; partial intervals are labeled."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:100
-msgid "No included orders in this period and currency. Try another date range or currency, or review pending and on-hold orders in WooCommerce."
-msgstr ""
-
-#: admin/view/partials/ecommerce.php:104
+#: admin/view/partials/ecommerce.php:103
 msgid "Your Pro reports are ready"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:105
+#: admin/view/partials/ecommerce.php:104
 msgid "Start with a question. Explore the report, then use View report to see exact values and export your current selection."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:107
+#: admin/view/partials/ecommerce.php:106
 msgid "Compare campaigns"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:108
+#: admin/view/partials/ecommerce.php:107
 msgid "Explore devices"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:109
+#: admin/view/partials/ecommerce.php:108
 msgid "Explore coupons"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:111
+#: admin/view/partials/ecommerce.php:110
 msgid "Activate your license"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:111
+#: admin/view/partials/ecommerce.php:110
 msgid "to receive Pro updates for this site."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:113
+#: admin/view/partials/ecommerce.php:112
 msgid "Find your next revenue opportunity"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:114
+#: admin/view/partials/ecommerce.php:113
 msgid "Pro adds campaign and landing-page revenue, device and customer segments, coupon discounts, product refunds and CSV exports. Your overview, channels, sources and products are included in Free."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:115
+#: admin/view/partials/ecommerce.php:114
 msgid "See what Pro adds to Ecommerce"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:115
+#: admin/view/partials/ecommerce.php:114
 msgid "Already have Pro? Activate the plugin"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:117
+#: admin/view/partials/ecommerce.php:116
 msgid "Update Pro to explore more reports"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:118
+#: admin/view/partials/ecommerce.php:117
 msgid "Your installed Pro version has not enabled Ecommerce reports. Update both SlimStat plugins to compatible versions."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:122
+#: admin/view/partials/ecommerce.php:121
 msgid "Revenue drivers"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:122
+#: admin/view/partials/ecommerce.php:121
 msgid "Explore the leading contributions to your sales."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:125
-#: admin/view/wp-slimstat-reports.php:574
+#: admin/view/partials/ecommerce.php:123
+msgid "Orders are still importing. Revenue drivers fill in when synchronization completes."
+msgstr ""
+
+#: admin/view/partials/ecommerce.php:123
+msgid "No WooCommerce orders in this period. Revenue drivers fill in after the first order from a tracked visit."
+msgstr ""
+
+#: admin/view/partials/ecommerce.php:127
+#: admin/view/wp-slimstat-reports.php:575
 msgid "Channels"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:125
+#: admin/view/partials/ecommerce.php:127
 msgid "Sources"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:125
+#: admin/view/partials/ecommerce.php:127
 msgid "Products"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:125
+#: admin/view/partials/ecommerce.php:127
 msgid "Campaigns"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:125
 #: admin/view/partials/ecommerce.php:127
+#: admin/view/partials/ecommerce.php:129
 msgid "Landing pages"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:125
+#: admin/view/partials/ecommerce.php:127
 msgid "Customer segments"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:125
+#: admin/view/partials/ecommerce.php:127
 msgid "Coupons"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:128
 msgid "Which channels contribute the most net sales?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:128
 msgid "Which sources contribute orders and revenue?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:128
 msgid "Which products contribute the most after refunds?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:128
 msgid "Which tagged campaigns contribute sales?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:128
 msgid "Which entry pages are associated with sales?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:128
 msgid "How do sales differ across tracked devices?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:128
 msgid "How do account and guest orders compare?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:128
 msgid "Which coupons account for the most discounts?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:127
+#: admin/view/partials/ecommerce.php:129
 msgid "Acquisition"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:127
+#: admin/view/partials/ecommerce.php:129
 msgid "Shopping"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:133
+#: admin/view/partials/ecommerce.php:135
 msgid "Top 10"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:143
+#: admin/view/partials/ecommerce.php:145
 msgid "Top by discounts"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:143
+#: admin/view/partials/ecommerce.php:145
 msgid "Top by net sales"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:143
+#: admin/view/partials/ecommerce.php:145
 msgid "Sort these results"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:143
-#: admin/view/partials/ecommerce.php:158
+#: admin/view/partials/ecommerce.php:145
+#: admin/view/partials/ecommerce.php:160
 msgid "Discounts"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:143
+#: admin/view/partials/ecommerce.php:145
 msgid "Reverse sort order"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:144
+#: admin/view/partials/ecommerce.php:146
 msgid "No results for this view"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:144
+#: admin/view/partials/ecommerce.php:146
 msgid "Try a different period or remove a filter to explore more activity."
 msgstr ""
 
 #. translators: %s: the acquisition dimension value.
-#: admin/view/partials/ecommerce.php:149
+#: admin/view/partials/ecommerce.php:151
 #, php-format
 msgid "Filter tracked visits by %s; unlinked orders will be excluded"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:154
+#: admin/view/partials/ecommerce.php:156
 msgid "No retained visit links in this period. Sales remain unattributed here."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:155
+#: admin/view/partials/ecommerce.php:157
 #: admin/assets/js/ecommerce.js:32
 msgid "View report"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:155
+#: admin/view/partials/ecommerce.php:157
 msgid "About"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:155
+#: admin/view/partials/ecommerce.php:157
 msgid "After item discounts and itemized refunds. Fees and amount-only refunds are unallocated adjustments."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:155
+#: admin/view/partials/ecommerce.php:157
 msgid "Applied discounts, not incremental revenue. Orders using multiple coupons appear in multiple rows."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:155
+#: admin/view/partials/ecommerce.php:157
 msgid "Guest and registered-account orders; these are not new and returning customer counts."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:155
+#: admin/view/partials/ecommerce.php:157
 msgid "Based only on retained SlimStat visit entries. Orders without matching traffic stay unattributed."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:155
+#: admin/view/partials/ecommerce.php:157
 msgid "Retained SlimStat visit attribution where available; otherwise recorded WooCommerce acquisition. Missing data stays unattributed."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:157
+#: admin/view/partials/ecommerce.php:159
 msgid "Up to 10 leading results. Sorting changes these results only. Current dates, currency and traffic filters apply."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:158
+#: admin/view/partials/ecommerce.php:160
 msgid "Net units"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:158
+#: admin/view/partials/ecommerce.php:160
 msgid "Item refunds"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:159
+#: admin/view/partials/ecommerce.php:161
 msgid "Other results:"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:160
+#: admin/view/partials/ecommerce.php:162
 msgid "Unallocated adjustments:"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:168
+#: admin/view/partials/ecommerce.php:171
 msgid "Purchase journey"
 msgstr ""
 
 #. translators: 1: eligible visit count, 2: start date, 3: end date.
-#: admin/view/partials/ecommerce.php:168
+#: admin/view/partials/ecommerce.php:171
 #, php-format
 msgid "Observed in %1$s eligible visits · %2$s to %3$s"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:170
+#: admin/view/partials/ecommerce.php:173
 msgid "Journey data is not available yet"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:170
+#: admin/view/partials/ecommerce.php:173
 msgid "No shopping steps were observed in eligible tracked visits in this period. Order history cannot reconstruct these steps or prove abandonment."
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/partials/ecommerce.php:170
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:173
+#: admin/view/partials/ecommerce.php:184
 msgid "Review tracking settings"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:172
+#: admin/view/partials/ecommerce.php:175
 msgid "Viewed a product"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:172
+#: admin/view/partials/ecommerce.php:175
 msgid "Added to cart"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:172
+#: admin/view/partials/ecommerce.php:175
 msgid "Reached checkout"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:172
+#: admin/view/partials/ecommerce.php:175
 msgid "Placed an included order"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:172
+#: admin/view/partials/ecommerce.php:175
 msgid "Observed product visits"
 msgstr ""
 
 #. translators: %s: percentage of visits that reached this step.
-#: admin/view/partials/ecommerce.php:172
+#: admin/view/partials/ecommerce.php:175
 #, php-format
 msgid "%s%% of previous step"
 msgstr ""
 
 #. translators: %s: percentage of visits that reached this step.
-#: admin/view/partials/ecommerce.php:172
+#: admin/view/partials/ecommerce.php:175
 msgid "No previous-step observations"
 msgstr ""
 
 #. translators: %s: buying visit count.
-#: admin/view/partials/ecommerce.php:173
+#: admin/view/partials/ecommerce.php:176
 #, php-format
 msgid "%s buying visit did not follow every observed step. Missing events, express checkout or a different path may explain gaps; they do not prove abandonment."
 msgid_plural "%s buying visits did not follow every observed step. Missing events, express checkout or a different path may explain gaps; they do not prove abandonment."
@@ -2969,202 +2973,202 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: buying visit count.
-#: admin/view/partials/ecommerce.php:173
+#: admin/view/partials/ecommerce.php:176
 msgid "Explore products"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:175
+#: admin/view/partials/ecommerce.php:178
 msgid "Observation window and coverage"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:175
+#: admin/view/partials/ecommerce.php:178
 msgid "Steps must occur in order within the same tracked visit and selected window. Journey tracking starts after setup; imported orders do not create historical steps. Counts describe only the observed portion of the period."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:175
+#: admin/view/partials/ecommerce.php:178
 msgid "Purchase rate needs at least 100 eligible visits. This display threshold does not establish statistical significance."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:177
+#: admin/view/partials/ecommerce.php:180
 msgid "Your next investigation"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:177
+#: admin/view/partials/ecommerce.php:180
 msgid "What this period suggests checking, most important first."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:178
+#: admin/view/partials/ecommerce.php:181
 #: src/Ecommerce/Report.php:310
 #: src/Ecommerce/Report.php:323
 #: src/Ecommerce/Report.php:336
 msgid "Data quality"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:178
+#: admin/view/partials/ecommerce.php:181
 msgid "Complete synchronization first"
 msgstr ""
 
 #. translators: %s: number of orders processed.
-#: admin/view/partials/ecommerce.php:178
+#: admin/view/partials/ecommerce.php:181
 #, php-format
 msgid "%s orders processed. Resolve the import status before comparing revenue drivers."
 msgstr ""
 
 #. translators: %s: number of orders processed.
-#: admin/view/partials/ecommerce.php:178
+#: admin/view/partials/ecommerce.php:181
 msgid "Review synchronization"
 msgstr ""
 
 #. translators: %s: number of orders processed.
-#: admin/view/partials/ecommerce.php:179
+#: admin/view/partials/ecommerce.php:182
 msgid "Attribution coverage"
 msgstr ""
 
 #. translators: %s: number of orders without a linked visit.
-#: admin/view/partials/ecommerce.php:179
+#: admin/view/partials/ecommerce.php:182
 #, php-format
 msgid "%s orders have no tracked visit"
 msgstr ""
 
 #. translators: %s: number of orders without a linked visit.
-#: admin/view/partials/ecommerce.php:179
+#: admin/view/partials/ecommerce.php:182
 msgid "Their sales count, but traffic efficiency cannot be inferred. Review consent and excluded traffic before comparing acquisition performance."
 msgstr ""
 
 #. translators: %s: number of orders without a linked visit.
-#: admin/view/partials/ecommerce.php:179
+#: admin/view/partials/ecommerce.php:182
 msgid "Inspect coverage"
 msgstr ""
 
 #. translators: %s: number of orders without a linked visit.
-#: admin/view/partials/ecommerce.php:180
+#: admin/view/partials/ecommerce.php:183
 msgid "Refunds"
 msgstr ""
 
 #. translators: %s: number of orders without a linked visit.
-#: admin/view/partials/ecommerce.php:180
+#: admin/view/partials/ecommerce.php:183
 msgid "refunded on these orders"
 msgstr ""
 
 #. translators: %s: number of orders without a linked visit.
-#: admin/view/partials/ecommerce.php:180
+#: admin/view/partials/ecommerce.php:183
 msgid "Includes refunded tax and shipping. Review product patterns before changing offers or messaging; amount-only refunds may be unallocated."
 msgstr ""
 
 #. translators: %s: number of orders without a linked visit.
-#: admin/view/partials/ecommerce.php:180
+#: admin/view/partials/ecommerce.php:183
 msgid "Explore product contribution"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:184
 msgid "product to cart"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:184
 msgid "cart to checkout"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:184
 msgid "checkout to order"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:184
 msgid "Observed journey"
 msgstr ""
 
 #. translators: %s: journey transition, such as product to cart.
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:184
 #, php-format
 msgid "Inspect %s"
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:184
 #, php-format
 msgid "%1$s of %2$s observed visits did not reach the next step in this window. Test this path on your main devices; friction is a hypothesis, not a measured cause."
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:184
 msgid "Review observed steps"
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:184
 msgid "First observations"
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:184
 msgid "Verify the first complete journey"
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:184
 msgid "Check a consented product-to-checkout visit, then confirm an included order appears after background synchronization. Pending and on-hold orders do not count as sales."
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:184
 msgid "Revenue contribution"
 msgstr ""
 
 #. translators: %s: order count in the leading channel.
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:184
 #, php-format
 msgid "%s included orders in the leading channel. Explore its sources before deciding what to test next; contribution alone does not measure efficiency."
 msgstr ""
 
 #. translators: %s: order count in the leading channel.
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:184
 msgid "Explore sources"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:184
+#: admin/view/partials/ecommerce.php:187
 msgid "Definitions, coverage and reporting setup"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:185
+#: admin/view/partials/ecommerce.php:188
 msgid "Revenue basis"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:185
+#: admin/view/partials/ecommerce.php:188
 msgid "Net sales = discounted order total minus tax and shipping, minus recorded refunds excluding their explicitly refunded tax and shipping. Fees remain included. Refunds revise the original order period, even when refunded later. This is not cash flow or profit."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:186
+#: admin/view/partials/ecommerce.php:189
 msgid "Included orders"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:186
+#: admin/view/partials/ecommerce.php:189
 msgid "Processing, completed and refunded standard orders, grouped by creation date in the site timezone. Fully refunded and zero-value orders remain in the order count. Pending, on-hold, failed, cancelled, draft, trash and custom statuses are excluded. Processing does not guarantee gateway settlement."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:187
+#: admin/view/partials/ecommerce.php:190
 msgid "Net sales divided by included orders. Discounts are already in the order total and are never subtracted twice."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:188
+#: admin/view/partials/ecommerce.php:191
 msgid "Distinct eligible visits associated with an included order created in this window, divided by eligible visits active in the same window. Multiple orders in one visit count once. Shared traffic filters apply to both. Visits have no currency: the numerator uses the selected order currency. This rate does not describe untracked shoppers."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:189
+#: admin/view/partials/ecommerce.php:192
 msgid "Attribution and privacy"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:189
+#: admin/view/partials/ecommerce.php:192
 msgid "Existing consented session cookies connect checkout to a retained SlimStat visit. No email/IP matching or cross-device inference. The session entry supplies traffic dimensions; existing WooCommerce order attribution is a fallback. Historical order imports cannot recreate visitor associations. Retention and privacy erasure remove those associations."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:190
+#: admin/view/partials/ecommerce.php:193
 msgid "Freshness and comparisons"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:190
+#: admin/view/partials/ecommerce.php:193
 msgid "Background jobs update orders and refunds. Reports cache for up to one minute and invalidate when synchronized. Comparisons use the immediately preceding equal-length window in the site calendar. Current periods end at the current time. Late refunds and status changes can revise previous periods."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:191
+#: admin/view/partials/ecommerce.php:194
 msgid "Rebuild the reporting copy after a timezone change or an interrupted import. This does not alter orders or fabricate historical traffic."
 msgstr ""
 
@@ -3313,7 +3317,7 @@ msgstr ""
 
 #. translators: 1: step count, 2: conversion rate
 #: admin/view/partials/goals-funnels/funnel-summary.php:52
-#: admin/view/wp-slimstat-reports.php:2351
+#: admin/view/wp-slimstat-reports.php:2427
 #: admin/assets/js/goals-funnels.js:710
 #, php-format,js-format
 msgid "%1$d-step funnel · %2$s%% conversion rate"
@@ -3394,7 +3398,7 @@ msgid "Landing → Form → Thank-you (only if you redirect after submit)"
 msgstr ""
 
 #: admin/view/partials/goals-funnels/funnels-card.php:103
-#: admin/view/wp-slimstat-reports.php:2022
+#: admin/view/wp-slimstat-reports.php:2098
 msgid "+ Add funnel"
 msgstr ""
 
@@ -3407,7 +3411,7 @@ msgid "Templates pre-fill the dimension and operator. You fill in the URLs or ev
 msgstr ""
 
 #: admin/view/partials/goals-funnels/funnels-card.php:133
-#: admin/view/wp-slimstat-reports.php:2289
+#: admin/view/wp-slimstat-reports.php:2365
 msgid "Configured funnels"
 msgstr ""
 
@@ -3494,7 +3498,7 @@ msgid "Unique visitors who matched this goal at least once."
 msgstr ""
 
 #: admin/view/partials/goals-funnels/goals-card.php:111
-#: admin/view/wp-slimstat-reports.php:2130
+#: admin/view/wp-slimstat-reports.php:2206
 msgid "Uniques"
 msgstr ""
 
@@ -3503,7 +3507,7 @@ msgid "Matching pageviews. A single visitor can match several times, so Total is
 msgstr ""
 
 #: admin/view/partials/goals-funnels/goals-card.php:115
-#: admin/view/wp-slimstat-reports.php:2131
+#: admin/view/wp-slimstat-reports.php:2207
 msgid "Total"
 msgstr ""
 
@@ -3741,34 +3745,31 @@ msgid "Syndication Reader"
 msgstr ""
 
 #: admin/view/right-now.php:53
-#: admin/view/wp-slimstat-reports.php:1338
-#: admin/view/wp-slimstat-reports.php:1742
-#: admin/view/wp-slimstat-reports.php:2408
-msgid "No data to display"
+msgid "Visits appear here as they happen."
 msgstr ""
 
 #: admin/view/right-now.php:87
-#: admin/view/wp-slimstat-reports.php:113
+#: admin/view/wp-slimstat-reports.php:114
 msgid "From search result page"
 msgstr ""
 
 #: admin/view/right-now.php:88
-#: admin/view/wp-slimstat-reports.php:113
+#: admin/view/wp-slimstat-reports.php:114
 msgid "Has left comments"
 msgstr ""
 
 #: admin/view/right-now.php:89
-#: admin/view/wp-slimstat-reports.php:113
+#: admin/view/wp-slimstat-reports.php:114
 msgid "WordPress user"
 msgstr ""
 
 #: admin/view/right-now.php:90
-#: admin/view/wp-slimstat-reports.php:113
+#: admin/view/wp-slimstat-reports.php:114
 msgid "Other human"
 msgstr ""
 
 #: admin/view/right-now.php:91
-#: admin/view/wp-slimstat-reports.php:113
+#: admin/view/wp-slimstat-reports.php:114
 msgid "Bot or crawler"
 msgstr ""
 
@@ -3777,9 +3778,9 @@ msgid "Date and Time"
 msgstr ""
 
 #: admin/view/right-now.php:244
-#: admin/view/wp-slimstat-reports.php:1649
-#: admin/view/wp-slimstat-reports.php:1657
-#: admin/view/wp-slimstat-reports.php:2435
+#: admin/view/wp-slimstat-reports.php:1725
+#: admin/view/wp-slimstat-reports.php:1733
+#: admin/view/wp-slimstat-reports.php:2511
 msgid "Open this URL in a new window"
 msgstr ""
 
@@ -4191,6 +4192,7 @@ msgid "Choose a date range, explore your campaigns and use View report to export
 msgstr ""
 
 #: admin/view/upgrade-pro.php:143
+#: admin/view/wp-slimstat-reports.php:1321
 msgid "Build your first campaign link"
 msgstr ""
 
@@ -4301,7 +4303,7 @@ msgid "-- Advanced filters --"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:88
-#: admin/view/wp-slimstat-reports.php:1781
+#: admin/view/wp-slimstat-reports.php:1857
 msgid "Coordinates"
 msgstr ""
 
@@ -4496,9 +4498,9 @@ msgstr ""
 
 #: admin/view/wp-slimstat-db.php:1461
 #: admin/view/wp-slimstat-db.php:2085
-#: admin/view/wp-slimstat-reports.php:127
-#: admin/view/wp-slimstat-reports.php:307
-#: admin/view/wp-slimstat-reports.php:601
+#: admin/view/wp-slimstat-reports.php:128
+#: admin/view/wp-slimstat-reports.php:308
+#: admin/view/wp-slimstat-reports.php:602
 msgid "Unique IPs"
 msgstr ""
 
@@ -4614,7 +4616,7 @@ msgid "Average Visit Duration"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:2081
-#: admin/view/wp-slimstat-reports.php:306
+#: admin/view/wp-slimstat-reports.php:307
 msgid "Visits"
 msgstr ""
 
@@ -4702,29 +4704,20 @@ msgstr ""
 msgid "Latency is the amount of time it takes for the host server to receive and process a request for a page object. The amount of latency depends largely on how far away the user is from the server."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:46
+#: admin/view/wp-slimstat-reports.php:47
 msgid "Chart Controls"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:46
+#: admin/view/wp-slimstat-reports.php:47
 msgid "Use your mouse wheel to zoom in and out"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:46
+#: admin/view/wp-slimstat-reports.php:47
 msgid "While zooming in, drag the chart to move to a different area"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:49
+#: admin/view/wp-slimstat-reports.php:50
 msgid "Shows how many times your site’s pages have been viewed."
-msgstr ""
-
-#: admin/view/wp-slimstat-reports.php:51
-#: admin/view/wp-slimstat-reports.php:60
-#: admin/view/wp-slimstat-reports.php:69
-#: admin/view/wp-slimstat-reports.php:78
-#: admin/view/wp-slimstat-reports.php:87
-#: admin/view/wp-slimstat-reports.php:96
-msgid "Solid line: current period"
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:52
@@ -4733,475 +4726,567 @@ msgstr ""
 #: admin/view/wp-slimstat-reports.php:79
 #: admin/view/wp-slimstat-reports.php:88
 #: admin/view/wp-slimstat-reports.php:97
-msgid "Dashed line: previous period"
+msgid "Solid line: current period"
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:53
-msgid "Tap “Pageviews” or “Unique IPs” to toggle each line."
+#: admin/view/wp-slimstat-reports.php:62
+#: admin/view/wp-slimstat-reports.php:71
+#: admin/view/wp-slimstat-reports.php:80
+#: admin/view/wp-slimstat-reports.php:89
+#: admin/view/wp-slimstat-reports.php:98
+msgid "Dashed line: previous period"
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:54
-#: admin/view/wp-slimstat-reports.php:63
-#: admin/view/wp-slimstat-reports.php:72
-#: admin/view/wp-slimstat-reports.php:81
-#: admin/view/wp-slimstat-reports.php:90
-#: admin/view/wp-slimstat-reports.php:99
+msgid "Tap “Pageviews” or “Unique IPs” to toggle each line."
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:55
+#: admin/view/wp-slimstat-reports.php:64
+#: admin/view/wp-slimstat-reports.php:73
+#: admin/view/wp-slimstat-reports.php:82
+#: admin/view/wp-slimstat-reports.php:91
+#: admin/view/wp-slimstat-reports.php:100
 msgid "Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:57
-#: admin/view/wp-slimstat-reports.php:296
+#: admin/view/wp-slimstat-reports.php:58
+#: admin/view/wp-slimstat-reports.php:297
 msgid "Human Visits"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:58
+#: admin/view/wp-slimstat-reports.php:59
 msgid "Track the number of real human visitors."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:62
+#: admin/view/wp-slimstat-reports.php:63
 msgid "Tap “Visits” or “Unique IPs” to toggle each line."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:66
-#: admin/view/wp-slimstat-reports.php:898
+#: admin/view/wp-slimstat-reports.php:67
+#: admin/view/wp-slimstat-reports.php:904
 msgid "Pages with Outbound Links"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:67
+#: admin/view/wp-slimstat-reports.php:68
 msgid "Track how often visitors click outbound links on your site."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:71
+#: admin/view/wp-slimstat-reports.php:72
 msgid "Tap “Outbound Links” or “Unique Outbound” to toggle each line."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:76
+#: admin/view/wp-slimstat-reports.php:77
 msgid "See how many times users find your site via search engines."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:80
+#: admin/view/wp-slimstat-reports.php:81
 msgid "Tap “Search Terms” or “Unique Terms” to toggle each line."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:85
+#: admin/view/wp-slimstat-reports.php:86
 msgid "See how many visits come from each traffic source."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:89
+#: admin/view/wp-slimstat-reports.php:90
 msgid "Tap “Domains” or “Unique IPs” to toggle each line."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:93
-#: admin/view/wp-slimstat-reports.php:522
-#: admin/view/wp-slimstat-reports.php:531
+#: admin/view/wp-slimstat-reports.php:94
+#: admin/view/wp-slimstat-reports.php:523
+#: admin/view/wp-slimstat-reports.php:532
 msgid "Users"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:94
+#: admin/view/wp-slimstat-reports.php:95
 msgid "See how many users come to your site."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:98
+#: admin/view/wp-slimstat-reports.php:99
 msgid "Tap “Users” or “Unique Users” to toggle each line."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:104
+#: admin/view/wp-slimstat-reports.php:105
 msgid "Access Log"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:113
+#: admin/view/wp-slimstat-reports.php:114
 msgid "Color codes"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:127
+#: admin/view/wp-slimstat-reports.php:128
 msgid "Unique Visitors"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:135
+#: admin/view/wp-slimstat-reports.php:136
 msgid "At a Glance"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:144
+#: admin/view/wp-slimstat-reports.php:145
 msgid "Visitors online (last 5 min)"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:159
+#: admin/view/wp-slimstat-reports.php:160
 msgid "Recent Search Terms"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:170
+#: admin/view/wp-slimstat-reports.php:171
 msgid "Keywords used by your visitors to find your website on a search engine."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:173
+#: admin/view/wp-slimstat-reports.php:174
 msgid "Top Web Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:182
+#: admin/view/wp-slimstat-reports.php:183
 msgid "Here a \"page\" is not just a WordPress page type, but any webpage on your site, including posts, products, categories, and any other custom post type. For example, you can set the corresponding filter where Resource Content Type equals cpt:you_cpt_slug_here to get top web pages for a specific custom post type you have."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:185
+#: admin/view/wp-slimstat-reports.php:186
 msgid "Top Referring Domains"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:200
+#: admin/view/wp-slimstat-reports.php:201
 msgid "Top Known Visitors"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:212
+#: admin/view/wp-slimstat-reports.php:213
 msgid "Top Search Terms"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:224
-#: admin/view/wp-slimstat-reports.php:2588
+#: admin/view/wp-slimstat-reports.php:225
+#: admin/view/wp-slimstat-reports.php:2664
 msgid "Top Countries"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:234
+#: admin/view/wp-slimstat-reports.php:235
 msgid "You can configure SlimStat to not track specific Countries by setting the corresponding filter in SlimStat > Settings > Exclusions."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:237
+#: admin/view/wp-slimstat-reports.php:238
 msgid "Rankings"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:244
+#: admin/view/wp-slimstat-reports.php:245
 msgid "SlimStat retrieves live information from Alexa, Facebook and Mozscape, to measures your site's rankings. Values are updated every 12 hours. Please enter your personal access ID in the settings to access your personalized Mozscape data."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:247
+#: admin/view/wp-slimstat-reports.php:248
 msgid "Top Language Families"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:260
+#: admin/view/wp-slimstat-reports.php:261
 msgid "Logged-in users online (last 5 min)"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:273
+#: admin/view/wp-slimstat-reports.php:274
 msgid "When visitors leave a comment on your blog, WordPress assigns them a cookie. SlimStat leverages this information to identify returning visitors. Please note that visitors also include registered users."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:287
+#: admin/view/wp-slimstat-reports.php:288
 #: views/modules/chart-view.php:94
 msgid "Unique Terms"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:315
+#: admin/view/wp-slimstat-reports.php:316
 msgid "Audience Overview"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:322
+#: admin/view/wp-slimstat-reports.php:323
 msgid "Where not otherwise specified, the metrics in this report are referred to human visitors."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:325
+#: admin/view/wp-slimstat-reports.php:326
 msgid "Top Languages"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:336
+#: admin/view/wp-slimstat-reports.php:337
 msgid "Top User Agents"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:345
+#: admin/view/wp-slimstat-reports.php:346
 msgid "This report includes all types of clients, both bots and humans."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:348
+#: admin/view/wp-slimstat-reports.php:349
 msgid "Top Service Providers"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:357
-#: admin/view/wp-slimstat-reports.php:369
+#: admin/view/wp-slimstat-reports.php:358
+#: admin/view/wp-slimstat-reports.php:370
 msgid "Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > SlimStat > Filters."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:360
+#: admin/view/wp-slimstat-reports.php:361
 msgid "Top Operating Systems"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:372
+#: admin/view/wp-slimstat-reports.php:373
 msgid "Top Screen Resolutions"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:384
+#: admin/view/wp-slimstat-reports.php:385
 msgid "Top Viewport Sizes"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:395
+#: admin/view/wp-slimstat-reports.php:396
 msgid "Visit Duration"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:402
+#: admin/view/wp-slimstat-reports.php:403
 msgid "All values represent the percentages of pageviews within the corresponding time range."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:405
+#: admin/view/wp-slimstat-reports.php:406
 msgid "Recent Countries"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:418
+#: admin/view/wp-slimstat-reports.php:419
 msgid "Recent Viewport Sizes"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:431
+#: admin/view/wp-slimstat-reports.php:432
 msgid "Recent Operating Systems"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:444
+#: admin/view/wp-slimstat-reports.php:445
 msgid "Recent Browsers"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:457
+#: admin/view/wp-slimstat-reports.php:458
 msgid "Recent Languages"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:470
+#: admin/view/wp-slimstat-reports.php:471
 msgid "Top Browser Families"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:479
+#: admin/view/wp-slimstat-reports.php:480
 msgid "This report shows you what user agent families (no version considered) are popular among your visitors."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:482
+#: admin/view/wp-slimstat-reports.php:483
 msgid "Top OS Families"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:493
+#: admin/view/wp-slimstat-reports.php:494
 msgid "This report shows you what operating system families (no version considered) are popular among your visitors."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:496
+#: admin/view/wp-slimstat-reports.php:497
 msgid "Recent Users"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:510
+#: admin/view/wp-slimstat-reports.php:511
 msgid "Top Users"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:532
+#: admin/view/wp-slimstat-reports.php:533
 msgid "Unique Users"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:540
+#: admin/view/wp-slimstat-reports.php:541
 msgid "Top Bots"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:552
+#: admin/view/wp-slimstat-reports.php:553
 msgid "Top Human Browsers"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:565
+#: admin/view/wp-slimstat-reports.php:566
 msgid "Traffic Summary"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:579
+#: admin/view/wp-slimstat-reports.php:580
 msgid "Pageview sources, classified from campaign tags, referring sites and user agents. AI referrals and automated requests are reported separately."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:582
+#: admin/view/wp-slimstat-reports.php:583
 msgid "UTM Campaigns"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:587
+#: admin/view/wp-slimstat-reports.php:588
 msgid "Compare tagged pageviews by campaign, source and medium. Campaign values are case-sensitive; missing values are shown explicitly."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:600
+#: admin/view/wp-slimstat-reports.php:601
 msgid "Domains"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:609
+#: admin/view/wp-slimstat-reports.php:610
 msgid "Recent Outbound Links"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:625
+#: admin/view/wp-slimstat-reports.php:626
 msgid "Recent Posts"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:640
+#: admin/view/wp-slimstat-reports.php:641
 msgid "Recent Feeds"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:653
+#: admin/view/wp-slimstat-reports.php:654
 msgid "Recent Pages Not Found"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:667
+#: admin/view/wp-slimstat-reports.php:668
 msgid "Recent Internal Searches"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:678
+#: admin/view/wp-slimstat-reports.php:676
+#: admin/view/wp-slimstat-reports.php:756
+msgid "Shows searches made in your site's search box."
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:680
 msgid "Searches performed using WordPress' built-in search functionality."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:681
+#: admin/view/wp-slimstat-reports.php:683
 msgid "Top Categories"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:693
+#: admin/view/wp-slimstat-reports.php:690
+msgid "Shows posts that have categories."
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:696
 msgid "Top Downloads"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:703
+#. translators: %s: comma-separated file extensions, e.g. "pdf, doc, xls, zip"
+#: admin/view/wp-slimstat-reports.php:704
+#, php-format
+msgid "Shows clicks on links to %s files. Change the list in Settings › Tracker."
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:708
 msgid "You can configure SlimStat to track specific file extensions as downloads."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:706
+#: admin/view/wp-slimstat-reports.php:711
 msgid "Recent Custom Events"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:715
-#: admin/view/wp-slimstat-reports.php:740
+#: admin/view/wp-slimstat-reports.php:720
+#: admin/view/wp-slimstat-reports.php:745
 msgid "This report lists any <em>event</em> occurred on your website. Please refer to the FAQ for more information on how to use this functionality."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:718
+#: admin/view/wp-slimstat-reports.php:723
 msgid "Top Posts"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:731
+#: admin/view/wp-slimstat-reports.php:736
 msgid "Top Custom Events"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:743
+#: admin/view/wp-slimstat-reports.php:748
 msgid "Top Internal Searches"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:756
+#: admin/view/wp-slimstat-reports.php:762
 msgid "Recent Categories"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:771
+#: admin/view/wp-slimstat-reports.php:777
 msgid "Recent Tags"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:786
+#: admin/view/wp-slimstat-reports.php:792
 msgid "Top Pages Not Found"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:798
+#: admin/view/wp-slimstat-reports.php:804
 msgid "Top Authors"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:810
+#: admin/view/wp-slimstat-reports.php:816
 msgid "Top Tags"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:822
+#: admin/view/wp-slimstat-reports.php:828
 msgid "Recent Downloads"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:836
+#: admin/view/wp-slimstat-reports.php:842
 msgid "Top Outbound Links"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:847
+#: admin/view/wp-slimstat-reports.php:853
 msgid "Your Website"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:854
+#: admin/view/wp-slimstat-reports.php:860
 msgid "Your content at a glance: posts, comments, pingbacks, etc. Please note that this report is not affected by the filters set above."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:857
+#: admin/view/wp-slimstat-reports.php:863
 msgid "Top Bounce Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:871
+#: admin/view/wp-slimstat-reports.php:877
 msgid "Top Exit Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:884
+#: admin/view/wp-slimstat-reports.php:890
 msgid "Top Entry Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:907
+#: admin/view/wp-slimstat-reports.php:913
 msgid "Outbound Links"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:908
+#: admin/view/wp-slimstat-reports.php:914
 msgid "Unique Outbound"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:916
+#: admin/view/wp-slimstat-reports.php:922
 msgid "Users by Page"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:927
+#: admin/view/wp-slimstat-reports.php:933
 msgid "Audience Location"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:934
+#: admin/view/wp-slimstat-reports.php:940
 msgid "Dots on the map represent the most recent pageviews geolocated by City. This feature is only available by enabling the corresponding precision level in the settings."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:948
+#: admin/view/wp-slimstat-reports.php:954
 msgid "Goals"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:965
+#: admin/view/wp-slimstat-reports.php:971
 msgid "Track conversions for custom goals you define. Goals are evaluated retroactively against existing data."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:968
+#: admin/view/wp-slimstat-reports.php:974
 msgid "Funnels"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:984
-#: admin/view/wp-slimstat-reports.php:2263
+#: admin/view/wp-slimstat-reports.php:990
+#: admin/view/wp-slimstat-reports.php:2339
 msgid "Visualize conversion funnels with step-by-step drop-off analysis."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:990
+#: admin/view/wp-slimstat-reports.php:996
 msgid "Top Cities"
 msgstr ""
 
 #. translators: 1: first displayed row, 2: last displayed row, 3: total row count.
-#: admin/view/wp-slimstat-reports.php:1194
+#: admin/view/wp-slimstat-reports.php:1200
 #, php-format
 msgid "Showing %1$s - %2$s of %3$s"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1197
+#: admin/view/wp-slimstat-reports.php:1203
 msgid "Refresh in"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1412
+#: admin/view/wp-slimstat-reports.php:1282
+msgid "No pageviews recorded yet."
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1283
+msgid "Open your site in a private window, then refresh this page."
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1285
+msgid "No pageviews match these filters."
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1287
+msgid "No pageviews in this date range."
+msgstr ""
+
+#. translators: %s: date of the most recent pageview on record
+#: admin/view/wp-slimstat-reports.php:1290
+#, php-format
+msgid "The last pageview was on %s."
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1294
+#: src/Components/DateRangeHelper.php:222
+msgid "Last 90 days"
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1319
+msgid "Check that tracking works"
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1319
+msgid "Open your site in a private window, then watch Real-time."
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1320
+msgid "Add a goal"
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1320
+msgid "Count the visits that reach a page or click a button you care about."
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1321
+msgid "Tag an incoming link to see where its visitors go."
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1324
+msgid "Explore your Ecommerce reports"
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1324
+msgid "See which visits lead to WooCommerce orders."
+msgstr ""
+
+#. translators: %s: number of pageviews recorded so far (fewer than 50)
+#: admin/view/wp-slimstat-reports.php:1328
+msgid "Get started"
+msgstr ""
+
+#. translators: %s: number of pageviews recorded so far (fewer than 50)
+#: admin/view/wp-slimstat-reports.php:1328
+#, php-format
+msgid "SlimStat has recorded %s pageview so far."
+msgid_plural "SlimStat has recorded %s pageviews so far."
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/view/wp-slimstat-reports.php:1488
 msgid "Tag"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1415
-#: admin/view/wp-slimstat-reports.php:1424
+#: admin/view/wp-slimstat-reports.php:1491
+#: admin/view/wp-slimstat-reports.php:1500
 msgid "ID"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1421
+#: admin/view/wp-slimstat-reports.php:1497
 msgid "Category"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1442
-#: admin/view/wp-slimstat-reports.php:1474
-#: admin/view/wp-slimstat-reports.php:1479
+#: admin/view/wp-slimstat-reports.php:1518
+#: admin/view/wp-slimstat-reports.php:1550
+#: admin/view/wp-slimstat-reports.php:1555
 msgid "Code"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1522
+#: admin/view/wp-slimstat-reports.php:1598
 msgid "URL"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1542
+#: admin/view/wp-slimstat-reports.php:1618
 msgid "No referrer"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1545
+#: admin/view/wp-slimstat-reports.php:1621
 #: src/Services/Privacy/DataExporter.php:68
 msgid "Referrer"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1565
-#: admin/view/wp-slimstat-reports.php:1593
+#: admin/view/wp-slimstat-reports.php:1641
+#: admin/view/wp-slimstat-reports.php:1669
 #: languages/index.php:11
 #: languages/index.php:14
 #: languages/index.php:15
@@ -5214,136 +5299,136 @@ msgstr ""
 msgid "Unknown"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1569
-#: admin/view/wp-slimstat-reports.php:1597
+#: admin/view/wp-slimstat-reports.php:1645
+#: admin/view/wp-slimstat-reports.php:1673
 msgid "Guest"
 msgstr ""
 
 #. translators: %s: human-readable time difference, e.g. 5 mins
-#: admin/view/wp-slimstat-reports.php:1624
+#: admin/view/wp-slimstat-reports.php:1700
 #, php-format
 msgid "%s ago"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1781
+#: admin/view/wp-slimstat-reports.php:1857
 #: src/Heatmap/Store.php:364
 msgid "Date"
 msgstr ""
 
 #. translators: 1: used count, 2: maximum count
-#: admin/view/wp-slimstat-reports.php:1962
+#: admin/view/wp-slimstat-reports.php:2038
 #, php-format
 msgid "%1$d of %2$d used"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1991
+#: admin/view/wp-slimstat-reports.php:2067
 msgid "+ Add goal"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2015
+#: admin/view/wp-slimstat-reports.php:2091
 #: admin/assets/js/goals-funnels.js:502
 msgid "See templates"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2060
-#: admin/view/wp-slimstat-reports.php:2164
+#: admin/view/wp-slimstat-reports.php:2136
+#: admin/view/wp-slimstat-reports.php:2240
 msgid "Goal data reflects visitors who provided statistics consent."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2120
+#: admin/view/wp-slimstat-reports.php:2196
 msgid "No goals defined yet."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2129
+#: admin/view/wp-slimstat-reports.php:2205
 msgid "Goal"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2132
+#: admin/view/wp-slimstat-reports.php:2208
 msgid "CR%"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2148
+#: admin/view/wp-slimstat-reports.php:2224
 msgid "Not shown here. Open the Goals report."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2253
+#: admin/view/wp-slimstat-reports.php:2329
 msgid "Step 1"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2253
+#: admin/view/wp-slimstat-reports.php:2329
 msgid "Step 2"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2253
+#: admin/view/wp-slimstat-reports.php:2329
 msgid "Step 3"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2262
+#: admin/view/wp-slimstat-reports.php:2338
 msgid "Visualize every step of the journey"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2270
+#: admin/view/wp-slimstat-reports.php:2346
 msgid "No funnels configured."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2334
+#: admin/view/wp-slimstat-reports.php:2410
 msgid "Not shown here. Open the Funnels report."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2344
+#: admin/view/wp-slimstat-reports.php:2420
 msgid "No matching visitors in this date range."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2444
-#: admin/view/wp-slimstat-reports.php:2446
+#: admin/view/wp-slimstat-reports.php:2520
+#: admin/view/wp-slimstat-reports.php:2522
 msgid "Filter by element in a group"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2483
+#: admin/view/wp-slimstat-reports.php:2559
 msgid "Moz Domain Authority"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2484
+#: admin/view/wp-slimstat-reports.php:2560
 msgid "A normalized 100-point score representing the likelihood of a domain to rank well in search engine results."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2488
+#: admin/view/wp-slimstat-reports.php:2564
 msgid "Moz Backlinks"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2489
+#: admin/view/wp-slimstat-reports.php:2565
 msgid "Number of external equity links to your website."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2493
+#: admin/view/wp-slimstat-reports.php:2569
 msgid "Moz Links"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2494
+#: admin/view/wp-slimstat-reports.php:2570
 msgid "The number of links (external, equity or nonequity or not) to your homepage."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2680
+#: admin/view/wp-slimstat-reports.php:2756
 msgid "Edit user profile"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2695
+#: admin/view/wp-slimstat-reports.php:2771
 msgid "src"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2699
+#: admin/view/wp-slimstat-reports.php:2775
 msgid "serp"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2728
+#: admin/view/wp-slimstat-reports.php:2804
 msgid "Remove filter for"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2733
+#: admin/view/wp-slimstat-reports.php:2809
 msgid "Save"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2737
+#: admin/view/wp-slimstat-reports.php:2813
 msgid "Reset All"
 msgstr ""
 
@@ -7604,10 +7689,6 @@ msgstr ""
 msgid "Last 30 days"
 msgstr ""
 
-#: src/Components/DateRangeHelper.php:222
-msgid "Last 90 days"
-msgstr ""
-
 #: src/Components/DateRangeHelper.php:223
 msgid "Last 6 months"
 msgstr ""
@@ -7831,7 +7912,7 @@ msgstr ""
 #: src/Ecommerce/Report.php:404
 #: src/Reports/AcquisitionReport.php:73
 #: src/Reports/AcquisitionReport.php:75
-#: src/Reports/AcquisitionReport.php:231
+#: src/Reports/AcquisitionReport.php:233
 #: src/Tracker/Acquisition.php:97
 msgid "Unassigned"
 msgstr ""
@@ -8212,7 +8293,7 @@ msgid "Source breakdown"
 msgstr ""
 
 #: src/Reports/AcquisitionReport.php:101
-#: src/Reports/AcquisitionReport.php:228
+#: src/Reports/AcquisitionReport.php:230
 msgid "Share"
 msgstr ""
 
@@ -8264,59 +8345,63 @@ msgstr ""
 msgid "No tagged pageviews in this period. Add utm_source, utm_medium and utm_campaign to your incoming links, or choose another date range."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:220
+#: src/Reports/AcquisitionReport.php:221
+msgid "No pageviews in this period. Try a wider date range."
+msgstr ""
+
+#: src/Reports/AcquisitionReport.php:222
 msgid "No pageviews match this period and these filters. Try a wider date range or clear a filter."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:253
+#: src/Reports/AcquisitionReport.php:255
 msgid "Filter by this campaign"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:253
+#: src/Reports/AcquisitionReport.php:255
 msgid "Filter by this channel"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:256
+#: src/Reports/AcquisitionReport.php:258
 msgid "View linked orders"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:260
+#: src/Reports/AcquisitionReport.php:262
 msgid "Linked orders uses these dates and filters to find orders associated with matching tracked visits. Orders without a visit link are excluded; pageview share is not a purchase rate."
 msgstr ""
 
 #. translators: 1: shown pageviews, 2: complete group pageviews.
-#: src/Reports/AcquisitionReport.php:270
+#: src/Reports/AcquisitionReport.php:272
 #, php-format
 msgid "Showing %1$s of %2$s pageviews in this breakdown. The result limit was reached; filter this group or narrow your filters for more detail."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:278
+#: src/Reports/AcquisitionReport.php:280
 msgid "Report pages"
 msgstr ""
 
 #. translators: 1: first row, 2: last row, 3: displayed result count.
-#: src/Reports/AcquisitionReport.php:281
+#: src/Reports/AcquisitionReport.php:283
 #, php-format
 msgid "%1$s–%2$s of %3$s"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:291
+#: src/Reports/AcquisitionReport.php:293
 msgid "The report result limit was reached. Narrow your filters to see more detail. Shares use all matching pageviews, including rows beyond this limit."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:294
+#: src/Reports/AcquisitionReport.php:296
 msgid "How to read this report"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:296
+#: src/Reports/AcquisitionReport.php:298
 msgid "Campaign totals combine all sources and tags. Expand a campaign for each combination of tags on a recorded page URL, not a session or conversion. Values keep their original case. More tags reveals content, term and campaign ID when present. Unassigned means that tag was absent. Use consistent names and tag incoming links, not internal links."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:297
+#: src/Reports/AcquisitionReport.php:299
 msgid "Channel totals combine all sources. Expand a channel for its source breakdown. These are pageview channels, not session attribution. Campaign tags take priority over referring sites. Internal navigation is separate. Direct / unknown means no usable source was sent; it can include untagged email, private messages or apps. Unassigned means the pageview predates report setup."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:299
+#: src/Reports/AcquisitionReport.php:301
 msgid "AI Assistants identifies referrals or tagged links from known assistants. AI Crawlers and AI User-requested Fetches identify automated requests by their claimed user agent, not verified identity. They appear only when your tracking settings collect them. Google AI Overviews cannot reliably be separated from Organic Search. Unknown tagged media appear as Unassigned."
 msgstr ""
 
@@ -8982,122 +9067,122 @@ msgstr ""
 msgid "This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (e.g. browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim"
 msgstr ""
 
-#: wp-slimstat.php:2287
+#: wp-slimstat.php:2288
 msgid "What personal data we collect and why"
 msgstr ""
 
-#: wp-slimstat.php:2288
+#: wp-slimstat.php:2289
 msgid "SlimStat Analytics collects the following data about website visitors:"
 msgstr ""
 
-#: wp-slimstat.php:2290
+#: wp-slimstat.php:2291
 msgid "IP Address: Collected for analytics and security purposes. May be anonymized or hashed based on your privacy settings."
 msgstr ""
 
-#: wp-slimstat.php:2291
+#: wp-slimstat.php:2292
 msgid "Page URLs: Tracks which pages are visited to analyze website usage."
 msgstr ""
 
-#: wp-slimstat.php:2292
+#: wp-slimstat.php:2293
 msgid "Referrer Information: Tracks where visitors came from (search engines, other websites, etc.)."
 msgstr ""
 
-#: wp-slimstat.php:2293
+#: wp-slimstat.php:2294
 msgid "Browser and Device Information: User agent, screen resolution, and device type for analytics."
 msgstr ""
 
-#: wp-slimstat.php:2294
+#: wp-slimstat.php:2295
 msgid "Timestamp: Date and time of each page visit."
 msgstr ""
 
-#: wp-slimstat.php:2297
+#: wp-slimstat.php:2298
 msgid "Cookies: A tracking cookie is used to identify returning visitors and maintain session continuity."
 msgstr ""
 
-#: wp-slimstat.php:2301
+#: wp-slimstat.php:2302
 msgid "User Information: If you are logged in, your username and email may be associated with your visits (only with consent when GDPR mode is enabled)."
 msgstr ""
 
-#: wp-slimstat.php:2305
+#: wp-slimstat.php:2306
 msgid "Heatmaps: Where visitors click on links, buttons and other page elements, and how far they scroll. What you type is never recorded."
 msgstr ""
 
-#: wp-slimstat.php:2310
+#: wp-slimstat.php:2311
 msgid "How long we retain your data"
 msgstr ""
 
 #. translators: %d: configured number of days before analytics data is deleted.
-#: wp-slimstat.php:2314
+#: wp-slimstat.php:2315
 #, php-format
 msgid "Analytics data is automatically deleted after %d days, in compliance with GDPR data retention requirements."
 msgstr ""
 
-#: wp-slimstat.php:2316
+#: wp-slimstat.php:2317
 msgid "Analytics data retention is currently disabled. Please contact the site administrator for information about data retention policies."
 msgstr ""
 
-#: wp-slimstat.php:2319
+#: wp-slimstat.php:2320
 msgid "Your rights"
 msgstr ""
 
-#: wp-slimstat.php:2320
+#: wp-slimstat.php:2321
 msgid "Under GDPR, you have the right to:"
 msgstr ""
 
-#: wp-slimstat.php:2322
+#: wp-slimstat.php:2323
 msgid "Access your personal data collected by SlimStat"
 msgstr ""
 
-#: wp-slimstat.php:2323
+#: wp-slimstat.php:2324
 msgid "Request deletion of your personal data (Right to be Forgotten)"
 msgstr ""
 
-#: wp-slimstat.php:2324
+#: wp-slimstat.php:2325
 msgid "Opt-out of tracking by revoking consent (if GDPR mode is enabled)"
 msgstr ""
 
-#: wp-slimstat.php:2328
+#: wp-slimstat.php:2329
 msgid "You can exercise these rights by using the WordPress Privacy Tools (Tools → Export Personal Data / Erase Personal Data) or by contacting the site administrator."
 msgstr ""
 
-#: wp-slimstat.php:2331
+#: wp-slimstat.php:2332
 msgid "Consent Management"
 msgstr ""
 
-#: wp-slimstat.php:2333
+#: wp-slimstat.php:2334
 msgid "This website uses Anonymous Tracking Mode. Initial tracking occurs without collecting personally identifiable information (PII). Full tracking with PII collection only occurs after you grant explicit consent."
 msgstr ""
 
-#: wp-slimstat.php:2335
+#: wp-slimstat.php:2336
 msgid "Tracking requires your consent when GDPR mode is enabled. You can grant or revoke consent at any time through the consent management interface."
 msgstr ""
 
 #. translators: %s: a number of sites.
-#: wp-slimstat.php:2668
+#: wp-slimstat.php:2669
 #, php-format
 msgid "SlimStat is still setting up %s site on this network. Reload this page to continue."
 msgid_plural "SlimStat is still setting up %s sites on this network. Reload this page to continue."
 msgstr[0] ""
 msgstr[1] ""
 
-#: wp-slimstat.php:2942
+#: wp-slimstat.php:2943
 msgid "Report"
 msgstr ""
 
-#: wp-slimstat.php:2950
+#: wp-slimstat.php:2951
 msgid "Title"
 msgstr ""
 
-#: wp-slimstat.php:2955
+#: wp-slimstat.php:2956
 msgid "Optional filters"
 msgstr ""
 
-#: wp-slimstat.php:3084
+#: wp-slimstat.php:3085
 msgid "Invalid nonce"
 msgstr ""
 
 #. translators: %d: number of cache items cleared.
-#: wp-slimstat.php:3101
+#: wp-slimstat.php:3102
 #, php-format
 msgid "SlimStat cache cleared (%d items)"
 msgstr ""

@@ -109,6 +109,8 @@
 .ss-ec-report-detail { padding: 0 0 18px; }
 .ss-ec-report-empty { min-height: 210px; padding: 35px 8px; }
 .ss-ec-report-empty p { font-size: 12px !important; max-width: 40ch; }
+/* Nothing to sort or expand on an empty card (audit E2). Hidden, not removed: ecommerce.js reads them. */
+.ss-ec-report:has(.ss-ec-report-empty) .ss-ec-rank-heading label, .ss-ec-report:has(.ss-ec-report-empty) .ss-ec-report-footer [data-expand] { display: none; }
 .ss-ec-scroll { overflow: auto; max-height: 420px; overscroll-behavior-inline: contain; }
 .ss-ec table { border-collapse: collapse; width: 100%; font-size: 12px; }
 .ss-ec :is(td,th) { padding: 10px 8px; border-bottom: 1px solid var(--ss-border-soft); text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }

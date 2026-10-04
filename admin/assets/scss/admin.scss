@@ -952,6 +952,37 @@ body {
   width: 90%;
 }
 
+/* Empty state (audit E1): a short card sized to its text, not a grey line centred in 240px */
+[id^="slim_"] .inside:has(> .slimstat-empty) {
+  height: auto !important;
+  margin-bottom: 0 !important;
+}
+
+[id^="slim_"] .slimstat-empty {
+  padding: 16px 20px;
+
+  p.nodata {
+    position: static;
+    transform: none;
+    width: auto;
+    margin: 0;
+    color: #1d2327;
+    font-weight: 600;
+    text-align: start;
+  }
+
+  .slimstat-empty-hint {
+    display: block;
+    max-width: 72ch;
+    margin-top: 4px;
+    color: #646970;
+  }
+
+  .button {
+    margin-top: 12px;
+  }
+}
+
 /* Single Report: Chart */
 .chart-placeholder {
   height: 280px;

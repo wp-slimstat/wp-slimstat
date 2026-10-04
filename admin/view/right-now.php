@@ -50,7 +50,7 @@ $count_page_results = count($results);
 echo wp_kses_post(wp_slimstat_db::$debug_message);
 
 if (0 == $count_page_results) {
-    echo '<p class="nodata">' . esc_html__('No data to display', 'wp-slimstat') . '</p>';
+    wp_slimstat_reports::empty_state('', __('Visits appear here as they happen.', 'wp-slimstat'));
     return 0;
 }
 

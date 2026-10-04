@@ -358,25 +358,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 ctx2.restore();
             },
         };
-        var emptyLine = {
-            id: "emptyLine",
-            afterDraw: function (chart) {
-                var opts = chart.options && chart.options.plugins && chart.options.plugins.emptyLine;
-                if (!opts || !opts.enabled) return;
-                var area = chart.chartArea;
-                if (!area) return;
-                var ctx2 = chart.ctx;
-                var y = (area.top + area.bottom) / 2;
-                ctx2.save();
-                ctx2.strokeStyle = opts.color || "#e8294c";
-                ctx2.lineWidth = 2;
-                ctx2.beginPath();
-                ctx2.moveTo(area.left, y);
-                ctx2.lineTo(area.right, y);
-                ctx2.stroke();
-                ctx2.restore();
-            },
-        };
 
         var maxTicks = 8;
         var uniqueTickIndexes = [];
@@ -492,7 +473,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 data: labels.map(function () {
                     return 0;
                 }),
-                borderColor: "#e8294c",
+                borderColor: "#c3c4c7",
                 backgroundColor: "transparent",
                 borderWidth: 2,
                 fill: false,
@@ -530,8 +511,10 @@ document.addEventListener("DOMContentLoaded", function () {
             },
         };
 
+        // An empty period sits on a 0–1 axis: a flat grey line at zero, never an axis that
+        // dips to -1 under a red line that reads as an error (audit E1).
         if (isEmptyCurrent) {
-            yScale.min = -1;
+            yScale.min = 0;
             yScale.max = 1;
             yScale.ticks.stepSize = 1;
         }
@@ -579,10 +562,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         titleColor: "#222",
                         bodyColor: "#222",
                     },
-                    emptyLine: {
-                        enabled: isEmptyCurrent,
-                        color: "#e8294c",
-                    },
                 },
                 scales: {
                     x: {
@@ -623,7 +602,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     mode: "index",
                 },
             },
-            plugins: [customCrosshair, emptyLine],
+            plugins: [customCrosshair],
         });
     }
 

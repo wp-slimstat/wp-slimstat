@@ -139,6 +139,8 @@ if (!empty($filters_html)) {
             </div>
         <?php endif; ?>
 
+        <?php wp_slimstat_reports::get_started(); ?>
+
         <?php if ('slimview5' === wp_slimstat_admin::$current_screen) {
             wp_slimstat_admin::get_template('utm-builder');
         } ?>

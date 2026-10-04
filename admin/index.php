@@ -346,6 +346,7 @@ class wp_slimstat_admin
                 'slimstat_notice_browscap'          => 'notices_handler',
                 'slimstat_notice_browscap_fileinfo' => 'notices_handler',
                 'slimstat_notice_caching'           => 'notices_handler',
+                'slimstat_notice_getstarted'        => 'notices_handler',
                 'slimstat_manage_filters'        => 'manage_filters',
                 'slimstat_delete_pageview'       => 'delete_pageview',
                 'slimstat_update_geoip_database' => 'update_geoip_database',

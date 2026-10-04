@@ -1588,6 +1588,7 @@ class wp_slimstat
             'notice_browscap_fileinfo' => 'on',
             'notice_geolite'           => 'on',
             'notice_caching'           => 'on',
+            'notice_getstarted'        => 'on',
 
             // Network-wide Settings
             'locked_options' => '',

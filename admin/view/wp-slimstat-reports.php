@@ -15,6 +15,7 @@ class wp_slimstat_reports
         'inactive'  => [],
     ];
     public static $resource_titles = [];
+    public static $last_pageview_dt = null; // empty_state()'s per-request cache; 0 = nothing ever tracked
 
     /**
      * Initalize class properties
@@ -672,6 +673,7 @@ class wp_slimstat_reports
                     'where'        => 'content_type LIKE %s AND searchterms <> "" AND searchterms IS NOT NULL',
                     'where_params' => ['%search%'],
                     'raw'          => ['wp_slimstat_db', 'get_recent'],
+                    'empty_hint'   => __("Shows searches made in your site's search box.", 'wp-slimstat'),
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview4'],
@@ -685,6 +687,7 @@ class wp_slimstat_reports
                     'columns' => 'category',
                     'where'   => 'content_type LIKE "%category%"',
                     'raw'     => ['wp_slimstat_db', 'get_top'],
+                    'empty_hint' => __('Shows posts that have categories.', 'wp-slimstat'),
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview4', 'dashboard'],
@@ -697,6 +700,8 @@ class wp_slimstat_reports
                     'columns'  => 'resource',
                     'where'    => 'content_type = "download"',
                     'raw'      => ['wp_slimstat_db', 'get_top'],
+                    /* translators: %s: comma-separated file extensions, e.g. "pdf, doc, xls, zip" */
+                    'empty_hint' => sprintf(__('Shows clicks on links to %s files. Change the list in Settings › Tracker.', 'wp-slimstat'), str_replace(',', ', ', (string) wp_slimstat::$settings['extensions_to_track'])),
                 ],
                 'classes'   => ['large'],
                 'locations' => ['slimview4'],
@@ -748,6 +753,7 @@ class wp_slimstat_reports
                     'where'   => 'content_type LIKE %s AND searchterms <> "" AND searchterms IS NOT NULL',
                     'where_params' => ['%search%'],
                     'raw'     => ['wp_slimstat_db', 'get_top'],
+                    'empty_hint' => __("Shows searches made in your site's search box.", 'wp-slimstat'),
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview4'],
@@ -1256,6 +1262,76 @@ class wp_slimstat_reports
         }
     }
 
+    /**
+     * The one empty state for legacy reports (audit E1–E3, E5, C6). It says which of three
+     * things is true: nothing was ever tracked, the filters exclude everything, or this date
+     * range is empty. It then says what to do next. $hint is the report's own line (e.g. which
+     * setting feeds it); $title replaces the date-range line for a report with no range, such
+     * as the Access Log. Keeps p.nodata: E2E specs use it to tell "empty" from "has rows".
+     */
+    public static function empty_state($hint = '', $title = '')
+    {
+        // MAX(dt) answers "ever tracked?" and "when last?" in one indexed lookup, once per request.
+        if (null === self::$last_pageview_dt) {
+            self::$last_pageview_dt = (int) wp_slimstat::$wpdb->get_var("SELECT MAX(dt) FROM {$GLOBALS['wpdb']->prefix}slim_stats");
+        }
+        $last_dt = self::$last_pageview_dt;
+
+        $action = '';
+        if (0 === $last_dt) {
+            $title = __('No pageviews recorded yet.', 'wp-slimstat');
+            $hint  = __('Open your site in a private window, then refresh this page.', 'wp-slimstat');
+        } elseif (!empty(wp_slimstat_db::$filters_normalized['columns'])) {
+            $title = __('No pageviews match these filters.', 'wp-slimstat');
+        } elseif ('' === $title) {
+            $title = __('No pageviews in this date range.', 'wp-slimstat');
+            if ('' === $hint) {
+                /* translators: %s: date of the most recent pageview on record */
+                $hint = sprintf(__('The last pageview was on %s.', 'wp-slimstat'), date_i18n(get_option('date_format'), $last_dt));
+            }
+            if (abs((int) (wp_slimstat_db::$filters_normalized['date']['interval'] ?? 0)) < 90) {
+                $url    = admin_url('admin.php?page=' . rawurlencode((string) wp_slimstat_admin::$current_screen) . '&type=last_90_days');
+                $action = '<a class="button" href="' . esc_url($url) . '">' . esc_html__('Last 90 days', 'wp-slimstat') . '</a>';
+            }
+        }
+
+        echo '<div class="slimstat-empty"><p class="nodata">' . esc_html($title) . '</p>'
+            . ('' !== $hint ? '<span class="slimstat-empty-hint">' . esc_html($hint) . '</span>' : '')
+            . $action . '</div>';
+    }
+
+    /**
+     * First-run path on Overview (audit E7, C6): admins only, until the site has 50 pageviews
+     * or someone dismisses it (site-wide, through the existing notice_* handler).
+     */
+    public static function get_started()
+    {
+        if ('slimview2' !== wp_slimstat_admin::$current_screen || 'no' === (wp_slimstat::$settings['notice_getstarted'] ?? 'on') || !current_user_can('manage_options')) {
+            return;
+        }
+        // Counts no further than 50, so a busy site pays for 50 index rows, not the table.
+        $pageviews = (int) wp_slimstat::$wpdb->get_var("SELECT COUNT(*) FROM (SELECT 1 FROM {$GLOBALS['wpdb']->prefix}slim_stats LIMIT 50) t");
+        if ($pageviews >= 50) {
+            return;
+        }
+
+        $links = [
+            ['slimview1', __('Check that tracking works', 'wp-slimstat'), __('Open your site in a private window, then watch Real-time.', 'wp-slimstat')],
+            ['slimview6', __('Add a goal', 'wp-slimstat'), __('Count the visits that reach a page or click a button you care about.', 'wp-slimstat')],
+            ['slimview5#slimstat-utm-builder', __('Build your first campaign link', 'wp-slimstat'), __('Tag an incoming link to see where its visitors go.', 'wp-slimstat')],
+        ];
+        if (\SlimStat\Ecommerce\Integration::available()) {
+            $links[] = ['slimview7', __('Explore your Ecommerce reports', 'wp-slimstat'), __('See which visits lead to WooCommerce orders.', 'wp-slimstat')];
+        }
+
+        /* translators: %s: number of pageviews recorded so far (fewer than 50) */
+        $html = '<strong>' . esc_html__('Get started', 'wp-slimstat') . '</strong> ' . esc_html(sprintf(_n('SlimStat has recorded %s pageview so far.', 'SlimStat has recorded %s pageviews so far.', $pageviews, 'wp-slimstat'), number_format_i18n($pageviews))) . '<ul>';
+        foreach ($links as [$page, $label, $why]) {
+            $html .= '<li><a href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($label) . '</a>: ' . esc_html($why) . '</li>';
+        }
+        wp_slimstat_admin::show_message($html . '</ul>', 'info', 'getstarted');
+    }
+
     public static function raw_results_to_html($_args = [])
     {
         if ('on' == wp_slimstat::$settings['async_load'] && (!defined('DOING_AJAX') || !DOING_AJAX) && empty($_args['is_widget'])) {
@@ -1335,7 +1411,7 @@ class wp_slimstat_reports
             $count_page_results = count($results);
 
             if (0 == $count_page_results) {
-                echo '<p class="nodata">' . esc_html__('No data to display', 'wp-slimstat') . '</p>';
+                self::empty_state($_args['empty_hint'] ?? '');
 
                 if (defined('DOING_AJAX') && DOING_AJAX) {
                     die();
@@ -1739,7 +1815,7 @@ class wp_slimstat_reports
         $count_page_results = count($results);
 
         if (0 == $count_page_results) {
-            echo '<p class="nodata">' . esc_html__('No data to display', 'wp-slimstat') . '</p>';
+            self::empty_state($_args['empty_hint'] ?? '');
 
             if (defined('DOING_AJAX') && DOING_AJAX) {
                 die();
@@ -2405,7 +2481,7 @@ class wp_slimstat_reports
         $count_page_results = count($results);
 
         if (0 == $count_page_results) {
-            echo '<p class="nodata">' . esc_html__('No data to display', 'wp-slimstat') . '</p>';
+            self::empty_state($_args['empty_hint'] ?? '');
 
             if (defined('DOING_AJAX') && DOING_AJAX) {
                 die();
