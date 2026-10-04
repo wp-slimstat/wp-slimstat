@@ -16,12 +16,14 @@
 .ss-hm-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-block: 0 12px; font-size: 13px; }
 .ss-hm-toolbar :is(select,input) { min-height: 32px; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-xs); background: var(--ss-surface); font-size: 13px; }
 .ss-hm-search input { min-width: 240px; }
+/* The global date picker sits in the toolbar here, not pinned to the report header. */
+.ss-hm-toolbar #slimstat-date-filters { position: static; margin: 0; border: 0; }
 .ss-hm-updated { margin-inline-start: auto; color: var(--ss-text-muted); }
 
 .ss-hm-table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-sm); background: var(--ss-surface); }
 .ss-hm-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .ss-hm-table :is(th,td) { padding: 10px 12px; border-bottom: 1px solid var(--ss-border-soft); text-align: start; vertical-align: middle; }
-.ss-hm-table th { white-space: nowrap; font-weight: 600; }
+.ss-hm-table th { font-weight: 600; text-wrap: balance; }
 .ss-hm-table th button { all: unset; cursor: pointer; }
 .ss-hm-table th[aria-sort="descending"] button::after { content: " ↓"; }
 .ss-hm-table th[aria-sort="ascending"] button::after { content: " ↑"; }
@@ -71,7 +73,8 @@
 .ss-hm-empty .button + .button { margin-inline-start: var(--ss-space-2); }
 .ss-hm-pager { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 12px; }
 .ss-hm-delete { margin-top: 24px; }
-.ss-hm-delete .button-link { color: var(--ss-danger-fg); }
+.ss-hm .ss-hm-delete .button { border-color: var(--ss-danger-fg); color: var(--ss-danger-fg); }
+.ss-hm .ss-hm-delete .button:hover { background: var(--ss-danger-bg-soft); border-color: var(--ss-danger-fg); color: var(--ss-danger-fg); }
 
 .ss-hm-dialog { max-width: 440px; padding: 24px; border: 0; border-radius: var(--ss-radius-lg); box-shadow: var(--ss-shadow-modal); background: var(--ss-surface); color: var(--ss-text-primary); }
 .ss-hm-dialog::backdrop { background: var(--ss-overlay-scrim, rgba(0, 0, 0, .4)); }

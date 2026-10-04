@@ -4,6 +4,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use SlimStat\Components\DateRangeHelper;
 use SlimStat\Heatmap\Query;
 use SlimStat\Heatmap\Store;
 
@@ -15,6 +16,9 @@ $state    = get_option(Store::STATE, []);
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Read-only view selector; pageKey() normalises it.
 $page_key = $viewer && isset($_GET['heatmap']) ? Query::pageKey((string) wp_unslash($_GET['heatmap'])) : '';
 $error    = 'off' !== Store::level() ? (string) ($state['error'] ?? '') : '';
+// The global picker's range. A custom range was parsed in UTC, a preset in the site timezone.
+$range    = DateRangeHelper::get_current_date_range();
+$day      = 'custom' === $range['preset'] ? 'gmdate' : 'wp_date';
 
 wp_localize_script('slimstat-heatmaps', 'SlimStatHeatmaps', [
     'route' => '/slimstat/v1/heatmap/pages',
@@ -107,19 +111,13 @@ if ('' !== $error) {
         <?php do_action('slimstat_heatmap_content'); ?>
 
         <form class="ss-hm-toolbar" role="search" onsubmit="return false">
-            <label>
-                <span class="screen-reader-text"><?php esc_html_e('Date range', 'wp-slimstat'); ?></span>
-                <select name="range">
-                    <option value="7"><?php esc_html_e('Last 7 days', 'wp-slimstat'); ?></option>
-                    <option value="30" selected><?php esc_html_e('Last 30 days', 'wp-slimstat'); ?></option>
-                    <option value="90"><?php esc_html_e('Last 90 days', 'wp-slimstat'); ?></option>
-                    <option value="custom"><?php esc_html_e('Custom', 'wp-slimstat'); ?></option>
-                </select>
-            </label>
-            <span class="ss-hm-custom" hidden>
-                <label><?php esc_html_e('From', 'wp-slimstat'); ?> <input type="date" name="from"></label>
-                <label><?php esc_html_e('To', 'wp-slimstat'); ?> <input type="date" name="to"></label>
-            </span>
+            <?php
+            wp_slimstat_admin::get_template('date-range-picker', [
+                'label' => DateRangeHelper::format_date_range($range['start'], $range['end'], $range['preset']),
+                'start' => $day('Y-m-d', $range['start']),
+                'end'   => $day('Y-m-d', $range['end']),
+            ]);
+            ?>
             <label>
                 <span class="screen-reader-text"><?php esc_html_e('Device', 'wp-slimstat'); ?></span>
                 <select name="device">
@@ -176,7 +174,7 @@ if ('' !== $error) {
         </nav>
 
         <?php if ($is_admin && Store::ready()) : ?>
-            <p class="ss-hm-delete"><button type="button" class="button-link" data-dialog="ss-hm-delete"><?php esc_html_e('Delete heatmap data', 'wp-slimstat'); ?></button></p>
+            <p class="ss-hm-delete"><button type="button" class="button" data-dialog="ss-hm-delete"><?php esc_html_e('Delete heatmap data', 'wp-slimstat'); ?></button></p>
             <dialog id="ss-hm-delete" class="ss-hm-dialog">
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                     <p><?php esc_html_e('Delete all full-tracking heatmap data? Link and button click history is kept. This can\'t be undone.', 'wp-slimstat'); ?></p>

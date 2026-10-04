@@ -286,7 +286,7 @@ class DateRangeHelper
      */
     public static function get_current_date_range()
     {
-        $defaults = self::get_range_by_preset('last_30_days');
+        $defaults = self::get_range_by_preset('last_28_days');
 
         // Check URL parameters - prioritize type parameter
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
@@ -350,7 +350,7 @@ class DateRangeHelper
         return [
             'start' => $defaults['start'],
             'end' => $defaults['end'],
-            'preset' => 'last_30_days'
+            'preset' => 'last_28_days'
         ];
     }
 

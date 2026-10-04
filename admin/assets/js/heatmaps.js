@@ -13,6 +13,8 @@
     const empty = root.querySelector('.ss-hm-empty');
     const pager = root.querySelector('.ss-hm-pager');
     const updated = root.querySelector('.ss-hm-updated');
+    // The global date picker's resolved range; picking another one reloads the page.
+    const range = root.querySelector('.slimstat-date-range-input');
     const number = new Intl.NumberFormat(document.documentElement.lang || undefined, { maximumFractionDigits: 2 });
     // An empty cell says so instead of looking like a rendering gap.
     const NONE = '\u2014';
@@ -105,7 +107,7 @@
         const tr = el('tr', { class: row.page === state.highlight ? 'is-highlighted' : '' }, [
             page,
             // Heat dot: share of the hottest page in the range; sqrt keeps quiet pages visible.
-            el('td', { class: 'num' }, [
+            el('td', { class: 'num ss-hm-nowrap' }, [
                 el('span', { class: 'ss-hm-heat', style: '--heat:' + Math.max(12, Math.round(Math.sqrt(row.clicks / shown.max) * 100)) + '%', 'aria-hidden': 'true' }),
                 number.format(row.clicks),
             ]),
@@ -113,7 +115,7 @@
             el('td', { class: 'num' }, [row.pageviews ? number.format(row.clicks / row.pageviews) : NONE]),
             el('td', {}, [devices(row)]),
             shown.scroll && el('td', { class: 'num' }, [null === row.scroll ? NONE : row.scroll + '%']),
-            shown.dead && el('td', {}, [dead]),
+            shown.dead && el('td', { class: 'ss-hm-nowrap' }, [dead]),
             el('td', { class: 'ss-hm-nowrap' }, [row.lastText]),
             shown.full && el('td', {}, [el('span', { class: 'ss-hm-badge' + (row.full ? ' is-full' : '') }, [row.full ? __('All clicks + scroll', 'wp-slimstat') : __('Link and button clicks', 'wp-slimstat')])]),
             el('td', { class: 'ss-hm-action' }, [action]),
@@ -166,7 +168,14 @@
         } else if (!state.rows.length) {
             const buttons = [];
             if (form.device.value) buttons.push([__('Show all devices', 'wp-slimstat'), () => { form.device.value = ''; load(); }]);
-            if ('90' !== form.range.value) buttons.push([__('Use last 90 days', 'wp-slimstat'), () => { form.range.value = '90'; load(); }]);
+            if ('last_90_days' !== new URLSearchParams(location.search).get('type')) {
+                buttons.push([__('Use last 90 days', 'wp-slimstat'), () => {
+                    const url = new URL(location.href);
+                    ['from', 'to'].forEach((key) => url.searchParams.delete(key));
+                    url.searchParams.set('type', 'last_90_days');
+                    location.href = url;
+                }]);
+            }
             showEmpty(
                 form.device.value
                     ? __('No clicks recorded on this device in this date range.', 'wp-slimstat')
@@ -192,13 +201,7 @@
 
     function load(refresh) {
         const id = ++request;
-        const params = new URLSearchParams({ device: form.device.value });
-        if ('custom' === form.range.value) {
-            if (form.from.value) params.set('from', form.from.value);
-            if (form.to.value) params.set('to', form.to.value);
-        } else {
-            params.set('days', form.range.value);
-        }
+        const params = new URLSearchParams({ device: form.device.value, from: range.dataset.start, to: range.dataset.end });
         if (refresh) params.set('refresh', '1');
         table.setAttribute('aria-busy', 'true');
         table.classList.add('is-loading');
@@ -208,8 +211,6 @@
                 state.rows = data.rows;
                 state.ever = false !== data.ever;
                 state.updated = data.updated;
-                form.from.value = data.from;
-                form.to.value = data.to;
                 if (state.highlight) {
                     const index = visibleRows().findIndex((r) => r.page === state.highlight);
                     if (index >= 0) state.page = Math.floor(index / PER_PAGE);
@@ -230,12 +231,9 @@
     }
 
     form.addEventListener('change', (e) => {
-        if ('q' === e.target.name) return;
-        root.querySelector('.ss-hm-custom').hidden = 'custom' !== form.range.value;
-        if ('custom' !== form.range.value || ('from' === e.target.name || 'to' === e.target.name)) {
-            state.page = 0;
-            load();
-        }
+        if ('device' !== e.target.name) return;
+        state.page = 0;
+        load();
     });
     form.q.addEventListener('input', () => {
         state.page = 0;

@@ -77,4 +77,12 @@ class DateRangeHelperCompatTest extends WpSlimstatTestCase
             unset($GLOBALS['slimstat_test_options']['date_format']);
         }
     }
+
+    /** Pages without a range in the URL open on the reports' default, Last 28 days (Heatmaps once showed 30). */
+    public function test_default_range_matches_the_report_default(): void
+    {
+        $range = \SlimStat\Components\DateRangeHelper::get_current_date_range();
+        $this->assertSame('last_28_days', $range['preset']);
+        $this->assertSame(\SlimStat\Components\DateRangeHelper::get_range_by_preset('last_28_days')['start'], $range['start']);
+    }
 }

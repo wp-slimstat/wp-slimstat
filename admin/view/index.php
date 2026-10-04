@@ -47,39 +47,14 @@ if (!empty($saved_filters)) {
 }
 ?></fieldset><!-- #slimstat-filters -->
 
-            <fieldset id="slimstat-date-filters" class="wp-ui-highlight">
-                <?php
-                // Get current date range for display
-                $current_range = DateRangeHelper::get_current_date_range();
-                $display_label = DateRangeHelper::format_date_range($current_range['start'], $current_range['end'], $current_range['preset']);
-                ?>
-                
-                <!-- New Statistics-style Date Range Picker -->
-                <div class="slimstat-date-range-picker">
-                    <button type="button" class="slimstat-date-range-btn" aria-haspopup="true" aria-expanded="false">
-                        <div class="datepicker-badge-elements">
-                            <svg class="calendar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none">
-                                <defs>
-                                    <clipPath id="slimstat-calendar-clip">
-                                        <path fill="#fff" d="M0 0h16v16H0z"/>
-                                    </clipPath>
-                                </defs>
-                                <g clip-path="url(#slimstat-calendar-clip)" stroke="currentColor" stroke-linejoin="round">
-                                    <path d="M13 2.5H3a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5z"/>
-                                    <g stroke-linecap="round">
-                                        <path d="M11 1.5v2m-6-2v2m-2.5 2h11"/>
-                                    </g>
-                                </g>
-                            </svg>
-                            <span class="date-label"><?php echo esc_html($display_label); ?></span>
-                        </div>
-                        <div class="datepicker-badge-elements">
-                            <span class="caret"></span>
-                        </div>
-                    </button>
-                    <input type="text" class="slimstat-date-range-input" style="display: none;" data-start="<?php echo esc_attr(gmdate('Y-m-d', (int) wp_slimstat_db::$filters_normalized['utime']['start'])); ?>" data-end="<?php echo esc_attr(gmdate('Y-m-d', (int) wp_slimstat_db::$filters_normalized['utime']['end'])); ?>" />
-                </div>
-            </fieldset><!-- .slimstat-date-filters -->
+            <?php
+            $current_range = DateRangeHelper::get_current_date_range();
+            wp_slimstat_admin::get_template('date-range-picker', [
+                'label' => DateRangeHelper::format_date_range($current_range['start'], $current_range['end'], $current_range['preset']),
+                'start' => gmdate('Y-m-d', (int) wp_slimstat_db::$filters_normalized['utime']['start']),
+                'end'   => gmdate('Y-m-d', (int) wp_slimstat_db::$filters_normalized['utime']['end']),
+            ]);
+            ?>
 
             <?php foreach (wp_slimstat_db::$filters_normalized['columns'] as $a_key => $a_details) : ?>
                 <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- htmlspecialchars preserves literal entities in the escaped attribute. ?>
