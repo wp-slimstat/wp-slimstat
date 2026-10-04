@@ -63,6 +63,8 @@ function home_url() { return 'https://canonical.example/site'; }
 function wp_parse_url($url, $component) { return parse_url($url, $component); }
 function number_format_i18n($number, $decimals = 0) { return number_format($number, $decimals); }
 $GLOBALS['wpdb'] = new class { public function esc_like($value) { return addcslashes($value, '_%\\'); } };
+function get_option($name, $default = false) { return 'k' === $name && !empty($GLOBALS['slimstat_attribution_ready']) ? '1' : $default; }
+eval('namespace SlimStat\\Tracker; class Acquisition { public static function readinessKey(): string { return "k"; } }');
 $summary_body = slimstat_function_body(file_get_contents(dirname(__DIR__) . '/admin/view/wp-slimstat-db.php'), 'get_traffic_sources_summary');
 eval('class TrafficSummary extends wp_slimstat_db { public static function summary() {' . $summary_body . '} }');
 unset($_SERVER['SERVER_NAME']);
@@ -70,3 +72,26 @@ TrafficSummary::summary();
 $referrer_query = array_values(array_filter(wp_slimstat_db::$queries, static function ($args) { return ($args[0] ?? null) === 'referer'; }));
 if ($referrer_query[0][3] !== ['%canonical.example%']) { throw new RuntimeException('Referrer report lost canonical hostname in CLI'); }
 echo "PASS: referrer summary uses the canonical site host without SERVER_NAME\n";
+
+// Direct and search follow the Channels report once attribution is set up; rows with no channel,
+// and installs without the columns, keep the referrer rule. Direct was once `resource IS NULL`.
+$where_of = static function () {
+    $where = [];
+    foreach (wp_slimstat_db::$queries as $args) { if ('id' === ($args[0] ?? null)) { $where[] = $args[1] ?? ''; } }
+    return $where;
+};
+wp_slimstat_db::$queries = [];
+TrafficSummary::summary();
+$legacy = $where_of();
+if (!in_array('referer IS NULL', $legacy, true) || in_array('resource IS NULL', $legacy, true) || false !== strpos(implode(' ', $legacy), 'traffic_channel')) {
+    throw new RuntimeException('Without attribution, direct must be the referrer rule and nothing may read traffic_channel: ' . implode(' | ', $legacy));
+}
+$GLOBALS['slimstat_attribution_ready'] = true;
+wp_slimstat_db::$queries = [];
+TrafficSummary::summary();
+$channelled = implode(' | ', $where_of());
+foreach (["(traffic_channel = 'direct' OR (traffic_channel IS NULL AND referer IS NULL))", "(traffic_channel = 'organic_search' OR (traffic_channel IS NULL AND searchterms IS NOT NULL"] as $needle) {
+    if (false === strpos($channelled, $needle)) { throw new RuntimeException("Traffic Summary lost the Channels definition {$needle}: {$channelled}"); }
+}
+if (2 !== substr_count($channelled, "traffic_channel = 'organic_search'")) { throw new RuntimeException('Both search rows (range and last 5 minutes) must use the channel'); }
+echo "PASS: Traffic Summary counts direct and search like the Channels report, with the referrer rule for unattributed rows\n";

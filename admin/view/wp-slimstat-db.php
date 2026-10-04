@@ -1935,6 +1935,14 @@ class wp_slimstat_db
         // 3.13. Issue #334; the operand order is ADR-17's and is unchanged.
         $new_visitors_rate = ($total_human_hits > 0) ? round((100 * $new_visitors / $total_human_hits), 2) : 0;
         $server_name       = (string) wp_parse_url(home_url(), PHP_URL_HOST);
+        // Direct and search counts use the Channels report's definitions, so the two reports
+        // agree. Rows recorded before attribution existed have no channel and keep the referrer rule.
+        $serp_where   = 'searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE %s';
+        $direct_where = 'referer IS NULL';
+        if ('1' === get_option(\SlimStat\Tracker\Acquisition::readinessKey(), '0')) {
+            $serp_where   = "(traffic_channel = 'organic_search' OR (traffic_channel IS NULL AND {$serp_where}))";
+            $direct_where = "(traffic_channel = 'direct' OR (traffic_channel IS NULL AND {$direct_where}))";
+        }
 
         if (intval($new_visitors_rate) > 99) {
             $new_visitors_rate = '100';
@@ -1949,11 +1957,11 @@ class wp_slimstat_db
         $results[1]['tooltip'] = __('A referrer (or referring site) is a site that a visitor previously visited before following a link to your site.', 'wp-slimstat');
 
         $results[2]['metric']  = __('Direct Pageviews', 'wp-slimstat');
-        $results[2]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', 'resource IS NULL'));
+        $results[2]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', $direct_where));
         $results[2]['tooltip'] = __("Visitors who typed your website URL directly into their browser address bar. It can also refer to visitors who clicked on one of their bookmarked links, untagged links within emails, or links in documents that don't include tracking variables.", 'wp-slimstat');
 
         $results[3]['metric']  = __('From External SERP', 'wp-slimstat');
-        $results[3]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', 'searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE %s', true, ['%' . $GLOBALS['wpdb']->esc_like(home_url()) . '%']));
+        $results[3]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', $serp_where, true, ['%' . $GLOBALS['wpdb']->esc_like(home_url()) . '%']));
         $results[3]['tooltip'] = __('Visitors who clicked on a link to your website listed on a search engine result page (SERP). This metric only counts visits coming from EXTERNAL search pages.', 'wp-slimstat');
 
         $results[4]['metric']  = __('Unique Landing Pages', 'wp-slimstat');
@@ -1969,7 +1977,7 @@ class wp_slimstat_db
         $results[6]['tooltip'] = __('Percentage of single-page visits, i.e. visits in which the person left your site from the entrance page.', 'wp-slimstat');
 
         $results[7]['metric']  = __('Currently from search engines', 'wp-slimstat');
-        $results[7]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', 'searchterms IS NOT NULL  AND referer IS NOT NULL AND referer NOT LIKE %s AND dt > UNIX_TIMESTAMP() - 300', false, ['%' . $GLOBALS['wpdb']->esc_like(home_url()) . '%']));
+        $results[7]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', $serp_where . ' AND dt > UNIX_TIMESTAMP() - 300', false, ['%' . $GLOBALS['wpdb']->esc_like(home_url()) . '%']));
         $results[7]['tooltip'] = __('Visitors who clicked on a link to your website listed on a search engine result page (SERP), tracked in the last 5 minutes.', 'wp-slimstat');
 
         return $results;
