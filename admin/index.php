@@ -2199,7 +2199,7 @@ class wp_slimstat_admin
                 'parent' => 'slimstat-header',
                 'title'  => '<div class="slimstat-adminbar__chart-container">'
                     . '<div class="slimstat-adminbar__chart-bars" id="slimstat-adminbar-chart-bars">' . $chart_bars . '</div>'
-                    . '<div class="slimstat-adminbar__chart-axis"><span>' . esc_html__('30 min ago', 'wp-slimstat') . '</span><span>' . esc_html__('Now', 'wp-slimstat') . '</span></div>'
+                    . '<div class="slimstat-adminbar__chart-axis"><span>' . sprintf('%d %s', $total_bars - 1, esc_html__('min ago', 'wp-slimstat')) . '</span><span>' . esc_html__('Now', 'wp-slimstat') . '</span></div>'
                     . '</div>',
                 'meta'   => ['class' => 'slimstat-adminbar__chart-wrapper'],
             ]);

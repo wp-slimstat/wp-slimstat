@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-04T20:40:09+00:00\n"
+"POT-Creation-Date: 2026-10-04T20:52:58+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -1267,6 +1267,7 @@ msgstr ""
 
 #: admin/index.php:2054
 #: admin/index.php:2114
+#: admin/index.php:2202
 msgid "min ago"
 msgstr ""
 
@@ -1295,10 +1296,6 @@ msgstr ""
 
 #: admin/index.php:2183
 msgid "Referrals Today"
-msgstr ""
-
-#: admin/index.php:2202
-msgid "30 min ago"
 msgstr ""
 
 #: admin/index.php:2212
