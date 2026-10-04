@@ -141,7 +141,7 @@ class wp_slimstat_reports
                 'locations' => ['slimview2', 'dashboard'],
             ],
             'slim_p1_04' => [
-                'title'         => __('Currently Online', 'wp-slimstat'),
+                'title'         => __('Visitors online (last 5 min)', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
                     'type'             => 'top',
@@ -257,7 +257,7 @@ class wp_slimstat_reports
                 'locations' => ['inactive'],
             ],
             'slim_p1_18' => [
-                'title'         => __('Users Currently Online', 'wp-slimstat'),
+                'title'         => __('Logged-in users online (last 5 min)', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
                     'type'    => 'top',

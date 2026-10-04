@@ -73,7 +73,7 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
                 <ellipse cx="9" cy="12.75" rx="5.25" ry="3" fill="#676E74"/>
                 </svg>
             </span>
-            <span class="slimstat-header__online-label"><?php esc_html_e('Online Visitors', 'wp-slimstat'); ?></span>
+            <span class="slimstat-header__online-label"><?php esc_html_e('Visitors online (last 30 min)', 'wp-slimstat'); ?></span>
             <span id="slimstat-online-visitors-count" class="slimstat-header__online-value"><?php echo esc_html($formatted_online_visitors); ?></span>
         </div>
     </div>

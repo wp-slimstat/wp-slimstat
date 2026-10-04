@@ -1463,6 +1463,7 @@ class wp_slimstat_db
         $results[4]['tooltip'] = __('Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses.', 'wp-slimstat');
 
         $results[5]['metric'] = __('Last 30 minutes', 'wp-slimstat');
+        $results[5]['tooltip'] = __('Pageviews in the last 30 minutes. Visitors online counts people, not pageviews.', 'wp-slimstat');
         $results[5]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt > ' . (wp_slimstat::now() - 1800), false));
 
         $results[6]['metric'] = __('Today', 'wp-slimstat');

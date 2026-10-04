@@ -2050,7 +2050,7 @@ class wp_slimstat_admin
                 'i18n'      => [
                     /* translators: %s: formatted count for the previous day. */
                     'was_last_day' => esc_html__('was %s last day', 'wp-slimstat'),
-                    'online_users' => esc_html__('Online Users', 'wp-slimstat'),
+                    'online_users' => esc_html__('Visitors online', 'wp-slimstat'),
                     'count_label'  => esc_html__('Count', 'wp-slimstat'),
                     'now'          => esc_html__('Now', 'wp-slimstat'),
                     'min_ago'      => esc_html__('min ago', 'wp-slimstat'),
@@ -2127,7 +2127,7 @@ class wp_slimstat_admin
                 $count > 0 ? max($height_pct, 3) : 0, // 0% for empty, min 3% for non-zero
                 $count,
                 $minutes_ago,
-                esc_html__('Online Users', 'wp-slimstat'),
+                esc_html__('Visitors online', 'wp-slimstat'),
                 esc_html__('Count', 'wp-slimstat'),
                 $count,
                 $time_text
@@ -2157,7 +2157,7 @@ class wp_slimstat_admin
         $stats_html = '<div class="slimstat-adminbar__stats-grid">'
             // Online Users (top left)
             . '<div class="slimstat-adminbar__stat-card">'
-            . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Online Users', 'wp-slimstat')
+            . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Visitors online (last 30 min)', 'wp-slimstat')
             . ' <span class="slimstat-adminbar__realtime-dot"></span></div>'
             . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-online-count">' . number_format_i18n($online_count) . '</div>'
             . '<div class="slimstat-adminbar__realtime-badge">'
