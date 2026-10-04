@@ -1379,10 +1379,12 @@ class wp_slimstat_reports
 
         // Some reports don't need any kind of pre/post-processing, we just display the data contained in the array
         if (empty($_args['columns'])) {
+            // Rates carry their % here, not in the row: the row value is a report answer (audit C2).
+            $percent_metrics = [__('Bounce rate', 'wp-slimstat'), __('New Visitors Rate', 'wp-slimstat')];
             foreach ($all_results as $a_result) {
                 echo '<p>';
 
-                echo sprintf('%s <span>%s</span>', wp_kses_post($a_result['metric']), wp_kses_post($a_result['value']));
+                echo sprintf('%s <span>%s</span>', wp_kses_post($a_result['metric']), wp_kses_post($a_result['value']) . (in_array($a_result['metric'], $percent_metrics, true) ? '%' : ''));
 
                 if (!empty($a_result['tooltip'])) {
                     self::inline_help($a_result['tooltip']);

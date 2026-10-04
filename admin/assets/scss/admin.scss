@@ -924,10 +924,14 @@ body {
   white-space: nowrap;
 }
 
+/* Dots, not squares: a square swatch reads as a checkbox (audit B11). */
 .slimstat-access-log-legend .little-color-box {
   float: none;
   margin: 0;
   flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
 
 [id^="slim_"] p.loading {

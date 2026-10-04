@@ -312,3 +312,55 @@ body .wrap-slimstat .button-secondary:hover {
     color: var(--ss-text-primary);
 }
 .live-analytics-chart--locked .slimstat-pro-adds { margin: 0; border: 0; }
+
+/* One disclosure style (audit B6): chevron on the left, sentence case, link colour. Accordion
+   rows (Acquisition groups), the currency control and the FAQ keep their own shapes. */
+details:is(.slimstat-details, .slimstat-acquisition__help, .slimstat-acquisition__tags, .slimstat-utm-builder__extra, .ss-ec-exact, .ss-ec-report-info, .ss-ec-journey-context, .ss-ec-definitions, .ss-pro-setup, .ss-hmv-help) > summary {
+    list-style: none;
+    cursor: pointer;
+    color: var(--ss-info-fg);
+    font-weight: 500;
+    text-transform: none;
+}
+details:is(.slimstat-details, .slimstat-acquisition__help, .slimstat-acquisition__tags, .slimstat-utm-builder__extra, .ss-ec-exact, .ss-ec-report-info, .ss-ec-journey-context, .ss-ec-definitions, .ss-pro-setup, .ss-hmv-help) > summary::-webkit-details-marker { display: none; }
+details:is(.slimstat-details, .slimstat-acquisition__help, .slimstat-acquisition__tags, .slimstat-utm-builder__extra, .ss-ec-exact, .ss-ec-report-info, .ss-ec-journey-context, .ss-ec-definitions, .ss-pro-setup, .ss-hmv-help) > summary::before,
+.ss-ec-quality-action::before {
+    content: "";
+    display: inline-block;
+    width: 0.4em;
+    height: 0.4em;
+    margin-inline-end: 0.5em;
+    border: solid currentColor;
+    border-width: 0 1.5px 1.5px 0;
+    transform: translateY(-0.15em) rotate(-45deg);
+    transition: transform 0.15s;
+}
+[dir="rtl"] details:is(.slimstat-details, .slimstat-acquisition__help, .slimstat-acquisition__tags, .slimstat-utm-builder__extra, .ss-ec-exact, .ss-ec-report-info, .ss-ec-journey-context, .ss-ec-definitions, .ss-pro-setup, .ss-hmv-help) > summary::before,
+[dir="rtl"] .ss-ec-quality-action::before { transform: translateY(-0.15em) rotate(135deg); }
+details:is(.slimstat-details, .slimstat-acquisition__help, .slimstat-acquisition__tags, .slimstat-utm-builder__extra, .ss-ec-exact, .ss-ec-report-info, .ss-ec-journey-context, .ss-ec-definitions, .ss-pro-setup, .ss-hmv-help)[open] > summary::before,
+.ss-ec-quality[open] .ss-ec-quality-action::before { transform: translateY(-0.3em) rotate(45deg); }
+@media (prefers-reduced-motion: reduce) {
+    details > summary::before, .ss-ec-quality-action::before { transition: none; }
+}
+
+/* Customize (audit B7): a grip says a card can be dragged; icon buttons lose button chrome. */
+.slimstat-layout .postbox .hndle { cursor: grab; }
+.slimstat-layout .postbox .hndle::before {
+    content: "\2807\2807";
+    letter-spacing: -0.35em;
+    margin-inline-end: 0.75em;
+    color: var(--ss-text-muted);
+}
+.slimstat-layout .postbox.ui-sortable-helper .hndle { cursor: grabbing; }
+.slimstat-layout .slimstat-header-buttons button {
+    background: none;
+    border: 0;
+    padding: 0 2px;
+    font: inherit;
+    line-height: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+.slimstat-layout .slimstat-header-buttons button:focus-visible { outline: 2px solid var(--ss-focus); outline-offset: 1px; }
+.slimstat-layout-reset { margin-top: var(--ss-space-5); }
+

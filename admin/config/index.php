@@ -36,9 +36,9 @@ if (!isset(wp_slimstat::$settings['geolocation_provider'])) {
 
 // Build General → Tracker rows, conditionally adding Tracking Request Method under Tracking Mode
 $general_rows = [
-    // General - Tracker
+    // General - Tracking basics (not "Tracker": that is the next tab's name, audit B4)
     'general_tracking_header' => [
-        'title' => __('Tracker', 'wp-slimstat'),
+        'title' => __('Tracking basics', 'wp-slimstat'),
         'type'  => 'section_header',
     ],
     'is_tracking' => [

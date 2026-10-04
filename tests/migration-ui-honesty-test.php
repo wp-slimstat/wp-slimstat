@@ -273,6 +273,18 @@ if (!preg_match('/pass\s*<\s*MAX_PASSES/', $js)) {
         . 'no cap — a step that never converges would loop indefinitely';
 }
 
+// Audit B3: with nothing owed, the page said "no migration required" three times above four
+// zero counters and a 0% bar for a run that cannot start. Those belong to the required state only.
+$page  = (string) file_get_contents($plugin_root . '/src/view/migration-page.php');
+$gate  = strpos($page, 'if (!$offered_only) :');
+$close = false === $gate ? false : strpos($page, '<?php endif; ?>', $gate);
+foreach (['slimstat-status-header', 'slimstat-status-metrics', 'slimstat-progress-percent'] as $part) {
+    $at = strpos($page, $part);
+    if (false === $close || false === $at || $at < $gate || $at > $close) {
+        $failures[] = "migration-page.php draws {$part} when only optional steps are offered (audit B3)";
+    }
+}
+
 if ($failures) {
     fwrite(STDERR, 'FAIL: migration UI honesty (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {

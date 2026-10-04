@@ -41,8 +41,6 @@
 .ss-ec-quality strong { font-weight: 600; }
 .ss-ec-quality-summary { margin-inline-start: 12px; color: var(--ss-text-muted); }
 .ss-ec-quality-action { margin-inline-start: auto; color: var(--ss-info-fg); white-space: nowrap; }
-.ss-ec-quality-action::after { content: ' +'; }
-.ss-ec-quality[open] .ss-ec-quality-action::after { content: ' −'; }
 .ss-ec-quality-body { padding: 4px 16px 14px; max-width: 90ch; }
 .wrap-slimstat .ss-ec .ss-ec-scope { font-size: 12px; margin: 12px 0; }
 .ss-ec-performance { border: 1px solid var(--ss-border); border-radius: var(--ss-radius-md); background: var(--ss-surface); overflow: hidden; }

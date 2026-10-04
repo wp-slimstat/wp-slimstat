@@ -92,6 +92,17 @@ $admincss = read_or_die('admin/assets/css/admin.css');
 check((bool) preg_match('/\.slimstat-access-log-legend[^{]*\{[^}]*display:\s*flex/', $admincss), 'C8: legend is laid out with flex');
 check((bool) preg_match('/\.slimstat-access-log-legend \.little-color-box\s*\{[^}]*float:\s*none/', $admincss), 'C8: legend swatches override float:left');
 
+// B11: legend swatches are dots, not checkbox-like squares; "Pages live" is not
+// underlined like a link; the performance line names its units in words.
+check((bool) preg_match('/\.slimstat-access-log-legend \.little-color-box\s*\{[^}]*border-radius:\s*50%/', $admincss), 'B11: legend swatches are round');
+check(!preg_match('/\.pages-label\s*\{[^}]*underline/', read_or_die('admin/assets/css/live-analytics.css')), 'B11: "Pages live" label is not underlined');
+// C2: rate rows render with a % sign. The suffix is added by the renderer, not the
+// data row, because the report-answer contract pins the raw value ("66.67").
+$reports = read_or_die('admin/view/wp-slimstat-reports.php');
+check((bool) preg_match('/\$percent_metrics\s*=\s*\[__\(\'Bounce rate\', \'wp-slimstat\'\), __\(\'New Visitors Rate\', \'wp-slimstat\'\)\]/', $reports), 'C2: Bounce rate and New Visitors Rate are listed as percentages');
+check(false !== strpos($reports, 'in_array($a_result[\'metric\'], $percent_metrics, true) ? \'%\' : \'\''), 'C2: the summary renderer appends % to rate rows');
+check(false === strpos($rightnow, "__('SL'") && false === strpos($rightnow, "__('PS'"), 'B11: no SL/PS abbreviations in the Access Log');
+
 if ($failures > 0) {
     fwrite(STDERR, "{$failures} check(s) failed in admin-ui-render-guards-test.php\n");
     exit(1);

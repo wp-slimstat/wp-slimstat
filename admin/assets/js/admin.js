@@ -1489,13 +1489,17 @@ jQuery(function () {
     }
 
     // Clone and delete report placeholders
-    jQuery(".slimstat-layout .slimstat-header-buttons a").on("click", function (e) {
+    jQuery(".slimstat-layout .slimstat-header-buttons button").on("click", function (e) {
         e.preventDefault();
-        if (jQuery(this).hasClass("slimstat-font-docs")) {
-            jQuery(this).removeClass("slimstat-font-docs").addClass("slimstat-font-trash").parents(".postbox").clone(true).appendTo(jQuery(this).parents(".meta-box-sortables"));
-            jQuery(this).removeClass("slimstat-font-trash").addClass("slimstat-font-docs");
-        } else if (jQuery(this).hasClass("slimstat-font-minus-circled")) {
-            jQuery(this).removeClass("slimstat-font-minus-circled").parents(".postbox").appendTo(jQuery("#postbox-container-inactive .meta-box-sortables"));
+        var $btn = jQuery(this);
+        if ($btn.hasClass("slimstat-font-docs")) {
+            // The copy's first button deletes it, and says so.
+            var del = $btn.data("delete-label");
+            $btn.parents(".postbox").clone(true).appendTo($btn.parents(".meta-box-sortables"))
+                .find(".slimstat-font-docs").removeClass("slimstat-font-docs").addClass("slimstat-font-trash").attr({ title: del, "aria-label": del });
+        } else if ($btn.hasClass("slimstat-font-minus-circled")) {
+            $btn.parents(".postbox").appendTo(jQuery("#postbox-container-inactive .meta-box-sortables"));
+            $btn.remove();
         } else {
             jQuery(this).parents(".postbox").remove();
         }

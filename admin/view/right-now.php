@@ -283,7 +283,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
     // Server Latency and Page Speed
     $performance = '';
     if (!$is_dashboard && (!empty($results[$i]['server_latency']) || !empty($results[$i]['page_performance']))) {
-        $performance = "<i class='slimstat-font-gauge spaced slimstat-tooltip-trigger' title='" . __('Server Latency and Page Speed in milliseconds', 'wp-slimstat') . "'></i> " . __('SL', 'wp-slimstat') . sprintf(': %s / ', $results[$i]['server_latency']) . __('PS', 'wp-slimstat') . (': ' . $results[$i]['page_performance']);
+        $performance = "<i class='slimstat-font-gauge spaced slimstat-tooltip-trigger' title='" . __('Server Latency and Page Speed in milliseconds', 'wp-slimstat') . "'></i> " . esc_html(sprintf(__('Server %1$s ms · Page %2$s ms', 'wp-slimstat'), (int) $results[$i]['server_latency'], (int) $results[$i]['page_performance']));
     }
 
     // Time on page
