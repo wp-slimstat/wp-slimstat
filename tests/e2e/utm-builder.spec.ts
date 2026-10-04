@@ -16,7 +16,11 @@ test.describe('UTM link builder', () => {
       await expect(page.locator(`[name="${name}"]`)).toBeHidden();
     }
     await expect(output).toHaveValue('');
-    await page.getByRole('button', { name: 'Copy campaign URL' }).click();
+    // Not primary while there is no URL, yet stays clickable to point at the missing field.
+    const copy = page.getByRole('button', { name: 'Copy campaign URL' });
+    await expect(copy).not.toHaveClass(/button-primary/);
+    await expect(page.locator('label[for="slimstat-utm_campaign"]')).toContainText('*');
+    await copy.click();
     await expect(page.locator('[name="utm_source"]')).toBeFocused();
     await page.locator('[name="utm_source"]').fill('newsletter');
     await page.locator('[name="utm_medium"]').fill('email');
@@ -27,6 +31,7 @@ test.describe('UTM link builder', () => {
     await page.keyboard.press('Enter');
     await page.locator('[name="utm_id"]').fill('0');
     expect(new URL(await output.inputValue()).searchParams.get('utm_id')).toBe('0');
+    await expect(copy).toHaveClass(/button-primary/);
     await extra.locator('summary').click();
     await expect(page.locator('[name="utm_id"]')).toBeHidden();
     expect(new URL(await output.inputValue()).searchParams.get('utm_id')).toBe('0');

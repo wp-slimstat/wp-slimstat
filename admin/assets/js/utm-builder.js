@@ -9,8 +9,15 @@
     const tags = [...form.querySelectorAll('input[name^="utm_"]')];
     const output = form.querySelector('textarea');
     const status = form.querySelector('[data-utm-status]');
+    const copy = form.querySelector('button[type="submit"]');
 
     function update() {
+        render();
+        // Primary only once there is a URL; never disabled, so a click still points at the missing field.
+        copy.classList.toggle('button-primary', !!output.value);
+    }
+
+    function render() {
         output.value = '';
         status.textContent = '';
         website.setCustomValidity('');
