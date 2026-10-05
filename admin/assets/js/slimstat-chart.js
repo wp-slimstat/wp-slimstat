@@ -260,6 +260,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     borderWidth: isPrevious ? 1 : 2,
                     fill: chartType === "bar" ? true : false,
                     tension: chartType === "line" ? 0.3 : 0,
+                    cubicInterpolationMode: "monotone", // Smooth without overshooting: no dip below 0, no peak above the data (QA R11).
                     pointBorderColor: "transparent",
                     pointBackgroundColor: color,
                     pointBorderWidth: 2,
@@ -719,17 +720,18 @@ document.addEventListener("DOMContentLoaded", function () {
             respectEndOfPeriod = false;
         }
         var date = new Date(dateInput);
-        var day = date.getDay();
+        var day = date.getUTCDay(); // Labels are UTC dates, as formatDate() prints them.
         var diff = (7 - startOfWeek + day) % 7;
-        var nextWeek = new Date(date.getTime() + (7 - diff) * 24 * 60 * 60 * 1000);
+        // The week's last day, not the next week's first: "Sep 14 - Sep 20", then "Sep 21 - ..." (QA R11).
+        var weekEnd = new Date(date.getTime() + (6 - diff) * 24 * 60 * 60 * 1000);
         if (respectEndOfPeriod) {
             var today2 = new Date(respectEndOfPeriod);
 
-            if (nextWeek.getTime() > today2.getTime()) {
+            if (weekEnd.getTime() > today2.getTime()) {
                 return new Date(respectEndOfPeriod);
             }
         }
-        return nextWeek;
+        return weekEnd;
     }
 
     function slimstatGetLabel(label, long, unitTime, translations, justTranslation) {
@@ -815,7 +817,11 @@ document.addEventListener("DOMContentLoaded", function () {
             var weekStart = formatDate(d2, { month: long ? "long" : "short", day: "numeric" });
             var weekEndFormatted = formatDate(weekEnd, { month: long ? "long" : "short", day: "numeric" });
 
-            return weekEndFormatted === weekStart ? weekStart : weekStart + " - " + weekEndFormatted;
+            var weekRange = weekEndFormatted === weekStart ? weekStart : weekStart + " - " + weekEndFormatted;
+            // The week in progress has fewer days in it than the rest; say so where its total is read.
+            var todayIso = new Date().toISOString().slice(0, 10);
+            var isThisWeek = long && rawDate <= todayIso && todayIso <= weekEnd.toISOString().slice(0, 10);
+            return isThisWeek ? weekRange + " (" + translations.now + ")" : weekRange;
         } else if (unitTime === "daily") {
             var rawDate2 = (justTranslation || label).replace(/\//g, "-");
             var d3 = new Date(rawDate2 + "T00:00:00Z");
