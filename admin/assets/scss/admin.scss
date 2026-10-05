@@ -942,9 +942,11 @@ body {
   float: none;
   margin: 0;
   flex: 0 0 auto;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
+  /* The base #aaa border turned a pale fill into a hollow ring (QA D7). */
+  border-color: rgba(0, 0, 0, .12);
 }
 
 [id^="slim_"] p.loading {

@@ -112,6 +112,8 @@ check(false !== strpos(read_or_die('admin/view/heatmaps.php'), '<p class="ss-hm-
 // QA D11: "Build your first campaign link" read one way on the Upgrade page and another on Reports.
 $campaignLink = "__('Tag an incoming link to see its recorded pageviews in UTM Campaigns.', 'wp-slimstat')";
 check(false !== strpos($reports, $campaignLink) && false !== strpos(read_or_die('admin/view/upgrade-pro.php'), str_replace('__(', 'esc_html_e(', $campaignLink)), 'D11: one description for "Build your first campaign link"');
+// QA D7: the #aaa base border around a pale 10px fill read as a hollow ring, not the row colour it names.
+check((bool) preg_match('/\.slimstat-access-log-legend \.little-color-box\s*\{[^}]*width:\s*12px[^}]*border-color:\s*rgba\(0,\s*0,\s*0,\s*\.12\)/', $admincss), 'D7: legend swatches are filled dots with a hairline, not #aaa rings');
 // QA R12: the pill rule for settings inputs also rounded checkboxes, so Email Report's picks read as radio buttons.
 check(false === strpos($admincss, '.wrap-slimstat .form-table tr td input{') && false !== strpos($admincss, '.wrap-slimstat .form-table tr td input:not([type=checkbox]):not([type=radio]){'), 'R12: form-table pill inputs leave checkboxes and radios native');
 
