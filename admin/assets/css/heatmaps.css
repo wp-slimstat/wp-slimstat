@@ -2,6 +2,8 @@
 .ss-hm { color: var(--ss-text-primary); font: 14px/1.5 var(--ss-font-modern); padding-block: 20px 32px; }
 .ss-hm *, .ss-hm *::before { box-sizing: border-box; }
 .ss-hm [hidden] { display: none !important; }
+/* Below an intro its margin is the gap (QA D5); the viewer has no intro. */
+.slimstat-pageintro ~ .ss-hm { padding-top: 0; }
 .ss-hm h2 { font-size: 18px; font-weight: 600; margin: 0 0 8px; }
 .ss-hm :is(a,button,input,select,summary):focus-visible { outline: 2px solid var(--ss-focus); outline-offset: 2px; box-shadow: none; }
 

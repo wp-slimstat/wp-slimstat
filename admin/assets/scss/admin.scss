@@ -803,6 +803,11 @@ body {
   border-bottom: 0;
 }
 
+/* Report rows are paragraphs; a visually hidden one (a live region) stays out of the flow (QA D5). */
+[id^="slim_"] p.screen-reader-text {
+  position: absolute;
+}
+
 [id^="slim_"] p .slimstat-tooltip-trigger.corner {
   -moz-transform: scaleX(-1);
   -o-transform: scaleX(-1);
