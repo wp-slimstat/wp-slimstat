@@ -542,7 +542,7 @@ jQuery(document).ready(function($) {
 
             // Clear cache is an action, not a range: it sits in a footer below the presets and calendars.
             if (picker.container.find(CONFIG.SELECTORS.clearCacheBtn).length === 0) {
-                const $clearBtn = $('<button type="button" class="button button-secondary" id="slimstat-clear-cache"></button>')
+                const $clearBtn = $('<button type="button" class="button-link" id="slimstat-clear-cache"></button>')
                     .text(SlimStatDatePicker.strings.clear_cache);
                 picker.container.append($('<div class="slimstat-clear-cache-wrap">').append($clearBtn));
             }

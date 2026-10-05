@@ -34,4 +34,11 @@ test('a preset range from the URL keeps the preset name, in the WordPress date f
   await expect(picker.locator('.ranges li.active')).toHaveText('Last 28 days');
   await expect(picker.locator('.slimstat-clear-cache-wrap #slimstat-clear-cache')).toHaveText('Clear cache');
   await expect(picker.locator('.ranges #slimstat-clear-cache')).toHaveCount(0);
+  // A text link, not a blue outline button in a red picker (QA D10).
+  const look = await picker.locator('#slimstat-clear-cache').evaluate((b) => {
+    const cs = getComputedStyle(b);
+    return { border: cs.borderTopWidth, background: cs.backgroundColor, rgb: (cs.color.match(/\d+/g) || []).slice(0, 3).map(Number) };
+  });
+  expect([look.border, look.background]).toEqual(['0px', 'rgba(0, 0, 0, 0)']);
+  expect(look.rgb[2], 'Clear cache is not link blue').toBeLessThanOrEqual(Math.max(look.rgb[0], look.rgb[1]));
 });

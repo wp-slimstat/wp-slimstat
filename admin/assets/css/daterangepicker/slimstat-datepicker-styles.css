@@ -268,3 +268,8 @@
     padding: 8px 12px;
     border-top: 1px solid var(--slimstat-border);
 }
+/* A quiet text link: clearing a cache is not a date choice (QA D10). */
+.slimstat-daterangepicker #slimstat-clear-cache {
+    color: var(--color-drp-fg-default);
+    font-size: 12px;
+}
