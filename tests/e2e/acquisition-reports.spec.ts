@@ -240,7 +240,10 @@ test.describe('UTM and channel reports', () => {
       await expect(utm.getByRole('link', { name: source, exact: true })).toBeVisible();
       await page.locator('#slimstat-filter-name').selectOption('utm_source', { force: true });
       await page.locator('#slimstat-filter-operator').selectOption('equals', { force: true });
-      await page.locator('#slimstat-filter-value').fill(source);
+      // The options AJAX mounts a combobox over #slimstat-filter-value; type where a user types (PITFALLS 159).
+      await page.locator('.slimstat-select-display').click();
+      await page.locator('.slimstat-select-search input').fill(source);
+      await expect(page.locator('#slimstat-filter-value')).toHaveValue(source);
       await page.locator('#slimstat-filters input[type=submit]').click();
       await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('2 pageviews');
       await page.locator('#slimstat-save-filter').click();
