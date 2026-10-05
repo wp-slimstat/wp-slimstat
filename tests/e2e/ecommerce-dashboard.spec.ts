@@ -30,7 +30,7 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     await expect(dashboard.locator('[data-metric=orders]')).toHaveText('4');
     await expect(dashboard.locator('[data-metric=aov]')).toContainText('28.75');
     await expect(dashboard.locator('[data-metric=rate]')).toHaveText('0.83%');
-    await expect(dashboard).toContainText('2 of 4 orders linked');
+    await expect(dashboard).toContainText('2 of 4 orders in this report linked');
     await expect(dashboard.locator('[data-dimension=channel]')).toContainText('Paid Search');
     await expect(dashboard.locator('[data-dimension=source]')).not.toBeVisible();
     await dashboard.getByRole('tab', { name: 'Channels', exact: true }).focus();
@@ -162,7 +162,7 @@ test('Ecommerce explains incomplete, empty and loading states and keeps the newe
     // Import finished, one order failed: say so and offer Retry, but the totals stand.
     runWordPressFixture("<?php $state=get_option('slimstat_ecommerce_state'); $state['complete']=true; $state['error']=true; $state['failed_order']=4242; update_option('slimstat_ecommerce_state',$state,false);");
     await dashboard.getByRole('link', { name: 'Refresh Ecommerce reports' }).click();
-    await expect(page.locator('#ss-ec-quality > summary')).toContainText('Some orders could not be imported');
+    await expect(page.locator('#ss-ec-quality > summary')).toContainText('Order 4242 could not be imported');
     await expect(page.locator('#ss-ec-quality > summary')).not.toContainText('provisional');
     await expect(dashboard.getByText('Complete synchronization first', { exact: true })).toHaveCount(0);
     await page.locator('#ss-ec-quality > summary').click();

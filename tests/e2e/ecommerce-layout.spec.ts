@@ -70,6 +70,15 @@ test('@woocommerce orders without a campaign say so, not "Unassigned" (QA U1)', 
   expect(names).not.toContain('Unassigned');
 });
 
+test('@woocommerce the sync banner names the failed order and counts this report only (QA U2)', async ({ page }) => {
+  await open(page);
+  // "Some orders could not be imported" beside "58 of 58 orders linked" read as a contradiction.
+  const summary = page.locator('#ss-ec-quality > summary');
+  await expect(summary).not.toContainText('Some orders could not be imported');
+  await expect(summary).toContainText(/orders in this report linked|No orders in this report/);
+  await expect(page.locator('.ss-ec-steps')).not.toContainText('included order');
+});
+
 test('@woocommerce cards in a row match, a lone tab is hidden, sort shows its direction', async ({ page }) => {
   await open(page);
   const rows = await page.locator('.ss-ec-card').evaluateAll((cards) => {
