@@ -634,8 +634,8 @@ class wp_slimstat_admin
     {
         include_once __DIR__ . '/view/wp-slimstat-reports.php';
         wp_slimstat_reports::init();
-        // Pro's weekly email range.
-        wp_slimstat_db::init('interval equals -7');
+        // Pro's weekly email range. init() above built the column names; only the date window changes.
+        wp_slimstat_db::$filters_normalized = wp_slimstat_db::init_filters('interval equals -7');
         $sections = [];
         foreach (['slim_p1_08', 'slim_p1_10'] as $id) {
             $args       = wp_slimstat_reports::$reports[$id]['callback_args'];

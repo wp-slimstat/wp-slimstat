@@ -6,9 +6,9 @@
  */
 import { test, expect } from '@playwright/test';
 import { BASE_URL } from './helpers/env';
+import { rgb } from './helpers/setup';
 
 const button = '#wp-admin-bar-slimstat-heatmap > .ab-item';
-const rgb = (c: string) => (c.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
 
 test('wp-admin: a red Heatmap button opens the Heatmaps list, and the dropdown no longer repeats it', async ({ page }) => {
   await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`);

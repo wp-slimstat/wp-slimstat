@@ -8,10 +8,10 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'fs';
 import { runWordPressFixture } from './helpers/chart';
+import { rgb } from './helpers/setup';
 
 const source = readFileSync(new URL('./helpers/ecommerce-data.php', import.meta.url), 'utf8').replace(/^<\?php\s*/, '');
 const fixture = (mode: string) => JSON.parse(runWordPressFixture(`<?php\n$fixture_mode = '${mode}';\n${source}`));
-const rgb = (c: string) => (c.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
 const live = process.env.ECOMMERCE_LIVE_DATA === '1';
 let url = '/wp-admin/admin.php?page=slimview7';
 

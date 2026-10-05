@@ -184,12 +184,13 @@ class AcquisitionReport
             $failed = '' !== (string) $db->last_error;
             $capped = count($all) >= (int) \wp_slimstat::$settings['limit_results'];
             // Values that read the same are one group: no channel yet and the unassigned channel, or a NULL and an empty tag.
-            $slot = static function ($value) use ($groupField): string {
-                return 'traffic_channel' === $groupField && !isset(Acquisition::labels()[$value ?? '']) ? 'unassigned' : (string) $value;
+            $groupKey = static function (array $row) use ($groupField): string {
+                $value = $row[$groupField] ?? null;
+                return serialize([(int) ($row['blog_id'] ?? 0), 'traffic_channel' === $groupField && !isset(Acquisition::labels()[$value ?? '']) ? 'unassigned' : (string) $value]);
             };
             $merged = [];
             foreach ($all as $row) {
-                $key = serialize([(int) ($row['blog_id'] ?? 0), $slot($row[$groupField] ?? null)]);
+                $key = $groupKey($row);
                 if (isset($merged[$key])) {
                     $merged[$key]['counthits'] = (int) $merged[$key]['counthits'] + (int) $row['counthits'];
                     $merged[$key]['values'][] = $row[$groupField] ?? null;
@@ -241,14 +242,14 @@ class AcquisitionReport
             $network = NetworkMerge::isMerging();
             $byGroup = [];
             foreach ($details as $detail) {
-                $byGroup[serialize([(int) ($detail['blog_id'] ?? 0), $slot($detail[$groupField] ?? null)])][] = $detail;
+                $byGroup[$groupKey($detail)][] = $detail;
             }
             echo '<div class="slimstat-acquisition__groups"><div class="slimstat-acquisition__columns" aria-hidden="true"><span>' . esc_html($fields[$groupField]) . '</span><span>' . esc_html__('Pageviews', 'wp-slimstat') . '</span><span>' . esc_html__('Share', 'wp-slimstat') . '</span></div>';
             foreach ($rows as $row) {
                 // A merged group has no one value to filter by.
                 $value = 1 === count($row['values']) ? $row[$groupField] : null;
                 $label = 'traffic_channel' === $groupField ? (Acquisition::labels()[$value ?? ''] ?? __('Unassigned', 'wp-slimstat')) : ('' !== ($value ?? '') ? $value : __('Unassigned', 'wp-slimstat'));
-                $groupRows = $byGroup[serialize([(int) ($row['blog_id'] ?? 0), $slot($row[$groupField] ?? null)])] ?? [];
+                $groupRows = $byGroup[$groupKey($row)] ?? [];
                 $count = (int) $row['counthits'];
                 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- htmlspecialchars encodes quotes and existing entities to preserve literal stored tags.
                 echo '<details class="slimstat-acquisition__group"><summary><span class="slimstat-acquisition__identity"><span class="slimstat-acquisition__label">' . htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</span>';

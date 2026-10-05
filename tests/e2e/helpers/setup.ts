@@ -1082,3 +1082,6 @@ export async function fillAndConfirm(page: import('@playwright/test').Page, sele
   }
   throw new Error(`${selector} would not hold its value after 5 attempts — something on the login page is clearing it`);
 }
+
+/** The r, g, b numbers of a computed CSS colour such as "rgb(214, 54, 56)". */
+export const rgb = (c: string) => (c.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
