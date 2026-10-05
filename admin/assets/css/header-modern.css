@@ -227,7 +227,7 @@
     letter-spacing: 0.01em;
 }
 
-#contextual-help-link-wrap {
+.slimstat-admin-page #contextual-help-link-wrap {
     display: none !important;
 }
 
@@ -291,7 +291,7 @@
         height: 16px;
     }
 }
-.backdrop-container{
+.slimstat-admin-page .backdrop-container{
     margin-top: 0px !important;
     background-color: transparent; /* show WordPress's admin grey, not a second one */
 }

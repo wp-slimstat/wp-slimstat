@@ -288,8 +288,8 @@ body .wrap-slimstat .button-secondary:hover {
 .wrap-slimstat .form-table tr td .description { max-width: 72ch; }
 
 /* Pagination: "1–50 of 200+", refresh countdown as muted text (audit B10). */
-.pagination .refresh-countdown { color: var(--ss-text-secondary); font-style: normal; }
-.pagination .refresh-countdown .refresh-timer { font-style: normal; }
+[id^="slim_"] .pagination .refresh-countdown { color: var(--ss-text-secondary); font-style: normal; }
+[id^="slim_"] .pagination .refresh-countdown .refresh-timer { font-style: normal; }
 
 /* Inline "Pro adds …" panel for Free: no blur, no modal (audit F1, F4). */
 .slimstat-pro-adds {
@@ -343,7 +343,7 @@ details:is(.slimstat-details, .slimstat-acquisition__help, .slimstat-acquisition
 details:is(.slimstat-details, .slimstat-acquisition__help, .slimstat-acquisition__tags, .slimstat-utm-builder__extra, .ss-ec-exact, .ss-ec-report-info, .ss-ec-journey-context, .ss-ec-definitions, .ss-pro-setup, .ss-hmv-help)[open] > summary::before,
 .ss-ec-quality[open] .ss-ec-quality-action::before { transform: translateY(-0.3em) rotate(45deg); }
 @media (prefers-reduced-motion: reduce) {
-    details > summary::before, .ss-ec-quality-action::before { transition: none; }
+    details:is(.slimstat-details, .slimstat-acquisition__help, .slimstat-acquisition__tags, .slimstat-utm-builder__extra, .ss-ec-exact, .ss-ec-report-info, .ss-ec-journey-context, .ss-ec-definitions, .ss-pro-setup, .ss-hmv-help) > summary::before, .ss-ec-quality-action::before { transition: none; }
 }
 
 /* Customize (audit B7): a grip says a card can be dragged; icon buttons lose button chrome. */

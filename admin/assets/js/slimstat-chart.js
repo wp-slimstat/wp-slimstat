@@ -876,10 +876,10 @@ document.addEventListener("DOMContentLoaded", function () {
             var unitTime = document.getElementById("slimstat_chart_data_" + chartId).dataset.granularity;
             var data = JSON.parse(document.getElementById("slimstat_chart_data_" + chartId).getAttribute("data-data"));
             prevLabels = data.prev_labels;
-            var tooltipEl = document.getElementById("chartjs-tooltip");
+            var tooltipEl = document.getElementById("slimstat-chartjs-tooltip");
             if (!tooltipEl) {
                 tooltipEl = document.createElement("div");
-                tooltipEl.id = "chartjs-tooltip";
+                tooltipEl.id = "slimstat-chartjs-tooltip";
                 tooltipEl.innerHTML = "<table></table>";
                 document.body.appendChild(tooltipEl);
             }
@@ -926,7 +926,7 @@ document.addEventListener("DOMContentLoaded", function () {
             for (var g = 0; g < grouped.length; g++) {
                 var item = grouped[g];
                 var color = tooltip.labelColors[g];
-                innerHtml += '<tr data-index="' + g + '" class="slimstat-postbox-chart--item"><td><div class="slimstat-postbox-chart--item--color" style="background-color: ' + color.backgroundColor + '; margin-bottom: 3px; margin-right: 10px;"></div><span class="tooltip-item-title">' + item.label + '</span>: <span class="tooltip-item-content">' + item.value + "</span>";
+                innerHtml += '<tr data-index="' + g + '" class="slimstat-postbox-chart--item"><td><div class="slimstat-postbox-chart--item--color" style="background-color: ' + color.backgroundColor + '; margin-bottom: 3px; margin-right: 10px;"></div><span class="slimstat-tooltip-item-title">' + item.label + '</span>: <span class="slimstat-tooltip-item-content">' + item.value + "</span>";
                 if (item.prevValue !== null && item.prevDate) {
                     var hex = color.backgroundColor.replace("#", "");
                     var rgb = hex
@@ -935,7 +935,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             return parseInt(x, 16);
                         })
                         .join(",");
-                    innerHtml += '<br><span class="slimstat-postbox-chart--item--color" style="display:inline-block;width:18px;height:2px;background-image:repeating-linear-gradient(to right, rgba(' + rgb + ",0.7), rgba(" + rgb + ',0.7) 4px, transparent 0px, transparent 6px);background-size:auto 6px;opacity:1;margin-bottom:0px;margin-left:0px;vertical-align:middle;"></span> <span class="tooltip-item-title" style="font-size:12px;opacity:.7;">' + slimstatGetLabel(item.prevDate, false, unitTime, translations) + ': </span><span class="tooltip-item-content" style="font-size:12px;opacity:.7;">' + item.prevValue + "</span>";
+                    innerHtml += '<br><span class="slimstat-postbox-chart--item--color" style="display:inline-block;width:18px;height:2px;background-image:repeating-linear-gradient(to right, rgba(' + rgb + ",0.7), rgba(" + rgb + ',0.7) 4px, transparent 0px, transparent 6px);background-size:auto 6px;opacity:1;margin-bottom:0px;margin-left:0px;vertical-align:middle;"></span> <span class="slimstat-tooltip-item-title" style="font-size:12px;opacity:.7;">' + slimstatGetLabel(item.prevDate, false, unitTime, translations) + ': </span><span class="slimstat-tooltip-item-content" style="font-size:12px;opacity:.7;">' + item.prevValue + "</span>";
                 }
                 innerHtml += "</td></tr>";
             }

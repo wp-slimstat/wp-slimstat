@@ -383,7 +383,7 @@
     background: color-mix(in srgb, var(--ss-brand-500, #e8294c) 6%, var(--ss-surface, #fff));
 }
 
-.live-analytics-container .clickable-metric.active .metric-value {
+[id^="slim_"] .clickable-metric.active .metric-value {
     color: var(--ss-brand-700, #dc3232) !important;
 }
 

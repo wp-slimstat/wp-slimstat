@@ -4,7 +4,7 @@
     const { __, sprintf } = window.wpSlimstatI18n;
     let chart, request, requestKey, feedbackTimer, serial = 0, reportHashHandled = false;
     const state = { metric: 'net', interval: 'auto', compare: true, tabs: {}, expanded: {}, sort: {} };
-    const root = () => document.querySelector('[data-ecommerce]');
+    const root = () => document.querySelector('.ss-ec[data-ecommerce]');
     const announce = (message, visible = false) => {
         const target = document.querySelector('.ss-ec-feedback');
         if (target) {
@@ -67,7 +67,7 @@
         dashboard.querySelector('[data-value-heading]').textContent = label;
         dashboard.querySelector('[data-chart-description]').textContent = button.dataset.description;
         dashboard.querySelector('.ss-ec-chart-unit').textContent = ['net', 'aov'].includes(metric) ? performance.dataset.currency : (metric === 'rate' ? '%' : '');
-        document.querySelectorAll('[data-compare]').forEach(input => { input.checked = state.compare; });
+        dashboard.querySelectorAll('[data-compare]').forEach(input => { input.checked = state.compare; });
         dashboard.querySelectorAll('[data-comparison-content]').forEach(el => { el.hidden = !state.compare; });
         dashboard.querySelectorAll('[data-chart-metric]:not([data-chart-metric=rate]) small').forEach(el => { el.style.visibility = state.compare ? 'visible' : 'hidden'; });
         const tbody = dashboard.querySelector('[data-chart-table]');
@@ -245,8 +245,8 @@
         if (dismiss) { const next = discover.nextElementSibling; discover.remove(); next.tabIndex = -1; next.focus(); }
     });
     document.addEventListener('change', event => {
-        if (event.target.matches('[data-compare]')) { state.compare = event.target.checked; draw(); }
         if (!root()?.contains(event.target)) return;
+        if (event.target.matches('[data-compare]')) { state.compare = event.target.checked; draw(); }
         if (event.target.matches('[data-interval]')) { state.interval = event.target.value; window.SlimStatEcommerce.refresh(); }
         if (event.target.matches('[data-rank-metric]')) rank(event.target.closest('.ss-ec-report'));
     });
