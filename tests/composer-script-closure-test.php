@@ -68,6 +68,7 @@ $walk('test:all');
 // Standalone by design. Each entry states WHY, because "it is in the list" is not a reason, and
 // a list anyone may append to without argument is not a gate.
 $standalone = [
+    'test:shortcode-render-wp' => 'requires real WordPress, analytics tables and an administrator; runs via WP-CLI in the Tier 2 CI lane',
     'test:acquisition-network' => 'requires a disposable two-site WordPress network and the private '
         . 'Pro plugin, unavailable in public CI; run with WP-CLI during paired Free/Pro qualification',
     'test:pot-freshness' => 'runs in the dedicated catalog CI job with pinned WP-CLI 2.12.0; '

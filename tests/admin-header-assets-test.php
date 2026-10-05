@@ -77,6 +77,7 @@ $covered_by_shared_enqueuer = [
     'admin/config/index.php'       => 'slimconfig, via wp_slimstat_stylesheet()',
     'admin/view/upgrade-pro.php'   => 'slimpro, via wp_slimstat_stylesheet()',
     'admin/view/email-report.php'  => 'slimemail, via wp_slimstat_stylesheet()',
+    'admin/view/shortcodes.php'    => 'slimshortcodes, via wp_slimstat_stylesheet()',
     'admin/view/heatmaps.php'      => 'slimheatmap, via wp_slimstat_stylesheet()',
     // add_header() returns the header for slimlayout/slimconfig and has ZERO callers in either
     // repo. Left in place rather than deleted — it is a public static on a public class, so

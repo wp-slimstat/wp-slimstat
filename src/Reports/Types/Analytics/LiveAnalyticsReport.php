@@ -163,7 +163,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 *
 	 * @return array{users: int, pages: int, countries: int}
 	 */
-	private function get_all_live_counts(): array {
+	public function get_all_live_counts(): array {
 		$wpdb = \wp_slimstat::$wpdb;
 
 		if ( ! $this->is_tracking_enabled() ) {

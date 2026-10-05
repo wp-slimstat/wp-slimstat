@@ -503,7 +503,7 @@ class wp_slimstat
         add_filter('wp_redirect_status', [\SlimStat\Tracker\Tracker::class, 'update_content_type'], 10, 2);
 
         // Shortcodes
-        add_shortcode('slimstat', [self::class, 'slimstat_shortcode'], 15);
+        add_shortcode('slimstat', [\SlimStat\Shortcodes\Shortcode::class, 'render']);
 
         // Init the plugin functionality
         add_action('init', [self::class, 'init_plugin']);
@@ -895,187 +895,7 @@ class wp_slimstat
      */
     public static function slimstat_shortcode($_attributes = '', $_content = '')
     {
-        shortcode_atts([
-            'f' => '',    // recent, popular, count, widget
-            'w' => '',    // column to use (for recent, popular and count) or widget to use
-            's' => ' ',    // separator
-            'o' => 0,    // offset for counters
-        ], $_attributes);
-
-        $f         = $_attributes['f'] ?? '';
-        $w         = $_attributes['w'] ?? '';
-        $s         = $_attributes['s'] ?? '';
-        $o         = $_attributes['o'] ?? 0;
-        $output    = '';
-        $where     = '';
-        $as_column = '';
-        $s         = sprintf("<span class='slimstat-item-separator'>%s</span>", $s);
-
-        // Look for required fields
-        if (empty($f) || empty($w)) {
-            return '<!-- Slimstat Shortcode Error: missing parameter -->';
-        }
-
-        // Validation the parameter w
-        $w = (string) $w;
-        if (false === in_array($w, ['*', 'count', 'display_name', 'hostname', 'post_link', 'post_link_no_qs', 'dt', 'username', 'post_link', 'ip', 'id', 'searchterms', 'username', 'resource', 'country', 'browser', 'platform', 'language', 'slim_p1_01', 'slim_p1_03', 'slim_p1_04', 'slim_p1_06', 'slim_p1_08', 'slim_p1_10', 'slim_p1_11', 'slim_p1_12', 'slim_p1_13', 'slim_p1_15', 'slim_p1_17', 'slim_p1_18', 'slim_p1_19_01', 'slim_p2_01', 'slim_p2_02', 'slim_p2_03', 'slim_p2_04', 'slim_p2_05', 'slim_p2_06', 'slim_p2_07', 'slim_p2_08', 'slim_p2_12', 'slim_p2_13', 'slim_p2_14', 'slim_p2_15', 'slim_p2_16', 'slim_p2_17', 'slim_p2_18', 'slim_p2_19', 'slim_p2_20', 'slim_p2_21', 'slim_p2_22_01', 'slim_p2_24', 'slim_p2_25', 'slim_p3_01', 'slim_p3_02', 'slim_p3_03', 'slim_p3_04', 'traffic_channel', 'traffic_source', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'utm_id', 'slim_p4_01', 'slim_p4_02', 'slim_p4_04', 'slim_p4_05', 'slim_p4_06', 'slim_p4_07', 'slim_p4_09', 'slim_p4_10', 'slim_p4_11', 'slim_p4_12', 'slim_p4_13', 'slim_p4_15', 'slim_p4_16', 'slim_p4_18', 'slim_p4_19', 'slim_p4_20', 'slim_p4_21', 'slim_p4_22', 'slim_p4_23', 'slim_p4_24', 'slim_p4_25', 'slim_p4_26_01', 'slim_p4_27', 'slim_p6_01', 'slim_p9_01', 'slim_p9_02', 'slim_p2_23'], true)) {
-            return '<!-- Slimstat Shortcode Error: invalid parameter for w -->';
-        }
-
-        // Include the Reports Library, but don't initialize the database, since we will do that separately later
-        include_once(plugin_dir_path(__FILE__) . 'admin/view/wp-slimstat-reports.php');
-        wp_slimstat_reports::init();
-
-        /**
-         * @SecurityProfile https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-0630
-         * Disabled because of the report from WP Scan
-         */
-        // Init the database library with the appropriate filters
-        /*if ( strpos ( $_content, 'WHERE:' ) !== false ) {
-            $where = html_entity_decode( str_replace( 'WHERE:', '', $_content ), ENT_QUOTES, 'UTF-8' );
-        }
-        else{*/
-        wp_slimstat_db::init(html_entity_decode($_content, ENT_QUOTES, 'UTF-8'));
-        //}
-
-        switch ($f) {
-            case 'count':
-            case 'count-all':
-                $output = wp_slimstat_db::count_records($w, $where, false === strpos($f, 'all')) + $o;
-                break;
-
-            case 'widget':
-                if (empty(wp_slimstat_reports::$reports[$w])) {
-                    return __('Invalid Report ID', 'wp-slimstat');
-                }
-
-                wp_register_style('wp-slimstat-frontend', plugins_url('/admin/assets/css/slimstat.css', __FILE__), true, SLIMSTAT_ANALYTICS_VERSION);
-                wp_enqueue_style('wp-slimstat-frontend');
-
-                wp_slimstat_reports::$reports[$w]['callback_args']['is_widget'] = true;
-
-                ob_start();
-                wp_slimstat_reports::report_header($w);
-                call_user_func(wp_slimstat_reports::$reports[$w]['callback'], wp_slimstat_reports::$reports[$w]['callback_args']);
-                wp_slimstat_reports::report_footer();
-                $output = ob_get_contents();
-                ob_end_clean();
-                break;
-
-            case 'recent':
-            case 'recent-all':
-            case 'top':
-            case 'top-all':
-                $function = 'get_' . str_replace('-all', '', $f);
-
-                if ('*' === $w) {
-                    $w = 'id';
-                }
-
-                $w = esc_html($w);
-                $w = self::string_to_array($w);
-
-                // Some columns are 'special' and need be removed from the list
-                $w_clean = array_diff($w, ['count', 'display_name', 'hostname', 'post_link', 'post_link_no_qs', 'dt']);
-
-                // The special value 'display_name' requires the username to be retrieved
-                if (in_array('display_name', $w)) {
-                    $w_clean[] = 'username';
-                }
-
-                // The special value 'post_list' requires the resource to be retrieved
-                if (in_array('post_link', $w)) {
-                    $w_clean[] = 'resource';
-                }
-
-                // The special value 'post_list_no_qs' requires a substring to be calculated
-                if (in_array('post_link_no_qs', $w)) {
-                    $w_clean   = ['SUBSTRING_INDEX( resource, "' . (get_option('permalink_structure') ? '?' : '&') . '", 1 )'];
-                    $as_column = 'resource';
-                }
-
-                // Retrieve the data
-                $results = wp_slimstat_db::$function(implode(', ', $w_clean), $where, '', false === strpos($f, 'all'), $as_column);
-
-                // No data? No problem!
-                if (empty($results)) {
-                    return '<!--  Slimstat Shortcode: No Data -->';
-                }
-
-                // Are nice permalinks enabled?
-                $permalinks_enabled = get_option('permalink_structure');
-
-                // Format results
-                $output = [];
-
-                foreach ($results as $result_idx => $a_result) {
-                    foreach ($w as $a_column) {
-                        $output[$result_idx][$a_column] = sprintf("<span class='col-%s'>", $a_column);
-
-                        switch ($a_column) {
-                            case 'count':
-                                $output[$result_idx][$a_column] .= $a_result['counthits'];
-                                break;
-
-                            case 'country':
-                                $output[$result_idx][$a_column] .= wp_slimstat_i18n::get_string('c-' . $a_result[$a_column]);
-                                break;
-
-                            case 'display_name':
-                                $user_details = get_user_by('login', $a_result['username']);
-                                if (!empty($user_details)) {
-                                    $output[$result_idx][$a_column] .= $user_details->display_name;
-                                } else {
-                                    $output[$result_idx][$a_column] .= $a_result['username'];
-                                }
-
-                                break;
-
-                            case 'dt':
-                                $output[$result_idx][$a_column] .= date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $a_result['dt']);
-                                break;
-
-                            case 'hostname':
-                                $output[$result_idx][$a_column] .= self::gethostbyaddr($a_result['ip']);
-                                break;
-
-                            case 'language':
-                                $output[$result_idx][$a_column] .= wp_slimstat_i18n::get_string('l-' . $a_result[$a_column]);
-                                break;
-
-                            case 'platform':
-                                $output[$result_idx][$a_column] .= wp_slimstat_i18n::get_string($a_result[$a_column]);
-                                break;
-
-                            case 'post_link':
-                            case 'post_link_no_qs':
-                                $post_id = url_to_postid($a_result['resource']);
-                                if ($post_id > 0) {
-                                    $output[$result_idx][$a_column] .= sprintf("<a href='%s'>", esc_url( $a_result[ 'resource' ] )) . esc_html( get_the_title($post_id) ) . '</a>';
-                                } else {
-                                    $output[$result_idx][$a_column] .= sprintf("<a href='%s'>%s</a>", esc_url( $a_result[ 'resource' ] ), esc_html( $a_result[ 'resource' ] ));
-                                }
-                                break;
-
-                            default:
-                                $text = (string) ($a_result[$a_column] ?? '');
-                                $output[$result_idx][$a_column] .= 0 === strpos($a_column, 'utm_') || 'traffic_source' === $a_column
-                                    ? htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : esc_html($text);
-                                break;
-                        }
-                        $output[$result_idx][$a_column] .= '</span>';
-                    }
-                    $output[$result_idx] = '<li>' . implode($s, $output[$result_idx]) . '</li>';
-                }
-
-                $output = '<ul class="slimstat-shortcode ' . $f . implode('-', $w) . '">' . implode('', $output) . '</ul>';
-                break;
-
-            default:
-                break;
-        }
-
-        return $output;
+        return \SlimStat\Shortcodes\Shortcode::render($_attributes, $_content);
     }
 
     // end slimstat_shortcode
@@ -2886,7 +2706,7 @@ class slimstat_widget extends WP_Widget
     {
         parent::__construct('slimstat_widget', 'Slimstat', [
             'classname'   => 'slimstat_widget',
-            'description' => 'Add a Slimstat report to your sidebar',
+            'description' => __('Add a SlimStat report to your sidebar', 'wp-slimstat'),
         ]);
     }
 
@@ -2898,18 +2718,21 @@ class slimstat_widget extends WP_Widget
      */
     public function widget($_args = [], $_instance = [])
     {
-        extract(shortcode_atts([
+        $instance = shortcode_atts([
             'slimstat_widget_id'      => '',
             'slimstat_widget_title'   => '',
             'slimstat_widget_filters' => '',
-        ], $_instance));
+        ], $_instance);
+        $slimstat_widget_id = $instance['slimstat_widget_id'];
+        $slimstat_widget_title = $instance['slimstat_widget_title'];
+        $slimstat_widget_filters = $instance['slimstat_widget_filters'];
 
         if (!empty($slimstat_widget_title)) {
             // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Core register_sidebar supplies theme-owned wrapper HTML; the stored widget title is escaped here.
             echo (empty($_args['before_title']) ? '<h2 class="widget-title">' : $_args['before_title']) . esc_html($slimstat_widget_title) . (empty($_args['after_title']) ? '</h2>' : $_args['after_title']);
         }
         if (!empty($slimstat_widget_id)) {
-            echo do_shortcode(sprintf("[slimstat f='widget' w='%s']%s[/slimstat]", $slimstat_widget_id, $slimstat_widget_filters));
+            echo \SlimStat\Shortcodes\Shortcode::render(['f' => 'widget', 'w' => $slimstat_widget_id], $slimstat_widget_filters); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shortcode renderer escapes its output.
         } else {
             echo '';
         }
@@ -2923,26 +2746,30 @@ class slimstat_widget extends WP_Widget
      */
     public function form($_instance)
     {
-        extract(shortcode_atts([
+        $instance = shortcode_atts([
             'slimstat_widget_id'      => '',
             'slimstat_widget_title'   => '',
             'slimstat_widget_filters' => '',
-        ], $_instance));
+        ], $_instance);
+        $slimstat_widget_id = $instance['slimstat_widget_id'];
+        $slimstat_widget_title = $instance['slimstat_widget_title'];
+        $slimstat_widget_filters = $instance['slimstat_widget_filters'];
 
         // Let's build the dropdown
         include_once(plugin_dir_path(__FILE__) . 'admin/view/wp-slimstat-reports.php');
         wp_slimstat_reports::init();
         $select_options = '';
 
-        foreach (wp_slimstat_reports::$reports as $a_report_id => $a_report_info) {
-            $select_options .= sprintf("<option value='%s' ", esc_attr($a_report_id)) . (($slimstat_widget_id == $a_report_id) ? 'selected="selected"' : '') . sprintf('>%s</option>', esc_html($a_report_info[ 'title' ]));
+        foreach (\SlimStat\Shortcodes\Shortcode::catalog() as $a_report_id => $a_report_info) {
+            if (!in_array('widget', $a_report_info['modes'], true)) { continue; }
+            $select_options .= sprintf("<option value='%s' ", esc_attr($a_report_id)) . (($slimstat_widget_id == $a_report_id) ? 'selected="selected"' : '') . sprintf('>%s</option>', esc_html($a_report_info[ 'label' ]));
         }
         ?>
 
         <p>
             <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_id')); ?>"><?php esc_html_e('Report', 'wp-slimstat') ?></label>
             <select class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_id')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_id')); ?>">
-                <option value="">Select a widget</option>
+                <option value=""><?php esc_html_e('Select a report', 'wp-slimstat'); ?></option>
                 <?php echo wp_kses($select_options, ['option' => ['value' => true, 'selected' => true]]); ?>
             </select>
         </p>

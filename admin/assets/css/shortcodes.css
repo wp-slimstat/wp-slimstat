@@ -1,0 +1,57 @@
+/* Shortcode Playground uses the shared WordPress admin tokens. */
+.wrap-slimstat .ss-sc { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 32px; padding-block: 20px 32px; color: var(--ss-text-body); }
+.wrap-slimstat .slimstat-pageintro ~ .ss-sc { padding-top: 0; }
+.wrap-slimstat .ss-sc [hidden] { display: none !important; }
+.wrap-slimstat .ss-sc-catalog { position: sticky; top: 48px; align-self: start; max-height: calc(100vh - 80px); overflow-y: auto; padding-inline-end: 16px; }
+.wrap-slimstat .ss-sc-catalog label, .wrap-slimstat .ss-sc-codebar > label { display: block; font-weight: 600; margin-block-end: 8px; }
+.wrap-slimstat #ss-sc-search { width: 100%; margin-block-end: 16px; }
+.wrap-slimstat #ss-sc-rail h3 { color: var(--ss-text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; margin: 24px 0 8px; }
+.wrap-slimstat #ss-sc-rail button { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; width: 100%; min-height: 40px; padding: 10px; text-align: start; border: 1px solid transparent; border-radius: var(--ss-radius-2xs); background: transparent; color: var(--ss-text-body); cursor: pointer; }
+.wrap-slimstat #ss-sc-rail button:hover { background: var(--ss-hover-soft); }
+.wrap-slimstat #ss-sc-rail button[aria-current] { color: var(--ss-brand-900); border-color: var(--ss-brand-900); background: var(--ss-surface); font-weight: 600; }
+.wrap-slimstat .ss-sc .ss-sc-chip { display: inline-block; margin: 0; font-size: 11px; font-weight: 600; padding: 2px 6px; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-2xs); background: var(--ss-surface-tint); color: var(--ss-text-muted); }
+.wrap-slimstat .ss-sc-staff { font-size: 11px; color: var(--ss-text-muted); }
+.wrap-slimstat .ss-sc-workspace { min-width: 0; max-width: 1000px; }
+.wrap-slimstat .ss-sc-workspace > h2 { font-size: 18px; font-weight: 600; line-height: 1.3; margin: 0 0 8px; }
+.wrap-slimstat .ss-sc-workspace > p { max-width: 70ch; }
+.wrap-slimstat .ss-sc-controls { display: flex; flex-wrap: wrap; gap: 16px; margin-block: 24px 16px; }
+.wrap-slimstat .ss-sc-controls label { display: grid; gap: 6px; font-weight: 600; }
+.wrap-slimstat #ss-sc-limit { max-width: 100px; }
+.wrap-slimstat .ss-sc-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-block-end: 12px; }
+.wrap-slimstat .ss-sc-filter input, .wrap-slimstat .ss-sc-filter select { min-width: 0; max-width: 100%; }
+.wrap-slimstat .ss-sc-stage { margin-block: 24px; padding: 24px; background: var(--ss-surface); border: 1px solid var(--ss-border); border-radius: var(--ss-radius-2xs); }
+.wrap-slimstat .ss-sc-stage h3 { font-size: 14px; margin: 0 0 8px; }
+.wrap-slimstat #ss-sc-preview { min-height: 96px; padding-block-start: 20px; overflow-x: auto; transition: opacity 180ms var(--ss-easing-out); }
+.wrap-slimstat #ss-sc-preview.is-loading { opacity: .4; background: linear-gradient(var(--ss-border) 0 0) 0 40px / 65% 14px no-repeat, linear-gradient(var(--ss-border) 0 0) 0 72px / 45% 14px no-repeat; }
+.wrap-slimstat #ss-sc-preview table { border-collapse: collapse; width: 100%; text-align: start; font-variant-numeric: tabular-nums; }
+.wrap-slimstat #ss-sc-preview th, .wrap-slimstat #ss-sc-preview td { padding: 12px; border-bottom: 1px solid var(--ss-border); text-align: start; }
+.wrap-slimstat #ss-sc-preview .top li, .wrap-slimstat #ss-sc-preview .top-all li { display: flex; gap: 12px; }
+.wrap-slimstat #ss-sc-preview .col-count { margin-inline-start: auto; font-variant-numeric: tabular-nums; }
+.wrap-slimstat #ss-sc-preview .postbox { border: 0; box-shadow: none; min-width: 0; }
+/* Admin report rules reach widget rows here; the live page has only slimstat.css, which paints no bar. */
+.wrap-slimstat #ss-sc-preview p.slimstat-tooltip-trigger { display: block; }
+.wrap-slimstat #ss-sc-preview span.slimstat-tooltip-bar { display: none; }
+.wrap-slimstat #ss-sc-error { color: var(--ss-danger-fg); }
+.wrap-slimstat #ss-sc-hint { position: relative; padding-inline-end: 48px; }
+.wrap-slimstat #ss-sc-hint .notice-dismiss { min-width: 44px; min-height: 44px; }
+.wrap-slimstat .ss-sc-codebar { margin-block-start: 24px; }
+.wrap-slimstat #ss-sc-code { box-sizing: border-box; width: 100%; font-family: monospace; padding: 12px; resize: vertical; }
+.wrap-slimstat .ss-sc-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.wrap-slimstat .ss-sc :focus-visible { outline: 2px solid var(--ss-focus); outline-offset: 3px; }
+.wrap-slimstat .ss-sc-catalog .ss-sc-mobile { display: none; }
+@media (max-width: 960px) {
+    .wrap-slimstat .ss-sc { grid-template-columns: minmax(0, 1fr); }
+    .wrap-slimstat .ss-sc-catalog { position: static; max-height: none; overflow: visible; padding: 0; }
+    .wrap-slimstat #ss-sc-rail { display: none; }
+    .wrap-slimstat .ss-sc-catalog .ss-sc-mobile { display: block; width: 100%; max-width: none; }
+}
+@media (max-width: 782px) {
+    .wrap-slimstat .ss-sc { gap: 24px; }
+    .wrap-slimstat .ss-sc-stage { padding: 16px; }
+    .wrap-slimstat .ss-sc-controls, .wrap-slimstat .ss-sc-filter { flex-direction: column; align-items: stretch; }
+    .wrap-slimstat .ss-sc-controls select, .wrap-slimstat #ss-sc-limit { max-width: none; width: 100%; }
+    .wrap-slimstat .ss-sc button { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .wrap-slimstat #ss-sc-preview { transition: none; }
+}

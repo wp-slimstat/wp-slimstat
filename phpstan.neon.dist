@@ -28,5 +28,6 @@ parameters:
     scanDirectories:
         - src/Dependencies      # known to the analyzer, but not analyzed
     scanFiles:
+        - languages/index.php
         - tests/phpstan/woocommerce.php
     treatPhpDocTypesAsCertain: false

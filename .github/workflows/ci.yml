@@ -542,6 +542,10 @@ jobs:
         if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1' }}
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/acquisition-reports-db-test.php
 
+      - name: Shortcode rendering and privacy
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1' }}
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/shortcode-render-wp-test.php
+
       - name: Pretty permalinks, and prove /wp-json/ actually routes
         # WordPress installs with an EMPTY permalink_structure, so /wp-json/ is not rewritten
         # at all and the obfuscated /request/{hash}/ endpoint cannot exist. The tracker builds

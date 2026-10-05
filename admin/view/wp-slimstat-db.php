@@ -1124,7 +1124,7 @@ class wp_slimstat_db
     public static function count_records($_column = 'id', $_where = '', $_use_date_filters = true, $where_params = [])
     {
         // Validating the column
-        if (false === in_array($_column, ['id', 'ip', 'other_ip', 'username', 'email', 'country', 'location', 'city', 'referer', 'resource', 'searchterms', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser', 'browser_version', 'browser_type', 'platform', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'content_type', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out', 'dt'])) {
+        if (false === in_array($_column, ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'utm_id', 'traffic_channel', 'traffic_source', 'id', 'ip', 'other_ip', 'username', 'email', 'country', 'location', 'city', 'referer', 'resource', 'searchterms', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser', 'browser_version', 'browser_type', 'platform', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'content_type', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out', 'dt'])) {
             return null;
         }
 

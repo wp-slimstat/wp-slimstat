@@ -152,6 +152,13 @@ class wp_slimstat_admin
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_email_report'],
             ],
+            'slimshortcodes' => [
+                'is_report_group' => false,
+                'show_in_sidebar' => true,
+                'title' => __('Shortcodes', 'wp-slimstat'),
+                'capability' => 'can_view',
+                'callback' => [self::class, 'wp_slimstat_include_shortcodes'],
+            ],
             'slimlayout' => [
                 'is_report_group' => false,
                 'show_in_sidebar' => true,
@@ -1592,6 +1599,13 @@ class wp_slimstat_admin
             wp_enqueue_script('slimstat-heatmaps', plugins_url('/admin/assets/js/heatmaps.js', __DIR__), ['wp-i18n', 'wp-api-fetch'], SLIMSTAT_ANALYTICS_VERSION, true);
             wp_set_script_translations('slimstat-heatmaps', 'wp-slimstat');
         }
+        if ('slimshortcodes' === self::$current_screen) {
+            // The preview renders front-end widget markup, so it needs the front-end stylesheet too.
+            \SlimStat\Shortcodes\Shortcode::style();
+            wp_enqueue_style('wp-slimstat-shortcodes', plugins_url('/admin/assets/css/shortcodes.css', __DIR__), ['wp-slimstat-tokens', 'wp-slimstat-frontend'], SLIMSTAT_ANALYTICS_VERSION);
+            wp_enqueue_script('slimstat-shortcodes', plugins_url('/admin/assets/js/shortcodes.js', __DIR__), ['wp-i18n', 'wp-api-fetch', 'utils'], SLIMSTAT_ANALYTICS_VERSION, true);
+            wp_set_script_translations('slimstat-shortcodes', 'wp-slimstat');
+        }
         if ('slimpro' === self::$current_screen) {
             wp_enqueue_style('wp-slimstat-pro-overview', plugins_url('/admin/assets/css/pro.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
         }
@@ -2320,6 +2334,11 @@ class wp_slimstat_admin
     }
 
     // END: wp_slimstat_include_layout
+
+    public static function wp_slimstat_include_shortcodes()
+    {
+        include(__DIR__ . '/view/shortcodes.php');
+    }
 
     /**
      * Includes the Heatmaps page list

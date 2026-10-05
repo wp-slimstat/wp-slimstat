@@ -215,9 +215,7 @@ class Utils
 			return '';
 		}
 
-		if (method_exists('\wp_slimstat_i18n', 'init_dynamic_strings')) {
-			\wp_slimstat_i18n::init_dynamic_strings();
-		}
+		\wp_slimstat_i18n::init_dynamic_strings();
 
 		$lookupKey = 'e-' . $code;
 		$rawLabel = \wp_slimstat_i18n::get_string($lookupKey);

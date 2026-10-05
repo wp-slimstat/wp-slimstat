@@ -1353,7 +1353,7 @@ class wp_slimstat_reports
 
             $_args['where'] = call_user_func(
                 [$_args['raw'][0], 'get_combined_where'],
-                $_args['where'],
+                $_args['where'] ?? '',
                 '',
                 $use_date_filters,
                 '',
@@ -2637,7 +2637,7 @@ class wp_slimstat_reports
             $code         = strtolower((string)($a_country['country'] ?? ''));
             $visits       = (int) $a_country['counthits'];
             $percent      = (wp_slimstat_db::$pageviews > 0) ? round((100 * $visits / wp_slimstat_db::$pageviews), 2) : 0;
-            $country_name = wp_slimstat_i18n::get_string('c-' . ($a_country['country'] ?? ''), 'wp-slimstat');
+            $country_name = wp_slimstat_i18n::get_string('c-' . ($a_country['country'] ?? ''));
 
             $data_areas[$code] = $visits;
             $country_stats[]   = [

@@ -1,5 +1,11 @@
 = 6.1.0 - Unreleased =
 
+**Shortcodes**
+* New Shortcode Playground under SlimStat → Shortcodes: browse reports, preview your data, adjust filters and copy or test a shortcode. Pro reports include clearly labelled samples and dismissible hints.
+* New live visitor, page and country counters; Ecommerce KPI tables for analytics viewers; Pro Heatmap insights tables.
+* Shortcodes support multiple columns and UTM/channel counts, escape text and separators, and accept nonnumeric offsets without crashing. Report widgets placed with a shortcode no longer log an “Undefined array key "where"” warning. Personal data, access logs and user reports now appear only to people allowed to view analytics; visitors see nothing.
+* Translation changes: removed “Invalid Report ID”; replaced “Select a widget” with “Select a report” and translated “Add a SlimStat report to your sidebar”. New labels and notices need translation; obsolete strings are retained in PO history.
+
 **Heatmaps**
 * New Heatmaps page lists every page with clicks: clicks, pageviews, clicks per pageview, device split, last click and what was recorded. Search, sort and date ranges run on one cached query. A Heatmap button on the admin bar, beside Online, opens it (on the site, at the current page).
 * Heatmap recording is opt-in (off by default). When SlimStat Pro shows heatmaps, a sampled share of pageviews on chosen pages records clicks with their element, scroll depth, dead clicks and rage clicks. Recording follows the site's consent and Do Not Track rules and stores no text typed by visitors.
