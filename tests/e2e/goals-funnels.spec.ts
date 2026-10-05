@@ -108,7 +108,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(funnelCtas.first()).toHaveText(/Upgrade to Pro/);
 
         // No deprecated Pro labels on this view.
-        await expect(page.locator('#wpbody-content')).not.toContainText(/Upgrade to Pro/);
+        await expect(page.locator('#wpbody-content')).not.toContainText(/Unlock SlimStat Pro/);
     });
 
     // ─── State: Free × has-data ─────────────────────────────────
