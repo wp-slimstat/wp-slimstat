@@ -47,3 +47,21 @@ test('report cards fill their row and keep the info icon with the title', async 
   const short = cards.find((c) => 'slim_p1_18' === c.id)!;
   expect(cards.filter((c) => c.top === short.top).length, 'slim_p1_18 lines up with the cards beside it').toBeGreaterThan(1);
 });
+
+test('a row that is not full spreads its cards across the empty columns (QA D9)', async ({ page }) => {
+  // Traffic Summary sat beside Top Countries with a blank third column; most report pages had such a row.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  for (const slug of ['slimview3', 'slimview4', 'slimview5']) {
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=${slug}`);
+    await expect(page.locator('.meta-box-sortables > .postbox').first()).toBeVisible({ timeout: 20_000 });
+    const rows = await page.locator('.meta-box-sortables > .postbox').evaluateAll((boxes) => {
+      const ends: Record<number, number> = {};
+      for (const box of boxes) {
+        const r = box.getBoundingClientRect();
+        if (r.height) ends[Math.round(r.top)] = Math.max(ends[Math.round(r.top)] || 0, Math.round(r.right));
+      }
+      return Object.values(ends);
+    });
+    for (const end of rows) expect(end, `${slug}: every row ends where the widest one does`).toBeGreaterThanOrEqual(Math.max(...rows) - 2);
+  }
+});

@@ -688,6 +688,8 @@ body {
 .wrap-slimstat .postbox,
 .wrap-slimstat .sortable-placeholder {
   box-sizing: border-box;
+  /* A row that is not full spreads its cards over the empty columns (QA D9). */
+  flex-grow: 1;
   float: left;
   margin-bottom: 15px;
   min-width: 24.3%;
@@ -1559,6 +1561,8 @@ body.slimstat-admin-page.rtl .ui-datepicker-multi .ui-datepicker-group {
 
 .slimstat-layout .postbox,
 .slimstat-layout .sortable-placeholder {
+  /* Tiles to drag, not reports: they keep their width. */
+  flex-grow: 0;
   float: left;
   margin: 0 10px 10px 0;
   min-width: 285px;
