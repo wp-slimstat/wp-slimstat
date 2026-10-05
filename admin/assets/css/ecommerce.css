@@ -16,7 +16,7 @@
 .ss-ec button { font: inherit; cursor: pointer; }
 .ss-ec :is(button,a,summary,select) { -webkit-tap-highlight-color: transparent; }
 .ss-ec .button { display: inline-flex; gap: 6px; align-items: center; justify-content: center; min-height: 36px; padding: 0 12px; font-size: 12px; font-weight: 500; text-decoration: none; box-shadow: none; }
-.ss-ec-discover { margin-block: 24px; padding: 24px; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-sm); background: var(--ss-surface); }
+.ss-ec-discover { position: relative; margin-block: 24px; padding: 24px; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-sm); background: var(--ss-surface); }
 .ss-ec-discover p { max-width: 75ch; }
 .ss-ec-discover-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-block: 16px 4px; }
 .ss-ec-discover-actions .button { min-height: 44px; }

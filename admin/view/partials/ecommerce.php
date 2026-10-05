@@ -147,9 +147,13 @@ $setup = static function ($label) {
 		</div>
 		<?php endif; ?>
 		<?php // Below Revenue drivers, not above (audit F5). ?>
-		<?php if ($orders || !isset($data['groups']['campaign'])) : // Pro's reports have nothing to show in a range without orders. ?>
+		<?php $pro = isset($data['groups']['campaign']); $license = $pro && empty(wp_slimstat::$settings['slimstat_pro_license_status']) && current_user_can('manage_options') ? '<a href="' . esc_url(admin_url('admin.php?page=slimconfig&tab=8')) . '">' . esc_html__('Activate your license', 'wp-slimstat') . '</a> ' . esc_html__('to receive Pro updates for this site.', 'wp-slimstat') : ''; ?>
+		<?php if ($pro && get_user_setting('slimstat_ec_discover')) : // QA C3: retired once a report it lists was opened, or on Dismiss. ?>
+			<?php if ($orders && $license) : ?><p class="ss-ec-footnote"><?php echo wp_kses_post($license); ?></p><?php endif; ?>
+		<?php elseif ($orders || !$pro) : // Pro's reports have nothing to show in a range without orders. ?>
 		<section class="ss-ec-discover" aria-labelledby="ss-ec-discover-title">
-			<?php if (isset($data['groups']['campaign'])) : ?>
+			<?php if ($pro) : ?>
+				<button type="button" class="notice-dismiss" data-ec-discover-dismiss><span class="screen-reader-text"><?php esc_html_e('Dismiss', 'wp-slimstat'); ?></span></button>
 				<h2 id="ss-ec-discover-title"><?php esc_html_e('Your Pro reports are ready', 'wp-slimstat'); ?></h2>
 				<p><?php esc_html_e('Start with a question. Explore the report, then use View report to see exact values and export your current selection.', 'wp-slimstat'); ?></p>
 				<div class="ss-ec-discover-actions">
@@ -157,7 +161,7 @@ $setup = static function ($label) {
 					<button type="button" class="button" data-open-report="device"><?php esc_html_e('Explore devices', 'wp-slimstat'); ?></button>
 					<button type="button" class="button" data-open-report="coupon"><?php esc_html_e('Explore coupons', 'wp-slimstat'); ?></button>
 				</div>
-				<?php if (empty(wp_slimstat::$settings['slimstat_pro_license_status']) && current_user_can('manage_options')) : ?><p><a href="<?php echo esc_url(admin_url('admin.php?page=slimconfig&tab=8')); ?>"><?php esc_html_e('Activate your license', 'wp-slimstat'); ?></a> <?php esc_html_e('to receive Pro updates for this site.', 'wp-slimstat'); ?></p><?php endif; ?>
+				<?php if ($license) : ?><p><?php echo wp_kses_post($license); ?></p><?php endif; ?>
 			<?php elseif (!wp_slimstat::pro_is_installed()) : ?>
 				<h2 id="ss-ec-discover-title"><?php esc_html_e('Find your next revenue opportunity', 'wp-slimstat'); ?></h2>
 				<p><?php esc_html_e('Pro adds campaign and landing-page revenue, device and customer segments, coupon discounts, product refunds and CSV exports. Your overview, channels, sources and products are included in Free.', 'wp-slimstat'); ?></p>

@@ -14,6 +14,9 @@
 * At a Glance says what it counts: "From Any SERP" is now "Pageviews with a search term" and "Last 30 minutes" is now "Pageviews, last 30 minutes". The numbers are unchanged. These two labels show in English until they are translated again.
 * Clearer Migration, Settings, Customize and Access Log screens: Customize cards show a drag grip and keyboard-reachable buttons; Reset layout asks before it discards the layout; Access Log speed reads "Server … ms · Page … ms"; Bounce rate and New Visitors Rate show a % sign.
 
+**Ecommerce**
+* "Your Pro reports are ready" shows until you open one of the reports it lists or dismiss it, per user. The license reminder it carried stays as a footnote.
+
 = 6.0.0 - 2026-09-15 =
 
 **Ecommerce**

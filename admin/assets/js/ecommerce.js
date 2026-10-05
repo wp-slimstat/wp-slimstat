@@ -237,6 +237,11 @@
             if (destination) { event.preventDefault(); if (destination.tagName === 'DETAILS') destination.open = true; destination.tabIndex = -1; destination.focus(); destination.scrollIntoView({ block: 'center' }); }
         }
         if (target.matches('[data-ec-export]')) announce(__('CSV download requested for the current report and filters.', 'wp-slimstat'), true);
+        // QA C3: the Pro reports panel retires once a report it lists is opened, by its button or its tab, or on Dismiss.
+        const opened = target.dataset.openReport || (target.matches('[role=tab]') && target.getAttribute('aria-controls').replace('ss-ec-panel-', ''));
+        const discover = root().querySelector('.ss-ec-discover');
+        if (target.matches('[data-ec-discover-dismiss]') || (opened && discover?.querySelector('[data-open-report="' + opened + '"]'))) window.setUserSetting('slimstat_ec_discover', 'seen');
+        if (target.matches('[data-ec-discover-dismiss]')) { const next = discover.nextElementSibling; discover.remove(); next.tabIndex = -1; next.focus(); }
     });
     document.addEventListener('change', event => {
         if (event.target.matches('[data-compare]')) { state.compare = event.target.checked; draw(); }
