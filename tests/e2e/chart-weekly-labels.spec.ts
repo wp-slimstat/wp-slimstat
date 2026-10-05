@@ -11,6 +11,8 @@ import { test, expect } from '@playwright/test';
 import { BASE_URL } from './helpers/env';
 
 test('weekly chart: ranges do not overlap, the curve does not overshoot, this week says so', async ({ page }) => {
+  // Short enough that the chart starts below the fold, as on an empty install under "Get started".
+  await page.setViewportSize({ width: 1280, height: 480 });
   await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&type=last_28_days`);
   await page.locator('select.slimstat-granularity-select').first().selectOption('weekly');
   const canvas = page.locator('canvas[id^="slimstat_chart_"]').first();
@@ -40,6 +42,8 @@ test('weekly chart: ranges do not overlap, the curve does not overshoot, this we
   expect(chart.curves.every((mode) => 'monotone' === mode), 'a monotone curve never overshoots its points').toBe(true);
 
   // The range ends today, so its last week is still in progress.
+  // A mouse move outside the viewport reaches no element, so bring the chart in first.
+  await canvas.scrollIntoViewIfNeeded();
   const box = (await canvas.boundingBox())!;
   await page.mouse.move(box.x + chart.lastPoint.x, box.y + chart.lastPoint.y);
   await expect(page.locator('th').filter({ hasText: /\(Now\)$/ })).toBeVisible({ timeout: 5_000 });
