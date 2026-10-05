@@ -109,6 +109,8 @@ check((bool) preg_match('/p span\.slimstat-count-pct\s*\{[^}]*float:\s*none[^}]*
 // A4: Delete heatmap data takes the destructive role. It renders only once Pro capture has set up
 // the heatmap tables, so a Free-only E2E install never shows it; this is the check that always runs.
 check(false !== strpos(read_or_die('admin/view/heatmaps.php'), '<p class="ss-hm-delete"><button type="button" class="button-link button-link-delete"'), 'A4: Delete heatmap data uses the destructive button role');
+// QA R12: the pill rule for settings inputs also rounded checkboxes, so Email Report's picks read as radio buttons.
+check(false === strpos($admincss, '.wrap-slimstat .form-table tr td input{') && false !== strpos($admincss, '.wrap-slimstat .form-table tr td input:not([type=checkbox]):not([type=radio]){'), 'R12: form-table pill inputs leave checkboxes and radios native');
 
 if ($failures > 0) {
     fwrite(STDERR, "{$failures} check(s) failed in admin-ui-render-guards-test.php\n");

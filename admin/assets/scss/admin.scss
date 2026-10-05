@@ -2999,7 +2999,8 @@ body.slimstat-admin-page {
         word-break: break-word;
         overflow-wrap: anywhere;
 
-        input {
+        /* Pills are for text fields; a round checkbox reads as a radio button (QA R12). */
+        input:not([type=checkbox]):not([type=radio]) {
           border: 2px solid $grayFour;
           border-radius: 50px;
           /* Avoid input overflow in narrow viewports */
