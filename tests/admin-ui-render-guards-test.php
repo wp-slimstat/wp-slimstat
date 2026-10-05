@@ -109,6 +109,9 @@ check((bool) preg_match('/p span\.slimstat-count-pct\s*\{[^}]*float:\s*none[^}]*
 // A4: Delete heatmap data takes the destructive role. It renders only once Pro capture has set up
 // the heatmap tables, so a Free-only E2E install never shows it; this is the check that always runs.
 check(false !== strpos(read_or_die('admin/view/heatmaps.php'), '<p class="ss-hm-delete"><button type="button" class="button-link button-link-delete"'), 'A4: Delete heatmap data uses the destructive button role');
+// QA D11: "Build your first campaign link" read one way on the Upgrade page and another on Reports.
+$campaignLink = "__('Tag an incoming link to see its recorded pageviews in UTM Campaigns.', 'wp-slimstat')";
+check(false !== strpos($reports, $campaignLink) && false !== strpos(read_or_die('admin/view/upgrade-pro.php'), str_replace('__(', 'esc_html_e(', $campaignLink)), 'D11: one description for "Build your first campaign link"');
 // QA R12: the pill rule for settings inputs also rounded checkboxes, so Email Report's picks read as radio buttons.
 check(false === strpos($admincss, '.wrap-slimstat .form-table tr td input{') && false !== strpos($admincss, '.wrap-slimstat .form-table tr td input:not([type=checkbox]):not([type=radio]){'), 'R12: form-table pill inputs leave checkboxes and radios native');
 

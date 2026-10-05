@@ -1320,7 +1320,7 @@ class wp_slimstat_reports
         $links = [
             ['slimview1', __('Check that tracking works', 'wp-slimstat'), __('Open your site in a private window, then watch Real-time.', 'wp-slimstat')],
             ['slimview6', __('Add a goal', 'wp-slimstat'), __('Count the visits that reach a page or click a button you care about.', 'wp-slimstat')],
-            ['slimview5#slimstat-utm-builder', __('Build your first campaign link', 'wp-slimstat'), __('Tag an incoming link to see where its visitors go.', 'wp-slimstat')],
+            ['slimview5#slimstat-utm-builder', __('Build your first campaign link', 'wp-slimstat'), __('Tag an incoming link to see its recorded pageviews in UTM Campaigns.', 'wp-slimstat')],
         ];
         if (\SlimStat\Ecommerce\Integration::available()) {
             $links[] = ['slimview7', __('Explore your Ecommerce reports', 'wp-slimstat'), __('See which visits lead to WooCommerce orders.', 'wp-slimstat')];
