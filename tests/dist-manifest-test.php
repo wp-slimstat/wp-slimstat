@@ -134,7 +134,7 @@ if (false === $ci_generate || false === $wp_env || $ci_generate > $wp_env) {
 }
 
 // ── 4. …and nothing development-only. A DENYLIST WRITTEN HERE, on purpose ───────────────
-$dev_only = '~^(tests|\.github|\.githooks|node_modules|vendor/phpunit|vendor/bin|build)/'
+$dev_only = '~^(tests|\.github|\.githooks|node_modules|vendor/phpunit|vendor/bin|build|plans)/'
     . '|(^|/)(phpunit\.xml\.dist|phpstan\.neon\.dist|phpstan-baseline\.neon|composer\.lock|package(-lock)?\.json'
     . '|\.wp-env(\.override)?\.json|CONTRIBUTING\.md|\.distignore|\.gitignore|rector\.php|pint\.json)$'
     . '|\.(spec|test)\.ts$~';

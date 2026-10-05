@@ -35,6 +35,7 @@ phpstan-baseline.neon
 
 # Dev-only directories not needed in release
 /packages
+/plans
 /vendor/bin
 /vendor/mockery
 /vendor/phpunit
