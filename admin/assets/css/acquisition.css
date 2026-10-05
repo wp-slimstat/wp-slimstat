@@ -169,8 +169,10 @@
     max-width: 65ch;
     line-height: 1.6;
 }
-.wrap-slimstat .slimstat-acquisition__empty {
-    padding-block: var(--ss-space-6);
+.wrap-slimstat p.slimstat-acquisition__empty {
+    /* Outranks the legacy list-row paragraph (.inside p), as the guide does. */
+    padding: var(--ss-space-6) 0;
+    border: 0;
 }
 .wrap-slimstat .slimstat-acquisition :focus-visible {
     outline: 2px solid var(--ss-focus);

@@ -37,17 +37,20 @@ test('the chart keeps its last x label clear of the card edge', async ({ page })
   await expect.poll(gap).toBeGreaterThanOrEqual(12);
 });
 
-test('the report guide lines up with the table, without a legacy row divider', async ({ page }) => {
-  await page.goto(PAGE);
-  const guide = page.locator('#slim_p3_04 .slimstat-acquisition__guide');
-  const table = page.locator('#slim_p3_04 .slimstat-acquisition__groups');
-  const [style, guideLeft, tableLeft] = await Promise.all([
-    guide.evaluate((g) => ({ border: getComputedStyle(g).borderBottomStyle, maxWidth: getComputedStyle(g).maxWidth })),
-    guide.evaluate((g) => Math.round(g.getBoundingClientRect().left + parseFloat(getComputedStyle(g).paddingLeft))),
-    table.evaluate((t) => Math.round(t.getBoundingClientRect().left)),
-  ]);
-  expect(style.border).toBe('none');
-  expect(guideLeft).toBe(tableLeft);
+test('the report guide lines up with the table or empty state, without a legacy row divider', async ({ page }) => {
+  // A range with no data (all of CI's install) renders a paragraph in place of the table, and the
+  // legacy report body pads and underlines every paragraph as a list row.
+  for (const range of ['', '&type=custom&from=2001-01-01&to=2001-01-02']) {
+    await page.goto(PAGE + range);
+    const blocks = page.locator('#slim_p3_04 :is(.slimstat-acquisition__guide, .slimstat-acquisition__groups, .slimstat-acquisition__empty)');
+    await expect(blocks).toHaveCount(2);
+    const [guide, body] = await blocks.evaluateAll((nodes) => nodes.map((n) => {
+      const cs = getComputedStyle(n);
+      return { left: Math.round(n.getBoundingClientRect().left + parseFloat(cs.paddingLeft)), divider: 'P' === n.tagName ? cs.borderBottomStyle : 'none' };
+    }));
+    expect([guide.divider, body.divider]).toEqual(['none', 'none']);
+    expect(body.left).toBe(guide.left);
+  }
 });
 
 test('the UTM builder opens only from a report link, and closing it returns focus there', async ({ page }) => {
