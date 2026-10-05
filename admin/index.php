@@ -2141,6 +2141,7 @@ class wp_slimstat_admin
                      /* translators: %s: formatted online visitor count inside its updating HTML span. */
                      . sprintf(__('Online: %s', 'wp-slimstat'), '<span id="slimstat-adminbar-online-header">' . number_format_i18n($online_count) . '</span>'),
             'href'  => $overview_url,
+            'meta'  => ['title' => __('Visitors online (last 30 min)', 'wp-slimstat')],
         ]);
 
         // Add stats grid node. Free shows a "Pro" badge where Views and Referrals would be (audit F3).

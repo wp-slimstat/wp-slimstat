@@ -105,6 +105,8 @@ test.describe('Admin Bar Realtime Refresh (#223/#224)', () => {
       const el = page.locator(`#${id}`);
       await expect(el).toBeAttached({ timeout: 5000 });
     }
+    // "Online: 0" names its window on hover, as the dropdown's title does (QA D2).
+    await expect(page.locator('#wp-admin-bar-slimstat-header > a')).toHaveAttribute('title', 'Visitors online (last 30 min)');
   });
 
   test('SlimStatAdminBar localized data includes i18n and is_pro', async ({ page }) => {
