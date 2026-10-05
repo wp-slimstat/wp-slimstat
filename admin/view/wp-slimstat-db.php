@@ -1940,7 +1940,8 @@ class wp_slimstat_db
         // agree. Rows recorded before attribution existed have no channel and keep the referrer rule.
         $serp_where   = 'searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE %s';
         $direct_where = 'referer IS NULL';
-        if ('1' === get_option(\SlimStat\Tracker\Acquisition::readinessKey(), '0')) {
+        $channels_ready = '1' === get_option(\SlimStat\Tracker\Acquisition::readinessKey(), '0');
+        if ($channels_ready) {
             $serp_where   = "(traffic_channel = 'organic_search' OR (traffic_channel IS NULL AND {$serp_where}))";
             $direct_where = "(traffic_channel = 'direct' OR (traffic_channel IS NULL AND {$direct_where}))";
         }
@@ -1959,7 +1960,8 @@ class wp_slimstat_db
 
         $results[2]['metric']  = __('Direct Pageviews', 'wp-slimstat');
         $results[2]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', $direct_where));
-        $results[2]['tooltip'] = __("Visitors who typed your website URL directly into their browser address bar. It can also refer to visitors who clicked on one of their bookmarked links, untagged links within emails, or links in documents that don't include tracking variables.", 'wp-slimstat');
+        $results[2]['tooltip'] = __("Visitors who typed your website URL directly into their browser address bar. It can also refer to visitors who clicked on one of their bookmarked links, untagged links within emails, or links in documents that don't include tracking variables.", 'wp-slimstat')
+            . ($channels_ready ? ' ' . __('It also counts older pageviews with no referrer, recorded before channels were tracked; the Channels report lists those as Unassigned.', 'wp-slimstat') : '');
 
         $results[3]['metric']  = __('From External SERP', 'wp-slimstat');
         $results[3]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', $serp_where, true, ['%' . $GLOBALS['wpdb']->esc_like(home_url()) . '%']));

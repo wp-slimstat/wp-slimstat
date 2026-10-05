@@ -14,6 +14,7 @@
 * Free screens show what Pro adds honestly: no blurred mock reports or invented figures.
 * Without Pro, Email Report shows the weekly email built from your site's last 7 days (top pages and referring domains) and can send it to you as a sample.
 * At a Glance says what it counts: "From Any SERP" is now "Pageviews with a search term" and "Last 30 minutes" is now "Pageviews, last 30 minutes". The numbers are unchanged. These two labels show in English until they are translated again.
+* Traffic Summary's Direct Pageviews help text explains why it can be higher than Direct in Channels: it also counts older pageviews with no referrer, which Channels lists as Unassigned. The numbers are unchanged. The new sentence shows in English until it is translated.
 * Clearer Migration, Settings, Customize and Access Log screens: Customize cards show a drag grip and keyboard-reachable buttons; Reset layout asks before it discards the layout; Access Log speed reads "Server … ms · Page … ms"; Bounce rate and New Visitors Rate show a % sign.
 
 **Ecommerce**
