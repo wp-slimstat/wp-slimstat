@@ -87,6 +87,7 @@ class HeatmapRestController implements RestControllerInterface
         $format = (string) get_option('date_format');
         $rows   = [];
         foreach ($data['rows'] as $row) {
+            $url    = (string) apply_filters('slimstat_heatmap_row_url', '', $row['page']);
             $rows[] = [
                 'page'      => $row['page'],
                 'title'     => $row['content_id'] ? wp_strip_all_tags(get_the_title($row['content_id'])) : '',
@@ -99,8 +100,8 @@ class HeatmapRestController implements RestControllerInterface
                 'last'      => $row['last'],
                 'lastText'  => \wp_slimstat::date_i18n($format, $row['last']),
                 'full'      => $row['full'],
-                // Pro's viewer URL for this page; empty in Free, where the row opens the Pro modal.
-                'url'       => esc_url_raw((string) apply_filters('slimstat_heatmap_row_url', '', $row['page'])),
+                // Pro's viewer URL for this page, on the list's range; empty in Free, where the row opens the Pro modal.
+                'url'       => '' === $url ? '' : esc_url_raw(add_query_arg(['from' => $range['from'], 'to' => $range['to']], $url)),
             ];
         }
 

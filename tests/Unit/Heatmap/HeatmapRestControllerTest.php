@@ -72,6 +72,7 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 		Functions\when('_prime_post_caches')->justReturn(null);
 		Functions\when('get_the_title')->justReturn('<em>About</em> us');
 		Functions\when('esc_url_raw')->returnArg();
+		Functions\when('add_query_arg')->alias(static fn($args, $url) => $url . '&' . http_build_query($args));
 		Functions\when('rest_ensure_response')->returnArg();
 		$GLOBALS['slimstat_test_options']['date_format'] = 'Y-m-d';
 		$request = new \WP_REST_Request(['to' => '2026-10-03', 'days' => 7, 'device' => '', 'refresh' => false]);
@@ -86,7 +87,7 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 
 		Functions\when('apply_filters')->alias(static fn($hook, $url, $page) => 'slimstat_heatmap_row_url' === $hook ? 'https://example.test/view?page=' . rawurlencode($page) : $url);
 		$pro = (new HeatmapRestController())->pages($request);
-		self::assertSame('https://example.test/view?page=%2Fabout', $pro['rows'][0]['url']);
+		self::assertSame('https://example.test/view?page=%2Fabout&from=2026-09-27&to=2026-10-03', $pro['rows'][0]['url'], 'the viewer opens on the list\'s range');
 		self::assertCount(1, array_unique($keys), 'one cache entry per range and device');
 	}
 }
