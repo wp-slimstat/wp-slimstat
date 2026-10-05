@@ -3832,8 +3832,10 @@ class wp_slimstat_admin
             $slugs = array_keys(array_filter($channel_labels, static function ($label, $slug) use ($find, $search) {
                 return false !== $find($label, $search) || false !== $find($slug, $search);
             }, ARRAY_FILTER_USE_BOTH));
-            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- allowlisted dimension; one placeholder per slug.
+            // A phpcs:ignore is dropped inside the DirectQuery disable region above, so this pairs like the LIKE branch below.
+            // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- allowlisted dimension; one placeholder per slug.
             $where_clauses[] = $slugs ? wp_slimstat::$wpdb->prepare($safe_dimension . ' IN (' . implode(',', array_fill(0, count($slugs), '%s')) . ')', $slugs) : '0 = 1';
+            // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
         } elseif ($search !== '') {
             // Append LIKE filter when a server-side search term was supplied.
             $like_pattern    = self::build_filter_search_like($dimension, $search);

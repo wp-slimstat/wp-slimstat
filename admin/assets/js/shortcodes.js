@@ -9,7 +9,7 @@
     let manual = false;
     let timer;
     let request = 0;
-    const modeLabels = { count: __('Number', 'wp-slimstat'), top: __('Top list', 'wp-slimstat'), recent: __('List', 'wp-slimstat'), 'count-all': __('Number, all time', 'wp-slimstat'), 'top-all': __('Top list, all time', 'wp-slimstat'), 'recent-all': __('List, all time', 'wp-slimstat') };
+    const modeLabels = { count: __('Number', 'wp-slimstat'), top: __('Top list', 'wp-slimstat'), recent: __('List', 'wp-slimstat'), 'count-all': __('Number, all time', 'wp-slimstat'), 'top-all': __('Top list, all time', 'wp-slimstat'), 'recent-all': __('List, all time', 'wp-slimstat'), widget: __('Report', 'wp-slimstat'), live: __('Live', 'wp-slimstat') };
     const node = (tag, text, className) => {
         const el = document.createElement(tag);
         if (text) el.textContent = text;

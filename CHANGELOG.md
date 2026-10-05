@@ -23,6 +23,7 @@
 * Traffic Summary's Direct Pageviews help text explains why it can be higher than Direct in Channels: it also counts older pageviews with no referrer, which Channels lists as Unassigned. The numbers are unchanged. The new sentence shows in English until it is translated.
 * Clearer Migration, Settings, Customize and Access Log screens: Customize cards show a drag grip and keyboard-reachable buttons; Reset layout asks before it discards the layout; Access Log speed reads "Server … ms · Page … ms"; Bounce rate and New Visitors Rate show a % sign.
 * The "Cookieless visit grouping" warning now clears as soon as the visitor identity migration adds its column, instead of staying up to three hours while the Migration screen already says the database is up to date.
+* Translations: the IP label in report row details and the Shortcode Playground's display names are translatable (one new string, "Live"); placeholder avatars no longer read "Unknown" to screen readers; translators see notes for the speed and row-range strings. Plugin Check reports no new errors or warnings.
 
 **Ecommerce**
 * "Your Pro reports are ready" shows until you open one of the reports it lists or dismiss it, per user. The license reminder it carried stays as a footnote.

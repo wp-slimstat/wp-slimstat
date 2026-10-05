@@ -399,6 +399,7 @@ $recorded     = [
     // helper and then scans other content raw, so the old whole-file exemption hid them.
     'migration-notice-visibility-test.php'       => 'exempt — its raw subjects are CSS and JS, which no PHP tokeniser can read; the template IS routed through slimstat_blank_comments()',
     'migration-ui-honesty-test.php'              => 'exempt — the raw subject is JS ($js), not PHP',
+    'admin-i18n-labels-test.php'                 => 'exempt — the raw subject is JS ($js, the Playground mode labels); the PHP reads go through slimstat_blank_comments()',
     // Two scanners, one file, and only one of them can be tokenised. The PHP half IS routed
     // through slimstat_tokenize() (rc_rounding_calls); the raw half walks the LINES OF A
     // JAVASCRIPT FILE, which no PHP tokeniser can strip. It is detected here through the

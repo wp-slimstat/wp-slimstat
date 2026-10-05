@@ -1275,11 +1275,12 @@ class wp_slimstat_reports
     {
         // MAX(dt) answers "ever tracked?" and "when last?" in one indexed lookup, once per request.
         if (null === self::$last_pageview_dt) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fixed query on the core-prefixed table; no values. Cached per request.
             self::$last_pageview_dt = (int) wp_slimstat::$wpdb->get_var("SELECT MAX(dt) FROM {$GLOBALS['wpdb']->prefix}slim_stats");
         }
         $last_dt = self::$last_pageview_dt;
 
-        $action = '';
+        $url = '';
         if (0 === $last_dt) {
             $title = __('No pageviews recorded yet.', 'wp-slimstat');
             $hint  = __('Open your site in a private window, then refresh this page.', 'wp-slimstat');
@@ -1292,14 +1293,14 @@ class wp_slimstat_reports
                 $hint = sprintf(__('The last pageview was on %s.', 'wp-slimstat'), date_i18n(get_option('date_format'), $last_dt));
             }
             if (abs((int) (wp_slimstat_db::$filters_normalized['date']['interval'] ?? 0)) < 90) {
-                $url    = admin_url('admin.php?page=' . rawurlencode((string) wp_slimstat_admin::$current_screen) . '&type=last_90_days');
-                $action = '<a class="button" href="' . esc_url($url) . '">' . esc_html__('Last 90 days', 'wp-slimstat') . '</a>';
+                $url = admin_url('admin.php?page=' . rawurlencode((string) wp_slimstat_admin::$current_screen) . '&type=last_90_days');
             }
         }
 
         echo '<div class="slimstat-empty"><p class="nodata">' . esc_html($title) . '</p>'
             . ('' !== $hint ? '<span class="slimstat-empty-hint">' . esc_html($hint) . '</span>' : '')
-            . $action . '</div>';
+            . ('' !== $url ? '<a class="button" href="' . esc_url($url) . '">' . esc_html__('Last 90 days', 'wp-slimstat') . '</a>' : '')
+            . '</div>';
     }
 
     /**
@@ -1312,6 +1313,7 @@ class wp_slimstat_reports
             return;
         }
         // Counts no further than 50, so a busy site pays for 50 index rows, not the table.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fixed query on the core-prefixed table; no values. Runs only until the site has 50 pageviews.
         $pageviews = (int) wp_slimstat::$wpdb->get_var("SELECT COUNT(*) FROM (SELECT 1 FROM {$GLOBALS['wpdb']->prefix}slim_stats LIMIT 50) t");
         if ($pageviews >= 50) {
             return;
@@ -1642,11 +1644,11 @@ class wp_slimstat_reports
                                 $element_value .= self::get_edit_profile_link($element_custom_value->ID);
                             } else {
                                 $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . sprintf("' class=\"avatar avatar-16 photo\" alt='Unknown'>%s (", esc_html($results[$i]['username'])) . __('account deleted', 'wp-slimstat') . ')</a>';
+                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . sprintf("' class=\"avatar avatar-16 photo\" alt=''>%s (", esc_html($results[$i]['username'])) . __('account deleted', 'wp-slimstat') . ')</a>';
                             }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt='Unknown'>" . __('Guest', 'wp-slimstat') . '</a>';
+                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt=''>" . __('Guest', 'wp-slimstat') . '</a>';
                         }
 
                         if ('on' == wp_slimstat::$settings['show_display_name']) {
@@ -1670,11 +1672,11 @@ class wp_slimstat_reports
                                 $element_value .= self::get_edit_profile_link($author_id);
                             } else {
                                 $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt='Unknown'>" . esc_html($author_username) . ' (' . __('account deleted', 'wp-slimstat') . ')</a>';
+                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt=''>" . esc_html($author_username) . ' (' . __('account deleted', 'wp-slimstat') . ')</a>';
                             }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . $image_url . "' class=\"avatar avatar-16 photo\" alt='Unknown'>" . __('Guest', 'wp-slimstat') . '</a>';
+                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt=''>" . __('Guest', 'wp-slimstat') . '</a>';
                         }
                         break;
                     case 'visit_id':
@@ -1738,7 +1740,7 @@ class wp_slimstat_reports
                 }
 
                 if (is_admin() && !empty($results[$i]['ip']) && 'ip' != $_args['columns'] && 'on' != wp_slimstat::$settings['convert_ip_addresses']) {
-                    $row_details .= '<br> IP: <a class="slimstat-filter-link" href="' . esc_url(self::fs_url('ip equals ' . $results[$i]['ip'])) . '">' . esc_html($results[$i]['ip']) . '</a>' . (empty($results[$i]['other_ip']) ? '' : ' / ' . esc_html($results[$i]['other_ip'])) . '<a title="WHOIS: ' . esc_attr($results[$i]['ip']) . '" class="slimstat-font-location-1 whois" href="' . esc_url(wp_slimstat::$settings['ip_lookup_service'] . $results[$i]['ip']) . '"></a>';
+                    $row_details .= '<br> ' . esc_html__('IP', 'wp-slimstat') . ': <a class="slimstat-filter-link" href="' . esc_url(self::fs_url('ip equals ' . $results[$i]['ip'])) . '">' . esc_html($results[$i]['ip']) . '</a>' . (empty($results[$i]['other_ip']) ? '' : ' / ' . esc_html($results[$i]['other_ip'])) . '<a title="WHOIS: ' . esc_attr($results[$i]['ip']) . '" class="slimstat-font-location-1 whois" href="' . esc_url(wp_slimstat::$settings['ip_lookup_service'] . $results[$i]['ip']) . '"></a>';
                 }
                 if ('' !== $row_details && '0' !== $row_details) {
                     $row_details = sprintf("<b class='slimstat-tooltip-content'>%s</b>", $row_details);

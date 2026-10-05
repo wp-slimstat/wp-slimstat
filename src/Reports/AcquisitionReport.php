@@ -296,7 +296,7 @@ class AcquisitionReport
             // class is extracted by admin.js for older reports with an external footer.
             echo '<nav class="slimstat-acquisition__pagination" aria-label="' . esc_attr__('Report pages', 'wp-slimstat') . '"><span>';
             echo esc_html(sprintf(
-                /* translators: 1: first row, 2: last row, 3: displayed result count. */
+                /* translators: 1: first displayed row, 2: last displayed row, 3: total row count. */
                 __('%1$s–%2$s of %3$s', 'wp-slimstat'), number_format_i18n($start + 1), number_format_i18n($start + count($rows)), number_format_i18n(count($all))
             )) . '</span>';
             if (is_admin() && $start > 0) {

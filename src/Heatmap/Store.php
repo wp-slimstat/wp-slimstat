@@ -209,6 +209,7 @@ final class Store
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery -- Table from the manifest; id prepared.
 		$view = $db->get_row($db->prepare('SELECT resource, dt FROM ' . self::table('slim_stats') . ' WHERE id = %d', $id), ARRAY_A);
 		if ('' !== (string) $db->last_error) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; the caller records them as a degradation, which escapes on display.
 			throw new \RuntimeException($db->last_error);
 		}
 		$page  = Query::pageKey((string) ($view['resource'] ?? ''));
@@ -266,6 +267,7 @@ final class Store
 		$table = self::table();
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery -- Table from the manifest; placeholders built above, values prepared.
 		if (false === $db->query($db->prepare("INSERT INTO {$table} (id, kind, seq, page, dt, device, vw, vh, dh, x, y, sel, rx, ry, flags) VALUES " . implode(', ', $values) . ' ON DUPLICATE KEY UPDATE y = GREATEST(y, VALUES(y)), dh = GREATEST(dh, VALUES(dh))', $args))) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; the caller records them as a degradation, which escapes on display.
 			throw new \RuntimeException($db->last_error);
 		}
 
@@ -277,6 +279,7 @@ final class Store
 			$elementsTable = self::table('slim_heatmap_elements');
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery -- Table from the manifest; values prepared.
 			if (false === $db->query($db->prepare("INSERT IGNORE INTO {$elementsTable} (sel, selector, label) VALUES " . implode(', ', array_fill(0, count($elements), '(UNHEX(%s), %s, %s)')), $args))) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; the caller records them as a degradation, which escapes on display.
 				throw new \RuntimeException($db->last_error);
 			}
 		}
