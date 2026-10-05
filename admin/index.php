@@ -3772,8 +3772,17 @@ class wp_slimstat_admin
             $where_clauses[] = $safe_dimension . ' <> 0';
         }
 
-        // Append LIKE filter when a server-side search term was supplied.
-        if ($search !== '') {
+        // Channels are stored as slugs but read as labels: search both, suggest both.
+        $channel_labels = 'traffic_channel' === $dimension ? \SlimStat\Tracker\Acquisition::labels() : [];
+        if ($search !== '' && $channel_labels) {
+            $find  = function_exists('mb_stripos') ? 'mb_stripos' : 'stripos';
+            $slugs = array_keys(array_filter($channel_labels, static function ($label, $slug) use ($find, $search) {
+                return false !== $find($label, $search) || false !== $find($slug, $search);
+            }, ARRAY_FILTER_USE_BOTH));
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- allowlisted dimension; one placeholder per slug.
+            $where_clauses[] = $slugs ? wp_slimstat::$wpdb->prepare($safe_dimension . ' IN (' . implode(',', array_fill(0, count($slugs), '%s')) . ')', $slugs) : '0 = 1';
+        } elseif ($search !== '') {
+            // Append LIKE filter when a server-side search term was supplied.
             $like_pattern    = self::build_filter_search_like($dimension, $search);
             // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- SQL uses core-prefix/schema identifiers or allowlisted dimensions; dynamic filter values are prepared before execution.
             $where_clauses[] = wp_slimstat::$wpdb->prepare($safe_dimension . ' LIKE %s', $like_pattern);
@@ -3915,6 +3924,8 @@ class wp_slimstat_admin
                         'label' => $sanitized_value,
                         'icon' => $icon_url
                     ];
+                } elseif ($channel_labels) {
+                    $options[] = ['value' => $sanitized_value, 'label' => $channel_labels[$sanitized_value] ?? $sanitized_value];
                 } else {
                     // Return simple string for backward compatibility
                     $options[] = $sanitized_value;
