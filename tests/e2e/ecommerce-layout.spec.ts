@@ -47,6 +47,22 @@ test('@woocommerce the selected KPI is a neutral tint, and the currency control 
   await expect(page.locator('.ss-ec-currency > summary')).toContainText('Currency:');
 });
 
+test('@woocommerce the selected value is not red, cards claim no fixed count, funnels match the UI (QA D8)', async ({ page }) => {
+  await open(page);
+  // Brand red on a sales figure reads as a loss.
+  const [r, g, b] = rgb(await page.locator('.ss-ec-kpi[aria-pressed=true] > strong').evaluate((v) => getComputedStyle(v).color));
+  expect(r, 'the selected value is not red').toBeLessThanOrEqual(Math.max(g, b));
+  // "Top 10" sat over tabs of 5 or 3 rows; each panel already says "Top by net sales".
+  await expect(page.locator('.ss-ec-card-heading')).not.toContainText(['Top 10']);
+  // The pointer resting on the selected tab left a grey box that read as stale focus.
+  const selected = page.locator('.ss-ec-tabs [aria-selected=true]').first();
+  await selected.hover();
+  expect(await selected.evaluate((t) => getComputedStyle(t).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+  // WordPress link blue on a red UI.
+  const [fr, fg, fb] = rgb(await page.locator('.ss-ec-row-filter').first().evaluate((a) => getComputedStyle(a).color));
+  expect(fr, 'filter funnels take the UI accent').toBeGreaterThan(Math.max(fg, fb));
+});
+
 test('@woocommerce cards in a row match, a lone tab is hidden, sort shows its direction', async ({ page }) => {
   await open(page);
   const rows = await page.locator('.ss-ec-card').evaluateAll((cards) => {

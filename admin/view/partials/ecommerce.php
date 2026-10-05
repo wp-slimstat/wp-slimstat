@@ -110,7 +110,7 @@ $setup = static function ($label) {
 			if (!$dimensions) { continue; }
 			?>
 			<section class="ss-ec-card" aria-label="<?php echo esc_attr($title); ?>">
-				<div class="ss-ec-card-heading"><h3><?php echo esc_html($title); ?></h3><span class="ss-ec-card-hint"><?php esc_html_e('Top 10', 'wp-slimstat'); ?></span></div>
+				<div class="ss-ec-card-heading"><h3><?php echo esc_html($title); ?></h3></div>
 				<div class="ss-ec-tabs" role="tablist" aria-label="<?php echo esc_attr($title); ?>"<?php echo 1 === count($dimensions) ? ' hidden' : ''; ?>><?php foreach ($dimensions as $index => $dimension) : ?><button type="button" role="tab" id="ss-ec-tab-<?php echo esc_attr($dimension); ?>" aria-controls="ss-ec-panel-<?php echo esc_attr($dimension); ?>" aria-selected="<?php echo 0 === $index ? 'true' : 'false'; ?>" tabindex="<?php echo 0 === $index ? '0' : '-1'; ?>"><?php echo esc_html($titles[$dimension]); ?></button><?php endforeach; ?></div>
 				<?php foreach ($dimensions as $index => $dimension) :
 					$rows = $data['groups'][$dimension]; $isCoupon = 'coupon' === $dimension;
