@@ -401,6 +401,10 @@ final class Report
 			'tablet' => __('Tablet', 'wp-slimstat'), 'guest' => __('Guest checkout', 'wp-slimstat'),
 			'account' => __('Registered account', 'wp-slimstat'),
 		];
+		if ('campaign' === $dimension && '' === $value) {
+			// Channels' "Unassigned" means a pageview from before report setup (QA U1).
+			return __('No campaign', 'wp-slimstat');
+		}
 		return '' === $value ? __('Unassigned', 'wp-slimstat') : (in_array($dimension, ['device', 'customer'], true) ? ($labels[$value] ?? $value) : $value);
 	}
 }

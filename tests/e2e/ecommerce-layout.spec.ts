@@ -63,6 +63,13 @@ test('@woocommerce the selected value is not red, cards claim no fixed count, fu
   expect(fr, 'filter funnels take the UI accent').toBeGreaterThan(Math.max(fg, fb));
 });
 
+test('@woocommerce orders without a campaign say so, not "Unassigned" (QA U1)', async ({ page }) => {
+  await open(page);
+  // Channels use "Unassigned" for pageviews that predate report setup; here it meant no campaign tag.
+  const names = await page.locator('#ss-ec-panel-campaign .ss-ec-rank-name').allTextContents();
+  expect(names).not.toContain('Unassigned');
+});
+
 test('@woocommerce cards in a row match, a lone tab is hidden, sort shows its direction', async ({ page }) => {
   await open(page);
   const rows = await page.locator('.ss-ec-card').evaluateAll((cards) => {
