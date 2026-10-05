@@ -513,6 +513,11 @@
 @media screen and (max-width: 782px) {
     #wpadminbar li#wp-admin-bar-slimstat-heatmap {
         display: block;
+        position: static; /* its menu anchors to the bar, as core's own items do here */
+    }
+
+    #wpadminbar #wp-admin-bar-slimstat-heatmap > .ab-sub-wrapper {
+        max-width: 100vw;
     }
 
     #wpadminbar #wp-admin-bar-slimstat-heatmap > .ab-item {
