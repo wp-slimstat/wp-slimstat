@@ -596,12 +596,24 @@ export async function restoreAllOptions(): Promise<void> {
 
 // ─── Stats table helpers ─────────────────────────────────────────
 
+/**
+ * Heatmap rows reference wp_slim_stats ids. TRUNCATE with foreign key checks off skips the
+ * cascade, so they would point at ids the next pageviews reuse. The table exists only once
+ * Pro capture set it up.
+ */
+export async function clearHeatmapTable(pool: mysql.Pool): Promise<void> {
+  await pool.execute("TRUNCATE TABLE wp_slim_heatmap").catch((error) => {
+    if ('ER_NO_SUCH_TABLE' !== error?.code) throw error;
+  });
+}
+
 export async function clearStatsTable(): Promise<void> {
   const pool = getPool();
   // Disable FK checks — wp_slim_events has a FK reference to wp_slim_stats
   await pool.execute("SET FOREIGN_KEY_CHECKS = 0");
   await pool.execute("TRUNCATE TABLE wp_slim_stats");
   await pool.execute("TRUNCATE TABLE wp_slim_events");
+  await clearHeatmapTable(pool);
   await pool.execute("SET FOREIGN_KEY_CHECKS = 1");
   // Every cache derived from wp_slim_stats must go with the rows, or a spec that
   // truncates and re-seeds reads the pre-truncate answer. admin/index.php:3276

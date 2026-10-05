@@ -2,6 +2,8 @@
 /** @license GPL-2.0-or-later */
 namespace SlimStat\Heatmap;
 
+use SlimStat\Schema\SurrogateKey;
+
 /**
  * One read contract for heatmaps, shared by Free's page list and Pro's viewer.
  *
@@ -201,7 +203,9 @@ final class Query
 				FROM {$table} WHERE kind = 0 AND dt BETWEEN %d AND %d{$on} GROUP BY page ORDER BY clicks DESC LIMIT " . self::MAX_PAGES, $start, $end));
 			$scroll = self::rows($db->prepare("SELECT HEX(page) page, ROUND(100 * AVG(LEAST(y / dh, 1))) depth
 				FROM {$table} WHERE kind = 1 AND dh > 0 AND dt BETWEEN %d AND %d{$on} GROUP BY page", $start, $end));
-			// Rows carry the page hash only; one sample pageview per page names it.
+			// Rows carry the page hash only; one sample pageview per page names it, if its page
+			// still hashes there. A TRUNCATE or restore with foreign key checks off leaves rows
+			// whose ids come back on other pages.
 			$paths = [];
 			if ($clicks) {
 				$ids = implode(',', array_map('intval', array_column($clicks, 'id')));
@@ -211,9 +215,22 @@ final class Query
 			}
 			$byHash = [];
 			foreach ($clicks as $row) {
-				$page = $paths[(int) $row['id']] ?? '';
-				$add($page, $row);
-				$byHash[(string) $row['page']] = $page;
+				$page                          = $paths[(int) $row['id']] ?? '';
+				$byHash[(string) $row['page']] = 0 === strcasecmp(SurrogateKey::hex($page), (string) $row['page']) ? $page : '';
+			}
+			// Otherwise any pageview of the group whose page hashes there names it.
+			$stale = array_keys($byHash, '', true);
+			if ($stale) {
+				$in = implode(',', array_map(static function ($hex): string {
+					return "UNHEX('" . preg_replace('/[^0-9A-F]/i', '', (string) $hex) . "')";
+				}, $stale));
+				foreach (self::rows($db->prepare("SELECT HEX(h.page) page, MIN(s.resource) resource FROM {$table} h INNER JOIN {$prefix}slim_stats s ON s.id = h.id
+					WHERE h.page IN ({$in}) AND h.dt BETWEEN %d AND %d AND LEFT(MD5(" . self::pageKeySql('s.resource') . '), 16) = LOWER(HEX(h.page)) GROUP BY h.page', $start, $end)) as $row) {
+					$byHash[(string) $row['page']] = self::pageKey((string) $row['resource']);
+				}
+			}
+			foreach ($clicks as $row) {
+				$add($byHash[(string) $row['page']], $row);
 			}
 			foreach ($scroll as $row) {
 				$page = $byHash[(string) $row['page']] ?? '';

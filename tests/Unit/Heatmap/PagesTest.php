@@ -5,6 +5,7 @@ namespace WpSlimstat\Tests\Unit\Heatmap;
 use Brain\Monkey\Functions;
 use SlimStat\Heatmap\Query;
 use SlimStat\Heatmap\Store;
+use SlimStat\Schema\SurrogateKey;
 use WpSlimstat\Tests\Unit\WpSlimstatTestCase;
 
 /** The Heatmaps page list: both layers merged by page key, each pageview counted once. */
@@ -19,16 +20,17 @@ class PagesTest extends WpSlimstatTestCase
 	{
 		parent::setUp();
 		$this->queries = [];
+		[$about, $pricing] = [strtoupper(SurrogateKey::hex('/about')), strtoupper(SurrogateKey::hex('/pricing'))];
 		$this->canned  = [
 			'slim_events te'      => [
 				['page' => '/about', 'clicks' => '5', 'desktop' => '3', 'tablet' => '1', 'mobile' => '1', 'last' => '200'],
 				['page' => '/', 'clicks' => '2', 'desktop' => '2', 'tablet' => '0', 'mobile' => '0', 'last' => '150'],
 			],
 			'kind = 0'            => [
-				['page' => 'AAAA', 'id' => '7', 'clicks' => '3', 'desktop' => '0', 'tablet' => '0', 'mobile' => '3', 'dead' => '1', 'rage' => '1', 'last' => '300'],
-				['page' => 'BBBB', 'id' => '9', 'clicks' => '4', 'desktop' => '4', 'tablet' => '0', 'mobile' => '0', 'dead' => '0', 'rage' => '0', 'last' => '120'],
+				['page' => $about, 'id' => '7', 'clicks' => '3', 'desktop' => '0', 'tablet' => '0', 'mobile' => '3', 'dead' => '1', 'rage' => '1', 'last' => '300'],
+				['page' => $pricing, 'id' => '9', 'clicks' => '4', 'desktop' => '4', 'tablet' => '0', 'mobile' => '0', 'dead' => '0', 'rage' => '0', 'last' => '120'],
 			],
-			'kind = 1'            => [['page' => 'AAAA', 'depth' => '62'], ['page' => 'CCCC', 'depth' => '10']],
+			'kind = 1'            => [['page' => $about, 'depth' => '62'], ['page' => 'CCCC', 'depth' => '10']],
 			'SELECT id, resource' => [['id' => '7', 'resource' => '/about?ref=nav'], ['id' => '9', 'resource' => '/pricing#plans']],
 			'COUNT(*) n'          => [['page' => '/about', 'n' => '20', 'content_id' => '5'], ['page' => '/elsewhere', 'n' => '1', 'content_id' => '0']],
 		];
@@ -124,6 +126,25 @@ class PagesTest extends WpSlimstatTestCase
 		// After capture began, legacy rows of a pageview that has heatmap rows are skipped.
 		self::assertStringContainsString('te.dt < 100 OR NOT EXISTS (SELECT 1 FROM wp_slim_heatmap h WHERE h.id = te.id)', $this->query('slim_events te'));
 		self::assertStringContainsString('WHERE id IN (7,9)', $this->query('SELECT id, resource'));
+	}
+
+	public function test_a_reused_pageview_id_does_not_rename_a_page(): void
+	{
+		// A TRUNCATE or restore with foreign key checks off leaves heatmap rows behind, and their
+		// ids come back on other pages: the group's own hash names it, not its oldest row.
+		$this->ready();
+		$home         = strtoupper(SurrogateKey::hex('/'));
+		$this->canned = [
+			'kind = 0'            => [
+				['page' => $home, 'id' => '3', 'clicks' => '1711', 'desktop' => '1711', 'tablet' => '0', 'mobile' => '0', 'dead' => '45', 'rage' => '59', 'last' => '300'],
+				['page' => 'AAAA', 'id' => '4', 'clicks' => '2', 'desktop' => '2', 'tablet' => '0', 'mobile' => '0', 'dead' => '0', 'rage' => '0', 'last' => '300'],
+			],
+			'SELECT id, resource' => [['id' => '3', 'resource' => '/checkout/?e2e_run=1'], ['id' => '4', 'resource' => '/gone']],
+			'MD5('                => [['page' => $home, 'resource' => '/?utm_source=x']],
+		];
+
+		self::assertSame(['/'], array_column(Query::pages(1, 999), 'page'), 'a group no pageview hashes to is not shown under another page');
+		self::assertStringContainsString("h.page IN (UNHEX('{$home}'),UNHEX('AAAA'))", $this->query('MD5('));
 	}
 
 	public function test_device_filter_reaches_every_layer(): void

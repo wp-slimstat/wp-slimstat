@@ -7,7 +7,7 @@
 import { execFileSync, execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getPool } from './setup';
+import { clearHeatmapTable, getPool } from './setup';
 import { WP_ROOT, PLUGIN_DIR, BASE_URL } from './env';
 
 // ─── Where WP-CLI actually lives ────────────────────────────────────────────
@@ -242,6 +242,7 @@ export async function clearTestData(): Promise<void> {
   await getPool().execute("SET FOREIGN_KEY_CHECKS = 0");
   await getPool().execute("TRUNCATE TABLE wp_slim_stats");
   await getPool().execute("TRUNCATE TABLE wp_slim_events");
+  await clearHeatmapTable(getPool());
   await getPool().execute("SET FOREIGN_KEY_CHECKS = 1");
   await getPool().execute(
     "DELETE FROM wp_options WHERE option_name LIKE '_transient_wp_slimstat_%' OR option_name LIKE '_transient_timeout_wp_slimstat_%'"
