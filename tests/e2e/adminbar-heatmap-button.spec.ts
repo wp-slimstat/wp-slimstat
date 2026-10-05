@@ -1,6 +1,7 @@
 /**
- * Heatmaps get their own admin bar button beside "Online", in the brand red, instead of a
- * small link in the Online dropdown's footer. On the site it opens this page's heatmap.
+ * Heatmaps get their own admin bar button beside "Online", instead of a small link in the
+ * Online dropdown's footer: an outlined pill in the bar's own colours, with only the icon in
+ * the brand colour. On the site it opens this page's heatmap.
  *
  * Read-only: navigation only, no rows written.
  */
@@ -10,17 +11,28 @@ import { rgb } from './helpers/setup';
 
 const button = '#wp-admin-bar-slimstat-heatmap > .ab-item';
 
-test('wp-admin: a red Heatmap button opens the Heatmaps list, and the dropdown no longer repeats it', async ({ page }) => {
+test('wp-admin: a quiet Heatmap button opens the Heatmaps list, and the dropdown no longer repeats it', async ({ page }) => {
   await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`);
   const link = page.locator(button);
   await expect(link).toHaveText('Heatmap');
   await expect(link).toHaveAttribute('href', /admin\.php\?page=slimheatmap$/);
 
-  const [r, g, b] = rgb(await link.evaluate((a) => getComputedStyle(a).backgroundColor));
-  expect(r - Math.max(g, b), 'a red fill, not the bar\'s grey').toBeGreaterThan(120);
+  const style = () => link.evaluate((a) => {
+    const s = getComputedStyle(a);
+    return { fill: s.backgroundColor, border: s.borderTopWidth, label: getComputedStyle(a.querySelector('.ab-label')!).color, icon: getComputedStyle(a.querySelector('.ab-icon')!, '::before').color };
+  });
+  const rest = await style();
+  expect(rest.fill, 'no fill at rest: the bar shows through').toBe('rgba(0, 0, 0, 0)');
+  expect(rest.border, 'an outline marks it as a button').toBe('1px');
+  const [lr, lg, lb] = rgb(rest.label);
+  expect(Math.max(lr, lg, lb) - Math.min(lr, lg, lb), 'the label is the bar\'s own text colour, not red').toBeLessThan(30);
+  const [ir, ig, ib] = rgb(rest.icon);
+  expect(ir - Math.max(ig, ib), 'only the icon carries the brand colour').toBeGreaterThan(80);
+
   await link.hover();
-  const [hr, hg, hb] = rgb(await link.evaluate((a) => getComputedStyle(a).backgroundColor));
-  expect(hr - Math.max(hg, hb), 'hover keeps the fill').toBeGreaterThan(100);
+  const hover = await style();
+  expect(hover.label, 'hover uses the admin bar\'s own state colour').not.toBe(rest.label);
+  await expect.poll(async () => (await style()).icon, { message: 'the icon follows the label on hover (after core\'s 0.1s colour transition)' }).toBe(hover.label);
 
   await expect(page.locator('#wp-admin-bar-slimstat-header a[href*="slimheatmap"]')).toHaveCount(0);
 });

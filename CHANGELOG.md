@@ -1,7 +1,7 @@
 = 6.1.0 - Unreleased =
 
 **Heatmaps**
-* New Heatmaps page lists every page with clicks: clicks, pageviews, clicks per pageview, device split, last click and what was recorded. Search, sort and date ranges run on one cached query. A red Heatmap button on the admin bar, beside Online, opens it (on the site, at the current page).
+* New Heatmaps page lists every page with clicks: clicks, pageviews, clicks per pageview, device split, last click and what was recorded. Search, sort and date ranges run on one cached query. A Heatmap button on the admin bar, beside Online, opens it (on the site, at the current page).
 * Heatmap recording is opt-in (off by default). When SlimStat Pro shows heatmaps, a sampled share of pageviews on chosen pages records clicks with their element, scroll depth, dead clicks and rage clicks. Recording follows the site's consent and Do Not Track rules and stores no text typed by visitors.
 * Heatmap rows live in their own tables, created on first use, purged with the site's retention setting, included in personal-data erasure and removed on uninstall when you choose to delete SlimStat data. Admins can delete all heatmap data from the Heatmaps page.
 * Existing link and button clicks keep their events reports and Goals unchanged and appear in the page list right away.

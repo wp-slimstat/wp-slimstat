@@ -459,35 +459,25 @@
     color: #FFFFFF !important;
 }
 
-/* ---- Heatmap button: its own brand-red pill beside "Online" ---- */
+/* ---- Heatmap button: an outlined pill beside "Online"; only its icon carries the brand colour ---- */
 #wpadminbar #wp-admin-bar-slimstat-heatmap > .ab-item {
     display: flex;
     align-items: center;
     gap: 5px;
-    height: 24px;
+    height: 22px;
     margin: 4px 6px;
-    padding: 0 11px 0 9px;
+    padding: 0 10px 0 8px;
+    border: 1px solid rgba(240, 246, 252, 0.3);
+    border: 1px solid color-mix(in srgb, currentColor 30%, transparent); /* follows the colour scheme and the hover colour */
     border-radius: 12px;
-    background: #e8294c;
-    color: #fff;
-    font-weight: 600;
-    line-height: 24px;
-    transition: background-color 150ms cubic-bezier(0.25, 1, 0.5, 1);
+    line-height: 22px;
+    transition: background-color 150ms cubic-bezier(0.25, 1, 0.5, 1), border-color 150ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-#wpadminbar #wp-admin-bar-slimstat-heatmap:hover > .ab-item,
-#wpadminbar #wp-admin-bar-slimstat-heatmap > .ab-item:focus {
-    background: #c41a39;
-    color: #fff;
-}
-
+/* Fill, label and hover colours stay core's, so the button reads like the rest of the bar. */
 #wpadminbar #wp-admin-bar-slimstat-heatmap > .ab-item:focus-visible {
     outline: 2px solid #72AEE6;
     outline-offset: 1px;
-}
-
-#wpadminbar #wp-toolbar #wp-admin-bar-slimstat-heatmap span.ab-label {
-    color: #fff;
 }
 
 #wpadminbar #wp-admin-bar-slimstat-heatmap .ab-icon {
@@ -500,7 +490,11 @@
 #wpadminbar #wp-admin-bar-slimstat-heatmap .ab-icon:before {
     content: "\f230";
     top: 0;
-    color: #fff;
+}
+
+/* Under core's hover and focus rules, so the icon turns with the label. */
+#wpadminbar li:where(#wp-admin-bar-slimstat-heatmap) .ab-icon:before {
+    color: #ec6b7e;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -521,7 +515,7 @@
     }
 
     #wpadminbar #wp-admin-bar-slimstat-heatmap > .ab-item {
-        height: 34px;
+        height: 32px; /* plus the 1px outline: 34px, centred in core's 46px bar */
         margin: 6px 4px;
         padding: 0 9px;
         border-radius: 17px;
