@@ -30,9 +30,10 @@ test('counts stay on one line and Delete reads as destructive', async ({ page })
     expect(await heat.evaluate((td) => getComputedStyle(td).whiteSpace)).toBe('nowrap');
   }
 
+  // Delete renders only once Pro capture has set up the heatmap tables (never on a Free-only
+  // install); tests/admin-ui-render-guards-test.php pins its markup everywhere.
   const remove = page.locator('.ss-hm-delete button');
-  await expect(remove).toHaveClass(/(^|\s)button(\s|$)/);
-  const [color, danger] = await remove.evaluate((b) => [getComputedStyle(b).color, getComputedStyle(b).getPropertyValue('--ss-danger-fg').trim()]);
-  const probe = await page.evaluate((c) => { const s = document.createElement('span'); s.style.color = c; document.body.append(s); const v = getComputedStyle(s).color; s.remove(); return v; }, danger);
-  expect(color).toBe(probe);
+  if (await remove.count()) {
+    await expect(remove).toHaveClass(/(^|\s)button-link-delete(\s|$)/);
+  }
 });

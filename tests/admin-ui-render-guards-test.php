@@ -106,6 +106,9 @@ check(false === strpos($rightnow, "__('SL'") && false === strpos($rightnow, "__(
 // a line of its own. The row is flex instead; DOM order (which the parity harness reads) is kept.
 check((bool) preg_match('/p\.slimstat-tooltip-trigger:has\(>\s*\.slimstat-count-pct\)\s*\{[^}]*display:\s*flex/', $admincss), 'QA §5: a report row with a count is a flex row');
 check((bool) preg_match('/p span\.slimstat-count-pct\s*\{[^}]*float:\s*none[^}]*margin-inline-start:\s*auto/', $admincss), 'QA §5: the count stops floating and sits at the end of the first line');
+// A4: Delete heatmap data takes the destructive role. It renders only once Pro capture has set up
+// the heatmap tables, so a Free-only E2E install never shows it; this is the check that always runs.
+check(false !== strpos(read_or_die('admin/view/heatmaps.php'), '<p class="ss-hm-delete"><button type="button" class="button-link button-link-delete"'), 'A4: Delete heatmap data uses the destructive button role');
 
 if ($failures > 0) {
     fwrite(STDERR, "{$failures} check(s) failed in admin-ui-render-guards-test.php\n");
