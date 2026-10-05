@@ -1128,7 +1128,7 @@ class wp_slimstat_reports
             $header_buttons = apply_filters('slimstat_report_header_buttons', $header_buttons, $_report_id);
             $header_buttons = '<div class="slimstat-header-buttons">' . $header_buttons . '</div>';
 
-            $widget_title = '<h3>' . esc_html(self::$reports[$_report_id]['title']) . $header_tooltip . '</h3>';
+            $widget_title = self::header_title(self::$reports[$_report_id]['title'], $header_tooltip);
 
             // Allow third-party code to inject content directly under the <h3> (e.g. a subtitle).
             $widget_title .= apply_filters('slimstat_report_header_after_title', '', $_report_id);
@@ -2818,6 +2818,19 @@ class wp_slimstat_reports
         }
 
         return $filters_html;
+    }
+
+    /**
+     * A report card's <h3>. The info icon shares a no-wrap span with the title's last word, so a
+     * title that wraps never leaves the icon alone on a line of its own (QA D1).
+     */
+    public static function header_title($title, $tooltip)
+    {
+        $title = esc_html($title);
+        $cut   = strrpos($title, ' ');
+        $cut   = false === $cut ? 0 : $cut + 1;
+
+        return '<h3>' . substr($title, 0, $cut) . '<span class="slimstat-nowrap">' . substr($title, $cut) . $tooltip . '</span></h3>';
     }
 
     public static function fs_url($_filters_string = '')

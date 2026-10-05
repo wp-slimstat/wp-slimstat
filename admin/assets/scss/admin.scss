@@ -664,7 +664,8 @@ body {
 /* Reports: Container */
 .wrap-slimstat .meta-box-sortables {
   display: flex;
-  align-items: center;
+  /* Cards in a row share its top edge and height; a short one used to float mid-row (QA D1). */
+  align-items: stretch;
   justify-content: flex-start;
   flex-wrap: wrap;
   margin-right: -1.3%;
@@ -3274,6 +3275,10 @@ body.slimstat-admin-page {
         font-size: 16px;
         font-weight: bold;
         letter-spacing: -0.43px;
+
+        .slimstat-nowrap {
+          white-space: nowrap;
+        }
 
         .header-tooltip {
           margin: 0px 5px;
