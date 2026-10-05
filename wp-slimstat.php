@@ -734,6 +734,31 @@ class wp_slimstat
     }
 
     /**
+     * Forget one degradation because its caller has just observed the cause gone.
+     *
+     * DEGRADATION_TTL heals failures that stop recurring; this is for the caller that PROVES
+     * the fix, so the notice does not contradict the screen beside it for up to three hours.
+     * Unrelated records are kept, and the option is deleted when none remain.
+     *
+     * @param string $step The key record_degradation() stored it under.
+     * @return void
+     */
+    public static function clear_degradation($step)
+    {
+        $stored = get_option(self::DEGRADATION_OPTION, []);
+        if (!is_array($stored) || !isset($stored[$step])) {
+            return;
+        }
+
+        unset($stored[$step]);
+        if ($stored) {
+            update_option(self::DEGRADATION_OPTION, $stored, false);
+        } else {
+            delete_option(self::DEGRADATION_OPTION);
+        }
+    }
+
+    /**
      * Currently-true degradations, newest first. Records past DEGRADATION_TTL are
      * filtered out here so a healed failure stops being reported immediately, even
      * before reconcile_degradations() prunes the stored option.

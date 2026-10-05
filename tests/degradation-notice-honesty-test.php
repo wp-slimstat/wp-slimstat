@@ -415,7 +415,13 @@ foreach (['record_column_drift' => 'required', 'observe_column_drift' => 'drift'
 }
 
 // Execute the production persistence body: repaired drift must clear its notice only.
-class wp_slimstat { const DEGRADATION_OPTION = 'slimstat_degradations'; }
+// clear_degradation() runs its production body too, so the keep-unrelated rule is tested, not stubbed.
+$clearBody = slimstat_find_function_body((string) file_get_contents($plugin_root . '/wp-slimstat.php'), 'clear_degradation');
+if (null === $clearBody) {
+    $failures[] = 'wp_slimstat::clear_degradation() not found';
+    $clearBody  = '';
+}
+eval('class wp_slimstat { const DEGRADATION_OPTION = "slimstat_degradations"; public static function clear_degradation($step) {' . $clearBody . '} }');
 function get_option($key, $default = false) { return $GLOBALS['drift_options'][$key] ?? $default; }
 function update_option($key, $value, $autoload = null) { $GLOBALS['drift_options'][$key] = $value; }
 function delete_option($key) { unset($GLOBALS['drift_options'][$key]); }

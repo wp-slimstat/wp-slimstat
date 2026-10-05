@@ -130,6 +130,12 @@ class AddVisitIdentity extends AbstractMigration
         // day E1 flips that flag.
         if ($live) {
             $this->reconcileColumnIndexes('slim_stats', 'vid_hash', 'add_visit_identity');
+
+            // The tracker's identity probe reads only the live table, so it stops failing here.
+            // Without this its notice kept saying "inflated until the migration has run" for up
+            // to DEGRADATION_TTL while the Migrations screen said "up to date" (QA R2 #6). Only
+            // this key: `add_visit_identity` may hold an index failure from the line above.
+            \wp_slimstat::clear_degradation('anonymous visit reuse');
         }
 
         // Short-circuit preserved: the archive ALTER is attempted only when the live one landed.

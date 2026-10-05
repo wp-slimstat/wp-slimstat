@@ -22,6 +22,7 @@
 * At a Glance says what it counts: "From Any SERP" is now "Pageviews with a search term" and "Last 30 minutes" is now "Pageviews, last 30 minutes". The numbers are unchanged. These two labels show in English until they are translated again.
 * Traffic Summary's Direct Pageviews help text explains why it can be higher than Direct in Channels: it also counts older pageviews with no referrer, which Channels lists as Unassigned. The numbers are unchanged. The new sentence shows in English until it is translated.
 * Clearer Migration, Settings, Customize and Access Log screens: Customize cards show a drag grip and keyboard-reachable buttons; Reset layout asks before it discards the layout; Access Log speed reads "Server … ms · Page … ms"; Bounce rate and New Visitors Rate show a % sign.
+* The "Cookieless visit grouping" warning now clears as soon as the visitor identity migration adds its column, instead of staying up to three hours while the Migration screen already says the database is up to date.
 
 **Ecommerce**
 * "Your Pro reports are ready" shows until you open one of the reports it lists or dismiss it, per user. The license reminder it carried stays as a footnote.

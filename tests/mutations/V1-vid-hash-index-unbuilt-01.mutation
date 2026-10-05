@@ -6,18 +6,16 @@ rationale: Removes the index-reconciliation call and LEAVES THE COMMENT that des
 ---
 --- a/src/Migration/Migrations/AddVisitIdentity.php
 +++ b/src/Migration/Migrations/AddVisitIdentity.php
-@@ -103,14 +103,10 @@
-         //
+@@ -127,12 +127,10 @@
          // slim_stats_archive gets no call at all: it declares the same index set with
          // `reconcile => false`, so a call would return at the guard on every possible run — and
          // would quietly start building the archive's whole declared index set on cold storage the
          // day E1 flips that flag.
--        if ($live) {
+         if ($live) {
 -            $this->reconcileColumnIndexes('slim_stats', 'vid_hash', 'add_visit_identity');
--        }
 -
-         // Short-circuit preserved: the archive ALTER is attempted only when the live one landed.
-         $ok = $live && $this->addManifestColumn('slim_stats_archive', 'vid_hash', 'add_visit_identity');
- 
-         if ($ok) {
- 
+             // The tracker's identity probe reads only the live table, so it stops failing here.
+             // Without this its notice kept saying "inflated until the migration has run" for up
+             // to DEGRADATION_TTL while the Migrations screen said "up to date" (QA R2 #6). Only
+             // this key: `add_visit_identity` may hold an index failure from the line above.
+             \wp_slimstat::clear_degradation('anonymous visit reuse');
