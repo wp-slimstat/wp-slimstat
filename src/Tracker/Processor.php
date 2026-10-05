@@ -214,7 +214,7 @@ class Processor
         // Capture campaign values BEFORE legacy URL decoding changes encoded delimiters.
         $acquisitionParams = Acquisition::parameters((string) $stat['resource']);
         $stat['resource'] = self::sanitizeResource((string) $stat['resource']);
-        $parsed_url = wp_parse_url($stat['resource'] ?? '');
+        $parsed_url = wp_parse_url($stat['resource']);
         if (!$parsed_url) {
             Query::setProcessingTimestamp(null);
             return Utils::logError(203);

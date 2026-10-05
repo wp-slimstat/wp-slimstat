@@ -2087,6 +2087,7 @@ class wp_slimstat_admin
         // Free draws no chart rather than an invented one (audit F3).
         // Reuse LiveAnalyticsReport's session-spanning query for consistent data (#221)
         $minute_data = [];
+        $max_count   = 0;
         if ($is_pro) {
             $live_report  = new \SlimStat\Reports\Types\Analytics\LiveAnalyticsReport();
             $chart_result = $live_report->get_users_chart_data();

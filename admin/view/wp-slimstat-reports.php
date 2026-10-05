@@ -1701,7 +1701,7 @@ class wp_slimstat_reports
                     // A recent list is a log: without a visible time, five searches for one term read as a duplicate row.
                     if (!empty($_args['type']) && 'recent' == $_args['type']) {
                         /* translators: %s: human-readable time difference, e.g. 5 mins */
-                        $percentage = ' <span class="slimstat-count-pct slimstat-row-time">' . esc_html(sprintf(__('%s ago', 'wp-slimstat'), human_time_diff((int) $results[$i]['dt'], date_i18n('U')))) . '</span>';
+                        $percentage = ' <span class="slimstat-count-pct slimstat-row-time">' . esc_html(sprintf(__('%s ago', 'wp-slimstat'), human_time_diff((int) $results[$i]['dt'], wp_slimstat::now()))) . '</span>';
                     }
                 }
 
