@@ -197,9 +197,12 @@ test('Ecommerce explains incomplete, empty and loading states and keeps the newe
 test('Ecommerce Free is useful alone and WooCommerce deactivation is safe @woocommerce', async ({ page }) => {
   test.setTimeout(90_000);
   const proWasActive = runWordPressFixture("<?php echo is_plugin_active('wp-slimstat-pro/wp-slimstat-pro.php') ? 'yes' : 'no';") === 'yes';
+  fixture('cleanup');
   try {
+    // A range without orders is one line, not empty report cards (audit E2), so open the seeded day.
+    const day = new Date(fixture('seed').start * 1000).toISOString().slice(0, 10);
     runWordPressFixture("<?php deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php');");
-    await page.goto('/wp-admin/admin.php?page=slimview7');
+    await page.goto(`/wp-admin/admin.php?${new URLSearchParams({ page: 'slimview7', type: 'custom', from: day, to: day })}`);
     await expect(page.locator('.ss-ec-report')).toHaveCount(3, { timeout: 30_000 });
     await expect(page.locator('[data-ecommerce]').getByRole('link', { name: 'Export CSV', exact: true })).toHaveCount(0);
     runWordPressFixture("<?php deactivate_plugins('woocommerce/woocommerce.php');");
@@ -222,6 +225,7 @@ test('Ecommerce Free is useful alone and WooCommerce deactivation is safe @wooco
     runWordPressFixture("<?php if (is_file(WP_PLUGIN_DIR.'/woocommerce/woocommerce.php.audit-absent') && !rename(WP_PLUGIN_DIR.'/woocommerce/woocommerce.php.audit-absent',WP_PLUGIN_DIR.'/woocommerce/woocommerce.php')) throw new RuntimeException('Cannot restore WooCommerce'); $s=get_option('slimstat_ec_absent_backup',null); if(null!==$s){update_option('slimstat_ecommerce_state',$s,false);delete_option('slimstat_ec_absent_backup');}");
     runWordPressFixture("<?php activate_plugin('woocommerce/woocommerce.php');");
     if (proWasActive) runWordPressFixture("<?php activate_plugin('wp-slimstat-pro/wp-slimstat-pro.php');");
+    fixture('cleanup');
   }
 });
 

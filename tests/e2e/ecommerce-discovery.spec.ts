@@ -27,7 +27,8 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await dashboard.getByRole('link', { name: 'See what Pro adds to Ecommerce' }).click();
     await expect(page.getByRole('heading', { name: 'Turn store activity into your next decision' })).toBeVisible();
     const [checkout, footerCta] = [page.locator('.ss-pro-cta').first(), page.locator('.ss-pro-cta').last()];
-    await expect(page.getByRole('link', { name: 'Upgrade to Pro' })).toHaveCount(2);
+    // The page's own two calls to action; the WordPress menu and the brand bar say it too.
+    await expect(page.locator('.ss-pro').getByRole('link', { name: 'Upgrade to Pro' })).toHaveCount(2);
     expect(new URL(await checkout.getAttribute('href') || '').pathname).toBe('/checkout/wp-slimstat-pro');
     expect(new URL(await checkout.getAttribute('href') || '').searchParams.get('tier')).toBe('1-site');
     await expect(checkout).toHaveAttribute('rel', /noopener/);
