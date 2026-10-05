@@ -1454,15 +1454,15 @@ class wp_slimstat_db
         $results[2]['value']   = number_format_i18n(round(self::$pageviews / $days_in_range, 0));
         $results[2]['tooltip'] = __('How many daily pageviews have been generated on average.', 'wp-slimstat');
 
-        $results[3]['metric']  = __('From Any SERP', 'wp-slimstat');
+        $results[3]['metric']  = __('Pageviews with a search term', 'wp-slimstat');
         $results[3]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', 'searchterms IS NOT NULL'));
-        $results[3]['tooltip'] = __('Visitors who landed on your site after searching for a keyword on a search engine and clicking on the corresponding search result link. This value includes both internal and external search result pages.', 'wp-slimstat');
+        $results[3]['tooltip'] = __('Pageviews that arrived with a search term, from a search engine or your own site search. Most search engines no longer pass the term, so Channels counts more Organic Search.', 'wp-slimstat');
 
         $results[4]['metric']  = __('Unique IPs', 'wp-slimstat');
         $results[4]['value']   = number_format_i18n(wp_slimstat_db::count_records('ip'));
         $results[4]['tooltip'] = __('Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses.', 'wp-slimstat');
 
-        $results[5]['metric'] = __('Last 30 minutes', 'wp-slimstat');
+        $results[5]['metric'] = __('Pageviews, last 30 minutes', 'wp-slimstat');
         $results[5]['tooltip'] = __('Pageviews in the last 30 minutes. Visitors online counts people, not pageviews.', 'wp-slimstat');
         $results[5]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt > ' . (wp_slimstat::now() - 1800), false));
 

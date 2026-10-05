@@ -149,7 +149,8 @@ $time_dependent = [
     // — this probe saw "Last 30 minutes" move in one run and nothing move in the next. Do not add
     // to this list from a single quiet run.
     'slim_p1_03' => [
-        'labels' => ['Last 30 minutes'],
+        // QA U3 renamed it; the old label covers a before-ref older than the rename.
+        'labels' => ['Pageviews, last 30 minutes', 'Last 30 minutes'],
         // How many labelled values the report must yield, in BOTH arms. Without it a partial
         // extraction is indistinguishable from a complete one: reduce both arms to the single
         // exempt label and the comparator prints "only Last 30 minutes moved (exempt)" and passes,
