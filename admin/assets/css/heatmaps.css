@@ -53,6 +53,15 @@
 .ss-hm-device-2 { background: color-mix(in srgb, var(--ss-funnel-bar) 30%, var(--ss-surface)); }
 .ss-hm-badge { padding: 2px 8px; border-radius: var(--ss-radius-pill); background: var(--ss-border-soft); color: var(--ss-text-body); font-size: 12px; white-space: nowrap; }
 .ss-hm-badge.is-full { background: var(--ss-success-bg); color: var(--ss-success-fg); }
+/* Free: a page's most clicked links and buttons, open under its row (QA C2). */
+.ss-hm-table tbody tr.ss-hm-preview-row, .ss-hm-table tbody tr.ss-hm-preview-row:hover { cursor: auto; background: var(--ss-surface-tint); }
+.ss-hm-preview { max-width: 75ch; }
+.ss-hm-preview h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.ss-hm-preview :is(ol, p) { margin: 0 0 12px; }
+.ss-hm-targets { padding-inline-start: 2em; }
+.ss-hm-targets li { margin-bottom: 4px; overflow-wrap: anywhere; }
+.ss-hm-target-clicks { margin-inline-start: var(--ss-space-2); color: var(--ss-text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ss-hm-preview-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 
 .ss-hm-skeleton span { display: block; height: 14px; border-radius: var(--ss-radius-xs); background: linear-gradient(90deg, var(--ss-border-soft), var(--ss-surface-tint), var(--ss-border-soft)); background-size: 200% 100%; animation: ss-hm-shimmer 1.2s linear infinite; }
 @keyframes ss-hm-shimmer { to { background-position: -200% 0; } }

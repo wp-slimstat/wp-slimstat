@@ -5,6 +5,7 @@
 * Heatmap recording is opt-in (off by default). When SlimStat Pro shows heatmaps, a sampled share of pageviews on chosen pages records clicks with their element, scroll depth, dead clicks and rage clicks. Recording follows the site's consent and Do Not Track rules and stores no text typed by visitors.
 * Heatmap rows live in their own tables, created on first use, purged with the site's retention setting, included in personal-data erasure and removed on uninstall when you choose to delete SlimStat data. Admins can delete all heatmap data from the Heatmaps page.
 * Existing link and button clicks keep their events reports and Goals unchanged and appear in the page list right away.
+* Without Pro, "View heatmap" opens the page's five most clicked links and buttons under its row, with what Pro adds, instead of a dialog.
 
 **Admin interface**
 * One name and one voice across the admin: labels, buttons and messages follow a shared glossary, checked by a test on every translatable string.

@@ -14,6 +14,7 @@ if (!defined('ABSPATH')) {
 
 /**
  * GET /slimstat/v1/heatmap/pages: the Heatmaps page list, for anyone who may view reports.
+ * GET /slimstat/v1/heatmap/targets: one page's most clicked links and buttons.
  *
  * @since 6.1.0
  */
@@ -26,6 +27,12 @@ class HeatmapRestController implements RestControllerInterface
             'callback'            => [$this, 'pages'],
             'permission_callback' => [self::class, 'canView'],
             'args'                => self::rangeArgs() + ['refresh' => ['type' => 'boolean', 'default' => false]],
+        ]);
+        register_rest_route('slimstat/v1', '/heatmap/targets', [
+            'methods'             => 'GET',
+            'callback'            => [$this, 'targets'],
+            'permission_callback' => [self::class, 'canView'],
+            'args'                => self::rangeArgs() + ['page' => ['type' => 'string', 'required' => true, 'minLength' => 1, 'maxLength' => 2048, 'pattern' => '^/']],
         ]);
     }
 
@@ -100,11 +107,39 @@ class HeatmapRestController implements RestControllerInterface
                 'last'      => $row['last'],
                 'lastText'  => \wp_slimstat::date_i18n($format, $row['last']),
                 'full'      => $row['full'],
-                // Pro's viewer URL for this page, on the list's range; empty in Free, where the row opens the Pro modal.
+                // Pro's viewer URL for this page, on the list's range; empty in Free, where the row opens a preview of its clicks.
                 'url'       => '' === $url ? '' : esc_url_raw(add_query_arg(['from' => $range['from'], 'to' => $range['to']], $url)),
             ];
         }
 
         return rest_ensure_response(['from' => $range['from'], 'to' => $range['to'], 'updated' => $data['updated'], 'rows' => $rows, 'ever' => $ever]);
+    }
+
+    /** Free's preview of a page's heatmap: its five most clicked links and buttons, by their text. */
+    public function targets(\WP_REST_Request $request)
+    {
+        $range = self::range($request);
+        if (is_wp_error($range)) {
+            return $range;
+        }
+
+        try {
+            $points = Query::legacyPoints(Query::pageKey((string) $request['page']), (string) $request['device'], Query::db()->prepare('t1.dt BETWEEN %d AND %d', $range['start'], $range['end']));
+        } catch (\Throwable $e) {
+            return new \WP_Error('slimstat_heatmap_read', $e->getMessage(), ['status' => 500]);
+        }
+
+        // One element clicked at several spots is one target. No text and no id: '' (the browser names it).
+        $clicks = [];
+        foreach ($points as $point) {
+            $label          = '' !== $point['text'] ? $point['text'] : ('' !== $point['id'] ? '#' . $point['id'] : '');
+            $clicks[$label] = ($clicks[$label] ?? 0) + $point['n'];
+        }
+        arsort($clicks);
+        $targets = [];
+        foreach (array_slice($clicks, 0, 5, true) as $label => $n) {
+            $targets[] = ['label' => (string) $label, 'clicks' => $n];
+        }
+        return rest_ensure_response($targets);
     }
 }

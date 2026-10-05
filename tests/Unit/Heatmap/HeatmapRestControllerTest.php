@@ -80,7 +80,7 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 		Functions\when('apply_filters')->returnArg(2);
 		$free = (new HeatmapRestController())->pages($request);
 		self::assertSame(['from' => '2026-09-27', 'to' => '2026-10-03', 'updated' => 77], array_slice($free, 0, 3), 'seven days ending on to');
-		self::assertSame('', $free['rows'][0]['url'], 'Free: no viewer, the row opens the Pro dialog');
+		self::assertSame('', $free['rows'][0]['url'], 'Free: no viewer, the row opens the preview');
 		self::assertSame('About us', $free['rows'][0]['title']);
 		self::assertSame([3, 1, 4], $free['rows'][0]['devices']);
 		self::assertTrue($free['ever'], 'rows in range: the site has clicks, no extra query (no wpdb here)');
@@ -89,5 +89,60 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 		$pro = (new HeatmapRestController())->pages($request);
 		self::assertSame('https://example.test/view?page=%2Fabout&from=2026-09-27&to=2026-10-03', $pro['rows'][0]['url'], 'the viewer opens on the list\'s range');
 		self::assertCount(1, array_unique($keys), 'one cache entry per range and device');
+	}
+
+	/** QA C2: Free's preview of a page's heatmap, behind the report gate. */
+	public function test_targets_are_the_pages_top_five_links_and_buttons_by_name(): void
+	{
+		$routes = [];
+		Functions\when('register_rest_route')->alias(static function ($namespace, $route, $args) use (&$routes) {
+			$routes[$route] = $args;
+		});
+		(new HeatmapRestController())->register_routes();
+		self::assertSame([HeatmapRestController::class, 'canView'], $routes['/heatmap/targets']['permission_callback']);
+		self::assertTrue($routes['/heatmap/targets']['args']['page']['required']);
+		self::assertSame('^/', $routes['/heatmap/targets']['args']['page']['pattern']);
+
+		$queries = [];
+		$db      = \Mockery::mock(\wpdb::class);
+		$db->prefix     = 'wp_';
+		$db->last_error = '';
+		$db->shouldReceive('suppress_errors')->andReturn(false);
+		$db->shouldReceive('esc_like')->andReturnUsing(static fn($text) => addcslashes($text, '_%\\'));
+		$db->shouldReceive('prepare')->andReturnUsing(static fn($sql, ...$args) => vsprintf(str_replace(['%s', '%d'], ["'%s'", '%d'], $sql), $args));
+		// Distinct totals, so the order does not hang on sort stability (PHP 7.4).
+		$db->shouldReceive('get_results')->andReturnUsing(static function ($sql) use (&$queries) {
+			$queries[] = $sql;
+			return [
+				['notes' => '{"text":"Start free trial","type":"click"}', 'position' => '120,340', 'vw' => '1280', 'n' => '3'],
+				['notes' => '{"id":"menu-toggle"}', 'position' => '10,10', 'vw' => '390', 'n' => '6'],
+				['notes' => '{"text":"Start  free trial"}', 'position' => '640,90', 'vw' => '1280', 'n' => '2'],
+				['notes' => '{"text":"Pricing"}', 'position' => '900,20', 'vw' => '1280', 'n' => '4'],
+				['notes' => '{"type":"click"}', 'position' => '5,5', 'vw' => '1280', 'n' => '3'],
+				['notes' => '{"text":"Docs"}', 'position' => '800,20', 'vw' => '1280', 'n' => '2'],
+				['notes' => '{"text":"Blog"}', 'position' => '700,20', 'vw' => '1280', 'n' => '1'],
+			];
+		});
+		$GLOBALS['wpdb']    = $db;
+		\wp_slimstat::$wpdb = $db;
+		Functions\when('rest_ensure_response')->returnArg();
+		$controller = new HeatmapRestController();
+
+		$targets = $controller->targets(new \WP_REST_Request(['page' => '/pricing?utm=x', 'from' => '2026-10-01', 'to' => '2026-10-03', 'days' => 30, 'device' => '']));
+		self::assertSame([
+			['label' => '#menu-toggle', 'clicks' => 6],
+			['label' => 'Start free trial', 'clicks' => 5],
+			['label' => 'Pricing', 'clicks' => 4],
+			['label' => '', 'clicks' => 3],
+			['label' => 'Docs', 'clicks' => 2],
+		], $targets, 'one name at several spots is one target; no text or id is the browser\'s to name');
+		self::assertStringContainsString("t1.resource = '/pricing'", $queries[0], 'the page key, not the raw address');
+		self::assertStringContainsString('t1.dt BETWEEN ' . strtotime('2026-10-01 00:00:00 UTC') . ' AND ' . strtotime('2026-10-03 23:59:59 UTC'), $queries[0]);
+
+		$reversed = $controller->targets(new \WP_REST_Request(['page' => '/pricing', 'from' => '2026-10-03', 'to' => '2026-10-01', 'days' => 30, 'device' => '']));
+		self::assertInstanceOf(\WP_Error::class, $reversed);
+		self::assertSame(400, $reversed->data['status']);
+		self::assertCount(1, $queries, 'a reversed range reads nothing');
+		\wp_slimstat::$wpdb = null;
 	}
 }

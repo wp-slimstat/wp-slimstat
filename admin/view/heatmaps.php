@@ -22,7 +22,7 @@ $day      = 'custom' === $range['preset'] ? 'gmdate' : 'wp_date';
 
 wp_localize_script('slimstat-heatmaps', 'SlimStatHeatmaps', [
     'route' => '/slimstat/v1/heatmap/pages',
-    // Free: rows open the Pro modal. Pro without the row filter is an older Pro: ask to update.
+    // Free: rows open a preview of the page's clicks. Pro without the row filter is an older Pro: ask to update.
     'mode'  => $viewer ? 'pro' : ($is_pro ? 'update' : 'free'),
     'home'  => home_url('/'),
 ]);
@@ -184,27 +184,29 @@ if ('' !== $error) {
             </dialog>
         <?php endif; ?>
 
-        <?php if (!$viewer) : ?>
+        <?php if (!$viewer && $is_pro) : ?>
             <dialog id="ss-hm-locked" class="ss-hm-dialog" aria-labelledby="ss-hm-locked-title">
                 <form method="dialog">
-                    <?php if ($is_pro) : ?>
-                        <h2 id="ss-hm-locked-title"><?php esc_html_e('Heatmaps', 'wp-slimstat'); ?></h2>
-                        <p><?php esc_html_e('Update SlimStat Pro to open heatmaps here. The on-page heatmap keeps working until you do.', 'wp-slimstat'); ?></p>
-                        <div class="ss-hm-dialog-actions">
-                            <a class="button button-primary" href="<?php echo esc_url(admin_url('plugins.php')); ?>"><?php esc_html_e('Go to Plugins', 'wp-slimstat'); ?></a>
-                            <button class="button"><?php esc_html_e('Not now', 'wp-slimstat'); ?></button>
-                        </div>
-                    <?php else : ?>
-                        <h2 id="ss-hm-locked-title" data-heading></h2>
-                        <p data-body></p>
-                        <div class="ss-hm-dialog-actions">
-                            <a class="button button-primary" target="_blank" rel="noopener" href="<?php echo esc_url('https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=heatmaps'); ?>"><?php esc_html_e('Get SlimStat Pro', 'wp-slimstat'); ?></a>
-                            <button class="button"><?php esc_html_e('Not now', 'wp-slimstat'); ?></button>
-                        </div>
-                        <p><a href="<?php echo esc_url(admin_url('plugin-install.php?tab=upload')); ?>"><?php esc_html_e('Already have Pro? Install it', 'wp-slimstat'); ?></a></p>
-                    <?php endif; ?>
+                    <h2 id="ss-hm-locked-title"><?php esc_html_e('Heatmaps', 'wp-slimstat'); ?></h2>
+                    <p><?php esc_html_e('Update SlimStat Pro to open heatmaps here. The on-page heatmap keeps working until you do.', 'wp-slimstat'); ?></p>
+                    <div class="ss-hm-dialog-actions">
+                        <a class="button button-primary" href="<?php echo esc_url(admin_url('plugins.php')); ?>"><?php esc_html_e('Go to Plugins', 'wp-slimstat'); ?></a>
+                        <button class="button"><?php esc_html_e('Not now', 'wp-slimstat'); ?></button>
+                    </div>
                 </form>
             </dialog>
+        <?php elseif (!$viewer) : ?>
+            <template id="ss-hm-preview">
+                <div class="ss-hm-preview" role="region">
+                    <h3 data-heading></h3>
+                    <ol class="ss-hm-targets" aria-busy="true"></ol>
+                    <p><?php esc_html_e('SlimStat Pro shows these on the page itself, with every other click, how far visitors scroll, and dead and rage clicks.', 'wp-slimstat'); ?></p>
+                    <p class="ss-hm-preview-actions">
+                        <a class="button button-primary" target="_blank" rel="noopener" href="<?php echo esc_url('https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=heatmaps'); ?>"><?php esc_html_e('Get SlimStat Pro', 'wp-slimstat'); ?></a>
+                        <a href="<?php echo esc_url(admin_url('plugin-install.php?tab=upload')); ?>"><?php esc_html_e('Already have Pro? Install it', 'wp-slimstat'); ?></a>
+                    </p>
+                </div>
+            </template>
         <?php endif; ?>
         <?php endif; ?>
     </div>

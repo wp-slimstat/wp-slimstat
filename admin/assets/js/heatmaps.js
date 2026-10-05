@@ -20,6 +20,7 @@
     const NONE = '\u2014';
     const state = { rows: [], ever: true, sort: 'clicks', dir: -1, page: 0, updated: 0, highlight: new URLSearchParams(location.search).get('highlight') || '' };
     let request = 0;
+    let previews = 0;
 
     function el(tag, attrs, children) {
         const node = document.createElement(tag);
@@ -49,24 +50,53 @@
             });
     }
 
-    function openRow(row) {
+    // Free: the page's most clicked links and buttons open under its row; again closes them.
+    function openRow(row, tr) {
         if (row.url) {
             location.href = row.url;
             return;
         }
-        const dialog = document.getElementById('ss-hm-locked');
-        if (!dialog) return;
-        const heading = dialog.querySelector('[data-heading]');
-        if (heading) {
-            /* translators: %s: page address, e.g. /pricing */
-            heading.textContent = sprintf(__('Heatmap for %s is ready', 'wp-slimstat'), row.page);
-            dialog.querySelector('[data-body]').textContent = sprintf(
-                /* translators: %s: number of clicks */
-                _n('%s click recorded in this range. SlimStat Pro shows where visitors click, what they miss and how far they scroll.', '%s clicks recorded in this range. SlimStat Pro shows where visitors click, what they miss and how far they scroll.', row.clicks, 'wp-slimstat'),
-                number.format(row.clicks)
-            );
+        const template = document.getElementById('ss-hm-preview');
+        if (!template) {
+            const dialog = document.getElementById('ss-hm-locked');
+            if (dialog) dialog.showModal();
+            return;
         }
-        dialog.showModal();
+        const button = tr.querySelector('.ss-hm-locked');
+        const open = 'true' === button.getAttribute('aria-expanded');
+        body.querySelectorAll('.ss-hm-preview-row').forEach((node) => node.remove());
+        body.querySelectorAll('.ss-hm-locked[aria-expanded="true"]').forEach((node) => node.setAttribute('aria-expanded', 'false'));
+        if (open) return;
+
+        const panel = template.content.firstElementChild.cloneNode(true);
+        const heading = panel.querySelector('[data-heading]');
+        const list = panel.querySelector('ol');
+        panel.id = 'ss-hm-preview-' + ++previews;
+        heading.id = panel.id + '-title';
+        panel.setAttribute('aria-labelledby', heading.id);
+        /* translators: %s: page address, e.g. /pricing */
+        heading.textContent = sprintf(__('Most clicked links and buttons on %s', 'wp-slimstat'), row.page);
+        tr.after(el('tr', { class: 'ss-hm-preview-row' }, [el('td', { colspan: tr.cells.length }, [panel])]));
+        button.setAttribute('aria-controls', panel.id);
+        button.setAttribute('aria-expanded', 'true');
+
+        const params = new URLSearchParams({ page: row.page, device: form.device.value, from: range.dataset.start, to: range.dataset.end });
+        wp.apiFetch({ path: '/slimstat/v1/heatmap/targets?' + params })
+            .then((targets) => {
+                if (!targets.length) {
+                    list.replaceWith(el('p', {}, [__('These clicks did not record where on the page they landed.', 'wp-slimstat')]));
+                    return;
+                }
+                list.replaceChildren(...targets.map((target) => el('li', {}, [
+                    el('span', { class: 'ss-hm-target' }, [target.label || __('Link or button without text', 'wp-slimstat')]),
+                    el('span', { class: 'ss-hm-target-clicks' }, [sprintf(
+                        /* translators: %s: number of clicks */
+                        _n('%s click', '%s clicks', target.clicks, 'wp-slimstat'), number.format(target.clicks)
+                    )]),
+                ])));
+                list.setAttribute('aria-busy', 'false');
+            })
+            .catch((error) => list.replaceWith(el('p', {}, [(error && error.message) || __('Heatmap data could not be loaded. Try a shorter date range, then retry.', 'wp-slimstat')])));
     }
 
     // A neutral split bar plus the leading device in words; the full split is the tooltip.
@@ -92,12 +122,12 @@
     function rowNode(row, shown) {
         const action = row.url
             ? el('a', { class: 'button button-small', href: row.url }, [__('View heatmap', 'wp-slimstat')])
-            : el('button', { type: 'button', class: 'button button-small ss-hm-locked', title: __('Available in SlimStat Pro', 'wp-slimstat') }, [
+            : el('button', { type: 'button', class: 'button button-small ss-hm-locked', title: __('Available in SlimStat Pro', 'wp-slimstat'), ...('free' === config.mode ? { 'aria-expanded': 'false' } : {}) }, [
                   el('span', { class: 'dashicons dashicons-lock', 'aria-hidden': 'true' }),
                   __('View heatmap', 'wp-slimstat'),
                   el('span', { class: 'screen-reader-text' }, [__('(Pro)', 'wp-slimstat')]),
               ]);
-        if (!row.url) action.addEventListener('click', () => openRow(row));
+        if (!row.url) action.addEventListener('click', () => openRow(row, tr));
         // No post title (archives, search, 404): the address is the name.
         const page = el('td', { class: 'ss-hm-page' }, row.title ? [el('strong', {}, [row.title]), el('span', { class: 'ss-hm-path' }, [row.page])] : [el('strong', {}, [row.page])]);
         const dead = null === row.dead ? NONE : sprintf(
@@ -122,7 +152,7 @@
         ].filter(Boolean));
         // The whole row opens it too; the button stays the keyboard path.
         tr.addEventListener('click', (e) => {
-            if (!e.target.closest('a,button')) openRow(row);
+            if (!e.target.closest('a,button')) openRow(row, tr);
         });
         return tr;
     }
