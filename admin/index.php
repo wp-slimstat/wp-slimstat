@@ -2224,14 +2224,6 @@ class wp_slimstat_admin
             ]);
         }
 
-        // Heatmaps: no count here, so no lookup on every page load. On the site, the link opens this page's
-        // heatmap where Pro provides one, else the list on this page's row.
-        $heatmap_url = $view_url . 'slimheatmap';
-        if (!is_admin()) {
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- pageKeyFromUrl() decodes and sanitizes; the key only selects a page.
-            $page_key    = \SlimStat\Heatmap\Query::pageKeyFromUrl((string) ($_SERVER['REQUEST_URI'] ?? '/'));
-            $heatmap_url = (string) apply_filters('slimstat_heatmap_row_url', '', $page_key) ?: add_query_arg('highlight', rawurlencode($page_key), $heatmap_url);
-        }
         // Add footer node
         $footer_html = '<div class="slimstat-adminbar__footer">'
             . '<div class="slimstat-adminbar__footer-logo">'
@@ -2241,10 +2233,6 @@ class wp_slimstat_admin
             . '<span class="slimstat-adminbar__footer-brand">SlimStat</span>'
             . '</div>'
             . '<div class="slimstat-adminbar__footer-links">'
-            . '<a href="' . esc_url($heatmap_url) . '" class="slimstat-adminbar__footer-link">'
-            . '<span class="dashicons dashicons-location" aria-hidden="true"></span> '
-            . (is_admin() ? esc_html__('Heatmaps', 'wp-slimstat') : esc_html__('Page heatmap', 'wp-slimstat'))
-            . '</a>'
             . '<a href="' . esc_url($overview_url) . '" class="slimstat-adminbar__footer-link">'
             . esc_html__('Open Overview', 'wp-slimstat')
             . ' <span class="dashicons dashicons-arrow-right-alt2" style="font-size:12px" aria-hidden="true"></span>'
@@ -2255,6 +2243,21 @@ class wp_slimstat_admin
             'parent' => 'slimstat-header',
             'title'  => $footer_html,
             'meta'   => ['class' => 'slimstat-adminbar__footer-wrapper'],
+        ]);
+
+        // Heatmaps get their own button beside "Online". No count, so no lookup on every page load. On the
+        // site it opens this page's heatmap where Pro provides one, else the list on this page's row.
+        $heatmap_url = $view_url . 'slimheatmap';
+        if (!is_admin()) {
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- pageKeyFromUrl() decodes and sanitizes; the key only selects a page.
+            $page_key    = \SlimStat\Heatmap\Query::pageKeyFromUrl((string) ($_SERVER['REQUEST_URI'] ?? '/'));
+            $heatmap_url = (string) apply_filters('slimstat_heatmap_row_url', '', $page_key) ?: add_query_arg('highlight', rawurlencode($page_key), $heatmap_url);
+        }
+        $GLOBALS['wp_admin_bar']->add_node([
+            'id'    => 'slimstat-heatmap',
+            'title' => '<span class="ab-icon" aria-hidden="true"></span><span class="ab-label">' . esc_html__('Heatmap', 'wp-slimstat') . '</span>',
+            'href'  => $heatmap_url,
+            'meta'  => ['title' => is_admin() ? __('Heatmaps', 'wp-slimstat') : __('Page heatmap', 'wp-slimstat')],
         ]);
     }
 

@@ -458,3 +458,74 @@
 #wpadminbar #wp-admin-bar-slimstat-header:hover > .ab-item .ab-icon {
     color: #FFFFFF !important;
 }
+
+/* ---- Heatmap button: its own brand-red pill beside "Online" ---- */
+#wpadminbar #wp-admin-bar-slimstat-heatmap > .ab-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 24px;
+    margin: 4px 6px;
+    padding: 0 11px 0 9px;
+    border-radius: 12px;
+    background: #e8294c;
+    color: #fff;
+    font-weight: 600;
+    line-height: 24px;
+    transition: background-color 150ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+#wpadminbar #wp-admin-bar-slimstat-heatmap:hover > .ab-item,
+#wpadminbar #wp-admin-bar-slimstat-heatmap > .ab-item:focus {
+    background: #c41a39;
+    color: #fff;
+}
+
+#wpadminbar #wp-admin-bar-slimstat-heatmap > .ab-item:focus-visible {
+    outline: 2px solid #72AEE6;
+    outline-offset: 1px;
+}
+
+#wpadminbar #wp-toolbar #wp-admin-bar-slimstat-heatmap span.ab-label {
+    color: #fff;
+}
+
+#wpadminbar #wp-admin-bar-slimstat-heatmap .ab-icon {
+    margin: 0;
+    padding: 0;
+    font-size: 16px;
+    line-height: 1;
+}
+
+#wpadminbar #wp-admin-bar-slimstat-heatmap .ab-icon:before {
+    content: "\f230";
+    top: 0;
+    color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #wpadminbar #wp-admin-bar-slimstat-heatmap > .ab-item {
+        transition: none;
+    }
+}
+
+/* Core hides plugin nodes below 782px and shows icons only. */
+@media screen and (max-width: 782px) {
+    #wpadminbar li#wp-admin-bar-slimstat-heatmap {
+        display: block;
+    }
+
+    #wpadminbar #wp-admin-bar-slimstat-heatmap > .ab-item {
+        height: 34px;
+        margin: 6px 4px;
+        padding: 0 9px;
+        border-radius: 17px;
+    }
+
+    #wpadminbar #wp-admin-bar-slimstat-heatmap .ab-icon {
+        width: auto;
+        height: auto;
+        font-size: 24px !important; /* core sets the icon font with !important here */
+        line-height: 1 !important;
+    }
+}
