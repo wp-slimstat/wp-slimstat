@@ -79,6 +79,15 @@ test('@woocommerce the sync banner names the failed order and counts this report
   await expect(page.locator('.ss-ec-steps')).not.toContainText('included order');
 });
 
+test('@woocommerce the comparison line says what it compares, exact times in a tooltip (QA U5)', async ({ page }) => {
+  await open(page);
+  // "Compared with Aug 11, 2026 17:51 to Sep 7, 2026 23:59" did not say why the time was 17:51.
+  const line = page.locator('.ss-ec-comparison');
+  await expect(line).toHaveText(/^Compared with the same length of time before \(\w+ \d+ to \w+ \d+\)/);
+  await expect(line).not.toHaveText(/\d:\d\d/);
+  await expect(line).toHaveAttribute('title', /\d:\d\d .*\d:\d\d/);
+});
+
 test('@woocommerce cards in a row match, a lone tab is hidden, sort shows its direction', async ({ page }) => {
   await open(page);
   const rows = await page.locator('.ss-ec-card').evaluateAll((cards) => {
