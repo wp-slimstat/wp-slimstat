@@ -391,7 +391,7 @@ foreach (['username', 'author'] as $column) {
             assert_contains('Guest', $html, "$column: missing identity stays Guest outside known-only reports");
         } else {
             assert_not_contains('Guest', $html, "$column: nonempty identity must not become Guest");
-            assert_contains('>' . $name . ' (Unknown)', $html, "$column: historical name is preserved");
+            assert_contains('>' . $name . ' (account deleted)', $html, "$column: historical name is preserved, marked as a deleted account (QA §5)");
         }
     }
 }
