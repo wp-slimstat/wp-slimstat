@@ -12,6 +12,7 @@
 * Empty reports say why they are empty (nothing tracked yet, no match for the filters, or nothing in the date range) and what to do next. A Get started panel helps new sites record their first pageview.
 * Buttons, switches and segmented choices use native WordPress controls with one set of colors and the WordPress focus ring. Red glows, nested cards and side stripes are gone, and every report paginates the same way.
 * Free screens show what Pro adds honestly: no blurred mock reports or invented figures.
+* Without Pro, Email Report shows the weekly email built from your site's last 7 days (top pages and referring domains) and can send it to you as a sample.
 * At a Glance says what it counts: "From Any SERP" is now "Pageviews with a search term" and "Last 30 minutes" is now "Pageviews, last 30 minutes". The numbers are unchanged. These two labels show in English until they are translated again.
 * Clearer Migration, Settings, Customize and Access Log screens: Customize cards show a drag grip and keyboard-reachable buttons; Reset layout asks before it discards the layout; Access Log speed reads "Server … ms · Page … ms"; Bounce rate and New Visitors Rate show a % sign.
 

@@ -74,6 +74,7 @@ class wp_slimstat_admin
     {
         // Action for reset layout
         add_action('admin_post_slimstat_reset_layout', ['wp_slimstat_admin', 'handle_reset_layout']);
+        add_action('admin_post_slimstat_email_sample', ['wp_slimstat_admin', 'handle_email_sample']);
         add_action('wp_ajax_meta-box-order', ['wp_slimstat_admin', 'save_network_layout'], 0);
 
         // Define the default screens
@@ -625,6 +626,43 @@ class wp_slimstat_admin
         }
 
         wp_safe_redirect($network ? network_admin_url('admin.php?page=slimlayout') : admin_url('admin.php?page=slimlayout'));
+        exit;
+    }
+
+    /** Free's sample email (QA C1): the last 7 days of the Top Web Pages and Top Referring Domains reports, five rows each. */
+    public static function email_sample_sections()
+    {
+        include_once __DIR__ . '/view/wp-slimstat-reports.php';
+        wp_slimstat_reports::init();
+        // Pro's weekly email range.
+        wp_slimstat_db::init('interval equals -7');
+        $sections = [];
+        foreach (['slim_p1_08', 'slim_p1_10'] as $id) {
+            $args       = wp_slimstat_reports::$reports[$id]['callback_args'];
+            $sections[] = [
+                'title'  => wp_slimstat_reports::$reports[$id]['title'],
+                'column' => $args['as_column'] ?? $args['columns'],
+                'rows'   => array_slice((array) call_user_func($args['raw'], $args), 0, 5),
+            ];
+        }
+        return $sections;
+    }
+
+    /** Sends the sample email to the user who asked for it. */
+    public static function handle_email_sample()
+    {
+        check_admin_referer('slimstat_email_sample');
+        if (!self::can_view_stats()) {
+            wp_die(esc_html__('Insufficient permissions.', 'wp-slimstat'), '', ['response' => 403]);
+        }
+        $sent = wp_mail(
+            wp_get_current_user()->user_email,
+            /* translators: %s: site name */
+            sprintf(__('[%s] Your SlimStat sample report', 'wp-slimstat'), wp_specialchars_decode(get_bloginfo('name'), ENT_QUOTES)),
+            self::get_template('email-sample', ['sections' => self::email_sample_sections()], true),
+            ['Content-Type: text/html; charset=UTF-8']
+        );
+        wp_safe_redirect(admin_url('admin.php?page=slimemail&sample=' . ($sent ? 'sent' : 'failed')));
         exit;
     }
 

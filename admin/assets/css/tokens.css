@@ -313,6 +313,8 @@ body .wrap-slimstat .button-secondary:hover {
     color: var(--ss-text-primary);
 }
 .live-analytics-chart--locked .slimstat-pro-adds { margin: 0; border: 0; }
+/* Free Email Report: "Send me a sample" under the sample email (QA C1). */
+.slimstat-email-sample-send { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ss-space-2) var(--ss-space-3); margin: var(--ss-space-4) 0; }
 
 /* One disclosure style (audit B6): chevron on the left, sentence case, link colour. Accordion
    rows (Acquisition groups), the currency control and the FAQ keep their own shapes. */
