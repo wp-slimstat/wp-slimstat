@@ -108,6 +108,16 @@ try {
     $rows = AcquisitionReport::rows(['mode' => 'channels']);
     $check(8 === array_sum(array_column($rows, 'counthits')), 'Channels partition all matching pageviews including legacy and bots');
     $check(1 === (int) array_values(array_filter($rows, static function ($row) { return 'ai_fetcher' === $row['traffic_channel']; }))[0]['counthits'], 'AI fetches stay separate');
+    // A row from before setup (no channel) and an unassigned one read the same, so they are one group.
+    $insert('utm_medium=weird', '', '', 0, 'carol');
+    wp_slimstat::$settings['rows_to_show'] = 20;
+    ob_start();
+    AcquisitionReport::render(['mode' => 'channels']);
+    $channelsHtml = ob_get_clean();
+    wp_slimstat::$settings['rows_to_show'] = 2;
+    $db->query("DELETE FROM `{$testPrefix}slim_stats` WHERE author = 'carol'");
+    $check(1 === substr_count($channelsHtml, '__label">Unassigned<'), 'Unassigned is one channel group, not one per stored value');
+    $check((bool) preg_match('/__label">Unassigned<.*?__number">2</s', $channelsHtml), 'The Unassigned group counts both rows');
     $check(1 === array_sum(array_column(AcquisitionReport::rows(['mode' => 'utm', 'where' => $db->prepare('author = %s', 'bob')]), 'counthits')), 'Raw callback honors the per-author email scope');
     wp_slimstat_db::$filters_normalized['columns']['author'] = ['equals', 'alice'];
     $check(3 === array_sum(array_column(AcquisitionReport::rows(['mode' => 'utm']), 'counthits')), 'Author scope applies to campaign data');

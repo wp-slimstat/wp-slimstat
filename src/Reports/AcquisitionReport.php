@@ -182,14 +182,31 @@ class AcquisitionReport
         try {
             $all = self::rows(['mode' => $mode, 'summary' => true]);
             $failed = '' !== (string) $db->last_error;
+            $capped = count($all) >= (int) \wp_slimstat::$settings['limit_results'];
+            // Values that read the same are one group: no channel yet and the unassigned channel, or a NULL and an empty tag.
+            $slot = static function ($value) use ($groupField): string {
+                return 'traffic_channel' === $groupField && !isset(Acquisition::labels()[$value ?? '']) ? 'unassigned' : (string) $value;
+            };
+            $merged = [];
+            foreach ($all as $row) {
+                $key = serialize([(int) ($row['blog_id'] ?? 0), $slot($row[$groupField] ?? null)]);
+                if (isset($merged[$key])) {
+                    $merged[$key]['counthits'] = (int) $merged[$key]['counthits'] + (int) $row['counthits'];
+                    $merged[$key]['values'][] = $row[$groupField] ?? null;
+                } else {
+                    $merged[$key] = $row + ['values' => [$row[$groupField] ?? null]];
+                }
+            }
+            $all = array_values($merged);
+            array_multisort(array_map('intval', array_column($all, 'counthits')), SORT_DESC, array_keys($all), $all);
             if ($all && $start >= count($all)) {
                 $start = (int) (floor((count($all) - 1) / $perPage) * $perPage);
             }
             $rows = array_slice($all, $start, $perPage);
             // One bounded breakdown query for the visible groups, never one query per row.
             $scope = [];
-            foreach ($rows as $row) {
-                $scope[] = null === ($row[$groupField] ?? null) ? $groupField . ' IS NULL' : $db->prepare($groupField . ' = %s', $row[$groupField]);
+            foreach (array_merge([], ...array_column($rows, 'values')) as $value) {
+                $scope[] = null === $value ? $groupField . ' IS NULL' : $db->prepare($groupField . ' = %s', $value);
             }
             $details = $rows ? self::rows(['mode' => $mode, 'where' => '(' . implode(' OR ', array_unique($scope)) . ')']) : [];
             $failed = $failed || '' !== (string) $db->last_error;
@@ -224,15 +241,14 @@ class AcquisitionReport
             $network = NetworkMerge::isMerging();
             $byGroup = [];
             foreach ($details as $detail) {
-                $key = serialize([(int) ($detail['blog_id'] ?? 0), $detail[$groupField] ?? null]);
-                $byGroup[$key][] = $detail;
+                $byGroup[serialize([(int) ($detail['blog_id'] ?? 0), $slot($detail[$groupField] ?? null)])][] = $detail;
             }
             echo '<div class="slimstat-acquisition__groups"><div class="slimstat-acquisition__columns" aria-hidden="true"><span>' . esc_html($fields[$groupField]) . '</span><span>' . esc_html__('Pageviews', 'wp-slimstat') . '</span><span>' . esc_html__('Share', 'wp-slimstat') . '</span></div>';
             foreach ($rows as $row) {
-                $value = $row[$groupField] ?? null;
+                // A merged group has no one value to filter by.
+                $value = 1 === count($row['values']) ? $row[$groupField] : null;
                 $label = 'traffic_channel' === $groupField ? (Acquisition::labels()[$value ?? ''] ?? __('Unassigned', 'wp-slimstat')) : ('' !== ($value ?? '') ? $value : __('Unassigned', 'wp-slimstat'));
-                $key = serialize([(int) ($row['blog_id'] ?? 0), $value]);
-                $groupRows = $byGroup[$key] ?? [];
+                $groupRows = $byGroup[serialize([(int) ($row['blog_id'] ?? 0), $slot($row[$groupField] ?? null)])] ?? [];
                 $count = (int) $row['counthits'];
                 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- htmlspecialchars encodes quotes and existing entities to preserve literal stored tags.
                 echo '<details class="slimstat-acquisition__group"><summary><span class="slimstat-acquisition__identity"><span class="slimstat-acquisition__label">' . htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</span>';
@@ -289,7 +305,7 @@ class AcquisitionReport
                 echo '<a class="button refresh" href="' . esc_url(\wp_slimstat_reports::fs_url('start_from equals ' . ($start + $perPage))) . '">' . esc_html__('Next', 'wp-slimstat') . '</a>';
             }
             echo '</nav>';
-            if (count($all) >= (int) \wp_slimstat::$settings['limit_results']) {
+            if ($capped) {
                 echo '<p class="slimstat-acquisition__note">' . esc_html__('The report result limit was reached. Narrow your filters to see more detail. Shares use all matching pageviews, including rows beyond this limit.', 'wp-slimstat') . '</p>';
             }
         }
