@@ -1,12 +1,15 @@
 = 6.1.0 - Unreleased =
 
 **Shortcodes**
+* Preserve public aggregate counters such as `count` of `ip`, group query-string-free page links before limiting results, and render stored dates correctly. Published shortcode filters are isolated from URL/form fields, and rendering restores the filters and pageview totals of surrounding reports.
+* Avoid anonymous-user warnings on PHP 7.4 and deprecated URL sanitizer notices on older WordPress. Compatibility remains PHP 7.4+ and WordPress 5.6+, with the current test target pinned to WordPress 7.1.2.
 * New Shortcode Playground under SlimStat → Shortcodes: browse reports, preview your data, adjust filters and copy or test a shortcode. Pro reports include clearly labelled samples and dismissible hints.
 * New live visitor, page and country counters; Ecommerce KPI tables for analytics viewers; Pro Heatmap insights tables.
 * Shortcodes support multiple columns and UTM/channel counts, escape text and separators, and accept nonnumeric offsets without crashing. Report widgets placed with a shortcode no longer log an “Undefined array key "where"” warning. Personal data, access logs and user reports now appear only to people allowed to view analytics; visitors see nothing.
 * Translation changes: removed “Invalid Report ID”; replaced “Select a widget” with “Select a report” and translated “Add a SlimStat report to your sidebar”. New labels and notices need translation; obsolete strings are retained in PO history.
 
 **Heatmaps**
+* Apply restricted-author permissions to heatmap lists, points, scroll depth and cached results. Stop accepting cached capture batches when the Pro viewer is removed, and limit list scroll aggregation to the selected pages.
 * New Heatmaps page lists every page with clicks: clicks, pageviews, clicks per pageview, device split, last click and what was recorded. Search, sort and date ranges run on one cached query. A Heatmap button on the admin bar, beside Online, opens it (on the site, at the current page).
 * Heatmap recording is opt-in (off by default). When SlimStat Pro shows heatmaps, a sampled share of pageviews on chosen pages records clicks with their element, scroll depth, dead clicks and rage clicks. Recording follows the site's consent and Do Not Track rules and stores no text typed by visitors.
 * Heatmap rows live in their own tables, created on first use, purged with the site's retention setting, included in personal-data erasure and removed on uninstall when you choose to delete SlimStat data. Admins can delete all heatmap data from the Heatmaps page.

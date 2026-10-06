@@ -55,7 +55,7 @@ final class Shortcode
     private static function init(): void
     {
         require_once dirname(__DIR__, 2) . '/admin/view/wp-slimstat-reports.php';
-        wp_slimstat_reports::init();
+        wp_slimstat_reports::init(false);
     }
 
     /** All entries pass the same literal allowlist as rendered shortcodes. */
@@ -150,43 +150,46 @@ final class Shortcode
     {
         $atts = self::attributes($atts);
         if (is_wp_error($atts)) { return self::comment($atts->get_error_message()); }
-        $catalog = self::catalog();
-        foreach ($atts['columns'] as $column) {
-            if (!isset($catalog[$column])) { return self::comment(__('Invalid shortcode attribute: w.', 'wp-slimstat')); }
-            if ('staff' === $catalog[$column]['privacy'] && !self::canView()) { return ''; }
-        }
-        $w = $atts['columns'][0];
-        $item = $catalog[$w];
-        if ('pro' === $item['tier'] && !wp_slimstat::pro_is_installed()) {
-            if (!self::canView()) { return ''; }
-            self::style();
-            return '<aside class="slimstat-shortcode-notice">' . esc_html__("This SlimStat shortcode needs SlimStat Pro. Visitors don't see this note.", 'wp-slimstat') . ' <a target="_blank" rel="noopener" href="' . esc_url(self::pricingUrl('frontend')) . '">' . esc_html__('Learn about Pro', 'wp-slimstat') . '</a></aside>';
-        }
-        if (!$item['available']) {
-            return self::comment('pro' === $item['tier'] ? __('Update SlimStat Pro to use this shortcode.', 'wp-slimstat') : __('This report is unavailable. Activate WooCommerce and set up reporting for Ecommerce.', 'wp-slimstat'));
-        }
-        if ('live' === $atts['f']) {
-            $key = 'slimstat_shortcode_live_' . get_current_blog_id() . '_' . wp_slimstat::report_scope()['cache'];
-            $counts = get_transient($key);
-            if (false === $counts) {
-                $counts = (new LiveAnalyticsReport())->get_all_live_counts();
-                set_transient($key, $counts, max(60 - (wp_slimstat::now() % 60), 1));
-            }
-            return esc_html(number_format_i18n($counts[$w]));
-        }
-        // A shortcode must not change the date/column filters of a following report.
+        require_once dirname(__DIR__, 2) . '/admin/view/wp-slimstat-db.php';
+        // Catalog initialization and report callbacks both mutate shared report state.
         $filters = wp_slimstat_db::$filters_normalized;
         $where = wp_slimstat_db::$sql_where;
+        $pageviews = wp_slimstat_db::$pageviews;
         $agentTooltip = wp_slimstat::$settings['show_complete_user_agent_tooltip'] ?? 'off';
         wp_slimstat::$settings['show_complete_user_agent_tooltip'] = 'off';
         try {
-            wp_slimstat_db::init(html_entity_decode((string) $content, ENT_QUOTES, 'UTF-8'));
+            $catalog = self::catalog();
+            foreach ($atts['columns'] as $column) {
+                if (!isset($catalog[$column])) { return self::comment(__('Invalid shortcode attribute: w.', 'wp-slimstat')); }
+                if ('staff' === $catalog[$column]['privacy'] && !in_array($atts['f'], ['count', 'count-all'], true) && !self::canView()) { return ''; }
+            }
+            $w = $atts['columns'][0];
+            $item = $catalog[$w];
+            if ('pro' === $item['tier'] && !wp_slimstat::pro_is_installed()) {
+                if (!self::canView()) { return ''; }
+                self::style();
+                return '<aside class="slimstat-shortcode-notice">' . esc_html__("This SlimStat shortcode needs SlimStat Pro. Visitors don't see this note.", 'wp-slimstat') . ' <a target="_blank" rel="noopener" href="' . esc_url(self::pricingUrl('frontend')) . '">' . esc_html__('Learn about Pro', 'wp-slimstat') . '</a></aside>';
+            }
+            if (!$item['available']) {
+                return self::comment('pro' === $item['tier'] ? __('Update SlimStat Pro to use this shortcode.', 'wp-slimstat') : __('This report is unavailable. Activate WooCommerce and set up reporting for Ecommerce.', 'wp-slimstat'));
+            }
+            if ('live' === $atts['f']) {
+                $key = 'slimstat_shortcode_live_' . get_current_blog_id() . '_' . wp_slimstat::report_scope()['cache'];
+                $counts = get_transient($key);
+                if (false === $counts) {
+                    $counts = (new LiveAnalyticsReport())->get_all_live_counts();
+                    set_transient($key, $counts, max(60 - (wp_slimstat::now() % 60), 1));
+                }
+                return esc_html(number_format_i18n($counts[$w]));
+            }
+            wp_slimstat_db::init(html_entity_decode((string) $content, ENT_QUOTES, 'UTF-8'), false);
             return self::output($atts);
         } catch (\Throwable $e) {
             return self::comment(__('This report could not load. Check reporting setup and retry.', 'wp-slimstat'));
         } finally {
             wp_slimstat_db::$filters_normalized = $filters;
             wp_slimstat_db::$sql_where = $where;
+            wp_slimstat_db::$pageviews = $pageviews;
             wp_slimstat::$settings['show_complete_user_agent_tooltip'] = $agentTooltip;
         }
     }
@@ -224,10 +227,20 @@ final class Shortcode
         if (in_array($f, ['count', 'count-all'], true)) {
             return esc_html(number_format_i18n((int) wp_slimstat_db::count_records($map[$w] ?? $w, '', 'count' === $f) + $atts['o']));
         }
-        $queryColumns = array_values(array_unique(array_map(static function ($column) use ($map) { return $map[$column] ?? $column; }, array_diff($columns, ['count', 'dt']))));
+        $queryColumns = array_values(array_unique(array_map(static function ($column) use ($map) { return $map[$column] ?? $column; }, array_diff($columns, ['count']))));
         if (!$queryColumns) { $queryColumns = ['id']; }
         $function = 'get_' . str_replace('-all', '', $f);
-        $results = wp_slimstat_db::$function(implode(', ', $queryColumns), '', '', false === strpos($f, '-all'));
+        $query = ['columns' => implode(', ', $queryColumns), 'use_date_filters' => false === strpos($f, '-all')];
+        if (in_array('post_link_no_qs', $columns, true) && !array_intersect(['resource', 'post_link'], $columns)) {
+            // Group before LIMIT so tracking parameters do not split a popular page into rows.
+            $expression = "SUBSTRING_INDEX(resource, '" . (get_option('permalink_structure') ? '?' : '&') . "', 1)";
+            $queryColumns = array_map(static function ($column) use ($expression, $function) {
+                return 'resource' === $column ? $expression . ('get_recent' === $function ? ' AS resource' : '') : $column;
+            }, $queryColumns);
+            $query['columns'] = implode(', ', $queryColumns);
+            if ('get_top' === $function) { $query['more_select'] = $expression . ' AS resource'; }
+        }
+        $results = wp_slimstat_db::$function($query);
         if (!$results) { return ''; }
         $rows = [];
         foreach ($results as $row) {

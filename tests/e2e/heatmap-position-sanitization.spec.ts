@@ -109,12 +109,14 @@ async function createAnonymousPage(
 async function callHeatmapEndpoint(
   page: import('@playwright/test').Page,
   nonce: string,
+  resource: string,
   filters = '',
-): Promise<{ max: number; data: Array<{ x: string; y: string; value: number }> }> {
+): Promise<{ data: Array<{ x: number; y: number; n: number }> }> {
   const response = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
     form: {
       action: 'slimstat_heatmap',
       security: nonce,
+      page: resource,
       fs: encodeBase64(filters),
     },
   });
@@ -231,7 +233,7 @@ test.describe('Heatmap position sanitization', () => {
     expect(event!.position).toBe('');
   });
 
-  test('heatmap endpoint excludes corrupted positions and returns x/y/value entries', async ({ page }) => {
+  test('heatmap endpoint excludes corrupted positions and returns numeric coordinates and counts', async ({ page }) => {
     await requireProBooted(page);
 
     await setSlimstatOptions({ addon_heatmap_enable: 'on' });
@@ -246,13 +248,13 @@ test.describe('Heatmap position sanitization', () => {
     await seedEventRow(stat!.id, '50,75');
 
     const nonce = await getHeatmapNonce(page);
-    const payload = await callHeatmapEndpoint(page, nonce, `resource starts_with ${resourcePrefix}`);
+    const payload = await callHeatmapEndpoint(page, nonce, stat!.resource);
 
     expect(payload.data).toHaveLength(2);
     expect(payload.data).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ x: '320', y: '480', value: 1 }),
-        expect.objectContaining({ x: '50', y: '75', value: 1 }),
+        expect.objectContaining({ x: 320, y: 480, n: 1 }),
+        expect.objectContaining({ x: 50, y: 75, n: 1 }),
       ]),
     );
   });
@@ -274,16 +276,16 @@ test.describe('Heatmap position sanitization', () => {
     await seedEventRow(stat!.id, '300,400');
 
     const nonce = await getHeatmapNonce(page);
-    const payload = await callHeatmapEndpoint(page, nonce, `resource starts_with ${resourcePrefix}`);
+    const payload = await callHeatmapEndpoint(page, nonce, stat!.resource);
 
     expect(payload.data).toHaveLength(2);
     expect(payload.data).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ x: '100', y: '200', value: 3 }),
-        expect.objectContaining({ x: '300', y: '400', value: 2 }),
+        expect.objectContaining({ x: 100, y: 200, n: 3 }),
+        expect.objectContaining({ x: 300, y: 400, n: 2 }),
       ]),
     );
-    expect(payload.max).toBe(3);
+    expect(Math.max(...payload.data.map(point => point.n))).toBe(3);
   });
 
   test('GDPR enabled with granted consent records interaction position via browser click', async ({ browser, page }) => {

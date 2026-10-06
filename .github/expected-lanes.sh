@@ -36,7 +36,7 @@ code=$(grep -v '^[[:space:]]*#' "$ci")
 tier1=$(printf '%s\n' "$code" \
   | sed -n '/^  fast:/,/^  phpstan:/p' \
   | grep -m1 -oE 'php: \[[^]]*\]' \
-  | grep -oE '[0-9]+\.[0-9]+' || true)
+  | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || true)
 
 # ---- Tier 2: the lanes that carry the BLOCKING escaping gate ---------------------------
 # tests/reports-output-escaping-test.php is the only XSS gate over the report render path
@@ -52,15 +52,15 @@ tier2_block=$(printf '%s\n' "$code" | sed -n '/^  standard:/,/^  nightly:/p')
 
 esc_wp=$(printf '%s\n' "$tier2_block" \
   | grep -B4 'reports-output-escaping-test\.php' \
-  | grep -oE "matrix\.wp == '[0-9]+\.[0-9]+'" \
-  | grep -oE '[0-9]+\.[0-9]+' || true)
+  | grep -oE "matrix\.wp == '[0-9]+\.[0-9]+(\.[0-9]+)?'" \
+  | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || true)
 
 if [ -z "$esc_wp" ]; then
   # A step with no `if:` runs on every cell of the matrix. Falling back to the full lane list
   # is the honest reading of that, and it fails CLOSED: the set can only grow. An empty set
   # here would make the whole Tier 2 requirement vacuous, which is the failure this file is
   # being added to fix.
-  esc_wp=$(printf '%s\n' "$tier2_block" | grep -oE '\{ wp: "[0-9]+\.[0-9]+"' | grep -oE '[0-9]+\.[0-9]+' || true)
+  esc_wp=$(printf '%s\n' "$tier2_block" | grep -oE '\{ wp: "[0-9]+\.[0-9]+(\.[0-9]+)?"' | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || true)
 fi
 
 # ---- Tier 2: the lanes whose E2E step can fail the job ---------------------------------
@@ -87,7 +87,7 @@ fi
 
 case "$soft_line" in
   *"fromJSON("*)
-    block_wp=$(printf '%s\n' "$soft_line" | grep -oE "fromJSON\('\[[^]]*\]'\)" | grep -oE '[0-9]+\.[0-9]+' || true)
+    block_wp=$(printf '%s\n' "$soft_line" | grep -oE "fromJSON\('\[[^]]*\]'\)" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || true)
     # A polarity flip turns the same list into the lanes that are SOFT. §7 of the perf gate is
     # what forbids that shape; this script refuses to read it rather than trusting §7 ran.
     case "$soft_line" in
@@ -96,7 +96,7 @@ case "$soft_line" in
     esac
     ;;
   *': false'*)
-    block_wp=$(printf '%s\n' "$tier2_block" | grep -oE '\{ wp: "[0-9]+\.[0-9]+"' | grep -oE '[0-9]+\.[0-9]+' || true)
+    block_wp=$(printf '%s\n' "$tier2_block" | grep -oE '\{ wp: "[0-9]+\.[0-9]+(\.[0-9]+)?"' | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || true)
     ;;
   *': true'*)
     block_wp=""   # advisory everywhere: the escaping gate is again the only blocking step
@@ -108,9 +108,10 @@ case "$soft_line" in
 esac
 
 # Union, deduplicated, in version order so the comparison in perf-gate §5b is order-stable.
-tier2_wp=$(printf '%s\n%s\n' "$esc_wp" "$block_wp" | grep -E '^[0-9]+\.[0-9]+$' | sort -u -V)
+tier2_wp=$(printf '%s\n%s\n' "$esc_wp" "$block_wp" | grep -E '^[0-9]+\.[0-9]+(\.[0-9]+)?$' | sort -u -V)
 
 echo "Static analysis · PHPStan"
+echo "WordPress 5.6 · PHP 7.4 · runtime"
 
 for v in $tier1; do
   echo "Tier 1 · fast · PHP $v"
@@ -120,9 +121,9 @@ for wp in $tier2_wp; do
   # `.` is any-character in a regex, so 6.4 would also match a lane called 674.
   wp_re="${wp//./[.]}"
   php=$(printf '%s\n' "$tier2_block" \
-    | grep -oE "\{ wp: \"${wp_re}\", php: \"[0-9]+\.[0-9]+\" \}" \
-    | grep -oE 'php: "[0-9]+\.[0-9]+"' \
-    | grep -oE '[0-9]+\.[0-9]+' \
+    | grep -oE "\{ wp: \"${wp_re}\", php: \"[0-9]+\.[0-9]+(\.[0-9]+)?\" \}" \
+    | grep -oE 'php: "[0-9]+\.[0-9]+(\.[0-9]+)?"' \
+    | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' \
     | head -1 || true)
   if [ -z "$php" ]; then
     echo "expected-lanes: ci.yml runs the escaping gate on WP ${wp}, but the Tier 2 matrix declares no such lane" >&2

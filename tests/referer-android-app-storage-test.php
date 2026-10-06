@@ -5,9 +5,9 @@
  * survive the storage layer.
  *
  * Storage::insertRow() routes the `referer` key through sanitize_text_field()
- * (only `resource` uses sanitize_url()), so the value is preserved at this layer.
+ * (only `resource` uses esc_url_raw()), so the value is preserved at this layer.
  * This proves the #306 fault was strictly upstream (Ajax::sanitizeReferer /
- * Processor server fallback used sanitize_url, which stripped the scheme) and
+ * Processor server fallback used esc_url_raw, which stripped the scheme) and
  * that the storage layer needs no change.
  *
  * Run: php tests/referer-android-app-storage-test.php
@@ -94,10 +94,10 @@ namespace {
         }
     }
 
-    if (!function_exists('sanitize_url')) {
+    if (!function_exists('esc_url_raw')) {
         // Models WP esc_url_raw: strips schemes not in the default allowlist.
         // android-app is NOT in the default list — returns '' (the #306 bug).
-        function sanitize_url($url)
+        function esc_url_raw($url)
         {
             $url = trim((string) $url);
             if (preg_match('#^([a-z][a-z0-9+.\-]*):#i', $url, $m)) {
@@ -136,14 +136,14 @@ namespace {
     assert_same(
         $ANDROID_APP,
         \SlimStat\Utils\FakeQueryRecorder::$values['referer'] ?? null,
-        'Storage::insertRow must preserve android-app:// referer (routes through sanitize_text_field, not sanitize_url)'
+        'Storage::insertRow must preserve android-app:// referer (routes through sanitize_text_field, not esc_url_raw)'
     );
 
-    // ─── Test 2: control — sanitize_url WOULD have stripped it ─────────
-    // Documents the root cause: had the referer key used sanitize_url like
+    // ─── Test 2: control — esc_url_raw WOULD have stripped it ─────────
+    // Documents the root cause: had the referer key used esc_url_raw like
     // `resource` does, the value would be emptied.
 
-    assert_same('', sanitize_url($ANDROID_APP), 'sanitize_url strips android-app:// — this is why the fix moved upstream off sanitize_url');
+    assert_same('', esc_url_raw($ANDROID_APP), 'esc_url_raw strips android-app:// — this is why the fix moved upstream off esc_url_raw');
 
     // ─── Test 3: insertRow still strips HTML tags from referer ─────────
 

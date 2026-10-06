@@ -25,6 +25,12 @@ class ShortcodeRestControllerTest extends WpSlimstatTestCase
         \wp_slimstat::$settings['capability_can_view'] = 'manage_options';
         Functions\when('current_user_can')->justReturn(false);
         self::assertFalse(Shortcode::canView());
+        $GLOBALS['current_user']->user_login = '';
+        $asked = null;
+        Functions\when('current_user_can')->alias(static function ($cap) use (&$asked) { $asked = $cap; return false; });
+        self::assertFalse(Shortcode::canView(), 'An anonymous user never matches the whitelist, including PHP 7.4');
+        self::assertSame('manage_options', $asked);
+        $GLOBALS['current_user']->user_login = 'bob';
         Functions\when('current_user_can')->justReturn(true);
         self::assertTrue(Shortcode::canView());
         \wp_slimstat::$settings = $settings;

@@ -877,7 +877,7 @@ function slimstat_ci_wp_lanes(string $yaml): array
     $code  = slimstat_yaml_strip_comments($yaml);
     $lanes = [];
 
-    if (preg_match_all('/\{\s*wp:\s*"(\d+\.\d+)"\s*,\s*php:\s*"(\d+\.\d+)"\s*\}/', $code, $m, PREG_SET_ORDER)) {
+    if (preg_match_all('/\{\s*wp:\s*"(\d+\.\d+(?:\.\d+)?)"\s*,\s*php:\s*"(\d+\.\d+)"\s*\}/', $code, $m, PREG_SET_ORDER)) {
         foreach ($m as $pair) {
             $lanes[$pair[1]] = $pair[2];
         }

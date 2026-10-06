@@ -128,7 +128,7 @@ class Ajax
      *
      * @internal Extracted from handle() (#306) to provide a unit-testable seam.
      *
-     * Uses sanitize_url() with `android-app` added to the allow-list
+     * Uses esc_url_raw() with `android-app` added to the allow-list
      * (Processor::REFERER_ALLOWED_SCHEMES) rather than the default wp_allowed_protocols():
      *   - app-scheme referers such as `android-app://com.google.android.googlequicksearchbox/`
      *     (Google Discover) survive — the original #306 bug was the default list emptying them;
@@ -176,7 +176,7 @@ class Ajax
             $referer = substr($referer, 0, 2048);
         }
 
-        return sanitize_url($referer, Processor::REFERER_ALLOWED_SCHEMES);
+        return esc_url_raw($referer, Processor::REFERER_ALLOWED_SCHEMES);
     }
 
     /**
@@ -553,7 +553,7 @@ class Ajax
                         \wp_slimstat::set_stat($stat);
                         $id = Processor::process();
                     } elseif (!$is_allowed_host($parsed_resource['host'])) {
-                        $sanitized_url = sanitize_url($resource);
+                        $sanitized_url = esc_url_raw($resource);
                         $stat['outbound_resource'] = !empty($sanitized_url) ? $sanitized_url : '';
                         $stat['dt_out']             = \wp_slimstat::date_i18n('U');
 

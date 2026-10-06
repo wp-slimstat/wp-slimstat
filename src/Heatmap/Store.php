@@ -190,7 +190,7 @@ final class Store
 	{
 		$level = self::level();
 		$rate  = (int) (\wp_slimstat::$settings['heatmap_rate'] ?? 10000);
-		if ($id <= 0 || 'off' === $level || strlen($raw) > self::MAX_BYTES || $id % 10000 >= $rate || !self::ready()) {
+		if ($id <= 0 || !self::capturing() || strlen($raw) > self::MAX_BYTES || $id % 10000 >= $rate || !self::ready()) {
 			return 0;
 		}
 		if (!Consent::canTrack() || !Consent::piiAllowed()) {

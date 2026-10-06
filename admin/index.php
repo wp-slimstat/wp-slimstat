@@ -339,7 +339,7 @@ class wp_slimstat_admin
 
         // Dashboard Widgets
         if ('on' == wp_slimstat::$settings['add_dashboard_widgets']) {
-            $sanitized_uri  = sanitize_url(wp_unslash(is_string($_SERVER['REQUEST_URI'] ?? null) ? $_SERVER['REQUEST_URI'] : ''));
+            $sanitized_uri  = esc_url_raw(wp_unslash(is_string($_SERVER['REQUEST_URI'] ?? null) ? $_SERVER['REQUEST_URI'] : ''));
             $request_length = strlen($sanitized_uri);
             $temp           = $request_length - 10;
 
@@ -2050,9 +2050,10 @@ class wp_slimstat_admin
 
         // A whitelisted user gets the minimum capability instead of the configured one.
 
-        $whitelisted = false !== strpos(
+        $login = (string) ($GLOBALS['current_user']->user_login ?? '');
+        $whitelisted = '' !== $login && false !== strpos(
             (string) wp_slimstat::$settings['can_view'],
-            (string) ($GLOBALS['current_user']->user_login ?? '')
+            $login
         );
 
         if (!$whitelisted && !empty(wp_slimstat::$settings['capability_can_view'])) {

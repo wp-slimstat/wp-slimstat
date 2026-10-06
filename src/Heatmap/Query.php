@@ -39,6 +39,13 @@ final class Query
 		return \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
 	}
 
+	/** Apply the same author boundary to both capture tables and legacy pageviews. */
+	private static function authorScope(string $id): string
+	{
+		$scope = \wp_slimstat::report_scope()['where'];
+		return '1=1' === $scope ? '1=1' : $id . ' IN (SELECT id FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE ' . $scope . ')';
+	}
+
 	/** Device bucket for a viewport width; '' when the width is unknown. */
 	public static function device(int $width): string
 	{
@@ -117,6 +124,7 @@ final class Query
 	 */
 	public static function legacyPoints(string $pageKey, string $device, string $scope = '1=1'): array
 	{
+		$scope = '(' . $scope . ') AND ' . self::authorScope('t1.id');
 		$prefix = $GLOBALS['wpdb']->prefix;
 		$rows   = self::rows("SELECT te.notes, te.position, CAST(SUBSTRING_INDEX(t1.resolution,'x',1) AS UNSIGNED) vw, COUNT(*) n
 			FROM {$prefix}slim_events te INNER JOIN {$prefix}slim_stats t1 ON te.id = t1.id
@@ -142,7 +150,7 @@ final class Query
 	 */
 	public static function cachedPages(int $start, int $end, string $device = '', bool $refresh = false): array
 	{
-		$key       = 'slimstat_hm_pages_' . md5((string) wp_json_encode([get_current_blog_id(), $start, $end, $device]));
+		$key       = 'slimstat_hm_pages_' . md5((string) wp_json_encode([get_current_blog_id(), $start, $end, $device, \wp_slimstat::report_scope()['cache']]));
 		$signature = [(string) get_option(Store::GENERATION, ''), \wp_slimstat::$settings['auto_purge'] ?? 0, Store::ready()];
 		$cached    = $refresh ? null : get_transient($key);
 		if (is_array($cached) && ($cached['signature'] ?? null) === $signature) {
@@ -165,7 +173,7 @@ final class Query
 		$db     = self::db();
 		$prefix = $GLOBALS['wpdb']->prefix;
 		$ready  = Store::ready();
-		$probe  = self::legacyProbe();
+		$probe  = self::legacyProbe() . ' AND ' . self::authorScope('t1.id');
 
 		$pages = [];
 		$add   = static function (string $page, array $row) use (&$pages): void {
@@ -198,11 +206,16 @@ final class Query
 			$table  = Store::table();
 			$code   = self::DEVICE_CODES[$device] ?? 0;
 			$on     = $code ? $db->prepare(' AND device = %d', $code) : '';
+			$on    .= ' AND ' . self::authorScope($table . '.id');
 			$clicks = self::rows($db->prepare("SELECT HEX(page) page, MIN(id) id, COUNT(*) clicks, SUM(device = 1) desktop, SUM(device = 2) tablet, SUM(device = 3) mobile,
 				SUM(flags & 2 > 0) dead, SUM(flags & 4 > 0) rage, MAX(dt) last
 				FROM {$table} WHERE kind = 0 AND dt BETWEEN %d AND %d{$on} GROUP BY page ORDER BY clicks DESC LIMIT " . self::MAX_PAGES, $start, $end));
-			$scroll = self::rows($db->prepare("SELECT HEX(page) page, ROUND(100 * AVG(LEAST(y / dh, 1))) depth
-				FROM {$table} WHERE kind = 1 AND dh > 0 AND dt BETWEEN %d AND %d{$on} GROUP BY page", $start, $end));
+			// Only aggregate scroll for the bounded page list, not every URL ever captured.
+			$scrollPages = implode(',', array_map(static function ($hex): string {
+				return "UNHEX('" . preg_replace('/[^0-9A-F]/i', '', (string) $hex) . "')";
+			}, array_column($clicks, 'page')));
+			$scroll = $clicks ? self::rows($db->prepare("SELECT HEX(page) page, ROUND(100 * AVG(LEAST(y / dh, 1))) depth
+				FROM {$table} WHERE kind = 1 AND dh > 0 AND page IN ({$scrollPages}) AND dt BETWEEN %d AND %d{$on} GROUP BY page", $start, $end)) : [];
 			// Rows carry the page hash only; one sample pageview per page names it, if its page
 			// still hashes there. A TRUNCATE or restore with foreign key checks off leaves rows
 			// whose ids come back on other pages.
@@ -254,7 +267,7 @@ final class Query
 			return '(' . self::pageWhere($page) . ')';
 		}, array_keys($pages)));
 		$views = self::rows('SELECT ' . self::pageKeySql('t1.resource') . " page, COUNT(*) n, MAX(t1.content_id) content_id FROM {$prefix}slim_stats t1
-			WHERE " . $db->prepare('t1.dt BETWEEN %d AND %d', $start, $end) . ' AND ' . self::deviceWhere($device) . " AND ({$match}) GROUP BY page");
+			WHERE " . $db->prepare('t1.dt BETWEEN %d AND %d', $start, $end) . ' AND ' . self::deviceWhere($device) . ' AND ' . self::authorScope('t1.id') . " AND ({$match}) GROUP BY page");
 		foreach ($views as $row) {
 			if (isset($pages[$row['page']])) {
 				$pages[$row['page']]['pageviews']  = (int) $row['n'];
@@ -268,10 +281,10 @@ final class Query
 	public static function anyClicks(): bool
 	{
 		$prefix = $GLOBALS['wpdb']->prefix;
-		if (self::rows("SELECT 1 FROM {$prefix}slim_events te WHERE " . self::VALID_POSITION_SQL . ' LIMIT 1')) {
+		if (self::rows("SELECT 1 FROM {$prefix}slim_events te WHERE " . self::VALID_POSITION_SQL . ' AND ' . self::authorScope('te.id') . ' LIMIT 1')) {
 			return true;
 		}
-		return Store::ready() && (bool) self::rows('SELECT 1 FROM ' . Store::table() . ' WHERE kind = 0 LIMIT 1');
+		return Store::ready() && (bool) self::rows('SELECT 1 FROM ' . Store::table() . ' WHERE kind = 0 AND ' . self::authorScope(Store::table() . '.id') . ' LIMIT 1');
 	}
 
 	/**
@@ -377,6 +390,7 @@ final class Query
 	 */
 	public static function deviceViews(string $pageKey, int $start, int $end, string $scope = '1=1'): array
 	{
+		$scope = '(' . $scope . ') AND ' . self::authorScope('t1.id');
 		$db    = self::db();
 		$since = Store::ready() ? (int) (get_option(Store::STATE, [])['since'] ?? 0) : PHP_INT_MAX;
 		$row   = self::rows($db->prepare('SELECT COUNT(*) views, ' . self::deviceSplit() . ', SUM(t1.dt < %d) older, MAX(t1.content_id) content_id
@@ -439,6 +453,7 @@ final class Query
 		$sql .= $db->prepare(' WHERE h.page = UNHEX(%s) AND h.dt BETWEEN %d AND %d', \SlimStat\Schema\SurrogateKey::hex($pageKey), $start, $end);
 		$code = self::DEVICE_CODES[$device] ?? 0;
 		$sql .= $code ? $db->prepare(' AND h.device = %d', $code) : '';
+		$sql .= ' AND ' . self::authorScope('h.id');
 		return $sql . ('1=1' === $scope ? '' : " AND ({$scope})");
 	}
 

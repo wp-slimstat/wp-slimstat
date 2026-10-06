@@ -35,6 +35,7 @@ final class ShortcodeRestController implements RestControllerInterface
             if (!$item) { return new \WP_Error('slimstat_shortcode_w', __('Invalid shortcode attribute: w.', 'wp-slimstat'), ['status' => 400]); }
             $staff = false;
             foreach ($normalized['columns'] as $column) { $staff = $staff || 'staff' === ($catalog[$column]['privacy'] ?? 'staff'); }
+            $staff = $staff && !in_array($normalized['f'], ['count', 'count-all'], true);
             $sample = 'pro' === $item['tier'] && !\wp_slimstat::pro_is_installed();
             return rest_ensure_response([
                 'html' => $sample ? Shortcode::table($item['sample'] ?? []) : Shortcode::render($atts, $match[5]),

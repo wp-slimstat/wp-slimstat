@@ -156,6 +156,7 @@ class StoreTest extends WpSlimstatTestCase
 	private function readyToIngest(string $level = 'full'): void
 	{
 		$this->stubCommonWpFunctions();
+		Functions\when('has_filter')->justReturn(true);
 		\wp_slimstat::$settings = array_merge(\wp_slimstat::$settings, [
 			'heatmap_capture' => $level,
 			'heatmap_rate'    => 10000,
@@ -176,6 +177,7 @@ class StoreTest extends WpSlimstatTestCase
 	{
 		$good  = $this->batch([[0, 1, 0, 5000, 5000, 100, 200]], [['#buy', 'Buy']]);
 		$cases = [
+			'viewer removed'  => [static fn() => Functions\when('has_filter')->justReturn(false), 42, $good],
 			'capture off'     => [static fn() => \wp_slimstat::$settings['heatmap_capture'] = 'off', 42, $good],
 			'tables missing'  => [static fn() => $GLOBALS['slimstat_test_options'] = [], 42, $good],
 			'no pageview id'  => [static fn() => null, 0, $good],

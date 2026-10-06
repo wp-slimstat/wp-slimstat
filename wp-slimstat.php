@@ -894,7 +894,7 @@ class wp_slimstat
         $request_url = '';
 
         if (isset($_SERVER['REQUEST_URI'])) {
-            return urldecode(sanitize_url(wp_unslash($_SERVER['REQUEST_URI'])));
+            return urldecode(esc_url_raw(wp_unslash($_SERVER['REQUEST_URI'])));
         } elseif (isset($_SERVER['SCRIPT_NAME'])) {
             $request_url = sanitize_text_field(wp_unslash($_SERVER['SCRIPT_NAME']));
         } elseif (isset($_SERVER['PHP_SELF'])) {

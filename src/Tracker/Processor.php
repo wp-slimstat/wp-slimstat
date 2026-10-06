@@ -20,7 +20,7 @@ class Processor
 
     /**
      * Schemes accepted for the stored referer. Anything else is treated as an XSS
-     * attempt and dropped. Used both as the protocols allow-list for sanitize_url()
+     * attempt and dropped. Used both as the protocols allow-list for esc_url_raw()
      * at ingestion (Ajax::sanitizeReferer + the HTTP_REFERER fallback below) and by
      * the post-storage scheme check in process(), so the list never drifts. `android-app`
      * is included so Google Discover / Android-app referers survive. See #306.
@@ -232,12 +232,12 @@ class Processor
         // Ajax explicitly supplies an empty referrer for direct visits. Its HTTP header
         // identifies the tracked page, not that page's source; only fall back when absent.
         if (!isset($stat['referer']) && is_string($http_referer) && '' !== $http_referer) {
-            // sanitize_url() with android-app added to the allow-list: app-scheme referers
+            // esc_url_raw() with android-app added to the allow-list: app-scheme referers
             // (android-app://com.google.android.googlequicksearchbox/, Google Discover) survive,
             // disallowed schemes (javascript:, data:) are emptied at the boundary, and — unlike
             // sanitize_text_field — percent-encoded query octets are preserved so getSearchTerms()
             // below can still decode non-Latin / spaced search terms. See #306.
-            $stat['referer'] = sanitize_url(wp_unslash($http_referer), self::REFERER_ALLOWED_SCHEMES);
+            $stat['referer'] = esc_url_raw(wp_unslash($http_referer), self::REFERER_ALLOWED_SCHEMES);
         }
 
 

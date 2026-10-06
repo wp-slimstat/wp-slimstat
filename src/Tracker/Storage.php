@@ -24,7 +24,7 @@ class Storage
 			}
 			$data[$key] = 0 === strpos($key, 'utm_') || 'traffic_source' === $key
 				? Acquisition::clean($value)
-				: ('resource' == $key ? sanitize_url($value) : sanitize_text_field($value));
+				: ('resource' == $key ? esc_url_raw($value) : sanitize_text_field($value));
 		}
 
 		// vid_hash travels through $stat as 32 hex chars — the one spelling that survives
@@ -214,7 +214,7 @@ class Storage
 			if (is_array($value)) {
 				$data[$key] = array_map('sanitize_text_field', $value);
 			} elseif ('resource' === $key || 'outbound_resource' === $key) {
-				$data[$key] = sanitize_url($value);
+				$data[$key] = esc_url_raw($value);
 			} else {
 				$data[$key] = sanitize_text_field($value);
 			}
@@ -239,7 +239,7 @@ class Storage
 		}
 
 		if (!empty($data['outbound_resource'])) {
-			$url = sanitize_url(wp_unslash($data['outbound_resource']));
+			$url = esc_url_raw(wp_unslash($data['outbound_resource']));
 			$query->setRaw(
 				'outbound_resource',
 				"IF(outbound_resource IS NULL OR outbound_resource = '', %s, IF(LENGTH(outbound_resource) + LENGTH(%s) + 3 <= 2048, CONCAT(outbound_resource, ';;;', %s), outbound_resource))",

@@ -53,7 +53,7 @@ class wp_slimstat_db
     /*
      * Sets the filters and other structures needed to store the data retrieved from the DB
      */
-    public static function init($_filters = '')
+    public static function init($_filters = '', bool $_use_request = true)
     {
         // List of supported filters and their user-friendly names
         self::$columns_names = [
@@ -167,7 +167,7 @@ class wp_slimstat_db
 
         // Handle type parameter for date presets and custom ranges
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
-        if (isset($_GET['type']) && is_string($_GET['type'])) {
+        if ($_use_request && isset($_GET['type']) && is_string($_GET['type'])) {
             // Sanitize the type parameter to prevent XSS
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
             $type = sanitize_key($_GET['type']);
@@ -218,7 +218,7 @@ class wp_slimstat_db
 
         // Filters are set via javascript as hidden fields and submitted as a POST request. They override anything passed through the regular input fields
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
-        if (!empty($_REQUEST['fs']) && is_array($_REQUEST['fs'])) {
+        if ($_use_request && !empty($_REQUEST['fs']) && is_array($_REQUEST['fs'])) {
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Read-only page/date/presentation selection; no privileged mutation is performed by this input. Read-only filter parser validates dimensions/operators and binds values; UTM values preserve percent encoding, input dates are cast to integers.
             foreach ($_REQUEST['fs'] as $a_request_filter_name => $a_request_filter_value) {
                 if (!is_string($a_request_filter_value)) {
@@ -238,7 +238,7 @@ class wp_slimstat_db
         // Date filters (input fields) - Please note: interval_minutes is not exposed via the web interface, that's why it's not listed here below
         foreach (['hour', 'day', 'month', 'year', 'interval', 'interval_hours'] as $a_date_time_filter_name) {
             // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Read-only page/date/presentation selection; no privileged mutation is performed by this input. Read-only filter parser validates dimensions/operators and binds values; UTM values preserve percent encoding, input dates are cast to integers.
-            if (isset($_POST[$a_date_time_filter_name]) && is_string($_POST[$a_date_time_filter_name]) && strlen($_POST[$a_date_time_filter_name]) > 0) { // here we use isset instead of !empty to handle ZERO as a valid input value
+            if ($_use_request && isset($_POST[$a_date_time_filter_name]) && is_string($_POST[$a_date_time_filter_name]) && strlen($_POST[$a_date_time_filter_name]) > 0) { // here we use isset instead of !empty to handle ZERO as a valid input value
                 // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
                 $filters_array[$a_date_time_filter_name] = $a_date_time_filter_name . ' equals ' . intval($_POST[$a_date_time_filter_name]);
             }
@@ -246,7 +246,7 @@ class wp_slimstat_db
 
         // Fields and drop downs
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
-        if (!empty($_POST['f']) && is_string($_POST['f']) && !empty($_POST['o']) && is_string($_POST['o'])
+        if ($_use_request && !empty($_POST['f']) && is_string($_POST['f']) && !empty($_POST['o']) && is_string($_POST['o'])
             // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
             && (!isset($_POST['v']) || is_string($_POST['v']))) {
             // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.

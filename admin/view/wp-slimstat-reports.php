@@ -20,7 +20,7 @@ class wp_slimstat_reports
     /**
      * Initalize class properties
      */
-    public static function init()
+    public static function init(bool $_use_request = true)
     {
         // Has the class already been initialized?
         if (!empty(self::$reports)) {
@@ -29,7 +29,7 @@ class wp_slimstat_reports
 
         // Include and initialize the API to interact with the database
         include_once(__DIR__ . '/wp-slimstat-db.php');
-        wp_slimstat_db::init();
+        wp_slimstat_db::init('', $_use_request);
 
         // Include the localization library
         include_once(plugin_dir_path(dirname(__FILE__, 2)) . 'languages/index.php');
@@ -2847,7 +2847,7 @@ class wp_slimstat_reports
 
         // Avoid XSS attacks ( why would the owner try to hack into his/her own website though? )
         if (!empty($_SERVER['HTTP_REFERER']) && is_string($_SERVER['HTTP_REFERER'])) {
-            $parsed_referer = wp_parse_url(sanitize_url(wp_unslash($_SERVER['HTTP_REFERER'])) ?: '');
+            $parsed_referer = wp_parse_url(esc_url_raw(wp_unslash($_SERVER['HTTP_REFERER'])) ?: '');
             if (!$parsed_referer || (isset($parsed_referer['scheme']) && ('' !== $parsed_referer['scheme'] && '0' !== $parsed_referer['scheme']) && !in_array(strtolower($parsed_referer['scheme']), ['http', 'https']))) {
                 return '';
             }

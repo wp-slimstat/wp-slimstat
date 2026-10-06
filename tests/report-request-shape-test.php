@@ -16,7 +16,7 @@ eval('class wp_slimstat_db {
  public static $queries = []; public static function count_records(...$args) { self::$queries[] = $args; return 7; }
  public static function count_records_having(...$args) { return 1; }
  public static function count_bouncing_pages() { return 1; }
- public static function init($_filters = "") {' . $body . '}
+ public static function init($_filters = "", bool $_use_request = true) {' . $body . '}
 }');
 $GLOBALS['current_user'] = (object) ['user_login' => 'author-fixture'];
 set_error_handler(static function ($severity, $message) { throw new RuntimeException($message); });
@@ -40,6 +40,8 @@ wp_slimstat_db::init('resource contains news');
 foreach (['hour equals 0', "browser equals O'Brien", 'country equals gb', 'resource contains news', 'author equals author-fixture'] as $filter) {
  if (false === strpos(wp_slimstat_db::$filters_normalized, $filter)) { throw new RuntimeException('Valid filter lost: ' . $filter); }
 }
+wp_slimstat_db::init('resource contains news', false);
+if ('resource contains news&&&author equals author-fixture' !== wp_slimstat_db::$filters_normalized) { throw new RuntimeException('Explicit-only initialization must ignore request fields but retain author isolation'); }
 if (7 !== wp_slimstat_db::$pageviews) { throw new RuntimeException('Report initialization skipped'); }
 echo "PASS: malformed request shapes ignored without fatal errors; valid zero, custom, author and explicit filters preserved\n";
 

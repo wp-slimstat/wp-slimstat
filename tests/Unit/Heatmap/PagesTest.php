@@ -67,6 +67,17 @@ class PagesTest extends WpSlimstatTestCase
 		$GLOBALS['slimstat_test_options'][Store::STATE] = ['schema' => Store::SCHEMA, 'since' => $since];
 	}
 
+	public function test_scroll_aggregation_is_limited_to_the_selected_click_pages(): void
+	{
+		$this->ready();
+		Query::pages(1, 999);
+		self::assertStringContainsString("page IN (UNHEX('" . strtoupper(SurrogateKey::hex('/about')) . "'),UNHEX('" . strtoupper(SurrogateKey::hex('/pricing')) . "'))", $this->query('ROUND(100 * AVG'));
+		$this->queries = [];
+		$this->canned['kind = 0'] = [];
+		Query::pages(1, 999);
+		self::assertSame('', $this->query('ROUND(100 * AVG'), 'No unbounded scroll query when there are no clicked pages');
+	}
+
 	private function query(string $needle): string
 	{
 		return implode("\n", array_filter($this->queries, static fn($q) => false !== strpos($q, $needle)));
