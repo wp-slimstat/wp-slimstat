@@ -1,0 +1,19 @@
+target:    src/Schema/Meta.php
+gate:      php tests/lease-claim-shape-test.php
+kind:      restore-defect
+expect:    the steal condition is not `expired (dt < %d) or already mine`
+rationale: Inverts the lease steal condition — dt > now steals every UNEXPIRED lease, so any concurrent claimer takes a live lease and the single-flight the lease exists to provide is gone. SchemaMetaTest cannot see this: its double never executes SQL, so only the shape gate reads the condition. This is the exact mutation class PITFALLS 21/22 warns about — same green with and without the defect — unless the gate pins the literal condition.
+---
+diff --git a/src/Schema/Meta.php b/src/Schema/Meta.php
+index 4fdc1fe7..ff297aae 100644
+--- a/src/Schema/Meta.php
++++ b/src/Schema/Meta.php
+@@ -100,7 +100,7 @@ final class Meta
+         $written = $db->query($db->prepare(
+             "INSERT INTO {$prefix}slim_meta (meta_key, meta_value, dt) VALUES (%s, %s, %d)
+              ON DUPLICATE KEY UPDATE
+-                 dt         = IF(meta_value = VALUES(meta_value) OR dt < %d, VALUES(dt), dt),
++                 dt         = IF(meta_value = VALUES(meta_value) OR dt > %d, VALUES(dt), dt),
+                  meta_value = IF(dt = VALUES(dt), VALUES(meta_value), meta_value)",
+             $key,
+             $holder,

@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    P34-above-the-cut-differs-is-not-a-tie label
+rationale: Turns the tie tolerance into a blanket pardon: with this EQUAL, two LIMIT-N answers whose last-ranked row happens to hold the same count compare equal however much the rows ABOVE the cut differ. It is the one rule in this algebra that can convert a real difference into agreement, and until run 53 no plant reached the branch that bounds it - the mutation left `plants=28 assertions=216 failures=0` byte-identical. Because classify() computes all three legs through the same compare_envelopes call, it blinds the oracle at the same time: a triple that should be (b)/block reads equal/pass even when the oracle holds OLD's answer.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -587,7 +587,7 @@ def compare_banded(a_rows, b_rows, contract=None):
+     if above_a != above_b:
+         only_a = sorted((above_a - above_b).elements())
+         only_b = sorted((above_b - above_a).elements())
+-        return _diff(DIFFER, "above-the-cut-differs", "the rows above the cut",
++        return _diff(EQUAL, "above-the-cut-differs", "the rows above the cut",
+                      "the tie band is the only place membership may differ; %d row(s) above the "
+                      "cut are on the first side only and %d on the second"
+                      % (len(only_a), len(only_b)),

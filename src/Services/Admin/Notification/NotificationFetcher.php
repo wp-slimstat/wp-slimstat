@@ -39,9 +39,10 @@ class NotificationFetcher
 			$notifications = \json_decode($response, true);
 
 			if (empty($notifications) || !\is_array($notifications)) {
-				\error_log(
-					\sprintf(\__('No notifications were found. The API returned an empty response from the following URL: %s', 'wp-slimstat'), "{$this->apiUrl}/api/v1/notifications?plugin_slug={$pluginSlug}")
-				);
+				// Untranslated on purpose: a log line is not user-facing copy, and the URL
+				// it carries has no business in a production debug.log. The helper owns the
+				// WP_DEBUG guard and the [WP SLIMSTAT] prefix.
+				\wp_slimstat::log("no notifications returned by {$this->apiUrl}/api/v1/notifications?plugin_slug={$pluginSlug}", 'error');
 			}
 
 			$notifications = NotificationProcessor::syncNotifications($notifications);
@@ -49,16 +50,16 @@ class NotificationFetcher
 
 			$prevRawNotificationsData = NotificationFactory::getRawNotificationsData();
 
-			if (!\update_option('wp_slimstat_notifications', $notifications)) {
-				if ($prevRawNotificationsData !== $notifications) {
-					\error_log('Failed to update wp_slimstat_notifications option.');
-				}
+			// update_option() returns false both for "write failed" and for "value did not
+			// change", so the second clause is what separates them.
+			if (!\update_option('wp_slimstat_notifications', $notifications) && $prevRawNotificationsData !== $notifications) {
+				\wp_slimstat::log('failed to update the wp_slimstat_notifications option', 'error');
 			}
 
 			return true;
 
 		} catch (Exception $e) {
-			\error_log($e->getMessage());
+			\wp_slimstat::log('notification fetch failed — ' . $e->getMessage(), 'error');
 			return false;
 		}
 	}

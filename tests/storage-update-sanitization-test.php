@@ -77,6 +77,9 @@ namespace SlimStat\Utils {
 }
 
 namespace {
+    function wp_parse_url($url, $component = -1) { return parse_url($url, $component); }
+
+    class wp_slimstat { public static $wpdb; }
 
     $assertions = 0;
 
@@ -147,8 +150,8 @@ namespace {
         }
     }
 
-    if (!function_exists('sanitize_url')) {
-        function sanitize_url($url)
+    if (!function_exists('esc_url_raw')) {
+        function esc_url_raw($url)
         {
             $url = (string) $url;
             $url = trim($url);
@@ -174,7 +177,9 @@ namespace {
         public string $prefix = 'wp_';
     };
 
-    // Load the SUT.
+    // Load the SUT. WriteResult first — this test bootstraps stubs rather than the
+    // autoloader, so Storage's return type has to be required explicitly.
+    require_once __DIR__ . '/../src/Tracker/WriteResult.php';
     require_once __DIR__ . '/../src/Tracker/Storage.php';
 
     // ─── Test 1: user_agent with XSS payload is stripped ───────────────
@@ -184,7 +189,10 @@ namespace {
         'id'         => 42,
         'user_agent' => 'Mozilla/5.0 <img src=x onerror=alert(/XSS/)>',
     ]);
-    assert_same(42, $result, 'updateRow returns the id on success');
+    // updateRow() now returns a WriteResult (C31) — the id is still the caller's answer,
+    // but a failure is finally representable instead of being discarded.
+    assert_same(42, $result->id(), 'updateRow reports the id on success');
+    assert_true($result->isStored(), 'and reports that it stored something');
     assert_same(42, \SlimStat\Utils\FakeQueryRecorder::$where_id, 'WHERE id is bound to the input id');
     assert_same(1, \SlimStat\Utils\FakeQueryRecorder::$executeCalls, 'execute() is called exactly once');
     $ua = \SlimStat\Utils\FakeQueryRecorder::$setClauses['user_agent'] ?? null;
@@ -203,7 +211,7 @@ namespace {
     assert_same('alert(1)Mozilla/5.0', $ua, 'sanitize_text_field strips <script> tags but keeps inner text');
     assert_not_contains('<script', $ua ?? '', 'no script tag survives');
 
-    // ─── Test 3: referer is sanitized as URL (sanitize_url) ───────────
+    // ─── Test 3: referer is sanitized as URL (esc_url_raw) ───────────
 
     \SlimStat\Utils\FakeQueryRecorder::reset();
     \SlimStat\Tracker\Storage::updateRow([
@@ -235,7 +243,7 @@ namespace {
         'id'                => 1,
         'outbound_resource' => 'javascript:alert(1)',
     ]);
-    // sanitize_url returns '' for javascript: scheme; the empty value then
+    // esc_url_raw returns '' for javascript: scheme; the empty value then
     // fails the !empty($data['outbound_resource']) gate, so no UPDATE is
     // performed for this field. This is stricter (and safer) than pre-fix.
     assert_true(empty(\SlimStat\Utils\FakeQueryRecorder::$setRawParams['outbound_resource'] ?? []), 'javascript: outbound_resource must not reach setRaw');
@@ -272,14 +280,16 @@ namespace {
 
     \SlimStat\Utils\FakeQueryRecorder::reset();
     $result = \SlimStat\Tracker\Storage::updateRow([]);
-    assert_false($result, 'updateRow returns false on empty input');
+    assert_false($result->isStored(), 'updateRow stores nothing on empty input');
+    assert_same(0, $result->id(), 'and has no row to report');
     assert_same(0, \SlimStat\Utils\FakeQueryRecorder::$executeCalls, 'execute() not called for empty input');
 
     // ─── Test 8: missing id returns false ─────────────────────────────
 
     \SlimStat\Utils\FakeQueryRecorder::reset();
     $result = \SlimStat\Tracker\Storage::updateRow(['user_agent' => 'Mozilla/5.0']);
-    assert_false($result, 'updateRow returns false when id missing');
+    assert_false($result->isStored(), 'updateRow stores nothing when id is missing');
+    assert_same(0, $result->id(), 'and has no row to report');
     assert_same(0, \SlimStat\Utils\FakeQueryRecorder::$executeCalls, 'execute() not called when id missing');
 
     // ─── Test 9: redirect content_type passes through unchanged ───────

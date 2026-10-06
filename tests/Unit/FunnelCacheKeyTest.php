@@ -45,12 +45,28 @@ class FunnelCacheKeyTest extends WpSlimstatTestCase
         }
     }
 
-    /** Invoke the private static helper via reflection. */
+    /**
+     * Invoke the private static helper via reflection.
+     *
+     * The window and the column filters are set on $filters_normalized rather than
+     * passed as arguments: results_cache_key() reads them from there, so driving them
+     * any other way would test a path production never takes.
+     *
+     * @param string $filtersSig Stands in for a distinct set of column filters. It is
+     *                           planted in $filters_normalized['columns'] as an opaque
+     *                           marker, so two different values still mean "two
+     *                           different filter sets" and NO_FILTERS still means none.
+     */
     private static function key(array $steps, int $start, int $end, string $filtersSig, $cacheVer): string
     {
+        \wp_slimstat_db::$filters_normalized['utime']   = ['start' => $start, 'end' => $end];
+        \wp_slimstat_db::$filters_normalized['columns'] = self::NO_FILTERS === $filtersSig
+            ? []
+            : ['marker' => $filtersSig];
+
         $m = new \ReflectionMethod(\wp_slimstat_db::class, 'funnel_cache_key');
         $m->setAccessible(true);
-        return $m->invoke(null, $steps, $start, $end, $filtersSig, $cacheVer);
+        return $m->invoke(null, $steps, $cacheVer);
     }
 
     /** @test */

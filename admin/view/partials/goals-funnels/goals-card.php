@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 /**
  * Goals card — modern admin layout for the Goals section of slimview6.
  *
@@ -42,7 +43,7 @@ $show_upsell = $at_max && !$is_pro;
                 <?php esc_html_e('Track a conversion like a signup, checkout, or pricing view. Each goal is one question you ask of your traffic.', 'wp-slimstat'); ?>
             </p>
             <p class="slimstat-gf-empty__note">
-                <?php esc_html_e('Goals are retroactive: each one measures your full visit history, with no warm-up period.', 'wp-slimstat'); ?>
+                <?php esc_html_e('Goals are retroactive: each one measures your full visit history, with no warm‑up period.', 'wp-slimstat'); ?>
             </p>
             <button type="button"
                     class="button button-primary slimstat-gf-cta"
@@ -73,7 +74,7 @@ $show_upsell = $at_max && !$is_pro;
                 $goal_id_attr  = esc_attr((string) ($goal['id'] ?? ''));
                 ?>
                 <li class="slimstat-gf-goal"
-                    data-goal-id="<?php echo $goal_id_attr; ?>"
+                    data-goal-id="<?php echo esc_attr($goal_id_attr); ?>"
                     data-active="<?php echo $goal_active ? 'true' : 'false'; ?>">
                     <div class="slimstat-gf-goal__head">
                         <h3 class="slimstat-gf-goal__name">
@@ -99,7 +100,7 @@ $show_upsell = $at_max && !$is_pro;
                         <?php /* Paused goals are retained but not measured (both
                                  tiers) — show that plainly instead of numbers. On
                                  Free, all but the newest goal are auto-paused. (#11) */ ?>
-                        <p class="slimstat-gf-goal__nomatch"><?php esc_html_e('Paused — not being measured', 'wp-slimstat'); ?></p>
+                        <p class="slimstat-gf-goal__nomatch"><?php esc_html_e('Paused: not being measured', 'wp-slimstat'); ?></p>
                     <?php elseif (0 === $uniques && 0 === $total) : ?>
                         <?php /* Distinguish "active, no matches yet" from a broken
                                  rule — three zeros read as an error (FN-15). */ ?>
@@ -141,7 +142,7 @@ $show_upsell = $at_max && !$is_pro;
                         <button type="button"
                                 class="button-link slimstat-gf-goal-delete"
                                 data-action="delete-goal"
-                                data-goal-id="<?php echo $goal_id_attr; ?>"
+                                data-goal-id="<?php echo esc_attr($goal_id_attr); ?>"
                                 data-goal-name="<?php echo esc_attr($goal['name'] ?? ''); ?>">
                             <?php esc_html_e('Delete', 'wp-slimstat'); ?>
                         </button>
@@ -176,7 +177,7 @@ $show_upsell = $at_max && !$is_pro;
     <?php elseif ($at_max && $is_pro) : ?>
         <p class="slimstat-gf-hint">
             <?php echo esc_html(sprintf(
-                /* translators: 1: active goals, 2: max goals */
+                /* translators: 1: configured items, 2: item limit */
                 __('%1$d of %2$d used · at limit', 'wp-slimstat'),
                 $active_count,
                 $max_goals

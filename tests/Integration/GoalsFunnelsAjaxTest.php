@@ -52,6 +52,17 @@ class GoalsFunnelsAjaxTest extends IntegrationTestCase
         $this->assertTrue($this->optionStore['slimstat_goals'][0]['active']);
     }
 
+    public function test_save_goal_rejects_nested_field_shapes_without_writing(): void
+    {
+        $this->setMaxGoals(5);
+        foreach (['id', 'name', 'dimension', 'operator', 'value', 'active'] as $key) {
+            $_POST = array_merge(self::VALID_GOAL_POST, [$key => ['unexpected']]);
+            $die = $this->callHandler('ajax_save_goal');
+            $this->assertSame('error', $die->outcome(), $key);
+            $this->assertArrayNotHasKey('slimstat_goals', $this->optionStore);
+        }
+    }
+
     public function test_save_goal_updates_existing_by_id(): void
     {
         $this->setMaxGoals(5);

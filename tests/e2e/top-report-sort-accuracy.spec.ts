@@ -74,6 +74,7 @@ async function getReportRows(
       const $el = jQuery(this as HTMLElement);
       // Label: the filter-link anchor, or first text node as fallback
       const label =
+        $el.find('a.slimstat-author-link').first().text().trim() ||
         $el.find('a.slimstat-filter-link').first().text().trim() ||
         $el
           .contents()
@@ -84,7 +85,7 @@ async function getReportRows(
           .text()
           .trim();
       // Count: the hit-count span (skip .slimstat-tooltip-bar-wrap)
-      const countText = $el.find('span').not('.slimstat-tooltip-bar-wrap').first().text().trim();
+      const countText = $el.find('.slimstat-count-pct').first().clone().children().remove().end().text().trim();
       const count = parseInt(countText.replace(/,/g, ''), 10) || 0;
       rows.push({ label, count });
     });

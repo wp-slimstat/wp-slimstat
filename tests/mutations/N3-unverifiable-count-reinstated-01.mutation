@@ -1,0 +1,18 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:ci-comment-metrics
+kind:      restore-defect
+expect:    no suite in tests/ASSERTION-FLOOR.json reports that count
+rationale: Reinstates '56 XSS assertions' -- a figure with no authoritative file behind it. It was wrong when written and cannot be checked by anything static, because the test counts at runtime against a live WordPress. The remedy in the fix was to DELETE the number rather than replace it with a better guess: this workspace's local MySQL was down when the correction was made, so pinning any count would have been asserting an unmeasured number to satisfy a gate, which is the exact failure the gate is named after. This mutation is what stops the number coming back.
+---
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -366,7 +366,7 @@
+ 
+       - name: Reports output-escaping gate (XSS, needs a live WordPress)
+         # THE ONLY CI HOME THIS GATE HAS. tests/reports-output-escaping-test.php is a member
+-        # of `composer test:all` and of nothing else, and no job runs test:all — so its XSS
++        # of `composer test:all` and of nothing else, and no job runs test:all — so 56 XSS
+         # assertions over the report render path ran in no lane, on any tier, ever. It is not
+         # in test:source-level because it boots WordPress, and that is what this tier has.
+         # (The count that stood here was wrong and is deliberately not replaced: the test counts

@@ -25,7 +25,7 @@ const restoreOptions = restoreSlimstatOptions;
 const setOption = setSlimstatSetting;
 
 async function anonContext(browser: any): Promise<{ ctx: BrowserContext; page: Page }> {
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   return { ctx, page: await ctx.newPage() };
 }
 

@@ -1,3 +1,114 @@
+= 6.0.0 - 2026-10-06 =
+
+**Shortcodes**
+* Preserve public aggregate counters such as `count` of `ip`, group query-string-free page links before limiting results, and render stored dates correctly. Published shortcode filters are isolated from URL/form fields, and rendering restores the filters and pageview totals of surrounding reports.
+* Avoid anonymous-user warnings on PHP 7.4 and deprecated URL sanitizer notices on older WordPress. Compatibility remains PHP 7.4+ and WordPress 5.6+, with the current test target pinned to WordPress 7.1.2.
+* New Shortcode Playground under SlimStat → Shortcodes: browse reports, preview your data, adjust filters and copy or test a shortcode. Pro reports include clearly labelled samples and dismissible hints.
+* New live visitor, page and country counters; Ecommerce KPI tables for analytics viewers; Pro Heatmap insights tables.
+* Shortcodes support multiple columns and UTM/channel counts, escape text and separators, and accept nonnumeric offsets without crashing. Report widgets placed with a shortcode no longer log an “Undefined array key "where"” warning. Personal data, access logs and user reports now appear only to people allowed to view analytics; visitors see nothing.
+* Translation changes: removed “Invalid Report ID”; replaced “Select a widget” with “Select a report” and translated “Add a SlimStat report to your sidebar”. New labels and notices need translation; obsolete strings are retained in PO history.
+
+**Heatmaps**
+* Apply restricted-author permissions to heatmap lists, points, scroll depth and cached results. Stop accepting cached capture batches when the Pro viewer is removed, and limit list scroll aggregation to the selected pages.
+* New Heatmaps page lists every page with clicks: clicks, pageviews, clicks per pageview, device split, last click and what was recorded. Search, sort and date ranges run on one cached query. A Heatmap button on the admin bar, beside Online, opens it (on the site, at the current page).
+* Heatmap recording is opt-in (off by default). When SlimStat Pro shows heatmaps, a sampled share of pageviews on chosen pages records clicks with their element, scroll depth, dead clicks and rage clicks. Recording follows the site's consent and Do Not Track rules and stores no text typed by visitors.
+* Heatmap rows live in their own tables, created on first use, purged with the site's retention setting, included in personal-data erasure and removed on uninstall when you choose to delete SlimStat data. Admins can delete all heatmap data from the Heatmaps page.
+* Existing link and button clicks keep their events reports and Goals unchanged and appear in the page list right away.
+* Without Pro, "View heatmap" opens the page's five most clicked links and buttons under its row, with what Pro adds, instead of a dialog.
+
+**Admin interface**
+* One name and one voice across the admin: labels, buttons and messages follow a shared glossary, checked by a test on every translatable string.
+* Empty reports say why they are empty (nothing tracked yet, no match for the filters, or nothing in the date range) and what to do next. A Get started panel helps new sites record their first pageview.
+* Buttons, switches and segmented choices use native WordPress controls with one set of colors and the WordPress focus ring. Red glows, nested cards and side stripes are gone, and every report paginates the same way.
+* Free screens show what Pro adds honestly: no blurred mock reports or invented figures.
+* Without Pro, Email Report shows the weekly email built from your site's last 7 days (top pages and referring domains) and can send it to you as a sample.
+* At a Glance says what it counts: "From Any SERP" is now "Pageviews with a search term" and "Last 30 minutes" is now "Pageviews, last 30 minutes". The numbers are unchanged. These two labels show in English until they are translated again.
+* Traffic Summary's Direct Pageviews help text explains why it can be higher than Direct in Channels: it also counts older pageviews with no referrer, which Channels lists as Unassigned. The numbers are unchanged. The new sentence shows in English until it is translated.
+* Clearer Migration, Settings, Customize and Access Log screens: Customize cards show a drag grip and keyboard-reachable buttons; Reset layout asks before it discards the layout; Access Log speed reads "Server … ms · Page … ms"; Bounce rate and New Visitors Rate show a % sign.
+* The "Cookieless visit grouping" warning now clears as soon as the visitor identity migration adds its column, instead of staying up to three hours while the Migration screen already says the database is up to date.
+* Translations: the IP label in report row details and the Shortcode Playground's display names are translatable (one new string, "Live"); placeholder avatars no longer read "Unknown" to screen readers; translators see notes for the speed and row-range strings. Plugin Check reports no new errors or warnings.
+
+**Ecommerce**
+* Isolate report caches and setup by analytics database, exclude expired visits from purchase-rate cohorts, and provide scoped summaries for native exports and scheduled Pro email. Restore the shared date picker appearance.
+* Remove WooCommerce order-access keys from newly stored page URLs, referrers and URL updates. Existing historical records are not rewritten automatically.
+* Refine Ecommerce with interactive metric charts, calendar aggregation, tabbed revenue rankings, inline drill-downs and compact coverage guidance. Preserve native filters and scoped exports.
+* Add a revenue-first WooCommerce dashboard with net sales, orders, comparisons, products, acquisition coverage and a consented purchase journey. Currency, refunds and unmatched orders have explicit definitions.
+* Keep order synchronization in bounded background jobs, support HPOS and legacy storage, and integrate native dates, filters, saved segments, privacy erasure and retention. Setup is opt-in; see [the Ecommerce guide](docs/ecommerce.md).
+* "Your Pro reports are ready" shows until you open one of the reports it lists or dismiss it, per user. The license reminder it carried stays as a footnote.
+
+**UTM and channel reports**
+* Build and copy campaign URLs directly from the UTM report. The local builder validates required tags, preserves existing URL parameters and fragments, and supports campaign names or IDs.
+* Campaign and channel totals now expand into source breakdowns, with exact totals under result caps, compact optional tags, blue share bars, highlighted open rows, and layouts that adapt to narrow dashboard widgets and mobile screens.
+* Direct JavaScript-tracked visits retain their empty browser referrer instead of being mistaken for internal navigation from the tracking request's HTTP header.
+* Traffic Sources now includes UTM Campaigns and Channels, with pageview counts, shares, filters and accessible tables. Campaign tags preserve their case and encoded values.
+* Channels distinguish AI assistant referrals, AI crawlers and user-requested AI fetches, alongside search, social, email, paid and other sources. Classification respects bot exclusions; missing evidence is shown explicitly.
+* Date changes retain active filters, saved segments retain selected dates, and literal campaign values (including HTML entities and backslashes) remain intact and inert across forms, AJAX, summaries and shortcodes. Public report widgets avoid acquisition schema probes.
+* Upgrades add nullable attribution fields through the Migration screen. Existing pageviews remain unattributed; new tracking uses the existing date indexes without per-hit schema queries.
+
+**Performance — measured, not estimated**
+* Admin charts read about half as many database rows: totals now ride the same query as their buckets. Measured on the weekly chart over the 150,000-row reference bench corpus, as deterministic counters rather than timings: rows read 304,454 -> 152,227 and sort work 212,301 -> 106,141. That change alone leaves report output byte-identical; the separate previous-period correction below does move two numbers, on purpose.
+* The tracking path stopped writing diagnostics into wp_options: 62% fewer option writes per stored pageview (2.83 -> 1.07), 96% fewer per refused bot (1.75 -> 0.07).
+* Schema reconciliation fell 71%: from 14 statements to 4 on a healthy install.
+
+**Numbers that change on purpose** (each verified before/after against a measured register)
+* Sites that had "Enable CDN" switched on start recording again. That option pointed the tracker at a URL that does not exist until the version is published on WordPress.org, so those sites were recording nothing; their traffic reappears from the moment of the update.
+* Archived events start appearing: events now archive before their parent rows are deleted.
+* The weekly chart's "previous period" total now matches the bars it draws. The comparison window was longer than the current one by the current window's time of day, so the total counted hits that appeared in no bar. Previous-period totals go down slightly, the percentage-change headline goes up, and previous-period labels move to the same week grid the values were always on.
+* Date ranges straddling midnight stop collapsing multi-column groups, keeping browser versions, bot versions and screen resolutions distinct.
+* Top Known Visitors and Top Authors exclude missing names instead of displaying them as Guest, including in Pro exports and email reports.
+* Form-submit, tel: and mailto: goals start working; one press produces exactly one hit.
+* Funnels: silent zeros fixed (temp-table collation/width); overlapping steps stop double-counting, so some funnel numbers go DOWN to their true value; an errored chain is never cached.
+* "Currently Online" honours the date filter.
+* New installs default ignore_bots and async_load to on; existing sites keep their settings by construction.
+* Per-author email reports become per-author — every author used to receive the site-wide numbers.
+* Network View totals become genuinely network-wide, with correct per-column merge semantics; network membership corrected four ways (archived/deleted/spam subsites out, non-public in, other networks out) — totals can move in either direction.
+* Multisite subsites created on WP 5.1+ and WP-CLI-activated sites start tracking at all.
+* Unique-browser and unique-country aggregates stop being silently limited to 28 days.
+* Pages-per-visit counts pageviews recorded without an IP — and its query reads 49.5% fewer rows (302,855 -> 152,854 measured).
+* Overview "Today" and "Yesterday" stop reading 0 on every install.
+* Cookieless visits stop splitting at 5-minute boundaries; anonymous identity is a full-width private hash, so one visitor's data can no longer collide into another's (GDPR).
+* External-database installs: reports read the right database; an unreachable analytics database no longer creates a second schema inside WordPress or prints the hostname. (Connection hardening ships in Pro 3.0.0.)
+* Tied rows in top-list reports (pages, browsers, countries, entry/exit pages) stop reordering between page refreshes.
+* Same-page refreshes during an anonymous session stop double-counting, so anonymous pageview counts can decrease slightly — to their true value.
+* Percentages round the same way everywhere. A value landing exactly on a rounding boundary — 1 in 32 is exactly 3.125% — was printed as 3.12 in the top-list percentage column and the new-visitor rate, while the bar drawn beside it used 3.13. Both now round half-up, and the number and its bar are the same figure. Only on-the-boundary values move, and they move up by one in the last digit.
+* Sites using a consent plugin through the WP Consent API stop double-counting consenting visitors. A consent grant that arrived after the page had loaded inserted a *second* row for the same pageview instead of upgrading the first, and that second row recorded the tracker's own endpoint (/wp-json/slimstat/v1/hit) as the page visited. Pageview totals on those sites go DOWN, to their true value, and the endpoint disappears from Top Pages. Over the AJAX transport the same request was refused outright, so a consent upgrade applied no consent at all; both transports now agree.
+
+**Upgrading — what the Migration screen asks for**
+* After updating, SlimStat adds a "Migration" screen under its menu. Nothing on that screen runs on its own: every step waits for an explicit click, and tracking keeps working the whole time.
+* One thing does happen without a click, as in every past release: the first time an administrator opens wp-admin after updating, SlimStat reconciles its own tables and indexes and creates anything missing — four statements on a healthy install. It does not rebuild the analytics table and does not add, widen or drop a column; that heavier work is what the Migration screen is for.
+* Required steps are small. The largest adds one column to the analytics table and its archive — measured at about 8 seconds per 440,000 rows on MySQL 8, so roughly double that if you also have archived data, and longer on bigger tables. Reads and writes continue while it runs on servers that support online rebuilds; one that does not will pause tracking writes until it finishes. No existing data is changed or removed.
+* Two steps are OFFERED, never required, because they rebuild whole tables and can take minutes on a large site: the browser-dimension backfill, and the utf8mb4 character-set conversion. "Apply All" does not take them — run them by name, at a quiet time, if you want them.
+* To postpone everything, define `SLIMSTAT_DISABLE_MIGRATIONS` as true in `wp-config.php`. The screen stops offering, and tracking and reports carry on.
+* Back up your database before upgrading, as with any major release.
+
+**Reliability**
+* Dependency scoping is now reproducible from the Composer lockfile with WP Scoper; the private Browscap/Flysystem bundle, polyfill stubs and PHP 7.4 fallbacks retain their existing namespaces and behavior. ([#339](https://github.com/wp-slimstat/wp-slimstat/issues/339))
+* Fixed: the upgrade step that repairs corrupted heat-map positions could offer itself forever. It asked "is there a candidate row?" but only repaired rows it could resolve unambiguously, so on a site with unresolvable rows it reported success and then offered again, each click re-scanning the events table. "All migrations complete" is now reachable.
+* One schema source of truth — fresh installs are born at the target schema; migrations are kill-switchable, single-flight and checkpointed; failed purges are reported, not forgotten.
+* The full 23-report parity set verified byte-identical across MySQL 5.6, 5.7 and 8.0 on one fingerprint-proven corpus — the declared MySQL floor is tested, not assumed. MariaDB 10.0+ is supported by design and has not yet been exercised in a test cell.
+
+**Security**
+* Fixed a SQL injection reachable by any logged-in user, including a subscriber, on sites that had turned on the "Posts and Pages" column under Settings > Reports (off by default). The limit_results and start_from report filters were carried through from the request as raw text and concatenated into a query template, where $wpdb->prepare() does not escape them. Both are now normalised to non-negative integers at the single point every report reads them through. Found in-house during the 6.0.0 release review; no report of it in the wild.
+
+
+= 5.5.1 - 2026-07-26 =
+
+**Compatibility & stability**
+
+- Removed: the "Enable CDN" setting (Settings → Tracker → Performance). It served the tracking script from jsDelivr's mirror of the WordPress.org tag for your installed version — which only exists once that version has been published there. On a beta, or in the window between a release being tagged and WordPress.org syncing it, the request 404s and there was no fallback: the tracker never loaded and the site recorded nothing at all, with nothing to say so. If you had it switched on, tracking resumes on update. The copy-and-paste snippet for tracking external pages (Settings → Tracker) now points at your own site for the same reason; if you pasted the old snippet onto another site, replace it.
+
+- Fixed: A rare plugin-loading problem could take down your whole site and lock you out of wp-admin with a blank white screen ("critical error"). If a plugin file no longer matched its build index — for example after an interrupted update, a manually uploaded copy, or stale server caching — SlimStat could stop every page, including the login screen, from loading. The plugin now recovers gracefully: it falls back to loading files directly, and if one part still can't load it disables just that feature instead of crashing the site. A build-time safety check was also added so an incomplete package can't be released. ([#325](https://github.com/wp-slimstat/wp-slimstat/issues/325))
+  - Note: if your host caches PHP files aggressively (opcache), a blank screen may persist until that cache is flushed — the cached copy of the old loader has to expire first.
+- Fixed: Deleting the SlimStat plugin no longer erases your analytics by default. Your stats, settings, and stored data are removed only if you explicitly turned on "Delete Data on Uninstall" (Settings → Maintenance). Previously, on a normal install that had never touched that option, deleting the plugin dropped all SlimStat tables and settings. ([#327](https://github.com/wp-slimstat/wp-slimstat/issues/327))
+  - If you *want* your data removed on uninstall, enable that option before deleting the plugin, or use Settings → Maintenance → Delete Records.
+- Fixed: SlimStat's browser-detection cache is now always removed when you delete the plugin, even when you keep your analytics — it is a rebuildable cache that could otherwise sit in `wp-content/uploads` forever. The geolocation database is removed only when you opted into full data deletion, because on hosts without the PHP `phar` extension it has to be uploaded by hand and the plugin cannot download it again.
+- Fixed: The daily IP-hash salt task is now cleared when the plugin is deactivated or deleted. It was scheduled but never removed, so it kept firing against an inactive plugin.
+- Added: When a feature has to shut itself down to keep your site up, administrators now see exactly what stopped working, instead of the failure being silently swallowed unless `WP_DEBUG` was switched on.
+
+**Documentation**
+
+- Fixed: The plugin description said uninstalling permanently deletes all your stats. That has not been true since this release — it now explains that data is kept by default, and how to opt into deletion. The "Delete Data on Uninstall" setting description was rewritten to state what both the on and off positions do.
+
 = 5.5.0 - 2026-06-24 =
 
 **New: Goals & Funnels**

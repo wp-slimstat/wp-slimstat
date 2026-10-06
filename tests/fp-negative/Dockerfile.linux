@@ -1,0 +1,29 @@
+# The Linux arm of the fp-negative suite — PITFALLS 93 rule 2.
+#
+# WHY THIS EXISTS. `composer test:fp-negative` runs on the developer's host, and on macOS
+# /bin/sh is bash. shell_exec() therefore reports an absent command as
+# "sh: python3: command not found", while dash — /bin/sh on every Linux CI runner — says
+# "sh: 1: python3: not found". A scenario asserting the bash wording is green locally and
+# structurally incapable of passing in CI, which is what kept Tier 1 red for a week.
+#
+# WHY NOT php:8.2-cli DIRECTLY. run-negatives.php:62-66 refuses to start without a real
+# python3 (the harness drives the real Python reader), and the stock php images carry none,
+# so a bare `docker run php:8.2-cli` exits 2 before any scenario runs.
+#
+# The image is deliberately minimal: this suite needs no database and no WordPress —
+# tests/fp-negative/fake-server.php is a MySQL-shaped fake over SQLite.
+FROM php:8.2-cli
+
+# mysqli, because fake-server.php:102 is a MySQL-shaped fake and instantiates it; python3 for
+# the real reader. The asserts fail the BUILD rather than letting a cell discover mid-scenario
+# that it cannot run a half — this suite's whole subject is gates that silently do not run.
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends python3; \
+    rm -rf /var/lib/apt/lists/*; \
+    docker-php-ext-install mysqli; \
+    php -r 'foreach (["mysqli","sqlite3"] as $e) { if (!extension_loaded($e)) { fwrite(STDERR, "ABORT: php extension $e missing\n"); exit(1); } }'; \
+    python3 -c "import sqlite3, hashlib, json, sys"; \
+    sh -c nosuchcmd 2>&1 | grep -q "not found"
+
+WORKDIR /w

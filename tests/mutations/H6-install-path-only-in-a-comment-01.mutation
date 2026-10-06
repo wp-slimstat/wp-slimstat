@@ -1,0 +1,19 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:e2e-harness-contract
+kind:      name-only
+expect:    does not resolve the WordPress root with `npx wp-env install-path`
+rationale: Comments out the resolution and leaves the command mentioned only in prose. The first draft of this gate scanned the RAW ci.yml, so `strpos($ci, 'npx wp-env install-path')` was satisfied by any comment containing that string -- including a comment explaining that the command is missing. The same hole let a commented-out upload step satisfy the run-artifacts check. A gate written against vacuity, passing vacuously, found by review and not by its own green result. Comments are stripped before every code-presence check now, and this is what keeps them stripped.
+---
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -435,7 +435,8 @@
+           # so reading the wrong site's log is indistinguishable from a pass.
+           # Ask wp-env instead, and fail the job rather than continue with an empty
+           # WP_ROOT: empty is not absent, it makes the specs read paths under /.
+-          INSTALL_PATH="$(npx wp-env install-path 2>/dev/null || true)"
++          # INSTALL_PATH="$(npx wp-env install-path 2>/dev/null || true)"
++          INSTALL_PATH="$HOME/wp-env/whatever"
+           if [ -z "${INSTALL_PATH}" ] || [ ! -d "${INSTALL_PATH}/tests-WordPress" ]; then
+             echo "::error::could not resolve the wp-env install path"
+             echo "Without it every filesystem assertion reads a path under / and passes vacuously."

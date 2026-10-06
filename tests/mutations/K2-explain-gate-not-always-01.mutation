@@ -1,0 +1,17 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:perf-gate-integrity
+kind:      guard-removal
+expect:    does not carry always()
+rationale: Removes always() from the EXPLAIN gate, returning it to a step that has never executed once in the history of this pipeline. It sits after k6, and k6 failed on every dispatch this lane ever had. Section 3 pins the gate's CONTENTS -- it must exist, must not be a TODO, must carry no `exit 0`, must invoke explain-gate.sh -- and every one of those assertions was true and working the whole time. They answer 'could this gate fail?'; nothing answered 'did it run?'. PITFALLS 111.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -804,7 +804,7 @@
+       # those are two different claims. A gate proven capable of failing, in a
+       # lane that never reaches it, is the recurring shape one altitude up.
+       - name: EXPLAIN gate — full-table-scan check
+-        if: ${{ matrix.php == '8.2' && always() }}
++        if: ${{ matrix.php == '8.2' }}
+         env:
+           EXPLAIN_ROW_THRESHOLD: "100000"
+         run: bash tests/perf/explain-gate.sh

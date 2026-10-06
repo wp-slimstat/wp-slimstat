@@ -7,6 +7,8 @@ use SlimStat\Tracker\Tracker;
 use SlimStat\Controllers\Rest\ConsentChangeRestController;
 use SlimStat\Controllers\Rest\ConsentHealthRestController;
 use SlimStat\Controllers\Rest\GDPRBannerRestController;
+use SlimStat\Controllers\Rest\HeatmapRestController;
+use SlimStat\Controllers\Rest\ShortcodeRestController;
 use SlimStat\Controllers\Rest\TrackerHealthRestController;
 use SlimStat\Controllers\Rest\TrackingRestController;
 
@@ -44,14 +46,26 @@ class RestApiManager
      */
     private static function load_controllers(): void
     {
-        // Default core controllers
-		$controllers = [
-			new TrackingRestController(),
-			new GDPRBannerRestController(),
-			new ConsentChangeRestController(),
-			new ConsentHealthRestController(),
-			new TrackerHealthRestController(),
-		];
+        // Default core controllers. Each instantiation is guarded so a single
+        // class-load failure (e.g. a stale/incomplete classmap) degrades just
+        // that endpoint instead of fataling every request (issue #325).
+        $controllers = [];
+        $factories   = [
+            static function () { return new TrackingRestController(); },
+            static function () { return new GDPRBannerRestController(); },
+            static function () { return new ConsentChangeRestController(); },
+            static function () { return new ConsentHealthRestController(); },
+            static function () { return new TrackerHealthRestController(); },
+            static function () { return new HeatmapRestController(); },
+            static function () { return new ShortcodeRestController(); },
+        ];
+        foreach ($factories as $factory) {
+            try {
+                $controllers[] = $factory();
+            } catch (\Throwable $e) {
+                \wp_slimstat::record_degradation('rest_controller', $e);
+            }
+        }
 
         /**
          * Filter: slimstat_rest_controllers
@@ -82,7 +96,11 @@ class RestApiManager
     public static function register_routes(): void
     {
         foreach (self::$controllers as $controller) {
-            $controller->register_routes();
+            try {
+                $controller->register_routes();
+            } catch (\Throwable $e) {
+                \wp_slimstat::record_degradation('rest_routes', $e);
+            }
         }
     }
 
@@ -134,14 +152,17 @@ class RestApiManager
     private static function prepareAdblockTrackingResponse(): void
     {
         if (!defined('DONOTCACHEPAGE')) {
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- Third-party page/object/database cache opt-out contracts require these exact constant names.
             define('DONOTCACHEPAGE', true);
         }
 
         if (!defined('DONOTCACHEOBJECT')) {
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- Third-party page/object/database cache opt-out contracts require these exact constant names.
             define('DONOTCACHEOBJECT', true);
         }
 
         if (!defined('DONOTCACHEDB')) {
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- Third-party page/object/database cache opt-out contracts require these exact constant names.
             define('DONOTCACHEDB', true);
         }
 
@@ -164,7 +185,9 @@ class RestApiManager
 
         self::prepareAdblockTrackingResponse();
 
-        if ('POST' !== strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET')) {
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- HTTP method is type-checked, unslashed and compared to POST before handling the request.
+        $request_method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if (!is_string($request_method) || 'POST' !== strtoupper(wp_unslash($request_method))) {
             status_header(405);
             header('Allow: POST');
             exit;
@@ -205,6 +228,7 @@ class RestApiManager
             $result = Tracker::slimtrack_ajax();
             // Output result and exit for adblock bypass requests
             \SlimStat\Tracker\Utils::sendTrackingHeaders('adblock_bypass', $result);
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- plain-text tracking protocol; HTML escaping would change the response bytes.
             echo $result;
             exit;
         }

@@ -1,0 +1,26 @@
+target:    readme.txt
+gate:      composer test:db-floor-metadata
+kind:      restore-defect
+expect:    has no `= 6.0.0 =` entry under `== Upgrade Notice ==`
+rationale: Deletes the Upgrade Notice entry and makes the changelog heading `= 6.0.0 =` (dateless) so a whole-file regex finds it first; only the section-scoped extraction distinguishes the two.
+---
+--- a/readme.txt
++++ b/readme.txt
+@@ -111,16 +111,12 @@
+ 
+ == Upgrade Notice ==
+ 
+-= 6.0.0 =
+-Back up your database first. This update only ADDS columns and never removes a row; older versions keep working on the updated tables, but the added columns stay. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — see the changelog.
+-
+-
+ = 5.5.1 =
+ Deleting the plugin no longer erases your analytics. Data is now kept by default and removed only if you enabled Settings → Maintenance → "Delete Data on Uninstall" first. Also fixes a rare blank-screen/admin-lockout on plugin load.
+ 
+ == Changelog ==
+ 
+-= 6.0.0 - 2026-10-06 =
++= 6.0.0 =
+ * New Shortcode Playground under SlimStat → Shortcodes: browse reports, preview your data, adjust filters and copy a shortcode. New live visitor, page and country counters. Personal data in shortcodes now shows only to people allowed to view analytics.
+ * New Heatmaps page: every page with clicks, its pageviews, device split and recorded detail, from the admin menu or the admin bar.
+ * Opt-in heatmap recording (clicks on any element, scroll depth, dead and rage clicks) for sites with SlimStat Pro, following consent, Do Not Track and retention settings.

@@ -26,6 +26,22 @@ namespace SlimStat\Tracker {
             }
         }
     }
+
+    // D29 added `\SlimStat\Tracker\Ajax::isRateLimitingActive()` to the controller's response and
+    // did not add the stub here, so `handle()` has fataled with "Class not found" ever since —
+    // and `composer test:all` has been RED that whole time without anyone noticing, because the
+    // sub-suites were being run individually and this script is in the aggregate only.
+    //
+    // A gate nobody runs is the same vacuity as a gate wired into nothing (PITFALLS 4), one level
+    // up: the wiring was correct and the command was not being issued.
+    if (!class_exists('SlimStat\Tracker\Ajax')) {
+        class Ajax {
+            public static function isRateLimitingActive(): bool
+            {
+                return false;
+            }
+        }
+    }
 }
 
 // ─── Global namespace: WP stubs + test runner ────────────────────────────────

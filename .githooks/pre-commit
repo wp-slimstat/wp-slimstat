@@ -1,35 +1,76 @@
 #!/usr/bin/env bash
 #
-# wp-slimstat pre-commit gate.
-# Runs `php -l` (syntax lint) on every staged PHP file.
-# Fast, dependency-free, catches syntax errors before they land.
-# /simplify is enforced via CLAUDE.md (shell hooks cannot call Claude skills).
+# Plugin pre-commit gate — BYTE-IDENTICAL in wp-slimstat and wp-slimstat-pro, and
+# jaan-to/bin/check-twins.sh holds them so (the label below is derived, not typed).
+#
+# Two gates:
+#   1. `php -l` on every staged PHP file. Fast, dependency-free.
+#   2. `composer test:source-level` whenever anything but a pure asset is staged. Until
+#      2026-09-04 both hooks ran gate 1 only, so a commit that broke a source-level gate, or a
+#      mutation, landed locally with no resistance and surfaced on CI after push (DoD 19).
+#      Measured 2026-09-04: ~35 s in free, ~3 s in pro. No gate count here — it is a number no
+#      interpreter checks, and both figures were already wrong in the commit that wrote them.
+#
+# A gate that cannot run must FAIL, not skip: composer missing from PATH is an error here,
+# because a gate that silently does not run is this workspace's most repeated defect.
+# /simplify is a once-per-branch pre-PR step since 2026-09-05; the Claude Code commit gate only requires the test gate.
 #
 set -euo pipefail
 
-echo "→ running fast gate before commit (wp-slimstat)"
+repo="$(basename "$(git rev-parse --show-toplevel)")"
+echo "→ running fast gate before commit (${repo})"
 
-staged_php="$(git diff --cached --name-only --diff-filter=ACMR -z | tr '\0' '\n' | grep -E '\.php$' || true)"
+staged="$(git diff --cached --name-only --diff-filter=ACMR -z | tr '\0' '\n')"
+staged_php="$(printf '%s\n' "$staged" | grep -E '\.php$' || true)"
 
-if [ -z "$staged_php" ]; then
-  echo "  no PHP changes, gate skipped"
+if [ -n "$staged_php" ]; then
+  fail=0
+  while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    if ! php -l "$file" > /dev/null 2>&1; then
+      echo "  ✗ syntax error in $file"
+      php -l "$file" || true
+      fail=1
+    fi
+  done <<< "$staged_php"
+  if [ "$fail" -ne 0 ]; then
+    echo "  gate failed — commit rejected"
+    exit 1
+  fi
+  echo "  ✓ all staged PHP files pass php -l"
+fi
+
+# Denylist, not allowlist: the allowlist version missed four real gate inputs on day one
+# (.gitattributes, CHANGELOG.md, the .pot, build/build-dist.sh — all Pro's), so a commit
+# touching only one of those skipped the very gate reading it.
+#
+# CSS AND .map ARE NOT ASSETS HERE, and the first denylist had them: css-selector-scope,
+# admin-ui-render-guards and funnels-widget-compact read admin/assets/css/*.css, and
+# bundle-matches-source reads the tracked wp-slimstat.min.js.map. Excluding them reproduced the
+# day-one defect inside its own fix. `scss` stays — nothing reads it. Scope per CLAUDE.md:
+# "pure-asset changes (images, fonts, binary fixtures)".
+gate_inputs="$(printf '%s\n' "$staged" | grep -vE '\.(png|jpe?g|gif|svg|ico|woff2?|ttf|eot|scss)$' || true)"
+
+if [ -z "$gate_inputs" ]; then
+  echo "  only assets staged, suite skipped"
   exit 0
 fi
 
-fail=0
-while IFS= read -r file; do
-  [ -z "$file" ] && continue
-  if ! php -l "$file" > /dev/null 2>&1; then
-    echo "  ✗ syntax error in $file"
-    php -l "$file" || true
-    fail=1
-  fi
-done <<< "$staged_php"
-
-if [ "$fail" -ne 0 ]; then
-  echo "  gate failed — commit rejected"
+if ! command -v composer > /dev/null 2>&1; then
+  echo "  ✗ composer is not on PATH, so composer test:source-level cannot run."
+  echo "    This gate does not skip: install composer, or commit with --no-verify and say why."
   exit 1
 fi
 
-echo "  ✓ all staged PHP files pass php -l"
-exit 0
+echo "  running composer test:source-level (staged: $(printf '%s\n' "$gate_inputs" | wc -l | tr -d ' ') gate input(s))"
+log="$(mktemp)"
+if composer test:source-level > "$log" 2>&1; then
+  echo "  ✓ source-level suite green"
+  rm -f "$log"
+  exit 0
+fi
+
+echo "  ✗ source-level suite failed — commit rejected. Last lines:"
+tail -n 25 "$log" | sed 's/^/    /'
+echo "    full log: $log"
+exit 1

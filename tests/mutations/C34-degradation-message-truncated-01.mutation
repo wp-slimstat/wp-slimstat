@@ -1,0 +1,21 @@
+target:    src/Tracker/Session.php
+gate:      php tests/degradation-notice-honesty-test.php
+kind:      restore-defect
+expect:    characters against a 200-character store
+rationale: Put the 236-character message back. record_degradation() stores substr($message, 0, 200) and the notice renders what was STORED, so this loses its last clause - the one naming the migration that ends the problem - while the docblock above it goes on claiming it names it. Nothing in the suite checked message length until this gate, and it is the shape that makes it invisible: the message reads correctly in the source and is cut only in the database.
+---
+--- a/src/Tracker/Session.php
++++ b/src/Tracker/Session.php
+@@ -312,9 +312,9 @@
+ 		// on claiming it named it.
+ 		\wp_slimstat::record_degradation(
+ 			'anonymous visit reuse',
+-			'cookieless visitors count as a new visit on every pageview: the identity column '
+-				. 'could not be read. Tracking still works; visit counts are inflated until the '
+-				. '"add visit identity" migration has run.',
++			'the visitor-identity column could not be read, so cookieless visitors are being '
++				. 'counted as a new visit on every pageview. Tracking and reports keep working, but '
++				. 'visit counts are inflated until the "add visit identity" migration has run.',
+ 			\wp_slimstat::DEGRADATION_OPERATIONAL
+ 		);
+ 	}

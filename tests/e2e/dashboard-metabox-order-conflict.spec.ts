@@ -106,9 +106,14 @@ function captureMetaBoxOrderRequest(page: Page): Promise<Record<string, string>>
  * Playwright's built-in dragTo doesn't always fire the required mouse events.
  */
 async function dragPostbox(page: Page, sourceHandle: string, targetContainer: string): Promise<void> {
-  const sourceBbox = await page.locator(sourceHandle).boundingBox();
+  const source = page.locator(sourceHandle);
+  await source.scrollIntoViewIfNeeded();
+  const sourceBbox = await source.boundingBox();
   const targetBbox = await page.locator(targetContainer).boundingBox();
   if (!sourceBbox || !targetBbox) throw new Error('Cannot find source or target bounding box');
+  const configuredDelay = await source.evaluate((element) =>
+    Number(jQuery(element).closest('.meta-box-sortables').sortable('option', 'delay')) || 0
+  );
 
   const srcX = sourceBbox.x + sourceBbox.width / 2;
   const srcY = sourceBbox.y + sourceBbox.height / 2;
@@ -118,6 +123,10 @@ async function dragPostbox(page: Page, sourceHandle: string, targetContainer: st
 
   await page.mouse.move(srcX, srcY);
   await page.mouse.down();
+  if (configuredDelay > 0) {
+    // Respect the interaction delay configured by the shipping sortable.
+    await page.waitForTimeout(configuredDelay + 20);
+  }
   // Move in steps to trigger sortable's mousemove detection
   const steps = 10;
   for (let i = 1; i <= steps; i++) {
@@ -187,7 +196,7 @@ test.describe('Meta-box-order conflict (#15036)', () => {
       // Perform manual drag from first postbox handle to side column
       await dragPostbox(
         page,
-        '#normal-sortables .postbox:visible:first-child .postbox-header',
+        '#normal-sortables .postbox:visible:first-child .hndle',
         '#side-sortables'
       );
 
@@ -220,7 +229,7 @@ test.describe('Meta-box-order conflict (#15036)', () => {
       const capturePromise = captureMetaBoxOrderRequest(page);
       await dragPostbox(
         page,
-        '#normal-sortables .postbox:visible:first-child .postbox-header',
+        '#normal-sortables .postbox:visible:first-child .hndle',
         '#side-sortables'
       );
       const body = await capturePromise;
@@ -503,7 +512,7 @@ test.describe('Meta-box-order conflict (#15036)', () => {
         const capturePromise = captureMetaBoxOrderRequest(page);
         await dragPostbox(
           page,
-          '#normal-sortables .postbox:visible:first-child .postbox-header',
+          '#normal-sortables .postbox:visible:first-child .hndle',
           '#side-sortables'
         );
         const body = await capturePromise;

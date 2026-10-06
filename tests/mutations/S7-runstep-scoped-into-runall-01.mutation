@@ -1,0 +1,19 @@
+target:    admin/assets/js/migration.js
+gate:      php tests/migration-ui-honesty-test.php
+kind:      name-only
+expect:    declares no runStep
+rationale: Rename runStep out of existence while leaving a same-shaped function behind. The offered-step click handler is a SIBLING of runAll() and calls runStep(); when the helper was declared inside runAll() the handler threw ReferenceError - after it had already disabled the button and started the spinner, so the offered migration was unrunnable and reported nothing at all. node --check passes on that, which is exactly why a syntax gate is not enough and this assertion is structural.
+---
+--- a/admin/assets/js/migration.js
++++ b/admin/assets/js/migration.js
+@@ -103,7 +103,9 @@
+     var MAX_PASSES = 120;
+     var MAX_RETRY_MS = 20 * 60 * 1000;
+ 
+-    function runStep(id, onSettled, pass, since) {
++    var __unused_runStep_marker = 1;
++
++    function runAll_runStep_moved(id, onSettled, pass, since) {
+         pass = pass || 1;
+         since = since || Date.now();
+ 

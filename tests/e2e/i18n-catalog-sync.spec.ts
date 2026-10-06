@@ -21,6 +21,7 @@ const TABLE_PREFIX = process.env.WP_DB_PREFIX || 'wp_';
 const OPTIONS_TABLE = `${TABLE_PREFIX}options`;
 
 let pool: mysql.Pool;
+let originalLocale: string;
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
@@ -44,11 +45,12 @@ async function getWplang(): Promise<string> {
 test.describe('Issue #173: i18n catalog sync', () => {
   test.beforeAll(async () => {
     pool = mysql.createPool(MYSQL_CONFIG);
+    originalLocale = await getWplang();
   });
 
   test.afterAll(async () => {
     if (!pool) return;
-    await pool.execute(`UPDATE ${OPTIONS_TABLE} SET option_value = '' WHERE option_name = 'WPLANG'`);
+    await setWplang(originalLocale);
     await pool.end();
   });
 
@@ -113,6 +115,51 @@ test.describe('Issue #173: i18n catalog sync', () => {
       hasGermanTracker || hasGermanEnable || hasGermanSettings,
       `Expected at least one German translation. Page text snippet: ${bodyText!.substring(0, 500)}`
     ).toBeTruthy();
+  });
+
+  test('calendar uses the WordPress locale and preserves Sunday week starts', async ({ page }) => {
+    const [rows] = await pool.execute<RowDataPacket[]>(`SELECT option_value FROM ${OPTIONS_TABLE} WHERE option_name = 'start_of_week'`);
+    const original = rows[0]?.option_value ?? '1';
+    try {
+      await setWplang('de_DE');
+      await pool.execute(`UPDATE ${OPTIONS_TABLE} SET option_value = '0' WHERE option_name = 'start_of_week'`);
+      await page.goto('/wp-admin/admin.php?page=slimview2');
+      await expect(page.locator('.slimstat-date-range-btn')).toBeVisible();
+      const calendar = await page.evaluate(() => {
+        const win = window as any;
+        const picker = win.jQuery('.slimstat-date-range-input').data('daterangepicker');
+        return { actual: picker.locale, expected: win.SlimStatDatePicker.strings };
+      });
+      expect(calendar.actual.firstDay).toBe(0);
+      expect(calendar.actual.daysOfWeek).toEqual(calendar.expected.weekdays);
+      expect(calendar.actual.monthNames).toEqual(calendar.expected.months);
+      await page.locator('.slimstat-date-range-btn').click();
+      await expect(page.locator('.daterangepicker:visible')).toBeVisible();
+    } finally {
+      await pool.execute(`UPDATE ${OPTIONS_TABLE} SET option_value = ? WHERE option_name = 'start_of_week'`, [original]);
+    }
+  });
+
+  test('dynamic notification empty states use localized text safely', async ({ page }) => {
+    await page.goto('/wp-admin/admin.php?page=slimview2');
+    const result = await page.evaluate(() => {
+      const win = window as any;
+      win.slimstat_admin.empty_title = 'Aktuell <em>Test</em>';
+      win.slimstat_admin.empty_inbox = 'Keine neuen Nachrichten.';
+      win.slimstat_admin.empty_dismissed = 'Keine ausgeblendeten Nachrichten.';
+      const contents: string[] = [];
+      for (const tab of ['tab-1', 'tab-2']) {
+        const pane = document.querySelector('#' + tab + ' .slimstat-notification-sidebar__cards')!;
+        pane.innerHTML = '';
+        (document.querySelector('[data-tab="' + tab + '"]') as HTMLElement).click();
+        contents.push(pane.textContent || '');
+        if (pane.querySelector('em')) throw new Error('Translated text must not become markup');
+      }
+      return contents;
+    });
+    expect(result[0]).toContain('Keine neuen Nachrichten.');
+    expect(result[1]).toContain('Keine ausgeblendeten Nachrichten.');
+    expect(result[0]).toContain('Aktuell <em>Test</em>');
   });
 
   // ─── Test 3: French locale renders translated strings ─────────────
@@ -181,7 +228,7 @@ test.describe('Issue #173: i18n catalog sync', () => {
     const bodyText = await page.locator('body').textContent() || '';
 
     // Known English strings should be present
-    expect(bodyText).toContain('Enable Tracking');
+    expect(bodyText).toContain('Enable tracking');
     expect(bodyText).toContain('Tracker');
 
     // No PHP runtime errors (match specific PHP error patterns, not generic "Warning:" which may appear in UI copy)

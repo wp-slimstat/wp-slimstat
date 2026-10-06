@@ -75,7 +75,7 @@ check(
     'C8: legend is gated on !$is_dashboard (hidden in the compact widget)'
 );
 // All five categories and their swatch classes are present.
-foreach (['From search result page', 'Has Left Comments', 'WP User', 'Other Human', 'Bot or Crawler'] as $label) {
+foreach (['From search result page', 'Has left comments', 'WordPress user', 'Other human', 'Bot or crawler'] as $label) {
     check(false !== strpos($legendBlock, $label), "C8: legend has the \"{$label}\" category");
 }
 foreach (['is-search-engine', 'is-known-visitor', 'is-known-user', 'is-direct'] as $cls) {
@@ -91,6 +91,31 @@ check(false !== strpos($legendBlock, 'title='), 'C8: each swatch carries a toolt
 $admincss = read_or_die('admin/assets/css/admin.css');
 check((bool) preg_match('/\.slimstat-access-log-legend[^{]*\{[^}]*display:\s*flex/', $admincss), 'C8: legend is laid out with flex');
 check((bool) preg_match('/\.slimstat-access-log-legend \.little-color-box\s*\{[^}]*float:\s*none/', $admincss), 'C8: legend swatches override float:left');
+
+// B11: legend swatches are dots, not checkbox-like squares; "Pages live" is not
+// underlined like a link; the performance line names its units in words.
+check((bool) preg_match('/\.slimstat-access-log-legend \.little-color-box\s*\{[^}]*border-radius:\s*50%/', $admincss), 'B11: legend swatches are round');
+check(!preg_match('/\.pages-label\s*\{[^}]*underline/', read_or_die('admin/assets/css/live-analytics.css')), 'B11: "Pages live" label is not underlined');
+// C2: rate rows render with a % sign. The suffix is added by the renderer, not the
+// data row, because the report-answer contract pins the raw value ("66.67").
+$reports = read_or_die('admin/view/wp-slimstat-reports.php');
+check((bool) preg_match('/\$percent_metrics\s*=\s*\[__\(\'Bounce rate\', \'wp-slimstat\'\), __\(\'New Visitors Rate\', \'wp-slimstat\'\)\]/', $reports), 'C2: Bounce rate and New Visitors Rate are listed as percentages');
+check(false !== strpos($reports, 'in_array($a_result[\'metric\'], $percent_metrics, true) ? \'%\' : \'\''), 'C2: the summary renderer appends % to rate rows');
+check(false === strpos($rightnow, "__('SL'") && false === strpos($rightnow, "__('PS'"), 'B11: no SL/PS abbreviations in the Access Log');
+// QA §5: the count floated right AFTER the label, so a label that wrapped pushed its count onto
+// a line of its own. The row is flex instead; DOM order (which the parity harness reads) is kept.
+check((bool) preg_match('/p\.slimstat-tooltip-trigger:has\(>\s*\.slimstat-count-pct\)\s*\{[^}]*display:\s*flex/', $admincss), 'QA §5: a report row with a count is a flex row');
+check((bool) preg_match('/p span\.slimstat-count-pct\s*\{[^}]*float:\s*none[^}]*margin-inline-start:\s*auto/', $admincss), 'QA §5: the count stops floating and sits at the end of the first line');
+// A4: Delete heatmap data takes the destructive role. It renders only once Pro capture has set up
+// the heatmap tables, so a Free-only E2E install never shows it; this is the check that always runs.
+check(false !== strpos(read_or_die('admin/view/heatmaps.php'), '<p class="ss-hm-delete"><button type="button" class="button-link button-link-delete"'), 'A4: Delete heatmap data uses the destructive button role');
+// QA D11: "Build your first campaign link" read one way on the Upgrade page and another on Reports.
+$campaignLink = "__('Tag an incoming link to see its recorded pageviews in UTM Campaigns.', 'wp-slimstat')";
+check(false !== strpos($reports, $campaignLink) && false !== strpos(read_or_die('admin/view/upgrade-pro.php'), str_replace('__(', 'esc_html_e(', $campaignLink)), 'D11: one description for "Build your first campaign link"');
+// QA D7: the #aaa base border around a pale 10px fill read as a hollow ring, not the row colour it names.
+check((bool) preg_match('/\.slimstat-access-log-legend \.little-color-box\s*\{[^}]*width:\s*12px[^}]*border-color:\s*rgba\(0,\s*0,\s*0,\s*\.12\)/', $admincss), 'D7: legend swatches are filled dots with a hairline, not #aaa rings');
+// QA R12: the pill rule for settings inputs also rounded checkboxes, so Email Report's picks read as radio buttons.
+check(false === strpos($admincss, '.wrap-slimstat .form-table tr td input{') && false !== strpos($admincss, '.wrap-slimstat .form-table tr td input:not([type=checkbox]):not([type=radio]){'), 'R12: form-table pill inputs leave checkboxes and radios native');
 
 if ($failures > 0) {
     fwrite(STDERR, "{$failures} check(s) failed in admin-ui-render-guards-test.php\n");

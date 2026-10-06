@@ -1,0 +1,46 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      php tests/get-results-convert-contract-test.php
+kind:      restore-defect
+expect:    single-line statement did not reach the handle verbatim-once
+rationale: Restores the Query converter get_results() carried for years - the regex whose lazy `WHERE (.+?)` with every following group optional captured exactly ONE character of the WHERE clause, dropped the GROUP BY, appended a LIMIT 100 the caller never wrote, and cached the wrong rows under the md5 of the ORIGINAL sql. No shipped caller ever reached it (their tab-indented SQL fails the regex's literal-space demand), so nothing behavioural ever caught it; only the verbatim-execution contract can. The gate must see the single-line statement fail to arrive intact whether the restored converter mangles it or throws mid-rewrite - the test deliberately does not `continue` after a throw so both worlds trip the same assertion.
+---
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -586,6 +586,37 @@
+             if (false !== $cached_results) {
+                 return $cached_results;
+             }
++
++            // Try to parse and convert to Query class
++            if (preg_match('/SELECT (.+) FROM [^ ]+ WHERE (.+?)( GROUP BY (.+?))?( ORDER BY (.+?))?( LIMIT (\d+), (\d+))?/is', $_sql, $m)) {
++                $columns      = trim($m[1]);
++                $where        = trim($m[2]);
++                $group_by     = isset($m[4]) ? trim($m[4]) : '';
++                $order_by     = isset($m[6]) ? trim($m[6]) : '';
++                $limit_offset = isset($m[8]) ? intval($m[8]) : 0;
++                $limit_count  = isset($m[9]) ? intval($m[9]) : 100;
++
++                $q = Query::select($columns)->from($table);
++
++                if ($where && '1=1' !== $where) {
++                    $q->whereRaw($where);
++                }
++
++                if ('' !== $group_by && '0' !== $group_by) {
++                    $q->groupBy($group_by);
++                }
++
++                if ('' !== $order_by && '0' !== $order_by) {
++                    $q->orderBy($order_by);
++                }
++
++                $page = ($limit_offset / $limit_count) + 1;
++                $q->perPage($page, $limit_count);
++                $q->allowCaching(true);
++                $result = $q->getAll();
++                set_transient($cache_key, $result, 10 * MINUTE_IN_SECONDS);
++                return $result;
++            }
+         }
+ 
+         // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.

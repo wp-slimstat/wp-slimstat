@@ -1,0 +1,16 @@
+target:    tests/oracle/independence_lint.py
+gate:      composer test:oracle-independence
+kind:      guard-removal
+expect:    selftest sql-text did not fire
+rationale: Deletes the SQL-text rule while leaving the lint, its family scan and every other
+           required-red control intact. The selftest must name this missing class specifically.
+---
+--- a/tests/oracle/independence_lint.py
++++ b/tests/oracle/independence_lint.py
+@@ -28,6 +28,5 @@
+ STRING_RULES = (
+     ("plugin-symbol", re.compile(r"\bwp_slimstat(?:_db|_reports)?\b", re.I)),
+     ("production-path", re.compile(r"(?:^|/)(?:src|admin|includes)/|\.php\b", re.I)),
+-    ("sql-text", re.compile(r"\b(?:SELECT\s+.+\s+FROM|INSERT\s+INTO|UPDATE\s+.+\s+SET|DELETE\s+FROM|GROUP\s+BY|ORDER\s+BY)\b", re.I | re.S)),
+     ("capture-output", re.compile(r"(?:arm-[12]|before|after)-(?:answers|caps|timing)|report-answers", re.I)),
+ )

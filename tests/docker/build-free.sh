@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Build the exact Free artifact an upgrade cell installs: committed files only, filtered by the
+# exported .distignore, with the wp-slimstat/ slug at the ZIP root.
+set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
+
+REF="${1:?free ref}"
+FULL=$(git -C "$PLUGIN_SRC" rev-parse "$REF^{commit}")
+SHA=${FULL:0:8}
+OUT="${FREE_ZIP_OUT:-$HARNESS_DIR/build/wp-slimstat-$SHA.zip}"
+BUILD="${WPSS_FREE_BUILD_DIR:-/tmp/wpss-free-$SHA}"  # /tmp, not /private/tmp: same dir on macOS, exists on Linux (PITFALLS 115)
+REF_STAMP="$OUT.ref"
+HASH_STAMP="$OUT.sha256"
+DISTIGNORE="$BUILD/distignore"
+
+mkdir -p "$(dirname "$OUT")"
+CACHED=0
+if [ -f "$OUT" ] && [ -f "$REF_STAMP" ] && [ -f "$HASH_STAMP" ] \
+   && [ "$(cat "$REF_STAMP")" = "$FULL" ] \
+   && [ "$(shasum -a 256 "$OUT" | cut -d' ' -f1)" = "$(cat "$HASH_STAMP")" ]; then
+  log "Free ZIP up-to-date for $SHA: $OUT"
+  CACHED=1
+fi
+
+if [ "$CACHED" -eq 0 ]; then
+  rm -rf "$BUILD"
+  mkdir -p "$BUILD/raw" "$BUILD/stage/wp-slimstat"
+  git -C "$PLUGIN_SRC" archive --format=tar "$FULL" | tar -x -C "$BUILD/raw"
+else
+  mkdir -p "$BUILD"
+fi
+git -C "$PLUGIN_SRC" show "$FULL:.distignore" > "$DISTIGNORE" \
+  || { err "Free $SHA has no exported .distignore"; exit 1; }
+
+if [ "$CACHED" -eq 0 ]; then
+  command -v composer >/dev/null 2>&1 || { err "Composer is required to build the Free ZIP"; exit 1; }
+  composer dump-autoload --working-dir="$BUILD/raw" --no-dev -o --no-interaction --no-ansi
+  rsync -a --exclude-from="$DISTIGNORE" "$BUILD/raw/" "$BUILD/stage/wp-slimstat/"
+
+  VERSION=$(sed -n 's/^ \* Version: *//p' "$BUILD/raw/wp-slimstat.php" | tr -d ' \r')
+  [ -n "$VERSION" ] || { err "cannot read Free version at $SHA"; exit 1; }
+
+  # The catalog ships in the ZIP; a stale one means the strings a translator sees are not
+  # the strings the frozen code calls __() with, and nothing downstream would notice. This
+  # is NOT in composer test:source-level on purpose: the check needs pinned WP-CLI, and a
+  # gate that quietly skips itself where WP-CLI is missing is a silent pass. Here it is a
+  # build refusal, and a missing `wp` is a refusal too rather than a skip. Both the checker
+  # and the tree it checks come from the frozen SHA, not from the working copy.
+  command -v wp >/dev/null 2>&1 \
+    || { err "WP-CLI is required to verify the shipped catalog before freezing a Free ZIP"; exit 1; }
+  [ -f "$BUILD/raw/tests/check-pot.py" ] \
+    || { err "Free $SHA exports no tests/check-pot.py — the catalog would ship unverified"; exit 1; }
+  python3 "$BUILD/raw/tests/check-pot.py" "$BUILD/raw" \
+    || { err "catalog does not match the source at $SHA — refusing to build the Free ZIP"; exit 1; }
+
+  rm -f "$OUT"
+  ( cd "$BUILD/stage" && zip -qr -X -9 "$OUT" wp-slimstat )
+  printf '%s' "$FULL" > "$REF_STAMP"
+  shasum -a 256 "$OUT" | cut -d' ' -f1 > "$HASH_STAMP"
+else
+  VERSION=$(unzip -p "$OUT" wp-slimstat/wp-slimstat.php \
+    | sed -n 's/^ \* Version: *//p' | tr -d ' \r')
+fi
+
+LIST="$BUILD/list.txt"
+unzip -Z1 "$OUT" | grep -v '/$' > "$LIST"
+[ "$(cut -d/ -f1 "$LIST" | sort -u)" = wp-slimstat ] || { err "Free ZIP root is not wp-slimstat/"; exit 1; }
+for required in wp-slimstat/wp-slimstat.php wp-slimstat/uninstall.php wp-slimstat/readme.txt \
+                wp-slimstat/vendor/autoload.php wp-slimstat/vendor/composer/autoload_classmap.php \
+                wp-slimstat/src/Dependencies/autoload.php wp-slimstat/src/Dependencies/autoload-classmap.php; do
+  grep -qxF "$required" "$LIST" || { err "Free ZIP is missing $required"; exit 1; }
+done
+# Independent deny rule: the private vendor CLI password executable is not a plugin runtime asset.
+if grep -qxF 'wp-slimstat/src/Dependencies/veronalabs/browscap-php/src/Symfony/Component/Console/Resources/bin/hiddeninput.exe' "$LIST"; then
+  err "Free ZIP contains private Windows interactive-console executable"
+  exit 1
+fi
+while IFS= read -r pattern; do
+  case "$pattern" in ''|'#'*) continue ;; esac
+  if ! awk -v pattern="$pattern" '
+    function leaked(path, target, anchored) {
+      if (anchored) return path == target || index(path, target "/") == 1
+      return path == target || index(path, "/" target "/") > 0 \
+        || (length(path) > length(target) \
+          && substr(path, length(path) - length(target)) == "/" target)
+    }
+    BEGIN {
+      anchored = substr(pattern, 1, 1) == "/"
+      if (anchored) pattern = substr(pattern, 2)
+      target = anchored ? "wp-slimstat/" pattern : pattern
+    }
+    leaked($0, target, anchored) { exit 1 }
+  ' "$LIST"; then
+    err ".distignore entry '$pattern' leaked into Free ZIP"
+    exit 1
+  fi
+done < "$DISTIGNORE"
+unzip -tqq "$OUT" || { err "Free ZIP failed its CRC check"; exit 1; }
+[ "$(unzip -p "$OUT" wp-slimstat/vendor/composer/autoload_real.php | grep -c setClassMapAuthoritative)" -eq 0 ] \
+  || { err "Free ZIP autoloader is classmap-authoritative"; exit 1; }
+
+log "Free ZIP ready: $OUT (v$VERSION @ $SHA, $(wc -l < "$LIST" | tr -d ' ') files)"

@@ -17,18 +17,13 @@ class CreateFunnelQueriesIndex extends AbstractIndexMigration
         return __('Create Funnel Queries Index', 'wp-slimstat');
     }
 
-    protected function getIndexName(): string
+    protected function getIndexKey(): string
     {
         return 'idx_funnel_queries';
     }
 
-    protected function getIndexColumns(): array
+    protected function getTableSuffix(): string
     {
-        return ['fingerprint(20)', 'dt', 'resource(191)'];
-    }
-
-    protected function getTableName(): string
-    {
-        return $this->wpdb->prefix . 'slim_stats';
+        return 'slim_stats';
     }
 }

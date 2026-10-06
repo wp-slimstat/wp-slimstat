@@ -12,6 +12,21 @@
  */
 
 namespace SlimStat\Services {
+    /**
+     * Guarded by SLIMSTAT_E2E_TESTING, like every other helper here. Ungated, this
+     * makes ext-fileinfo look absent to the whole SlimStat\Services namespace, so
+     * Browscap takes its no-fileinfo path on a site nobody is testing.
+     *
+     * The guard is inside the braced namespace, and gates the DEFINITION rather than
+     * returning: a top-level return inside a braced namespace block is not the same
+     * statement it is in a plain file, and shadowing a built-in is not something to
+     * be clever about. The file reaching wp-content/mu-plugins is not consent to run
+     * it — a helper gets there by an interrupted test run as easily as a deliberate one.
+     */
+    if ((!defined('SLIMSTAT_E2E_TESTING') || !SLIMSTAT_E2E_TESTING)) {
+        return;
+    }
+
     if (!function_exists('SlimStat\\Services\\extension_loaded')) {
         function extension_loaded(string $extension): bool
         {

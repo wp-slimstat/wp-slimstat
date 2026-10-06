@@ -1,0 +1,20 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+expect:    P49-more-rows-than-the-limit-on-the-OTHER-arm-is-not-a-tie-either
+kind:      guard-removal
+rationale: The tie-at-the-cut tolerance applies only when BOTH answers are exactly `limit` rows long —
+           that is what makes a tie AT THE CUT meaningful rather than a pardon for any difference.
+           The guard is a two-sided conjunct and only one side was pinned. Dropping the first arm's
+           half lets an answer of the wrong length reach the tolerance and be forgiven.
+---
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -565,7 +565,7 @@
+     limit = contract["limit"]
+     if limit is None:
+         return compare_rows(a_rows, b_rows, contract)
+-    if len(a_rows) != limit or len(b_rows) != limit:
++    if len(b_rows) != limit:
+         return compare_rows(a_rows, b_rows, contract)
+ 
+     field_name = contract["count_field"]

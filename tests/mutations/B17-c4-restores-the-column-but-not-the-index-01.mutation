@@ -1,0 +1,28 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    the C4 control restores the index its own DROP COLUMN mutilated, not just the column
+rationale: C4 drops vid_hash to prove the cell can go red, and MySQL takes the column out of idx_vid_hash_dt on the way, leaving it over (dt) alone. Re-running AddVisitIdentity puts the COLUMN back and cannot put the INDEX back: Schema::indexState() matches on Key_name, so the mutilated index reads as present and reconcileColumnIndexes() skips it. Removing the explicit DROP INDEX restores exactly that -- and the damage does not surface in C4's own output at all. It surfaces three legs later as "idx_vid_hash_dt survived the rollback intact -- dt", a rollback defect reported about a rollback that never touched the index, which is the shape that cost Run 65 pass 2 a wrong diagnosis.
+---
+diff --git a/tests/docker/rehearse-upgrade.sh b/tests/docker/rehearse-upgrade.sh
+index cf049d04..d45d820c 100755
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -921,17 +921,12 @@ fi
+ # does not put the world back does not test the next leg, it writes the next leg's verdict.
+ # Dropping the mutilated index by name is what makes the migration's own probe see work to do.
+ # Run 65 cell 7a, PITFALLS 135.
+-mysql_q "DROP INDEX idx_vid_hash_dt ON wordpress.wp_slim_stats;" >/dev/null 2>&1
+ wpc eval '
+   $a = SlimStat\Migration\MigrationService::analyticsConnection();
+   (new SlimStat\Migration\Migrations\AddVisitIdentity($a,$GLOBALS["wpdb"]))->run(); echo "restored";
+ ' >/dev/null 2>&1
+ [ "$(has_column vid_hash)" = 1 ] && note PASS "the column was restored for the rollback leg" \
+   || { note FAIL "could not restore vid_hash"; fail "C4 restore"; }
+-IDX_COLS_C4=$(index_columns wp_slim_stats idx_vid_hash_dt)
+-[ "$IDX_COLS_C4" = "vid_hash,dt" ] \
+-  && note PASS "and so was the index the drop took with it — vid_hash,dt" \
+-  || { note FAIL "the control left idx_vid_hash_dt as '${IDX_COLS_C4:-gone}'"; fail "C4 left the index it broke"; }
+ 
+ echo
+ echo "── R7 · code downgrade to OLD on the migrated schema ─────────────────"

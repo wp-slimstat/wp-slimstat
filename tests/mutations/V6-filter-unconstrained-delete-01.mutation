@@ -1,0 +1,21 @@
+target:    uninstall.php
+gate:      composer test:uninstall-data-safety
+kind:      guard-removal
+expect:    nothing is deleted when slimstat_maxmind_path returns the filesystem root
+rationale: Puts the filtered path straight back into the recursive delete. `slimstat_maxmind_path` is a THIRD-PARTY filter and the next statement is `$wp_filesystem->delete($dir, true, 'd')`, so whatever the filter returns is what gets removed -- measured before the guard existed: a filter returning `/` made uninstall ask the filesystem to recursively delete the filesystem root, and one returning the uploads basedir took every other plugin's files with it. 5.5.0 did not apply the filter on this path at all; 6.0.0 added it so a site that MOVED the directory would not keep everything after uninstall, and routed an arbitrary string into a recursive delete on the way. No in-tree consumer returns a broader path; the hazard is that nothing stopped one. The `on@inside` case is the control that keeps the cheap fix -- ignoring the filter -- from passing: a relocation that stays under uploads must still be honoured, at exactly the path it names.
+---
+--- a/uninstall.php
++++ b/uninstall.php
+@@ -193,11 +193,11 @@
+     // everything after uninstall.
+     if (function_exists('apply_filters')) {
+         $upload_dir = apply_filters('slimstat_maxmind_path', $upload_dir);
+     }
+ 
+-    return slimstat_uninstall_contained_path($base, $upload_dir);
++    return $upload_dir;
+ }
+ 
+ /**
+  * Clean up uploads/wp-slimstat.
+  *

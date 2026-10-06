@@ -1,0 +1,18 @@
+target:    tests/bench/lib/fingerprint-v2.php
+gate:      php tests/fingerprint-v2-encoding-test.php
+kind:      restore-defect
+expect:    null_is_not_empty_string row encoding
+rationale: Collapses NULL into the empty-string token - the precise weakness fingerprint v2 exists to remove (encoding-spec.md, "Why a fingerprint at all"). Under the mutation both a NULL and an empty string encode to `6:\EMPTY`, so two corpora differing ONLY in NULLness produce one identical chained hash: the arms are certified as holding the same rows when they do not, and every answer difference downstream inherits an explanation nobody can rule out. R16 (count(ip) vs count(*)) turns on exactly that distinction. The int/str branches are left intact so the kill demonstrates the NULL rule specifically rather than the type dispatch beside it.
+---
+diff --git a/tests/bench/lib/fingerprint-v2.php b/tests/bench/lib/fingerprint-v2.php
+--- a/tests/bench/lib/fingerprint-v2.php
++++ b/tests/bench/lib/fingerprint-v2.php
+@@ -100,7 +100,7 @@ if (!function_exists('slimstat_fp2_encode_field')) {
+     {
+         $kind = slimstat_fp2_kind($declared_type);   // validate the type even when NULL
+         if (null === $value) {
+-            return '\\NUL';
++            return '\\EMPTY';
+         }
+         if ('int' === $kind) {
+             return strtoupper(bin2hex(slimstat_fp2_canonical_int($value)));

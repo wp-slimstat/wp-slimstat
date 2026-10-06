@@ -5,12 +5,28 @@ ARG PHP_VERSION=8.2
 FROM php:${PHP_VERSION}-apache
 
 # OS libs needed to build the PHP extensions WordPress + SlimStat require.
+#
+# python3 is NOT a WordPress dependency. It is here because the ENCODING_V1 pair is two
+# implementations on purpose — PHP against MySQL, Python against the SQLite export — and a gate
+# that can only run half of them proves half of what it appears to. Without it
+# tests/docker/verify-export-fingerprint.php exits for an environmental reason on every cell,
+# which is this workspace's most repeated defect (a gate that silently does not run) wearing the
+# costume of a missing interpreter. Measured cost: +35 MB in this layer, paid once — all three
+# cells build with the same PHP_VERSION arg, so 5.7 and 5.6 cache-hit.
+#
+# `python3`, NOT `python3-minimal`. An earlier version listed both and claimed the minimal one
+# was enough because "the reader imports only sqlite3, hashlib, json and sys". Measured: with
+# python3-minimal alone, `python3 -c 'import sqlite3'` is a ModuleNotFoundError — the stdlib
+# sqlite3 module lives in libpython3.x-stdlib, which only the full package pulls in. Listing both
+# also resolved to the identical 8 packages, since python3 Depends on python3-minimal, so the
+# second name was a no-op sitting under a comment recommending it.
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
         libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
         libzip-dev libonig-dev libicu-dev \
-        default-mysql-client less unzip git curl ca-certificates; \
+        default-mysql-client less unzip git curl ca-certificates \
+        python3; \
     rm -rf /var/lib/apt/lists/*
 
 # PHP extensions. GD configured with freetype+jpeg (form works 7.4–8.4).
@@ -57,9 +73,20 @@ RUN set -eux; \
 
 # Fail the build loudly if a required extension is missing on this PHP minor.
 # (opcache registers as "Zend OPcache", so check via extension_loaded, not `php -m` anchors.)
-RUN php -r '$req=["mysqli","gd","zip","exif","intl","fileinfo"]; \
-    foreach ($req as $e) { if (!extension_loaded($e)) { fwrite(STDERR, "MISSING EXT: $e\n"); exit(1); } } \
-    if (!extension_loaded("Zend OPcache")) { fwrite(STDERR, "MISSING EXT: opcache\n"); exit(1); } \
-    echo "all required extensions present\n";'
+# sqlite3 is bundled on the official php images rather than installed above, so it is asserted
+# rather than assumed: the export half of the fingerprint gate writes through it, and an image
+# without it would fail that gate for a reason that is not a defect in what the gate measures.
+# The Python half of the ENCODING_V1 pair is asserted in the SAME layer, for the same reason: the
+# two encoders exist because they are independent, so a cell where only the PHP half can run is a
+# cell whose fingerprint gate is worth half what it prints. The stdlib sqlite3 module is checked
+# on both sides — python3 without it fails the reader at its first import, deep inside a
+# subprocess, and the PHP extension is what the export is written through. Neither writes a byte
+# to the image, so they share the layer rather than adding one apiece.
+RUN set -eux; \
+    php -r '$req=["mysqli","gd","zip","exif","intl","fileinfo","sqlite3"]; \
+      foreach ($req as $e) { if (!extension_loaded($e)) { fwrite(STDERR, "MISSING EXT: $e\n"); exit(1); } } \
+      if (!extension_loaded("Zend OPcache")) { fwrite(STDERR, "MISSING EXT: opcache\n"); exit(1); } \
+      echo "all required extensions present\n";'; \
+    python3 -c 'import sqlite3, hashlib, json, sys; print("python", sys.version.split()[0], "sqlite3", sqlite3.sqlite_version)'
 
 WORKDIR /var/www/html

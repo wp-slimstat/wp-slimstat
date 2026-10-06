@@ -1,0 +1,30 @@
+# tests/docker/arms.sha256 — the vintage arms, pinned to the bytes wordpress.org served.
+#
+# WHY THIS FILE EXISTS. The rehearsal cells that matter most (7a-7d) upgrade FROM versions that
+# 70k live sites actually run, and the most faithful old arm is not something build-free.sh
+# produces — it is the ZIP wp.org hands those sites. Two consequences follow. The bytes are not
+# ours, so they must be pinned: an arm silently substituted (a re-rolled ZIP, a truncated
+# download, a proxy's error page saved as a file) would make a cell green against code nobody
+# runs. And the 4.8 line PREDATES `.distignore`, which build-free.sh hard-requires at the ref, so
+# for those vintages there is no build path at all — the ZIP is the only arm that can exist.
+#
+# `resolve_arm_zip` (lib.sh) refuses any version absent from this file, and refuses to use a
+# present ZIP whose digest disagrees. Adding a vintage means adding its line HERE, in the same
+# commit as the cell that needs it; a downloaded-but-unpinned arm is exactly the failure mode.
+#
+# Fetched 2026-09-05 from https://downloads.wordpress.org/plugin/<file>. wp.org returns 200 for
+# 4.7.9, 4.8.1-4.8.4, 4.8.7.3, 4.8.8, 4.8.8.1, 4.9.4, 5.0.10.2, 5.1.5, 5.2.13, 5.3.5, 5.4.12 and
+# 5.5.0; only 4.8.0 and 4.8.8.2 are 404. Each file's plugin header Version was read after the
+# download and equals the version in its name — which is the property the cell's H1 control
+# re-asserts from inside the container, against what WordPress reports after installing it.
+#
+# Install share by bucket (wp.org API, read 2026-09-04): 5.5.x 41.1 %, 4.8.x 12.9 %,
+# 5.2.x 11.1 %, 5.3.x 8.3 %, 5.4.x 7.5 %, "other" (4.9-5.1) 19.1 %.
+#
+#   sha256                                                            file
+bab2b9e3287ce6c3fb8fc06240622a8225933f380f01897c4b61cb64554f2d47  wp-slimstat.4.8.1.zip
+9e84cfc632730b228ce8e993a2bf2f79f9ece22aeda347f8e479f425766b9519  wp-slimstat.5.1.5.zip
+63c91ad06c5708f0b0d5c163c52360d226742a7e529f3cd657332626b7a544d7  wp-slimstat.5.2.13.zip
+ffe98c41c93297301b0058d7ecb4ae0e57aa39da955a9b2ff526918db458f18c  wp-slimstat.5.3.5.zip
+f743d9d6ee2dcd71690d925910d5eb0b43e5347513fb7953bce358511d7a8569  wp-slimstat.5.4.12.zip
+36d146b212046da027498ea745b1eb70935c9d64f378b4145697c695ba9f73b9  wp-slimstat.5.5.0.zip

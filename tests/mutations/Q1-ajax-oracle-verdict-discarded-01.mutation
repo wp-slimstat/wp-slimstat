@@ -1,0 +1,18 @@
+target:    tests/run-qa.sh
+gate:      composer test:run-qa-oracle
+kind:      guard-removal
+expect:    prints a red FAIL that reaches no exit code
+rationale: Drops AJAX_EXIT back out of the sum. The check keeps running, keeps detecting an excessive AJAX count, and keeps printing it in red -- and the script exits 0. That is not a broken check; it is a working check whose verdict is discarded, which is strictly worse, because the terminal output looks like a failing test suite while every automated caller reads a pass. The regression it watches for is PR #166's infinite AJAX loop, and this script exists specifically to be its oracle.
+---
+diff --git a/tests/run-qa.sh b/tests/run-qa.sh
+--- a/tests/run-qa.sh
++++ b/tests/run-qa.sh
+@@ -198,7 +198,7 @@
+ 
+ echo ""
+ echo -e "${YELLOW}=== Summary ===${NC}"
+-TOTAL_EXIT=$((E2E_EXIT + K6_EXIT + AJAX_EXIT))
++TOTAL_EXIT=$((E2E_EXIT + K6_EXIT))
+ if [[ $TOTAL_EXIT -eq 0 ]]; then
+   echo -e "${GREEN}All QA tests PASSED${NC}"
+ else

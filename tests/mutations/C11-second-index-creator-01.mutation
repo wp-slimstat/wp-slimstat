@@ -1,0 +1,18 @@
+target:    admin/index.php
+gate:      php tests/schema-single-source-test.php
+kind:      restore-defect
+expect:    DDL statement(s) name a concrete table or index outside src/Schema/Schema.php
+rationale: C11's whole shape is that a second creator exists and nothing knows. This restores one of the six — the 4.8.4 ALTER block that re-added four indexes on any install upgrading from below 4.8.4, which is what made a Phase E drop unholdable. The gate must see a DDL statement carrying a concrete table name, regardless of which of the nine spellings the tree used. Note the mutation deliberately uses the sprintf-with-interpolated-prefix form rather than a plain literal, because that is the form five of the six creators actually had and the form a whole-file keyword scan gets wrong in both directions.
+---
+diff --git a/admin/index.php b/admin/index.php
+index deab16e5..1c351503 100644
+--- a/admin/index.php
++++ b/admin/index.php
+@@ -984,6 +984,7 @@ class wp_slimstat_admin
+             // every other. Restating them here was one of the six creators C11 enumerated, and
+             // the one that made a Phase E drop unholdable: an install upgrading from below 4.8.4
+             // re-added four dropped indexes with no way for anything to know it had.
++            wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_resource_idx( resource( 20 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix));
+             wp_slimstat::$settings['db_indexes'] = 'on';
+         }
+ 

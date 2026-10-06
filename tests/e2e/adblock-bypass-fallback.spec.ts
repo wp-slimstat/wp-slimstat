@@ -63,7 +63,7 @@ test.describe('Ad-Blocker Bypass Fallback Tracking', () => {
     await flushRewrites(page);
 
     // Visit as anonymous user to trigger JS-based tracking
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     // Track which transport URLs are hit
@@ -97,11 +97,11 @@ test.describe('Ad-Blocker Bypass Fallback Tracking', () => {
     await setSlimstatOption(page, 'tracking_request_method', 'adblock_bypass');
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     // Block REST and Admin-AJAX endpoints — force the tracker to use adblock bypass
-    await anonPage.route('**/wp-json/slimstat/**', (route) => {
+    await anonPage.route((url) => url.pathname.includes('/wp-json/slimstat/') || (url.searchParams.get('rest_route') || '').startsWith('/slimstat/'), (route) => {
       route.abort('blockedbyclient');
     });
     await anonPage.route('**/admin-ajax.php', (route) => {
@@ -127,7 +127,7 @@ test.describe('Ad-Blocker Bypass Fallback Tracking', () => {
     await setSlimstatOption(page, 'javascript_mode', 'on');
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     const jsErrors: string[] = [];
@@ -136,7 +136,7 @@ test.describe('Ad-Blocker Bypass Fallback Tracking', () => {
     });
 
     // Block ALL tracking endpoints
-    await anonPage.route('**/wp-json/slimstat/**', (route) => {
+    await anonPage.route((url) => url.pathname.includes('/wp-json/slimstat/') || (url.searchParams.get('rest_route') || '').startsWith('/slimstat/'), (route) => {
       route.abort('blockedbyclient');
     });
     await anonPage.route('**/admin-ajax.php', (route) => {

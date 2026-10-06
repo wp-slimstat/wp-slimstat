@@ -1,0 +1,33 @@
+target:    src/Tracker/Storage.php
+gate:      php tests/write-terminal-gate-test.php
+kind:      construct-removal
+expect:    insertRow() no longer detects an unknown-column failure
+rationale: Deletes the intersection retry, restoring the state where a v6 INSERT naming a column the v5 schema lacks drops the pageview outright. The window is unbounded because auto-updates and WP-CLI produce no admin request, so this is not an edge case — it is every hit on an unattended site until someone logs in.
+---
+--- a/src/Tracker/Storage.php
++++ b/src/Tracker/Storage.php
+@@ -53,23 +53,7 @@
+ 		//
+ 		// Reactive, never preemptive: the tracker budget is denominated in queries and
+ 		// wp_options writes, and neither may move on the path that always runs.
+-		if ($result->isFailed() && self::isUnknownColumnError($result->error())) {
+-			$present  = self::presentColumns($table);
+-			$writable = array_intersect_key($data, array_flip($present));
+-
+-			// Empty means every wanted column is absent, or the probe could not read the
+-			// table — nothing to retry with. Equal counts mean nothing was dropped, so the
+-			// retry would be the identical failing statement. array_intersect_key can only
+-			// shrink, hence `<`.
+-			if ($writable !== [] && count($writable) < count($data)) {
+-				// A restored pre-upgrade table must not pay this failed insert on every hit.
+-				if (preg_grep('/^(utm_|traffic_)/', array_diff(array_keys($data), $present))) {
+-					update_option(Acquisition::readinessKey(), '0', true);
+-				}
+-				self::recordColumnDegradation($table, array_diff(array_keys($data), $present));
+-				$result = self::write($table, $writable);
+-			}
+-		}
++
+ 
+ 		return $result;
+ 	}

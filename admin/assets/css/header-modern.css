@@ -88,7 +88,7 @@
     height: 27px;
     border-radius: 999px;
     background-color: #18A4561A;
-    color: #18A456;
+    color: var(--ss-success-fg, #087a37);
     font-weight: 600;
     font-size: 12px;
     letter-spacing: 0.01em;
@@ -204,7 +204,7 @@
     padding: 6px 0;
     border-radius: 999px;
     background-color: transparent;
-    color: #18A456;
+    color: var(--ss-success-fg, #087a37);
     font-weight: 600;
     font-size: 14px;
 }
@@ -227,7 +227,7 @@
     letter-spacing: 0.01em;
 }
 
-#contextual-help-link-wrap {
+.slimstat-admin-page #contextual-help-link-wrap {
     display: none !important;
 }
 
@@ -291,6 +291,22 @@
         height: 16px;
     }
 }
-.backdrop-container{
+.slimstat-admin-page .backdrop-container{
     margin-top: 0px !important;
+    background-color: transparent; /* show WordPress's admin grey, not a second one */
+}
+/* Chart.js centres the last x label on the last tick, so a long range label ends flush with the card edge. */
+.postbox.chart .slimstat-chart-wrap {
+    padding-inline-end: 20px;
+}
+/* Last tracker message: a pageview skipped on purpose (bot, excluded IP) is a note, not a failure. */
+.slimstat-tracker-message:not(.is-note) {
+    font-weight: 600;
+}
+.slimstat-tracker-message.is-note {
+    color: var(--ss-text-secondary, #646970);
+}
+.slimstat-tracker-message.is-note + .slimstat-font-cancel:before {
+    filter: grayscale(1);
+    opacity: .6;
 }

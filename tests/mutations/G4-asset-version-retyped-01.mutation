@@ -1,0 +1,13 @@
+target:    src/Reports/Types/Analytics/LiveAnalyticsReport.php
+gate:      composer test:asset-version-contract
+kind:      introduce-defect
+expect:    retyped version '5.4.1'
+rationale: Puts the hand-typed cache-buster back on live-analytics.js -- the state Query Monitor reported on 2026-09-05, with the plugin at 6.0.0 and the asset at ?ver=5.4.1. A retyped version is a cache key that never rotates: every install that loaded the file at 5.4.1 keeps serving that copy across releases. The gate found eight of these, five of them genuine vendor pins that had to be declared rather than inferred.
+---
+--- a/src/Reports/Types/Analytics/LiveAnalyticsReport.php
++++ b/src/Reports/Types/Analytics/LiveAnalyticsReport.php
+@@ -580,3 +580,3 @@
+ 			[ 'slimstat_chartjs', 'jquery' ],
+-			SLIMSTAT_ANALYTICS_VERSION,
++			'5.4.1',
+ 			true

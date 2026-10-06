@@ -1,0 +1,20 @@
+target:    src/Migration/Migrations/ConvertTablesToUtf8mb4.php
+gate:      composer test:migration-optionality
+kind:      restore-defect
+expect:    ConvertTablesToUtf8mb4 is OWED and the table says OFFERED
+rationale: Returns the charset rebuild to the REQUIRED set, where it shipped. The migration is an ALGORITHM=COPY rebuild that blocks writes, and on a tracking table blocked writes are dropped pageviews - 12.4 s measured on the real 443,535-row table, ~5 minutes at 10M. Required means the notice demands it on every admin page of every upgrading site, against the class's own header and against ADR-6. Nothing observed it before: no test asked, and the Migration screen renders identically either way - the only difference is which set it lands in and therefore whether the notice fires. tests/migration-optionality-test.php now catches the same edit declaratively; this entry gates on that declarative check because every gate in this registry is vendor-independent by construction - `composer test:unit` cannot run under the committed production autoloader, and dumping a dev one dirties the tree the runner requires to be clean. The BEHAVIOUR - that a real MigrationManager stops raising the notice - is pinned by tests/Unit/Migration/OptionalMigrationTest.php, which this edit also turns red.
+---
+--- a/src/Migration/Migrations/ConvertTablesToUtf8mb4.php
++++ b/src/Migration/Migrations/ConvertTablesToUtf8mb4.php
+@@ -198,11 +198,6 @@
+      * identity field. That is the one the notice should be about. The difference that matters
+      * here is not duration, it is that COPY blocks writes and INPLACE does not.
+      */
+-    public function isOptional(): bool
+-    {
+-        return true;
+-    }
+-
+     public function shouldRun(): bool
+     {
+         if (null !== $this->shouldRunCache) {

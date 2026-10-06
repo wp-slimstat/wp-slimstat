@@ -283,8 +283,10 @@ class UADetector
                 [$browser['platform'], $browser['browser_type']] = self::_get_os_version($_user_agent, $_user_agent, '');
             }
 
-            if (!empty($_SERVER['HTTP_UA_OS'])) {
-                [$browser['platform'], $browser['browser_type']] = self::_get_os_version($_SERVER['HTTP_UA_OS'], $_user_agent);
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Header is type-checked and unslashed before the OS detector maps it to known platform values.
+            $ua_os = $_SERVER['HTTP_UA_OS'] ?? '';
+            if (is_string($ua_os) && '' !== $ua_os) {
+                [$browser['platform'], $browser['browser_type']] = self::_get_os_version(wp_unslash($ua_os), $_user_agent);
             }
         }
 

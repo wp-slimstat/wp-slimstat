@@ -1,0 +1,17 @@
+target:    src/Migration/MigrationManager.php
+gate:      php tests/migration-ui-honesty-test.php
+kind:      construct-removal
+expect:    dismissNotice() still stores the literal
+rationale: Restores the unversioned dismissal flag. needsMigration() short-circuits on it, so a bare 'yes' means every migration added in v6.1 is silently skipped on any site that completed v6.0's — and the star-schema programme is built to ship migrations exactly that way. The failure is invisible: no error, no notice, just a migration that never announces itself.
+---
+--- a/src/Migration/MigrationManager.php
++++ b/src/Migration/MigrationManager.php
+@@ -164,7 +164,7 @@ class MigrationManager
+ 
+     public function dismissNotice(): void
+     {
+-        update_option(self::OPTION_DISMISSED, $this->migrationSetFingerprint(), false);
++        update_option(self::OPTION_DISMISSED, 'yes', false);
+         $this->forgetProbe();
+     }
+ 

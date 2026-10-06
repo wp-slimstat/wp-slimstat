@@ -1,9 +1,10 @@
 # tests/docker/docker-compose.yml — one cell (db + wp). Invoked per cell with a
 # unique COMPOSE_PROJECT_NAME and env-driven ports/paths so cells never collide.
 # Required env: PHP_VERSION, HTTP_PORT, DB_PORT, CELL_WP_DIR.
+# Optional: MYSQL_IMAGE (default mysql:8.0) — see matrix.env, C49.
 services:
   db:
-    image: mysql:8.0
+    image: ${MYSQL_IMAGE:-mysql:8.0}
     command:
       - --default-authentication-plugin=mysql_native_password
       - --max_allowed_packet=64M
