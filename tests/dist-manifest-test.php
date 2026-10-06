@@ -104,7 +104,7 @@ if (count($tracked) - count($package) < 200) {
 
 // ── 3. The runtime non-negotiables ship ─────────────────────────────────────────────────
 $package_set = array_flip($package);
-foreach (['wp-slimstat.php', 'uninstall.php', 'readme.txt', 'src/Schema/Schema.php', 'admin/index.php'] as $required) {
+foreach (['composer.json', 'wp-slimstat.php', 'uninstall.php', 'readme.txt', 'src/Schema/Schema.php', 'admin/index.php'] as $required) {
     if (!isset($package_set[$required])) {
         $failures[] = sprintf('the simulated package lacks `%s`; either .distignore excludes it or it '
             . 'is no longer tracked, and the ZIP would be broken on arrival', $required);
@@ -134,7 +134,7 @@ if (false === $ci_generate || false === $wp_env || $ci_generate > $wp_env) {
 }
 
 // ── 4. …and nothing development-only. A DENYLIST WRITTEN HERE, on purpose ───────────────
-$dev_only = '~^(tests|\.github|\.githooks|node_modules|vendor/phpunit|vendor/bin|build)/'
+$dev_only = '~^(tests|\.github|\.githooks|node_modules|vendor/phpunit|vendor/bin|build|plans)/'
     . '|(^|/)(phpunit\.xml\.dist|phpstan\.neon\.dist|phpstan-baseline\.neon|composer\.lock|package(-lock)?\.json'
     . '|\.wp-env(\.override)?\.json|CONTRIBUTING\.md|\.distignore|\.gitignore|rector\.php|pint\.json)$'
     . '|\.(spec|test)\.ts$~';

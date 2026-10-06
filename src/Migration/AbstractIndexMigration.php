@@ -72,7 +72,9 @@ abstract class AbstractIndexMigration extends AbstractMigration
                 implode(', ', $this->getIndexColumns())
             );
 
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- DDL identifiers come from the migration definition and core table prefix, never request parameters.
             $result = $this->wpdb->query($sql);
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             if (false === $result) {
                 // Optionally log error: $this->wpdb->last_error
                 return false;

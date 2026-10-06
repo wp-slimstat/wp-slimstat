@@ -422,7 +422,7 @@ if (!is_file($lanes_script)) {
     }
 
     $expected_lanes = [];
-    foreach (['phpstan' => [], 'fast' => ['php'], 'standard' => ['wp', 'php']] as $job => $keys) {
+    foreach (['phpstan' => [], 'minimum-compatibility' => [], 'fast' => ['php'], 'standard' => ['wp', 'php']] as $job => $keys) {
         $name = $job_name($deploy_jobs[$job] ?? '');
         if ('' === $name) {
             $failures[] = sprintf('ci.yml declares no job `%s` with a name — the deploy gate '

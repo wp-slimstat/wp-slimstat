@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -9,13 +10,11 @@ $already_seen = [];
 
 <div class="backdrop-container ">
     <div class="wrap-slimstat slimstat-layout">
-        <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]); ?>
-
-        <h1 class="wp-heading-inline"><?php esc_html_e('Customize', 'wp-slimstat'); ?></h1>
+        <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed(), 'title' => __('Customize', 'wp-slimstat')]); ?>
         <hr class="wp-header-end">
 
         <p><?php
-            esc_html_e('You can drag and drop the placeholders here below from one widget area to another, to customize the layout of each report screen. You can place multiple charts on the same view, clone reports or move them to the Inactive Reports if you are not interested in that specific metric.', 'wp-slimstat');
+            esc_html_e('You can drag and drop the placeholders below from one widget area to another, to customize the layout of each report screen. You can place multiple charts on the same view, clone reports or move them to the Inactive Reports if you are not interested in that specific metric.', 'wp-slimstat');
 if (is_network_admin()) {
     echo ' ';
     esc_html_e('By using the network-wide customizer, all your users will see the same layout you define, and they will not be able to customize it further.', 'wp-slimstat');
@@ -24,13 +23,6 @@ if (is_network_admin()) {
 ?></p>
 
         <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo esc_attr(wp_create_nonce('meta-box-order')) ?>"/></form>
-
-        <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
-            <?php wp_nonce_field(is_network_admin() ? 'reset_layout_network' : 'reset_layout'); ?>
-            <input type="hidden" name="slimstat_layout_scope" value="<?php echo is_network_admin() ? 'network' : 'personal'; ?>">
-            <input type="hidden" name="action" value="slimstat_reset_layout">
-            <input type="submit" value="<?php esc_attr_e('Reset Layout', 'wp-slimstat') ?>" class="button"/>
-        </form>
 
         <?php foreach (wp_slimstat_reports::$user_reports as $a_location_id => $a_location_list): ?>
 
@@ -60,8 +52,8 @@ if (is_network_admin()) {
             echo "
 			<div class='postbox" . esc_attr($placeholder_classes) . "' id='" . esc_attr($a_report_id) . "'>
 				<div class='slimstat-header-buttons'>
-					<a class='slimstat-font-" . esc_attr($icon) . "' href='#' title='" . esc_attr($title) . "'></a>
-					" . (('inactive' != $a_location_id) ? ' <a class="slimstat-font-minus-circled" href="#" title="' . esc_attr__('Move to Inactive', 'wp-slimstat') . '"></a>' : '') . "
+					<button type='button' class='slimstat-font-" . esc_attr($icon) . "' title='" . esc_attr($title) . "' aria-label='" . esc_attr($title) . "' data-delete-label='" . esc_attr__('Delete', 'wp-slimstat') . "'></button>
+					" . (('inactive' != $a_location_id) ? ' <button type="button" class="slimstat-font-minus-circled" title="' . esc_attr__('Move to Inactive', 'wp-slimstat') . '" aria-label="' . esc_attr__('Move to Inactive', 'wp-slimstat') . '"></button>' : '') . "
 				</div>
 				<h3 class='hndle'>" . wp_kses_post(wp_slimstat_reports::$reports[$a_report_id]['title']) . '</h3>
 			</div>';
@@ -69,4 +61,12 @@ if (is_network_admin()) {
                 </div>
             </div>
         <?php endforeach; ?>
+
+        <?php // Last, as a text link with a confirm step: it discards the whole layout (audit B7). ?>
+        <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" class="slimstat-layout-reset" onsubmit="return window.confirm('<?php echo esc_js(__('Reset every report screen to the default layout? Your arrangement, clones and inactive reports are lost.', 'wp-slimstat')); ?>');">
+            <?php wp_nonce_field(is_network_admin() ? 'reset_layout_network' : 'reset_layout'); ?>
+            <input type="hidden" name="slimstat_layout_scope" value="<?php echo is_network_admin() ? 'network' : 'personal'; ?>">
+            <input type="hidden" name="action" value="slimstat_reset_layout">
+            <input type="submit" value="<?php esc_attr_e('Reset layout', 'wp-slimstat') ?>" class="button-link button-link-delete"/>
+        </form>
     </div>

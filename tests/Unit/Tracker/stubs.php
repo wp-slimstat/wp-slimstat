@@ -110,6 +110,11 @@ if (!class_exists('wp_slimstat')) {
             self::$degradations[$step] = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
         }
 
+        public static function clear_degradation($step): void
+        {
+            unset(self::$degradations[$step]);
+        }
+
         /** @var array<string,mixed> */
         public static array $settings = [
             'enable_browscap'          => 'off',

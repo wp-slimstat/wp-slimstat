@@ -260,6 +260,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     borderWidth: isPrevious ? 1 : 2,
                     fill: chartType === "bar" ? true : false,
                     tension: chartType === "line" ? 0.3 : 0,
+                    cubicInterpolationMode: "monotone", // Smooth without overshooting: no dip below 0, no peak above the data (QA R11).
                     pointBorderColor: "transparent",
                     pointBackgroundColor: color,
                     pointBorderWidth: 2,
@@ -354,25 +355,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 ctx2.beginPath();
                 ctx2.moveTo(pt.x, top);
                 ctx2.lineTo(pt.x, bottom);
-                ctx2.stroke();
-                ctx2.restore();
-            },
-        };
-        var emptyLine = {
-            id: "emptyLine",
-            afterDraw: function (chart) {
-                var opts = chart.options && chart.options.plugins && chart.options.plugins.emptyLine;
-                if (!opts || !opts.enabled) return;
-                var area = chart.chartArea;
-                if (!area) return;
-                var ctx2 = chart.ctx;
-                var y = (area.top + area.bottom) / 2;
-                ctx2.save();
-                ctx2.strokeStyle = opts.color || "#e8294c";
-                ctx2.lineWidth = 2;
-                ctx2.beginPath();
-                ctx2.moveTo(area.left, y);
-                ctx2.lineTo(area.right, y);
                 ctx2.stroke();
                 ctx2.restore();
             },
@@ -492,7 +474,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 data: labels.map(function () {
                     return 0;
                 }),
-                borderColor: "#e8294c",
+                borderColor: "#c3c4c7",
                 backgroundColor: "transparent",
                 borderWidth: 2,
                 fill: false,
@@ -530,8 +512,10 @@ document.addEventListener("DOMContentLoaded", function () {
             },
         };
 
+        // An empty period sits on a 0–1 axis: a flat grey line at zero, never an axis that
+        // dips to -1 under a red line that reads as an error (audit E1).
         if (isEmptyCurrent) {
-            yScale.min = -1;
+            yScale.min = 0;
             yScale.max = 1;
             yScale.ticks.stepSize = 1;
         }
@@ -579,10 +563,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         titleColor: "#222",
                         bodyColor: "#222",
                     },
-                    emptyLine: {
-                        enabled: isEmptyCurrent,
-                        color: "#e8294c",
-                    },
                 },
                 scales: {
                     x: {
@@ -623,7 +603,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     mode: "index",
                 },
             },
-            plugins: [customCrosshair, emptyLine],
+            plugins: [customCrosshair],
         });
     }
 
@@ -740,17 +720,18 @@ document.addEventListener("DOMContentLoaded", function () {
             respectEndOfPeriod = false;
         }
         var date = new Date(dateInput);
-        var day = date.getDay();
+        var day = date.getUTCDay(); // Labels are UTC dates, as formatDate() prints them.
         var diff = (7 - startOfWeek + day) % 7;
-        var nextWeek = new Date(date.getTime() + (7 - diff) * 24 * 60 * 60 * 1000);
+        // The week's last day, not the next week's first: "Sep 14 - Sep 20", then "Sep 21 - ..." (QA R11).
+        var weekEnd = new Date(date.getTime() + (6 - diff) * 24 * 60 * 60 * 1000);
         if (respectEndOfPeriod) {
             var today2 = new Date(respectEndOfPeriod);
 
-            if (nextWeek.getTime() > today2.getTime()) {
+            if (weekEnd.getTime() > today2.getTime()) {
                 return new Date(respectEndOfPeriod);
             }
         }
-        return nextWeek;
+        return weekEnd;
     }
 
     function slimstatGetLabel(label, long, unitTime, translations, justTranslation) {
@@ -836,7 +817,11 @@ document.addEventListener("DOMContentLoaded", function () {
             var weekStart = formatDate(d2, { month: long ? "long" : "short", day: "numeric" });
             var weekEndFormatted = formatDate(weekEnd, { month: long ? "long" : "short", day: "numeric" });
 
-            return weekEndFormatted === weekStart ? weekStart : weekStart + " - " + weekEndFormatted;
+            var weekRange = weekEndFormatted === weekStart ? weekStart : weekStart + " - " + weekEndFormatted;
+            // The week in progress has fewer days in it than the rest; say so where its total is read.
+            var todayIso = new Date().toISOString().slice(0, 10);
+            var isThisWeek = long && rawDate <= todayIso && todayIso <= weekEnd.toISOString().slice(0, 10);
+            return isThisWeek ? weekRange + " (" + translations.now + ")" : weekRange;
         } else if (unitTime === "daily") {
             var rawDate2 = (justTranslation || label).replace(/\//g, "-");
             var d3 = new Date(rawDate2 + "T00:00:00Z");
@@ -891,10 +876,10 @@ document.addEventListener("DOMContentLoaded", function () {
             var unitTime = document.getElementById("slimstat_chart_data_" + chartId).dataset.granularity;
             var data = JSON.parse(document.getElementById("slimstat_chart_data_" + chartId).getAttribute("data-data"));
             prevLabels = data.prev_labels;
-            var tooltipEl = document.getElementById("chartjs-tooltip");
+            var tooltipEl = document.getElementById("slimstat-chartjs-tooltip");
             if (!tooltipEl) {
                 tooltipEl = document.createElement("div");
-                tooltipEl.id = "chartjs-tooltip";
+                tooltipEl.id = "slimstat-chartjs-tooltip";
                 tooltipEl.innerHTML = "<table></table>";
                 document.body.appendChild(tooltipEl);
             }
@@ -941,7 +926,7 @@ document.addEventListener("DOMContentLoaded", function () {
             for (var g = 0; g < grouped.length; g++) {
                 var item = grouped[g];
                 var color = tooltip.labelColors[g];
-                innerHtml += '<tr data-index="' + g + '" class="slimstat-postbox-chart--item"><td><div class="slimstat-postbox-chart--item--color" style="background-color: ' + color.backgroundColor + '; margin-bottom: 3px; margin-right: 10px;"></div><span class="tooltip-item-title">' + item.label + '</span>: <span class="tooltip-item-content">' + item.value + "</span>";
+                innerHtml += '<tr data-index="' + g + '" class="slimstat-postbox-chart--item"><td><div class="slimstat-postbox-chart--item--color" style="background-color: ' + color.backgroundColor + '; margin-bottom: 3px; margin-right: 10px;"></div><span class="slimstat-tooltip-item-title">' + item.label + '</span>: <span class="slimstat-tooltip-item-content">' + item.value + "</span>";
                 if (item.prevValue !== null && item.prevDate) {
                     var hex = color.backgroundColor.replace("#", "");
                     var rgb = hex
@@ -950,7 +935,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             return parseInt(x, 16);
                         })
                         .join(",");
-                    innerHtml += '<br><span class="slimstat-postbox-chart--item--color" style="display:inline-block;width:18px;height:2px;background-image:repeating-linear-gradient(to right, rgba(' + rgb + ",0.7), rgba(" + rgb + ',0.7) 4px, transparent 0px, transparent 6px);background-size:auto 6px;opacity:1;margin-bottom:0px;margin-left:0px;vertical-align:middle;"></span> <span class="tooltip-item-title" style="font-size:12px;opacity:.7;">' + slimstatGetLabel(item.prevDate, false, unitTime, translations) + ': </span><span class="tooltip-item-content" style="font-size:12px;opacity:.7;">' + item.prevValue + "</span>";
+                    innerHtml += '<br><span class="slimstat-postbox-chart--item--color" style="display:inline-block;width:18px;height:2px;background-image:repeating-linear-gradient(to right, rgba(' + rgb + ",0.7), rgba(" + rgb + ',0.7) 4px, transparent 0px, transparent 6px);background-size:auto 6px;opacity:1;margin-bottom:0px;margin-left:0px;vertical-align:middle;"></span> <span class="slimstat-tooltip-item-title" style="font-size:12px;opacity:.7;">' + slimstatGetLabel(item.prevDate, false, unitTime, translations) + ': </span><span class="slimstat-tooltip-item-content" style="font-size:12px;opacity:.7;">' + item.prevValue + "</span>";
                 }
                 innerHtml += "</td></tr>";
             }

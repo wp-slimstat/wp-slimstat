@@ -291,10 +291,10 @@ jobs:
           - { wp: "6.6", php: "8.2" }
           - { wp: "6.9", php: "8.2" }
           - { wp: "7.0", php: "8.2" }
-          # 7.1 is current. Added with the metadata bump in readme.txt/README.md, so
+          # 7.1.2 is current. Added with the metadata bump in readme.txt/README.md, so
           # "Tested up to" and the lane that tests it move together — which is the whole
           # property tests/wp70-tested-up-to-test.php exists to hold.
-          - { wp: "7.1", php: "8.3" }
+          - { wp: "7.1.2", php: "8.3" }
 
     env:
       TEST_BASE_URL: http://localhost:8889
@@ -311,13 +311,13 @@ jobs:
       # Named once, read by three steps (override, active-plugin check, E2E grep) so
       # they cannot drift into "installed here, run there".
       #
-      # 7.1, not 6.9, for two reasons. WooCommerce 10.6.2 declares `Requires at
-      # least: 6.8`, so the 6.4 full-suite lane cannot host it -- and 7.1 is the only
+      # 7.1.2, not 6.9, for two reasons. WooCommerce 10.6.2 declares `Requires at
+      # least: 6.8`, so the 6.4 full-suite lane cannot host it -- and 7.1.2 is the only
       # lane at or above that floor whose E2E step BLOCKS (continue-on-error is false
       # for the baseline and the newest lane only). On a soft lane a WooCommerce
       # regression would fail the step and leave the job green, which is the exact
       # shape of self-skipping this workstream exists to end.
-      WOO_E2E_LANE: "7.1"
+      WOO_E2E_LANE: "7.1.2"
 
     steps:
       - name: Checkout
@@ -503,7 +503,7 @@ jobs:
         # because that file set varies by WP version. 6.4 already runs the full E2E suite; the
         # NEWEST lane is where that surface is most likely to move under it again — so this
         # condition names the newest WordPress in the matrix, and widens with it. It said
-        # `6.4 || 7.0` while 7.1 was added, which would have quietly stopped covering the
+        # `6.4 || 7.0` while 7.1.2 was added, which would have quietly stopped covering the
         # version the readme claims to be tested against. §8 of
         # tests/perf-gate-integrity-test.php asserts the condition names every blocking
         # version rather than a fixed pair.
@@ -516,7 +516,7 @@ jobs:
         #
         # Blocking, unlike the E2E step below. On these lanes it is the first step that can
         # fail this job, which is the point of adding it.
-        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1' }}
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
         run: npx wp-env run tests-cli -- php wp-content/plugins/wp-slimstat/tests/reports-output-escaping-test.php
 
       - name: Activate plugin and create database tables
@@ -526,15 +526,28 @@ jobs:
           npx wp-env run tests-cli -- wp plugin deactivate wp-slimstat 2>/dev/null || true
           npx wp-env run tests-cli -- wp plugin activate wp-slimstat
           npx wp-env run tests-cli -- wp user update admin --user_pass=password
-          # wp-env creates only `admin`; the permission specs need a real author.
+          # wp-env creates only `admin`; permission specs also need author/subscriber roles.
           npx wp-env run tests-cli -- wp user create "$WP_AUTHOR_USER" "$WP_AUTHOR_USER@example.com" \
             --role=author --user_pass="$WP_AUTHOR_PASS"
+          npx wp-env run tests-cli -- wp user create e2e_subscriber e2e_subscriber@example.com \
+            --role=subscriber --user_pass=password
           npx wp-env run tests-cli -- wp eval '
             include_once(WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php");
             wp_slimstat_admin::init_tables($GLOBALS["wpdb"]);
           '
           echo "--- Verifying tables ---"
           npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
+
+      - name: Acquisition schema, attribution and report database checks
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/acquisition-reports-db-test.php
+
+      - name: Shortcode rendering and privacy
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/shortcode-render-wp-test.php
+
+      - name: Heatmap author isolation
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/heatmap-author-scope-wp-test.php
 
       - name: Pretty permalinks, and prove /wp-json/ actually routes
         # WordPress installs with an EMPTY permalink_structure, so /wp-json/ is not rewritten
@@ -770,14 +783,14 @@ jobs:
         # matrix lanes run only the @compat-tagged compat specs via --grep, so
         # PRs stay within budget (the lane is the CI job, not the filename).
         #
-        # BLOCKING on 6.4 and 7.1; soft everywhere else. continue-on-error is the
+        # BLOCKING on 6.4 and 7.1.2; soft everywhere else. continue-on-error is the
         # setting being excused, and the expression is FALSE — the lane can fail
         # the job — for exactly two versions: the committed baseline that
         # .wp-env.json boots, and the newest WordPress in the matrix above.
         #
-        # Read "blocking on 7.1" literally. The branch below runs the full suite
+        # Read "blocking on 7.1.2" literally. The branch below runs the full suite
         # only when WP_VERSION is the baseline; every other lane runs
-        # --grep "@compat". So 7.1 blocking gates the @compat subset, and the real
+        # --grep "@compat". So 7.1.2 blocking gates the @compat subset, and the real
         # target of this flip is 6.4/PHP 7.4 running all 748 tests. The interior
         # lanes stay soft on purpose: they are version-drift signal, not a merge
         # gate, and making them blocking would fail the job on host-environment
@@ -789,7 +802,7 @@ jobs:
         # everything, dropping either version, or reverting to a bare `true` all
         # fail that gate. §7 used to match only the literal `continue-on-error:
         # true`, so before this commit it would have matched nothing here.
-        continue-on-error: ${{ !contains(fromJSON('["6.4","7.1"]'), matrix.wp) }}
+        continue-on-error: ${{ !contains(fromJSON('["6.4","7.1.2"]'), matrix.wp) }}
         env:
           # wp-env creates a fresh WordPress with default admin credentials.
           # Override WP_ADMIN_USER / WP_ADMIN_PASS in global-setup.ts.
@@ -1076,3 +1089,49 @@ jobs:
       - name: Stop wp-env
         if: ${{ matrix.php == '8.2' && always() }}
         run: npx wp-env stop
+
+  minimum-compatibility:
+    name: WordPress 5.6 · PHP 7.4 · runtime
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: wordpress
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -ppassword"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: wp-slimstat
+      # Build dependencies on the toolchain's PHP, then execute on the declared minimum.
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer, wp-cli
+      - name: Install plugin dependencies
+        run: |
+          composer install --working-dir=wp-slimstat --no-dev --prefer-dist --no-interaction
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "7.4"
+          extensions: mysqli, mbstring
+          tools: wp-cli
+      - name: Boot minimum WordPress and run database regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          WP_DIR="$RUNNER_TEMP/slimstat-minimum"
+          wp core download --version=5.6 --path="$WP_DIR"
+          wp config create --path="$WP_DIR" --dbname=wordpress --dbuser=root --dbpass=password --dbhost=127.0.0.1
+          wp core install --path="$WP_DIR" --url=http://localhost --title=Compatibility --admin_user=admin --admin_password=password --admin_email=qa@example.com --skip-email
+          for plugin in wp-slimstat; do
+            ln -s "$GITHUB_WORKSPACE/$plugin" "$WP_DIR/wp-content/plugins/$plugin"
+          done
+          wp plugin activate wp-slimstat --path="$WP_DIR"
+          wp eval 'require_once WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php"; wp_slimstat_admin::init_tables($GLOBALS["wpdb"]);' --path="$WP_DIR"
+          wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/shortcode-render-wp-test.php" --path="$WP_DIR"
+          wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/heatmap-author-scope-wp-test.php" --path="$WP_DIR"

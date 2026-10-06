@@ -12,6 +12,10 @@ if ($fixture_mode === 'cleanup') {
         foreach ($fixture['posts'] as $post_id) {
             wp_delete_post($post_id, true);
         }
+        if (!empty($fixture['customer'])) {
+            require_once ABSPATH . 'wp-admin/includes/user.php';
+            wp_delete_user($fixture['customer']);
+        }
         foreach ($fixture['options'] as $name => $old) {
             if ($old['exists']) update_option($name, $old['value']);
             else delete_option($name);
@@ -51,7 +55,14 @@ foreach ($settings as $name => $value) {
 update_option($fixture_key, $fixture, false);
 foreach ($settings as $name => $value) update_option($name, $value);
 foreach (['cart', 'checkout'] as $page) {
-    $id = wp_insert_post(['post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'QA ' . $page, 'post_name' => $fixture_run . '-' . $page, 'post_content' => '[woocommerce_' . $page . ']'], true);
+    $content = '[woocommerce_' . $page . ']';
+    if (!empty($fixture_blocks)) {
+        // Use the installed WC version's own default blocks in this disposable fixture.
+        $method = new ReflectionMethod(WC_Install::class, 'get_' . $page . '_block_content');
+        $method->setAccessible(true);
+        $content = $method->invoke(null);
+    }
+    $id = wp_insert_post(['post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'QA ' . $page, 'post_name' => $fixture_run . '-' . $page, 'post_content' => $content], true);
     if (is_wp_error($id)) throw new RuntimeException($id->get_error_message());
     $fixture['posts'][] = $id;
     update_option($fixture_key, $fixture, false);
@@ -66,4 +77,10 @@ $product->set_sku($fixture_run);
 $product->save();
 $fixture['posts'][] = $product->get_id();
 update_option($fixture_key, $fixture, false);
-echo wp_json_encode(['product' => get_permalink($product->get_id()), 'cart' => wc_get_cart_url(), 'checkout' => wc_get_checkout_url(), 'email' => $fixture['email'], 'version' => WC_VERSION]);
+if (!empty($fixture_customer)) {
+    $customer = wp_insert_user(['user_login' => $fixture_run, 'user_pass' => 'fixture-only-password', 'user_email' => $fixture['email'], 'role' => 'customer']);
+    if (is_wp_error($customer)) throw new RuntimeException($customer->get_error_message());
+    $fixture['customer'] = $customer;
+    update_option($fixture_key, $fixture, false);
+}
+echo wp_json_encode(['product' => get_permalink($product->get_id()), 'cart' => wc_get_cart_url(), 'checkout' => wc_get_checkout_url(), 'email' => $fixture['email'], 'version' => WC_VERSION, 'customer' => $fixture['customer'] ?? 0]);

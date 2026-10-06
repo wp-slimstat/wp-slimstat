@@ -153,8 +153,8 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
     const nonce = await getWhoisNonce(page);
     const result = await callWhoisEndpoint(page, '8.8.8.8', nonce);
 
-    expect(result.body).toContain('GeoIP collection is not enabled');
-    expect(result.body).toContain('setting page');
+    expect(result.body).toContain('Geolocation is off');
+    expect(result.body).toContain('Turn it on in Settings');
     expect(result.body).not.toContain('Fatal error');
 
     // Whois URL should NOT be injected

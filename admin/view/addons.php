@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -12,11 +13,13 @@ if (!empty($_POST['licenses']) && isset($_POST['slimstat_update_licenses']) && i
     if (!is_array($_POST['licenses'])) {
         wp_die(esc_html__('Invalid license data.', 'wp-slimstat'));
     }
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- License array shape is checked before per-key sanitization; request URL is unslashed and escaped with esc_url before output.
     foreach ($_POST['licenses'] as $a_license_slug => $a_license_key) {
         if (!is_string($a_license_slug) || !preg_match('/^[a-zA-Z0-9_-]+$/D', $a_license_slug) || !is_string($a_license_key)) {
             wp_die(esc_html__('Invalid license data.', 'wp-slimstat'));
         }
     }
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- License array shape is checked before per-key sanitization; request URL is unslashed and escaped with esc_url before output.
     foreach (wp_unslash($_POST['licenses']) as $a_license_slug => $a_license_key) {
         wp_slimstat::$settings['addon_licenses'][$a_license_slug] = sanitize_title($a_license_key);
     }
@@ -31,7 +34,7 @@ if (!empty($_GET['force_refresh']) || false === $response) {
     if (is_wp_error($response) || 200 != $response['response']['code']) {
         $error_message = is_wp_error($response) ? $response->get_error_message() : $response['response']['code'] . ' ' . $response['response']['message'];
         /* translators: %s: error message returned while retrieving the add-ons list. */
-        $error_message = sprintf(__('There was an error retrieving the add-ons list from the server. Please try again later. Error Message: %s', 'wp-slimstat'), $error_message);
+        $error_message = sprintf(__('There was an error retrieving the addons list from the server. Please try again later. Error Message: %s', 'wp-slimstat'), $error_message);
     } else {
         set_transient('wp_slimstat_addon_list', $response, 86400);
     }
@@ -56,17 +59,17 @@ if (is_array($list_addons)) {
     }
 }
 if (!is_array($list_addons)) {
-    $error_message = __('There was an error decoding the add-ons list from the server. Please try again later.', 'wp-slimstat');
+    $error_message = __('There was an error decoding the addons list from the server. Please try again later.', 'wp-slimstat');
 }
 ?>
 
 <div class="wrap-slimstat">
-    <h2><?php esc_html_e('Add-ons', 'wp-slimstat') ?></h2>
-    <p><?php echo wp_kses_post(__('Add-ons extend the functionality of Slimstat in many interesting ways. We offer both free and premium (paid) extensions. Each add-on can be installed as a separate plugin, which will receive regular updates via the WordPress Plugins panel. In order to be notified when a new version of a premium add-on is available, please enter the <strong>license key</strong> you received when you purchased it.', 'wp-slimstat')); ?><?php
+    <h2><?php esc_html_e('Addons', 'wp-slimstat') ?></h2>
+    <p><?php echo wp_kses_post(__('Addons extend SlimStat. We offer both free and paid extensions. Each addon can be installed as a separate plugin, which will receive regular updates via the WordPress Plugins panel. In order to be notified when a new version of a paid addon is available, enter the <strong>license key</strong> you received when you purchased it.', 'wp-slimstat')); ?><?php
 if (empty($_GET['force_refresh'])) {
     echo ' ';
     /* translators: %s: current settings page URL, before the force-refresh parameter. */
-    echo wp_kses_post(sprintf(__('This list is refreshed once daily: <a href="%s&amp;force_refresh=true" class="noslimstat">click here</a> to clear the cache.', 'wp-slimstat'), esc_url(isset($_SERVER['REQUEST_URI']) && is_string($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : '')));
+    echo wp_kses_post(sprintf(__('This list is refreshed once daily: <a href="%s&amp;force_refresh=true" class="noslimstat">click here</a> to clear the cache.', 'wp-slimstat'), esc_url(isset($_SERVER['REQUEST_URI']) && is_string($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : ''))); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- License array shape is checked before per-key sanitization; request URL is unslashed and escaped with esc_url before output.
 }
 
 if (!empty($error_message)) {
@@ -81,7 +84,7 @@ if (!empty($error_message)) {
         <table class="wp-list-table widefat plugins slimstat-addons" cellspacing="0">
             <thead>
             <tr>
-                <th scope="col" id="name" class="manage-column column-name"><?php esc_html_e('Add-on', 'wp-slimstat') ?></th>
+                <th scope="col" id="name" class="manage-column column-name"><?php esc_html_e('Addon', 'wp-slimstat') ?></th>
                 <th scope="col" id="description" class="manage-column column-description" style=""><?php esc_html_e('Description', 'wp-slimstat') ?></th>
             </tr>
             </thead>

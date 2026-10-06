@@ -98,6 +98,9 @@ const EXPECTED_COLUMNS = [
   // migration and ua_id via the OPTIONAL AddUserAgentDimension one. This list is what CI's
   // fresh wp-env compares against, and it was frozen at the 5.x shape.
   'vid_hash', 'ua_id',
+  // Acquisition columns are part of the fresh-install schema; existing tables use AddAcquisitionColumns.
+  'traffic_channel', 'traffic_source', 'utm_source', 'utm_medium', 'utm_campaign',
+  'utm_content', 'utm_term', 'utm_id',
 ];
 
 // ─── Tests ───────────────────────────────────────────────────────

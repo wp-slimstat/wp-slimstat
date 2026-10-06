@@ -19,10 +19,10 @@ const SLIMVIEW1 = `${BASE_URL}/wp-admin/admin.php?page=slimview1`;
 // bot has no class so it uses the base #eee).
 const LEGEND = [
   { label: 'From search result page', rgb: 'rgb(226, 219, 255)' },
-  { label: 'Has Left Comments',       rgb: 'rgb(255, 233, 200)' },
-  { label: 'WP User',                 rgb: 'rgb(221, 240, 255)' },
-  { label: 'Other Human',             rgb: 'rgb(248, 248, 248)' },
-  { label: 'Bot or Crawler',          rgb: 'rgb(238, 238, 238)' },
+  { label: 'Has left comments',       rgb: 'rgb(255, 233, 200)' },
+  { label: 'WordPress user',                 rgb: 'rgb(221, 240, 255)' },
+  { label: 'Other human',             rgb: 'rgb(248, 248, 248)' },
+  { label: 'Bot or crawler',          rgb: 'rgb(238, 238, 238)' },
 ];
 
 async function openAccessLog(page: Page): Promise<void> {

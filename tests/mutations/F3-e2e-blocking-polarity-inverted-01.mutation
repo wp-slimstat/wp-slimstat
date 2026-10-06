@@ -10,8 +10,8 @@ rationale: The half a version list cannot express. Same line, same two versions,
          # everything, dropping either version, or reverting to a bare `true` all
          # fail that gate. §7 used to match only the literal `continue-on-error:
          # true`, so before this commit it would have matched nothing here.
--        continue-on-error: ${{ !contains(fromJSON('["6.4","7.1"]'), matrix.wp) }}
-+        continue-on-error: ${{ contains(fromJSON('["6.4","7.1"]'), matrix.wp) }}
+-        continue-on-error: ${{ !contains(fromJSON('["6.4","7.1.2"]'), matrix.wp) }}
++        continue-on-error: ${{ contains(fromJSON('["6.4","7.1.2"]'), matrix.wp) }}
          env:
            # wp-env creates a fresh WordPress with default admin credentials.
            # Override WP_ADMIN_USER / WP_ADMIN_PASS in global-setup.ts.

@@ -39,8 +39,8 @@ $removed_fns = [
     'js_escape', 'get_settings', 'wp_load_image', 'wp_get_http',
     'get_the_author_email', 'clean_url', 'wp_specialchars', 'funky_javascript_fix',
     'get_alloptions',
-    // NB: sanitize_url() is intentionally NOT listed — deprecated in 2.8 but
-    // RE-INTRODUCED in WP 6.1 as a valid esc_url_raw() alias; own code uses it.
+    // Deprecated on our WordPress 5.6 floor, despite returning in newer core.
+    'sanitize_url',
 ];
 
 $violations = [];

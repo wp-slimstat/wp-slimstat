@@ -6,8 +6,8 @@ rationale: Adds the most plausible future backfill: an UPDATE recomputing identi
 ---
 --- a/src/Migration/Migrations/AddVisitIdentity.php
 +++ b/src/Migration/Migrations/AddVisitIdentity.php
-@@ -109,10 +109,11 @@
-             $this->reconcileColumnIndexes('slim_stats', 'vid_hash', 'add_visit_identity');
+@@ -138,10 +138,11 @@
+             \wp_slimstat::clear_degradation('anonymous visit reuse');
          }
  
          // Short-circuit preserved: the archive ALTER is attempted only when the live one landed.

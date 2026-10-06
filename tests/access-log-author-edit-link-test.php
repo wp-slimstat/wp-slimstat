@@ -87,6 +87,14 @@ aael_assert(
     $failures
 );
 
+// (c) a login with no matching account reads "(account deleted)", not "(Unknown)" (screenshot QA §5).
+$reports = (string) file_get_contents($plugin_root . '/admin/view/wp-slimstat-reports.php');
+aael_assert(
+    strpos($reports, "__('Unknown', 'wp-slimstat') . ')") === false && substr_count($reports, "__('account deleted', 'wp-slimstat')") === 2,
+    'Top Known Visitors labels a login with no account "(account deleted)", not "(Unknown)"',
+    $failures
+);
+
 echo "\n";
 if ($failures) {
     echo count($failures) . " FAILURE(S)\n";

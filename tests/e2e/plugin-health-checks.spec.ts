@@ -71,7 +71,7 @@ test.describe('Plugin Health Checks', () => {
     expect(settingsRes?.status()).toBeLessThan(400);
 
     const bodyText = await page.textContent('body');
-    expect(bodyText).toContain('Slimstat');
+    expect(bodyText).toContain('SlimStat');
   });
 
   // ─── Test 2: PHP error log clean ─────────────────────────────────

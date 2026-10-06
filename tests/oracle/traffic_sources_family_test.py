@@ -67,10 +67,25 @@ assert all(item['tooltip'].strip()
 
 assert value['Pageviews'] == '5', value                      # in-window rows; id 0 is before it
 assert value['Unique Referrers'] == '2', value               # NEWS/news fold; the self referer is out
-assert value['Direct Pageviews'] == '1', value               # id 4 alone has no resource
+assert value['Direct Pageviews'] == '1', value               # id 4 alone has no referrer
 assert value['From External SERP'] == '1', value             # id 1; id 3's is this site, id 0 early
 assert value['Unique Landing Pages'] == '3', value           # /one, /two, /three
 assert value['Currently from search engines'] == '0', value
+
+# Direct and search follow the Channels report: a row's channel decides; a row with no channel
+# (recorded before attribution) keeps the referrer rule. Direct was once `resource IS NULL`.
+channelled = [
+    row(100, id=1, referer=None, resource=b'/a'),                                   # legacy direct
+    row(110, id=2, referer=b'http://x.example/', resource=None),                    # not direct
+    row(120, id=3, referer=b'http://app.example/', traffic_channel=b'direct'),      # direct by channel
+    row(130, id=4, referer=None, traffic_channel=b'internal'),                      # channel wins
+    row(140, id=5, referer=b'http://google.com/', traffic_channel=b'organic_search'),  # no searchterms
+    row(150, id=6, referer=b'http://serp.example/', searchterms=b'q', traffic_channel=b'referral'),
+    row(160, id=7, referer=b'http://serp.example/', searchterms=b'q'),              # legacy search
+]
+by_channel = answers(channelled)
+assert by_channel['Direct Pageviews'] == '2', by_channel               # ids 1 and 3
+assert by_channel['From External SERP'] == '2', by_channel   # ids 5 and 7
 
 # Bounce Pages counts pages seen by exactly one visit, and a row with no resource is not a page.
 # (The shared where-builder adds `resource IS NOT NULL`; modelling it as its own group counted a

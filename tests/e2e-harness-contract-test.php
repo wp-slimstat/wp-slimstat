@@ -296,6 +296,21 @@ if ($ci !== null) {
     }
 }
 
+// ── Sec.5 — no spec types into an input a combobox hides (PITFALLS 159, 227) ─────────────
+//
+// SlimStatSearchableSelect hides these inputs once the options AJAX lands. fill() on them passes
+// while the request is slow (locally) and times out when it is fast (CI). Type into
+// .slimstat-select-search input instead.
+
+$checks++;
+$spec_files = new RegexIterator(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($plugin_root . '/tests/e2e', FilesystemIterator::SKIP_DOTS)), '/\.ts$/');
+foreach ($spec_files as $spec_file) {
+    if (preg_match('/(#slimstat-filter-value|step-value"\])[\'"]\s*\)\s*\.fill\(|\bfill\(\s*[\'"]#slimstat-filter-value/', (string) file_get_contents((string) $spec_file))) {
+        $failures[] = substr((string) $spec_file, strlen($plugin_root) + 1) . ' fills an input SlimStatSearchableSelect hides; '
+            . 'that passes only while the options AJAX is slow. Fill .slimstat-select-search input (PITFALLS 159)';
+    }
+}
+
 if ($failures) {
     fwrite(STDERR, 'FAIL: E2E harness contract (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {

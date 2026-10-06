@@ -71,12 +71,21 @@ class AddVisitIdentity extends AbstractMigration
         return __('Add the anonymous visitor identity column', 'wp-slimstat');
     }
 
+    public function getSummary(): string
+    {
+        return sprintf(
+            /* translators: %s: a measured cost, e.g. "about 8 seconds on a 440,000-row table (MySQL 8)". */
+            __('Groups visitors tracked without cookies into visits. Each table takes %s.', 'wp-slimstat'),
+            $this->measuredCostPhrase()
+        );
+    }
+
     public function getDescription(): string
     {
         return sprintf(
             /* translators: %s: a measured cost, e.g. "about 8 seconds on a 440,000-row table (MySQL 8)". */
             __(
-                'Adds a private, full-width identity column for visitors tracked without cookies. Until it runs, anonymous pageviews are still recorded but cost extra database work on every hit and cannot be grouped into visits reliably. The analytics table and its archive are each rebuilt in place — %s, so roughly double that if you also have archived data, and longer on bigger tables. Tracking and reports normally keep working while it runs, but a server that cannot rebuild online will pause tracking writes until it finishes. No existing data is changed or removed.',
+                'Adds a private, full-width identity column for visitors tracked without cookies. Until it runs, anonymous pageviews are still recorded but cost extra database work on every hit and cannot be grouped into visits reliably. The analytics table and its archive are each rebuilt in place: %s, so roughly double that if you also have archived data, and longer on bigger tables. Tracking and reports normally keep working while it runs, but a server that cannot rebuild online will pause tracking writes until it finishes. No existing data is changed or removed.',
                 'wp-slimstat'
             ),
             $this->measuredCostPhrase()
@@ -121,6 +130,12 @@ class AddVisitIdentity extends AbstractMigration
         // day E1 flips that flag.
         if ($live) {
             $this->reconcileColumnIndexes('slim_stats', 'vid_hash', 'add_visit_identity');
+
+            // The tracker's identity probe reads only the live table, so it stops failing here.
+            // Without this its notice kept saying "inflated until the migration has run" for up
+            // to DEGRADATION_TTL while the Migrations screen said "up to date" (QA R2 #6). Only
+            // this key: `add_visit_identity` may hold an index failure from the line above.
+            \wp_slimstat::clear_degradation('anonymous visit reuse');
         }
 
         // Short-circuit preserved: the archive ALTER is attempted only when the live one landed.

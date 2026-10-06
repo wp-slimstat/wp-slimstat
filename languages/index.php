@@ -578,7 +578,7 @@ class wp_slimstat_i18n
                 'e-202' => __('Pageview not tracked because the IP address format was invalid.', 'wp-slimstat'),
                 'e-203' => __('Malformed resource URL', 'wp-slimstat'),
                 'e-204' => __('Tracking is turned off, but it looks like the client-side code is still attached to your pages. Do you have a caching tool enabled?', 'wp-slimstat'),
-                'e-205' => __('GeoIP database file is missing or corrupt. Please go to Settings -> Tracker and click on the "Update Database" button to download a fresh copy.', 'wp-slimstat'),
+                'e-205' => __('The geolocation database file is missing or damaged. In Settings > Tracker, click "Update Database" to download a fresh copy.', 'wp-slimstat'),
 
                 // Tracker Exclusion Codes (3xx)
                 'e-301' => __('Pageview not tracked: consent denied by CMP or GDPR settings.', 'wp-slimstat'),

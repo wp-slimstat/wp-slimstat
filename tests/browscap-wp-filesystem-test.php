@@ -102,8 +102,8 @@ fs_assert(
 preg_match('/!\s*WP_Filesystem\s*\([^)]*\)\s*\)\s*\{(.*?)\}/s', $source, $matches);
 
 fs_assert(
-    !empty($matches[1]) && strpos($matches[1], '@unlink($browscap_zip)') !== false,
-    'TEST 5: @unlink($browscap_zip) must be called inside WP_Filesystem failure block'
+    !empty($matches[1]) && strpos($matches[1], 'wp_delete_file($browscap_zip)') !== false,
+    'TEST 5: wp_delete_file($browscap_zip) must be called inside WP_Filesystem failure block'
 );
 
 // ═══════════════════════════════════════════════════════════════════════════

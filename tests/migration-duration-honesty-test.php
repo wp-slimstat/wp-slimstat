@@ -333,7 +333,7 @@ foreach ($scanned as $file) {
     $code = slimstat_blank_comments($source);
 
     $user_facing = '';
-    foreach (['getName', 'getDescription'] as $method) {
+    foreach (['getName', 'getSummary', 'getDescription'] as $method) {
         $body = slimstat_find_function_body($code, $method);
         if (null !== $body) {
             $user_facing .= "\n" . $body;

@@ -77,6 +77,7 @@ namespace SlimStat\Utils {
 }
 
 namespace {
+    function wp_parse_url($url, $component = -1) { return parse_url($url, $component); }
 
     class wp_slimstat { public static $wpdb; }
 
@@ -149,8 +150,8 @@ namespace {
         }
     }
 
-    if (!function_exists('sanitize_url')) {
-        function sanitize_url($url)
+    if (!function_exists('esc_url_raw')) {
+        function esc_url_raw($url)
         {
             $url = (string) $url;
             $url = trim($url);
@@ -210,7 +211,7 @@ namespace {
     assert_same('alert(1)Mozilla/5.0', $ua, 'sanitize_text_field strips <script> tags but keeps inner text');
     assert_not_contains('<script', $ua ?? '', 'no script tag survives');
 
-    // ─── Test 3: referer is sanitized as URL (sanitize_url) ───────────
+    // ─── Test 3: referer is sanitized as URL (esc_url_raw) ───────────
 
     \SlimStat\Utils\FakeQueryRecorder::reset();
     \SlimStat\Tracker\Storage::updateRow([
@@ -242,7 +243,7 @@ namespace {
         'id'                => 1,
         'outbound_resource' => 'javascript:alert(1)',
     ]);
-    // sanitize_url returns '' for javascript: scheme; the empty value then
+    // esc_url_raw returns '' for javascript: scheme; the empty value then
     // fails the !empty($data['outbound_resource']) gate, so no UPDATE is
     // performed for this field. This is stricter (and safer) than pre-fix.
     assert_true(empty(\SlimStat\Utils\FakeQueryRecorder::$setRawParams['outbound_resource'] ?? []), 'javascript: outbound_resource must not reach setRaw');

@@ -95,13 +95,15 @@ foreach ($files as $file) {
             continue;
         }
 
-        // The chain runs to the statement terminator ';'.
+        // The chain runs to the statement terminator ';', or to the ')' closing the call it is
+        // an argument of: `f(Query::x())` would otherwise never see depth 0 again and swallow
+        // the rest of the file, flagging whatever `->users` comes next.
         $end = $i;
         $depth = 0;
         for ($k = $i; $k < $count; $k++) {
             $t = $tokens[$k];
             if ('(' === $t) { $depth++; }
-            elseif (')' === $t) { $depth--; }
+            elseif (')' === $t && --$depth < 0) { $end = $k; break; }
             elseif (';' === $t && 0 === $depth) { $end = $k; break; }
         }
 

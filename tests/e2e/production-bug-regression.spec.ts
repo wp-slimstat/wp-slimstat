@@ -339,9 +339,9 @@ test.describe('Production Bug Regressions (v5.4.7 QA)', () => {
     // Wait for report content to render (may be AJAX-loaded)
     await reportContainer.locator('p[class*="header"]').first().waitFor({ timeout: 15_000 });
 
-    // Early-fail guard: ensure the report has data (not "No data to display")
+    // Early-fail guard: ensure the report has data (no p.nodata empty state)
     const noData = await reportContainer.locator('p.nodata').count();
-    expect(noData, 'Access Log should have data, not "No data to display"').toBe(0);
+    expect(noData, 'Access Log should have data, not the empty state').toBe(0);
 
     // Count visitor header <p class="header..."> elements within the report.
     // With ignore_wp_users=on (set above), only anonymous test pageviews are tracked,

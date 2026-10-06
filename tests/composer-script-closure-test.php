@@ -68,6 +68,9 @@ $walk('test:all');
 // Standalone by design. Each entry states WHY, because "it is in the list" is not a reason, and
 // a list anyone may append to without argument is not a gate.
 $standalone = [
+    'test:shortcode-render-wp' => 'requires real WordPress, analytics tables and an administrator; runs via WP-CLI in the Tier 2 CI lane',
+    'test:acquisition-network' => 'requires a disposable two-site WordPress network and the private '
+        . 'Pro plugin, unavailable in public CI; run with WP-CLI during paired Free/Pro qualification',
     'test:pot-freshness' => 'runs in the dedicated catalog CI job with pinned WP-CLI 2.12.0; '
         . 'requires the catalog generator, not a plugin PHP runtime dependency',
     'test:phpstan' => 'runs in its own PHPStan lane with vendor installed; static analysis is not '
@@ -80,7 +83,9 @@ $standalone = [
         . 'executes; PITFALLS 93 rule 2 is why it exists separately from test:fp-negative',
     'test:settings-cache-family-wp' => 'requires a disposable WordPress site and native database; '
         . 'run it with WP-CLI against the packaged candidate during qualification',
-    'test:date-i18n-filter-suspension-wp' => 'requires the real WordPress WP_Hook implementation; '
+    'test:heatmap-legacy-oracle-wp' => 'requires a loaded WordPress site and its real slim_events corpus; '
+        . 'read-only, run it with WP-CLI against a populated database during qualification',
+    'test:date-i18n-filter-suspension-wp' =>'requires the real WordPress WP_Hook implementation; '
         . 'run it with WP-CLI against the candidate during qualification',
 ];
 

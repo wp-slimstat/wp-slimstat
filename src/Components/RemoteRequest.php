@@ -35,7 +35,9 @@ class RemoteRequest
 
         if (\is_wp_error($this->response)) {
             if ($throw) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception($this->response->get_error_message());
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
             return false;
         }

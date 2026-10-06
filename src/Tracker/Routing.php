@@ -28,6 +28,7 @@ class Routing
 
 				$js_path = SLIMSTAT_ANALYTICS_DIR . 'wp-slimstat.min.js';
 				if (file_exists($js_path)) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- streams a fixed, plugin-owned local asset to the response without buffering or filesystem credentials.
 					readfile($js_path);
 					exit;
 				}
@@ -45,6 +46,7 @@ class Routing
 
 				$css_path = SLIMSTAT_ANALYTICS_DIR . 'assets/css/gdpr-banner.css';
 				if (file_exists($css_path)) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- streams a fixed, plugin-owned local asset to the response without buffering or filesystem credentials.
 					readfile($css_path);
 					exit;
 				}

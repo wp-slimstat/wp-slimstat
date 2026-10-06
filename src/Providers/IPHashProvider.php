@@ -500,6 +500,7 @@ class IPHashProvider
      * PHP-level get_option() pre-check and then INSERT ... ON DUPLICATE KEY UPDATE,
      * which overwrites, so the unique index never rejects anybody.
      */
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery -- Atomic salt compare-and-swap prevents concurrent rotations; core option caches are invalidated after writes.
     private static function claimSaltFor(string $today, $seen): string
     {
         global $wpdb;
@@ -561,6 +562,7 @@ class IPHashProvider
         // "hashing unavailable".
         return self::saltFor(get_option(self::SALT_OPTION), $today) ?: $salt;
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery
 
     /**
      * Get current daily salt (without generating if missing).

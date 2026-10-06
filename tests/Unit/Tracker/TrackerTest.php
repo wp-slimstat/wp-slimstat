@@ -65,19 +65,19 @@ class TrackerTest extends WpSlimstatTestCase
     // -----------------------------------------------------------------------
 
     /**
-     * The 'resource' key must be sanitized via sanitize_url().
+     * The 'resource' key must be sanitized via esc_url_raw().
      *
      * We stub both sanitizers and capture which is called for the resource key.
      *
      * @test
      */
-    public function test_insert_row_sanitizes_resource_with_sanitize_url(): void
+    public function test_insert_row_sanitizes_resource_with_esc_url_raw(): void
     {
         $resourceUrl = 'https://example.com/page?q=1';
         $sanitizedUrl = 'https://example.com/page?q=1';
 
-        // sanitize_url should be called exactly once (for the resource field).
-        Functions\expect('sanitize_url')
+        // esc_url_raw should be called exactly once (for the resource field).
+        Functions\expect('esc_url_raw')
             ->once()
             ->with($resourceUrl)
             ->andReturn($sanitizedUrl);
@@ -107,8 +107,8 @@ class TrackerTest extends WpSlimstatTestCase
             ->with($browserValue)
             ->andReturn($browserValue);
 
-        // sanitize_url should NOT be called (no 'resource' key in data).
-        Functions\expect('sanitize_url')
+        // esc_url_raw should NOT be called (no 'resource' key in data).
+        Functions\expect('esc_url_raw')
             ->never();
 
         $this->expectInsert($browserValue);

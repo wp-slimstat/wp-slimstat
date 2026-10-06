@@ -69,6 +69,7 @@ class VisitIdGenerator
      *
      * @return int The initialized counter value
      */
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery -- Atomic counter initialization uses prepared values and a core options table; a cached read would permit duplicate visit IDs.
     public static function initializeCounter(): int
     {
         $initial_value = self::getInitialCounterValue();
@@ -97,6 +98,7 @@ class VisitIdGenerator
 
         return $counter;
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery
 
     /**
      * Get the current counter value without incrementing.
@@ -145,6 +147,7 @@ class VisitIdGenerator
     }
 
     /** Increment an existing counter; a missing row cannot issue an unseeded ID. */
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Atomic LAST_INSERT_ID increment is connection-local and must bypass caches to prevent duplicate visit IDs.
     private static function runAtomicIncrement(): int
     {
         global $wpdb;
@@ -161,12 +164,14 @@ class VisitIdGenerator
         // connection exposes UPDATE's LAST_INSERT_ID without another query.
         $dbh = $wpdb->dbh ?? null;
         if ($dbh instanceof \mysqli) {
+            // phpcs:ignore WordPress.DB.RestrictedFunctions.mysql_mysqli_insert_id -- reads UPDATE LAST_INSERT_ID from the existing wpdb connection; wpdb::insert_id is stale for UPDATE.
             return (int) mysqli_insert_id($dbh);
         }
 
         // Non-mysqli database drop-ins retain correctness with one extra read.
         return (int) $wpdb->get_var('SELECT LAST_INSERT_ID()');
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
     /**
      * Calculate the counter base value from the existing stats table.
@@ -224,6 +229,7 @@ class VisitIdGenerator
         }
 
         if (defined('WP_DEBUG') && WP_DEBUG) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Diagnostic logging is guarded by WP_DEBUG; normal production requests do not log here.
             error_log('[WP SLIMSTAT] [ERROR]: ' . $message);
         }
     }

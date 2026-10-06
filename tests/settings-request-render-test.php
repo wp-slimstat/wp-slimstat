@@ -10,6 +10,7 @@ function esc_html__($text, $domain = '') { return esc_html($text); }
 function esc_attr_e($text, $domain = '') { echo esc_attr($text); }
 function esc_html($text) { return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8'); }
 function esc_attr($text) { return esc_html($text); }
+function esc_attr__($text, $domain = '') { return esc_attr($text); }
 function esc_textarea($text) { return esc_html($text); }
 function esc_url($text) { return esc_attr($text); }
 function wp_kses_post($text) { return strip_tags($text, '<li><a><strong><p>'); }
@@ -100,6 +101,24 @@ check(strpos($html, '&lt;/textarea&gt;&lt;script&gt;') !== false, 'textarea brea
 check(strpos($html, '\\literal') !== false, 'literal backslash lost on render');
 check(strpos($html, 'name="trusted-extension"') !== false, 'extension field markup removed');
 echo "PASS: settings capabilities precede destructive actions; malformed nonce/options refuse writes; textarea escaped without stripping extension fields\n";
+
+// Audit A10: on/off renders a native role="switch"; a two-way choice renders a segmented radio group.
+$settings = [1 => ['title' => 'Settings', 'rows' => [
+    'flag'   => ['type' => 'toggle', 'title' => 'Flag', 'description' => ''],
+    'locked' => ['type' => 'toggle', 'title' => 'Locked', 'description' => '', 'readonly' => true],
+    'mode'   => ['type' => 'toggle', 'title' => 'Mode', 'description' => '', 'custom_label_on' => 'Client', 'custom_label_off' => 'Server'],
+]]];
+wp_slimstat::$settings = ['flag' => 'on', 'locked' => 'on', 'mode' => 'no'];
+ob_start();
+eval(substr($source, $start, $end - $start));
+$html = ob_get_clean();
+check(strpos($html, 'bootstrap') === false && strpos($html, 'data-on-text') === false, 'toggle still renders bootstrap-switch markup');
+check(preg_match('/<input class="slimstat-checkbox-toggle slimstat-switch" type="checkbox" role="switch"\s+name="options\[flag\]"\s+id="flag" checked="checked">/', $html) === 1, 'on/off toggle is not a checked role="switch" checkbox');
+check(preg_match('/id="locked" checked="checked" aria-readonly="true" onclick="return false">/', $html) === 1, 'readonly switch is clickable or disabled');
+check(strpos($html, '<th scope="row"><span id="mode-label">Mode</span></th>') !== false && strpos($html, 'role="radiogroup" aria-labelledby="mode-label"') !== false, 'two-way choice is not a labelled radio group');
+check(preg_match('/id="mode" value="on">/', $html) === 1 && preg_match('/id="mode-off" value="no" checked="checked">/', $html) === 1, 'segmented group does not reflect the saved "no"');
+check(substr_count($html, 'name="options[mode]"') === 3, 'segmented group must post hidden no + two radios');
+echo "PASS: settings toggles render as role=switch (readonly blocks clicks) and two-way choices as a labelled radio group\n";
 
 // Execute shared admin sinks, preserving CSS child combinators and valid text.
 require_once __DIR__ . '/lib/source-scan.php';

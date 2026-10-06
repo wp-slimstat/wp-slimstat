@@ -15,6 +15,7 @@ import {
   restoreSlimstatOptions,
   clearStatsTable,
   closeDb,
+  waitForTrackerId,
 } from './helpers/setup';
 import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
 
@@ -93,16 +94,13 @@ test.describe('Visitor Count & Visit ID Correlation (AC-TRK-003/007)', () => {
 
     // Navigate to 3 pages in the same browser context (same session)
     await page.goto(`${BASE_URL}/?e2e=${sessionMarker}-p1`);
-    await page.waitForLoadState('load');
-    await page.waitForTimeout(2500);
+    await waitForTrackerId(page);
 
     await page.goto(`${BASE_URL}/?e2e=${sessionMarker}-p2`);
-    await page.waitForLoadState('load');
-    await page.waitForTimeout(2500);
+    await waitForTrackerId(page);
 
     await page.goto(`${BASE_URL}/?e2e=${sessionMarker}-p3`);
-    await page.waitForLoadState('load');
-    await page.waitForTimeout(2500);
+    await waitForTrackerId(page);
 
     const rows = await waitForStatRows(sessionMarker, 3, 15_000);
     expect(rows.length).toBeGreaterThanOrEqual(2);
@@ -127,15 +125,13 @@ test.describe('Visitor Count & Visit ID Correlation (AC-TRK-003/007)', () => {
     const ctxA = await browser.newContext({ recordVideo: undefined, trace: 'off', storageState: { cookies: [], origins: [] } } as any);
     const pageA = await ctxA.newPage();
     await pageA.goto(`${BASE_URL}/?e2e=${marker}-ctxA`);
-    await pageA.waitForLoadState('load');
-    await pageA.waitForTimeout(3000);
+    await waitForTrackerId(pageA);
 
     // Context B (separate session)
     const ctxB = await browser.newContext({ recordVideo: undefined, trace: 'off', storageState: { cookies: [], origins: [] } } as any);
     const pageB = await ctxB.newPage();
     await pageB.goto(`${BASE_URL}/?e2e=${marker}-ctxB`);
-    await pageB.waitForLoadState('load');
-    await pageB.waitForTimeout(3000);
+    await waitForTrackerId(pageB);
 
     const rows = await waitForStatRows(marker, 2, 15_000);
     expect(rows.length).toBeGreaterThanOrEqual(2);
@@ -170,8 +166,7 @@ test.describe('Visitor Count & Visit ID Correlation (AC-TRK-003/007)', () => {
       const ctx = await browser.newContext({ recordVideo: undefined, trace: 'off', storageState: { cookies: [], origins: [] } } as any);
       const pg = await ctx.newPage();
       await pg.goto(`${BASE_URL}/?e2e=${marker}-v${i}`);
-      await pg.waitForLoadState('load');
-      await pg.waitForTimeout(5000);
+      await waitForTrackerId(pg);
       await pg.close();
       await ctx.close();
     }
@@ -197,12 +192,10 @@ test.describe('Visitor Count & Visit ID Correlation (AC-TRK-003/007)', () => {
     const marker = `visit-positive-${Date.now()}`;
 
     await page.goto(`${BASE_URL}/?e2e=${marker}-a`);
-    await page.waitForLoadState('load');
-    await page.waitForTimeout(4000);
+    await waitForTrackerId(page);
 
     await page.goto(`${BASE_URL}/?e2e=${marker}-b`);
-    await page.waitForLoadState('load');
-    await page.waitForTimeout(4000);
+    await waitForTrackerId(page);
 
     const rows = await waitForStatRows(marker, 2, 20_000);
     expect(rows.length).toBeGreaterThanOrEqual(1);
@@ -222,8 +215,7 @@ test.describe('Visitor Count & Visit ID Correlation (AC-TRK-003/007)', () => {
 
     const marker = `visit-first-${Date.now()}`;
     await pg.goto(`${BASE_URL}/?e2e=${marker}`);
-    await pg.waitForLoadState('load');
-    await pg.waitForTimeout(5000);
+    await waitForTrackerId(pg);
 
     const rows = await waitForStatRows(marker, 1, 15_000);
     expect(rows.length).toBeGreaterThanOrEqual(1);

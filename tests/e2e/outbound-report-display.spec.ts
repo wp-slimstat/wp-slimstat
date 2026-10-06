@@ -97,7 +97,7 @@ test.describe('Outbound Link Report Display', () => {
     await page.waitForTimeout(6_000);
 
     const widgetText = await widget.textContent();
-    expect(widgetText, 'Recent Outbound Links should not be empty').not.toContain('No data to display');
+    expect(await widget.locator('.nodata').count(), 'Recent Outbound Links should not be empty').toBe(0);
     expect(widgetText, 'Should contain seeded outbound URL').toContain('example.com');
   });
 
@@ -115,7 +115,7 @@ test.describe('Outbound Link Report Display', () => {
     await page.waitForTimeout(6_000);
 
     const widgetText = await widget.textContent();
-    expect(widgetText, 'Top Outbound Links should not be empty').not.toContain('No data to display');
+    expect(await widget.locator('.nodata').count(), 'Top Outbound Links should not be empty').toBe(0);
     expect(widgetText, 'Should contain seeded outbound URL').toContain('example.com');
   });
 
@@ -132,8 +132,7 @@ test.describe('Outbound Link Report Display', () => {
 
     await page.waitForTimeout(6_000);
 
-    const widgetText = await widget.textContent();
-    expect(widgetText, 'Chart should not show no data').not.toContain('No data to display');
+    expect(await widget.locator('.nodata').count(), 'Chart should not show no data').toBe(0);
   });
 
   // ─── Test 4: slim_p7_02 — Access Log shows outbound_resource ─────

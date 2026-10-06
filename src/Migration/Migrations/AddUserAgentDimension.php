@@ -101,12 +101,21 @@ class AddUserAgentDimension extends AbstractMigration
         return __('Build the browser dimension', 'wp-slimstat');
     }
 
+    public function getSummary(): string
+    {
+        return sprintf(
+            /* translators: %s: a measured cost, e.g. "more than 8 minutes on a 440,000-row table (MySQL 8)". */
+            __('Groundwork for a future release: no report gets faster today. The slowest step here: %s.', 'wp-slimstat'),
+            $this->measuredCostPhrase()
+        );
+    }
+
     public function getDescription(): string
     {
         return sprintf(
             /* translators: %s: a measured cost, e.g. "more than 8 minutes on a 440,000-row table (MySQL 8)". */
             __(
-                'Optional. Adds a compact browser key to the analytics table AND to the archive table, and builds a lookup of browsers and platforms — groundwork for a future release. It does not make any report faster today, and it is by far the slowest step here: %s — and that run was stopped before it finished, so it is a minimum and not an estimate. On a larger table you may not be able to complete it from this screen at all. Your existing data is not modified, and reports keep working while it runs. Tracking normally keeps working too, but a server that cannot rebuild the table online will pause tracking writes for the whole rebuild, so on a large site prefer a quiet period.',
+                'Optional. Adds a compact browser key to the analytics table and to the archive table, and builds a lookup of browsers and platforms. It is groundwork for a future release. It does not make any report faster today, and it is by far the slowest step here: %s. That run was stopped before it finished, so it is a minimum and not an estimate. On a larger table you may not be able to complete it from this screen at all. Your existing data is not modified, and reports keep working while it runs. Tracking normally keeps working too, but a server that cannot rebuild the table online will pause tracking writes for the whole rebuild, so on a large site prefer a quiet period.',
                 'wp-slimstat'
             ),
             $this->measuredCostPhrase()
@@ -179,11 +188,13 @@ class AddUserAgentDimension extends AbstractMigration
      * by table size. That is the property that makes this affordable to re-run each time
      * staleness re-offers the migration (there is no cron — see the class docblock).
      */
+    // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Bounded migration binds all user-agent values; interpolated identifiers come from the core prefix and schema manifest.
     private function backfill(): bool
     {
         $stats     = $this->tablePrefix() . 'slim_stats';
         $dimension = $this->tablePrefix() . 'slim_user_agents';
 
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers, fixed columns and integer batch limit; every user-agent value is prepared on the analytics connection.
         $rows = $this->wpdb->get_results(
             "SELECT DISTINCT browser, browser_version, browser_type, platform
                FROM `{$stats}`
@@ -191,6 +202,7 @@ class AddUserAgentDimension extends AbstractMigration
               LIMIT " . self::BATCH,
             ARRAY_A
         );
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         if ($this->probeFailed()) {
             return false;
@@ -214,6 +226,7 @@ class AddUserAgentDimension extends AbstractMigration
             $natural = $this->naturalKey($row);
             $key     = SurrogateKey::for($natural);
 
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers, fixed columns and integer batch limit; every user-agent value is prepared on the analytics connection.
             // INSERT IGNORE: if two passes race, or a previous run already inserted this tuple,
             // the loser is a no-op. No read, no lock, no retry — the same property that makes
             // the derived key worth having.
@@ -229,6 +242,7 @@ class AddUserAgentDimension extends AbstractMigration
                 time()
             ))) {
                 return false;
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             }
 
             // Stamp every fact row sharing this tuple. Bounded by the tuple, not the table.
@@ -259,11 +273,13 @@ class AddUserAgentDimension extends AbstractMigration
                 $args[]  = $value;
             }
 
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers, fixed columns and integer batch limit; every user-agent value is prepared on the analytics connection.
             if (false === $this->wpdb->query($this->wpdb->prepare(
                 "UPDATE `{$stats}` SET ua_id = %s WHERE " . implode(' AND ', $where),
                 $args
             ))) {
                 return false;
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             }
 
             $stamped += max(0, (int) $this->wpdb->rows_affected);
@@ -297,6 +313,7 @@ class AddUserAgentDimension extends AbstractMigration
         // can re-post the same step until it is done.
         return true;
     }
+    // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
     /**
      * The string the surrogate key is derived from.
@@ -328,6 +345,7 @@ class AddUserAgentDimension extends AbstractMigration
         return $this->columnExists('slim_stats', 'ua_id');
     }
 
+    // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fresh migration probe over a core-prefix table; no request values enter the identifier.
     private function dimensionIsBehind(): bool
     {
         if (!$this->factColumnExists()) {
@@ -342,6 +360,7 @@ class AddUserAgentDimension extends AbstractMigration
 
         return !$this->probeFailed() && null !== $pending;
     }
+    // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
     /** @return array<int,array{key:string,exists:bool,table:string,columns:string}> */
     public function getDiagnostics(): array

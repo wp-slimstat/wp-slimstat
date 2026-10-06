@@ -155,6 +155,9 @@ $normalise = static function (string $html): string {
 
 /** Pull the numbers a user actually reads out of the rendered HTML. */
 $extract_numbers = static function (string $html): array {
+    // The empty state carries a date and "Last 90 days": numbers, but not report values. Left in,
+    // every empty cell would count as value_compared and the coverage floor would mean nothing.
+    $html = (string) preg_replace('~<div class="slimstat-empty">.*?</div>~s', '', $html);
     preg_match_all('/\bdata-data="([^"]*)"/', $html, $chart_data);
     $text = html_entity_decode(wp_strip_all_tags(str_replace('<', ' <', $html)) . ' ' . implode(' ', $chart_data[1]), ENT_QUOTES, 'UTF-8');
     preg_match_all('/(?<![\w.])(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*%?/', $text, $m);
@@ -302,9 +305,10 @@ foreach ($wanted as $cell => $filters) {
 // different questions and the first was standing in for the second:
 //
 //   errored       the render threw
-//   render_only   bytes > 0 but NO numbers — "No data to display" is 40 bytes after $normalise
-//                 and would otherwise count as full coverage. Two such cells also hash
-//                 identically: the same pathology at 40 bytes instead of 0.
+//   render_only   bytes > 0 but NO numbers — the empty state ("No pageviews in this date range",
+//                 its date and "Last 90 days" stripped by $extract_numbers) would otherwise count
+//                 as full coverage. Two such cells also hash identically: the same pathology
+//                 at a few hundred bytes instead of 0.
 //   value_compared  carries at least one number, i.e. something a wrong value could move
 //
 // The floor is on value_compared as a PROPORTION, so adding cells or reports cannot dilute it.

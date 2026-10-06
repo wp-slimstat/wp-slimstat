@@ -10,6 +10,7 @@ if (!function_exists('getallheaders')) {
      *
      * @return string[string] The HTTP header key/value pairs.
      */
+    // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound -- Native getallheaders polyfill must retain the native name and byte-exact authorization values; consumers validate and escape at their boundary.
     function getallheaders()
     {
         $headers = array();
@@ -27,11 +28,15 @@ if (!function_exists('getallheaders')) {
         }
         if (!isset($headers['Authorization'])) {
             if (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+                // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Native getallheaders polyfill must retain the native name and byte-exact authorization values; consumers validate and escape at their boundary.
                 $headers['Authorization'] = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
             } elseif (isset($_SERVER['PHP_AUTH_USER'])) {
+                // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Native getallheaders polyfill must retain the native name and byte-exact authorization values; consumers validate and escape at their boundary.
                 $basic_pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : '';
+                // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Native getallheaders polyfill must retain the native name and byte-exact authorization values; consumers validate and escape at their boundary.
                 $headers['Authorization'] = 'Basic ' . base64_encode($_SERVER['PHP_AUTH_USER'] . ':' . $basic_pass);
             } elseif (isset($_SERVER['PHP_AUTH_DIGEST'])) {
+                // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Native getallheaders polyfill must retain the native name and byte-exact authorization values; consumers validate and escape at their boundary.
                 $headers['Authorization'] = $_SERVER['PHP_AUTH_DIGEST'];
             }
         }

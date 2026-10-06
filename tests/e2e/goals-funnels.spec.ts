@@ -900,7 +900,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         // Goals hero subtitle (now under postbox <h3>, not inside the card).
         await expect(page.locator('#slim_p9_01 .slimstat-gf-postbox-subtitle'))
-            .toContainText('A Goal is one question you ask of your traffic');
+            .toContainText('A goal is one question you ask of your traffic');
 
         // Goals empty state.
         await expect(page.locator('[data-role="goals-empty"] .slimstat-gf-empty__title'))
@@ -1017,6 +1017,35 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
     });
 
     // ─── Modal accessibility: focus trap, Escape, focus restore ──
+
+    test('a11y-autosuggest: mounting preserves active input focus, text and caret', async ({ page }) => {
+        await gotoSlimview6(page);
+        await page.waitForFunction(() => typeof (window as any).SlimStatSearchableSelect === 'function');
+        const result = await page.evaluate(() => {
+            const input = document.createElement('input');
+            input.value = '/pricing?utm_campaign=summer';
+            document.body.append(input);
+            input.focus();
+            input.setSelectionRange(9, 12);
+            const widget = new (window as any).SlimStatSearchableSelect(input);
+            const search = widget.searchContainer.querySelector('input');
+            const active = document.activeElement === search;
+            const value = search.value;
+            const selection = [search.selectionStart, search.selectionEnd];
+            const otherInput = document.createElement('input');
+            document.body.append(otherInput);
+            const otherWidget = new (window as any).SlimStatSearchableSelect(otherInput);
+            const unchanged = document.activeElement === search;
+            otherWidget.destroy();
+            otherInput.remove();
+            widget.destroy();
+            input.remove();
+            return { active, value, selection, unchanged };
+        });
+        expect(result).toEqual({
+            active: true, value: '/pricing?utm_campaign=summer', selection: [9, 12], unchanged: true,
+        });
+    });
 
     test('a11y-modal: drawer is aria-modal, traps Tab, Escape closes and restores focus', async ({ page }) => {
         await forceLimits(5, 3, WP_CONTENT);

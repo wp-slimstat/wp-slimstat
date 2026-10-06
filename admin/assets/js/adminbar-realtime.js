@@ -104,7 +104,7 @@
                             : minutesAgo + " " + (i18n.min_ago || "min ago");
                         tooltip.textContent = "";
                         var strong = document.createElement("strong");
-                        strong.textContent = i18n.online_users || "Online Users";
+                        strong.textContent = i18n.online_users || "Visitors online";
                         tooltip.appendChild(strong);
                         tooltip.appendChild(document.createTextNode(
                             (i18n.count_label || "Count") + ": " + parseInt(count, 10)

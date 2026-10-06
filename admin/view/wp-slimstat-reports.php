@@ -10,15 +10,17 @@ class wp_slimstat_reports
         'slimview4' => [],
         'slimview5' => [],
         'slimview6' => [],
+        'slimview7' => [],
         'dashboard' => [],
         'inactive'  => [],
     ];
     public static $resource_titles = [];
+    public static $last_pageview_dt = null; // empty_state()'s per-request cache; 0 = nothing ever tracked
 
     /**
      * Initalize class properties
      */
-    public static function init()
+    public static function init(bool $_use_request = true)
     {
         // Has the class already been initialized?
         if (!empty(self::$reports)) {
@@ -27,7 +29,7 @@ class wp_slimstat_reports
 
         // Include and initialize the API to interact with the database
         include_once(__DIR__ . '/wp-slimstat-db.php');
-        wp_slimstat_db::init();
+        wp_slimstat_db::init('', $_use_request);
 
         // Include the localization library
         include_once(plugin_dir_path(dirname(__FILE__, 2)) . 'languages/index.php');
@@ -47,8 +49,8 @@ class wp_slimstat_reports
         $pageviews_chart_tooltip = '<strong>' . __('Pageviews', 'wp-slimstat') . '</strong><br>'
             . __('Shows how many times your site’s pages have been viewed.', 'wp-slimstat')
             . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
-            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
-            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Pageviews” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
@@ -56,8 +58,8 @@ class wp_slimstat_reports
         $human_visits_chart_tooltip = '<strong>' . __('Human Visits', 'wp-slimstat') . '</strong><br>'
             . __('Track the number of real human visitors.', 'wp-slimstat')
             . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
-            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
-            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Visits” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
@@ -65,8 +67,8 @@ class wp_slimstat_reports
         $pages_with_outbound_links_chart_tooltip = '<strong>' . __('Pages with Outbound Links', 'wp-slimstat') . '</strong><br>'
             . __('Track how often visitors click outbound links on your site.', 'wp-slimstat')
             . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
-            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
-            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Outbound Links” or “Unique Outbound” to toggle each line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
@@ -74,8 +76,8 @@ class wp_slimstat_reports
         $search_terms_chart_tooltip = '<strong>' . __('Search Terms', 'wp-slimstat') . '</strong><br>'
             . __('See how many times users find your site via search engines.', 'wp-slimstat')
             . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
-            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
-            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Search Terms” or “Unique Terms” to toggle each line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
@@ -83,8 +85,8 @@ class wp_slimstat_reports
         $traffic_sources_chart_tooltip = '<strong>' . __('Traffic Sources', 'wp-slimstat') . '</strong><br>'
             . __('See how many visits come from each traffic source.', 'wp-slimstat')
             . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
-            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
-            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Domains” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
@@ -92,8 +94,8 @@ class wp_slimstat_reports
         $users_chart_tooltip = '<strong>' . __('Users', 'wp-slimstat') . '</strong><br>'
             . __('See how many users come to your site.', 'wp-slimstat')
             . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
-            . '<li>' . __('— Solid line: current period', 'wp-slimstat') . '</li>'
-            . '<li>' . __('-- Dashed line: previous period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Solid line: current period', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Dashed line: previous period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Tap “Users” or “Unique Users” to toggle each line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
@@ -109,7 +111,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['full-width', 'tall'],
                 'locations' => ['slimview1', 'dashboard'],
-                'tooltip'   => __('Color Codes', 'wp-slimstat') . '</strong><p><span class="little-color-box is-search-engine"></span> ' . __('From search result page', 'wp-slimstat') . '</p><p><span class="little-color-box is-known-visitor"></span> ' . __('Has Left Comments', 'wp-slimstat') . '</p><p><span class="little-color-box is-known-user"></span> ' . __('WP User', 'wp-slimstat') . '</p><p><span class="little-color-box is-direct"></span> ' . __('Other Human', 'wp-slimstat') . '</p><p><span class="little-color-box"></span> ' . __('Bot or Crawler', 'wp-slimstat') . '</p>',
+                'tooltip'   => __('Color codes', 'wp-slimstat') . '</strong><p><span class="little-color-box is-search-engine"></span> ' . __('From search result page', 'wp-slimstat') . '</p><p><span class="little-color-box is-known-visitor"></span> ' . __('Has left comments', 'wp-slimstat') . '</p><p><span class="little-color-box is-known-user"></span> ' . __('WordPress user', 'wp-slimstat') . '</p><p><span class="little-color-box is-direct"></span> ' . __('Other human', 'wp-slimstat') . '</p><p><span class="little-color-box"></span> ' . __('Bot or crawler', 'wp-slimstat') . '</p>',
             ],
 
             'slim_p1_01' => [
@@ -140,7 +142,7 @@ class wp_slimstat_reports
                 'locations' => ['slimview2', 'dashboard'],
             ],
             'slim_p1_04' => [
-                'title'         => __('Currently Online', 'wp-slimstat'),
+                'title'         => __('Visitors online (last 5 min)', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
                     'type'             => 'top',
@@ -150,6 +152,7 @@ class wp_slimstat_reports
                     'more_select'      => 'MAX(dt) AS dt',
                     'use_date_filters' => false,
                     'raw'              => ['wp_slimstat_db', 'get_top'],
+                    'empty_title'      => __('No visitors in the last 5 minutes.', 'wp-slimstat'),
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview2', 'dashboard'],
@@ -230,7 +233,7 @@ class wp_slimstat_reports
                 'classes' => ['normal'],
                 // 'color'         => '#fff7ed',
                 'locations' => ['slimview2', 'slimview3', 'slimview5', 'dashboard'],
-                'tooltip'   => __('You can configure Slimstat to not track specific Countries by setting the corresponding filter in Slimstat > Settings > Exclusions.', 'wp-slimstat'),
+                'tooltip'   => __('You can configure SlimStat to not track specific Countries by setting the corresponding filter in SlimStat > Settings > Exclusions.', 'wp-slimstat'),
             ],
             'slim_p1_15' => [
                 'title'         => __('Rankings', 'wp-slimstat'),
@@ -240,7 +243,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['inactive'],
-                'tooltip'   => __("Slimstat retrieves live information from Alexa, Facebook and Mozscape, to measures your site's rankings. Values are updated every 12 hours. Please enter your personal access ID in the settings to access your personalized Mozscape data.", 'wp-slimstat'),
+                'tooltip'   => __("SlimStat retrieves live information from Alexa, Facebook and Mozscape, to measures your site's rankings. Values are updated every 12 hours. Please enter your personal access ID in the settings to access your personalized Mozscape data.", 'wp-slimstat'),
             ],
             'slim_p1_17' => [
                 'title'         => __('Top Language Families', 'wp-slimstat'),
@@ -256,7 +259,7 @@ class wp_slimstat_reports
                 'locations' => ['inactive'],
             ],
             'slim_p1_18' => [
-                'title'         => __('Users Currently Online', 'wp-slimstat'),
+                'title'         => __('Logged-in users online (last 5 min)', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
                     'type'    => 'top',
@@ -266,10 +269,11 @@ class wp_slimstat_reports
                     'where'            => '((dt_out > ' . (date_i18n('U') - 300) . ') OR (dt > ' . (date_i18n('U') - 300) . ')) AND username <> "" AND username IS NOT NULL',
                     'use_date_filters' => false,
                     'raw'              => ['wp_slimstat_db', 'get_top'],
+                    'empty_title'      => __('No logged-in users in the last 5 minutes.', 'wp-slimstat'),
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview2', 'dashboard'],
-                'tooltip'   => __('When visitors leave a comment on your blog, WordPress assigns them a cookie. Slimstat leverages this information to identify returning visitors. Please note that visitors also include registered users.', 'wp-slimstat'),
+                'tooltip'   => __('When visitors leave a comment on your blog, WordPress assigns them a cookie. SlimStat leverages this information to identify returning visitors. Please note that visitors also include registered users.', 'wp-slimstat'),
             ],
             'slim_p1_19_01' => [
                 'title'         => __('Search Terms', 'wp-slimstat'),
@@ -353,7 +357,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['extralarge'],
                 'locations' => ['inactive'],
-                'tooltip'   => __('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > Slimstat > Filters.', 'wp-slimstat'),
+                'tooltip'   => __('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > SlimStat > Filters.', 'wp-slimstat'),
             ],
             'slim_p2_06' => [
                 'title'         => __('Top Operating Systems', 'wp-slimstat'),
@@ -365,7 +369,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['inactive'],
-                'tooltip'   => __('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > Slimstat > Filters.', 'wp-slimstat'),
+                'tooltip'   => __('Internet Service Provider: a company which provides other companies or individuals with access to the Internet. Your DSL or cable internet service is provided to you by your ISP.<br><br>You can ignore specific IP addresses by setting the corresponding filter under Settings > SlimStat > Filters.', 'wp-slimstat'),
             ],
             'slim_p2_07' => [
                 'title'         => __('Top Screen Resolutions', 'wp-slimstat'),
@@ -560,6 +564,31 @@ class wp_slimstat_reports
                 'locations' => ['slimview3'],
             ],
 
+            'slim_p3_02' => [
+                'title'         => __('Traffic Summary', 'wp-slimstat'),
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
+                    'raw' => ['wp_slimstat_db', 'get_traffic_sources_summary'],
+                ],
+                'classes'   => ['normal'],
+                'locations' => ['slimview5'],
+            ],
+            'slim_p3_03' => [
+                'title' => __('Channels', 'wp-slimstat'),
+                'callback' => [\SlimStat\Reports\AcquisitionReport::class, 'render'],
+                'callback_args' => ['mode' => 'channels', 'raw' => [\SlimStat\Reports\AcquisitionReport::class, 'rows']],
+                'classes' => ['extralarge', 'slimstat-acquisition-box'],
+                'locations' => ['slimview5'],
+                'tooltip' => __('Pageview sources, classified from campaign tags, referring sites and user agents. AI referrals and automated requests are reported separately.', 'wp-slimstat'),
+            ],
+            'slim_p3_04' => [
+                'title' => __('UTM Campaigns', 'wp-slimstat'),
+                'callback' => [\SlimStat\Reports\AcquisitionReport::class, 'render'],
+                'callback_args' => ['mode' => 'utm', 'raw' => [\SlimStat\Reports\AcquisitionReport::class, 'rows']],
+                'classes' => ['extralarge', 'slimstat-acquisition-box'],
+                'locations' => ['slimview5'],
+                'tooltip' => __('Compare tagged pageviews by campaign, source and medium. Campaign values are case-sensitive; missing values are shown explicitly.', 'wp-slimstat'),
+            ],
             'slim_p3_01' => [
                 'title'         => __('Traffic Sources', 'wp-slimstat'),
                 'callback'      => [self::class, 'show_chart'],
@@ -579,16 +608,6 @@ class wp_slimstat_reports
                 'locations' => ['slimview5'],
                 'tooltip'   => $traffic_sources_chart_tooltip,
             ],
-            'slim_p3_02' => [
-                'title'         => __('Traffic Summary', 'wp-slimstat'),
-                'callback'      => [self::class, 'raw_results_to_html'],
-                'callback_args' => [
-                    'raw' => ['wp_slimstat_db', 'get_traffic_sources_summary'],
-                ],
-                'classes'   => ['normal'],
-                'locations' => ['slimview5'],
-            ],
-
             'slim_p4_01' => [
                 'title'         => __('Recent Outbound Links', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
@@ -656,6 +675,7 @@ class wp_slimstat_reports
                     'where'        => 'content_type LIKE %s AND searchterms <> "" AND searchterms IS NOT NULL',
                     'where_params' => ['%search%'],
                     'raw'          => ['wp_slimstat_db', 'get_recent'],
+                    'empty_hint'   => __("Shows searches made in your site's search box.", 'wp-slimstat'),
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview4'],
@@ -669,6 +689,7 @@ class wp_slimstat_reports
                     'columns' => 'category',
                     'where'   => 'content_type LIKE "%category%"',
                     'raw'     => ['wp_slimstat_db', 'get_top'],
+                    'empty_hint' => __('Shows posts that have categories.', 'wp-slimstat'),
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview4', 'dashboard'],
@@ -681,10 +702,12 @@ class wp_slimstat_reports
                     'columns'  => 'resource',
                     'where'    => 'content_type = "download"',
                     'raw'      => ['wp_slimstat_db', 'get_top'],
+                    /* translators: %s: comma-separated file extensions, e.g. "pdf, doc, xls, zip" */
+                    'empty_hint' => sprintf(__('Shows clicks on links to %s files. Change the list in Settings › Tracker.', 'wp-slimstat'), str_replace(',', ', ', (string) wp_slimstat::$settings['extensions_to_track'])),
                 ],
                 'classes'   => ['large'],
                 'locations' => ['slimview4'],
-                'tooltip'   => __('You can configure Slimstat to track specific file extensions as downloads.', 'wp-slimstat'),
+                'tooltip'   => __('You can configure SlimStat to track specific file extensions as downloads.', 'wp-slimstat'),
             ],
             'slim_p4_10' => [
                 'title'         => __('Recent Custom Events', 'wp-slimstat'),
@@ -732,6 +755,7 @@ class wp_slimstat_reports
                     'where'   => 'content_type LIKE %s AND searchterms <> "" AND searchterms IS NOT NULL',
                     'where_params' => ['%search%'],
                     'raw'     => ['wp_slimstat_db', 'get_top'],
+                    'empty_hint' => __("Shows searches made in your site's search box.", 'wp-slimstat'),
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview4'],
@@ -835,7 +859,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['inactive'],
-                'tooltip'   => __('Your content at a glance: posts, comments, pingbacks, etc. Please note that this report is not affected by the filters set here above.', 'wp-slimstat'),
+                'tooltip'   => __('Your content at a glance: posts, comments, pingbacks, etc. Please note that this report is not affected by the filters set above.', 'wp-slimstat'),
             ],
             'slim_p4_23' => [
                 'title'         => __('Top Bounce Pages', 'wp-slimstat'),
@@ -919,6 +943,15 @@ class wp_slimstat_reports
             ],
 
             // Goals & Funnels reports
+            'slim_p10_01' => [
+                'title' => __('Ecommerce', 'wp-slimstat'),
+                'callback' => [\SlimStat\Ecommerce\Report::class, 'render'],
+                'callback_args' => ['raw' => [\SlimStat\Ecommerce\Report::class, 'raw']],
+                'classes' => ['full-width', 'slimstat-ecommerce-box'],
+                'locations' => ['slimview7'],
+                'pinned' => true,
+                'postbox_config' => ['hide_header' => true, 'no_border' => true, 'no_background' => true],
+            ],
             'slim_p9_01' => [
                 'title'         => __('Goals', 'wp-slimstat'),
                 'callback'      => [self::class, 'show_goals'],
@@ -1029,6 +1062,7 @@ class wp_slimstat_reports
         do_action('wp_slimstat_reports_init');
 
         // We store page titles in a transient for improved performance
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
         if (empty($_REQUEST['page']) || !in_array($_REQUEST['page'], ['slimlayout', 'slimadddons'])) {
             self::$resource_titles = get_transient('slimstat_resource_titles');
             if (false === self::$resource_titles) {
@@ -1094,7 +1128,7 @@ class wp_slimstat_reports
             $header_buttons = apply_filters('slimstat_report_header_buttons', $header_buttons, $_report_id);
             $header_buttons = '<div class="slimstat-header-buttons">' . $header_buttons . '</div>';
 
-            $widget_title = '<h3>' . esc_html(self::$reports[$_report_id]['title']) . $header_tooltip . '</h3>';
+            $widget_title = self::header_title(self::$reports[$_report_id]['title'], $header_tooltip);
 
             // Allow third-party code to inject content directly under the <h3> (e.g. a subtitle).
             $widget_title .= apply_filters('slimstat_report_header_after_title', '', $_report_id);
@@ -1165,10 +1199,10 @@ class wp_slimstat_reports
         }
 
         $pagination = '<p class="pagination">' . sprintf(/* translators: 1: first displayed row, 2: last displayed row, 3: total row count. */
-                __('Showing %1$s - %2$s of %3$s', 'wp-slimstat'), number_format_i18n($effective_start + 1), number_format_i18n($endpoint), number_format_i18n($_count_all_results) . (($_count_all_results == wp_slimstat::$settings['limit_results']) ? '+' : ''));
+                __('%1$s–%2$s of %3$s', 'wp-slimstat'), number_format_i18n($effective_start + 1), number_format_i18n($endpoint), number_format_i18n($_count_all_results) . (($_count_all_results == wp_slimstat::$settings['limit_results']) ? '+' : ''));
 
         if ($_show_refresh_countdown && wp_slimstat::$settings['refresh_interval'] > 0 && wp_slimstat_db::$filters_normalized['utime']['end'] >= date_i18n('U') - 300) {
-            $pagination .= ' <span class="refresh-countdown">[' . __('Refresh in', 'wp-slimstat') . ' <i class="refresh-timer"></i>]</span>';
+            $pagination .= ' <span class="refresh-countdown">' . __('Refresh in', 'wp-slimstat') . ' <i class="refresh-timer"></i></span>';
         }
 
         return $pagination . ($pagination_buttons . '</p>');
@@ -1230,6 +1264,78 @@ class wp_slimstat_reports
         }
     }
 
+    /**
+     * The one empty state for legacy reports (audit E1–E3, E5, C6). It says which of three
+     * things is true: nothing was ever tracked, the filters exclude everything, or this date
+     * range is empty. It then says what to do next. $hint is the report's own line (e.g. which
+     * setting feeds it); $title replaces the date-range line for a report with no range, such
+     * as the Access Log. Keeps p.nodata: E2E specs use it to tell "empty" from "has rows".
+     */
+    public static function empty_state($hint = '', $title = '')
+    {
+        // MAX(dt) answers "ever tracked?" and "when last?" in one indexed lookup, once per request.
+        if (null === self::$last_pageview_dt) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fixed query on the core-prefixed table; no values. Cached per request.
+            self::$last_pageview_dt = (int) wp_slimstat::$wpdb->get_var("SELECT MAX(dt) FROM {$GLOBALS['wpdb']->prefix}slim_stats");
+        }
+        $last_dt = self::$last_pageview_dt;
+
+        $url = '';
+        if (0 === $last_dt) {
+            $title = __('No pageviews recorded yet.', 'wp-slimstat');
+            $hint  = __('Open your site in a private window, then refresh this page.', 'wp-slimstat');
+        } elseif (!empty(wp_slimstat_db::$filters_normalized['columns'])) {
+            $title = __('No pageviews match these filters.', 'wp-slimstat');
+        } elseif ('' === $title) {
+            $title = __('No pageviews in this date range.', 'wp-slimstat');
+            if ('' === $hint) {
+                /* translators: %s: date of the most recent pageview on record */
+                $hint = sprintf(__('The last pageview was on %s.', 'wp-slimstat'), date_i18n(get_option('date_format'), $last_dt));
+            }
+            if (abs((int) (wp_slimstat_db::$filters_normalized['date']['interval'] ?? 0)) < 90) {
+                $url = admin_url('admin.php?page=' . rawurlencode((string) wp_slimstat_admin::$current_screen) . '&type=last_90_days');
+            }
+        }
+
+        echo '<div class="slimstat-empty"><p class="nodata">' . esc_html($title) . '</p>'
+            . ('' !== $hint ? '<span class="slimstat-empty-hint">' . esc_html($hint) . '</span>' : '')
+            . ('' !== $url ? '<a class="button" href="' . esc_url($url) . '">' . esc_html__('Last 90 days', 'wp-slimstat') . '</a>' : '')
+            . '</div>';
+    }
+
+    /**
+     * First-run path on Overview (audit E7, C6): admins only, until the site has 50 pageviews
+     * or someone dismisses it (site-wide, through the existing notice_* handler).
+     */
+    public static function get_started()
+    {
+        if ('slimview2' !== wp_slimstat_admin::$current_screen || 'no' === (wp_slimstat::$settings['notice_getstarted'] ?? 'on') || !current_user_can('manage_options')) {
+            return;
+        }
+        // Counts no further than 50, so a busy site pays for 50 index rows, not the table.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fixed query on the core-prefixed table; no values. Runs only until the site has 50 pageviews.
+        $pageviews = (int) wp_slimstat::$wpdb->get_var("SELECT COUNT(*) FROM (SELECT 1 FROM {$GLOBALS['wpdb']->prefix}slim_stats LIMIT 50) t");
+        if ($pageviews >= 50) {
+            return;
+        }
+
+        $links = [
+            ['slimview1', __('Check that tracking works', 'wp-slimstat'), __('Open your site in a private window, then watch Real-time.', 'wp-slimstat')],
+            ['slimview6', __('Add a goal', 'wp-slimstat'), __('Count the visits that reach a page or click a button you care about.', 'wp-slimstat')],
+            ['slimview5#slimstat-utm-builder', __('Build your first campaign link', 'wp-slimstat'), __('Tag an incoming link to see its recorded pageviews in UTM Campaigns.', 'wp-slimstat')],
+        ];
+        if (\SlimStat\Ecommerce\Integration::available()) {
+            $links[] = ['slimview7', __('Explore your Ecommerce reports', 'wp-slimstat'), __('See which visits lead to WooCommerce orders.', 'wp-slimstat')];
+        }
+
+        /* translators: %s: number of pageviews recorded so far (fewer than 50) */
+        $html = '<strong>' . esc_html__('Get started', 'wp-slimstat') . '</strong> ' . esc_html(sprintf(_n('SlimStat has recorded %s pageview so far.', 'SlimStat has recorded %s pageviews so far.', $pageviews, 'wp-slimstat'), number_format_i18n($pageviews))) . '<ul>';
+        foreach ($links as [$page, $label, $why]) {
+            $html .= '<li><a href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($label) . '</a>: ' . esc_html($why) . '</li>';
+        }
+        wp_slimstat_admin::show_message($html . '</ul>', 'info', 'getstarted');
+    }
+
     public static function raw_results_to_html($_args = [])
     {
         if ('on' == wp_slimstat::$settings['async_load'] && (!defined('DOING_AJAX') || !DOING_AJAX) && empty($_args['is_widget'])) {
@@ -1249,7 +1355,7 @@ class wp_slimstat_reports
 
             $_args['where'] = call_user_func(
                 [$_args['raw'][0], 'get_combined_where'],
-                $_args['where'],
+                $_args['where'] ?? '',
                 '',
                 $use_date_filters,
                 '',
@@ -1277,10 +1383,12 @@ class wp_slimstat_reports
 
         // Some reports don't need any kind of pre/post-processing, we just display the data contained in the array
         if (empty($_args['columns'])) {
+            // Rates carry their % here, not in the row: the row value is a report answer (audit C2).
+            $percent_metrics = [__('Bounce rate', 'wp-slimstat'), __('New Visitors Rate', 'wp-slimstat')];
             foreach ($all_results as $a_result) {
                 echo '<p>';
 
-                echo sprintf('%s <span>%s</span>', wp_kses_post($a_result['metric']), wp_kses_post($a_result['value']));
+                echo sprintf('%s <span>%s</span>', wp_kses_post($a_result['metric']), wp_kses_post($a_result['value']) . (in_array($a_result['metric'], $percent_metrics, true) ? '%' : ''));
 
                 if (!empty($a_result['tooltip'])) {
                     self::inline_help($a_result['tooltip']);
@@ -1309,7 +1417,7 @@ class wp_slimstat_reports
             $count_page_results = count($results);
 
             if (0 == $count_page_results) {
-                echo '<p class="nodata">' . esc_html__('No data to display', 'wp-slimstat') . '</p>';
+                self::empty_state($_args['empty_hint'] ?? '', $_args['empty_title'] ?? '');
 
                 if (defined('DOING_AJAX') && DOING_AJAX) {
                     die();
@@ -1536,11 +1644,11 @@ class wp_slimstat_reports
                                 $element_value .= self::get_edit_profile_link($element_custom_value->ID);
                             } else {
                                 $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . sprintf("' class=\"avatar avatar-16 photo\" alt='Unknown'>%s (", esc_html($results[$i]['username'])) . __('Unknown', 'wp-slimstat') . ')</a>';
+                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . sprintf("' class=\"avatar avatar-16 photo\" alt=''>%s (", esc_html($results[$i]['username'])) . __('account deleted', 'wp-slimstat') . ')</a>';
                             }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt='Unknown'>" . __('Guest', 'wp-slimstat') . '</a>';
+                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt=''>" . __('Guest', 'wp-slimstat') . '</a>';
                         }
 
                         if ('on' == wp_slimstat::$settings['show_display_name']) {
@@ -1564,11 +1672,11 @@ class wp_slimstat_reports
                                 $element_value .= self::get_edit_profile_link($author_id);
                             } else {
                                 $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt='Unknown'>" . esc_html($author_username) . ' (' . __('Unknown', 'wp-slimstat') . ')</a>';
+                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt=''>" . esc_html($author_username) . ' (' . __('account deleted', 'wp-slimstat') . ')</a>';
                             }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . $image_url . "' class=\"avatar avatar-16 photo\" alt='Unknown'>" . __('Guest', 'wp-slimstat') . '</a>';
+                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt=''>" . __('Guest', 'wp-slimstat') . '</a>';
                         }
                         break;
                     case 'visit_id':
@@ -1592,6 +1700,11 @@ class wp_slimstat_reports
                 // (both type=recent raw rows and type=top with more_select=MAX(dt) AS dt)
                 if (is_array($results[$i]) && isset($results[$i]['dt']) && $results[$i]['dt'] > 0) {
                     $row_details = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true) . ('' === $row_details || '0' === $row_details ? '' : '<br>') . $row_details;
+                    // A recent list is a log: without a visible time, five searches for one term read as a duplicate row.
+                    if (!empty($_args['type']) && 'recent' == $_args['type']) {
+                        /* translators: %s: human-readable time difference, e.g. 5 mins */
+                        $percentage = ' <span class="slimstat-count-pct slimstat-row-time">' . esc_html(sprintf(__('%s ago', 'wp-slimstat'), human_time_diff((int) $results[$i]['dt'], wp_slimstat::now()))) . '</span>';
+                    }
                 }
 
                 if (!empty($_args['type']) && 'top' == $_args['type']) {
@@ -1627,7 +1740,7 @@ class wp_slimstat_reports
                 }
 
                 if (is_admin() && !empty($results[$i]['ip']) && 'ip' != $_args['columns'] && 'on' != wp_slimstat::$settings['convert_ip_addresses']) {
-                    $row_details .= '<br> IP: <a class="slimstat-filter-link" href="' . esc_url(self::fs_url('ip equals ' . $results[$i]['ip'])) . '">' . esc_html($results[$i]['ip']) . '</a>' . (empty($results[$i]['other_ip']) ? '' : ' / ' . esc_html($results[$i]['other_ip'])) . '<a title="WHOIS: ' . esc_attr($results[$i]['ip']) . '" class="slimstat-font-location-1 whois" href="' . esc_url(wp_slimstat::$settings['ip_lookup_service'] . $results[$i]['ip']) . '"></a>';
+                    $row_details .= '<br> ' . esc_html__('IP', 'wp-slimstat') . ': <a class="slimstat-filter-link" href="' . esc_url(self::fs_url('ip equals ' . $results[$i]['ip'])) . '">' . esc_html($results[$i]['ip']) . '</a>' . (empty($results[$i]['other_ip']) ? '' : ' / ' . esc_html($results[$i]['other_ip'])) . '<a title="WHOIS: ' . esc_attr($results[$i]['ip']) . '" class="slimstat-font-location-1 whois" href="' . esc_url(wp_slimstat::$settings['ip_lookup_service'] . $results[$i]['ip']) . '"></a>';
                 }
                 if ('' !== $row_details && '0' !== $row_details) {
                     $row_details = sprintf("<b class='slimstat-tooltip-content'>%s</b>", $row_details);
@@ -1708,7 +1821,7 @@ class wp_slimstat_reports
         $count_page_results = count($results);
 
         if (0 == $count_page_results) {
-            echo '<p class="nodata">' . esc_html__('No data to display', 'wp-slimstat') . '</p>';
+            self::empty_state($_args['empty_hint'] ?? '', $_args['empty_title'] ?? '');
 
             if (defined('DOING_AJAX') && DOING_AJAX) {
                 die();
@@ -2114,7 +2227,7 @@ class wp_slimstat_reports
                 // aggregates are not computed on this request.
                 if ($remaining <= 0) {
                     echo '<td colspan="3" class="slimstat-goal-deferred">'
-                        . esc_html__('Not shown here — open the Goals report.', 'wp-slimstat')
+                        . esc_html__('Not shown here. Open the Goals report.', 'wp-slimstat')
                         . '</td></tr>';
                     continue;
                 }
@@ -2300,7 +2413,7 @@ class wp_slimstat_reports
                 // Listed, not dropped: the funnel stays discoverable without paying for
                 // its chain on this request.
                 echo '<p class="slimstat-funnel-summary">'
-                    . esc_html__('Not shown here — open the Funnels report.', 'wp-slimstat')
+                    . esc_html__('Not shown here. Open the Funnels report.', 'wp-slimstat')
                     . '</p></div>';
                 continue;
             }
@@ -2374,7 +2487,7 @@ class wp_slimstat_reports
         $count_page_results = count($results);
 
         if (0 == $count_page_results) {
-            echo '<p class="nodata">' . esc_html__('No data to display', 'wp-slimstat') . '</p>';
+            self::empty_state($_args['empty_hint'] ?? '', $_args['empty_title'] ?? '');
 
             if (defined('DOING_AJAX') && DOING_AJAX) {
                 die();
@@ -2526,7 +2639,7 @@ class wp_slimstat_reports
             $code         = strtolower((string)($a_country['country'] ?? ''));
             $visits       = (int) $a_country['counthits'];
             $percent      = (wp_slimstat_db::$pageviews > 0) ? round((100 * $visits / wp_slimstat_db::$pageviews), 2) : 0;
-            $country_name = wp_slimstat_i18n::get_string('c-' . ($a_country['country'] ?? ''), 'wp-slimstat');
+            $country_name = wp_slimstat_i18n::get_string('c-' . ($a_country['country'] ?? ''));
 
             $data_areas[$code] = $visits;
             $country_stats[]   = [
@@ -2577,7 +2690,7 @@ class wp_slimstat_reports
                     }
                     if ($uses_db && $db_missing) {
                         /* translators: %s: URL of the geolocation settings section. */
-                        echo wp_kses_post(sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), esc_url($settings_url . '2#wp-slimstat-third-party-libraries')));
+                        echo wp_kses_post(sprintf(__("Geolocation is off, so reports show no countries or cities. <a href='%s' class='noslimstat'>Turn it on in Settings</a>.", 'wp-slimstat'), esc_url($settings_url . '2#wp-slimstat-third-party-libraries')));
                         echo '<br>';
                     }
                     ?>
@@ -2691,7 +2804,9 @@ class wp_slimstat_reports
                     continue;
                 }
 
-                $a_filter_value_no_slashes = in_array($a_filter_details[0], wp_slimstat_db::$valueless_operators, true) ? '' : htmlentities(str_replace('\\', '', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
+                $filter_value = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label
+                    ? $a_filter_details[1] : str_replace('\\', '', $a_filter_details[1]);
+                $a_filter_value_no_slashes = in_array($a_filter_details[0], wp_slimstat_db::$valueless_operators, true) ? '' : htmlentities($filter_value, ENT_QUOTES, 'UTF-8');
                 $filters_html .= '<li>' . strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]) . ' ' . esc_html(wp_slimstat_db::$operator_names[$a_filter_details[0]] ?? str_replace('_', ' ', $a_filter_details[0])) . sprintf(" %s <a class='slimstat-filter-link slimstat-font-cancel' title='", $a_filter_value_no_slashes) . htmlentities(__('Remove filter for', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . ' ' . wp_slimstat_db::$columns_names[$a_filter_label][0] . "' href='" . self::fs_url($a_filter_label . ' equals ') . "'></a></li>";
             }
         }
@@ -2707,6 +2822,19 @@ class wp_slimstat_reports
         return $filters_html;
     }
 
+    /**
+     * A report card's <h3>. The info icon shares a no-wrap span with the title's last word, so a
+     * title that wraps never leaves the icon alone on a line of its own (QA D1).
+     */
+    public static function header_title($title, $tooltip)
+    {
+        $title = esc_html($title);
+        $cut   = strrpos($title, ' ');
+        $cut   = false === $cut ? 0 : $cut + 1;
+
+        return '<h3>' . substr($title, 0, $cut) . '<span class="slimstat-nowrap">' . substr($title, $cut) . $tooltip . '</span></h3>';
+    }
+
     public static function fs_url($_filters_string = '')
     {
         // Allow only legitimate requests
@@ -2719,7 +2847,7 @@ class wp_slimstat_reports
 
         // Avoid XSS attacks ( why would the owner try to hack into his/her own website though? )
         if (!empty($_SERVER['HTTP_REFERER']) && is_string($_SERVER['HTTP_REFERER'])) {
-            $parsed_referer = wp_parse_url(sanitize_url(wp_unslash($_SERVER['HTTP_REFERER'])) ?: '');
+            $parsed_referer = wp_parse_url(esc_url_raw(wp_unslash($_SERVER['HTTP_REFERER'])) ?: '');
             if (!$parsed_referer || (isset($parsed_referer['scheme']) && ('' !== $parsed_referer['scheme'] && '0' !== $parsed_referer['scheme']) && !in_array(strtolower($parsed_referer['scheme']), ['http', 'https']))) {
                 return '';
             }
@@ -2747,7 +2875,9 @@ class wp_slimstat_reports
         // Columns
         if (!empty($fn['columns'])) {
             foreach ($fn['columns'] as $a_key => $a_filter) {
-                $request_uri .= sprintf('&amp;fs%%5B%s%%5D=', $a_key) . urlencode($a_filter[0] . ' ' . str_replace('=', '%3D', $a_filter[1]));
+                $value = 0 === strpos($a_key, 'utm_') || 'traffic_source' === $a_key
+                    ? $a_filter[1] : str_replace('=', '%3D', $a_filter[1]);
+                $request_uri .= sprintf('&amp;fs%%5B%s%%5D=', $a_key) . urlencode($a_filter[0] . ' ' . $value);
             }
         }
 

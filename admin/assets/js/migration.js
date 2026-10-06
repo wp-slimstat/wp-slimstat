@@ -18,7 +18,21 @@
         }
         steps.forEach(function (s) {
             var $li = $("<li/>", { id: "slimstat-step-" + s.id });
-            $li.append($("<div/>", { class: "label", html: s.name + " — " + s.desc }));
+            // A long description sits under a plain-text summary, in a "Details" disclosure.
+            // desc stays html: index steps wrap the index and table names in <code>.
+            var $label = $("<div/>", { class: "label" }).append($("<strong/>").text(s.name));
+            if (s.summary) {
+                $label.append(
+                    $("<p/>").text(s.summary),
+                    $("<details/>").append(
+                        $("<summary/>").text(SlimstatMigration.labels.details || "Details"),
+                        $("<p/>", { html: s.desc })
+                    )
+                );
+            } else {
+                $label.append($("<p/>", { html: s.desc }));
+            }
+            $li.append($label);
             $li.append($("<span/>", { class: "status" }));
             // An OFFERED step gets its own control and is skipped by "Start Migration".
             // Without the button it would be listed and unstartable, which is how the first
