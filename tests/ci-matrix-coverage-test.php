@@ -371,6 +371,15 @@ if ($orphan_omissions) {
     exit(1);
 }
 
+// A bare `wp-cli` makes setup-php resolve "latest" at run time; when that fails it logs
+// "Could not setup wp-cli" without failing the step, and the lane dies later on
+// `wp: command not found` (PITFALLS 229).
+if (preg_match_all('/^\s*tools:.*\bwp-cli(?![:\w-])/m', $ci_yaml, $unpinned)) {
+    fwrite(STDERR, 'FAIL: ' . count($unpinned[0]) . " setup-php step(s) in ci.yml request an unpinned wp-cli;\n"
+        . "pin it (wp-cli:2.12.0) like every other lane.\n");
+    exit(1);
+}
+
 ksort($execution);
 ksort($static);
 echo "OK: CI matrix, PHP {$floor}-{$ceiling}\n";

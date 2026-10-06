@@ -1111,7 +1111,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
-          tools: composer, wp-cli
+          tools: composer:v2
       - name: Install plugin dependencies
         run: |
           composer install --working-dir=wp-slimstat --no-dev --prefer-dist --no-interaction
@@ -1119,7 +1119,7 @@ jobs:
         with:
           php-version: "7.4"
           extensions: mysqli, mbstring
-          tools: wp-cli
+          tools: wp-cli:2.12.0
       - name: Boot minimum WordPress and run database regressions
         shell: bash
         run: |
