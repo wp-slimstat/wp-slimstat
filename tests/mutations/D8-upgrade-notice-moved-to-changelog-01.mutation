@@ -6,7 +6,7 @@ rationale: Deletes the Upgrade Notice entry and makes the changelog heading `= 6
 ---
 --- a/readme.txt
 +++ b/readme.txt
-@@ -111,10 +111,6 @@
+@@ -111,16 +111,12 @@
  
  == Upgrade Notice ==
  
@@ -17,12 +17,10 @@ rationale: Deletes the Upgrade Notice entry and makes the changelog heading `= 6
  = 5.5.1 =
  Deleting the plugin no longer erases your analytics. Data is now kept by default and removed only if you enabled Settings → Maintenance → "Delete Data on Uninstall" first. Also fixes a rare blank-screen/admin-lockout on plugin load.
  
-@@ -125,7 +121,7 @@
- * Opt-in heatmap recording (clicks on any element, scroll depth, dead and rage clicks) for sites with SlimStat Pro, following consent, Do Not Track and retention settings.
- * Clearer admin: consistent wording, empty reports that say why and what to do next, native WordPress buttons and switches, and honest Pro previews.
+ == Changelog ==
  
--= 6.0.0 - 2026-09-15 =
+-= 6.0.0 - 2026-10-06 =
 += 6.0.0 =
- * Improve Ecommerce database isolation, retention accuracy and native dates; remove order-access keys from new analytics URLs.
- 
- * Explore Ecommerce through selectable metric charts, tabbed revenue rankings and clearer tracking coverage.
+ * New Shortcode Playground under SlimStat → Shortcodes: browse reports, preview your data, adjust filters and copy a shortcode. New live visitor, page and country counters. Personal data in shortcodes now shows only to people allowed to view analytics.
+ * New Heatmaps page: every page with clicks, its pageviews, device split and recorded detail, from the admin menu or the admin bar.
+ * Opt-in heatmap recording (clicks on any element, scroll depth, dead and rage clicks) for sites with SlimStat Pro, following consent, Do Not Track and retention settings.

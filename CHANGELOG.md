@@ -1,4 +1,4 @@
-= 6.1.0 - Unreleased =
+= 6.0.0 - 2026-10-06 =
 
 **Shortcodes**
 * Preserve public aggregate counters such as `count` of `ip`, group query-string-free page links before limiting results, and render stored dates correctly. Published shortcode filters are isolated from URL/form fields, and rendering restores the filters and pageview totals of surrounding reports.
@@ -29,16 +29,12 @@
 * Translations: the IP label in report row details and the Shortcode Playground's display names are translatable (one new string, "Live"); placeholder avatars no longer read "Unknown" to screen readers; translators see notes for the speed and row-range strings. Plugin Check reports no new errors or warnings.
 
 **Ecommerce**
-* "Your Pro reports are ready" shows until you open one of the reports it lists or dismiss it, per user. The license reminder it carried stays as a footnote.
-
-= 6.0.0 - 2026-09-15 =
-
-**Ecommerce**
 * Isolate report caches and setup by analytics database, exclude expired visits from purchase-rate cohorts, and provide scoped summaries for native exports and scheduled Pro email. Restore the shared date picker appearance.
 * Remove WooCommerce order-access keys from newly stored page URLs, referrers and URL updates. Existing historical records are not rewritten automatically.
 * Refine Ecommerce with interactive metric charts, calendar aggregation, tabbed revenue rankings, inline drill-downs and compact coverage guidance. Preserve native filters and scoped exports.
 * Add a revenue-first WooCommerce dashboard with net sales, orders, comparisons, products, acquisition coverage and a consented purchase journey. Currency, refunds and unmatched orders have explicit definitions.
 * Keep order synchronization in bounded background jobs, support HPOS and legacy storage, and integrate native dates, filters, saved segments, privacy erasure and retention. Setup is opt-in; see [the Ecommerce guide](docs/ecommerce.md).
+* "Your Pro reports are ready" shows until you open one of the reports it lists or dismiss it, per user. The license reminder it carried stays as a footnote.
 
 **UTM and channel reports**
 * Build and copy campaign URLs directly from the UTM report. The local builder validates required tags, preserves existing URL parameters and fragments, and supports campaign names or IDs.

@@ -120,12 +120,12 @@ Deleting the plugin no longer erases your analytics. Data is now kept by default
 
 == Changelog ==
 
-= 6.1.0 - Unreleased =
+= 6.0.0 - 2026-10-06 =
+* New Shortcode Playground under SlimStat → Shortcodes: browse reports, preview your data, adjust filters and copy a shortcode. New live visitor, page and country counters. Personal data in shortcodes now shows only to people allowed to view analytics.
 * New Heatmaps page: every page with clicks, its pageviews, device split and recorded detail, from the admin menu or the admin bar.
 * Opt-in heatmap recording (clicks on any element, scroll depth, dead and rage clicks) for sites with SlimStat Pro, following consent, Do Not Track and retention settings.
+* New UTM Campaigns and Channels reports under Traffic Sources, with a campaign URL builder. Channels tell AI assistant referrals and AI crawlers apart from search, social, email and paid traffic. Existing pageviews stay unattributed.
 * Clearer admin: consistent wording, empty reports that say why and what to do next, native WordPress buttons and switches, and honest Pro previews.
-
-= 6.0.0 - 2026-09-15 =
 * Improve Ecommerce database isolation, retention accuracy and native dates; remove order-access keys from new analytics URLs.
 
 * Explore Ecommerce through selectable metric charts, tabbed revenue rankings and clearer tracking coverage.
