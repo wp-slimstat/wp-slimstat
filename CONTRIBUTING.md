@@ -12,7 +12,7 @@ coverage. We organize tests in three tiers:
 | Tier | Frequency | What runs | Where |
 |------|-----------|-----------|-------|
 | **Tier 1 · fast** | every push, every PR | PHPUnit + source-level + lint | `tests/Unit/`, `tests/*-test.php`, `php -l` |
-| **Tier 2 · standard** | push or PR to `main` / `development` | Playwright E2E via wp-env | `tests/e2e/*.spec.ts` |
+| **Tier 2 · standard** | push or PR to `master` / `main` / `development` | Playwright E2E via wp-env | `tests/e2e/*.spec.ts` |
 | **Tier 3 · nightly** | cron 02:00 UTC | Full PHP matrix + k6 perf | same files, broader matrix |
 
 See [.github/workflows/ci.yml](.github/workflows/ci.yml) for the full
