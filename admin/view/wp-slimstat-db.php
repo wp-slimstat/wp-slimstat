@@ -53,7 +53,7 @@ class wp_slimstat_db
     /*
      * Sets the filters and other structures needed to store the data retrieved from the DB
      */
-    public static function init($_filters = '')
+    public static function init($_filters = '', bool $_use_request = true)
     {
         // List of supported filters and their user-friendly names
         self::$columns_names = [
@@ -65,6 +65,14 @@ class wp_slimstat_db
             'platform'             => [__('Operating System', 'wp-slimstat'), 'varchar'],
             'resource'             => [__('Permalink', 'wp-slimstat'), 'varchar'],
             'referer'              => [__('Referer', 'wp-slimstat'), 'varchar'],
+            'traffic_channel'      => [__('Channel', 'wp-slimstat'), 'varchar'],
+            'traffic_source'       => [__('Channel Source', 'wp-slimstat'), 'varchar'],
+            'utm_campaign'         => [__('UTM Campaign', 'wp-slimstat'), 'varchar'],
+            'utm_source'           => [__('UTM Source', 'wp-slimstat'), 'varchar'],
+            'utm_medium'           => [__('UTM Medium', 'wp-slimstat'), 'varchar'],
+            'utm_content'          => [__('UTM Content', 'wp-slimstat'), 'varchar'],
+            'utm_term'             => [__('UTM Term', 'wp-slimstat'), 'varchar'],
+            'utm_id'               => [__('UTM Campaign ID', 'wp-slimstat'), 'varchar'],
             'username'             => [__("Visitor's Username", 'wp-slimstat'), 'varchar'],
             'email'                => [__("Visitor's Email", 'wp-slimstat'), 'varchar'],
             'outbound_resource'    => [__('Outbound Link', 'wp-slimstat'), 'varchar'],
@@ -132,7 +140,7 @@ class wp_slimstat_db
             // Other columns
             'metric'       => [__('Metric', 'wp-slimstat'), 'varchar'],
             'value'        => [__('Value', 'wp-slimstat'), 'varchar'],
-            'counthits'    => [__('Hits', 'wp-slimstat'), 'int'],
+            'counthits'    => [__('Pageviews', 'wp-slimstat'), 'int'],
             'column_group' => [__('Grouped Value', 'wp-slimstat'), 'varchar'],
             'percentage'   => [__('Percentage', 'wp-slimstat'), 'int'],
             'tooltip'      => [__('Notes', 'wp-slimstat'), 'varchar'],
@@ -158,8 +166,10 @@ class wp_slimstat_db
         $filters_array = [];
 
         // Handle type parameter for date presets and custom ranges
-        if (isset($_GET['type']) && is_string($_GET['type'])) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
+        if ($_use_request && isset($_GET['type']) && is_string($_GET['type'])) {
             // Sanitize the type parameter to prevent XSS
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
             $type = sanitize_key($_GET['type']);
 
             if ($type !== 'custom') {
@@ -180,9 +190,12 @@ class wp_slimstat_db
                         $filters_array['interval'] = 'interval equals -' . absint($interval_days);
                     }
                 }
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
             } elseif (isset($_GET['from'], $_GET['to']) && is_string($_GET['from']) && is_string($_GET['to'])) {
                 // Sanitize date inputs to prevent XSS
+                // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
                 $from_date = sanitize_text_field(wp_unslash($_GET['from']));
+                // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
                 $to_date = sanitize_text_field(wp_unslash($_GET['to']));
 
                 // Validate date format (YYYY-MM-DD)
@@ -204,28 +217,48 @@ class wp_slimstat_db
         }
 
         // Filters are set via javascript as hidden fields and submitted as a POST request. They override anything passed through the regular input fields
-        if (!empty($_REQUEST['fs']) && is_array($_REQUEST['fs'])) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
+        if ($_use_request && !empty($_REQUEST['fs']) && is_array($_REQUEST['fs'])) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Read-only page/date/presentation selection; no privileged mutation is performed by this input. Read-only filter parser validates dimensions/operators and binds values; UTM values preserve percent encoding, input dates are cast to integers.
             foreach ($_REQUEST['fs'] as $a_request_filter_name => $a_request_filter_value) {
                 if (!is_string($a_request_filter_value)) {
                     continue;
                 }
                 $safe_name  = sanitize_text_field(wp_unslash($a_request_filter_name));
                 $safe_value = str_replace('&&&', '', sanitize_text_field(wp_unslash($a_request_filter_value)));
+                if (0 === strpos($safe_name, 'utm_') || 'traffic_source' === $safe_name) {
+                    // HTTP already decoded these values. The filter grammar decodes once more;
+                    // protect literal '+', '%xx', '&' and delimiters before handing it the value.
+                    $safe_value = rawurlencode(trim(wp_strip_all_tags(wp_check_invalid_utf8(wp_unslash($a_request_filter_value)))));
+                }
                 $filters_array[$safe_name] = sprintf('%s %s', $safe_name, $safe_value);
             }
         }
 
         // Date filters (input fields) - Please note: interval_minutes is not exposed via the web interface, that's why it's not listed here below
         foreach (['hour', 'day', 'month', 'year', 'interval', 'interval_hours'] as $a_date_time_filter_name) {
-            if (isset($_POST[$a_date_time_filter_name]) && is_string($_POST[$a_date_time_filter_name]) && strlen($_POST[$a_date_time_filter_name]) > 0) { // here we use isset instead of !empty to handle ZERO as a valid input value
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Read-only page/date/presentation selection; no privileged mutation is performed by this input. Read-only filter parser validates dimensions/operators and binds values; UTM values preserve percent encoding, input dates are cast to integers.
+            if ($_use_request && isset($_POST[$a_date_time_filter_name]) && is_string($_POST[$a_date_time_filter_name]) && strlen($_POST[$a_date_time_filter_name]) > 0) { // here we use isset instead of !empty to handle ZERO as a valid input value
+                // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
                 $filters_array[$a_date_time_filter_name] = $a_date_time_filter_name . ' equals ' . intval($_POST[$a_date_time_filter_name]);
             }
         }
 
         // Fields and drop downs
-        if (!empty($_POST['f']) && is_string($_POST['f']) && !empty($_POST['o']) && is_string($_POST['o'])
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
+        if ($_use_request && !empty($_POST['f']) && is_string($_POST['f']) && !empty($_POST['o']) && is_string($_POST['o'])
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
             && (!isset($_POST['v']) || is_string($_POST['v']))) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
             $filters_array[sanitize_text_field(wp_unslash($_POST['f']))] = sprintf('%s %s ', sanitize_text_field(wp_unslash($_POST[ 'f' ])), sanitize_text_field(wp_unslash($_POST[ 'o' ]))) . (isset($_POST['v']) ? sanitize_text_field(wp_unslash($_POST['v'])) : '');
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
+            $field = sanitize_text_field(wp_unslash($_POST['f']));
+            if (0 === strpos($field, 'utm_') || 'traffic_source' === $field) {
+                // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Read-only page/date/presentation selection; no privileged mutation is performed by this input. Read-only filter parser validates dimensions/operators and binds values; UTM values preserve percent encoding, input dates are cast to integers.
+                $value = isset($_POST['v']) ? wp_strip_all_tags(wp_check_invalid_utf8(wp_unslash($_POST['v']))) : '';
+                // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
+                $filters_array[$field] = $field . ' ' . sanitize_key($_POST['o']) . ' ' . rawurlencode($value);
+            }
         }
 
         // Filters set via the plugin options
@@ -257,6 +290,7 @@ class wp_slimstat_db
         self::$filters_normalized = self::init_filters($filters_raw);
 
         // Retrieve data that will be used by multiple reports
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Read-only page/date/presentation selection; no privileged mutation is performed by this input. Read-only filter parser validates dimensions/operators and binds values; UTM values preserve percent encoding, input dates are cast to integers.
         if (empty($_REQUEST['page']) || (is_string($_REQUEST['page']) && false !== strpos($_REQUEST['page'], 'slimview'))) {
             self::$pageviews = wp_slimstat_db::count_records();
         }
@@ -308,20 +342,24 @@ class wp_slimstat_db
                 $_where = self::_get_sql_where(self::$filters_normalized['columns'], $_slim_stats_table_alias);
 
                 if ($_use_date_filters) {
+                    // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
                     // Use $wpdb->prepare() for all dynamic SQL values
                     $time_range_condition = $wpdb->prepare(
                         $dt_with_alias . ' BETWEEN %d AND %d',
                         intval(self::$filters_normalized['utime']['start']),
                         intval(self::$filters_normalized['utime']['end'])
                     );
+                    // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                 }
             } elseif ($_use_date_filters) {
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
                 // Use $wpdb->prepare() for all dynamic SQL values
                 $time_range_condition = $wpdb->prepare(
                     $dt_with_alias . ' BETWEEN %d AND %d',
                     intval(self::$filters_normalized['utime']['start']),
                     intval(self::$filters_normalized['utime']['end'])
                 );
+                // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             }
 
             // This could happen if we have custom filters (add-ons, third party tools)
@@ -339,12 +377,14 @@ class wp_slimstat_db
             }
 
             if ($_use_date_filters) {
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
                 // Use $wpdb->prepare() for all dynamic SQL values
                 $time_range_condition = $wpdb->prepare(
                     $dt_with_alias . ' BETWEEN %d AND %d',
                     intval(self::$filters_normalized['utime']['start']),
                     intval(self::$filters_normalized['utime']['end'])
                 );
+                // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             }
         }
 
@@ -377,7 +417,9 @@ class wp_slimstat_db
         // If where_param is provided and where contains %s or %d, use prepare
         if (null !== $where_params && (false !== strpos($_where, '%s') || false !== strpos($_where, '%d'))) {
             global $wpdb;
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
             $_where = is_array($where_params) ? $wpdb->prepare($_where, ...$where_params) : $wpdb->prepare($_where, $where_params);
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         }
 
         return $_where;
@@ -418,6 +460,10 @@ class wp_slimstat_db
         if (!empty($_slim_stats_table_alias)) {
             $column_with_alias = $_slim_stats_table_alias . '.' . $_dimension;
         }
+        if ((0 === strpos($_dimension, 'utm_') || 'traffic_source' === $_dimension) && in_array($_operator, ['matches', 'does_not_match'], true)) {
+            // MySQL 8's ICU regex rejects binary strings; retain case-sensitive UTF-8 matching.
+            $column_with_alias = 'CONVERT(' . $column_with_alias . ' USING utf8mb4) COLLATE utf8mb4_bin';
+        }
 
         switch ($_dimension) {
             case 'ip':
@@ -433,6 +479,9 @@ class wp_slimstat_db
         }
 
         $where = ['', htmlentities($_value, ENT_QUOTES, 'UTF-8')];
+        if (0 === strpos($_dimension, 'utm_') || 'traffic_source' === $_dimension) {
+            $where[1] = $_value;
+        }
 
         switch ($_operator) {
             case 'is_not_equal_to':
@@ -533,6 +582,7 @@ class wp_slimstat_db
         }
     }
 
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom analytics SQL is compiled by validated query builders; SELECTs use Query or full-SQL transients for historical windows.
     public static function get_results($_sql = '', $_select_no_aggregate_values = '', $_order_by = '', $_group_by = '', $_aggregate_values_add = '')
     {
         $_sql = apply_filters('slimstat_get_results_sql', $_sql, $_select_no_aggregate_values, $_order_by, $_group_by, $_aggregate_values_add);
@@ -555,6 +605,7 @@ class wp_slimstat_db
             }
         }
 
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
         // Nothing here rewrites the SQL into the Query builder, and nothing may without an
         // ANCHORED parse. The converter this method carried matched `WHERE (.+?)` with every
         // following group optional, so the lazy quantifier captured exactly ONE character:
@@ -569,6 +620,7 @@ class wp_slimstat_db
         //
         // Execute on wp_slimstat::$wpdb so the External DB addon queries the correct database.
         $results = wp_slimstat::$wpdb->get_results($_sql, ARRAY_A);
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         // Write back what we read.
         //
@@ -604,6 +656,7 @@ class wp_slimstat_db
 
         return $results;
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
     /**
      * Is the active window entirely in the past, and therefore safe to cache?
@@ -635,6 +688,7 @@ class wp_slimstat_db
         return preg_match('/^select\s+count\s*\(\s*distinct\s+.*\)\s+as\s+[a-z_][a-z0-9_]*\s+from\s+[`\w]+/i', $sql_trim) && (false === stripos($sql_trim, ' join ') && false === stripos($sql_trim, ' group by ') && false === stripos($sql_trim, ' having ') && false === stripos($sql_trim, ' union ') && false === stripos($sql_trim, ' as sub'));
     }
 
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom analytics SQL is compiled by validated query builders; SELECTs delegate to Query caching; non-SELECT fallback requires fresh database state.
     public static function get_var($_sql = '', $_aggregate_value = '')
     {
         $_sql = apply_filters('slimstat_get_var_sql', $_sql, $_aggregate_value);
@@ -687,9 +741,12 @@ class wp_slimstat_db
             self::maybe_enable_query_cache($query);
             return $query->getVar();
         } else {
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
             return wp_slimstat::$wpdb->get_var($_sql);
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         }
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
     public static function parse_filters($_filters_raw)
     {
@@ -815,7 +872,11 @@ class wp_slimstat_db
 
                     default:
                         $filter_op    = $a_filter[2];
-                        $filter_value = isset($a_filter[3]) ? str_replace('\\', '', htmlspecialchars_decode($a_filter[3])) : '';
+                        $filter_value = $a_filter[3] ?? '';
+                        // Acquisition values are stored literally, including entities and backslashes.
+                        if (0 !== strpos($a_filter[1], 'utm_') && 'traffic_source' !== $a_filter[1]) {
+                            $filter_value = str_replace('\\', '', htmlspecialchars_decode($filter_value));
+                        }
                         if (in_array($filter_op, self::$valueless_operators, true)) {
                             // Value-less by design — store an empty value, scrubbing any stale
                             // UI value the SQL builder would ignore anyway. See #305.
@@ -1063,7 +1124,7 @@ class wp_slimstat_db
     public static function count_records($_column = 'id', $_where = '', $_use_date_filters = true, $where_params = [])
     {
         // Validating the column
-        if (false === in_array($_column, ['id', 'ip', 'other_ip', 'username', 'email', 'country', 'location', 'city', 'referer', 'resource', 'searchterms', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser', 'browser_version', 'browser_type', 'platform', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'content_type', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out', 'dt'])) {
+        if (false === in_array($_column, ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'utm_id', 'traffic_channel', 'traffic_source', 'id', 'ip', 'other_ip', 'username', 'email', 'country', 'location', 'city', 'referer', 'resource', 'searchterms', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser', 'browser_version', 'browser_type', 'platform', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'content_type', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out', 'dt'])) {
             return null;
         }
 
@@ -1189,12 +1250,15 @@ class wp_slimstat_db
             : $query->getVar());
     }
 
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Live storage metadata on the configured analytics database has no WordPress API.
     public static function get_data_size()
     {
         $suffix = 'KB';
 
         $sql = wp_slimstat::$wpdb->prepare('SHOW TABLE STATUS LIKE %s', wp_slimstat::$wpdb->esc_like($GLOBALS['wpdb']->prefix . 'slim_stats'));
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
         $table_details = wp_slimstat::$wpdb->get_row($sql, 'ARRAY_A', 0);
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         $table_size = ($table_details['Data_length'] / 1024) + ($table_details['Index_length'] / 1024);
 
@@ -1205,6 +1269,7 @@ class wp_slimstat_db
 
         return number_format_i18n($table_size, 2) . ' ' . $suffix;
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
     public static function get_group_by($_args = [])
     {
@@ -1389,15 +1454,16 @@ class wp_slimstat_db
         $results[2]['value']   = number_format_i18n(round(self::$pageviews / $days_in_range, 0));
         $results[2]['tooltip'] = __('How many daily pageviews have been generated on average.', 'wp-slimstat');
 
-        $results[3]['metric']  = __('From Any SERP', 'wp-slimstat');
+        $results[3]['metric']  = __('Pageviews with a search term', 'wp-slimstat');
         $results[3]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', 'searchterms IS NOT NULL'));
-        $results[3]['tooltip'] = __('Visitors who landed on your site after searching for a keyword on a search engine and clicking on the corresponding search result link. This value includes both internal and external search result pages.', 'wp-slimstat');
+        $results[3]['tooltip'] = __('Pageviews that arrived with a search term, from a search engine or your own site search. Most search engines no longer pass the term, so Channels counts more Organic Search.', 'wp-slimstat');
 
         $results[4]['metric']  = __('Unique IPs', 'wp-slimstat');
         $results[4]['value']   = number_format_i18n(wp_slimstat_db::count_records('ip'));
         $results[4]['tooltip'] = __('Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses.', 'wp-slimstat');
 
-        $results[5]['metric'] = __('Last 30 minutes', 'wp-slimstat');
+        $results[5]['metric'] = __('Pageviews, last 30 minutes', 'wp-slimstat');
+        $results[5]['tooltip'] = __('Pageviews in the last 30 minutes. Visitors online counts people, not pageviews.', 'wp-slimstat');
         $results[5]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt > ' . (wp_slimstat::now() - 1800), false));
 
         $results[6]['metric'] = __('Today', 'wp-slimstat');
@@ -1870,6 +1936,15 @@ class wp_slimstat_db
         // 3.13. Issue #334; the operand order is ADR-17's and is unchanged.
         $new_visitors_rate = ($total_human_hits > 0) ? round((100 * $new_visitors / $total_human_hits), 2) : 0;
         $server_name       = (string) wp_parse_url(home_url(), PHP_URL_HOST);
+        // Direct and search counts use the Channels report's definitions, so the two reports
+        // agree. Rows recorded before attribution existed have no channel and keep the referrer rule.
+        $serp_where   = 'searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE %s';
+        $direct_where = 'referer IS NULL';
+        $channels_ready = '1' === get_option(\SlimStat\Tracker\Acquisition::readinessKey(), '0');
+        if ($channels_ready) {
+            $serp_where   = "(traffic_channel = 'organic_search' OR (traffic_channel IS NULL AND {$serp_where}))";
+            $direct_where = "(traffic_channel = 'direct' OR (traffic_channel IS NULL AND {$direct_where}))";
+        }
 
         if (intval($new_visitors_rate) > 99) {
             $new_visitors_rate = '100';
@@ -1884,12 +1959,13 @@ class wp_slimstat_db
         $results[1]['tooltip'] = __('A referrer (or referring site) is a site that a visitor previously visited before following a link to your site.', 'wp-slimstat');
 
         $results[2]['metric']  = __('Direct Pageviews', 'wp-slimstat');
-        $results[2]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', 'resource IS NULL'));
-        $results[2]['tooltip'] = __("Visitors who typed your website URL directly into their browser address bar. It can also refer to visitors who clicked on one of their bookmarked links, untagged links within emails, or links in documents that don't include tracking variables.", 'wp-slimstat');
+        $results[2]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', $direct_where));
+        $results[2]['tooltip'] = __("Visitors who typed your website URL directly into their browser address bar. It can also refer to visitors who clicked on one of their bookmarked links, untagged links within emails, or links in documents that don't include tracking variables.", 'wp-slimstat')
+            . ($channels_ready ? ' ' . __('It also counts older pageviews with no referrer, recorded before channels were tracked; the Channels report lists those as Unassigned.', 'wp-slimstat') : '');
 
         $results[3]['metric']  = __('From External SERP', 'wp-slimstat');
-        $results[3]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', 'searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE %s', true, ['%' . $GLOBALS['wpdb']->esc_like(home_url()) . '%']));
-        $results[3]['tooltip'] = __('Visitors who clicked on a link to your website listed on a search engine result page (SERP). This metric only counts visits coming from EXTERNAL search pages.', 'wp-slimstat');
+        $results[3]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', $serp_where, true, ['%' . $GLOBALS['wpdb']->esc_like(home_url()) . '%']));
+        $results[3]['tooltip'] = __('Visitors who clicked on a link to your website listed on a search engine result page (SERP). This metric only counts visits coming from <strong>external</strong> search pages.', 'wp-slimstat');
 
         $results[4]['metric']  = __('Unique Landing Pages', 'wp-slimstat');
         $results[4]['value']   = number_format_i18n(wp_slimstat_db::count_records('resource'));
@@ -1904,7 +1980,7 @@ class wp_slimstat_db
         $results[6]['tooltip'] = __('Percentage of single-page visits, i.e. visits in which the person left your site from the entrance page.', 'wp-slimstat');
 
         $results[7]['metric']  = __('Currently from search engines', 'wp-slimstat');
-        $results[7]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', 'searchterms IS NOT NULL  AND referer IS NOT NULL AND referer NOT LIKE %s AND dt > UNIX_TIMESTAMP() - 300', false, ['%' . $GLOBALS['wpdb']->esc_like(home_url()) . '%']));
+        $results[7]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', $serp_where . ' AND dt > UNIX_TIMESTAMP() - 300', false, ['%' . $GLOBALS['wpdb']->esc_like(home_url()) . '%']));
         $results[7]['tooltip'] = __('Visitors who clicked on a link to your website listed on a search engine result page (SERP), tracked in the last 5 minutes.', 'wp-slimstat');
 
         return $results;
@@ -1919,49 +1995,49 @@ class wp_slimstat_db
         $average_time              = 30 * $count_results;
         $results[0]['metric']      = __('0 - 30 seconds', 'wp-slimstat');
         $results[0]['value']       = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
-        $results[0]['details']     = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $results[0]['details']     = __('Pageviews', 'wp-slimstat') . (': ' . $count_results);
         $results[0]['counthits']   = $count_results;
 
         $count_results             = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 30 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 60');
         $average_time             += 60 * $count_results;
         $results[1]['metric']      = __('31 - 60 seconds', 'wp-slimstat');
         $results[1]['value']       = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
-        $results[1]['details']     = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $results[1]['details']     = __('Pageviews', 'wp-slimstat') . (': ' . $count_results);
         $results[1]['counthits']   = $count_results;
 
         $count_results             = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 60 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 180');
         $average_time             += 180 * $count_results;
         $results[2]['metric']      = __('1 - 3 minutes', 'wp-slimstat');
         $results[2]['value']       = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
-        $results[2]['details']     = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $results[2]['details']     = __('Pageviews', 'wp-slimstat') . (': ' . $count_results);
         $results[2]['counthits']   = $count_results;
 
         $count_results             = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 180 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 300');
         $average_time             += 300 * $count_results;
         $results[3]['metric']      = __('3 - 5 minutes', 'wp-slimstat');
         $results[3]['value']       = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
-        $results[3]['details']     = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $results[3]['details']     = __('Pageviews', 'wp-slimstat') . (': ' . $count_results);
         $results[3]['counthits']   = $count_results;
 
         $count_results             = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 300 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 420');
         $average_time             += 420 * $count_results;
         $results[4]['metric']      = __('5 - 7 minutes', 'wp-slimstat');
         $results[4]['value']       = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
-        $results[4]['details']     = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $results[4]['details']     = __('Pageviews', 'wp-slimstat') . (': ' . $count_results);
         $results[4]['counthits']   = $count_results;
 
         $count_results             = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 420 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 600');
         $average_time             += 600 * $count_results;
         $results[5]['metric']      = __('7 - 10 minutes', 'wp-slimstat');
         $results[5]['value']       = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
-        $results[5]['details']     = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $results[5]['details']     = __('Pageviews', 'wp-slimstat') . (': ' . $count_results);
         $results[5]['counthits']   = $count_results;
 
         $count_results             = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 600');
         $average_time             += 900 * $count_results;
         $results[6]['metric']      = __('More than 10 minutes', 'wp-slimstat');
         $results[6]['value']       = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
-        $results[6]['details']     = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $results[6]['details']     = __('Pageviews', 'wp-slimstat') . (': ' . $count_results);
         $results[6]['counthits']   = $count_results;
 
         // Sort time buckets by most hits first
@@ -2031,7 +2107,7 @@ class wp_slimstat_db
         $results[6]['value']  = number_format_i18n($metrics_per_visit[0]['avghits'], 2);
 
         $results[7]['metric'] = __('Longest visit', 'wp-slimstat');
-        $results[7]['value']  = number_format_i18n($metrics_per_visit[0]['maxhits']) . ' ' . __('hits', 'wp-slimstat');
+        $results[7]['value']  = number_format_i18n($metrics_per_visit[0]['maxhits']) . ' ' . __('pageviews', 'wp-slimstat');
 
         return $results;
     }
@@ -2105,6 +2181,24 @@ class wp_slimstat_db
     private static function and_extra_where($where, $extra_where)
     {
         return '' === $extra_where ? $where : $where . ' AND (' . $extra_where . ')';
+    }
+
+    /**
+     * Pageviews from visits that reached (or didn't reach) a goal between $start and $end, as a
+     * WHERE on slim_stats alias t1. Pro's heatmap Visitors filter; the goal rule stays here.
+     * '1=0' when the goal can't be evaluated.
+     */
+    public static function goal_visits_where($goal, $converted, $start, $end)
+    {
+        $is_event = 'event_notes' === ($goal['dimension'] ?? '');
+        $where    = self::build_goal_where($goal, $is_event ? 'ge' : 'g1');
+        if ('' === $where) {
+            return '1=0';
+        }
+        $from = $GLOBALS['wpdb']->prefix . 'slim_stats g1' . ($is_event ? ' INNER JOIN ' . $GLOBALS['wpdb']->prefix . 'slim_events ge ON ge.id = g1.id' : '');
+
+        return 't1.visit_id ' . ($converted ? 'IN' : 'NOT IN') . " (SELECT g1.visit_id FROM {$from} WHERE {$where} AND g1.visit_id > 0 AND "
+            . $GLOBALS['wpdb']->prepare('g1.dt BETWEEN %d AND %d)', $start, $end);
     }
 
     private static function build_goal_where($goal, $alias = '')
@@ -2252,15 +2346,19 @@ class wp_slimstat_db
      * @param string $alias        Table alias the visitor columns live on.
      * @return int
      */
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Query builder owns validated table/alias/filter SQL; parent goal/funnel reports own result caching.
     private static function count_unique_visitors($from_clause, $where_clause, $alias = 't1')
     {
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
         return intval(wp_slimstat::$wpdb->get_var(sprintf(
             "SELECT COUNT(*) FROM (SELECT DISTINCT %s AS vid FROM %s WHERE %s) AS uv",
             self::visitor_id_expr($alias),
             $from_clause,
             $where_clause
         )));
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
     /**
      * Get results for a single goal: total hits, unique visitors, conversion rate.
@@ -2268,6 +2366,7 @@ class wp_slimstat_db
      * @param array $goal Goal definition.
      * @return array ['total' => int, 'uniques' => int, 'cr' => float]
      */
+    // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Validated goal predicate and core-prefix table on the analytics connection; results are cached by normalized report filters.
     public static function get_goal_results($goal, $extra_where = '')
     {
         $table_stats  = $GLOBALS['wpdb']->prefix . 'slim_stats';
@@ -2350,6 +2449,7 @@ class wp_slimstat_db
         $request_memo[$memo_key] = $result;
         return $result;
     }
+    // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
     /**
      * Get total unique visitors in the current date range.
@@ -2574,6 +2674,7 @@ class wp_slimstat_db
      * @param array $funnel Funnel definition with steps array.
      * @return array Array of step results: name, visitors, pct, dropoff, unreachable.
      */
+    // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Per-connection temporary tables use fixed identifiers and prepared predicates; final funnel results are cached, intermediate tables cannot be.
     public static function get_funnel_results($funnel, $extra_where = '')
     {
         if (empty($funnel['steps']) || count($funnel['steps']) < 2) {
@@ -2664,7 +2765,9 @@ class wp_slimstat_db
             if (empty($step_where)) {
                 $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0, 'unreachable' => false];
                 $use_temp = false;
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
                 wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+                // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
                 continue;
             }
 
@@ -2739,11 +2842,16 @@ class wp_slimstat_db
 
             // Lazy preflight: only drop stale temps on the first step that actually runs SQL.
             if (!$preflight) {
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
                 wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+                // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
                 wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
+                // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
                 $preflight = true;
             }
 
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
             // Create the per-step temp table once, then count from it — avoids
             // running the grouped subquery twice for the same step.
             //
@@ -2770,6 +2878,7 @@ class wp_slimstat_db
             // merged into one visitor. None do on that dataset, but the derived column is
             // VARCHAR(256) and the question no longer arises. (D53, D16)
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
+            // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
             $created = wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_write (KEY(vid)) AS $select_sql");
 
             // If CREATE … AS SELECT failed (malformed step rule, STRICT-mode
@@ -2784,7 +2893,9 @@ class wp_slimstat_db
                 if ('on' == wp_slimstat::$settings['show_sql_debug'] && !empty(wp_slimstat::$wpdb->last_error)) {
                     self::$debug_message .= sprintf("<p class='debug'>Funnel step query failed: %s</p>", esc_html(wp_slimstat::$wpdb->last_error));
                 }
+                // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
                 wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+                // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
                 wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
                 $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0, 'unreachable' => false];
                 $had_error = true;
@@ -2797,8 +2908,10 @@ class wp_slimstat_db
                 $step1_count = $visitor_count;
             }
 
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
             // Swap: drop old READ, rename WRITE → READ for next iteration.
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+            // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
             wp_slimstat::$wpdb->query("ALTER TABLE $temp_write RENAME TO $temp_read");
             $use_temp = ($visitor_count > 0);
 
@@ -2824,7 +2937,9 @@ class wp_slimstat_db
         }
 
         if ($preflight) {
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+            // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
         }
 
@@ -2839,6 +2954,7 @@ class wp_slimstat_db
         $request_memo[$cache_key] = $results;
         return $results;
     }
+    // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
     /**
      * Get raw funnel results as flat array (for Export CSV / Email Reports).

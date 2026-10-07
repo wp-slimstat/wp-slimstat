@@ -1949,6 +1949,201 @@ if (!window.requestIdleCallback) {
             return false;
         };
 
+    // -------------------------- Heatmap capture -------------------------- //
+    // Runs only when the server sent SlimStatParams.hm ({l: "main"|"full", r: rate per 10000}),
+    // which needs capture on, this page listed and a heatmap viewer installed. Stored per
+    // element: selector plus the offset inside it, so the viewer can place clicks at any width.
+    // The server re-checks every gate; this side only keeps the visitor's cost low.
+    var HM_FLUSH_AT = 20;
+    var HM_MAX_CLICKS = 200;
+    var HM_INTERACTIVE = "a,button,input,select,textarea,label,summary,[role=button],[onclick]";
+    var HM_UNSTABLE = /\d{3,}|^(is|has|js)-|active|hover|focus|open|current|selected|visible|hidden/;
+    var heatmap = null; // { id, key: checksummed id, seq, sel: {selector: index}, s: [], r: [], maxY }
+    var heatmapSeq = {}; // last id -> next seq; the id can blink out (stale-id recovery) and come back
+    var recentClicks = [];
+
+    function heatmapParams() {
+        var hm = currentSlimStatParams().hm;
+        return hm && (hm.l === "main" || hm.l === "full") ? hm : null;
+    }
+
+    function heatmapId() {
+        var id = parseInt(currentSlimStatParams().id, 10);
+        return id > 0 ? id : 0;
+    }
+
+    function heatmapSampled(id, hm) {
+        return id % 10000 < parseInt(hm.r, 10);
+    }
+
+    // The batch for the current pageview. Navigation clears or replaces the id, so a batch
+    // whose id no longer matches is sent first, under the checksummed id it was captured with.
+    function heatmapBatch() {
+        var id = heatmapId();
+        if (heatmap && heatmap.id && heatmap.id !== id) heatmapFlush(false);
+        if (!heatmap) heatmap = { id: 0, key: "", seq: 0, sel: {}, s: [], r: [], maxY: window.innerHeight || 0 };
+        if (!heatmap.id && id) {
+            // Rows (id, kind, seq) are unique server side; a reused seq would be dropped.
+            var base = heatmapSeq[id] || 0;
+            heatmap.r.forEach(function (row) {
+                row[0] += base;
+            });
+            heatmap.seq += base;
+            heatmap.id = id;
+            heatmap.key = String(currentSlimStatParams().id);
+        }
+        return heatmap;
+    }
+
+    function stableToken(token) {
+        return /^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(token) && !HM_UNSTABLE.test(token);
+    }
+
+    // #id, or tag.class.class:nth-of-type(n), up to 6 levels joined by " > ", at most 255 chars.
+    function heatmapSelector(el) {
+        var parts = [];
+        var length = 0;
+        while (el && el.nodeType === 1 && el !== document.body && el !== document.documentElement && parts.length < 6) {
+            var id = el.getAttribute("id");
+            var part;
+            if (id && stableToken(id)) {
+                part = "#" + id;
+            } else {
+                part = el.nodeName.toLowerCase();
+                if (!/^[a-z][a-z0-9-]*$/.test(part)) return parts.join(" > ");
+                var classes = (el.getAttribute("class") || "").split(/\s+/).filter(stableToken).slice(0, 2);
+                if (classes.length) part += "." + classes.join(".");
+                var n = 1;
+                var same = false;
+                for (var sib = el.parentNode && el.parentNode.firstElementChild; sib; sib = sib.nextElementSibling) {
+                    if (sib === el) continue;
+                    if (sib.nodeName === el.nodeName) {
+                        same = true;
+                        if (sib.compareDocumentPosition(el) & 4) n++;
+                    }
+                }
+                if (same) part += ":nth-of-type(" + n + ")";
+            }
+            if (length + part.length + 3 > 255) break;
+            parts.unshift(part);
+            length += part.length + 3;
+            if (part.charAt(0) === "#") break;
+            el = el.parentNode;
+        }
+        return parts.join(" > ");
+    }
+
+    function closestMatch(el, selector) {
+        while (el && el.nodeType === 1) {
+            if (el.matches(selector)) return el;
+            el = el.parentNode;
+        }
+        return null;
+    }
+
+    function heatmapClick(e) {
+        var hm = heatmapParams();
+        if (!hm || !e || e.isTrusted === false || e.detail === 0) return;
+        var id = heatmapId();
+        if (id && !heatmapSampled(id, hm)) return;
+        var target = e.target && e.target.nodeType === 1 ? e.target : e.target && e.target.parentNode;
+        if (!target || closestMatch(target, ".noslimstat,[data-slimstat-hm-ignore]")) return;
+        try {
+            if (window.getSelection && String(window.getSelection()).length) return;
+        } catch (err) {
+            /* ignore */
+        }
+
+        var batch = heatmapBatch();
+        if (batch.seq >= HM_MAX_CLICKS) return;
+        var anchor = closestMatch(target, HM_INTERACTIVE);
+        if (!anchor && hm.l !== "full") return;
+        var el = anchor || target;
+        var flags = anchor ? 1 : 0;
+        if (!anchor) {
+            try {
+                if (window.getComputedStyle(el).cursor !== "pointer") flags |= 2;
+            } catch (err) {
+                /* ignore */
+            }
+        }
+
+        var now = Date.now();
+        recentClicks = recentClicks.filter(function (c) {
+            return now - c.t < 1000 && Math.abs(c.x - e.clientX) <= 30 && Math.abs(c.y - e.clientY) <= 30;
+        });
+        recentClicks.push({ t: now, x: e.clientX, y: e.clientY });
+        if (recentClicks.length >= 3) flags |= 4;
+
+        var index = -1;
+        var selector = heatmapSelector(el);
+        if (selector) {
+            if (!Object.prototype.hasOwnProperty.call(batch.sel, selector)) {
+                // Labels only from interactive elements, never what a visitor typed.
+                var label = anchor ? (el.getAttribute("aria-label") || (/^(input|select|textarea)$/i.test(el.nodeName) ? "" : el.textContent) || "") : "";
+                batch.sel[selector] = batch.s.length;
+                batch.s.push([selector, label.replace(/\s+/g, " ").trim().slice(0, 40)]);
+            }
+            index = batch.sel[selector];
+        }
+        var rect = el.getBoundingClientRect();
+        var rx = rect.width ? Math.round(((e.clientX - rect.left) / rect.width) * 10000) : 0;
+        var ry = rect.height ? Math.round(((e.clientY - rect.top) / rect.height) * 10000) : 0;
+        var clamp = function (v) {
+            return Math.max(0, Math.min(10000, v));
+        };
+        batch.r.push([batch.seq++, flags, index, clamp(rx), clamp(ry), Math.max(0, Math.round(e.pageX)), Math.max(0, Math.round(e.pageY))]);
+        if (batch.r.length >= HM_FLUSH_AT) heatmapFlush(false);
+    }
+
+    function heatmapScroll() {
+        var hm = heatmapParams();
+        if (!hm || hm.l !== "full") return;
+        var ticking = false;
+        window.addEventListener(
+            "scroll",
+            function () {
+                if (ticking) return;
+                ticking = true;
+                window.requestAnimationFrame(function () {
+                    ticking = false;
+                    var batch = heatmapBatch();
+                    batch.maxY = Math.max(batch.maxY, Math.round((window.pageYOffset || 0) + window.innerHeight));
+                });
+            },
+            { passive: true }
+        );
+    }
+
+    // The batch as an &hm= parameter, or "" when there is nothing to send. With final, a full
+    // level batch carries the scroll row, which also marks the pageview as captured.
+    function takeHeatmap(id, final) {
+        var hm = heatmapParams();
+        var batch = heatmap;
+        if (!hm || !batch || !id || (batch.id && batch.id !== id) || !heatmapSampled(id, hm)) return "";
+        var scroll = final && hm.l === "full";
+        if (!batch.r.length && !scroll) return "";
+        var consent = SlimStat.consent.checkAllowed(currentSlimStatParams());
+        if (!consent || !consent.allowed || consent.mode !== "full") return "";
+        var data = { v: 1, vw: window.innerWidth || 0, vh: window.innerHeight || 0, s: batch.s, r: batch.r };
+        if (scroll) data.sc = [batch.maxY, Math.round(document.documentElement.scrollHeight || 0)];
+        // Selectors are per request; seq keeps counting so retries overwrite, never duplicate.
+        batch.r = [];
+        batch.s = [];
+        batch.sel = {};
+        return "&hm=" + encodeURIComponent(JSON.stringify(data));
+    }
+
+    function heatmapFlush(final) {
+        if (!heatmap || !heatmap.id) return;
+        var batch = heatmap;
+        heatmapSeq = {}; // an earlier pageview's id never returns, so one entry is enough
+        heatmapSeq[batch.id] = batch.seq;
+        var raw = takeHeatmap(batch.id, final);
+        if (raw) SlimStat.send_to_server("action=slimtrack&id=" + batch.key + raw, true, { priority: "normal" });
+        if (batch.id !== heatmapId()) heatmap = null;
+    }
+
     // Track whether we've already finalized the current pageview (avoid duplicate beacons)
     var finalizedPageviews = {};
     // Track currently in-flight finalization requests to avoid races
@@ -1986,8 +2181,11 @@ if (!window.requestIdleCallback) {
         // Mark in-flight to prevent concurrent senders (race protection)
         inFlightFinalizations[p.id] = true;
 
-        // Old behavior: send a simple finalize to let the server compute dt_out
-        var payload = "action=slimtrack&id=" + p.id + (reason ? "&fv=" + encodeURIComponent(reason) : "");
+        // Old behavior: send a simple finalize to let the server compute dt_out.
+        // The heatmap batch rides along, so most pageviews cost no extra request.
+        // ponytail: clicks after a finalize (tab hidden, then shown again) wait for the next 20.
+        if (heatmapParams()) heatmapBatch();
+        var payload = "action=slimtrack&id=" + p.id + (reason ? "&fv=" + encodeURIComponent(reason) : "") + takeHeatmap(parseInt(p.id, 10), true);
         SlimStat.send_to_server(payload, true, { priority: "high", immediate: false });
 
         // Mark finalized and clear in-flight after a short window
@@ -2350,6 +2548,11 @@ if (!window.requestIdleCallback) {
 
     function setupClickDelegation() {
         SlimStat.add_event(document.body, "click", function (e) {
+            try {
+                heatmapClick(e);
+            } catch (err) {
+                /* never let capture break the legacy events below */
+            }
             var target = e.target;
             while (target && target !== document.body) {
                 // Skip GDPR consent buttons to avoid duplicate processing
@@ -2490,6 +2693,7 @@ if (!window.requestIdleCallback) {
 
     // Setup interaction tracking
     setupClickDelegation();
+    heatmapScroll();
     setupNavigationHooks();
 
     /**

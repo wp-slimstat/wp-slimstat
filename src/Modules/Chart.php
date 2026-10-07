@@ -68,7 +68,9 @@ class Chart
         }
 
         $args = isset($_POST['args']) && is_string($_POST['args'])
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Decode JSON before validating chart arguments; granularity is checked against the fixed allowlist.
             ? json_decode(wp_unslash($_POST['args']), true) : null;
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Decode JSON before validating chart arguments; granularity is checked against the fixed allowlist.
         $granularity = $_POST['granularity'] ?? 'daily';
         if (!is_string($granularity) || !in_array($granularity, self::GRANULARITIES, true)) {
             wp_send_json_error(['message' => __('Invalid granularity', 'wp-slimstat')]);
@@ -215,7 +217,9 @@ class Chart
 
     private function detectGranularity(array $args): string
     {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
         if (!empty($_REQUEST['granularity']) && in_array($_REQUEST['granularity'], self::GRANULARITIES, true)) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
             return sanitize_text_field(wp_unslash($_REQUEST['granularity']));
         }
 
@@ -407,12 +411,16 @@ class Chart
             // produce noisy logs or crash the AJAX handler instead of the
             // generic security rejection below.
             if (!is_string($args['chart_data']['where'])) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid chart filter expression.', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
             $normalized = self::normalizeSqlWhitespace($args['chart_data']['where']);
             $allowed    = self::getAllowedWhereClauses();
             if (!isset($allowed[$normalized])) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid chart filter expression.', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
             $canonical   = $allowed[$normalized]; // splice trusted text, never the user-derived $normalized
             // Wrap: allowlisted clauses may contain a top-level OR that would
@@ -592,11 +600,15 @@ class Chart
             $column = strtolower($matches[2]);
 
             if (!in_array($function, $allowedFunctions, true)) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid SQL function in chart data expression', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
 
             if (!in_array($column, $allowedColumns, true)) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid column name in chart data expression', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
 
             // Use esc_sql as additional protection (though column is whitelisted)
@@ -609,11 +621,15 @@ class Chart
             $column = strtolower($matches[2]);
 
             if (!in_array($function, $allowedFunctions, true)) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid SQL function in chart data expression', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
 
             if (!in_array($column, $allowedColumns, true)) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid column name in chart data expression', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
 
             // Use esc_sql as additional protection (though column is whitelisted)
@@ -621,7 +637,9 @@ class Chart
         }
 
         // If none of the patterns match, reject the expression
+        // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
         throw new \Exception(__('Invalid SQL expression in chart data. Only whitelisted aggregate functions on valid columns are allowed.', 'wp-slimstat'));
+        // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
     }
 
     /**

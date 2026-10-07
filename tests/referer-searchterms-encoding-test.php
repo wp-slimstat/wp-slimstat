@@ -5,13 +5,13 @@
  * percent-encoded (%XX) query octets so that search-term extraction keeps
  * working for non-Latin / space-bearing search-engine referers.
  *
- * Background: #306 swapped the referer sanitizer from sanitize_url() to
+ * Background: #306 swapped the referer sanitizer from esc_url_raw() to
  * sanitize_text_field() so that `android-app://…` survived. But WordPress's
  * sanitize_text_field() strips EVERY %XX octet (wp-includes/formatting.php:
  * `while (preg_match('/%[a-f0-9]{2}/i', …)) str_replace('', …)`), so a referer
  * like `https://yandex.ru/?text=%D0%BF%D1%80%D0%B8%D0%B2%D0%B5%D1%82` arrives at
  * Utils::getSearchTerms() as `…?text=` — the term is gone. The fix uses
- * sanitize_url() with `android-app` added to the protocols allow-list
+ * esc_url_raw() with `android-app` added to the protocols allow-list
  * (Processor::REFERER_ALLOWED_SCHEMES), which preserves %XX AND the app scheme
  * while still dropping disallowed schemes (javascript:, data:).
  *
@@ -59,10 +59,10 @@ namespace {
         }
     }
 
-    if (!function_exists('sanitize_url')) {
+    if (!function_exists('esc_url_raw')) {
         // Models esc_url_raw(): drops any scheme not in $protocols (default list +
         // whatever the caller passes), strips tags, but PRESERVES %XX query octets.
-        function sanitize_url($url, $protocols = null)
+        function esc_url_raw($url, $protocols = null)
         {
             $url     = strip_tags(trim((string) $url));
             $allowed = $protocols ?: ['http', 'https', 'ftp', 'ftps', 'mailto', 'news', 'irc', 'feed', 'telnet', 'mms', 'rtsp', 'svn', 'tel', 'fax', 'xmpp', 'webcal', 'urn'];

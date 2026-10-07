@@ -6,7 +6,7 @@ rationale: Deletes the intersection retry, restoring the state where a v6 INSERT
 ---
 --- a/src/Tracker/Storage.php
 +++ b/src/Tracker/Storage.php
-@@ -38,19 +38,6 @@ class Storage
+@@ -53,23 +53,7 @@
  		//
  		// Reactive, never preemptive: the tracker budget is denominated in queries and
  		// wp_options writes, and neither may move on the path that always runs.
@@ -19,10 +19,15 @@ rationale: Deletes the intersection retry, restoring the state where a v6 INSERT
 -			// retry would be the identical failing statement. array_intersect_key can only
 -			// shrink, hence `<`.
 -			if ($writable !== [] && count($writable) < count($data)) {
+-				// A restored pre-upgrade table must not pay this failed insert on every hit.
+-				if (preg_grep('/^(utm_|traffic_)/', array_diff(array_keys($data), $present))) {
+-					update_option(Acquisition::readinessKey(), '0', true);
+-				}
 -				self::recordColumnDegradation($table, array_diff(array_keys($data), $present));
 -				$result = self::write($table, $writable);
 -			}
 -		}
++
  
  		return $result;
  	}

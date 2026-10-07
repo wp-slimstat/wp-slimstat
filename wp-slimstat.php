@@ -276,6 +276,7 @@ class wp_slimstat
         }
 
         // Load all the settings
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Read-only page/date/presentation selection; no privileged mutation is performed by this input. String page value only selects network/site settings and is never rendered or stored.
         if (is_network_admin() && (!isset($_GET['page']) || !is_string($_GET['page']) || false === strpos(wp_unslash($_GET['page']), 'slimview'))) {
             self::$settings = get_site_option('slimstat_options', []);
         } else {
@@ -292,6 +293,14 @@ class wp_slimstat
         }
 
         self::$settings = array_merge(self::init_options(), self::$settings);
+
+        // Repair a lookup URL that an earlier release stored from Pro's runtime override.
+        $_repaired = \SlimStat\Utils\StoredSettings::withoutRuntimeOverrides(self::$settings);
+        if ($_repaired !== self::$settings) {
+            self::$settings = $_repaired;
+            self::update_option('slimstat_options', self::$settings);
+        }
+        unset($_repaired);
 
         // One-shot settings migration for installs that ran v5.4.0–v5.4.5. The logic lives in
         // SlimStat\Migration\LegacySettings5460 so the unit test exercises THIS code rather than
@@ -494,10 +503,16 @@ class wp_slimstat
         add_filter('wp_redirect_status', [\SlimStat\Tracker\Tracker::class, 'update_content_type'], 10, 2);
 
         // Shortcodes
-        add_shortcode('slimstat', [self::class, 'slimstat_shortcode'], 15);
+        add_shortcode('slimstat', [\SlimStat\Shortcodes\Shortcode::class, 'render']);
 
         // Init the plugin functionality
         add_action('init', [self::class, 'init_plugin']);
+
+        if (class_exists('WooCommerce') || \SlimStat\Ecommerce\Integration::ready()) {
+            \SlimStat\Ecommerce\Integration::boot();
+        }
+
+        \SlimStat\Heatmap\Store::boot();
 
         // REST API Support
         add_action('rest_api_init', [self::class, 'register_rest_route']);
@@ -530,7 +545,8 @@ class wp_slimstat
      */
     public static function load_textdomain()
     {
-        load_plugin_textdomain('wp-slimstat', false, '/wp-slimstat/languages');
+        // phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- Keep bundled translations available on the supported WordPress 5.6 floor and renamed plugin directories.
+        load_plugin_textdomain('wp-slimstat', false, dirname(plugin_basename(__FILE__)) . '/languages');
     }
 
     /**
@@ -554,7 +570,7 @@ class wp_slimstat
         ?>
         <div class="notice notice-warning">
             <p>
-                <strong><?php esc_html_e('SlimStat Analytics — IP Privacy Settings Reset', 'wp-slimstat'); ?></strong><br>
+                <strong><?php esc_html_e('SlimStat: IP privacy settings reset', 'wp-slimstat'); ?></strong><br>
                 <?php esc_html_e('This update restored full-IP storage (the 5.3.x default) by turning off IP anonymization and daily visitor hashing. If your site serves EU visitors, please review your Data Protection settings.', 'wp-slimstat'); ?>
                 &nbsp;<a href="<?php echo esc_url($settings_url); ?>"><?php esc_html_e('Review Settings → Data Protection', 'wp-slimstat'); ?></a>
             </p>
@@ -580,6 +596,7 @@ class wp_slimstat
 
         // Log when debug is enabled
         if (defined('WP_DEBUG') && WP_DEBUG) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Diagnostic logging is guarded by WP_DEBUG; normal production requests do not log here.
             error_log(sprintf('[WP SLIMSTAT] [%s]: %s', $log_level, $message));
         }
     }
@@ -714,6 +731,31 @@ class wp_slimstat
         // by get_degradations(), which runs on admin screens. H2's own governance gate
         // fails a new autoloaded option; this was one, introduced by the D1 fix.
         update_option(self::DEGRADATION_OPTION, $stored, false);
+    }
+
+    /**
+     * Forget one degradation because its caller has just observed the cause gone.
+     *
+     * DEGRADATION_TTL heals failures that stop recurring; this is for the caller that PROVES
+     * the fix, so the notice does not contradict the screen beside it for up to three hours.
+     * Unrelated records are kept, and the option is deleted when none remain.
+     *
+     * @param string $step The key record_degradation() stored it under.
+     * @return void
+     */
+    public static function clear_degradation($step)
+    {
+        $stored = get_option(self::DEGRADATION_OPTION, []);
+        if (!is_array($stored) || !isset($stored[$step])) {
+            return;
+        }
+
+        unset($stored[$step]);
+        if ($stored) {
+            update_option(self::DEGRADATION_OPTION, $stored, false);
+        } else {
+            delete_option(self::DEGRADATION_OPTION);
+        }
     }
 
     /**
@@ -852,7 +894,7 @@ class wp_slimstat
         $request_url = '';
 
         if (isset($_SERVER['REQUEST_URI'])) {
-            return urldecode(sanitize_url(wp_unslash($_SERVER['REQUEST_URI'])));
+            return urldecode(esc_url_raw(wp_unslash($_SERVER['REQUEST_URI'])));
         } elseif (isset($_SERVER['SCRIPT_NAME'])) {
             $request_url = sanitize_text_field(wp_unslash($_SERVER['SCRIPT_NAME']));
         } elseif (isset($_SERVER['PHP_SELF'])) {
@@ -878,185 +920,7 @@ class wp_slimstat
      */
     public static function slimstat_shortcode($_attributes = '', $_content = '')
     {
-        shortcode_atts([
-            'f' => '',    // recent, popular, count, widget
-            'w' => '',    // column to use (for recent, popular and count) or widget to use
-            's' => ' ',    // separator
-            'o' => 0,    // offset for counters
-        ], $_attributes);
-
-        $f         = $_attributes['f'] ?? '';
-        $w         = $_attributes['w'] ?? '';
-        $s         = $_attributes['s'] ?? '';
-        $o         = $_attributes['o'] ?? 0;
-        $output    = '';
-        $where     = '';
-        $as_column = '';
-        $s         = sprintf("<span class='slimstat-item-separator'>%s</span>", $s);
-
-        // Look for required fields
-        if (empty($f) || empty($w)) {
-            return '<!-- Slimstat Shortcode Error: missing parameter -->';
-        }
-
-        // Validation the parameter w
-        $w = (string) $w;
-        if (false === in_array($w, ['*', 'count', 'display_name', 'hostname', 'post_link', 'post_link_no_qs', 'dt', 'username', 'post_link', 'ip', 'id', 'searchterms', 'username', 'resource', 'country', 'browser', 'platform', 'language', 'slim_p1_01', 'slim_p1_03', 'slim_p1_04', 'slim_p1_06', 'slim_p1_08', 'slim_p1_10', 'slim_p1_11', 'slim_p1_12', 'slim_p1_13', 'slim_p1_15', 'slim_p1_17', 'slim_p1_18', 'slim_p1_19_01', 'slim_p2_01', 'slim_p2_02', 'slim_p2_03', 'slim_p2_04', 'slim_p2_05', 'slim_p2_06', 'slim_p2_07', 'slim_p2_08', 'slim_p2_12', 'slim_p2_13', 'slim_p2_14', 'slim_p2_15', 'slim_p2_16', 'slim_p2_17', 'slim_p2_18', 'slim_p2_19', 'slim_p2_20', 'slim_p2_21', 'slim_p2_22_01', 'slim_p2_24', 'slim_p2_25', 'slim_p3_01', 'slim_p3_02', 'slim_p4_01', 'slim_p4_02', 'slim_p4_04', 'slim_p4_05', 'slim_p4_06', 'slim_p4_07', 'slim_p4_09', 'slim_p4_10', 'slim_p4_11', 'slim_p4_12', 'slim_p4_13', 'slim_p4_15', 'slim_p4_16', 'slim_p4_18', 'slim_p4_19', 'slim_p4_20', 'slim_p4_21', 'slim_p4_22', 'slim_p4_23', 'slim_p4_24', 'slim_p4_25', 'slim_p4_26_01', 'slim_p4_27', 'slim_p6_01', 'slim_p9_01', 'slim_p9_02', 'slim_p2_23'], true)) {
-            return '<!-- Slimstat Shortcode Error: invalid parameter for w -->';
-        }
-
-        // Include the Reports Library, but don't initialize the database, since we will do that separately later
-        include_once(plugin_dir_path(__FILE__) . 'admin/view/wp-slimstat-reports.php');
-        wp_slimstat_reports::init();
-
-        /**
-         * @SecurityProfile https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-0630
-         * Disabled because of the report from WP Scan
-         */
-        // Init the database library with the appropriate filters
-        /*if ( strpos ( $_content, 'WHERE:' ) !== false ) {
-            $where = html_entity_decode( str_replace( 'WHERE:', '', $_content ), ENT_QUOTES, 'UTF-8' );
-        }
-        else{*/
-        wp_slimstat_db::init(html_entity_decode($_content, ENT_QUOTES, 'UTF-8'));
-        //}
-
-        switch ($f) {
-            case 'count':
-            case 'count-all':
-                $output = wp_slimstat_db::count_records($w, $where, false === strpos($f, 'all')) + $o;
-                break;
-
-            case 'widget':
-                if (empty(wp_slimstat_reports::$reports[$w])) {
-                    return __('Invalid Report ID', 'wp-slimstat');
-                }
-
-                wp_register_style('wp-slimstat-frontend', plugins_url('/admin/assets/css/slimstat.css', __FILE__), true, SLIMSTAT_ANALYTICS_VERSION);
-                wp_enqueue_style('wp-slimstat-frontend');
-
-                wp_slimstat_reports::$reports[$w]['callback_args']['is_widget'] = true;
-
-                ob_start();
-                wp_slimstat_reports::report_header($w);
-                call_user_func(wp_slimstat_reports::$reports[$w]['callback'], wp_slimstat_reports::$reports[$w]['callback_args']);
-                wp_slimstat_reports::report_footer();
-                $output = ob_get_contents();
-                ob_end_clean();
-                break;
-
-            case 'recent':
-            case 'recent-all':
-            case 'top':
-            case 'top-all':
-                $function = 'get_' . str_replace('-all', '', $f);
-
-                if ('*' === $w) {
-                    $w = 'id';
-                }
-
-                $w = esc_html($w);
-                $w = self::string_to_array($w);
-
-                // Some columns are 'special' and need be removed from the list
-                $w_clean = array_diff($w, ['count', 'display_name', 'hostname', 'post_link', 'post_link_no_qs', 'dt']);
-
-                // The special value 'display_name' requires the username to be retrieved
-                if (in_array('display_name', $w)) {
-                    $w_clean[] = 'username';
-                }
-
-                // The special value 'post_list' requires the resource to be retrieved
-                if (in_array('post_link', $w)) {
-                    $w_clean[] = 'resource';
-                }
-
-                // The special value 'post_list_no_qs' requires a substring to be calculated
-                if (in_array('post_link_no_qs', $w)) {
-                    $w_clean   = ['SUBSTRING_INDEX( resource, "' . (get_option('permalink_structure') ? '?' : '&') . '", 1 )'];
-                    $as_column = 'resource';
-                }
-
-                // Retrieve the data
-                $results = wp_slimstat_db::$function(implode(', ', $w_clean), $where, '', false === strpos($f, 'all'), $as_column);
-
-                // No data? No problem!
-                if (empty($results)) {
-                    return '<!--  Slimstat Shortcode: No Data -->';
-                }
-
-                // Are nice permalinks enabled?
-                $permalinks_enabled = get_option('permalink_structure');
-
-                // Format results
-                $output = [];
-
-                foreach ($results as $result_idx => $a_result) {
-                    foreach ($w as $a_column) {
-                        $output[$result_idx][$a_column] = sprintf("<span class='col-%s'>", $a_column);
-
-                        switch ($a_column) {
-                            case 'count':
-                                $output[$result_idx][$a_column] .= $a_result['counthits'];
-                                break;
-
-                            case 'country':
-                                $output[$result_idx][$a_column] .= wp_slimstat_i18n::get_string('c-' . $a_result[$a_column]);
-                                break;
-
-                            case 'display_name':
-                                $user_details = get_user_by('login', $a_result['username']);
-                                if (!empty($user_details)) {
-                                    $output[$result_idx][$a_column] .= $user_details->display_name;
-                                } else {
-                                    $output[$result_idx][$a_column] .= $a_result['username'];
-                                }
-
-                                break;
-
-                            case 'dt':
-                                $output[$result_idx][$a_column] .= date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $a_result['dt']);
-                                break;
-
-                            case 'hostname':
-                                $output[$result_idx][$a_column] .= self::gethostbyaddr($a_result['ip']);
-                                break;
-
-                            case 'language':
-                                $output[$result_idx][$a_column] .= wp_slimstat_i18n::get_string('l-' . $a_result[$a_column]);
-                                break;
-
-                            case 'platform':
-                                $output[$result_idx][$a_column] .= wp_slimstat_i18n::get_string($a_result[$a_column]);
-                                break;
-
-                            case 'post_link':
-                            case 'post_link_no_qs':
-                                $post_id = url_to_postid($a_result['resource']);
-                                if ($post_id > 0) {
-                                    $output[$result_idx][$a_column] .= sprintf("<a href='%s'>", esc_url( $a_result[ 'resource' ] )) . esc_html( get_the_title($post_id) ) . '</a>';
-                                } else {
-                                    $output[$result_idx][$a_column] .= sprintf("<a href='%s'>%s</a>", esc_url( $a_result[ 'resource' ] ), esc_html( $a_result[ 'resource' ] ));
-                                }
-                                break;
-
-                            default:
-                                $output[$result_idx][$a_column] .= $a_result[$a_column] ?? '';
-                                break;
-                        }
-                        $output[$result_idx][$a_column] .= '</span>';
-                    }
-                    $output[$result_idx] = '<li>' . implode($s, $output[$result_idx]) . '</li>';
-                }
-
-                $output = '<ul class="slimstat-shortcode ' . $f . implode('-', $w) . '">' . implode('', $output) . '</ul>';
-                break;
-
-            default:
-                break;
-        }
-
-        return $output;
+        return \SlimStat\Shortcodes\Shortcode::render($_attributes, $_content);
     }
 
     // end slimstat_shortcode
@@ -1199,11 +1063,11 @@ class wp_slimstat
             'permission_callback' => [self::class, 'rest_api_authorization'],
             'args'                => [
                 'token' => [
-                    'description' => __('You will need to specify a valid token to be able to query the data. Tokens are defined in Slimstat > Settings > Access Control.', 'wp-slimstat'),
+                    'description' => __('You will need to specify a valid token to be able to query the data. Tokens are defined in SlimStat > Settings > Access Control.', 'wp-slimstat'),
                     'type'        => 'string',
                 ],
                 'function' => [
-                    'description' => __('This parameter specifies the type of QUERY you would like to perform. Accepted funciton values include: count, count-all, recent, recent-all, top and top-all.', 'wp-slimstat'),
+                    'description' => __('This parameter specifies the type of query you would like to perform. Accepted function values include: count, count-all, recent, recent-all, top and top-all.', 'wp-slimstat'),
                     'type'        => 'string',
                     'enum'        => ['count', 'count-all', 'recent', 'recent-all', 'top', 'top-all'],
                 ],
@@ -1213,7 +1077,7 @@ class wp_slimstat
                     'enum'        => ['*', 'id', 'ip', 'username', 'email', 'country', 'referer', 'resource', 'searchterms', 'browser', 'platform', 'language', 'resolution', 'content_type', 'content_id', 'tz_offset', 'outbound_resource'],
                 ],
                 'filters' => [
-                    'description' => __('This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (i.e.: browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim', 'wp-slimstat')
+                    'description' => __('This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (e.g. browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim', 'wp-slimstat')
                         // The urlencoded example is kept out of the translatable string: %20/%26 read as
                         // printf placeholders to i18n tooling, and the example must not be translated anyway.
                         . ' (encoded: browser%20contains%20Chrome%26%26%26referer%20contains%20slim)',
@@ -1376,6 +1240,8 @@ class wp_slimstat
     {
         $defaults = self::init_options();
         $defaults['geolocation_provider'] = 'dbip';
+        // Heatmaps start on for new installs only; init_options() keeps upgrades opted out.
+        $defaults['heatmap_capture'] = 'full';
         return $defaults;
     }
 
@@ -1416,6 +1282,12 @@ class wp_slimstat
             // General - Database
             'auto_purge'        => 420,
             'auto_purge_delete' => 'on',
+
+            // Heatmaps (6.1.0): off | main | full; rate in 1/10,000 of pageviews; pages is a
+            // wildcard list like the permalink exclusions, empty for all pages.
+            'heatmap_capture' => 'off',
+            'heatmap_rate'    => 10000,
+            'heatmap_pages'   => '',
 
             // Tracker
             // -----------------------------------------------------------------------
@@ -1561,6 +1433,7 @@ class wp_slimstat
             'notice_browscap_fileinfo' => 'on',
             'notice_geolite'           => 'on',
             'notice_caching'           => 'on',
+            'notice_getstarted'        => 'on',
 
             // Network-wide Settings
             'locked_options' => '',
@@ -1583,6 +1456,12 @@ class wp_slimstat
      */
     public static function update_option($_key = '', $_value = '', $_autoload = null)
     {
+        // Every save of the settings routes through here, so runtime overrides stop here once.
+        if ('slimstat_options' === $_key && is_array($_value)) {
+            $_stored = is_network_admin() ? get_site_option($_key) : get_option($_key);
+            $_value = \SlimStat\Utils\StoredSettings::withoutRuntimeOverrides($_value, is_array($_stored) ? $_stored : null);
+        }
+
         if (!is_network_admin()) {
             update_option($_key, $_value, $_autoload);
         } else {
@@ -1596,6 +1475,10 @@ class wp_slimstat
      */
     public static function enqueue_tracker()
     {
+        if (\SlimStat\Heatmap\Store::isPreview()) {
+            return false;
+        }
+
         // Use the new unified tracking method setting
         $method = self::$settings['tracking_request_method'] ?? 'rest';
 
@@ -1720,6 +1603,12 @@ class wp_slimstat
             $params['slimstat_debug'] = 'on';
         }
 
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Only reduced to a page key and wildcard-matched; pageKeyFromUrl() sanitizes.
+        $heatmap = \SlimStat\Heatmap\Store::params((string) ($_SERVER['REQUEST_URI'] ?? ''));
+        if (null !== $heatmap) {
+            $params['hm'] = $heatmap;
+        }
+
         $params = apply_filters('slimstat_js_params', $params);
 
         // Add dependencies for consent integrations (e.g., WP Consent API)
@@ -1754,6 +1643,7 @@ class wp_slimstat
             wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), $dependencies, $local_script_version, true);
         }
 
+        wp_script_add_data('wp_slimstat', 'strategy', 'defer');
         wp_enqueue_script('wp_slimstat');
 
         /**
@@ -1874,6 +1764,7 @@ class wp_slimstat
     /**
      * Removes old entries from the main table and performs other daily tasks
      */
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Retention uses core-prefix tables, manifest-intersected columns and bound cutoffs; archive/delete operations require fresh state.
     public static function wp_slimstat_purge()
     {
         $autopurge_interval = intval(self::$settings['auto_purge']);
@@ -1888,11 +1779,13 @@ class wp_slimstat
         $table_events         = $GLOBALS['wpdb']->prefix . 'slim_events';
         $table_events_archive = $GLOBALS['wpdb']->prefix . 'slim_events_archive';
 
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
         // Nothing to purge is the overwhelmingly common case: retention defaults to 420
         // days and this runs every 12 hours. Two indexed probes, then stop — the tick used
         // to continue into four full InnoDB table rebuilds regardless. (D1)
         $has_work = self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table_stats} WHERE dt < %d LIMIT 1", $days_ago))
             || self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table_events} WHERE dt < %d LIMIT 1", $days_ago));
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         if (!$has_work) {
             return;
@@ -2020,6 +1913,7 @@ class wp_slimstat
                 return;
             }
 
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
             // INSERT IGNORE, with event_id carried explicitly, so a run interrupted between
             // archiving and deleting is replayable: the next run re-copies the same rows
             // and MySQL ignores the ones already there. Without event_id there is no key to
@@ -2040,10 +1934,12 @@ class wp_slimstat
                     self::$wpdb->last_error,
                     self::DEGRADATION_OPERATIONAL
                 );
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                 return;
             }
         }
 
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
         // Delete the events explicitly rather than leaning on the cascade, so the set
         // removed is exactly the set archived, and so the behaviour is the same on an
         // install whose tables are MyISAM and silently ignore the foreign key.
@@ -2053,6 +1949,7 @@ class wp_slimstat
             $days_ago
         ))) {
             self::record_degradation('purge (deleting events)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             return;
         }
 
@@ -2096,6 +1993,7 @@ class wp_slimstat
                 return;
             }
 
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
             if (false === self::$wpdb->query(self::$wpdb->prepare(
                 "INSERT IGNORE INTO {$table_stats_archive} (" . implode(', ', $stats_columns) . ")
                  SELECT " . implode(', ', $stats_columns) . " FROM {$table_stats} WHERE dt < %d",
@@ -2106,6 +2004,7 @@ class wp_slimstat
                     self::$wpdb->last_error,
                     self::DEGRADATION_OPERATIONAL
                 );
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                 return;
             }
 
@@ -2136,8 +2035,12 @@ class wp_slimstat
 
         if ($rows_removed > 0 && (self::now() - $last_optimized) > 30 * DAY_IN_SECONDS) {
             self::update_option('slimstat_purge_optimized_at', self::now(), false);
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
             self::$wpdb->query('OPTIMIZE TABLE ' . $table_stats);
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
             self::$wpdb->query('OPTIMIZE TABLE ' . $table_events);
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         }
 
         // C34 — record that the purge SUCCEEDED, reached only by the path that completed.
@@ -2152,6 +2055,7 @@ class wp_slimstat
         // case is the one that raises, which is the direction a health signal has to fail.
         self::update_option(self::LAST_PURGE_OK_OPTION, self::now(), false);
     }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
     /**
      * Has the purge gone too long without a successful run?
@@ -2241,6 +2145,10 @@ class wp_slimstat
 
         if ('on' !== (self::$settings['ignore_wp_users'] ?? 'off')) {
             $content .= '<li>' . __('User Information: If you are logged in, your username and email may be associated with your visits (only with consent when GDPR mode is enabled).', 'wp-slimstat') . '</li>';
+        }
+
+        if (\SlimStat\Heatmap\Store::capturing()) {
+            $content .= '<li>' . __('Heatmaps: Where visitors click on links, buttons and other page elements, and how far they scroll. What you type is never recorded.', 'wp-slimstat') . '</li>';
         }
 
         $content .= '</ul>';
@@ -2789,6 +2697,7 @@ class wp_slimstat
         /**
          * Create .htaccess to avoid public access.
          */
+        // phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_is_writable,WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fwrite,WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- local upload protection must also work in background jobs without interactive filesystem credentials.
         if (is_dir($upload_dir) && is_writable($upload_dir)) {
             $htaccess_file = path_join($upload_dir, '.htaccess');
 
@@ -2797,6 +2706,7 @@ class wp_slimstat
                 fclose($handle);
             }
         }
+        // phpcs:enable WordPress.WP.AlternativeFunctions.file_system_operations_is_writable,WordPress.WP.AlternativeFunctions.file_system_operations_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fwrite,WordPress.WP.AlternativeFunctions.file_system_operations_fclose
     }
 
     public static function get_schedule_interval($schedule)
@@ -2821,7 +2731,7 @@ class slimstat_widget extends WP_Widget
     {
         parent::__construct('slimstat_widget', 'Slimstat', [
             'classname'   => 'slimstat_widget',
-            'description' => 'Add a Slimstat report to your sidebar',
+            'description' => __('Add a SlimStat report to your sidebar', 'wp-slimstat'),
         ]);
     }
 
@@ -2833,18 +2743,21 @@ class slimstat_widget extends WP_Widget
      */
     public function widget($_args = [], $_instance = [])
     {
-        extract(shortcode_atts([
+        $instance = shortcode_atts([
             'slimstat_widget_id'      => '',
             'slimstat_widget_title'   => '',
             'slimstat_widget_filters' => '',
-        ], $_instance));
+        ], $_instance);
+        $slimstat_widget_id = $instance['slimstat_widget_id'];
+        $slimstat_widget_title = $instance['slimstat_widget_title'];
+        $slimstat_widget_filters = $instance['slimstat_widget_filters'];
 
         if (!empty($slimstat_widget_title)) {
             // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Core register_sidebar supplies theme-owned wrapper HTML; the stored widget title is escaped here.
             echo (empty($_args['before_title']) ? '<h2 class="widget-title">' : $_args['before_title']) . esc_html($slimstat_widget_title) . (empty($_args['after_title']) ? '</h2>' : $_args['after_title']);
         }
         if (!empty($slimstat_widget_id)) {
-            echo do_shortcode(sprintf("[slimstat f='widget' w='%s']%s[/slimstat]", $slimstat_widget_id, $slimstat_widget_filters));
+            echo \SlimStat\Shortcodes\Shortcode::render(['f' => 'widget', 'w' => $slimstat_widget_id], $slimstat_widget_filters); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shortcode renderer escapes its output.
         } else {
             echo '';
         }
@@ -2858,26 +2771,30 @@ class slimstat_widget extends WP_Widget
      */
     public function form($_instance)
     {
-        extract(shortcode_atts([
+        $instance = shortcode_atts([
             'slimstat_widget_id'      => '',
             'slimstat_widget_title'   => '',
             'slimstat_widget_filters' => '',
-        ], $_instance));
+        ], $_instance);
+        $slimstat_widget_id = $instance['slimstat_widget_id'];
+        $slimstat_widget_title = $instance['slimstat_widget_title'];
+        $slimstat_widget_filters = $instance['slimstat_widget_filters'];
 
         // Let's build the dropdown
         include_once(plugin_dir_path(__FILE__) . 'admin/view/wp-slimstat-reports.php');
         wp_slimstat_reports::init();
         $select_options = '';
 
-        foreach (wp_slimstat_reports::$reports as $a_report_id => $a_report_info) {
-            $select_options .= sprintf("<option value='%s' ", esc_attr($a_report_id)) . (($slimstat_widget_id == $a_report_id) ? 'selected="selected"' : '') . sprintf('>%s</option>', esc_html($a_report_info[ 'title' ]));
+        foreach (\SlimStat\Shortcodes\Shortcode::catalog() as $a_report_id => $a_report_info) {
+            if (!in_array('widget', $a_report_info['modes'], true)) { continue; }
+            $select_options .= sprintf("<option value='%s' ", esc_attr($a_report_id)) . (($slimstat_widget_id == $a_report_id) ? 'selected="selected"' : '') . sprintf('>%s</option>', esc_html($a_report_info[ 'label' ]));
         }
         ?>
 
         <p>
             <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_id')); ?>"><?php esc_html_e('Report', 'wp-slimstat') ?></label>
             <select class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_id')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_id')); ?>">
-                <option value="">Select a widget</option>
+                <option value=""><?php esc_html_e('Select a report', 'wp-slimstat'); ?></option>
                 <?php echo wp_kses($select_options, ['option' => ['value' => true, 'selected' => true]]); ?>
             </select>
         </p>
@@ -2925,20 +2842,24 @@ if (empty(wp_slimstat::$wpdb) && isset($GLOBALS['wpdb'])) {
 // Ok, let's go, Sparky!
 if (function_exists('add_action')) {
     // Since we use sendBeacon, this function sends raw POST data, which does not populate the $_POST variable automatically
-    $http_content_type = isset($_SERVER['HTTP_CONTENT_TYPE']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_CONTENT_TYPE'])) : '';
-    $content_type = isset($_SERVER['CONTENT_TYPE']) ? sanitize_text_field(wp_unslash($_SERVER['CONTENT_TYPE'])) : '';
-    if ((!empty($http_content_type) || !empty($content_type)) && [] === $_POST) {
+    $slimstat_http_content_type = isset($_SERVER['HTTP_CONTENT_TYPE']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_CONTENT_TYPE'])) : '';
+    $slimstat_content_type = isset($_SERVER['CONTENT_TYPE']) ? sanitize_text_field(wp_unslash($_SERVER['CONTENT_TYPE'])) : '';
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Beacon body routing only; the tracker validates consent, exclusions, payload and signed identities before writes.
+    if ((!empty($slimstat_http_content_type) || !empty($slimstat_content_type)) && [] === $_POST) {
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Required for reading php://input stream
-        $raw_post_string = file_get_contents('php://input');
-        parse_str($raw_post_string, wp_slimstat::$raw_post_array);
+        $slimstat_raw_post_string = file_get_contents('php://input');
+        parse_str($slimstat_raw_post_string, wp_slimstat::$raw_post_array);
 
         // Sanitize the action key from the raw body before using it
         if (!empty(wp_slimstat::$raw_post_array['action'])) {
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- This is the already-prefixed wp_slimstat class static property, not an unprefixed global variable.
             wp_slimstat::$raw_post_array['action'] = sanitize_key(
                 wp_unslash(wp_slimstat::$raw_post_array['action'])
             );
         }
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Beacon body routing only; the tracker validates consent, exclusions, payload and signed identities before writes.
     } elseif ([] !== $_POST) {
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound,WordPress.Security.NonceVerification.Missing -- Beacon body routing only; the tracker validates consent, exclusions, payload and signed identities before writes.
         wp_slimstat::$raw_post_array = $_POST;
     }
 
@@ -2947,6 +2868,7 @@ if (function_exists('add_action')) {
 
         // This is needed because admin-ajax.php is reading $_REQUEST to fire the corresponding action
         // Use a hardcoded literal instead of passing the user-supplied value
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Beacon body routing only; the tracker validates consent, exclusions, payload and signed identities before writes.
         if (empty($_POST['action'])) {
             $_POST['action'] = 'slimtrack';
         }
@@ -3004,6 +2926,7 @@ if (function_exists('add_action')) {
 
 add_action('wp_ajax_slimstat_clear_cache', 'wp_slimstat_clear_cache_handler');
 
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Authorized cache invalidation deletes plugin transient families on the WordPress connection; result caching is inapplicable.
 function wp_slimstat_clear_cache_handler()
 {
     if (!current_user_can('manage_options')) {
@@ -3028,5 +2951,6 @@ function wp_slimstat_clear_cache_handler()
         $count++;
     }
     /* translators: %d: number of cache items cleared. */
-    wp_send_json_success(sprintf(__('Slimstat cache cleared (%d items)', 'wp-slimstat'), $count));
+    wp_send_json_success(sprintf(__('SlimStat cache cleared (%d items)', 'wp-slimstat'), $count));
 }
+// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching

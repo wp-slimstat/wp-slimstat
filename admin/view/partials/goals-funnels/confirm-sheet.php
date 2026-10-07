@@ -24,7 +24,7 @@ if (!defined('ABSPATH')) {
         </h2>
         <p class="slimstat-gf-sheet__body" data-role="confirm-body"></p>
         <p class="slimstat-gf-sheet__warning" data-role="confirm-warning">
-            <?php esc_html_e('Historical data stays — only the definition is removed. You can always rebuild it.', 'wp-slimstat'); ?>
+            <?php esc_html_e('Historical data stays. Only the definition is removed, and you can rebuild it.', 'wp-slimstat'); ?>
         </p>
         <div class="slimstat-gf-sheet__actions">
             <button type="button" class="button" data-action="close-confirm-sheet" data-role="confirm-cancel">

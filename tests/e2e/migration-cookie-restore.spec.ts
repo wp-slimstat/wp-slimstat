@@ -199,6 +199,8 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       // Visit page 1
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p1`);
       await anonPage.waitForLoadState('load');
+      // Page load can finish before tracking; navigating now can cancel its request.
+      expect((await waitForStatRows(`${marker}-p1`, 1, 20_000)).length).toBeGreaterThanOrEqual(1);
 
       // Check: slimstat_tracking_code cookie should be MISSING
       let cookies = await ctx.cookies();
@@ -211,6 +213,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       // Visit page 2
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p2`);
       await anonPage.waitForLoadState('load');
+      expect((await waitForStatRows(`${marker}-p2`, 1, 20_000)).length).toBeGreaterThanOrEqual(1);
 
       // Still no cookie
       cookies = await ctx.cookies();

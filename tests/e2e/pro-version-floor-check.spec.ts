@@ -191,7 +191,7 @@ test.describe('Pro Version Floor Check — Suite 04 (REQ-AC5)', () => {
     expect(result.status).toBeLessThan(500);
     expect(result.body).not.toContain('Fatal error');
     // Should not show version incompatibility message
-    expect(result.body).not.toContain('requires WP SlimStat 5.4.0');
+    expect(result.body).not.toContain('requires SlimStat 5.4.0');
   });
 
   // ─── TC-AC5-004: Admin pages load without fatal with Pro active ─
@@ -264,7 +264,7 @@ test.describe('Pro Version Floor Check — Suite 04 (REQ-AC5)', () => {
       const result = await callWhoisEndpoint(page, '8.8.8.8', nonce);
 
       expect(result.status).toBeLessThan(500);
-      expect(result.body).not.toContain('requires WP SlimStat 5.4.0');
+      expect(result.body).not.toContain('requires SlimStat 5.4.0');
       expect(result.body).not.toContain('Fatal error');
     }
   });

@@ -1,8 +1,7 @@
 <?php
 /**
  * Source-level: the readme.txt "Tested up to:" header matches the expected
- * WordPress version, and is a two-segment major.minor (the wp.org parser
- * strips any third segment).
+ * WordPress version, and is a major.minor with an optional patch version.
  *
  * PINS the WP "Tested up to" readiness: $expected and the header move in the same commit,
  * RED before and green after.
@@ -19,7 +18,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/lib/source-scan.php';
 
 $plugin_root = dirname(__DIR__);
-$expected    = '7.1'; // Two-segment per the wp.org parser; bumped with readme.txt and the CI lane.
+$expected    = '7.1.2'; // Exact tested release; bumped with readme.txt and the CI lane.
 
 $readme = file_get_contents($plugin_root . '/readme.txt');
 if (false === $readme) { fwrite(STDERR, "FAIL: cannot read readme.txt\n"); exit(1); }
@@ -34,11 +33,9 @@ if ($actual !== $expected) {
     fwrite(STDERR, "FAIL: readme.txt Tested up to is '{$actual}', expected '{$expected}'.\n");
     exit(1);
 }
-// The wp.org parser strips a third segment, so a 7.1.2 here would display as something the
-// header does not say. Unconditional now: it was gated on $expected === '7.0', which made the
-// check disappear the moment the value it was written for was bumped.
-if (!preg_match('/^\d+\.\d+$/', $actual)) {
-    fwrite(STDERR, "FAIL: Tested up to must be two-segment major.minor (got '{$actual}').\n");
+// Accept a pinned patch release as well as a major.minor release.
+if (!preg_match('/^\d+\.\d+(?:\.\d+)?$/', $actual)) {
+    fwrite(STDERR, "FAIL: Tested up to must be a WordPress release version (got '{$actual}').\n");
     exit(1);
 }
 

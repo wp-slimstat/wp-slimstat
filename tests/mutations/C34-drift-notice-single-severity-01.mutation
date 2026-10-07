@@ -6,14 +6,14 @@ rationale: Collapse the two notices back into one, which is the shipped defect. 
 ---
 --- a/admin/index.php
 +++ b/admin/index.php
-@@ -4221,14 +4221,6 @@
+@@ -4584,14 +4584,6 @@
              );
          }
  
 -        if ('' !== $operational_items) {
 -            self::show_message(
--                '<strong>' . esc_html__('Slimstat Analytics reported a problem while running.', 'wp-slimstat') . '</strong><br>' .
--                esc_html__('Tracking and reports kept working. These are maintenance tasks that did not complete — some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check Slimstat > Migrations and Settings > Maintenance.', 'wp-slimstat') .
+-                '<strong>' . esc_html__('SlimStat reported a problem while running.', 'wp-slimstat') . '</strong><br>' .
+-                esc_html__('Tracking and reports kept working. These are maintenance tasks that did not complete, so some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check SlimStat > Migrations and Settings > Maintenance.', 'wp-slimstat') .
 -                '<ul class="ul-disc">' . $operational_items . '</ul>',
 -                'warning'
 -            );

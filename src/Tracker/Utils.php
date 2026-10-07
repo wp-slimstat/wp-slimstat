@@ -215,9 +215,7 @@ class Utils
 			return '';
 		}
 
-		if (method_exists('\wp_slimstat_i18n', 'init_dynamic_strings')) {
-			\wp_slimstat_i18n::init_dynamic_strings();
-		}
+		\wp_slimstat_i18n::init_dynamic_strings();
 
 		$lookupKey = 'e-' . $code;
 		$rawLabel = \wp_slimstat_i18n::get_string($lookupKey);
@@ -423,6 +421,7 @@ class Utils
 	{
 		$ipArray = ['', ''];
 
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
 		$remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
 		$remoteAddr = is_string($remoteAddr) ? sanitize_text_field(wp_unslash($remoteAddr)) : '';
 		if (false !== filter_var($remoteAddr, FILTER_VALIDATE_IP)) {
@@ -433,6 +432,7 @@ class Utils
 		// Including it here would bypass that check and allow IP spoofing on non-CF origins.
 		$originatingIpHeaders = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
 		foreach ($originatingIpHeaders as $header) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
 			$headerValue = $_SERVER[$header] ?? '';
 			if (is_string($headerValue) && '' !== $headerValue) {
 				$headerValue = sanitize_text_field(wp_unslash($headerValue));

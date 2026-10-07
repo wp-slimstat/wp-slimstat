@@ -79,7 +79,7 @@ class WriteTerminalTest extends WpSlimstatTestCase
         // and it would have shadowed the stub the rest of the Tracker tests rely on.)
         \wp_slimstat::$degradations = [];
 
-        Functions\when('sanitize_url')->alias(static fn($v) => $v);
+        Functions\when('esc_url_raw')->alias(static fn($v) => $v);
         Functions\when('esc_sql')->alias(static fn($v) => $v);
 
         $wpdb             = \Mockery::mock(\wpdb::class);

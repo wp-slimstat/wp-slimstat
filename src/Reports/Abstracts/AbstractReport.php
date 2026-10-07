@@ -239,7 +239,7 @@ abstract class AbstractReport implements ReportInterface, RenderableInterface {
 		$header_tooltip = $this->get_header_tooltip();
 
 		// Widget title
-		$widget_title = '<h3>' . esc_html( $this->get_title() ) . $header_tooltip . '</h3>';
+		$widget_title = \wp_slimstat_reports::header_title( $this->get_title(), $header_tooltip );
 
 		$bar_color = $this->get_color();
 

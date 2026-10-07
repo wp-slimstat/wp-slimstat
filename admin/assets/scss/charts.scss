@@ -6,7 +6,7 @@
   font-size: 14px;
 }
 
-#chartjs-tooltip {
+#slimstat-chartjs-tooltip {
   transition: 0.3s all ease-in-out;
   pointer-events: none !important;
   background: white;
@@ -24,13 +24,13 @@
     opacity: 0.3;
   }
 
-  .slimstat-postbox-chart--item[data-index].active .tooltip-item-content {
+  .slimstat-postbox-chart--item[data-index].active .slimstat-tooltip-item-content {
     color: #000 !important;
   }
 }
 
 @media (max-width: 600px) {
-  #chartjs-tooltip {
+  #slimstat-chartjs-tooltip {
     min-width: 120px;
     max-width: 98vw;
     font-size: 12px;
@@ -275,8 +275,8 @@ body.index-php {
   text-align: left;
 }
 
-[dir="rtl"] #chartjs-tooltip,
-.rtl #chartjs-tooltip {
+[dir="rtl"] #slimstat-chartjs-tooltip,
+.rtl #slimstat-chartjs-tooltip {
   direction: rtl;
   text-align: right;
   font-family: "Open Sans", sans-serif !important;
@@ -298,10 +298,10 @@ body.index-php {
   font-family: "Open Sans", sans-serif !important;
 }
 
-[dir="rtl"] .tooltip-item-title,
-.rtl .tooltip-item-title,
-[dir="rtl"] .tooltip-item-content,
-.rtl .tooltip-item-content {
+[dir="rtl"] .slimstat-tooltip-item-title,
+.rtl .slimstat-tooltip-item-title,
+[dir="rtl"] .slimstat-tooltip-item-content,
+.rtl .slimstat-tooltip-item-content {
   direction: rtl;
   text-align: right;
   font-family: "Open Sans", sans-serif !important;
@@ -325,14 +325,14 @@ body.index-php {
   overflow: hidden;
 }
 
-[dir="rtl"] #chartjs-tooltip table,
-.rtl #chartjs-tooltip table {
+[dir="rtl"] #slimstat-chartjs-tooltip table,
+.rtl #slimstat-chartjs-tooltip table {
   direction: rtl;
   text-align: right;
 }
 
-[dir="rtl"] #chartjs-tooltip tr.slimstat-postbox-chart--item td,
-.rtl #chartjs-tooltip tr.slimstat-postbox-chart--item td {
+[dir="rtl"] #slimstat-chartjs-tooltip tr.slimstat-postbox-chart--item td,
+.rtl #slimstat-chartjs-tooltip tr.slimstat-postbox-chart--item td {
   padding-right: 0;
   padding-left: 8px;
 }
@@ -343,7 +343,7 @@ body.index-php {
   gap: 8px;
 }
 
-[dir="rtl"] #chartjs-tooltip tr.slimstat-postbox-chart--item {
+[dir="rtl"] #slimstat-chartjs-tooltip tr.slimstat-postbox-chart--item {
   flex-direction: unset !important;
 }
 
@@ -367,8 +367,8 @@ body.index-php {
   margin-right: 10px !important;
 }
 
-[dir="rtl"] #chartjs-tooltip .slimstat-postbox-chart--item .slimstat-postbox-chart--item--color,
-.rtl #chartjs-tooltip .slimstat-postbox-chart--item .slimstat-postbox-chart--item--color {
+[dir="rtl"] #slimstat-chartjs-tooltip .slimstat-postbox-chart--item .slimstat-postbox-chart--item--color,
+.rtl #slimstat-chartjs-tooltip .slimstat-postbox-chart--item .slimstat-postbox-chart--item--color {
   margin-left: 10px !important;
   margin-right: 10px !important;
 }
@@ -386,13 +386,13 @@ body.index-php {
   margin: 0 3px 0 0;
 }
 
-[dir="rtl"] .tooltip-item-title,
-.rtl .tooltip-item-title {
+[dir="rtl"] .slimstat-tooltip-item-title,
+.rtl .slimstat-tooltip-item-title {
   text-align: right;
 }
 
-[dir="rtl"] .tooltip-item-content,
-.rtl .tooltip-item-content {
+[dir="rtl"] .slimstat-tooltip-item-content,
+.rtl .slimstat-tooltip-item-content {
   direction: rtl;
   text-align: right;
 }

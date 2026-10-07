@@ -46,6 +46,8 @@ $declared = [
     // used to claim. OWED regardless of cost: until it lands every anonymous pageview
     // pays the failed-INSERT-probe-retry dance and loses its identity field, so this is the
     // one the notice should be about.
+    // Acquisition fields are needed for the tracker to populate the new reports.
+    'AddAcquisitionColumns' => false,
     'AddVisitIdentity'                 => false,
     // Run 9 measured that the star-schema dimension buys nothing on the read path while P4
     // keeps the browser columns on the fact row. Cost real, benefit future.

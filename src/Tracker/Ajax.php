@@ -115,6 +115,11 @@ class Ajax
         if ($position !== '' && !preg_match('/^\d{1,5},\d{1,5}$/', $position)) {
             return '';
         }
+        // "0,0" is the tracker's default when a click has no coordinates (keyboard,
+        // form submit, synthetic). Storing it painted a false top-left hotspot.
+        if (preg_match('/^0+,0+$/', $position)) {
+            return '';
+        }
         return $position;
     }
 
@@ -123,7 +128,7 @@ class Ajax
      *
      * @internal Extracted from handle() (#306) to provide a unit-testable seam.
      *
-     * Uses sanitize_url() with `android-app` added to the allow-list
+     * Uses esc_url_raw() with `android-app` added to the allow-list
      * (Processor::REFERER_ALLOWED_SCHEMES) rather than the default wp_allowed_protocols():
      *   - app-scheme referers such as `android-app://com.google.android.googlequicksearchbox/`
      *     (Google Discover) survive — the original #306 bug was the default list emptying them;
@@ -171,7 +176,7 @@ class Ajax
             $referer = substr($referer, 0, 2048);
         }
 
-        return sanitize_url($referer, Processor::REFERER_ALLOWED_SCHEMES);
+        return esc_url_raw($referer, Processor::REFERER_ALLOWED_SCHEMES);
     }
 
     /**
@@ -182,6 +187,7 @@ class Ajax
     {
         $result = self::process();
         Utils::sendTrackingHeaders('ajax', $result);
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- plain-text tracking protocol; HTML escaping would change the response bytes.
         echo $result;
         exit;
     }
@@ -200,6 +206,7 @@ class Ajax
             return Utils::logError(204);
         }
 
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
         $remote_ip = $_SERVER['REMOTE_ADDR'] ?? '';
         $remote_ip = is_string($remote_ip) ? sanitize_text_field(wp_unslash($remote_ip)) : '';
         if (!empty($remote_ip) && self::isRateLimited($remote_ip)) {
@@ -311,15 +318,26 @@ class Ajax
                     $stat['email']    = $GLOBALS['current_user']->data->user_email;
                     $stat['notes'][]  = 'user:' . $GLOBALS['current_user']->data->ID;
                 } elseif (isset($_COOKIE['comment_author_' . COOKIEHASH])) {
+                    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
                     $comment_author = $_COOKIE['comment_author_' . COOKIEHASH] ?? '';
                     if (is_string($comment_author) && '' !== $comment_author) {
                         $stat['username'] = sanitize_user(wp_unslash($comment_author));
                     }
 
+                    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
                     $comment_email = $_COOKIE['comment_author_email_' . COOKIEHASH] ?? '';
                     if (is_string($comment_email) && '' !== $comment_email) {
                         $stat['email'] = sanitize_email(wp_unslash($comment_email));
                     }
+                }
+            }
+
+            // Heatmap batch for this verified pageview; it never stops the hit.
+            if (!empty($data_js['hm']) && is_string($data_js['hm'])) {
+                try {
+                    \SlimStat\Heatmap\Store::ingest((int) $stat['id'], $data_js['hm']);
+                } catch (\Throwable $e) {
+                    \wp_slimstat::record_degradation('heatmap insert', $e->getMessage(), \wp_slimstat::DEGRADATION_OPERATIONAL);
                 }
             }
 
@@ -535,7 +553,7 @@ class Ajax
                         \wp_slimstat::set_stat($stat);
                         $id = Processor::process();
                     } elseif (!$is_allowed_host($parsed_resource['host'])) {
-                        $sanitized_url = sanitize_url($resource);
+                        $sanitized_url = esc_url_raw($resource);
                         $stat['outbound_resource'] = !empty($sanitized_url) ? $sanitized_url : '';
                         $stat['dt_out']             = \wp_slimstat::date_i18n('U');
 

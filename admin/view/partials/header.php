@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 
 if (!defined('ABSPATH')) {
     exit;
@@ -72,7 +73,7 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
                 <ellipse cx="9" cy="12.75" rx="5.25" ry="3" fill="#676E74"/>
                 </svg>
             </span>
-            <span class="slimstat-header__online-label"><?php esc_html_e('Online Visitors', 'wp-slimstat'); ?></span>
+            <span class="slimstat-header__online-label"><?php esc_html_e('Visitors online (last 30 min)', 'wp-slimstat'); ?></span>
             <span id="slimstat-online-visitors-count" class="slimstat-header__online-value"><?php echo esc_html($formatted_online_visitors); ?></span>
         </div>
     </div>
@@ -101,23 +102,23 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
         </div>
 
         <?php if (isset($is_pro) && $is_pro): ?>
-            <span class="slimstat-header__status-pill" aria-label="<?php esc_attr_e('Premium plan active', 'wp-slimstat'); ?>">
+            <span class="slimstat-header__status-pill" aria-label="<?php esc_attr_e('Pro is active', 'wp-slimstat'); ?>">
                 <span class="slimstat-header__status-icon" aria-hidden="true">
                     <svg width="12" height="14" viewBox="0 0 12 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path fill-rule="evenodd" clip-rule="evenodd" d="M0.251677 2.05494C0 2.41352 0 3.47938 0 5.6111V6.66091C0 10.4196 2.82597 12.2437 4.59904 13.0182C5.08001 13.2283 5.32049 13.3333 6 13.3333C6.67951 13.3333 6.91999 13.2283 7.40096 13.0182C9.17402 12.2437 12 10.4196 12 6.66091V5.6111C12 3.47938 12 2.41352 11.7483 2.05494C11.4966 1.69636 10.4945 1.3533 8.49006 0.667195L8.10819 0.536478C7.06335 0.178826 6.54093 0 6 0C5.45907 0 4.93666 0.178826 3.89182 0.536478L3.50994 0.667195C1.50555 1.3533 0.503354 1.69636 0.251677 2.05494ZM8.03964 5.66634C8.22355 5.46036 8.20566 5.14428 7.99967 4.96036C7.79369 4.77645 7.47761 4.79434 7.2937 5.00033L5.28571 7.24927L4.7063 6.60033C4.52239 6.39434 4.20631 6.37645 4.00033 6.56036C3.79434 6.74428 3.77645 7.06036 3.96036 7.26634L4.91275 8.33301C5.00761 8.43925 5.14328 8.5 5.28571 8.5C5.42815 8.5 5.56382 8.43925 5.65868 8.33301L8.03964 5.66634Z" fill="#18A456"/>
                     </svg>
                 </span>
-                <span class="slimstat-header__status-text"><?php esc_html_e('Premium', 'wp-slimstat'); ?></span>
+                <span class="slimstat-header__status-text"><?php esc_html_e('Pro', 'wp-slimstat'); ?></span>
             </span>
         <?php else: ?>
-            <a href="<?php echo esc_url($upgrade_url); ?>" class="slimstat-header__cta slimstat-upgrade-pro" target="_blank" title="<?php esc_attr_e('Upgrade to Premium', 'wp-slimstat'); ?>">
+            <a href="<?php echo esc_url($upgrade_url); ?>" class="slimstat-header__cta slimstat-upgrade-pro" target="_blank" >
                 <span class="slimstat-header__cta-icon" aria-hidden="true">
                     <svg width="11" height="13" viewBox="0 0 11 13" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M7.50106 5.79266C6.8433 5.00565 6.51443 4.61214 6.13637 4.67275C5.75831 4.73336 5.58144 5.20795 5.22771 6.15713L5.1362 6.40269C5.03568 6.67242 4.98542 6.80728 4.88763 6.90662C4.78984 7.00597 4.65559 7.05855 4.38709 7.16371L4.14264 7.25945C3.19778 7.62952 2.72535 7.81455 2.67147 8.19275C2.61759 8.57094 3.01794 8.89184 3.81865 9.53363L4.0258 9.69967C4.25334 9.88205 4.3671 9.97324 4.43296 10.0981C4.49881 10.2229 4.5093 10.3672 4.53027 10.6558L4.54936 10.9186C4.62316 11.9343 4.66006 12.4422 5.00482 12.6153C5.34958 12.7885 5.77388 12.5122 6.62247 11.9597L6.84201 11.8167C7.08316 11.6597 7.20373 11.5812 7.34222 11.559C7.48071 11.5368 7.62144 11.5734 7.9029 11.6466L8.15915 11.7133C9.14962 11.971 9.64485 12.0998 9.91181 11.8286C10.1788 11.5574 10.0406 11.0658 9.76439 10.0825L9.69292 9.82816C9.61442 9.54874 9.57517 9.40903 9.59491 9.27049C9.61465 9.13195 9.69114 9.01026 9.84412 8.76688L9.98339 8.5453C10.5217 7.68883 10.7909 7.2606 10.6111 6.91986C10.4314 6.57912 9.9217 6.55154 8.90238 6.49637L8.63867 6.4821C8.34901 6.46642 8.20418 6.45858 8.07789 6.39516C7.9516 6.33174 7.85814 6.21992 7.67123 5.99627L7.50106 5.79266Z" fill="#202224"/>
                         <path d="M7.25194 2.11148L7.37396 2.45937C7.50798 2.84147 7.575 3.03253 7.70538 3.17327C7.83577 3.31401 8.01477 3.3885 8.37276 3.53748L8.6987 3.67311C9.95851 4.19737 10.5884 4.4595 10.6603 4.99528C10.6902 5.2183 10.6151 5.42726 10.4403 5.66079C10.3813 5.6448 10.3244 5.63177 10.2709 5.6209C9.92016 5.54958 9.47401 5.52554 9.01929 5.50104L8.6928 5.48338C8.63001 5.47998 8.58119 5.47732 8.53937 5.47461C8.51166 5.44219 8.47975 5.40403 8.43861 5.35481L8.2282 5.10303C7.93462 4.75159 7.64737 4.40773 7.38024 4.16902C7.09537 3.91444 6.61917 3.58241 5.97815 3.68518C5.33031 3.78904 4.98475 4.26042 4.79831 4.59686C4.62558 4.90857 4.47024 5.32575 4.31295 5.74812L4.19924 6.0533C4.18002 6.10486 4.16461 6.14617 4.15104 6.1817C4.11549 6.19596 4.07414 6.21217 4.02248 6.2324L3.71883 6.35132C3.29825 6.51592 2.88328 6.67832 2.5743 6.85611C2.24181 7.04742 1.77426 7.40077 1.68155 8.05153C1.58972 8.69609 1.93301 9.16663 2.19286 9.44567C2.38653 9.65363 2.64674 9.87301 2.92456 10.0978C1.87885 10.3815 1.32261 10.4874 1.00648 10.1461C0.650544 9.76194 0.834708 9.06545 1.20303 7.67249L1.29833 7.31211C1.40299 6.91627 1.45533 6.71835 1.42901 6.52209C1.40269 6.32582 1.30071 6.15342 1.09673 5.80863L0.91103 5.49473C0.193236 4.2814 -0.165661 3.67474 0.0740371 3.19202C0.313735 2.70931 0.993282 2.67023 2.35238 2.59208L2.70399 2.57186C3.09021 2.54965 3.28331 2.53855 3.4517 2.4487C3.62009 2.35886 3.7447 2.20044 3.99392 1.88361L4.22081 1.59516C5.09782 0.480225 5.53632 -0.0772439 6.0404 0.00862086C6.54448 0.0944856 6.7803 0.766818 7.25194 2.11148Z" fill="#202224"/>
                     </svg>
                 </span>
-                <span class="slimstat-header__cta-label"><?php esc_html_e('Upgrade to Premium', 'wp-slimstat'); ?></span>
+                <span class="slimstat-header__cta-label"><?php esc_html_e('Upgrade to Pro', 'wp-slimstat'); ?></span>
                 <span class="slimstat-header__cta-arrow" aria-hidden="true">
                 <svg width="4" height="8" viewBox="0 0 4 8" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path fill-rule="evenodd" clip-rule="evenodd" d="M0.13096 0.0902856C0.288207 -0.0444977 0.524945 -0.0262872 0.659728 0.13096L3.65973 3.63096C3.7801 3.77139 3.7801 3.97862 3.65973 4.11905L0.659728 7.61905C0.524945 7.7763 0.288207 7.79451 0.13096 7.65973C-0.0262872 7.52494 -0.0444977 7.28821 0.0902856 7.13096L2.8811 3.87501L0.0902856 0.619053C-0.0444977 0.461806 -0.0262872 0.225069 0.13096 0.0902856Z" fill="#202224"/>
@@ -127,6 +128,13 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
         <?php endif; ?>
     </div>
 </div>
+
+<?php if (!empty($title)) : // One page heading on every screen, directly under the brand bar (audit A6). ?>
+<div class="slimstat-pageintro">
+    <h1 class="slimstat-pageintro__title"><?php echo esc_html($title); ?></h1>
+    <?php if (!empty($lead)) : ?><p class="slimstat-pageintro__lead"><?php echo esc_html($lead); ?></p><?php endif; ?>
+</div>
+<?php endif; ?>
 
 <?php
 if ($displayNotifications && class_exists(NotificationFactory::class)) {

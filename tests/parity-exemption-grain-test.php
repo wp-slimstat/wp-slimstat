@@ -127,10 +127,16 @@ if (!preg_match('/\$time_dependent\s*=\s*\[(.*?)\n\];/s', $compare_literal, $m))
     // slim_p1_03 is the measured one and must stay narrowed. A regression to `null` here would
     // silently return seven asserted values to being unasserted.
     if (preg_match("/'slim_p1_03'\s*=>\s*\[((?:[^\[\]]|\[[^\]]*\])*)\]/s", $block, $glance)) {
-        if (false === strpos($glance[1], 'Last 30 minutes')) {
-            $failures[] = "slim_p1_03's exemption no longer names 'Last 30 minutes'. Measured over "
+        if (false === strpos($glance[1], 'Pageviews, last 30 minutes')) {
+            $failures[] = "slim_p1_03's exemption no longer names 'Pageviews, last 30 minutes'. Measured over "
                 . 'three samples, that is the ONLY one of its eight values that moves — including '
                 . 'Today and Yesterday, which F8 fixed and which this exemption used to hide';
+        }
+        // The exemption keys on the rendered label, so renaming one side alone compares a rolling
+        // window (QA U3 renamed "Last 30 minutes").
+        if (false === strpos((string) file_get_contents($plugin_root . '/admin/view/wp-slimstat-db.php'), "__('Pageviews, last 30 minutes'")) {
+            $failures[] = "admin/view/wp-slimstat-db.php does not render 'Pageviews, last 30 minutes'; "
+                . "rename slim_p1_03's exemption label with it";
         }
         if (preg_match("/'labels'\s*=>\s*null/", $glance[1])) {
             $failures[] = "slim_p1_03's exemption has been widened back to the whole report. "

@@ -10,8 +10,8 @@ rationale: Narrows the escaping `if:` to the newest lane, dropping the 6.4 that 
          #
          # Blocking, unlike the E2E step below. On these lanes it is the first step that can
          # fail this job, which is the point of adding it.
--        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1' }}
-+        if: ${{ matrix.wp == '7.1' }}
+-        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
++        if: ${{ matrix.wp == '7.1.2' }}
          run: npx wp-env run tests-cli -- php wp-content/plugins/wp-slimstat/tests/reports-output-escaping-test.php
  
        - name: Activate plugin and create database tables

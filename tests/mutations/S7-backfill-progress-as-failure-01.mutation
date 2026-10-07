@@ -6,12 +6,10 @@ rationale: Report a pass that made real progress as a failure. backfill() is res
 ---
 --- a/src/Migration/Migrations/AddUserAgentDimension.php
 +++ b/src/Migration/Migrations/AddUserAgentDimension.php
-@@ -268,7 +268,7 @@
-         // "Did it work" and "is it finished" are different questions. This answers the first;
+@@ -303,5 +303,5 @@
          // shouldRun() answers the second, and the AJAX response now carries it so the client
          // can re-post the same step until it is done.
 -        return true;
 +        return !$this->dimensionIsBehind();
      }
- 
-     /**
+     // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared

@@ -95,7 +95,7 @@ async function extractListPercentages(page: Page): Promise<{ name: string; pct: 
 /** Read the shipping Pageviews metric in At a Glance on the Overview page. */
 async function readOverviewPageviews(page: Page): Promise<number> {
   await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, { waitUntil: 'domcontentloaded' });
-  const metric = page.locator('#slim_p1_03 .inside p').filter({ hasText: /^Pageviews\s/ });
+  const metric = page.locator('#slim_p1_03 .inside p').filter({ hasText: /^Pageviews\s+[\d,]+/ }); // not "Pageviews with a search term"
   await expect(metric).toBeVisible();
   return parseInt((await metric.locator('span').first().innerText()).replace(/,/g, ''), 10);
 }

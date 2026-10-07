@@ -249,6 +249,21 @@ def _counted(rows, column, distinct=False, absent=(), present=(), without=()):
     return len(values)
 
 
+def _by_channel(rows, channel, legacy):
+    """Rows of `channel`, plus rows with no channel (recorded before attribution) that `legacy` keeps.
+
+    A corpus captured without the column reads as all-NULL, the same as an install whose
+    attribution setup has not run: the report then asks the legacy rule alone.
+    """
+    return [row for row in rows if row.get("traffic_channel") == channel
+            or (row.get("traffic_channel") is None and legacy(row))]
+
+
+def _external_serp(home_url):
+    return lambda row: (row["searchterms"] is not None and row["referer"] is not None
+                        and not _contains_ci(row["referer"], home_url))
+
+
 def traffic_sources_summary(rows, start, end, home_url, host):
     """Model get_traffic_sources_summary's eight rows over a pinned window.
 
@@ -267,7 +282,7 @@ def traffic_sources_summary(rows, start, end, home_url, host):
     # 0; anything else means the corpus reaches the live tail and this row has no clock-free
     # model, so the model refuses rather than guessing.
     tail = [row for row in rows if row["dt"] is not None and row["dt"] > end - 300]
-    if _counted(tail, "id", present=("searchterms", "referer"), without=(("referer", home_url),)):
+    if _counted(_by_channel(tail, b"organic_search", _external_serp(home_url)), "id"):
         raise ValueError("corpus reaches the live five-minute tail; this row is clock-bound")
 
     pageviews = _counted(selected, "id")
@@ -296,9 +311,8 @@ def traffic_sources_summary(rows, start, end, home_url, host):
     values = [
         f"{pageviews:,}",
         "{:,}".format(_counted(selected, "referer", True, without=(("referer", host),))),
-        "{:,}".format(_counted(selected, "id", absent=("resource",))),
-        "{:,}".format(_counted(selected, "id", present=("searchterms", "referer"),
-                               without=(("referer", home_url),))),
+        "{:,}".format(_counted(_by_channel(selected, b"direct", lambda row: row["referer"] is None), "id")),
+        "{:,}".format(_counted(_by_channel(selected, b"organic_search", _external_serp(home_url)), "id")),
         "{:,}".format(_counted(selected, "resource", True)),
         f"{bouncing_pages(rows, start, end):,}",
         rate_text,

@@ -44,18 +44,22 @@ jQuery(document).ready(function($) {
             daterangepicker: 'slimstat-daterangepicker',
             active: 'active'
         },
-        DATE_FORMAT: 'DD/MM/YYYY',
+        DATE_FORMAT: SlimStatDatePicker.options?.date_format || 'YYYY-MM-DD',
         SERVER_FORMAT: 'YYYY-MM-DD'
     };
 
     // Global variables
     const wpTimezone = SlimStatDatePicker.options?.wp_timezone || null;
-    const startOfWeek = parseInt(SlimStatDatePicker.options?.start_of_week) || 1;
+    const configuredWeekStart = Number(SlimStatDatePicker.options?.start_of_week);
+    const startOfWeek = Number.isInteger(configuredWeekStart) && configuredWeekStart >= 0 && configuredWeekStart <= 6 ? configuredWeekStart : 1;
     let validTimezone = wpTimezone;
 
     // Initialize moment locale with WordPress week start
     if (typeof moment !== 'undefined') {
-        moment.updateLocale('en', {
+        moment.updateLocale(moment.locale(), {
+            // Month names in the site language, for formats such as "F j, Y".
+            months: SlimStatDatePicker.strings.months,
+            monthsShort: SlimStatDatePicker.strings.months_short,
             week: {
                 dow: startOfWeek
             }
@@ -206,6 +210,19 @@ jQuery(document).ready(function($) {
             };
         }
 
+        // Saved filters use native fs[date] fields rather than from/to. The
+        // server has already resolved those fields and the site timezone.
+        const $resolved = $(CONFIG.SELECTORS.dateInput);
+        const resolvedStart = moment($resolved.attr('data-start'), CONFIG.SERVER_FORMAT, true);
+        const resolvedEnd = moment($resolved.attr('data-end'), CONFIG.SERVER_FORMAT, true);
+        if (resolvedStart.isValid() && resolvedEnd.isValid()) {
+            return {
+                startDate: normalizeDate(resolvedStart, validTimezone),
+                endDate: normalizeDate(resolvedEnd, validTimezone),
+                preset: 'custom'
+            };
+        }
+
         // Check sessionStorage for persisted date range (navigation between pages)
         const savedRange = sessionStorage.getItem('slimstat_date_range');
         if (savedRange) {
@@ -295,6 +312,16 @@ jQuery(document).ready(function($) {
      */
     function generateSlimStatUrl(startDate, endDate, presetType = null) {
         const url = new URL(window.location);
+
+        // Drilldowns and saved segments submit filters by POST, so the URL alone
+        // cannot carry them into a new date range. The rendered form is authoritative.
+        $('#slimstat-filters-form .slimstat-post-filter').each(function() {
+            if ($(this).hasClass('slimstat-date-filter') || this.name === 'fs[start_from]') {
+                url.searchParams.delete(this.name);
+            } else {
+                url.searchParams.set(this.name, this.value);
+            }
+        });
 
         // Clear existing date-related parameters
         url.searchParams.delete('from');
@@ -401,6 +428,16 @@ jQuery(document).ready(function($) {
         const ranges = getPresetRanges();
         const currentRange = getCurrentDateRange();
 
+        // A range resolved from the URL or a saved filter can still be a preset; name it
+        // as the picker will highlight it, not "Custom range".
+        if (currentRange.preset === 'custom') {
+            const day = (date) => moment(date).format(CONFIG.SERVER_FORMAT);
+            const match = Object.keys(ranges).find((key) => day(ranges[key][0]) === day(currentRange.startDate) && day(ranges[key][1]) === day(currentRange.endDate));
+            if (match) {
+                currentRange.preset = detectPresetType(match);
+            }
+        }
+
         // Click handler for button
         $button.on('click', function(e) {
             e.preventDefault();
@@ -412,6 +449,10 @@ jQuery(document).ready(function($) {
             autoApply: false, // We'll handle apply logic manually for better control
             ranges: ranges,
             locale: {
+                daysOfWeek: SlimStatDatePicker.strings.weekdays,
+                monthNames: SlimStatDatePicker.strings.months,
+                firstDay: startOfWeek,
+                direction: document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr',
                 customRangeLabel: SlimStatDatePicker.strings.custom_range,
                 format: CONFIG.DATE_FORMAT,
                 cancelLabel: SlimStatDatePicker.strings.cancel,
@@ -499,15 +540,11 @@ jQuery(document).ready(function($) {
                 }
             });
 
-            // Inject Clear Cache button under the preset ranges list (only once per open)
-            const $ranges = picker.container.find('.ranges');
-            if ($ranges.length && picker.container.find(CONFIG.SELECTORS.clearCacheBtn).length === 0) {
-                const $clearWrap = $('<div class="slimstat-clear-cache-wrap" style="padding:8px 12px 12px;">');
-                const $clearBtn = $('<button type="button" class="button button-secondary" id="slimstat-clear-cache"></button>')
+            // Clear cache is an action, not a range: it sits in a footer below the presets and calendars.
+            if (picker.container.find(CONFIG.SELECTORS.clearCacheBtn).length === 0) {
+                const $clearBtn = $('<button type="button" class="button-link" id="slimstat-clear-cache"></button>')
                     .text(SlimStatDatePicker.strings.clear_cache);
-                $clearWrap.append($clearBtn);
-                // Place it after the ranges list
-                $ranges.append($clearWrap);
+                picker.container.append($('<div class="slimstat-clear-cache-wrap">').append($clearBtn));
             }
 
             // No footer buttons needed - preset ranges auto-apply, custom ranges use built-in Apply/Cancel

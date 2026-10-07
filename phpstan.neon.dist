@@ -27,4 +27,7 @@ parameters:
         - src/Dependencies/*    # WP Scoper-scoped vendor — not own code
     scanDirectories:
         - src/Dependencies      # known to the analyzer, but not analyzed
+    scanFiles:
+        - languages/index.php
+        - tests/phpstan/woocommerce.php
     treatPhpDocTypesAsCertain: false

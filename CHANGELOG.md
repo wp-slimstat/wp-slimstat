@@ -1,4 +1,49 @@
-= 6.0.0 - 2026-09-15 =
+= 6.0.0 - 2026-10-06 =
+
+**Shortcodes**
+* Preserve public aggregate counters such as `count` of `ip`, group query-string-free page links before limiting results, and render stored dates correctly. Published shortcode filters are isolated from URL/form fields, and rendering restores the filters and pageview totals of surrounding reports.
+* Avoid anonymous-user warnings on PHP 7.4 and deprecated URL sanitizer notices on older WordPress. Compatibility remains PHP 7.4+ and WordPress 5.6+, with the current test target pinned to WordPress 7.1.2.
+* New Shortcode Playground under SlimStat → Shortcodes: browse reports, preview your data, adjust filters and copy or test a shortcode. Pro reports include clearly labelled samples and dismissible hints.
+* New live visitor, page and country counters; Ecommerce KPI tables for analytics viewers; Pro Heatmap insights tables.
+* Shortcodes support multiple columns and UTM/channel counts, escape text and separators, and accept nonnumeric offsets without crashing. Report widgets placed with a shortcode no longer log an “Undefined array key "where"” warning. Personal data, access logs and user reports now appear only to people allowed to view analytics; visitors see nothing.
+* Translation changes: removed “Invalid Report ID”; replaced “Select a widget” with “Select a report” and translated “Add a SlimStat report to your sidebar”. New labels and notices need translation; obsolete strings are retained in PO history.
+
+**Heatmaps**
+* Apply restricted-author permissions to heatmap lists, points, scroll depth and cached results. Stop accepting cached capture batches when the Pro viewer is removed, and limit list scroll aggregation to the selected pages.
+* New Heatmaps page lists every page with clicks: clicks, pageviews, clicks per pageview, device split, last click and what was recorded. Search, sort and date ranges run on one cached query. A Heatmap button on the admin bar, beside Online, opens it (on the site, at the current page).
+* Heatmap recording is opt-in (off by default). When SlimStat Pro shows heatmaps, a sampled share of pageviews on chosen pages records clicks with their element, scroll depth, dead clicks and rage clicks. Recording follows the site's consent and Do Not Track rules and stores no text typed by visitors.
+* Heatmap rows live in their own tables, created on first use, purged with the site's retention setting, included in personal-data erasure and removed on uninstall when you choose to delete SlimStat data. Admins can delete all heatmap data from the Heatmaps page.
+* Existing link and button clicks keep their events reports and Goals unchanged and appear in the page list right away.
+* Without Pro, "View heatmap" opens the page's five most clicked links and buttons under its row, with what Pro adds, instead of a dialog.
+
+**Admin interface**
+* One name and one voice across the admin: labels, buttons and messages follow a shared glossary, checked by a test on every translatable string.
+* Empty reports say why they are empty (nothing tracked yet, no match for the filters, or nothing in the date range) and what to do next. A Get started panel helps new sites record their first pageview.
+* Buttons, switches and segmented choices use native WordPress controls with one set of colors and the WordPress focus ring. Red glows, nested cards and side stripes are gone, and every report paginates the same way.
+* Free screens show what Pro adds honestly: no blurred mock reports or invented figures.
+* Without Pro, Email Report shows the weekly email built from your site's last 7 days (top pages and referring domains) and can send it to you as a sample.
+* At a Glance says what it counts: "From Any SERP" is now "Pageviews with a search term" and "Last 30 minutes" is now "Pageviews, last 30 minutes". The numbers are unchanged. These two labels show in English until they are translated again.
+* Traffic Summary's Direct Pageviews help text explains why it can be higher than Direct in Channels: it also counts older pageviews with no referrer, which Channels lists as Unassigned. The numbers are unchanged. The new sentence shows in English until it is translated.
+* Clearer Migration, Settings, Customize and Access Log screens: Customize cards show a drag grip and keyboard-reachable buttons; Reset layout asks before it discards the layout; Access Log speed reads "Server … ms · Page … ms"; Bounce rate and New Visitors Rate show a % sign.
+* The "Cookieless visit grouping" warning now clears as soon as the visitor identity migration adds its column, instead of staying up to three hours while the Migration screen already says the database is up to date.
+* Translations: the IP label in report row details and the Shortcode Playground's display names are translatable (one new string, "Live"); placeholder avatars no longer read "Unknown" to screen readers; translators see notes for the speed and row-range strings. Plugin Check reports no new errors or warnings.
+
+**Ecommerce**
+* Isolate report caches and setup by analytics database, exclude expired visits from purchase-rate cohorts, and provide scoped summaries for native exports and scheduled Pro email. Restore the shared date picker appearance.
+* Remove WooCommerce order-access keys from newly stored page URLs, referrers and URL updates. Existing historical records are not rewritten automatically.
+* Refine Ecommerce with interactive metric charts, calendar aggregation, tabbed revenue rankings, inline drill-downs and compact coverage guidance. Preserve native filters and scoped exports.
+* Add a revenue-first WooCommerce dashboard with net sales, orders, comparisons, products, acquisition coverage and a consented purchase journey. Currency, refunds and unmatched orders have explicit definitions.
+* Keep order synchronization in bounded background jobs, support HPOS and legacy storage, and integrate native dates, filters, saved segments, privacy erasure and retention. Setup is opt-in; see [the Ecommerce guide](docs/ecommerce.md).
+* "Your Pro reports are ready" shows until you open one of the reports it lists or dismiss it, per user. The license reminder it carried stays as a footnote.
+
+**UTM and channel reports**
+* Build and copy campaign URLs directly from the UTM report. The local builder validates required tags, preserves existing URL parameters and fragments, and supports campaign names or IDs.
+* Campaign and channel totals now expand into source breakdowns, with exact totals under result caps, compact optional tags, blue share bars, highlighted open rows, and layouts that adapt to narrow dashboard widgets and mobile screens.
+* Direct JavaScript-tracked visits retain their empty browser referrer instead of being mistaken for internal navigation from the tracking request's HTTP header.
+* Traffic Sources now includes UTM Campaigns and Channels, with pageview counts, shares, filters and accessible tables. Campaign tags preserve their case and encoded values.
+* Channels distinguish AI assistant referrals, AI crawlers and user-requested AI fetches, alongside search, social, email, paid and other sources. Classification respects bot exclusions; missing evidence is shown explicitly.
+* Date changes retain active filters, saved segments retain selected dates, and literal campaign values (including HTML entities and backslashes) remain intact and inert across forms, AJAX, summaries and shortcodes. Public report widgets avoid acquisition schema probes.
+* Upgrades add nullable attribution fields through the Migration screen. Existing pageviews remain unattributed; new tracking uses the existing date indexes without per-hit schema queries.
 
 **Performance — measured, not estimated**
 * Admin charts read about half as many database rows: totals now ride the same query as their buckets. Measured on the weekly chart over the 150,000-row reference bench corpus, as deterministic counters rather than timings: rows read 304,454 -> 152,227 and sort work 212,301 -> 106,141. That change alone leaves report output byte-identical; the separate previous-period correction below does move two numbers, on purpose.

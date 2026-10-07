@@ -1,9 +1,11 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
 $is_dashboard = empty($_REQUEST['page']) || 'slimview1' != $_REQUEST['page'];
 
 // Load the search engines list to mark pageviews accordingly
@@ -48,7 +50,7 @@ $count_page_results = count($results);
 echo wp_kses_post(wp_slimstat_db::$debug_message);
 
 if (0 == $count_page_results) {
-    echo '<p class="nodata">' . esc_html__('No data to display', 'wp-slimstat') . '</p>';
+    wp_slimstat_reports::empty_state('', __('Visits appear here as they happen.', 'wp-slimstat'));
     return 0;
 }
 
@@ -83,10 +85,10 @@ if (!$is_dashboard) {
     // the word it explains, instead of stranding apart from it. (#impeccable)
     echo '<p class="slimstat-access-log-legend">'
         . '<span class="slimstat-legend-item"><span class="little-color-box is-search-engine" title="' . esc_attr__('From search result page', 'wp-slimstat') . '"></span> ' . esc_html__('From search result page', 'wp-slimstat') . '</span>'
-        . '<span class="slimstat-legend-item"><span class="little-color-box is-known-visitor" title="' . esc_attr__('Has Left Comments', 'wp-slimstat') . '"></span> ' . esc_html__('Has Left Comments', 'wp-slimstat') . '</span>'
-        . '<span class="slimstat-legend-item"><span class="little-color-box is-known-user" title="' . esc_attr__('WP User', 'wp-slimstat') . '"></span> ' . esc_html__('WP User', 'wp-slimstat') . '</span>'
-        . '<span class="slimstat-legend-item"><span class="little-color-box is-direct" title="' . esc_attr__('Other Human', 'wp-slimstat') . '"></span> ' . esc_html__('Other Human', 'wp-slimstat') . '</span>'
-        . '<span class="slimstat-legend-item"><span class="little-color-box" title="' . esc_attr__('Bot or Crawler', 'wp-slimstat') . '"></span> ' . esc_html__('Bot or Crawler', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box is-known-visitor" title="' . esc_attr__('Has left comments', 'wp-slimstat') . '"></span> ' . esc_html__('Has left comments', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box is-known-user" title="' . esc_attr__('WordPress user', 'wp-slimstat') . '"></span> ' . esc_html__('WordPress user', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box is-direct" title="' . esc_attr__('Other human', 'wp-slimstat') . '"></span> ' . esc_html__('Other human', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box" title="' . esc_attr__('Bot or crawler', 'wp-slimstat') . '"></span> ' . esc_html__('Bot or crawler', 'wp-slimstat') . '</span>'
         . '</p>';
 }
 
@@ -281,7 +283,8 @@ for ($i = 0; $i < $count_page_results; $i++) {
     // Server Latency and Page Speed
     $performance = '';
     if (!$is_dashboard && (!empty($results[$i]['server_latency']) || !empty($results[$i]['page_performance']))) {
-        $performance = "<i class='slimstat-font-gauge spaced slimstat-tooltip-trigger' title='" . __('Server Latency and Page Speed in milliseconds', 'wp-slimstat') . "'></i> " . __('SL', 'wp-slimstat') . sprintf(': %s / ', $results[$i]['server_latency']) . __('PS', 'wp-slimstat') . (': ' . $results[$i]['page_performance']);
+        /* translators: 1: server latency in milliseconds, 2: page load time in milliseconds */
+        $performance = "<i class='slimstat-font-gauge spaced slimstat-tooltip-trigger' title='" . esc_attr__('Server Latency and Page Speed in milliseconds', 'wp-slimstat') . "'></i> " . esc_html(sprintf(__('Server %1$s ms · Page %2$s ms', 'wp-slimstat'), (int) $results[$i]['server_latency'], (int) $results[$i]['page_performance']));
     }
 
     // Time on page

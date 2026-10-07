@@ -105,6 +105,7 @@ class MigrationAdmin
                 'id'       => $migration->getId(),
                 'name'     => $migration->getName(),
                 'desc'     => $migration->getDescription(),
+                'summary'  => method_exists($migration, 'getSummary') ? $migration->getSummary() : '',
                 'optional' => false,
             ];
         }
@@ -113,6 +114,7 @@ class MigrationAdmin
                 'id'       => $migration->getId(),
                 'name'     => $migration->getName(),
                 'desc'     => $migration->getDescription(),
+                'summary'  => method_exists($migration, 'getSummary') ? $migration->getSummary() : '',
                 'optional' => true,
             ];
         }
@@ -131,7 +133,7 @@ class MigrationAdmin
 				// S7 error paths. Hardcoding these in migration.js would have been an i18n
 				// regression in a file where every other string is translated.
 				'notComplete' => __('The migration did not complete. Nothing further has been run.', 'wp-slimstat'),
-				'timedOut' => __('The migration request timed out. It may still be running on the server — reload this page before starting again.', 'wp-slimstat'),
+				'timedOut' => __('The migration request timed out. It may still be running on the server. Reload this page before starting again.', 'wp-slimstat'),
 				'requestFailed' => __('The migration request failed. Nothing further has been run.', 'wp-slimstat'),
 				// Read by migration.js since it was written and never supplied here, so every
 				// locale has silently fallen back to the English baked into the JS.
@@ -140,6 +142,7 @@ class MigrationAdmin
 				// hardcoded in migration.js, because a string baked into the JS is a string no
 				// locale ever translates — the defect the two labels above were added to fix.
 				'runThisStep' => __('Run this step', 'wp-slimstat'),
+				'details' => __('Details', 'wp-slimstat'),
 				'runningShort' => __('Running', 'wp-slimstat'),
 				'failedHelp' => __('A step failed. Please check the logs and retry.', 'wp-slimstat'),
 			],
@@ -158,7 +161,9 @@ class MigrationAdmin
 	private function isSlimStatPage($screen): bool
 	{
 		// Check if it's a SlimStat page by looking at the page parameter
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
 		if (isset($_GET['page'])) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
 			$page = sanitize_text_field(wp_unslash($_GET['page']));
 			// SlimStat pages start with 'slim' (slimview1, slimview2, slimconfig, etc.)
 			if (strpos($page, 'slim') === 0) {
@@ -303,6 +308,7 @@ class MigrationAdmin
 		// disabled_functions and under PHP-FPM's request_terminate_timeout, so it is asked for
 		// here and NOT relied on: the real bound is the per-pass deadline inside the backfill.
 		if (function_exists('set_time_limit')) {
+			// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- Authorized migration batches enforce their own deadline; set_time_limit availability is checked above.
 			@set_time_limit(0);
 		}
 

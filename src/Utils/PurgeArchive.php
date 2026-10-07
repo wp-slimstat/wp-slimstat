@@ -55,6 +55,8 @@ class PurgeArchive
         // that declared it on slim_stats. Retention applies to the identity exactly as it
         // applies to the row that carries it.
         'vid_hash',
+        'traffic_channel', 'traffic_source', 'utm_source', 'utm_medium', 'utm_campaign',
+        'utm_content', 'utm_term', 'utm_id',
     ];
 
     /**
@@ -124,11 +126,13 @@ class PurgeArchive
     public static function copyableColumns($db, $prefix, $liveSuffix)
     {
         if (!isset(self::ARCHIVE_PAIRS[$liveSuffix])) {
+            // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
             throw new \InvalidArgumentException(sprintf(
                 "'%s' is not an archived table — this class knows: %s",
                 $liveSuffix,
                 implode(', ', array_keys(self::ARCHIVE_PAIRS))
             ));
+            // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
         }
 
         $pair     = self::ARCHIVE_PAIRS[$liveSuffix];

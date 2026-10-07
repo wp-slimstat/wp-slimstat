@@ -200,7 +200,7 @@
         $confirmSheet.find('[data-role="confirm-title"]').text(opts.title || __('Delete this?', 'wp-slimstat'));
         $confirmSheet.find('[data-role="confirm-body"]').text(opts.body || '');
         $confirmSheet.find('[data-role="confirm-warning"]').text(
-            opts.warning || __('Historical data stays — only the definition is removed. You can always rebuild it.', 'wp-slimstat')
+            opts.warning || __('Historical data stays. Only the definition is removed, and you can rebuild it.', 'wp-slimstat')
         );
         $confirmSheet.find('[data-role="confirm-cancel"]').text(opts.cancelLabel || __('Cancel', 'wp-slimstat'));
         $confirmSheet.find('[data-role="confirm-destructive"]').text(opts.destructiveLabel || __('Delete', 'wp-slimstat'));
@@ -331,10 +331,9 @@
         openConfirmSheet({
             title:            __('Delete goal?', 'wp-slimstat'),
             body:             goalName
-                /* translators: %s is the goal name */
-                ? sprintf(__('Delete "%s"?', 'wp-slimstat'), goalName)
+                ? sprintf(/* translators: %s: goal name. */ __('Delete "%s"?', 'wp-slimstat'), goalName)
                 : __('Delete this goal?', 'wp-slimstat'),
-            warning:          __('Historical data stays — only the goal definition is removed. You can always rebuild it.', 'wp-slimstat'),
+            warning:          __('Historical data stays. Only the goal definition is removed, and you can rebuild it.', 'wp-slimstat'),
             cancelLabel:      __('Keep goal', 'wp-slimstat'),
             destructiveLabel: __('Delete goal', 'wp-slimstat'),
             onConfirm: function () {
@@ -560,7 +559,7 @@
         // A value-bearing step operator needs a value — flag the first offending
         // step by number so the user knows which row to fix. (#2)
         if (invalidStep !== null) {
-            $err.text(sprintf(__('Step %d needs a value for its operator.', 'wp-slimstat'), invalidStep.index + 1)).attr('hidden', false);
+            $err.text(sprintf(/* translators: %d: step number. */ __('Step %d needs a value for its operator.', 'wp-slimstat'), invalidStep.index + 1)).attr('hidden', false);
             focusValueField(invalidStep.$value);
             return;
         }
@@ -600,7 +599,7 @@
                 /* translators: %s is the funnel name */
                 ? sprintf(__('Delete "%s"?', 'wp-slimstat'), funnelName)
                 : __('Delete this funnel?', 'wp-slimstat'),
-            warning:          __('Historical data stays — only the funnel definition is removed. You can always rebuild it from the same goals.', 'wp-slimstat'),
+            warning:          __('Historical data stays. Only the funnel definition is removed, and you can rebuild it from the same goals.', 'wp-slimstat'),
             cancelLabel:      __('Keep funnel', 'wp-slimstat'),
             destructiveLabel: __('Delete funnel', 'wp-slimstat'),
             onConfirm: function () {
@@ -706,7 +705,7 @@
             mainHtml = '<span class="slimstat-gf-summary">' +
                 escHtml(sprintf(__('%d-step funnel · Conversion rate pending', 'wp-slimstat'), stepCount)) + '</span>';
         } else {
-            /* translators: 1: number of steps, 2: conversion rate */
+            /* translators: 1: step count, 2: conversion rate */
             mainHtml = '<span class="slimstat-gf-summary">' +
                 escHtml(sprintf(__('%1$d-step funnel · %2$s%% conversion rate', 'wp-slimstat'), stepCount, crLabel)) + '</span>';
         }
@@ -957,7 +956,7 @@
             searchPlaceholder: __('Search or type…', 'wp-slimstat'),
             // No "Apply" button here (unlike the filter bar) — a typed value is
             // saved as-is, so invite the user to type any value. (#1.1/#1.2)
-            noMatchesText:     __('No matches — type any value to use it.', 'wp-slimstat'),
+            noMatchesText:     __('No matches. Type any value to use it.', 'wp-slimstat'),
             noResultsText:     __('No matches', 'wp-slimstat'),
             loadingText:       __('Loading…', 'wp-slimstat'),
             // Wire server-side search so typed custom values are looked up per
@@ -1051,7 +1050,7 @@
                 var count = Number(response.data.visitors) || 0;
                 /* translators: %s is a localized unique-visitor count */
                 $result.removeClass('is-loading').text(
-                    sprintf(_n('%s unique visitor', '%s unique visitors', count, 'wp-slimstat'), formatNumber(count))
+                    sprintf(/* translators: %s: localized unique-visitor count. */ _n('%s unique visitor', '%s unique visitors', count, 'wp-slimstat'), formatNumber(count))
                 );
             } else {
                 $result.removeClass('is-loading').text('—');

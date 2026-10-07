@@ -629,7 +629,7 @@
     },
     "top_current_ip_pinned": {
       "report_id": "slim_p1_04",
-      "title": "Currently Online",
+      "title": "Visitors online (last 5 min)",
       "family": "top",
       "kind": "current",
       "dimension": "ip",
@@ -728,7 +728,7 @@
     },
     "top_current_username_pinned": {
       "report_id": "slim_p1_18",
-      "title": "Users Currently Online",
+      "title": "Logged-in users online (last 5 min)",
       "family": "top",
       "kind": "current",
       "dimension": "username",
