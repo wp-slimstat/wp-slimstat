@@ -17,6 +17,8 @@ test('Task 22: pending banner, failed request, retry, completion and optional-on
   const banner=page.locator('.slimstat-migration-notice-show');
   await expect(banner).toBeVisible(); await expect(banner).toContainText(/back up/i);
   await banner.getByRole('link',{name:'Start Migration',exact:true}).click();
+  // The button is enabled in markup before the footer script binds it; wait for the loaded page.
+  await page.waitForURL(/page=slimstat_migration/,{waitUntil:'load'});
   await expect(page.locator('#slimstat-start-migration')).toBeEnabled();
   let fail=true;
   await page.route('**/admin-ajax.php',async route=>{

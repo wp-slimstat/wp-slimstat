@@ -496,9 +496,12 @@ jQuery(document).ready(function($) {
 
             function positionPicker() {
                 const rect = $button[0].getBoundingClientRect();
+                const toolbar = document.getElementById('wpadminbar');
+                const topEdge = Math.max(8, (toolbar ? toolbar.getBoundingClientRect().bottom : 0) + 8);
+                picker.container.css({ position: 'fixed', 'box-sizing': 'border-box', 'max-width': 'calc(100vw - 16px)', 'max-height': Math.max(0, window.innerHeight - topEdge - 8), 'overflow-y': 'auto', 'z-index': 9999 });
                 const width = picker.container.outerWidth();
                 const desired = document.documentElement.dir === 'rtl' ? rect.right - width : rect.left;
-                picker.container.css({ position: 'fixed', top: Math.min(rect.bottom + 8, Math.max(8, window.innerHeight - picker.container.outerHeight() - 8)), left: Math.max(8, Math.min(desired, window.innerWidth - width - 8)), right: 'auto', 'max-width': 'calc(100vw - 16px)', 'max-height': 'calc(100dvh - 16px)', 'overflow-y': 'auto', 'z-index': 9999 });
+                picker.container.css({ top: Math.max(topEdge, Math.min(rect.bottom + 8, window.innerHeight - picker.container.outerHeight() - 8)), left: Math.max(8, Math.min(desired, window.innerWidth - width - 8)), right: 'auto' });
             }
             requestAnimationFrame(positionPicker);
             $(window).off('.slimstatPickerPosition').on('resize.slimstatPickerPosition scroll.slimstatPickerPosition', positionPicker);

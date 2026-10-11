@@ -179,7 +179,9 @@ Screenshot: Date trigger and detached menu (`task-notes/screenshots/heatmaps-tab
 
 **Result (11 October 2026):** Verified. Menu anchors to trigger, clamps within viewport, follows scroll/resize.
 
-**Evidence:** October heatmap test checks desktop 1280 and mobile 390, LTR/RTL; existing [toolbar spec](../tests/e2e/heatmaps-list-toolbar.spec.ts). [Executed results](../docs/evidence/october-backlog/results.json).
+**Correction (11 October 2026, final):** The first verification only checked horizontal containment. Stylesheet `!important` rules (`right: 20px`) still overrode the anchor, and the mobile custom-range calendars extended under the WordPress toolbar and past the viewport. Removed the overrides ([styles](../admin/assets/css/daterangepicker/slimstat-datepicker-styles.css)); the [shared control](../admin/assets/js/daterangepicker/slimstat-daterangepicker.js) now clamps below the toolbar with a scrollable max-height. When a short viewport forces the popup over its trigger, Cancel stays reachable inside it.
+
+**Evidence:** The [October heatmap test](../tests/e2e/october-backlog.spec.ts) opens Custom range at desktop 1280 and mobile 390, LTR/RTL. It asserts the exact trigger-anchored position, the toolbar and viewport edges, that the first preset can be clicked, and Cancel closing. Pre-fix assets fail the anchor assertion; pre-fix JS fails the viewport assertion ([calendar log](evidence/october-backlog/calendar-bounds.txt), [mobile RTL](evidence/october-backlog/heatmaps-390-rtl.png), [desktop LTR](evidence/october-backlog/heatmaps-1280-ltr.png)). Existing [toolbar spec](../tests/e2e/heatmaps-list-toolbar.spec.ts). [Executed results](evidence/october-backlog/results.json).
 
 ## 13. Make Heatmaps table indicators easier to understand
 

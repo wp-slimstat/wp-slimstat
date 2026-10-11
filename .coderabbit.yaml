@@ -1,4 +1,11 @@
 reviews:
+  # Review source code, tests and PO translations; catalog CI checks generated catalogs.
+  # Execution evidence remains in the PR, outside automated code review.
+  path_filters:
+    - "!docs/evidence/**"
+    - "!languages/*.json"
+    - "!languages/*.mo"
+    - "!languages/*.pot"
   auto_review:
     enabled: true
     base_branches:

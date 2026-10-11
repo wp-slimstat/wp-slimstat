@@ -54,12 +54,28 @@ test('Tasks 12–16: Heatmaps boundaries, device denominator, polling, date alig
       await page.locator('.slimstat-date-range-btn').click();
       const menu = page.locator('.daterangepicker:visible');
       await expect(menu).toBeVisible();
+      // Two calendars make the mobile popup taller than the viewport before clamping.
+      await menu.locator('.ranges li').last().click();
+      await expect(menu).toHaveClass(/custom-range-active/);
       await page.waitForTimeout(50);
       const box = await menu.boundingBox();
       expect(box!.x).toBeGreaterThanOrEqual(0);
       expect(box!.x + box!.width).toBeLessThanOrEqual(width + 1);
+      const button = await page.locator('.slimstat-date-range-btn').boundingBox();
+      const desired = dir === 'rtl' ? button!.x + button!.width - box!.width : button!.x;
+      expect(Math.abs(box!.x - Math.max(8, Math.min(desired, width - box!.width - 8)))).toBeLessThanOrEqual(1);
+      const toolbar = await page.locator('#wpadminbar').boundingBox();
+      expect(box!.y).toBeGreaterThanOrEqual(Math.max(8, toolbar!.y + toolbar!.height + 8));
+      expect(box!.y + box!.height).toBeLessThanOrEqual(page.viewportSize()!.height - 7);
+      expect(await menu.locator('.ranges li').first().evaluate(first => {
+        const rect = first.getBoundingClientRect();
+        return document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)?.closest('.ranges li') === first;
+      })).toBe(true);
       await page.screenshot({ path: info.outputPath(`heatmaps-${width}-${dir}.png`) });
-      await page.locator('.slimstat-date-range-btn').click();
+      // A clamped popup may cover its toggle; Cancel must stay reachable inside it.
+      await menu.getByRole('button', { name: 'Cancel', exact: true }).click();
+      await expect(page.locator('.daterangepicker')).toBeHidden();
+      await expect(page.locator('.slimstat-date-range-btn')).toHaveAttribute('aria-expanded', 'false');
     }
   }
   if ((await getProState(page)).pro_installed) {
