@@ -106,7 +106,7 @@ if ('' !== $error) {
 
         <?php do_action('slimstat_heatmap_content'); ?>
 
-        <?php if ($is_admin) : ?><p><a class="button" href="<?php echo esc_url(admin_url('admin.php?page=slimconfig&tab=7#heatmap_capture')); ?>"><?php esc_html_e('Heatmap settings', 'wp-slimstat'); ?></a></p><?php endif; ?>
+        <?php if ($is_admin && $is_pro) : ?><p><a class="button" href="<?php echo esc_url(admin_url('admin.php?page=slimconfig&tab=7#heatmap_capture')); ?>"><?php esc_html_e('Heatmap settings', 'wp-slimstat'); ?></a></p><?php endif; ?>
         <form class="ss-hm-toolbar" role="search" onsubmit="return false">
             <?php
             wp_slimstat_admin::get_template('date-range-picker', [

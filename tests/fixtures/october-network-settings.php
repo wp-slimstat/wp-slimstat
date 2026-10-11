@@ -1,4 +1,5 @@
 <?php
+if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') { http_response_code(403); exit(1); }
 /** Run only on the disposable octnet_ multisite; seed, then verify in a separate request. */
 if (!is_multisite() || 'octnet_' !== $GLOBALS['wpdb']->base_prefix || 'tests-wordpress' !== DB_NAME) {
     throw new RuntimeException('Requires the isolated October multisite fixture.');

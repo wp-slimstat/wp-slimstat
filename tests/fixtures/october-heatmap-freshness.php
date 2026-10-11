@@ -1,4 +1,5 @@
 <?php
+if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') { http_response_code(403); exit(1); }
 /** Real legacy/full writes against the disposable database; never the user's Local site. */
 use SlimStat\Heatmap\Query;
 use SlimStat\Heatmap\Store;

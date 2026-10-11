@@ -1,9 +1,11 @@
+import { requireProBooted } from './helpers/pro-state';
 import {test,expect} from '@playwright/test';
 import {runWordPressFixture} from './helpers/chart';
 import {snapshotOption,restoreOption,snapshotSlimstatOptions,restoreSlimstatOptions,setSlimstatOptions,closeDb} from './helpers/setup';
 
 test('Task 18: missing-theme explanation, fallback context and retry into standard-theme click/scroll previews',async({page},info)=>{
  test.setTimeout(90000);
+ await requireProBooted(page);
  await snapshotOption('template'); await snapshotOption('stylesheet'); await snapshotSlimstatOptions();
  await setSlimstatOptions({addon_heatmap_enable:'on'});
  await page.context().route(url=>decodeURIComponent(url.href).includes('/slimstat/v1/heatmap/view'),async route=>{

@@ -1,3 +1,4 @@
+import { getProState, requireProBooted } from './helpers/pro-state';
 import { test, expect } from '@playwright/test';
 import { runWordPressFixture } from './helpers/chart';
 import { closeDb, snapshotSlimstatOptions, restoreSlimstatOptions, snapshotOption, restoreOption, setSlimstatOptions } from './helpers/setup';
@@ -58,11 +59,16 @@ test('Tasks 12–16: Heatmaps boundaries, device denominator, polling, date alig
       await page.locator('.slimstat-date-range-btn').click();
     }
   }
-  await page.getByRole('link', { name: 'Heatmap settings', exact: true }).click();
-  await expect(page.locator('#heatmap_capture')).toBeFocused();
+  if ((await getProState(page)).pro_installed) {
+    await page.getByRole('link', { name: 'Heatmap settings', exact: true }).click();
+    await expect(page.locator('#heatmap_capture')).toBeFocused();
+  } else {
+    await expect(page.getByRole('link', { name: 'Heatmap settings', exact: true })).toHaveCount(0);
+  }
 });
 
 test('Tasks 19, 23: email search retains hidden selections and header notifications stay closed', async ({ page }, info) => {
+  await requireProBooted(page);
   test.setTimeout(120000);
   await snapshotSlimstatOptions(); await snapshotOption('wp_slimstat_notifications');
   await setSlimstatOptions({ display_notifications: 'on' });

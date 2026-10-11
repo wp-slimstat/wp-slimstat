@@ -228,7 +228,7 @@ Screenshot: Stale update time (`task-notes/screenshots/heatmaps-stale-update-tim
 
 Screenshot: Existing Heatmaps toolbar (`task-notes/screenshots/heatmaps-table-date-range.jpg`).
 
-**Result (11 October 2026):** Verified. Settings shortcut targets tab 7, `#heatmap_capture`, with focus.
+**Result (11 October 2026):** Verified. For Pro administrators, Settings shortcut targets tab 7, `#heatmap_capture`, with focus.
 
 **Evidence:** October heatmap browser test; [template](../admin/view/heatmaps.php), [settings focus handler](../admin/assets/js/admin.js). [Executed results](../docs/evidence/october-backlog/results.json).
 

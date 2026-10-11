@@ -692,5 +692,18 @@
       "expected_failure": "has no `= 6.0.0 =` entry under `== Upgrade Notice ==`",
       "matched": true
     }
-  ]
+  ],
+  "prerequisite_matrix": {
+    "paired": {
+      "passed": 8,
+      "skipped": 0,
+      "log": "paired-prerequisites-browser.txt"
+    },
+    "core_only": {
+      "passed": 6,
+      "skipped": 4,
+      "skip_reason": "Private Pro plugin intentionally absent; existing requireProBooted helper skips only absent plugins and fails installed-but-broken Pro.",
+      "log": "core-only-browser.txt"
+    }
+  }
 }

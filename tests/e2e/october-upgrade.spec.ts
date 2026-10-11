@@ -1,3 +1,4 @@
+import { requireProBooted } from './helpers/pro-state';
 import { test, expect } from '@playwright/test';
 import { runWordPressFixture } from './helpers/chart';
 import { snapshotSlimstatOptions, restoreSlimstatOptions, closeDb } from './helpers/setup';
@@ -5,6 +6,7 @@ import { snapshotSlimstatOptions, restoreSlimstatOptions, closeDb } from './help
 // Simulated stored-version upgrades run the real init/admin migration paths on disposable WordPress.
 test('Tasks 17/28: stored settings survive core upgrades, repeats and Pro reactivation', async ({ page }, info) => {
   test.setTimeout(180000);
+  await requireProBooted(page);
   await snapshotSlimstatOptions();
   const evidence: unknown[] = [];
   try {

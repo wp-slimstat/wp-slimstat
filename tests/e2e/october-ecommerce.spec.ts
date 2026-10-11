@@ -1,3 +1,4 @@
+import { requireProBooted } from './helpers/pro-state';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { runWordPressFixture } from './helpers/chart';
@@ -5,8 +6,9 @@ import { snapshotSlimstatOptions, restoreSlimstatOptions, snapshotOption, restor
 const fixtureCode = readFileSync(new URL('./helpers/ecommerce-data.php', import.meta.url), 'utf8').replace(/^<\?php\s*/, '');
 const fixture = (mode: string) => JSON.parse(runWordPressFixture(`<?php $fixture_mode='${mode}';\n${fixtureCode}`));
 
-test('Tasks 5–11, 26–27: currency, comparisons, full report, export and chart gaps', async ({ page }, info) => {
+test('Tasks 5–11, 26–27: currency, comparisons, full report, export and chart gaps @woocommerce', async ({ page }, info) => {
   test.setTimeout(180000);
+  await requireProBooted(page);
   await snapshotSlimstatOptions(); await snapshotOption('slimstat_filters');
   fixture('cleanup');
   try {
