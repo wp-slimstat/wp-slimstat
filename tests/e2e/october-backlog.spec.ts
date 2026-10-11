@@ -116,10 +116,28 @@ test('Tasks 19, 23: email search retains hidden selections and header notificati
   await page.goto('/wp-admin/admin.php?page=slimemail');
   const picks = page.locator('[name="email_report_pick[]"]');
   expect(await picks.count()).toBeGreaterThan(10);
+  // The search field has a visible edge, Recent Tags sits with the other Content reports, and wrapped titles hang beside their checkbox.
+  await expect(page.locator('#ss-email-search')).toHaveCSS('border-top-color', 'rgb(140, 143, 148)');
+  await expect(page.locator('[data-email-group]', { has: page.locator('legend', { hasText: /^Content$/ }) })).toContainText('Recent Tags');
+  await expect(page.locator('[data-email-group] legend', { hasText: 'Other reports' })).toHaveCount(0);
+  // A narrow label forces long titles onto two lines at any viewport.
+  const lines = await page.locator('.ss-email-report-picks label').evaluateAll(labels => labels.map(label => {
+    label.style.maxWidth = '150px';
+    const box = label.querySelector('input')!.getBoundingClientRect(), text = document.createRange();
+    text.setStartAfter(label.querySelector('input')!); text.setEnd(label, label.childNodes.length);
+    const rects = [...text.getClientRects()].filter(line => line.width > 0);
+    label.style.maxWidth = '';
+    return { title: label.textContent!.trim(), wraps: new Set(rects.map(line => Math.round(line.top))).size > 1, under: rects.some(line => line.left < box.right) };
+  }));
+  expect(lines.some(line => line.wraps)).toBe(true);
+  expect(lines.filter(line => line.under).map(line => line.title)).toEqual([]);
   await picks.first().check();
   const id = await picks.first().getAttribute('value');
+  // The live region exists before the search, so screen readers announce the message when it appears.
+  await expect(page.locator('#ss-email-no-results')).toHaveAttribute('role', 'status');
+  await expect(page.locator('#ss-email-no-results')).toBeEmpty();
   await page.locator('#ss-email-search').fill('no-such-report');
-  await expect(page.locator('#ss-email-no-results')).toBeVisible();
+  await expect(page.locator('#ss-email-no-results')).toHaveText('No reports match your search.');
   await expect(page.locator(`[name="email_report_pick[]"][value="${id}"]`)).toBeChecked();
   await page.getByRole('button', { name: 'Save Changes', exact: true }).click();
   await expect(page.locator(`[name="email_report_pick[]"][value="${id}"]`)).toBeChecked();
