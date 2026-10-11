@@ -83,7 +83,7 @@ Project check: [Ecommerce definitions](../docs/ecommerce.md) explicitly make AOV
 
 Screenshots: Purchase-rate gaps (`task-notes/screenshots/tracked-purchase-rate-gaps.jpg`) · Average-order-value gaps (`task-notes/screenshots/average-order-value-gaps.jpg`).
 
-**Result (11 October 2026):** Verified. [Ecommerce formatting](../admin/view/partials/ecommerce.php) and [chart details](../admin/assets/js/ecommerce.js) distinguish undefined ratios from measured zeroes. Gaps remain disconnected; current/previous interval explanations match exact values.
+**Result (11 October 2026):** Verified. [Ecommerce formatting](../admin/view/partials/ecommerce.php) and [chart details](../admin/assets/js/ecommerce.js) distinguish undefined ratios from measured zeroes. Gaps remain disconnected; current/previous interval explanations match exact values. Isolated measured points, including zero, remain visible in both series; [rendered-point regression](evidence/october-backlog/isolated-chart-points.txt) passes.
 
 **Evidence:** [Ecommerce fixture](../tests/e2e/helpers/ecommerce-data.php) verifies zero purchase rate with sufficient visits, null AOV without orders, distinct visits and calendar alignment. [October Ecommerce](../tests/e2e/october-ecommerce.spec.ts) checks visible gap explanations. [Executed results](../docs/evidence/october-backlog/results.json).
 

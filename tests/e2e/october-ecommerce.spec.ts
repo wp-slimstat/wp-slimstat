@@ -114,6 +114,33 @@ test('Tasks 5–11, 26–27: currency, comparisons, full report, export and char
     await expect(dash.locator('[data-chart-gaps]')).toContainText('No orders');
     await dash.locator('[data-chart-metric=rate]').click();
     await expect(dash.locator('[data-chart-gaps]')).toContainText('Not enough visits');
+    // A measured zero/positive point between null intervals must remain visible in both series.
+    for (const metric of ['aov', 'rate']) {
+      await dash.locator('[data-series]').evaluate((element, selected) => {
+        const series = JSON.parse((element as HTMLElement).dataset.series!);
+        for (const [period, values] of Object.entries({ current: [null, 0, null, null], previous: [null, null, 2, null] })) {
+          const source = series[period][0];
+          series[period] = values.map((value, index) => ({ ...source, partial: false,
+            label: `Interval ${index}`, short: String(index), [selected]: value,
+            formatted: { ...source.formatted, [selected]: value === null ? 'No data' : String(value) } }));
+        }
+        (element as HTMLElement).dataset.series = JSON.stringify(series);
+      }, metric);
+      await dash.locator(`[data-chart-metric=${metric}]`).click();
+      const points = await dash.locator('canvas').evaluate(canvas => {
+        const chart = (window as any).Chart.getChart(canvas);
+        chart.update('none');
+        return [0, 1].map(dataset => chart.getDatasetMeta(dataset).data.map((point: any) => ({
+          skipped: point.skip, radius: point.options.radius, y: point.y,
+        })));
+      });
+      for (const [dataset, index] of [[0, 1], [1, 2]]) {
+        expect(points[dataset][index].skipped).toBe(false);
+        expect(points[dataset][index].radius).toBeGreaterThan(0);
+        expect(Number.isFinite(points[dataset][index].y)).toBe(true);
+        expect(points[dataset][0].skipped).toBe(true);
+      }
+    }
     // Expired history is unavailable, not evidence that there were no orders or visits.
     await setSlimstatOptions({ auto_purge: 1 });
     await page.reload();

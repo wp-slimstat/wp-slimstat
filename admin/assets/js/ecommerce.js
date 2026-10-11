@@ -110,17 +110,21 @@
         const muted = colors.getPropertyValue('--ss-chart-compare').trim();
         const text = colors.getPropertyValue('--ss-text-muted').trim();
         const line = ['rate', 'aov'].includes(metric);
+        // A lone measured value has no line segment: keep its marker visible, including zero.
+        const isolated = (points, i) => points[i][metric] !== null
+            && (!points[i - 1] || points[i - 1][metric] === null)
+            && (!points[i + 1] || points[i + 1][metric] === null);
         const datasets = [{
             label: __('Selected period', 'wp-slimstat'), type: line ? 'line' : 'bar',
             data: series.current.map(p => p[metric]), borderColor: primary, backgroundColor: line ? primary + '12' : series.current.map(p => p.partial ? primary + 'cc' : primary),
             borderWidth: line ? 2 : 0, borderRadius: 3, maxBarThickness: 38, fill: line, tension: 0,
-            pointRadius: series.current.map(p => p.partial || series.current.length < 3 ? 4 : 0), pointStyle: series.current.map(p => p.partial ? 'triangle' : 'circle'), pointHitRadius: 12, spanGaps: false,
+            pointRadius: series.current.map((p, i) => p.partial || series.current.length < 3 || isolated(series.current, i) ? 4 : 0), pointStyle: series.current.map(p => p.partial ? 'triangle' : 'circle'), pointHitRadius: 12, spanGaps: false,
         }];
         if (state.compare) datasets.push({
             label: __('Previous period', 'wp-slimstat'), type: 'line', data: series.previous.map(p => p[metric]),
             borderColor: muted, backgroundColor: muted, borderDash: [5, 4], borderWidth: 2,
             pointBackgroundColor: colors.getPropertyValue('--ss-surface').trim(),
-            pointRadius: series.previous.length < 3 ? 4 : 0, pointHitRadius: 12, tension: 0, spanGaps: false, order: -1,
+            pointRadius: series.previous.map((p, i) => series.previous.length < 3 || isolated(series.previous, i) ? 4 : 0), pointHitRadius: 12, tension: 0, spanGaps: false, order: -1,
         });
         dashboard.querySelector('[data-chart-empty]').hidden = series.current.some(p => p[metric] !== null);
         if (chart) chart.destroy();
