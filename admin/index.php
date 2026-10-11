@@ -140,6 +140,8 @@ class wp_slimstat_admin
                 'lead'            => __('Where visits come from: channels, referring sites, search terms and campaigns.', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_view'],
+                // Channels has no sidebar item of its own: it is the new report here.
+                'new_badge'       => 'slimstat_channels_since',
             ],
             'slimview6' => [
                 'is_report_group' => true,
@@ -149,6 +151,7 @@ class wp_slimstat_admin
                 'lead'            => __('Define the conversions that matter, then string them into funnels to see where visitors drop off.', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_view'],
+                'new_badge'       => 'slimstat_goals_funnels_since',
             ],
             'slimview7' => [
                 'is_report_group' => true,
@@ -157,6 +160,7 @@ class wp_slimstat_admin
                 'lead'  => __('Sales, orders and the traffic that drove them.', 'wp-slimstat'),
                 'capability' => 'can_view',
                 'callback' => [self::class, 'wp_slimstat_include_view'],
+                'new_badge' => 'slimstat_ecommerce_since',
             ],
             'slimheatmap' => [
                 'is_report_group' => false,
@@ -164,6 +168,8 @@ class wp_slimstat_admin
                 'title'           => __('Heatmaps', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_heatmaps'],
+                'new_badge'       => 'slimstat_heatmaps_since',
+                'pro_badge'       => true,
             ],
             'slimemail' => [
                 'is_report_group' => false,
@@ -171,6 +177,7 @@ class wp_slimstat_admin
                 'title'           => __('Email Report', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_email_report'],
+                'pro_badge'       => true,
             ],
             'slimshortcodes' => [
                 'is_report_group' => false,
@@ -178,6 +185,7 @@ class wp_slimstat_admin
                 'title' => __('Shortcodes', 'wp-slimstat'),
                 'capability' => 'can_view',
                 'callback' => [self::class, 'wp_slimstat_include_shortcodes'],
+                'new_badge' => 'slimstat_shortcodes_since',
             ],
             'slimlayout' => [
                 'is_report_group' => false,
@@ -562,30 +570,47 @@ class wp_slimstat_admin
      */
     public static function styling_admin_menu()
     {
-        // The time-limited "New" badge on the Goals & Funnels item renders in the
-        // global sidebar, so its style must load on every admin page (not just
-        // slimview6). Tiny, so always emit it. (#20)
-        echo '<style> #adminmenu .slimstat-gf-new-badge {display:inline-block;margin-inline-start:6px;padding:0 6px;border-radius:9px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;font-size:9px;font-weight:600;line-height:16px;text-transform:uppercase;letter-spacing:.03em;vertical-align:middle;} #adminmenu .slimstat-menu-pro-badge {display:inline-block;margin-inline-start:6px;padding:0 5px;border:1px solid currentColor;border-radius:9px;font-size:9px;font-weight:600;line-height:14px;opacity:.85;vertical-align:middle;} </style>';
+        // The sidebar "New" and "Pro" pills render in the global sidebar, so their
+        // style must load on every admin page (not just SlimStat screens). Tiny,
+        // so always emit it. Both pills share one shape. (#20)
+        echo '<style> #adminmenu .slimstat-menu-new-badge, #adminmenu .slimstat-menu-pro-badge {display:inline-block;margin-inline-start:6px;border-radius:9px;font-size:9px;font-weight:600;vertical-align:middle;} #adminmenu .slimstat-menu-new-badge {padding:0 6px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;line-height:16px;text-transform:uppercase;letter-spacing:.03em;} #adminmenu .slimstat-menu-pro-badge {padding:0 5px;border:1px solid currentColor;line-height:14px;opacity:.85;} </style>';
     }
 
     /**
-     * "New" badge HTML for the Goals & Funnels sidebar item, shown for 15 days
-     * after the feature became available on this site, then it disappears.
-     * Returns '' once the window elapses. The window is anchored the first time
-     * the menu builds after this version ships, so existing installs start their
-     * countdown then. (#20)
+     * "New" pill shown for 15 days after a feature became available on this
+     * site, then ''. $option is the screen's 'new_badge' anchor: a per-site
+     * option set the first time the menu builds after the feature ships, so
+     * existing installs start their own countdown on update. uninstall.php
+     * deletes every anchor. (#20)
      */
-    private static function goals_funnels_new_badge()
+    private static function new_badge($option)
     {
-        $since = (int) get_option('slimstat_goals_funnels_since', 0);
+        $since = (int) get_option($option, 0);
         if ($since <= 0) {
             $since = time();
-            update_option('slimstat_goals_funnels_since', $since);
+            update_option($option, $since);
         }
         if ((time() - $since) >= (15 * DAY_IN_SECONDS)) {
             return '';
         }
-        return ' <span class="slimstat-gf-new-badge">' . esc_html__('New', 'wp-slimstat') . '</span>';
+        return ' <span class="slimstat-menu-new-badge">' . esc_html__('New', 'wp-slimstat') . '</span>';
+    }
+
+    /**
+     * Sidebar label: the screen title, then its "New" pill ('new_badge'), then
+     * its "Pro" pill ('pro_badge', while Pro is missing). The page title
+     * (browser tab) stays plain. (#20)
+     */
+    private static function sidebar_label($screen_info, $pro_installed)
+    {
+        $label = $screen_info['title'];
+        if (!empty($screen_info['new_badge'])) {
+            $label .= self::new_badge($screen_info['new_badge']);
+        }
+        if (!$pro_installed && !empty($screen_info['pro_badge'])) {
+            $label .= ' <span class="slimstat-menu-pro-badge">' . esc_html__('Pro', 'wp-slimstat') . '</span>';
+        }
+        return $label;
     }
 
     /**
@@ -1926,6 +1951,7 @@ class wp_slimstat_admin
             'dashicons-chart-area'
         );
 
+        $pro_installed = wp_slimstat::pro_is_installed();
         foreach (self::$screens_info as $a_screen_id => $a_screen_info) {
             if (isset(self::$meta_user_reports[$a_screen_id]) && empty(self::$meta_user_reports[$a_screen_id])) {
                 continue;
@@ -1937,19 +1963,10 @@ class wp_slimstat_admin
             }
 
             if ($a_screen_info['show_in_sidebar']) {
-                // Sidebar label may carry the time-limited "New" badge; the page
-                // title (browser tab) stays plain. (#20)
-                $menu_label = $a_screen_info['title'];
-                if ('slimview6' === $a_screen_id) {
-                    $menu_label .= self::goals_funnels_new_badge();
-                }
-                if (in_array($a_screen_id, ['slimheatmaps', 'slimemail'], true) && !wp_slimstat::pro_is_installed()) {
-                    $menu_label .= ' <span class="slimstat-menu-pro-badge">' . esc_html__('Pro', 'wp-slimstat') . '</span>';
-                }
                 $new_entry[] = add_submenu_page(
                     $parent,
                     $a_screen_info['title'],
-                    $menu_label,
+                    self::sidebar_label($a_screen_info, $pro_installed),
                     $minimum_capability,
                     $a_screen_id,
                     $a_screen_info['callback']

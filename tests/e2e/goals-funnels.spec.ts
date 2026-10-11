@@ -866,7 +866,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
     test('menu-new-badge: Goals & Funnels shows a time-limited "New" badge (#20)', async ({ page }) => {
         await forceLimits(5, 3, WP_CONTENT);
         const { getPool } = await import('./helpers/setup');
-        const badge = '#adminmenu a[href*="page=slimview6"] .slimstat-gf-new-badge';
+        const badge = '#adminmenu a[href*="page=slimview6"] .slimstat-menu-new-badge';
         const clearAnchor = () =>
             getPool().execute("DELETE FROM wp_options WHERE option_name = 'slimstat_goals_funnels_since'");
 

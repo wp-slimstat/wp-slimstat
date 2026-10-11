@@ -519,7 +519,12 @@ function slimstat_uninstall($_wpdb = '')
     delete_option('slimstat_migration_status');
     delete_option('slimstat_migration_completed');
     delete_option('slimstat_permalink_structure_updated');
+    // Sidebar "New" badge anchors (wp_slimstat_admin::NEW_BADGE_OPTIONS).
+    delete_option('slimstat_channels_since');
     delete_option('slimstat_goals_funnels_since');
+    delete_option('slimstat_ecommerce_since');
+    delete_option('slimstat_heatmaps_since');
+    delete_option('slimstat_shortcodes_since');
     delete_option('slimstat_dt_out_indexed');
     delete_option('slimstat_country_dt_indexed');
     delete_option('slimstat_dt_screen_indexed');
