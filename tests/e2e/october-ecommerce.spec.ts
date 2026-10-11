@@ -108,12 +108,13 @@ test('Tasks 5–11, 26–27: currency, comparisons, full report, export and char
     params.set('fs[addon_ecommerce_currency]', 'equals GBP');
     await page.goto('/wp-admin/admin.php?' + params);
     await expect(dash).toContainText('No included orders for this currency');
-    await dash.locator('[data-chart-metric=aov]').click();
-    await expect(dash.locator('[data-chart-gaps]')).toBeVisible();
-    await dash.locator('[data-chart-gaps] summary').click();
-    await expect(dash.locator('[data-chart-gaps]')).toContainText('No orders');
-    await dash.locator('[data-chart-metric=rate]').click();
-    await expect(dash.locator('[data-chart-gaps]')).toContainText('Not enough visits');
+    // Intervals without orders or visits plot at zero, not as gaps.
+    for (const metric of ['aov', 'rate']) {
+      await dash.locator(`[data-chart-metric=${metric}]`).click();
+      await expect(dash.locator('[data-chart-gaps]')).toBeHidden();
+      const values = await dash.locator('canvas').evaluate(canvas => (window as any).Chart.getChart(canvas).data.datasets[0].data);
+      expect(values.length).toBeGreaterThan(0); expect(values.every((v: unknown) => v === 0)).toBe(true);
+    }
     // A measured zero/positive point between null intervals must remain visible in both series.
     for (const metric of ['aov', 'rate']) {
       await dash.locator('[data-series]').evaluate((element, selected) => {
@@ -140,13 +141,14 @@ test('Tasks 5–11, 26–27: currency, comparisons, full report, export and char
         expect(Number.isFinite(points[dataset][index].y)).toBe(true);
         expect(points[dataset][0].skipped).toBe(true);
       }
-      // Hovering an unavailable interval explains it instead of jumping to the neighbouring point.
+      // Hovering an expired interval explains it, without a visible marker, instead of jumping to the neighbouring point.
       const marker = await dash.locator('canvas').evaluate(canvas => {
         const chart = (window as any).Chart.getChart(canvas);
         const point = chart.getDatasetMeta(chart.data.datasets.findIndex((d: any) => d.gap)).data[0];
         const box = canvas.getBoundingClientRect();
-        return { x: box.x + point.x, y: box.y + point.y };
+        return { x: box.x + point.x, y: box.y + point.y, radius: point.options.radius };
       });
+      expect(marker.radius).toBe(0);
       await page.mouse.move(marker.x, marker.y);
       const tooltip = await dash.locator('canvas').evaluate(canvas => {
         const { tooltip } = (window as any).Chart.getChart(canvas);
@@ -161,7 +163,6 @@ test('Tasks 5–11, 26–27: currency, comparisons, full report, export and char
     for (const metric of ['aov', 'rate']) {
       await dash.locator(`[data-chart-metric=${metric}]`).click();
       await expect(dash.locator('[data-chart-gaps]')).toContainText('No data');
-      await expect(dash.locator('[data-chart-gaps]')).not.toContainText(/No orders|Not enough visits/);
     }
   } finally { fixture('cleanup'); await restoreOption('slimstat_filters'); await restoreSlimstatOptions(); await closeDb(); }
 });

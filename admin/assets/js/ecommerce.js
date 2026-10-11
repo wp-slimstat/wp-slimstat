@@ -98,10 +98,8 @@
         let gaps = dashboard.querySelector('[data-chart-gaps]');
         if (!gaps) { gaps = document.createElement('details'); gaps.dataset.chartGaps = ''; performance.querySelector('.ss-ec-canvas').after(gaps); }
         gaps.replaceChildren();
-        // The × repeats the chart's gap marker so the key sits beside its explanation.
-        const summary = document.createElement('summary'), key = document.createElement('span');
-        key.setAttribute('aria-hidden', 'true'); key.textContent = '× ';
-        summary.append(key, __('Unavailable intervals', 'wp-slimstat')); gaps.append(summary);
+        const summary = document.createElement('summary');
+        summary.textContent = __('Unavailable intervals', 'wp-slimstat'); gaps.append(summary);
         const list = document.createElement('ul'); gaps.append(list);
         ['current', ...(state.compare ? ['previous'] : [])].forEach(period => series[period].forEach(point => {
             if (point[metric] !== null) return;
@@ -129,11 +127,11 @@
             pointBackgroundColor: colors.getPropertyValue('--ss-surface').trim(),
             pointRadius: series.previous.map((p, i) => series.previous.length < 3 || isolated(series.previous, i) ? 4 : 0), pointHitRadius: 12, tension: 0, spanGaps: false, order: -1,
         });
-        // Index-mode tooltips skip null points, so mark each unavailable interval on the baseline to make it hoverable.
+        // Index-mode tooltips skip null points, so an invisible baseline point keeps expired intervals hoverable.
         const gap = series.current.map(p => p[metric] === null ? 0 : null);
         if (gap.some(v => v !== null)) datasets.push({
             label: __('Selected period', 'wp-slimstat'), period: 'current', gap: true, type: 'line', data: gap, showLine: false,
-            borderColor: text, backgroundColor: text, pointStyle: 'crossRot', pointRadius: 5, pointBorderWidth: 1.5, pointHitRadius: 12, order: -2,
+            borderColor: text, backgroundColor: text, pointRadius: 0, pointHoverRadius: 0, pointHitRadius: 12, order: -2,
         });
         dashboard.querySelector('[data-chart-empty]').hidden = series.current.some(p => p[metric] !== null);
         if (chart) chart.destroy();

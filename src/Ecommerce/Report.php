@@ -223,8 +223,9 @@ final class Report
 				$result[$period][] = [
 					'start' => $first, 'end' => $last, 'label' => self::date('M j, Y H:i', $first) . ' – ' . self::date('M j, Y H:i', $last),
 					'short' => self::date('M j', $first), 'net' => $net, 'orders' => $orders,
-					'aov' => $orders ? $net / $orders : null, 'visits' => $count, 'buyers' => $buyers,
-					'rate' => !$unavailable && $count >= 100 ? 100 * $buyers / $count : null,
+					// Retained intervals without orders or visits plot at zero; only expired history is unavailable.
+					'aov' => $unavailable ? null : ($orders ? $net / $orders : 0.0), 'visits' => $count, 'buyers' => $buyers,
+					'rate' => $unavailable ? null : ($count ? 100 * $buyers / $count : 0.0),
 					'partial' => $partial || $first < Integration::retentionStart(),
 					'provisional' => Integration::provisional($state),
 				];
@@ -334,8 +335,8 @@ final class Report
 				__('Reporting period', 'wp-slimstat') => self::date('Y-m-d H:i', $data['range'][0]) . ' – ' . self::date('Y-m-d H:i', $data['range'][1]) . ' (' . wp_timezone_string() . ')',
 				__('Currency', 'wp-slimstat') => $data['currency'], __('Data quality', 'wp-slimstat') => $quality,
 				__('Net sales', 'wp-slimstat') => self::plainMoney($data['current']['net'], $data['currency']), __('Orders', 'wp-slimstat') => number_format_i18n($orders),
-				__('Average order value', 'wp-slimstat') => $orders ? self::plainMoney((float) $data['current']['net'] / $orders, $data['currency']) : __('Unavailable', 'wp-slimstat'),
-				__('Purchase rate (tracked visits)', 'wp-slimstat') => $journey['visits'] >= 100 ? number_format_i18n(100 * $journey['buyers'] / $journey['visits'], 2) . '%' : __('Insufficient observations', 'wp-slimstat'),
+				__('Average order value', 'wp-slimstat') => self::plainMoney($orders ? (float) $data['current']['net'] / $orders : 0.0, $data['currency']),
+				__('Purchase rate (tracked visits)', 'wp-slimstat') => number_format_i18n($journey['visits'] ? 100 * $journey['buyers'] / $journey['visits'] : 0, 2) . '%',
 				__('Tracked buying / eligible visits', 'wp-slimstat') => $journey['buyers'] . ' / ' . $journey['visits'],
 				__('Linked / included orders', 'wp-slimstat') => $data['current']['matched'] . ' / ' . $orders,
 				__('Scope', 'wp-slimstat') => $data['filtered'] ? __('Selected traffic filters; unlinked orders excluded.', 'wp-slimstat') : __('All included orders in this currency and period.', 'wp-slimstat'),

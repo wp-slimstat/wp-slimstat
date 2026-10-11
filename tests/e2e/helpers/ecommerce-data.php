@@ -175,7 +175,7 @@ if ('chart' === $mode) {
 		$same(120, $daily['journey']['visits'], 'Overall visits remain distinct');
 		$same(240, array_sum(array_column($daily['series']['current'], 'visits')), 'A visit active on both days appears in both daily intervals');
 		$same(0.0, (float) $daily['series']['current'][1]['rate'], 'Measured zero purchases is a valid zero rate');
-		$same(null, $daily['series']['current'][1]['aov'], 'No orders is unavailable AOV, not zero');
+		$same(0.0, $daily['series']['current'][1]['aov'], 'No orders plots AOV at zero');
 		$monthly = (new Report())->data('monthly');
 		$same(120, $monthly['series']['current'][0]['visits'], 'Month recomputes distinct visits instead of summing daily counts');
 		$same(100 / 120, $monthly['series']['current'][0]['rate'], 'Month recomputes rate from its own cohort');

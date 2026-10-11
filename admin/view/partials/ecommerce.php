@@ -36,7 +36,7 @@ $setup = static function ($label) {
 		$current = $data['current']; $previous = $data['previous']; $journey = $data['journey'];
 		$currency = $data['currency']; $orders = (int) $current['orders'];
 		$coverage = $orders ? 100 * (int) $current['matched'] / $orders : null;
-		$rate = $journey['visits'] >= 100 ? 100 * $journey['buyers'] / $journey['visits'] : null;
+		$rate = $journey['visits'] ? 100 * $journey['buyers'] / $journey['visits'] : 0;
 		$provisional = Integration::provisional($state); $failed = !empty($state['error']);
 		$retained = Integration::retentionStart() <= $data['previous_range'][0];
 		$money = static function ($amount) use ($currency) { return wp_kses_post(Report::money($amount, $currency)); };
@@ -50,16 +50,15 @@ $setup = static function ($label) {
 		$metrics = [
 			'net' => [__('Net sales', 'wp-slimstat'), $money($current['net']), $delta($current['net'], $previous['net']), __('Sales after discounts and refunds, excluding tax and shipping.', 'wp-slimstat')],
 			'orders' => [__('Orders', 'wp-slimstat'), number_format_i18n($orders), $delta($orders, $previous['orders']), __('Processing, completed and refunded orders, by creation date.', 'wp-slimstat')],
-			'aov' => [__('Average order value', 'wp-slimstat'), $orders ? $money((float) $current['net'] / $orders) : '—', !$orders ? __('No orders in this period', 'wp-slimstat') : $delta((float) $current['net'] / $orders, (int) $previous['orders'] ? (float) $previous['net'] / (int) $previous['orders'] : 0), __('Net sales divided by included orders in each interval.', 'wp-slimstat')],
-			'rate' => [__('Purchase rate (tracked visits)', 'wp-slimstat'), null === $rate ? '—' : number_format_i18n($rate, 2) . '%', sprintf(/* translators: 1: buying visit count, 2: eligible visit count. */ __('%1$s buying / %2$s eligible visits', 'wp-slimstat'), number_format_i18n($journey['buyers']), number_format_i18n($journey['visits'])), __('Buying visits divided by eligible visits in each interval. At least 100 eligible visits are required per point; smaller samples are gaps, not zero.', 'wp-slimstat')],
+			'aov' => [__('Average order value', 'wp-slimstat'), $money($orders ? (float) $current['net'] / $orders : 0), $delta($orders ? (float) $current['net'] / $orders : 0, (int) $previous['orders'] ? (float) $previous['net'] / (int) $previous['orders'] : 0), __('Net sales divided by included orders in each interval.', 'wp-slimstat')],
+			'rate' => [__('Purchase rate (tracked visits)', 'wp-slimstat'), number_format_i18n($rate, 2) . '%', sprintf(/* translators: 1: buying visit count, 2: eligible visit count. */ __('%1$s buying / %2$s eligible visits', 'wp-slimstat'), number_format_i18n($journey['buyers']), number_format_i18n($journey['visits'])), __('Buying visits divided by eligible visits in each interval.', 'wp-slimstat')],
 		];
 		$series = $data['series'];
-		$gaps = ['aov' => __('No orders', 'wp-slimstat'), 'rate' => __('Not enough visits', 'wp-slimstat')];
 		foreach (['current', 'previous'] as $period) {
 			foreach ($series[$period] as &$point) {
 				foreach (array_keys($metrics) as $metric) {
 					$value = $point[$metric];
-					if (null === $value) { $value = null === $point['orders'] ? __('No data', 'wp-slimstat') : ($gaps[$metric] ?? __('No data', 'wp-slimstat')); }
+					if (null === $value) { $value = __('No data', 'wp-slimstat'); }
 					elseif ('net' === $metric || 'aov' === $metric) { $value = Report::plainMoney($value, $currency); }
 					else { $value = 'rate' === $metric ? number_format_i18n($value, 2) . '%' : number_format_i18n($value); }
 					$point['formatted'][$metric] = $value;
@@ -180,7 +179,7 @@ $setup = static function ($label) {
 				<ol class="ss-ec-steps"><?php foreach (['products' => __('Viewed a product', 'wp-slimstat'), 'carts' => __('Added to cart', 'wp-slimstat'), 'checkouts' => __('Reached checkout', 'wp-slimstat'), 'completed' => __('Placed an order in this report', 'wp-slimstat')] as $key => $label) : ?><li><span><?php echo esc_html($label); ?></span><strong><?php echo esc_html(number_format_i18n($journey[$key])); ?></strong><meter min="0" max="<?php echo esc_attr((string) max(1, $journey['products'])); ?>" value="<?php echo esc_attr((string) $journey[$key]); ?>" aria-label="<?php echo esc_attr($label); ?>"></meter><small><?php echo esc_html(null === $prior ? __('Observed product visits', 'wp-slimstat') : ($prior ? sprintf(/* translators: %s: percentage of visits that reached this step. */ __('%s%% of previous step', 'wp-slimstat'), number_format_i18n(100 * $journey[$key] / $prior, 1)) : __('No previous-step observations', 'wp-slimstat'))); ?></small></li><?php $prior = $journey[$key]; endforeach; ?></ol>
 				<p class="ss-ec-footnote"><?php echo esc_html(sprintf(/* translators: %s: buying visit count. */ _n('In %s visit that ended in a purchase, not all steps were recorded. Visitors may have used express checkout or taken another route, or tracking may have missed a step. This does not mean they abandoned their purchase.', 'In %s visits that ended in a purchase, not all steps were recorded. Visitors may have used express checkout or taken another route, or tracking may have missed a step. This does not mean they abandoned their purchase.', max(0, $journey['buyers'] - $journey['completed']), 'wp-slimstat'), number_format_i18n(max(0, $journey['buyers'] - $journey['completed'])))); ?> <button type="button" class="ss-ec-quiet" data-open-report="product"><?php esc_html_e('Explore products', 'wp-slimstat'); ?></button></p>
 			<?php endif; ?>
-			<details class="ss-ec-journey-context"><summary><?php esc_html_e('Observation window and coverage', 'wp-slimstat'); ?></summary><p><?php esc_html_e('Steps must occur in order within the same tracked visit and selected window. Journey tracking starts after setup; imported orders do not create historical steps. Counts describe only the observed portion of the period.', 'wp-slimstat'); ?> <?php if (null === $rate) { esc_html_e('Purchase rate needs at least 100 eligible visits. This display threshold does not establish statistical significance.', 'wp-slimstat'); } ?></p></details>
+			<details class="ss-ec-journey-context"><summary><?php esc_html_e('Observation window and coverage', 'wp-slimstat'); ?></summary><p><?php esc_html_e('Steps must occur in order within the same tracked visit and selected window. Journey tracking starts after setup; imported orders do not create historical steps. Counts describe only the observed portion of the period.', 'wp-slimstat'); ?></p></details>
 		</section>
 		<section class="ss-ec-actions"><div class="ss-ec-section-heading"><h2><?php esc_html_e('Your next investigation', 'wp-slimstat'); ?></h2><p><?php esc_html_e('What this period suggests checking, most important first.', 'wp-slimstat'); ?></p></div><ol>
 			<?php if ($provisional) : ?><li><span class="ss-ec-action-label"><?php esc_html_e('Data quality', 'wp-slimstat'); ?></span><strong><?php esc_html_e('Complete synchronization first', 'wp-slimstat'); ?></strong><p><?php echo esc_html(sprintf(/* translators: %s: number of orders processed. */ __('%s orders processed. Resolve the import status before comparing revenue drivers.', 'wp-slimstat'), number_format_i18n((int) ($state['imported'] ?? 0)))); ?></p><a href="#ss-ec-quality" class="noslimstat"><?php esc_html_e('Review synchronization', 'wp-slimstat'); ?></a></li><?php else : ?>
