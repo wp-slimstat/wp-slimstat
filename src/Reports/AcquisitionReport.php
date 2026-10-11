@@ -135,6 +135,7 @@ class AcquisitionReport
         if (!empty($args['is_widget'])) {
             wp_enqueue_style('wp-slimstat-tokens', plugins_url('admin/assets/css/tokens.css', SLIMSTAT_FILE), [], SLIMSTAT_ANALYTICS_VERSION);
             wp_enqueue_style('wp-slimstat-acquisition', plugins_url('admin/assets/css/acquisition.css', SLIMSTAT_FILE), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
+            wp_enqueue_script('slimstat-report-dialogs', plugins_url('admin/assets/js/report-dialogs.js', SLIMSTAT_FILE), [], SLIMSTAT_ANALYTICS_VERSION, true);
             echo '<div class="wrap-slimstat">';
         }
         self::content($args);
@@ -150,7 +151,7 @@ class AcquisitionReport
     {
         echo '<div class="slimstat-acquisition">';
         if (is_admin()) {
-            echo '<a class="button slimstat-utm-builder-link" href="' . esc_url(admin_url('admin.php?page=slimview5#slimstat-utm-builder')) . '">' . esc_html__('Build a UTM link', 'wp-slimstat') . '</a>';
+            echo '<a class="button slimstat-utm-builder-link" href="' . esc_url(admin_url('admin.php?page=slimview5#slimstat-utm-builder')) . '">' . esc_html__('Build campaign link', 'wp-slimstat') . '</a>';
         }
         $ready = is_admin() ? Acquisition::checkSchema() : '1' === get_option(Acquisition::readinessKey(), '0');
         if (!$ready) {
@@ -220,19 +221,24 @@ class AcquisitionReport
             echo '<p role="status">' . esc_html__('This report could not be loaded. Check the database connection and report setup, then refresh.', 'wp-slimstat') . '</p></div>';
             return;
         }
-        $description = 'utm' === $mode
-            ? __('Tagged pageviews, excluding detected bots.', 'wp-slimstat')
-            : __('All recorded pageviews, grouped by channel.', 'wp-slimstat');
-        echo '<div class="slimstat-acquisition__intro"><span>' . esc_html($description) . '</span><strong>';
-        echo esc_html(sprintf(
-            /* translators: %s: localized pageview count. */
-            _n('%s pageview', '%s pageviews', $total, 'wp-slimstat'), number_format_i18n($total)
-        )) . '</strong></div>';
-        echo '<p class="slimstat-acquisition__guide">' . esc_html('utm' === $mode
-            ? __('Which campaigns bring visitors? Expand a campaign to compare its sources and tags. Share is the percentage of all matching tagged pageviews.', 'wp-slimstat')
-            : __('Where does your traffic come from? Expand a channel to compare sources. Share is the percentage of all matching pageviews, including recorded bots and internal navigation.', 'wp-slimstat')) . '</p>';
+        $helpId = 'ss-acquisition-help-' . $mode;
+        $helpLabel = 'utm' === $mode ? __('What are campaigns? How do they work?', 'wp-slimstat') : __('What are channels?', 'wp-slimstat');
+        $groupCount = count($all);
+        $countLabel = 'utm' === $mode
+            ? sprintf(/* translators: %s: campaign count. */ _n('%s campaign', '%s campaigns', $groupCount, 'wp-slimstat'), number_format_i18n($groupCount))
+            : sprintf(/* translators: %s: channel count. */ _n('%s channel', '%s channels', $groupCount, 'wp-slimstat'), number_format_i18n($groupCount));
+        if ($capped) { $countLabel = sprintf(/* translators: %s: counted groups, such as 20 campaigns. */ __('At least %s', 'wp-slimstat'), $countLabel); }
+        echo '<div class="slimstat-acquisition__intro"><button type="button" class="button-link" data-report-dialog="' . esc_attr($helpId) . '">' . esc_html($helpLabel) . '</button><strong>';
+        echo esc_html($countLabel . ' - ' . sprintf(/* translators: %s: pageview count. */ _n('%s pageview', '%s pageviews', $total, 'wp-slimstat'), number_format_i18n($total))) . '</strong></div>';
+        if (null !== $commerceFilters && \wp_slimstat::pro_is_installed()) {
+            $url = add_query_arg(['page' => 'slimview7', 'fs' => urlencode_deep($commerceFilters)], admin_url('admin.php')) . '#ss-ec-panel-' . ('utm' === $mode ? 'campaign' : 'channel');
+            echo '<a class="noslimstat" href="' . esc_url($url) . '">' . esc_html__('View sales in Ecommerce', 'wp-slimstat') . '</a>';
+        }
 
         if (!$all) {
+            if ('utm' === $mode && is_admin()) {
+                echo '<p><strong>' . esc_html__('Need a campaign link?', 'wp-slimstat') . '</strong></p><a class="button button-primary slimstat-utm-builder-link" href="' . esc_url(admin_url('admin.php?page=slimview5#slimstat-utm-builder')) . '">' . esc_html__('Build your first campaign link', 'wp-slimstat') . '</a>';
+            }
             echo '<p class="slimstat-acquisition__empty">' . esc_html('utm' === $mode
                 ? __('No tagged pageviews in this period. Add utm_source, utm_medium and utm_campaign to your incoming links, or choose another date range.', 'wp-slimstat')
                 : (empty(\wp_slimstat_db::$filters_normalized['columns'])
@@ -270,12 +276,12 @@ class AcquisitionReport
                 if (is_admin() && null !== $value && '' !== $value) {
                     echo '<div class="slimstat-acquisition__filter">';
                     self::value($groupField, $value, 'utm' === $mode ? __('Filter by this campaign', 'wp-slimstat') : __('Filter by this channel', 'wp-slimstat'));
-                    if (null !== $commerceFilters) {
-                        $url = add_query_arg(['page' => 'slimview7', 'fs' => urlencode_deep(array_merge($commerceFilters, [$groupField => 'equals ' . $value]))], admin_url('admin.php'));
-                        echo '<a class="noslimstat" href="' . esc_url($url) . '">' . esc_html__('View linked orders', 'wp-slimstat') . '</a>';
+                    if (null !== $commerceFilters && \wp_slimstat::pro_is_installed()) {
+                        $url = add_query_arg(['page' => 'slimview7', 'fs' => urlencode_deep(array_merge($commerceFilters, [$groupField => 'equals ' . $value]))], admin_url('admin.php')) . '#ss-ec-panel-' . ('utm' === $mode ? 'campaign' : 'channel');
+                        echo '<a class="noslimstat" href="' . esc_url($url) . '">' . esc_html__('View sales in Ecommerce', 'wp-slimstat') . '</a>';
                     }
                     echo '</div>';
-                    if (null !== $commerceFilters) {
+                    if (null !== $commerceFilters && \wp_slimstat::pro_is_installed()) {
                         echo '<p class="slimstat-acquisition__note">' . esc_html__('Linked orders uses these dates and filters to find orders associated with matching tracked visits. Orders without a visit link are excluded; pageview share is not a purchase rate.', 'wp-slimstat') . '</p>';
                     }
                 }
@@ -310,7 +316,7 @@ class AcquisitionReport
                 echo '<p class="slimstat-acquisition__note">' . esc_html__('The report result limit was reached. Narrow your filters to see more detail. Shares use all matching pageviews, including rows beyond this limit.', 'wp-slimstat') . '</p>';
             }
         }
-        echo '<details class="slimstat-acquisition__help"><summary>' . esc_html__('How to read this report', 'wp-slimstat') . '</summary>';
+        echo '<button type="button" class="button-link" data-report-dialog="' . esc_attr($helpId) . '">' . esc_html__('How to read this report', 'wp-slimstat') . '</button><dialog class="ss-report-dialog" id="' . esc_attr($helpId) . '" aria-labelledby="' . esc_attr($helpId) . '-title"><div class="ss-report-dialog__heading"><h2 id="' . esc_attr($helpId) . '-title">' . esc_html($helpLabel) . '</h2><button type="button" class="button" data-dialog-close>' . esc_html__('Close', 'wp-slimstat') . '</button></div>';
         echo '<p>' . esc_html('utm' === $mode
             ? __('Campaign totals combine all sources and tags. Expand a campaign for each combination of tags on a recorded page URL, not a session or conversion. Values keep their original case. More tags reveals content, term and campaign ID when present. Unassigned means that tag was absent. Use consistent names and tag incoming links, not internal links.', 'wp-slimstat')
             : __('Channel totals combine all sources. Expand a channel for its source breakdown. These are pageview channels, not session attribution. Campaign tags take priority over referring sites. Internal navigation is separate. Direct / unknown means no usable source was sent; it can include untagged email, private messages or apps. Unassigned means the pageview predates report setup.', 'wp-slimstat')) . '</p>';
@@ -319,6 +325,6 @@ class AcquisitionReport
         } else {
             echo '<p><code>?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=autumn</code></p>';
         }
-        echo '</details></div>';
+        echo '</dialog></div>';
     }
 }

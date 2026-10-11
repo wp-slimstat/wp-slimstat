@@ -448,3 +448,19 @@
     .wrap-slimstat .slimstat-utm-builder input,
     .wrap-slimstat .slimstat-utm-builder textarea { font-size: var(--ss-text-lg); }
 }
+
+/* Shared report overlays use the Goals & Funnels surface tokens. */
+html.ss-report-dialog-open { overflow: hidden; }
+.wrap-slimstat dialog.ss-report-dialog {
+    position: fixed; inset: 0; margin: auto; box-sizing: border-box;
+    width: min(720px, calc(100% - 32px)); max-height: calc(100dvh - 48px);
+    padding: var(--ss-space-6); border: 1px solid var(--ss-border-soft);
+    border-radius: var(--ss-radius-lg); background: var(--ss-surface);
+    color: var(--ss-text-primary); box-shadow: var(--ss-shadow-modal);
+    font-size: var(--ss-text-md); line-height: 1.65; overflow: auto;
+}
+.wrap-slimstat dialog.ss-report-dialog:not([open]) { display: none; }
+.wrap-slimstat dialog.ss-report-dialog::backdrop { background: rgb(20 24 30 / 55%); }
+.ss-report-dialog__heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.wrap-slimstat .ss-report-dialog p { max-width: 70ch; margin-block: 16px; }
+.wrap-slimstat .ss-report-dialog h2 { margin-block: 0 16px; }

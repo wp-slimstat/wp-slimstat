@@ -1,0 +1,37 @@
+[
+  {
+    "mutation": "C11-second-index-creator-01",
+    "baseline_exit": 0,
+    "mutant_exit": 1,
+    "expected_failure": "DDL statement(s) name a concrete table or index outside src/Schema/Schema.php",
+    "matched": true
+  },
+  {
+    "mutation": "G1-migration-note-hidden-by-own-css-01",
+    "baseline_exit": 0,
+    "mutant_exit": 1,
+    "expected_failure": "so migration.css hides it",
+    "matched": true
+  },
+  {
+    "mutation": "M7-legacy-settings-preference-reset-01",
+    "baseline_exit": 0,
+    "mutant_exit": 255,
+    "expected_failure": "User configuration changed for 0",
+    "matched": true
+  },
+  {
+    "mutation": "M8-legacy-settings-delegation-removed-01",
+    "baseline_exit": 0,
+    "mutant_exit": 255,
+    "expected_failure": "init() calls LegacySettings5460::apply() exactly once",
+    "matched": true
+  },
+  {
+    "mutation": "D8-upgrade-notice-moved-to-changelog-01",
+    "baseline_exit": 0,
+    "mutant_exit": 1,
+    "expected_failure": "has no `= 6.0.0 =` entry under `== Upgrade Notice ==`",
+    "matched": true
+  }
+]

@@ -283,6 +283,8 @@ class wp_slimstat
             self::$settings = get_option('slimstat_options', []);
         }
 
+        $_stored_settings = is_array(self::$settings) ? self::$settings : [];
+
         // Preserve whether settings were missing before defaults hide that distinction.
         // Physical freshness is checked after the custom analytics database is resolved.
         $_missing_settings = !is_array(self::$settings) || empty(self::$settings);
@@ -302,20 +304,13 @@ class wp_slimstat
         }
         unset($_repaired);
 
-        // One-shot settings migration for installs that ran v5.4.0–v5.4.5. The logic lives in
-        // SlimStat\Migration\LegacySettings5460 so the unit test exercises THIS code rather than
-        // a transcription of it — the transcription had drifted from this block in three places,
-        // and the one that mattered hid a 6.0.0 regression: `'0' !== $_migration_ran` skipped
-        // the resets on fresh installs AND on every upgrader from 5.4.0–5.4.5, who never had the
-        // key. Whether the options row existed is the discriminator, and only this method knows.
-        //
-        // No rewrite flush here: activation and settings-change paths own that, and a flush on
-        // plugins_loaded fires before the rule is registered on 'init' and wastes a DB write.
+        // Map legacy consent only when no modern choice was saved; retain all other settings.
         $_legacy = \SlimStat\Migration\LegacySettings5460::apply(
             self::$settings,
             SLIMSTAT_ANALYTICS_VERSION,
             $_fresh_install,
-            function_exists('wp_has_consent')
+            function_exists('wp_has_consent'),
+            $_stored_settings
         );
         if ($_legacy['ran']) {
             self::$settings = $_legacy['settings'];
@@ -364,6 +359,16 @@ class wp_slimstat
             // Resolve after add-on settings filters: the physical analytics database,
             // not an absent options row, determines whether there is an upgrade to do.
             if (!\SlimStat\Migration\MissingSettingsRecovery::isFresh(self::$wpdb, $GLOBALS['wpdb']->prefix)) {
+                if ($_missing_settings) {
+                    $_upgrade_defaults = self::init_options();
+                    $_network_settings = is_multisite() ? get_site_option('slimstat_options', []) : [];
+                    foreach (self::get_fresh_defaults() as $_key => $_value) {
+                        if ('on' === ($_network_settings['addon_network_settings_' . $_key] ?? '')) { continue; }
+                        if (array_key_exists($_key, $_upgrade_defaults)) {
+                            if ($_value !== $_upgrade_defaults[$_key]) { self::$settings[$_key] = $_upgrade_defaults[$_key]; }
+                        } else { unset(self::$settings[$_key]); }
+                    }
+                }
                 self::$settings['version'] = 'recovery';
                 self::$settings['_settings_recovery'] = true;
             }
@@ -1241,7 +1246,7 @@ class wp_slimstat
         $defaults = self::init_options();
         $defaults['geolocation_provider'] = 'dbip';
         // Heatmaps start on for new installs only; init_options() keeps upgrades opted out.
-        $defaults['heatmap_capture'] = 'full';
+        $defaults['heatmap_capture'] = self::pro_is_installed() ? 'full' : 'off';
         return $defaults;
     }
 

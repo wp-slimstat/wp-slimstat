@@ -494,15 +494,16 @@ jQuery(document).ready(function($) {
             $button.addClass(CONFIG.CLASSES.active);
             $button.attr('aria-expanded', 'true');
 
-            // Position the dropdown below the button
-            const buttonOffset = $button.offset();
-            const buttonHeight = $button.outerHeight();
-            const buttonWidth = $button.outerWidth();
-
-            picker.container.css({
-                'top': buttonOffset.top + buttonHeight + 10,
-                'z-index': 9999
-            });
+            function positionPicker() {
+                const rect = $button[0].getBoundingClientRect();
+                const width = picker.container.outerWidth();
+                const desired = document.documentElement.dir === 'rtl' ? rect.right - width : rect.left;
+                picker.container.css({ position: 'fixed', top: Math.min(rect.bottom + 8, Math.max(8, window.innerHeight - picker.container.outerHeight() - 8)), left: Math.max(8, Math.min(desired, window.innerWidth - width - 8)), right: 'auto', 'max-width': 'calc(100vw - 16px)', 'max-height': 'calc(100dvh - 16px)', 'overflow-y': 'auto', 'z-index': 9999 });
+            }
+            requestAnimationFrame(positionPicker);
+            $(window).off('.slimstatPickerPosition').on('resize.slimstatPickerPosition scroll.slimstatPickerPosition', positionPicker);
+            $input.one('hide.daterangepicker', () => $(window).off('.slimstatPickerPosition'));
+            picker.container.off('click.slimstatPickerPosition').on('click.slimstatPickerPosition', () => requestAnimationFrame(positionPicker));
 
             // Check if current selection is a custom range
             const isCustomRange = currentRange.preset === 'custom';

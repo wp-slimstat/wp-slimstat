@@ -1,6 +1,7 @@
 (function ($) {
     function renderList(steps) {
         var $ul = $("#slimstat-migration-list").empty();
+        var $optional = $("#slimstat-optional-migration-list").empty();
         // Render diagnostics first, then planned steps
         var diag = (SlimstatMigration && SlimstatMigration.diagnostics) || [];
         if (diag.length) {
@@ -49,7 +50,7 @@
                     })
                 );
             }
-            $ul.append($li);
+            (s.optional ? $optional : $ul).append($li);
         });
     }
     function setProgress(done, total) {
@@ -174,8 +175,9 @@
         // nowhere else — two hand-written copies is how the else branch came to claim success.
         function finishRun(state, message) {
             updateStatus(message);
+            $("#slimstat-status-note").removeClass("notice-info notice-error notice-success").addClass("error" === state ? "notice-error" : "notice-success");
             $("#slimstat-back-dashboard").show();
-            $("#slimstat-start-migration").toggle("error" === state);
+            $("#slimstat-start-migration").prop("disabled", false).toggle("error" === state);
             $(".spinner").removeClass("is-active");
             setStatusBadge(state);
             setStatusText("error" === state ? "failed" : "done");
@@ -193,11 +195,9 @@
                     if (success && data && data.all_complete) {
                         finishRun("success", data.message || SlimstatMigration.labels.allFinished);
 
-                        // Show completion message and redirect after a delay
-                        setTimeout(function () {
-                            alert(data.message || SlimstatMigration.labels.allFinished);
-                            window.location.href = $("#slimstat-back-dashboard").attr("href") || "admin.php?page=" + ((wp_slimstat_admin && wp_slimstat_admin.main_menu_slug) || "slimview1");
-                        }, 2000);
+                        // Keep the completed state visible for review.
+                        $("#slimstat-status-note").removeClass("notice-info notice-error").addClass("notice-success");
+                        $(".slimstat-migration-notice-show").remove();
                     } else {
                         // Reached exactly when the run did not complete.
                         finishRun("error", (data && data.message) || SlimstatMigration.labels.notComplete);

@@ -1,0 +1,13 @@
+target:    src/Migration/LegacySettings5460.php
+gate:      composer test:v5460-migration
+kind:      restore-defect
+expect:    User configuration changed for 0
+rationale: Restores the automatic JavaScript-tracking preference reset superseded by task 28. Even inherited legacy defaults must remain unchanged on upgrade; the preservation fixture must reject this reset.
+---
+--- a/src/Migration/LegacySettings5460.php
++++ b/src/Migration/LegacySettings5460.php
+@@ -25,3 +25,3 @@
+     {
+-        $stored = $stored ?? $settings;
++        $stored = $stored ?? $settings; if (!$freshInstall) { $settings['javascript_mode'] = 'on'; }
+         if (!$freshInstall && !array_key_exists('ignore_wp_users', $stored) && array_key_exists('track_users', $stored)) {

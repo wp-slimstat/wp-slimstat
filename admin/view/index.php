@@ -142,7 +142,12 @@ if (!empty($filters_html)) {
         <div class="meta-box-sortables">
             <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo esc_attr(wp_create_nonce('meta-box-order')) ?>"/></form><?php
 
-    foreach (wp_slimstat_reports::$user_reports[wp_slimstat_admin::$current_screen] as $a_report_id) {
+    $screen_reports = wp_slimstat_reports::$user_reports[wp_slimstat_admin::$current_screen];
+    if ('slimview5' === wp_slimstat_admin::$current_screen) {
+        $first = array_values(array_intersect(['slim_p3_03', 'slim_p3_04'], $screen_reports));
+        $screen_reports = array_merge($first, array_values(array_diff($screen_reports, $first)));
+    }
+    foreach ($screen_reports as $a_report_id) {
         // A report could have been deprecated...
         if (empty(wp_slimstat_reports::$reports[$a_report_id])) {
             continue;

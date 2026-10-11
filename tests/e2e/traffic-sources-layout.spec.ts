@@ -42,7 +42,7 @@ test('the report guide lines up with the table or empty state, without a legacy 
   // legacy report body pads and underlines every paragraph as a list row.
   for (const range of ['', '&type=custom&from=2001-01-01&to=2001-01-02']) {
     await page.goto(PAGE + range);
-    const blocks = page.locator('#slim_p3_04 :is(.slimstat-acquisition__guide, .slimstat-acquisition__groups, .slimstat-acquisition__empty)');
+    const blocks = page.locator('#slim_p3_04 :is(.slimstat-acquisition__intro, .slimstat-acquisition__groups, .slimstat-acquisition__empty)');
     await expect(blocks).toHaveCount(2);
     const [guide, body] = await blocks.evaluateAll((nodes) => nodes.map((n) => {
       const cs = getComputedStyle(n);
@@ -61,7 +61,7 @@ test('the UTM builder opens only from a report link, and closing it returns focu
   await link.click();
   await expect(builder).toBeVisible();
   await expect(page.locator('[name="website"]')).toBeFocused();
-  await builder.locator('> summary').click();
+  await page.keyboard.press('Escape');
   await expect(builder).toBeHidden();
   await expect(link).toBeFocused();
 });

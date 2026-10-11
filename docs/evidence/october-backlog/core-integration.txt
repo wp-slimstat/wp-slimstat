@@ -1,0 +1,12 @@
+PHPUnit 10.5.63 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.3.35
+Configuration: /var/www/html/wp-content/plugins/wp-slimstat/phpunit.xml.dist
+
+...............................................................  63 / 159 ( 39%)
+............................................................... 126 / 159 ( 79%)
+.................................                               159 / 159 (100%)
+
+Time: 00:00.548, Memory: 24.00 MB
+
+OK (159 tests, 399 assertions)

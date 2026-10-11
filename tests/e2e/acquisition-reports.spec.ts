@@ -138,11 +138,11 @@ test.describe('UTM and channel reports', () => {
     const utm = page.locator('#slim_p3_04');
     await expect(channels.locator('.slimstat-acquisition__group')).toHaveCount(6);
     await expect(channels.locator('.slimstat-acquisition__group[open]')).toHaveCount(0);
-    await expect(channels.locator('.slimstat-acquisition__intro strong')).toHaveText('8 pageviews');
+    await expect(channels.locator('.slimstat-acquisition__intro strong')).toHaveText('6 channels - 8 pageviews');
     await expect(channels.locator('.slimstat-acquisition__label').filter({ hasText: /^Unassigned$/ })).toBeVisible();
     await expect(channels.locator('.slimstat-acquisition__label').filter({ hasText: /^AI User-requested Fetches$/ })).toBeVisible();
     await expect(utm.locator('tbody tr')).toHaveCount(3);
-    await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('4 pageviews');
+    await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('3 campaigns - 4 pageviews');
     const campaign = utm.locator('.slimstat-acquisition__group').filter({ hasText: 'Spring + 20%' });
     await expect(campaign.locator('table')).not.toBeVisible();
     await campaign.locator(':scope > summary').focus();
@@ -162,7 +162,7 @@ test.describe('UTM and channel reports', () => {
     await page.screenshot({ path: 'tests/e2e/run-artifacts/acquisition-desktop.png', fullPage: true });
     await campaign.getByRole('link', { name: 'Filter by this campaign', exact: true }).click();
     await expect(utm.locator('tbody tr')).toHaveCount(1);
-    await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('2 pageviews');
+    await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('1 campaign - 2 pageviews');
     await expect(utm.locator('.slimstat-acquisition__group > summary')).toContainText('100.0%');
     const probe = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, { form: { action: 'e2e_get_slimstat_version' } });
     const { data } = await probe.json();
@@ -216,10 +216,11 @@ test.describe('UTM and channel reports', () => {
     await utm.getByRole('link', { name: 'Next', exact: true }).click();
     await expect(utm.locator('tbody tr')).toHaveCount(1);
     await expect(utm.locator('.slimstat-acquisition__groups')).toContainText('Search');
-    const help = utm.locator('.slimstat-acquisition__help summary');
+    const help = utm.getByRole('button', { name: 'How to read this report', exact: true });
     await help.focus();
     await page.keyboard.press('Enter');
-    await expect(utm.locator('.slimstat-acquisition__help')).toHaveAttribute('open', '');
+    await expect(utm.locator('dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
     await page.evaluate(() => document.documentElement.setAttribute('dir', 'rtl'));
     await utm.scrollIntoViewIfNeeded();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
@@ -235,7 +236,7 @@ test.describe('UTM and channel reports', () => {
       await db.execute("INSERT INTO wp_slim_stats (dt, resource, traffic_channel, traffic_source, utm_campaign, utm_source, utm_medium) SELECT MAX(dt)-86400, '/yesterday', 'email', 'archive', 'Yesterday only', ?, 'email' FROM wp_slim_stats", [source]);
       await page.goto('/wp-admin/admin.php?page=slimview5&type=today');
       const utm = page.locator('#slim_p3_04');
-      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('4 pageviews');
+      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('3 campaigns - 4 pageviews');
       await utm.locator('.slimstat-acquisition__group').filter({ hasText: 'Spring + 20%' }).locator(':scope > summary').click();
       await expect(utm.getByRole('link', { name: source, exact: true })).toBeVisible();
       await page.locator('#slimstat-filter-name').selectOption('utm_source', { force: true });
@@ -245,14 +246,14 @@ test.describe('UTM and channel reports', () => {
       await page.locator('.slimstat-select-search input').fill(source);
       await expect(page.locator('#slimstat-filter-value')).toHaveValue(source);
       await page.locator('#slimstat-filters input[type=submit]').click();
-      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('2 pageviews');
+      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('1 campaign - 2 pageviews');
       await page.locator('#slimstat-save-filter').click();
       await expect(page.locator('#slimstat-save-filter')).toHaveText(/Saved|Already saved/);
 
       await page.locator('.slimstat-date-range-btn').click();
       await page.locator('.daterangepicker:visible .ranges li').filter({ hasText: /^Yesterday$/ }).click();
       await expect(utm.locator('.slimstat-acquisition__groups')).toContainText('Yesterday only');
-      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('1 pageview');
+      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('1 campaign - 1 pageview');
       await expect(page.locator('#slimstat-current-filters')).toContainText(source);
 
       // Clear dimensions but keep yesterday, then load the saved segment through its dialog.
@@ -260,7 +261,7 @@ test.describe('UTM and channel reports', () => {
       await page.locator('#slimstat-load-saved-filters').click();
       await page.locator('#slim_filters_overlay a.slimstat-filter-link').filter({ hasText: source }).click();
       await expect(utm.locator('.slimstat-acquisition__groups')).toContainText('Yesterday only');
-      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('1 pageview');
+      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('1 campaign - 1 pageview');
       await expect(page.locator('#slimstat-current-filters')).toContainText(source);
 
       // A custom date range uses the real picker's Apply event and retains the POST segment.
@@ -271,7 +272,7 @@ test.describe('UTM and channel reports', () => {
         picker.chosenLabel = 'Custom range';
         picker.clickApply();
       });
-      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('3 pageviews');
+      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('2 campaigns - 3 pageviews');
       await expect(page.locator('#slimstat-current-filters')).toContainText(source);
     } finally { await restoreOption('slimstat_filters'); }
   });
@@ -321,7 +322,7 @@ test.describe('UTM and channel reports', () => {
       });
       expect((await savedResponse).ok()).toBeTruthy();
       await page.goto('/wp-admin/admin.php?page=slimview1&type=today');
-      await expect(page.locator('#slim_p3_03 .slimstat-acquisition__intro strong')).toHaveText('8 pageviews');
+      await expect(page.locator('#slim_p3_03 .slimstat-acquisition__intro strong')).toHaveText('6 channels - 8 pageviews');
       await page.goto('/wp-admin/index.php');
       await expect(page.locator('#slim_p3_04 tbody tr')).toHaveCount(3);
       await expect(page.locator('#wp-slimstat-acquisition-css')).toBeAttached();
@@ -344,9 +345,9 @@ test.describe('UTM and channel reports', () => {
       const authorPage = await author.newPage();
       await authorPage.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview5&type=today`);
       const utm = authorPage.locator('#slim_p3_04');
-      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('3 pageviews');
+      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('2 campaigns - 3 pageviews');
       await expect(utm).not.toContainText('Private campaign');
-      await expect(utm.getByRole('link', { name: 'View linked orders' })).toHaveCount(0);
+      await expect(utm.getByRole('link', { name: 'View sales in Ecommerce' })).toHaveCount(0);
     } finally { await author.close(); }
     const badNonce = await page.request.post('/wp-admin/admin-ajax.php', { form: { action: 'slimstat_load_report', report_id: 'slim_p3_04', security: 'invalid' } });
     expect(badNonce.status()).toBe(403);

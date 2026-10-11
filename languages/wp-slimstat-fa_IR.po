@@ -2999,8 +2999,8 @@ msgstr ""
 
 #: admin/view/partials/ecommerce.php:53 admin/view/partials/ecommerce.php:195
 #: src/Ecommerce/Report.php:326
-msgid "Tracked purchase rate"
-msgstr ""
+msgid "Purchase rate (tracked visits)"
+msgstr "نرخ خرید (بازدیدهای ردیابی‌شده)"
 
 #. translators: 1: buying visit count, 2: eligible visit count.
 #: admin/view/partials/ecommerce.php:53 admin/assets/js/ecommerce.js:123

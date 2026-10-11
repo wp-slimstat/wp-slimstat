@@ -16,8 +16,8 @@ $fields = [
     ],
 ];
 ?>
-<details id="slimstat-utm-builder" class="slimstat-utm-builder">
-    <summary><?php esc_html_e('UTM link builder', 'wp-slimstat'); ?></summary>
+<dialog id="slimstat-utm-builder" class="slimstat-utm-builder ss-report-dialog" aria-labelledby="ss-utm-title">
+    <div class="ss-report-dialog__heading"><h2 id="ss-utm-title"><?php esc_html_e('UTM link builder', 'wp-slimstat'); ?></h2><button type="button" class="button" data-dialog-close><?php esc_html_e('Close', 'wp-slimstat'); ?></button></div>
     <form class="slimstat-utm-builder__form" autocomplete="off" novalidate>
         <p><?php esc_html_e('Create a link to see which campaigns bring visitors to your site. Fields marked * are required.', 'wp-slimstat'); ?></p>
         <div class="slimstat-utm-builder__website">
@@ -55,4 +55,4 @@ $fields = [
         </div>
         <noscript><p><?php esc_html_e('Enable JavaScript to generate campaign links.', 'wp-slimstat'); ?></p></noscript>
     </form>
-</details>
+</dialog>

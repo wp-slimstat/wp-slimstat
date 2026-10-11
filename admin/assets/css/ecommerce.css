@@ -160,3 +160,11 @@
 .ss-ec-rankings .is-negative .ss-ec-rank-bar { background: var(--ss-border); }
 .ss-ec-rankings .is-negative .ss-ec-rank-value { color: var(--ss-danger-fg); }
 #slim_p10_01 .ss-ec p { word-break: normal; overflow-wrap: break-word; }
+
+.ss-ec-rankings { max-height: 310px; overflow-y: auto; }
+.ss-ec-pages { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ss-ec-pages[hidden] { display: none; }
+.ss-ec-rate-definition { font-size: var(--ss-text-sm); font-weight: normal; }
+.ss-ec [data-chart-gaps] { margin-block: 12px; max-height: 180px; overflow: auto; }
+
+.ss-ec-rank-both { display: block; color: var(--ss-text-muted); font-size: 11px; }

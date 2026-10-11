@@ -1,0 +1,49 @@
+admin-header-assets-test exit 0
+PASS: 9 header renderer(s) classified — 1 own their enqueue and load admin/assets/css/header-modern.css, 8 go through wp_slimstat_stylesheet()
+
+v5460-settings-migration-test exit 0
+PASS: 118 upgrade-preservation assertions
+
+consent-migration-gate-test exit 0
+PASS: 7 consent-key assignment(s) in the migration block are all bounded to pre-5.4.7 installs (1 gated block(s))
+
+migration-ui-honesty-test exit 0
+PASS: the migration UI reports failure as failure; dismissal is keyed to the migration set
+
+migration-optionality-test exit 0
+PASS: migration optionality (14 migrations, 3 offered, 11 owed — every one declared)
+
+migration-runner-reachable-test exit 0
+PASS: migration runner reachable (repair path wired; the needs-migration probe is memoised, cached and invalidated)
+
+migration-notice-visibility-test exit 0
+PASS: migration.css exempts `.slimstat-migration-notice`, and all 1 status element(s) migration.js writes into carry it
+
+migration-duration-honesty-test exit 0
+MODE: standalone checkout — no jaan-to/ sibling, so section 4 (citation resolution) is not run. Sections 1-3 and the fixtures below did run.
+CONTROL: 24 fixtures exercised the renderer, the figure matcher, the bound marker, the trigger patterns and the resolver
+CONTROL: 15 file(s) scanned for user-facing durations, 3 stating one, 3 declaring a measured cost
+PASS: every migration duration shown to an admin renders from a measured constant, and every constant is quoted from the record section that measured it
+
+migration-kill-switch-test exit 0
+PASS: migration kill switch and analytics-session single-flight lock are enforced
+
+uninstall-data-safety-test exit 0
+OK: 111 assertions passed (analytics deleted only on explicit opt-in; cron + browscap cache always cleaned, GeoIP DB preserved)
+
+network-activation-bounded-test exit 0
+OK: 59 assertions passed (the network activation walk is budgeted, persists after every site, and is resumed from a hook that fires again)
+
+settings-request-render-test exit 0
+PASS: settings capabilities precede destructive actions; malformed nonce/options refuse writes; textarea escaped without stripping extension fields
+PASS: settings toggles render as role=switch (readonly blocks clicks) and two-way choices as a labelled radio group
+PASS: admin CSS, headers, links and notices escape by context; malformed saved filters refused; valid filter JSON preserved
+PASS: summary metric, value and details use contextual HTML filtering (real WordPress KSES control in reports-output-escaping-test.php)
+PASS: legacy license writes authorized and validated; remote add-on metadata escaped; malformed remote responses fail closed
+PASS: external tracking snippet renders real line breaks and the installed tracker URL
+
+license-tag-gating-test exit 0
+All 14 assertions passed in license-tag-gating-test.php
+
+default-change-safety-test exit 0
+PASS: default change safety (stored settings beat defaults; fresh installs persist them; bot filtering is not applied retroactively)

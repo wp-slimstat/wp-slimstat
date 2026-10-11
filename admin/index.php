@@ -66,9 +66,29 @@ class wp_slimstat_admin
         'count' => [],
     ];
 
-    /**
-     * Init -- Sets things up.
-     */
+    /** Shared header assets, including screens registered outside the report menu. */
+    public static function enqueue_notification_assets(): void
+    {
+        // Enqueue notification assets if notifications are enabled
+        if (wp_slimstat::$settings['display_notifications'] == 'on') {
+            wp_enqueue_style('slimstat_notifications', plugins_url('/admin/assets/css/notifications.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
+            wp_enqueue_style('slimstat_header_notifications', plugins_url('/admin/assets/css/header-notifications.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
+            wp_enqueue_script('slimstat_notifications', plugins_url('/admin/assets/js/notifications.js', __DIR__), ['jquery'], SLIMSTAT_ANALYTICS_VERSION, false);
+
+            // Pass notification data to Javascript
+            $notification_params = [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => wp_create_nonce('wp_rest'),
+                'empty_title' => __('You are up to date!', 'wp-slimstat'),
+                'empty_inbox' => __('No notifications in your inbox.', 'wp-slimstat'),
+                'empty_dismissed' => __('No dismissed notifications.', 'wp-slimstat'),
+            ];
+            wp_localize_script('slimstat_notifications', 'slimstat_admin', $notification_params);
+        }
+
+    }
+
+    /** Init -- Sets things up. */
     // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Fresh table existence check for network activation on the configured analytics connection; no request values enter SQL.
     public static function init()
     {
@@ -1344,31 +1364,8 @@ class wp_slimstat_admin
 
         // --- END: Updates for version 4.8.2 ---
 
-        // --- Updates for version 4.8.4 ---
-        if (!$recover_settings && version_compare(wp_slimstat::$settings['version'], '4.8.4', '<')) {
-            // Switch option to track WP users (from track to ignore)
-            wp_slimstat::$settings['ignore_wp_users'] = (!empty(wp_slimstat::$settings['track_users']) && 'no' == wp_slimstat::$settings['track_users']) ? 'on' : 'no';
-
-            // Remove unused options
-            unset(wp_slimstat::$settings['track_users']);
-            unset(wp_slimstat::$settings['enable_javascript']);
-            unset(wp_slimstat::$settings['honor_dnt_header']);
-            unset(wp_slimstat::$settings['no_maxmind_warning']);
-            unset(wp_slimstat::$settings['no_browscap_warning']);
-            unset(wp_slimstat::$settings['use_european_separators']);
-            unset(wp_slimstat::$settings['date_format']);
-            unset(wp_slimstat::$settings['time_format']);
-            unset(wp_slimstat::$settings['expand_details']);
-
-            // The four indexes this block used to add by hand are in the manifest, and the
-            // single init_tables() call at the end of this function reconciles them along with
-            // every other. Restating them here was one of the six creators C11 enumerated, and
-            // the one that made a Phase E drop unholdable: an install upgrading from below 4.8.4
-            // re-added four dropped indexes with no way for anything to know it had.
-            wp_slimstat::$settings['db_indexes'] = 'on';
-        }
-
-        // --- END: Updates for version 4.8.4 ---
+        // Legacy option names are mapped using the raw saved options in init(). Keep obsolete extension
+        // keys and the saved db_indexes choice; schema reconciliation below owns indexes.
 
         // --- Updates for version 4.8.4.1 ---
         if (!$recover_settings && version_compare(wp_slimstat::$settings['version'], '4.8.4.1', '<')) {
@@ -1411,17 +1408,6 @@ class wp_slimstat_admin
                 wp_slimstat::$settings['tracking_request_method'] = 'adblock_bypass';
             }
 
-            // Default use_separate_menu to 'on' if not already set
-            if (empty(wp_slimstat::$settings['use_separate_menu'])) {
-                wp_slimstat::$settings['use_separate_menu'] = 'on';
-            }
-        }
-
-        // --- Updates for version 5.4.1 ---
-        // Fix admin bar migration: empty('no') returned false in 5.4.0, missing users with legacy 'no' value
-        // Safe because this runs once (version bumps to 5.4.1 after), users who disable later are already on 5.4.1+
-        if (version_compare(wp_slimstat::$settings['version'], '5.4.1', '<')) {
-            wp_slimstat::$settings['use_separate_menu'] = 'on';
         }
 
         // --- Bring the schema up to the manifest ---
@@ -1585,6 +1571,7 @@ class wp_slimstat_admin
 
         // Report widgets can be moved to any SlimStat screen through Customize.
         wp_enqueue_style('wp-slimstat-tokens', plugins_url('/admin/assets/css/tokens.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
+        wp_enqueue_script('slimstat-report-dialogs', plugins_url('/admin/assets/js/report-dialogs.js', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION, true);
         wp_enqueue_style('wp-slimstat-acquisition', plugins_url('/admin/assets/css/acquisition.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
         if ('slimheatmap' === self::$current_screen) {
             wp_enqueue_style('wp-slimstat-heatmaps', plugins_url('/admin/assets/css/heatmaps.css', __DIR__), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
@@ -1592,10 +1579,11 @@ class wp_slimstat_admin
             wp_set_script_translations('slimstat-heatmaps', 'wp-slimstat');
         }
         if ('slimshortcodes' === self::$current_screen) {
+            \SlimStat\Modules\Chart::enqueueAssets();
             // The preview renders front-end widget markup, so it needs the front-end stylesheet too.
             \SlimStat\Shortcodes\Shortcode::style();
             wp_enqueue_style('wp-slimstat-shortcodes', plugins_url('/admin/assets/css/shortcodes.css', __DIR__), ['wp-slimstat-tokens', 'wp-slimstat-frontend'], SLIMSTAT_ANALYTICS_VERSION);
-            wp_enqueue_script('slimstat-shortcodes', plugins_url('/admin/assets/js/shortcodes.js', __DIR__), ['wp-i18n', 'wp-api-fetch', 'utils'], SLIMSTAT_ANALYTICS_VERSION, true);
+            wp_enqueue_script('slimstat-shortcodes', plugins_url('/admin/assets/js/shortcodes.js', __DIR__), ['wp-i18n', 'wp-api-fetch', 'utils', 'slimstat_chart'], SLIMSTAT_ANALYTICS_VERSION, true);
             wp_set_script_translations('slimstat-shortcodes', 'wp-slimstat');
         }
         if ('slimpro' === self::$current_screen) {
@@ -1806,22 +1794,7 @@ class wp_slimstat_admin
             self::set_slimstat_script_translations('slimstat-utm-builder');
         }
 
-        // Enqueue notification assets if notifications are enabled
-        if (wp_slimstat::$settings['display_notifications'] == 'on') {
-            wp_enqueue_style('slimstat_notifications', plugins_url('/admin/assets/css/notifications.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
-            wp_enqueue_style('slimstat_header_notifications', plugins_url('/admin/assets/css/header-notifications.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
-            wp_enqueue_script('slimstat_notifications', plugins_url('/admin/assets/js/notifications.js', __DIR__), ['jquery'], SLIMSTAT_ANALYTICS_VERSION, false);
-
-            // Pass notification data to Javascript
-            $notification_params = [
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('wp_rest'),
-                'empty_title' => __('You are up to date!', 'wp-slimstat'),
-                'empty_inbox' => __('No notifications in your inbox.', 'wp-slimstat'),
-                'empty_dismissed' => __('No dismissed notifications.', 'wp-slimstat'),
-            ];
-            wp_localize_script('slimstat_notifications', 'slimstat_admin', $notification_params);
-        }
+        self::enqueue_notification_assets();
 
         // Pass some information to Javascript
         $params = [

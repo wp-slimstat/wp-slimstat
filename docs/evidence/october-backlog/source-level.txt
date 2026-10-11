@@ -1,0 +1,39 @@
+Command: composer test:source-level
+Exit: 0
+Runtime: host PHP 8.5
+Final output (full log retained locally):
+  ok   a tracked hit is measured by the row it wrote, not by what slimtrack returned
+  ok   and not by the marker, which a later check has to be free to test
+  ok   R1 reads the OLD arm tracking, so R7 compares rather than assumes
+  ok   and R2 re-baselines its row delta after that hit, not before it
+  ok   the degradation check names what it found, not how much of it there was
+  ok   an admin_init refresh is driven before the degradation store is read
+  ok   the drift leg re-observes the schema instead of reading back the record
+  ok   the premise still holds: the notice refresh returns early when there is no record
+  ok   the stored record is compared against the live one, so a stale snapshot fails
+  ok   the refresh eval loads the admin class and reports that it ran
+  ok   the literal the stale-record leg reads is the constant the plugin writes
+  ok   an explicit local core source is copied without runtime state and verified before install
+  ok   the ordinary provision path still downloads the requested core when no source is supplied
+  ok   one core staging helper serves both cell provisioning and answer comparison
+  ok   a serialized U1 run may use an isolated validated project without changing the default
+
+SLIMSTAT-REHEARSAL-VINTAGE-CORPUS checks=103 failures=0
+PASS: rehearsal vintage corpus — 103 checks
+PASS: 61 enqueue/register call(s) scanned; every own asset carries SLIMSTAT_ANALYTICS_VERSION and 6 vendor pin(s) match their record
+PASS: 9 header renderer(s) classified — 1 own their enqueue and load admin/assets/css/header-modern.css, 8 go through wp_slimstat_stylesheet()
+PASS: migration.css exempts `.slimstat-migration-notice`, and all 1 status element(s) migration.js writes into carry it
+PASS: all 178 tests/*-test.php scripts are invoked by a composer script or a workflow
+PASS: all 202 test:* script(s) are reachable from test:all or standalone with a stated reason (9 exempt)
+All 15 assertions passed in browscap-fileinfo-preflight-test.php
+All 16 assertions passed in consent-filter-context-test.php
+PASS: settings capabilities precede destructive actions; malformed nonce/options refuse writes; textarea escaped without stripping extension fields
+PASS: settings toggles render as role=switch (readonly blocks clicks) and two-way choices as a labelled radio group
+PASS: admin CSS, headers, links and notices escape by context; malformed saved filters refused; valid filter JSON preserved
+PASS: summary metric, value and details use contextual HTML filtering (real WordPress KSES control in reports-output-escaping-test.php)
+PASS: legacy license writes authorized and validated; remote add-on metadata escaped; malformed remote responses fail closed
+PASS: external tracking snippet renders real line breaks and the installed tracker URL
+PASS: delegated personal reset preserves other users/network/dashboard; network reset requires scoped nonce/capability and changes user1 network keys only
+PASS: scoped network saves target existing user1 format; direct-core bypass, malformed/unauthorized requests and failed writes refuse; personal core flow untouched
+PASS: 27 fake-transport cases; missing/stale/mismatched/failed/incomplete evidence refuses upload
+OK heatmap-copy: 105 strings in 5 files

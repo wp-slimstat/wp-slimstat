@@ -141,7 +141,7 @@ final class Query
 
 	/**
 	 * The Heatmaps page list, cached until heatmap data changes, retention changes or
-	 * 12 hours pass. Legacy clicks keep arriving without a generation bump, so the page
+	 * one minute passes. Legacy clicks keep arriving without a generation bump, so the page
 	 * offers Refresh.
 	 *
 	 * @param int $start Inclusive dt bound, in the dt column's local-time seconds.
@@ -153,11 +153,11 @@ final class Query
 		$key       = 'slimstat_hm_pages_' . md5((string) wp_json_encode([get_current_blog_id(), $start, $end, $device, \wp_slimstat::report_scope()['cache']]));
 		$signature = [(string) get_option(Store::GENERATION, ''), \wp_slimstat::$settings['auto_purge'] ?? 0, Store::ready()];
 		$cached    = $refresh ? null : get_transient($key);
-		if (is_array($cached) && ($cached['signature'] ?? null) === $signature) {
+		if (is_array($cached) && ($cached['signature'] ?? null) === $signature && time() - (int) ($cached['data']['updated'] ?? 0) < MINUTE_IN_SECONDS) {
 			return $cached['data'];
 		}
 		$data = ['rows' => self::pages($start, $end, $device), 'updated' => time()];
-		set_transient($key, ['signature' => $signature, 'data' => $data], 12 * HOUR_IN_SECONDS);
+		set_transient($key, ['signature' => $signature, 'data' => $data], MINUTE_IN_SECONDS);
 		return $data;
 	}
 

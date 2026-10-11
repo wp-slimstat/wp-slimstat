@@ -3,7 +3,7 @@
     'use strict';
     const { __, sprintf } = window.wpSlimstatI18n;
     let chart, request, requestKey, feedbackTimer, serial = 0, reportHashHandled = false;
-    const state = { metric: 'net', interval: 'auto', compare: true, tabs: {}, expanded: {}, sort: {} };
+    const state = { metric: 'net', interval: 'auto', compare: true, tabs: {}, expanded: {}, sort: {}, pages: {} };
     const root = () => document.querySelector('.ss-ec[data-ecommerce]');
     const announce = (message, visible = false) => {
         const target = document.querySelector('.ss-ec-feedback');
@@ -29,7 +29,7 @@
     function expand(panel, open, focus) {
         panel.querySelector('[data-expand]').setAttribute('aria-expanded', String(open));
         panel.querySelector('.ss-ec-report-detail').hidden = !open;
-        panel.querySelector('[data-expand]').textContent = open ? __('Close report', 'wp-slimstat') : __('View report', 'wp-slimstat');
+        panel.querySelector('[data-expand]').textContent = open ? __('Close report', 'wp-slimstat') : __('Full report', 'wp-slimstat');
         state.expanded[panel.dataset.dimension] = open;
         rank(panel);
         if (focus) panel.querySelector('[data-expand]').focus();
@@ -38,6 +38,10 @@
         const metric = panel.querySelector('[data-rank-metric]').value;
         const ascending = panel.querySelector('[data-sort]').getAttribute('aria-pressed') === 'true';
         const rows = Array.from(panel.querySelectorAll('.ss-ec-rankings > li'));
+        const expanded = Boolean(state.expanded[panel.dataset.dimension]);
+        const size = Number(panel.dataset.pageSize) || 20;
+        const page = Math.min(state.pages[panel.dataset.dimension] || 0, Math.max(0, Math.ceil(rows.length / size) - 1));
+        state.pages[panel.dataset.dimension] = page;
         const value = row => Number(metric === 'orders' ? row.dataset.rankOrders : row.dataset.rankValue);
         const max = Math.max(0, ...rows.map(row => Math.abs(value(row))));
         rows.sort((a, b) => (value(b) - value(a)) * (ascending ? -1 : 1));
@@ -45,11 +49,19 @@
             row.parentElement.append(row);
             const detail = panel.querySelector('tr[data-rank-index="' + row.dataset.rankIndex + '"]');
             if (detail) detail.parentElement.append(detail);
-            row.hidden = index >= 5 && !state.expanded[panel.dataset.dimension];
+            row.hidden = expanded ? index < page * size || index >= (page + 1) * size : index >= 5;
+            if (detail) detail.hidden = row.hidden;
+            /* translators: 1: order count, 2: formatted monetary amount. */
+            row.title = sprintf(__('%1$s orders · %2$s', 'wp-slimstat'), row.dataset.rankOrders, row.dataset.rankMoney);
             row.querySelector('.ss-ec-rank-value').textContent = metric === 'orders' ? Number(row.dataset.rankOrders).toLocaleString(document.documentElement.lang) : row.dataset.rankMoney;
             row.querySelector('.ss-ec-rank-bar').style.setProperty('--ss-ec-share', (max ? 100 * Math.abs(value(row)) / max : 0) + '%');
             row.classList.toggle('is-negative', value(row) < 0);
         });
+        const pager = panel.querySelector('.ss-ec-pages');
+        pager.hidden = !expanded || rows.length <= size;
+        pager.querySelector('[data-page-label]').textContent = sprintf(__('%1$s–%2$s of %3$s', 'wp-slimstat'), page * size + 1, Math.min((page + 1) * size, rows.length), rows.length);
+        pager.querySelector('[data-page-step="-1"]').disabled = page === 0;
+        pager.querySelector('[data-page-step="1"]').disabled = (page + 1) * size >= rows.length;
         state.sort[panel.dataset.dimension] = { metric, ascending };
     }
     function pointNote(point) {
@@ -83,6 +95,16 @@
             });
             tbody.append(row);
         });
+        let gaps = dashboard.querySelector('[data-chart-gaps]');
+        if (!gaps) { gaps = document.createElement('details'); gaps.dataset.chartGaps = ''; performance.querySelector('.ss-ec-canvas').after(gaps); }
+        gaps.replaceChildren();
+        const summary = document.createElement('summary'); summary.textContent = __('Unavailable intervals', 'wp-slimstat'); gaps.append(summary);
+        const list = document.createElement('ul'); gaps.append(list);
+        ['current', ...(state.compare ? ['previous'] : [])].forEach(period => series[period].forEach(point => {
+            if (point[metric] !== null) return;
+            const item = document.createElement('li'); item.textContent = (period === 'current' ? __('Selected period', 'wp-slimstat') : __('Previous period', 'wp-slimstat')) + ': ' + point.label + ' · ' + point.formatted[metric]; list.append(item);
+        }));
+        gaps.hidden = !list.children.length;
         const colors = getComputedStyle(dashboard);
         const primary = colors.getPropertyValue('--ss-chart-1').trim();
         const muted = colors.getPropertyValue('--ss-chart-compare').trim();
@@ -139,7 +161,9 @@
         if (!panel || !root()?.contains(panel) || !panel.matches('.ss-ec-report')) return;
         reportHashHandled = true;
         selectTab(document.getElementById(panel.getAttribute('aria-labelledby')), false);
-        panel.focus();
+        expand(panel, true, false);
+        panel.focus({ preventScroll: true });
+        panel.scrollIntoView({ block: 'center' });
     }
     setInterval(() => {
         const updated = root()?.querySelector('.ss-ec-updated'); if (!updated) return;
@@ -227,10 +251,11 @@
         if (target.matches('[data-chart-metric]')) { state.metric = target.dataset.chartMetric; draw(); }
         if (target.matches('[role=tab]')) selectTab(target, false);
         if (target.matches('[data-expand]')) expand(target.closest('.ss-ec-report'), target.getAttribute('aria-expanded') !== 'true', false);
+        if (target.matches('[data-page-step]')) { const panel = target.closest('.ss-ec-report'); state.pages[panel.dataset.dimension] += Number(target.dataset.pageStep); rank(panel); }
         if (target.matches('[data-sort]')) { target.setAttribute('aria-pressed', String(target.getAttribute('aria-pressed') !== 'true')); rank(target.closest('.ss-ec-report')); }
         if (target.matches('[data-open-report]')) {
             const panel = root().querySelector('[data-dimension="' + target.dataset.openReport + '"]');
-            if (panel) { selectTab(document.getElementById(panel.getAttribute('aria-labelledby')), false); expand(panel, true, true); panel.scrollIntoView({ block: 'center' }); }
+            if (panel) { selectTab(document.getElementById(panel.getAttribute('aria-labelledby')), false); expand(panel, true, false); panel.focus({ preventScroll: true }); panel.scrollIntoView({ block: 'center' }); }
         }
         if (target.matches('a[href^="#"]:not(.refresh)')) {
             const destination = document.querySelector(target.getAttribute('href'));

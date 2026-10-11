@@ -92,3 +92,10 @@
     .ss-hm-search, .ss-hm-search input { width: 100%; min-width: 0; }
     .ss-hm-updated { margin-inline-start: 0; }
 }
+
+.ss-hm-low-data { display: block; color: var(--ss-text-muted); }
+.ss-hm-device { white-space: normal; max-width: 240px; }
+.ss-hm-devices .ss-hm-device-0 { background: var(--ss-chart-1); }
+.ss-hm-devices .ss-hm-device-1 { background: var(--ss-chart-2); }
+.ss-hm-devices .ss-hm-device-2 { background: var(--ss-chart-3); }
+.ss-hm-devices .ss-hm-device-3 { background: var(--ss-text-muted); }

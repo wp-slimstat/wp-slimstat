@@ -120,6 +120,9 @@ Deleting the plugin no longer erases your analytics. Data is now kept by default
 
 == Changelog ==
 
+= Unreleased =
+* Improve campaign dialogs, Ecommerce reports, Heatmaps freshness and deletion confirmation, shortcode charts and migrations. Preserve existing upgrade settings. See CHANGELOG.md for details.
+
 = 6.0.0 - 2026-10-06 =
 * New Shortcode Playground under SlimStat → Shortcodes: browse reports, preview your data, adjust filters and copy a shortcode. New live visitor, page and country counters. Personal data in shortcodes now shows only to people allowed to view analytics.
 * New Heatmaps page: every page with clicks, its pageviews, device split and recorded detail, from the admin menu or the admin bar.

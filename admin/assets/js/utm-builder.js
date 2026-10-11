@@ -69,7 +69,7 @@
         event.preventDefault();
         update();
         // Native validation must be able to focus invalid fields inside the disclosure.
-        for (const field of form.querySelectorAll('input:invalid')) field.closest('details').open = true;
+        for (const field of form.querySelectorAll('input:invalid')) { const details = field.closest('details'); if (details) details.open = true; };
         if (!form.reportValidity() || !output.value) return;
         const value = output.value;
         let copied = false;
@@ -89,24 +89,13 @@
             : __('Link selected. Use your browser’s Copy command.', 'wp-slimstat');
     });
 
-    let opener = null;
     function open() {
-        panel.open = true;
-        website.focus();
+        if (!panel.open) panel.showModal();
+        website.focus({ preventScroll: true });
     }
     document.addEventListener('click', event => {
-        const link = event.target.closest('a.slimstat-utm-builder-link');
-        if (link) {
-            event.preventDefault();
-            opener = link.closest('.postbox')?.id;
-            open();
-        }
-    });
-    // Closed, the panel hides, so focus goes back to the button that opened it. Looked up
-    // by report, because refreshing a report replaces its button.
-    panel.addEventListener('toggle', () => {
-        if (panel.open) return;
-        (document.querySelector(`#${opener} a.slimstat-utm-builder-link`) || document.querySelector('a.slimstat-utm-builder-link'))?.focus();
+        const link = event.target.closest('a[href$="#slimstat-utm-builder"]');
+        if (link) { event.preventDefault(); open(); }
     });
     window.addEventListener('hashchange', () => {
         if (window.location.hash === '#slimstat-utm-builder') open();

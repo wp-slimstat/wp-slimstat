@@ -63,11 +63,12 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 	{
 		$row = ['page' => '/about', 'clicks' => 8, 'desktop' => 3, 'tablet' => 1, 'mobile' => 4, 'dead' => 1, 'rage' => 1, 'scroll' => 62, 'last' => 1759449600, 'full' => true, 'pageviews' => 20, 'content_id' => 5];
 		$keys = [];
+		$updated = time();
 		Functions\when('get_current_blog_id')->justReturn(1);
 		Functions\when('wp_json_encode')->alias('json_encode');
-		Functions\when('get_transient')->alias(static function ($key) use (&$keys, $row) {
+		Functions\when('get_transient')->alias(static function ($key) use (&$keys, $row, $updated) {
 			$keys[] = $key;
-			return ['signature' => ['', \wp_slimstat::$settings['auto_purge'] ?? 0, false], 'data' => ['rows' => [$row], 'updated' => 77]];
+			return ['signature' => ['', \wp_slimstat::$settings['auto_purge'] ?? 0, false], 'data' => ['rows' => [$row], 'updated' => $updated]];
 		});
 		Functions\when('_prime_post_caches')->justReturn(null);
 		Functions\when('get_the_title')->justReturn('<em>About</em> us');
@@ -79,7 +80,7 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 
 		Functions\when('apply_filters')->returnArg(2);
 		$free = (new HeatmapRestController())->pages($request);
-		self::assertSame(['from' => '2026-09-27', 'to' => '2026-10-03', 'updated' => 77], array_slice($free, 0, 3), 'seven days ending on to');
+		self::assertSame(['from' => '2026-09-27', 'to' => '2026-10-03', 'updated' => $updated], array_slice($free, 0, 3), 'seven days ending on to');
 		self::assertSame('', $free['rows'][0]['url'], 'Free: no viewer, the row opens the preview');
 		self::assertSame('About us', $free['rows'][0]['title']);
 		self::assertSame([3, 1, 4], $free['rows'][0]['devices']);

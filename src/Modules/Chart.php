@@ -52,7 +52,7 @@ class Chart
     public function showChart(array $args): void
     {
         $this->init($args);
-        $this->enqueueAssets();
+        self::enqueueAssets($this->args);
         $this->renderChart();
     }
 
@@ -747,7 +747,7 @@ class Chart
         return $prev;
     }
 
-    private function enqueueAssets(): void
+    public static function enqueueAssets(array $args = []): void
     {
         wp_enqueue_script(
             'slimstat_chartjs',
@@ -767,8 +767,8 @@ class Chart
             // Use a relative admin-ajax path for the admin chart to avoid cross-origin issues in dev setups
             'ajax_url'        => admin_url('admin-ajax.php', 'relative'),
             'nonce'           => wp_create_nonce('slimstat_chart_nonce'),
-            'end_date'        => $this->args['end'] ?? null,
-            'end_date_string' => isset($this->args['end']) ? gmdate('Y/m/d H:i:s', $this->args['end']) : null,
+            'end_date'        => $args['end'] ?? null,
+            'end_date_string' => isset($args['end']) ? gmdate('Y/m/d H:i:s', $args['end']) : null,
             'timezone'        => get_option('timezone_string') ?: 'UTC',
             'start_of_week'   => get_option('start_of_week', 1),
         ]);
