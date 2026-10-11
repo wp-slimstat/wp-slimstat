@@ -8,6 +8,15 @@
     margin-bottom: 0 !important;
     scrollbar-gutter: auto;
 }
+/* Channels and UTM Campaigns share a row; the legacy grid makes .large two-thirds below 1560px. */
+.wrap-slimstat .postbox.slimstat-acquisition-box {
+    width: 49.1%;
+}
+@media screen and (max-width: 800px) {
+    .wrap-slimstat .postbox.slimstat-acquisition-box {
+        width: 99.5%;
+    }
+}
 .wrap-slimstat .slimstat-acquisition {
     container-type: inline-size;
     --ss-acquisition-accent: var(--ss-info-fg);

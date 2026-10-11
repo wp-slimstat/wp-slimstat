@@ -87,6 +87,8 @@ Screenshots: Purchase-rate gaps (`task-notes/screenshots/tracked-purchase-rate-g
 
 **Evidence:** [Ecommerce fixture](../tests/e2e/helpers/ecommerce-data.php) verifies zero purchase rate with sufficient visits, null AOV without orders, distinct visits and calendar alignment. [October Ecommerce](../tests/e2e/october-ecommerce.spec.ts) checks visible gap explanations. [Executed results](../docs/evidence/october-backlog/results.json).
 
+**Revised (12 October 2026, product decision):** No-order and low-visit intervals now plot at 0 (AOV $0, rate measured with no 100-visit floor), with no × marker. Only intervals outside analytics retention stay as "No data" gaps, hoverable through an invisible baseline point.
+
 ## 6. Keep the Acquisition full report consistent with its preview
 
 Scope: **Ecommerce → Acquisition → Channels / Sources / Campaigns**.
@@ -368,6 +370,8 @@ Screenshot: Not supplied for the section-order request.
 **Result (11 October 2026):** Verified. Channels and Campaigns rendered first on Traffic Sources, without rewriting saved Customizer metadata.
 
 **Evidence:** October DOM order check; acquisition Customizer relocation and [layout tests](../tests/e2e/traffic-sources-layout.spec.ts). [Executed results](../docs/evidence/october-backlog/results.json).
+
+**Revised (12 October 2026):** Channels and UTM Campaigns now share a row at half width above 800px (`acquisition.css`), asserted in `traffic-sources-layout.spec.ts`.
 
 ## 26. Link traffic acquisition reports to Ecommerce sales
 

@@ -19,6 +19,13 @@ test('Top Countries and Traffic Summary share a row', async ({ page }) => {
   expect(await top(page, '#slim_p3_02')).toBe(await top(page, '#slim_p1_13'));
 });
 
+test('Channels and UTM Campaigns share a row at half width', async ({ page }) => {
+  await page.goto(PAGE);
+  expect(await top(page, '#slim_p3_04')).toBe(await top(page, '#slim_p3_03'));
+  const share = await page.locator('#slim_p3_03').evaluate((e) => e.getBoundingClientRect().width / e.parentElement!.getBoundingClientRect().width);
+  expect(share).toBeGreaterThan(0.45); expect(share).toBeLessThan(0.52);
+});
+
 test('the chart keeps its last x label clear of the card edge', async ({ page }) => {
   await page.goto(PAGE);
   const gap = () => page.evaluate(() => {
