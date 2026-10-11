@@ -288,18 +288,18 @@ final class Report
 			}
 			set_transient($key, ['signature' => $signature, 'data' => $data], MINUTE_IN_SECONDS);
 		}
-        // Active WooPayments currencies can have no orders yet; historical order currencies remain available.
-        $currencies = array_column($data['currencies'], 'currency');
-        $currencies[] = get_woocommerce_currency();
-        if (function_exists('WC_Payments_Multi_Currency')) {
-            $multi = WC_Payments_Multi_Currency();
-            if ($multi && is_callable([$multi, 'get_enabled_currencies'])) {
-                $currencies = array_merge($currencies, array_keys($multi->get_enabled_currencies()));
-            }
-        }
-        $currencies = array_values(array_unique(array_filter($currencies, static function ($code) { return is_string($code) && preg_match('/\A[A-Z0-9]{3,8}\z/', $code); })));
-        sort($currencies);
-        $data['currencies'] = array_map(static function ($code) { return ['currency' => $code]; }, $currencies);
+		// Active WooPayments currencies can have no orders yet; historical order currencies remain available.
+		$currencies = array_column($data['currencies'], 'currency');
+		$currencies[] = get_woocommerce_currency();
+		if (function_exists('WC_Payments_Multi_Currency')) {
+			$multi = WC_Payments_Multi_Currency();
+			if ($multi && is_callable([$multi, 'get_enabled_currencies'])) {
+				$currencies = array_merge($currencies, array_keys($multi->get_enabled_currencies()));
+			}
+		}
+		$currencies = array_values(array_unique(array_filter($currencies, static function ($code) { return is_string($code) && preg_match('/\A[A-Z0-9]{3,8}\z/', $code); })));
+		sort($currencies);
+		$data['currencies'] = array_map(static function ($code) { return ['currency' => $code]; }, $currencies);
 		if (!$details) { return $data; }
 		// Interval changes reuse summaries/rankings and query only their own trend.
 		$this->range['start'] = $data['range'][0]; $this->range['end'] = $data['range'][1];

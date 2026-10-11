@@ -167,7 +167,7 @@ class AcquisitionReport
         $groupField = array_key_first($fields);
         // Navigation needs the complete scope; fs_url() contains only a filter delta.
         $commerceFilters = null;
-        if (is_admin() && !NetworkMerge::isMerging() && \SlimStat\Ecommerce\Integration::available() && \SlimStat\Ecommerce\Report::canView()) {
+        if (is_admin() && \wp_slimstat::pro_is_installed() && !NetworkMerge::isMerging() && \SlimStat\Ecommerce\Integration::available() && \SlimStat\Ecommerce\Report::canView()) {
             $commerceFilters = [];
             foreach (\wp_slimstat_db::$filters_normalized['columns'] ?? [] as $key => $filter) {
                 $commerceFilters[$key] = $filter[0] . ' ' . $filter[1];
@@ -230,7 +230,7 @@ class AcquisitionReport
         if ($capped) { $countLabel = sprintf(/* translators: %s: counted groups, such as 20 campaigns. */ __('At least %s', 'wp-slimstat'), $countLabel); }
         echo '<div class="slimstat-acquisition__intro"><button type="button" class="button-link" data-report-dialog="' . esc_attr($helpId) . '">' . esc_html($helpLabel) . '</button><strong>';
         echo esc_html($countLabel . ' - ' . sprintf(/* translators: %s: pageview count. */ _n('%s pageview', '%s pageviews', $total, 'wp-slimstat'), number_format_i18n($total))) . '</strong></div>';
-        if (null !== $commerceFilters && \wp_slimstat::pro_is_installed()) {
+        if (null !== $commerceFilters) {
             $url = add_query_arg(['page' => 'slimview7', 'fs' => urlencode_deep($commerceFilters)], admin_url('admin.php')) . '#ss-ec-panel-' . ('utm' === $mode ? 'campaign' : 'channel');
             echo '<a class="noslimstat" href="' . esc_url($url) . '">' . esc_html__('View sales in Ecommerce', 'wp-slimstat') . '</a>';
         }
@@ -276,12 +276,12 @@ class AcquisitionReport
                 if (is_admin() && null !== $value && '' !== $value) {
                     echo '<div class="slimstat-acquisition__filter">';
                     self::value($groupField, $value, 'utm' === $mode ? __('Filter by this campaign', 'wp-slimstat') : __('Filter by this channel', 'wp-slimstat'));
-                    if (null !== $commerceFilters && \wp_slimstat::pro_is_installed()) {
+                    if (null !== $commerceFilters) {
                         $url = add_query_arg(['page' => 'slimview7', 'fs' => urlencode_deep(array_merge($commerceFilters, [$groupField => 'equals ' . $value]))], admin_url('admin.php')) . '#ss-ec-panel-' . ('utm' === $mode ? 'campaign' : 'channel');
                         echo '<a class="noslimstat" href="' . esc_url($url) . '">' . esc_html__('View sales in Ecommerce', 'wp-slimstat') . '</a>';
                     }
                     echo '</div>';
-                    if (null !== $commerceFilters && \wp_slimstat::pro_is_installed()) {
+                    if (null !== $commerceFilters) {
                         echo '<p class="slimstat-acquisition__note">' . esc_html__('Linked orders uses these dates and filters to find orders associated with matching tracked visits. Orders without a visit link are excluded; pageview share is not a purchase rate.', 'wp-slimstat') . '</p>';
                     }
                 }

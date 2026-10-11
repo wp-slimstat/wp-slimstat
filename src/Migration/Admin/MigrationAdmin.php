@@ -42,11 +42,7 @@ class MigrationAdmin
 			return;
 		}
 
-		// Registered when anything is OWED, and also when anything is merely OFFERED — the
-		// second half was missing and it is what made "opt-in" mean "unreachable". needsMigration()
-		// deliberately ignores optional migrations so they raise no notice; using it alone as the
-		// gate for the page removed the only place they could ever have been run from.
-
+		// Always registered: with nothing owed or offered the page reports the up-to-date state.
 		$parent = empty(wp_slimstat_admin::$main_menu_slug) ? 'slimview1' : wp_slimstat_admin::$main_menu_slug;
 		$hook = add_submenu_page(
 			$parent,
@@ -223,8 +219,6 @@ class MigrationAdmin
 		// how a wrong one survives review.
 		$offered_migrations = $this->manager->getOfferedMigrations();
 		$has_required_migrations = !empty($required_migrations);
-
-
 
 		include plugin_dir_path(__FILE__) . '/../../view/migration-page.php';
 	}

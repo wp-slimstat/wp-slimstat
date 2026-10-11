@@ -54,11 +54,12 @@ $setup = static function ($label) {
 			'rate' => [__('Purchase rate (tracked visits)', 'wp-slimstat'), null === $rate ? '—' : number_format_i18n($rate, 2) . '%', sprintf(/* translators: 1: buying visit count, 2: eligible visit count. */ __('%1$s buying / %2$s eligible visits', 'wp-slimstat'), number_format_i18n($journey['buyers']), number_format_i18n($journey['visits'])), __('Buying visits divided by eligible visits in each interval. At least 100 eligible visits are required per point; smaller samples are gaps, not zero.', 'wp-slimstat')],
 		];
 		$series = $data['series'];
+		$gaps = ['aov' => __('No orders', 'wp-slimstat'), 'rate' => __('Not enough visits', 'wp-slimstat')];
 		foreach (['current', 'previous'] as $period) {
 			foreach ($series[$period] as &$point) {
 				foreach (array_keys($metrics) as $metric) {
 					$value = $point[$metric];
-					if (null === $value) { $value = null === $point['orders'] ? __('No data', 'wp-slimstat') : ('aov' === $metric ? __('No orders', 'wp-slimstat') : ('rate' === $metric ? __('Not enough visits', 'wp-slimstat') : __('No data', 'wp-slimstat'))); }
+					if (null === $value) { $value = null === $point['orders'] ? __('No data', 'wp-slimstat') : ($gaps[$metric] ?? __('No data', 'wp-slimstat')); }
 					elseif ('net' === $metric || 'aov' === $metric) { $value = Report::plainMoney($value, $currency); }
 					else { $value = 'rate' === $metric ? number_format_i18n($value, 2) . '%' : number_format_i18n($value); }
 					$point['formatted'][$metric] = $value;

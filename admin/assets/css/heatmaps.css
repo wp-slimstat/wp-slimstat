@@ -45,7 +45,6 @@
 .ss-hm-locked .dashicons { color: var(--ss-text-muted); }
 .ss-hm-locked:is(:hover, :focus-visible) .dashicons-lock::before { content: "\f528"; }
 .ss-hm-locked:is(:hover, :focus-visible) .dashicons { color: var(--ss-brand-500); }
-.ss-hm-heat { display: inline-block; width: 8px; height: 8px; margin-inline-end: var(--ss-space-2); border-radius: 50%; background: color-mix(in oklch, var(--ss-brand-500) var(--heat, 0%), var(--ss-border-soft)); vertical-align: 1px; }
 .ss-hm-device { display: inline-flex; align-items: center; gap: var(--ss-space-2); white-space: nowrap; color: var(--ss-text-body); }
 .ss-hm-devices { display: flex; flex: none; width: 48px; height: 6px; overflow: hidden; border-radius: var(--ss-radius-pill); background: var(--ss-border-soft); }
 .ss-hm-device-0 { background: var(--ss-funnel-bar); }

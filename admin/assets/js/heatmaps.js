@@ -169,7 +169,6 @@
             scroll: state.rows.some((r) => null !== r.scroll),
             dead: state.rows.some((r) => null !== r.dead),
             full: 'pro' === config.mode && state.rows.some((r) => r.full),
-            max: Math.max(1, ...state.rows.map((r) => r.clicks)),
         };
         ['scroll', 'dead', 'full'].forEach((key) => {
             table.tHead.querySelector('th[data-sort="' + key + '"]').hidden = !shown[key];
