@@ -5,9 +5,13 @@
  * - Dismiss retires it at once, and it stays retired.
  * - The license note it carried survives it.
  *
- * Needs Pro, WooCommerce and orders; reads them, and restores the admin's user setting and the options it sets.
+ * Needs Pro and WooCommerce; seeds its own orders and restores the admin's user setting and the options it sets.
  */
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { runWordPressFixture } from './helpers/chart';
+const source = readFileSync(new URL('./helpers/ecommerce-data.php', import.meta.url), 'utf8').replace(/^<\?php\s*/, '');
+const fixture = (mode: string) => JSON.parse(runWordPressFixture(`<?php\n$fixture_mode = '${mode}';\n${source}`));
 import { requireProBooted } from './helpers/pro-state';
 import { closeDb, snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions } from './helpers/setup';
 
@@ -27,11 +31,15 @@ test('the Pro reports panel retires once opened or dismissed @woocommerce', asyn
   };
   await snapshotSlimstatOptions();
   try {
+    fixture('cleanup');
+    const seed = fixture('seed');
+    const day = new Date(seed.start * 1000).toISOString().slice(0, 10);
+    scope.set('from', day); scope.set('to', day);
     await setSlimstatOptions({ slimstat_pro_license_status: false });
     await reset();
     await load();
     await expect(ready).toBeVisible();
-    await dashboard.getByRole('button', { name: 'Compare campaigns' }).click();
+    await dashboard.getByRole('button', { name: 'Open campaigns report' }).click();
     await load();
     await expect(ready).toHaveCount(0);
 
@@ -47,8 +55,9 @@ test('the Pro reports panel retires once opened or dismissed @woocommerce', asyn
     await expect(ready).toHaveCount(0);
     await load();
     await expect(ready).toHaveCount(0);
-    await expect(dashboard.getByRole('link', { name: 'Activate your license' })).toBeVisible();
+    await expect(dashboard.getByRole('link', { name: 'Check your update license' })).toBeVisible();
   } finally {
+    fixture('cleanup');
     // The setting syncs to user meta on the next admin load, so it would outlive this test.
     await reset();
     await page.goto('/wp-admin/');

@@ -1,0 +1,66 @@
+{
+    "translation-revision-date": "2019-06-10 15:36-0400",
+    "generator": "WP-CLI\/2.12.0",
+    "source": "admin\/assets\/js\/ecommerce.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "pl_PL",
+                "plural-forms": "nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;"
+            },
+            "Retry": [
+                ""
+            ],
+            "Updated just now": [
+                ""
+            ],
+            "%1$s buying \/ %2$s eligible visits": [
+                ""
+            ],
+            "Selected period": [
+                ""
+            ],
+            "Previous period": [
+                ""
+            ],
+            "Full report": [
+                ""
+            ],
+            "%1$s\u2013%2$s of %3$s": [
+                ""
+            ],
+            "Close report": [
+                ""
+            ],
+            "%1$s orders \u00b7 %2$s": [
+                ""
+            ],
+            "Partial interval": [
+                ""
+            ],
+            "Provisional": [
+                ""
+            ],
+            "Unavailable intervals": [
+                ""
+            ],
+            "Updated %d min ago": [
+                ""
+            ],
+            "Could not refresh. Any displayed figures are from the previous response. Retry to get current data.": [
+                ""
+            ],
+            "Updating reports\u2026": [
+                ""
+            ],
+            "Reports refreshed": [
+                ""
+            ],
+            "CSV download requested for the current report and filters.": [
+                ""
+            ]
+        }
+    }
+}

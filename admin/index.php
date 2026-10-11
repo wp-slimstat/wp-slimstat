@@ -1576,7 +1576,7 @@ class wp_slimstat_admin
         if ('slimheatmap' === self::$current_screen) {
             wp_enqueue_style('wp-slimstat-heatmaps', plugins_url('/admin/assets/css/heatmaps.css', __DIR__), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
             wp_enqueue_script('slimstat-heatmaps', plugins_url('/admin/assets/js/heatmaps.js', __DIR__), ['wp-i18n', 'wp-api-fetch'], SLIMSTAT_ANALYTICS_VERSION, true);
-            wp_set_script_translations('slimstat-heatmaps', 'wp-slimstat');
+            self::set_slimstat_script_translations('slimstat-heatmaps');
         }
         if ('slimshortcodes' === self::$current_screen) {
             \SlimStat\Modules\Chart::enqueueAssets();
@@ -1584,7 +1584,7 @@ class wp_slimstat_admin
             \SlimStat\Shortcodes\Shortcode::style();
             wp_enqueue_style('wp-slimstat-shortcodes', plugins_url('/admin/assets/css/shortcodes.css', __DIR__), ['wp-slimstat-tokens', 'wp-slimstat-frontend'], SLIMSTAT_ANALYTICS_VERSION);
             wp_enqueue_script('slimstat-shortcodes', plugins_url('/admin/assets/js/shortcodes.js', __DIR__), ['wp-i18n', 'wp-api-fetch', 'utils', 'slimstat_chart'], SLIMSTAT_ANALYTICS_VERSION, true);
-            wp_set_script_translations('slimstat-shortcodes', 'wp-slimstat');
+            self::set_slimstat_script_translations('slimstat-shortcodes');
         }
         if ('slimpro' === self::$current_screen) {
             wp_enqueue_style('wp-slimstat-pro-overview', plugins_url('/admin/assets/css/pro.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
@@ -1596,7 +1596,7 @@ class wp_slimstat_admin
             wp_enqueue_style('wp-slimstat-ecommerce', plugins_url('/admin/assets/css/ecommerce.css', __DIR__), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
             wp_enqueue_script('slimstat_chartjs', plugins_url('/admin/assets/js/chartjs/chart.min.js', __DIR__), [], '4.2.1', true);
             wp_enqueue_script('slimstat-ecommerce', plugins_url('/admin/assets/js/ecommerce.js', __DIR__), ['slimstat_admin', 'slimstat_chartjs'], SLIMSTAT_ANALYTICS_VERSION, true);
-            wp_set_script_translations('slimstat-ecommerce', 'wp-slimstat');
+            self::set_slimstat_script_translations('slimstat-ecommerce');
         }
 
 		// Goals & Funnels CSS — only loaded on screens that actually render those reports.
@@ -1790,7 +1790,7 @@ class wp_slimstat_admin
         wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog', 'slimstat-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
         self::set_slimstat_script_translations('slimstat_admin');
         if ('slimview5' === self::$current_screen) {
-            wp_enqueue_script('slimstat-utm-builder', plugins_url('/admin/assets/js/utm-builder.js', __DIR__), ['slimstat-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
+            wp_enqueue_script('slimstat-utm-builder', plugins_url('/admin/assets/js/utm-builder.js', __DIR__), ['slimstat-i18n', 'slimstat-report-dialogs'], SLIMSTAT_ANALYTICS_VERSION, true);
             self::set_slimstat_script_translations('slimstat-utm-builder');
         }
 

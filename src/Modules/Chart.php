@@ -52,7 +52,7 @@ class Chart
     public function showChart(array $args): void
     {
         $this->init($args);
-        self::enqueueAssets($this->args);
+		self::enqueueAssets($this->args);
         $this->renderChart();
     }
 
@@ -747,32 +747,37 @@ class Chart
         return $prev;
     }
 
-    public static function enqueueAssets(array $args = []): void
-    {
-        wp_enqueue_script(
-            'slimstat_chartjs',
-            plugins_url('/admin/assets/js/chartjs/chart.min.js', SLIMSTAT_FILE),
-            [],
-            '4.2.1',
-            true
-        );
-        wp_enqueue_script(
-            'slimstat_chart',
-            plugins_url('/admin/assets/js/slimstat-chart.js', SLIMSTAT_FILE),
-            ['slimstat_chartjs'],
-            SLIMSTAT_ANALYTICS_VERSION,
-            true
-        );
-        wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
-            // Use a relative admin-ajax path for the admin chart to avoid cross-origin issues in dev setups
-            'ajax_url'        => admin_url('admin-ajax.php', 'relative'),
-            'nonce'           => wp_create_nonce('slimstat_chart_nonce'),
-            'end_date'        => $args['end'] ?? null,
-            'end_date_string' => isset($args['end']) ? gmdate('Y/m/d H:i:s', $args['end']) : null,
-            'timezone'        => get_option('timezone_string') ?: 'UTC',
-            'start_of_week'   => get_option('start_of_week', 1),
-        ]);
-    }
+	/**
+	 * Enqueue chart assets and localize their request context.
+	 *
+	 * @param array $args Optional chart arguments; omitted arguments leave the end date unset.
+	 */
+	public static function enqueueAssets(array $args = []): void
+	{
+		wp_enqueue_script(
+			'slimstat_chartjs',
+			plugins_url('/admin/assets/js/chartjs/chart.min.js', SLIMSTAT_FILE),
+			[],
+			'4.2.1',
+			true
+		);
+		wp_enqueue_script(
+			'slimstat_chart',
+			plugins_url('/admin/assets/js/slimstat-chart.js', SLIMSTAT_FILE),
+			['slimstat_chartjs'],
+			SLIMSTAT_ANALYTICS_VERSION,
+			true
+		);
+		wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
+			// Use a relative admin-ajax path for the admin chart to avoid cross-origin issues in dev setups
+			'ajax_url'        => admin_url('admin-ajax.php', 'relative'),
+			'nonce'           => wp_create_nonce('slimstat_chart_nonce'),
+			'end_date'        => $args['end'] ?? null,
+			'end_date_string' => isset($args['end']) ? gmdate('Y/m/d H:i:s', $args['end']) : null,
+			'timezone'        => get_option('timezone_string') ?: 'UTC',
+			'start_of_week'   => get_option('start_of_week', 1),
+		]);
+	}
 
     private function renderChart(): void
     {

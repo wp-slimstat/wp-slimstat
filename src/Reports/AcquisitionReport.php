@@ -221,7 +221,7 @@ class AcquisitionReport
             echo '<p role="status">' . esc_html__('This report could not be loaded. Check the database connection and report setup, then refresh.', 'wp-slimstat') . '</p></div>';
             return;
         }
-        $helpId = 'ss-acquisition-help-' . $mode;
+        $helpId = wp_unique_id('ss-acquisition-help-' . $mode . '-');
         $helpLabel = 'utm' === $mode ? __('What are campaigns? How do they work?', 'wp-slimstat') : __('What are channels?', 'wp-slimstat');
         $groupCount = count($all);
         $countLabel = 'utm' === $mode

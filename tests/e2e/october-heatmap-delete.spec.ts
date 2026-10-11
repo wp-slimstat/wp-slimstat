@@ -28,6 +28,12 @@ test('Task 14: typed confirmation, cancellation and server rejection protect dis
   const nonce=(await dialog.locator('[name=_wpnonce]').inputValue());
   const rejected=await page.request.post('/wp-admin/admin-post.php',{form:{action:'slimstat_heatmap_delete',_wpnonce:nonce,heatmap_delete_confirmation:'delete'}});
   expect(rejected.status()).toBe(400); expect(counts()).toEqual(before);
+  for (const value of ['<b>DELETE</b>', ' DELETE ', 'DELETE\\']) {
+    const malformed=await page.request.post('/wp-admin/admin-post.php',{form:{action:'slimstat_heatmap_delete',_wpnonce:nonce,heatmap_delete_confirmation:value}});
+    expect(malformed.status()).toBe(400);
+  }
+  const array=await page.request.post('/wp-admin/admin-post.php',{form:{action:'slimstat_heatmap_delete',_wpnonce:nonce,'heatmap_delete_confirmation[]':'DELETE'}});
+  expect(array.status()).toBe(400);
   const badNonce=await page.request.post('/wp-admin/admin-post.php',{form:{action:'slimstat_heatmap_delete',_wpnonce:'invalid',heatmap_delete_confirmation:'DELETE'}});
   expect(badNonce.status()).toBe(403); expect(counts()).toEqual(before);
   await page.getByRole('button',{name:'Delete heatmap data',exact:true}).click();

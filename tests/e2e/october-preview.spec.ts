@@ -25,7 +25,8 @@ test('Task 18: missing-theme explanation, fallback context and retry into standa
   const context=new URLSearchParams(new URL(fallbackUrl).searchParams.get('slimstat_heatmap_view')!);
   expect(context.get('from')).toBe('2026-10-01'); expect(context.get('to')).toBe('2026-10-07'); expect(context.get('device')).toBe('desktop');
   await page.screenshot({path:info.outputPath('missing-theme-recovery.png'),fullPage:true});
-  runWordPressFixture("<?php switch_theme('twentytwentyfive');");
+  // Change only the two snapshotted options; switch_theme also mutates widget/mod state.
+  runWordPressFixture("<?php update_option('template','twentytwentyfive'); update_option('stylesheet','twentytwentyfive');");
   expect((await page.request.get('/')).ok()).toBeTruthy();
   const outside=await page.context().newPage(); await outside.goto(fallbackUrl);
   await expect(outside.locator('.ss-hmo')).toBeVisible();

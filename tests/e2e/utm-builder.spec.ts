@@ -5,6 +5,7 @@ const target = `${BASE_URL}/wp-admin/admin.php?page=slimview5`;
 
 test.describe('UTM link builder', () => {
   test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => window.addEventListener('beforetoggle', event => event.stopImmediatePropagation(), true));
     await page.goto(`${target}#slimstat-utm-builder`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('#slimstat-utm-builder')).toHaveAttribute('open', '');
   });

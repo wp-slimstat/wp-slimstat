@@ -90,7 +90,7 @@
     });
 
     function open() {
-        if (!panel.open) panel.showModal();
+        window.SlimStatReportDialogs.open(panel);
         website.focus({ preventScroll: true });
     }
     document.addEventListener('click', event => {

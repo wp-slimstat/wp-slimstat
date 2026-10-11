@@ -6,6 +6,8 @@ import { closeDb, snapshotSlimstatOptions, restoreSlimstatOptions, snapshotOptio
 test.afterAll(closeDb);
 
 test('Tasks 1–4, 25: report dialogs keep focus, scroll and reading order', async ({ page }, info) => {
+  // Emulate browsers that support dialog but do not dispatch beforetoggle.
+  await page.addInitScript(() => window.addEventListener('beforetoggle', event => event.stopImmediatePropagation(), true));
   await page.goto('/wp-admin/admin.php?page=slimview5');
   await expect(page.locator('#slim_p3_03 .slimstat-acquisition__intro')).toContainText(/channels? - .*pageviews?/);
   const order = await page.locator('.meta-box-sortables > .postbox').evaluateAll(nodes => nodes.map(n => n.id));
@@ -14,8 +16,9 @@ test('Tasks 1–4, 25: report dialogs keep focus, scroll and reading order', asy
   await trigger.scrollIntoViewIfNeeded();
   const before = await page.evaluate(() => window.scrollY);
   await trigger.click();
-  const dialog = page.locator('#ss-acquisition-help-channels');
+  const dialog = page.locator('dialog[id^=ss-acquisition-help-channels-]');
   await expect(dialog).toBeVisible();
+  await expect(page.locator('html')).toHaveClass(/ss-report-dialog-open/);
   for (let i = 0; i < 4; i++) await page.keyboard.press('Tab');
   expect(await dialog.evaluate(el => el.contains(document.activeElement))).toBeTruthy();
   await page.keyboard.press('Escape');
@@ -131,11 +134,18 @@ test('Task 20: chart previews render and redraw from the generated shortcode', a
   await expect(page.locator('#ss-sc-preview #slimstat_chart_data_slim_p1_01')).toBeAttached();
   await expect.poll(() => page.locator('#ss-sc-preview canvas').evaluate((el: HTMLCanvasElement) => !!(window as any).Chart.getChart(el))).toBeTruthy();
   const data=await page.locator('#ss-sc-preview [data-data]').getAttribute('data-data');
-  const id=Number(runWordPressFixture(`<?php echo wp_insert_post(['post_type'=>'page','post_status'=>'publish','post_title'=>'October shortcode fixture','post_content'=>'${code}']);`));
+  const id=Number(runWordPressFixture(`<?php echo wp_insert_post(['post_type'=>'page','post_status'=>'publish','post_title'=>'October shortcode fixture','post_content'=>'${code} [slimstat f="widget" w="slim_p3_03"][/slimstat] [slimstat f="widget" w="slim_p3_03"][/slimstat]']);`));
   try {
     const front=await page.context().newPage(); await front.goto('/?page_id='+id);
     await expect(front.locator('#slimstat_chart_slim_p1_01')).toBeVisible();
     await expect(front.locator('#slimstat_chart_data_slim_p1_01')).toHaveAttribute('data-data',data!);
+    const dialogs=front.locator('dialog[id^=ss-acquisition-help-channels-]');
+    await expect(dialogs).toHaveCount(2);
+    const ids=await dialogs.evaluateAll(nodes=>nodes.map(node=>node.id));
+    expect(new Set(ids).size).toBe(2);
+    await front.getByRole('button',{name:'What are channels?',exact:true}).nth(1).click();
+    await expect(dialogs.nth(1)).toBeVisible();
+    await expect(dialogs.nth(0)).not.toBeVisible();
     await front.close();
   } finally {runWordPressFixture(`<?php wp_delete_post(${id},true);`);}
   await page.locator('#ss-sc-preview .slimstat-granularity-select').selectOption('weekly');
