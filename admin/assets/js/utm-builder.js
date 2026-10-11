@@ -89,13 +89,13 @@
             : __('Link selected. Use your browser’s Copy command.', 'wp-slimstat');
     });
 
-    function open() {
-        window.SlimStatReportDialogs.open(panel);
+    function open(opener) {
+        window.SlimStatReportDialogs.open(panel, opener);
         website.focus({ preventScroll: true });
     }
     document.addEventListener('click', event => {
         const link = event.target.closest('a[href$="#slimstat-utm-builder"]');
-        if (link) { event.preventDefault(); open(); }
+        if (link) { event.preventDefault(); open(link); }
     });
     window.addEventListener('hashchange', () => {
         if (window.location.hash === '#slimstat-utm-builder') open();

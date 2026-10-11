@@ -172,9 +172,9 @@ if ('' !== $error) {
 
         <?php if ($is_admin && Store::ready()) : ?>
             <p class="ss-hm-delete"><button type="button" class="button-link button-link-delete" data-dialog="ss-hm-delete"><?php esc_html_e('Delete heatmap data', 'wp-slimstat'); ?></button></p>
-            <dialog id="ss-hm-delete" class="ss-hm-dialog">
+            <dialog id="ss-hm-delete" class="ss-hm-dialog" aria-labelledby="ss-hm-delete-title">
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                    <p><?php esc_html_e('Delete all full-tracking heatmap data? Link and button click history is kept. This can\'t be undone.', 'wp-slimstat'); ?></p>
+                    <p id="ss-hm-delete-title"><?php esc_html_e('Delete all full-tracking heatmap data? Link and button click history is kept. This can\'t be undone.', 'wp-slimstat'); ?></p>
                     <input type="hidden" name="action" value="slimstat_heatmap_delete">
                     <?php wp_nonce_field('slimstat_heatmap_delete'); ?><label for="ss-hm-confirm"><?php esc_html_e('Type DELETE to confirm.', 'wp-slimstat'); ?></label><input id="ss-hm-confirm" name="heatmap_delete_confirmation" required pattern="DELETE" autocomplete="off">
                     <div class="ss-hm-dialog-actions">

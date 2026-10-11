@@ -286,7 +286,12 @@
         render();
     });
     root.querySelectorAll('[data-dialog]').forEach((button) => {
-        button.addEventListener('click', () => document.getElementById(button.dataset.dialog).showModal());
+        button.addEventListener('click', () => {
+            const dialog = document.getElementById(button.dataset.dialog);
+            // Safari does not focus a clicked button, so native focus restoration would land on <body>.
+            dialog.addEventListener('close', () => button.focus(), { once: true });
+            dialog.showModal();
+        });
     });
 
     const confirmation = root.querySelector('[name="heatmap_delete_confirmation"]');

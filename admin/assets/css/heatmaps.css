@@ -84,6 +84,8 @@
 .ss-hm-dialog { max-width: 440px; padding: 24px; border: 0; border-radius: var(--ss-radius-lg); box-shadow: var(--ss-shadow-modal); background: var(--ss-surface); color: var(--ss-text-primary); }
 .ss-hm-dialog::backdrop { background: var(--ss-overlay-scrim, rgba(0, 0, 0, .4)); }
 .ss-hm-dialog p { margin: 0 0 16px; }
+.ss-hm-dialog label { display: block; margin-bottom: 4px; }
+.ss-hm-dialog input[type=text], .ss-hm-dialog input:not([type]) { width: 100%; margin-bottom: 16px; }
 .ss-hm-dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 
 @media (max-width: 782px) {
@@ -95,6 +97,7 @@
 .ss-hm-low-data { display: block; color: var(--ss-text-muted); }
 .ss-hm-device { white-space: normal; max-width: 240px; }
 .ss-hm-devices .ss-hm-device-0 { background: var(--ss-chart-1); }
-.ss-hm-devices .ss-hm-device-1 { background: var(--ss-chart-2); }
-.ss-hm-devices .ss-hm-device-2 { background: var(--ss-chart-3); }
-.ss-hm-devices .ss-hm-device-3 { background: var(--ss-text-muted); }
+.ss-hm-devices .ss-hm-device-1 { background: color-mix(in srgb, var(--ss-chart-1) 60%, var(--ss-funnel-bar)); }
+.ss-hm-devices .ss-hm-device-2 { background: var(--ss-funnel-bar); }
+/* Unknown stays a pale neutral so it never reads as a fourth device. */
+.ss-hm-devices .ss-hm-device-3 { background: color-mix(in srgb, var(--ss-text-muted) 40%, var(--ss-surface)); }

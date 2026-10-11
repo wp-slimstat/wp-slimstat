@@ -27,6 +27,22 @@ test('Tasks 1–4, 25: report dialogs keep focus, scroll and reading order', asy
   await page.screenshot({ path: info.outputPath('traffic-sources.png'), fullPage: true });
 });
 
+test('Task 1: dialogs return focus to a clicked trigger that never took focus', async ({ page }) => {
+  // Safari does not focus clicked buttons or links; suppressing mousedown reproduces that in Chromium.
+  await page.addInitScript(() => document.addEventListener('mousedown', event => event.preventDefault(), true));
+  await page.goto('/wp-admin/admin.php?page=slimview5');
+  for (const trigger of [
+    page.getByRole('button', { name: 'What are channels?', exact: true }),
+    page.locator('#slim_p3_04 a[href$="#slimstat-utm-builder"]').first(),
+  ]) {
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.click();
+    await expect(page.locator('dialog.ss-report-dialog[open]')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+    await expect(trigger).toBeFocused();
+  }
+});
+
 test('Tasks 12–16: Heatmaps boundaries, device denominator, polling, date alignment and settings', async ({ page }, info) => {
   let requests = 0;
   await page.route(/heatmap(%2F|\/)pages/, async route => {
@@ -39,6 +55,11 @@ test('Tasks 12–16: Heatmaps boundaries, device denominator, polling, date alig
   await expect(page.locator('.ss-hm-low-data')).toHaveCount(1);
   await expect(page.locator('.ss-hm-table')).toContainText('Homepage');
   await expect(page.locator('.ss-hm-table')).toContainText('Unknown');
+  // Each device segment must paint its own colour; an undefined token renders transparent.
+  const fills = await page.locator('.ss-hm-devices').first().locator('span').evaluateAll(spans => spans.map(s => getComputedStyle(s).backgroundColor));
+  expect(fills).toHaveLength(4); // desktop, tablet, mobile and the 4 unknown clicks
+  expect(fills).not.toContain('rgba(0, 0, 0, 0)');
+  expect(new Set(fills).size).toBe(4);
   await expect(page.locator('.ss-hm-heat')).toHaveCount(0);
   const count = requests;
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));

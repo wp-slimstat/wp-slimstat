@@ -98,7 +98,10 @@
         let gaps = dashboard.querySelector('[data-chart-gaps]');
         if (!gaps) { gaps = document.createElement('details'); gaps.dataset.chartGaps = ''; performance.querySelector('.ss-ec-canvas').after(gaps); }
         gaps.replaceChildren();
-        const summary = document.createElement('summary'); summary.textContent = __('Unavailable intervals', 'wp-slimstat'); gaps.append(summary);
+        // The × repeats the chart's gap marker so the key sits beside its explanation.
+        const summary = document.createElement('summary'), key = document.createElement('span');
+        key.setAttribute('aria-hidden', 'true'); key.textContent = '× ';
+        summary.append(key, __('Unavailable intervals', 'wp-slimstat')); gaps.append(summary);
         const list = document.createElement('ul'); gaps.append(list);
         ['current', ...(state.compare ? ['previous'] : [])].forEach(period => series[period].forEach(point => {
             if (point[metric] !== null) return;
@@ -115,16 +118,22 @@
             && (!points[i - 1] || points[i - 1][metric] === null)
             && (!points[i + 1] || points[i + 1][metric] === null);
         const datasets = [{
-            label: __('Selected period', 'wp-slimstat'), type: line ? 'line' : 'bar',
+            label: __('Selected period', 'wp-slimstat'), period: 'current', type: line ? 'line' : 'bar',
             data: series.current.map(p => p[metric]), borderColor: primary, backgroundColor: line ? primary + '12' : series.current.map(p => p.partial ? primary + 'cc' : primary),
             borderWidth: line ? 2 : 0, borderRadius: 3, maxBarThickness: 38, fill: line, tension: 0,
             pointRadius: series.current.map((p, i) => p.partial || series.current.length < 3 || isolated(series.current, i) ? 4 : 0), pointStyle: series.current.map(p => p.partial ? 'triangle' : 'circle'), pointHitRadius: 12, spanGaps: false,
         }];
         if (state.compare) datasets.push({
-            label: __('Previous period', 'wp-slimstat'), type: 'line', data: series.previous.map(p => p[metric]),
+            label: __('Previous period', 'wp-slimstat'), period: 'previous', type: 'line', data: series.previous.map(p => p[metric]),
             borderColor: muted, backgroundColor: muted, borderDash: [5, 4], borderWidth: 2,
             pointBackgroundColor: colors.getPropertyValue('--ss-surface').trim(),
             pointRadius: series.previous.map((p, i) => series.previous.length < 3 || isolated(series.previous, i) ? 4 : 0), pointHitRadius: 12, tension: 0, spanGaps: false, order: -1,
+        });
+        // Index-mode tooltips skip null points, so mark each unavailable interval on the baseline to make it hoverable.
+        const gap = series.current.map(p => p[metric] === null ? 0 : null);
+        if (gap.some(v => v !== null)) datasets.push({
+            label: __('Selected period', 'wp-slimstat'), period: 'current', gap: true, type: 'line', data: gap, showLine: false,
+            borderColor: text, backgroundColor: text, pointStyle: 'crossRot', pointRadius: 5, pointBorderWidth: 1.5, pointHitRadius: 12, order: -2,
         });
         dashboard.querySelector('[data-chart-empty]').hidden = series.current.some(p => p[metric] !== null);
         if (chart) chart.destroy();
@@ -138,16 +147,18 @@
                     legend: { display: false },
                     tooltip: { padding: 12, displayColors: true, callbacks: {
                         title: items => items.length ? series.current[items[0].dataIndex].label : '',
-                        label: item => {
-                            const point = (item.datasetIndex ? series.previous : series.current)[item.dataIndex];
-                            return item.dataset.label + ': ' + point.formatted[metric];
-                        },
+                        label: item => item.dataset.label + ': ' + series[item.dataset.period][item.dataIndex].formatted[metric],
                         afterBody: items => {
                             if (!items.length) return [];
                             const index = items[0].dataIndex, point = series.current[index];
                             const notes = [pointNote(point)];
                             if (metric === 'rate') notes.push(sprintf(__('%1$s buying / %2$s eligible visits', 'wp-slimstat'), point.buyers, point.visits));
-                            if (state.compare) notes.push(series.previous[index].label, pointNote(series.previous[index]));
+                            if (state.compare) {
+                                const before = series.previous[index];
+                                notes.push(before.label, pointNote(before));
+                                // A null previous point has no tooltip item of its own.
+                                if (before[metric] === null) notes.push(__('Previous period', 'wp-slimstat') + ': ' + before.formatted[metric]);
+                            }
                             return notes.filter(Boolean);
                         },
                     } },

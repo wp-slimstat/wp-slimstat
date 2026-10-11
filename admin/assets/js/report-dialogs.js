@@ -2,15 +2,15 @@
 (() => {
     'use strict';
     const positions = new WeakMap();
-    function remember(dialog) {
-        const opener = document.activeElement;
+    // Safari does not focus a clicked link or button, so callers pass the trigger explicitly.
+    function remember(dialog, opener = document.activeElement) {
         positions.set(dialog, { opener, report: opener?.closest('.postbox')?.id, x: window.scrollX, y: window.scrollY });
         document.documentElement.classList.add('ss-report-dialog-open');
     }
     window.SlimStatReportDialogs = {
-        open(dialog) {
+        open(dialog, opener) {
             if (!dialog || dialog.open) return;
-            remember(dialog);
+            remember(dialog, opener);
             dialog.showModal();
         },
     };
@@ -18,7 +18,7 @@
         const trigger = event.target.closest('[data-report-dialog]');
         if (trigger) {
             const dialog = document.getElementById(trigger.dataset.reportDialog);
-            window.SlimStatReportDialogs.open(dialog);
+            window.SlimStatReportDialogs.open(dialog, trigger);
         }
         const close = event.target.closest('[data-dialog-close]');
         if (close) close.closest('dialog').close();
