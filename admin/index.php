@@ -2542,14 +2542,15 @@ class wp_slimstat_admin
     }
 
     /**
-     * Persists a release-notice dismissal on core screens, where admin.js is not loaded. Core's
-     * common.js adds the dismiss button; this posts the action notices_handler() serves, with its
-     * nonce in the script because wp_kses_post() strips a hidden input from the notice.
+     * Persists a release-notice dismissal on core screens. Core's common.js adds the dismiss button;
+     * this posts the action notices_handler() serves, with its nonce in the script because
+     * wp_kses_post() strips a hidden input from the notice. Where admin.js runs (the Dashboard with
+     * SlimStat widgets) its own notice handler posts, so this one stands down.
      */
     public static function release_notice_dismiss_script()
     {
         $body = wp_json_encode(['action' => 'slimstat_notice_latest_news', 'security' => wp_create_nonce('meta-box-order')]);
-        wp_add_inline_script('common', "document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('#slimstat-notice-latest-news .notice-dismiss')){fetch(ajaxurl,{method:'POST',credentials:'same-origin',body:new URLSearchParams(" . $body . ')});}});');
+        wp_add_inline_script('common', "document.addEventListener('click',function(e){if(!window.SlimStatAdminParams&&e.target.closest&&e.target.closest('#slimstat-notice-latest-news .notice-dismiss')){fetch(ajaxurl,{method:'POST',credentials:'same-origin',body:new URLSearchParams(" . $body . ')});}});');
     }
 
     /**

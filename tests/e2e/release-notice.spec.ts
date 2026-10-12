@@ -9,7 +9,7 @@
  * migration probe transient decides whether a migration is owed. Touches only options and
  * restores them; no stats rows are read or written.
  */
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, Request } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runWordPressFixture } from './helpers/chart';
@@ -59,11 +59,17 @@ async function simulateUpdate(page: Page, { anchorDaysAgo = null as number | nul
   if (migrationOwed) await setOption(DISMISSED, null);
 }
 
+// Exactly one POST: admin.js and the core-screen inline script must not both send it.
 async function dismissIn(page: Page): Promise<void> {
-  const posted = page.waitForResponse((r) => r.url().includes('admin-ajax.php') && (r.request().postData() ?? '').includes('slimstat_notice_latest_news'));
+  const isDismissal = (r: Request) => r.url().includes('admin-ajax.php') && (r.postData() ?? '').includes('slimstat_notice_latest_news');
+  let posts = 0;
+  page.on('request', (r) => { if (isDismissal(r)) posts++; });
+  const posted = page.waitForResponse((r) => isDismissal(r.request()));
   await notice(page).locator('.notice-dismiss').click();
   expect((await posted).status()).toBe(200);
   await expect(notice(page)).toHaveCount(0);
+  await page.waitForLoadState('networkidle');
+  expect(posts, 'one dismissal POST').toBe(1);
 }
 
 test.describe('6.0 release notice', () => {
@@ -121,17 +127,22 @@ test.describe('6.0 release notice', () => {
     expect(errors).toEqual([]);
   });
 
-  test('dismissed once on the Dashboard, it is gone everywhere', async ({ page }) => {
-    await simulateUpdate(page);
-    await page.goto(DASHBOARD);
-    await dismissIn(page);
-    expect(noticeSetting()).toBe('no');
-    expect(await optionValue(ANCHOR), 'the anchor stays').not.toBeNull();
-    for (const url of [DASHBOARD, PLUGINS, OVERVIEW]) {
-      await page.goto(url);
-      await expect(notice(page), url).toHaveCount(0);
-    }
-  });
+  // Plugins has only the inline script; the Dashboard also loads admin.js for SlimStat's widgets.
+  for (const [where, at, adminJs] of [['Plugins', PLUGINS, false], ['Dashboard', DASHBOARD, true]] as const) {
+    test(`dismissed once on ${where}, it is gone everywhere`, async ({ page }) => {
+      await setSlimstatOption(page, 'add_dashboard_widgets', 'on');
+      await simulateUpdate(page);
+      await page.goto(at);
+      expect(await page.evaluate(() => 'SlimStatAdminParams' in window), 'admin.js loaded').toBe(adminJs);
+      await dismissIn(page);
+      expect(noticeSetting()).toBe('no');
+      expect(await optionValue(ANCHOR), 'the anchor stays').not.toBeNull();
+      for (const url of [DASHBOARD, PLUGINS, OVERVIEW]) {
+        await page.goto(url);
+        await expect(notice(page), url).toHaveCount(0);
+      }
+    });
+  }
 
   test('dismissed once on a SlimStat screen, it is gone everywhere', async ({ page }) => {
     await simulateUpdate(page);

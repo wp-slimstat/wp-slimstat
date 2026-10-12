@@ -132,6 +132,7 @@ preg_match('/function release_notice_dismiss_script\(\)\s*\{(.*?)\n    \}/s', $a
 $dismiss = $dismiss[1] ?? '';
 check(false !== strpos($dismiss, "wp_add_inline_script('common'") && false !== strpos($dismiss, "'slimstat_notice_latest_news'") && false !== strpos($dismiss, "wp_create_nonce('meta-box-order')"), 'Release notice: the off-SlimStat dismiss posts the existing AJAX action with its nonce, on core\'s common handle');
 check(false !== strpos($gate, "'release_notice_dismiss_script'"), 'Release notice: the gate registers the dismiss script off SlimStat screens');
+check(false !== strpos($dismiss, 'if(!window.SlimStatAdminParams&&'), 'Release notice: the dismiss script stands down where admin.js handles the click (no double POST on the Dashboard)');
 preg_match_all('/([^{}]*slimstat-whats-new[^{}]*)\{([^}]*)\}/', read_or_die('admin/assets/css/tokens.css'), $rules);
 check(count($rules[0]) >= 5, 'Release notice: tokens.css styles the what\'s-new rows');
 check(!preg_match('/\b(margin|padding)-(left|right)\s*:|\bfloat\s*:|text-align\s*:\s*(left|right)/', implode("\n", $rules[2])), 'Release notice: what\'s-new rows use logical properties only (no RTL stylesheet exists)');
