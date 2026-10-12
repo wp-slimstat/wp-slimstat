@@ -7,12 +7,11 @@ namespace WpSlimstat\Tests\Integration;
 use Brain\Monkey\Functions;
 
 /**
- * The 6.0 release notice. Sites updating from 5.x see one dismissible notice: a
- * short form on the Dashboard and Plugins screens (7 days) and a long form with
- * one row per new feature on SlimStat screens (15 days), both counted from one
- * anchor option written on the first render. It waits while a database
- * migration is owed, carries no purchase link, and new installs never see it
- * (get_fresh_defaults() sets 'no'; pinned by admin-ui-render-guards-test.php).
+ * The 6.0 release notice. Sites updating from 5.x see one dismissible notice on
+ * the Dashboard and Plugins screens for 7 days, counted from an anchor option
+ * written on the first render. It waits while a database migration is owed,
+ * carries no purchase link, and new installs never see it (get_fresh_defaults()
+ * sets 'no'; the screens and that default are pinned by admin-ui-render-guards-test.php).
  */
 class ReleaseNoticeTest extends IntegrationTestCase
 {
@@ -45,10 +44,10 @@ class ReleaseNoticeTest extends IntegrationTestCase
         parent::tearDown();
     }
 
-    private static function render(bool $compact, bool $is_pro = false, ?bool $migration_owed = false, bool $commerce = false): string
+    private static function render(bool $is_pro = false, ?bool $migration_owed = false): string
     {
         ob_start();
-        \wp_slimstat_admin::show_latest_news($compact, $is_pro, $migration_owed, $commerce);
+        \wp_slimstat_admin::show_latest_news($is_pro, $migration_owed);
         return (string) ob_get_clean();
     }
 
@@ -58,61 +57,33 @@ class ReleaseNoticeTest extends IntegrationTestCase
         return (string) $m->invoke(null, $option, $days);
     }
 
-    /** Every <li> of the what's-new list, as raw HTML. */
-    private static function rows(string $html): array
+    public function test_offers_explore_and_review_migration_only(): void
     {
-        preg_match_all('#<li>(.*?)</li>#s', $html, $m);
-        return $m[1];
-    }
-
-    public function test_long_form_lists_one_row_per_feature_with_one_link_each(): void
-    {
-        $html = self::render(false, false, false, true);
+        $html = self::render();
 
         $this->assertStringContainsString('id="slimstat-notice-latest-news"', $html);
-        $this->assertStringContainsString('<ul class="slimstat-whats-new">', $html);
-        $rows = self::rows($html);
-        $this->assertCount(4, $rows, 'Channels, Ecommerce, Heatmaps, Shortcodes');
-        foreach ($rows as $row) {
-            $this->assertSame(1, substr_count($row, '<a '), "One link per row: $row");
-            $this->assertStringContainsString('<span class="dashicons ', $row);
-            $this->assertSame(substr_count($row, 'class="dashicons '), substr_count($row, 'aria-hidden="true"'), 'Every icon is hidden from screen readers');
-        }
-        foreach (['slimview5', 'slimview7', 'slimheatmap', 'slimshortcodes', 'slimstat_migration'] as $page) {
-            $this->assertStringContainsString('page=' . $page . '"', $html, "Links to $page");
-        }
-        $this->assertStringContainsString('Open Heatmaps', $html);
-    }
-
-    public function test_long_form_drops_the_ecommerce_row_without_woocommerce(): void
-    {
-        $html = self::render(false, false, false, false);
-
-        $this->assertCount(3, self::rows($html));
-        $this->assertStringNotContainsString('slimview7', $html);
-        $this->assertStringContainsString('slimstat_migration', $html);
-    }
-
-    public function test_short_form_offers_explore_and_review_migration_only(): void
-    {
-        $html = self::render(true, false, false, true);
-
-        $this->assertStringContainsString('id="slimstat-notice-latest-news"', $html);
+        $this->assertStringContainsString('<strong class="slimstat-release-notice__title">SlimStat 6 is here.</strong>', $html);
         $this->assertMatchesRegularExpression('#<a class="button button-primary" href="[^"]*page=slimview2">Explore SlimStat 6</a>#', $html);
-        $this->assertStringContainsString('page=slimstat_migration', $html);
-        $this->assertStringNotContainsString('slimstat-whats-new', $html);
-        foreach (['slimview5', 'slimview7', 'slimheatmap', 'slimshortcodes'] as $page) {
-            $this->assertStringNotContainsString($page, $html, "The short form has no $page link");
-        }
+        $this->assertStringContainsString('page=slimstat_migration">Review migration</a>', $html);
+        $this->assertSame(2, substr_count($html, '<a '));
+        $this->assertStringNotContainsString('slimstat-whats-new', $html, 'No per-feature list');
     }
 
-    public function test_dismiss_script_is_added_only_when_the_short_form_renders(): void
+    public function test_prints_the_brand_mark_style_once_with_no_remote_url(): void
     {
-        self::render(true, false, true);
-        self::render(false);
-        $this->assertSame([], $this->inline, 'Nothing when the notice waits, and admin.js covers SlimStat screens');
+        $html = self::render();
 
-        self::render(true);
+        $this->assertSame(1, substr_count($html, '<style>'));
+        $this->assertStringContainsString('#slimstat-notice-latest-news::before{', $html);
+        $this->assertSame(0, preg_match('#url\(\s*["\']?(https?:)?//#', $html), 'The mark is inline: no request leaves the site');
+    }
+
+    public function test_dismiss_script_is_added_only_when_the_notice_renders(): void
+    {
+        self::render(false, true);
+        $this->assertSame([], $this->inline, 'Nothing while the notice waits');
+
+        self::render();
         $this->assertCount(1, $this->inline);
         [$handle, $js] = $this->inline[0];
         $this->assertSame('common', $handle);
@@ -123,26 +94,22 @@ class ReleaseNoticeTest extends IntegrationTestCase
     public function test_paragraphs_are_separated_by_blank_lines_only(): void
     {
         // show_message() runs wpautop(): a single newline would become <br>.
-        foreach ([true, false] as $compact) {
-            $html = self::render($compact);
-            $this->assertSame(0, preg_match("/(?<!\n)\n(?!\n)/", $html), 'No lone newline in the notice body');
-            $this->assertStringContainsString("\n\n", $html);
-        }
+        $html = self::render();
+        $this->assertSame(0, preg_match("/(?<!\n)\n(?!\n)/", $html), 'No lone newline in the notice body');
+        $this->assertStringContainsString("\n\n", $html);
     }
 
     public function test_renders_nothing_once_dismissed(): void
     {
         \wp_slimstat::$settings['notice_latest_news'] = 'no';
 
-        $this->assertSame('', self::render(true));
-        $this->assertSame('', self::render(false));
+        $this->assertSame('', self::render());
         $this->assertArrayNotHasKey(self::ANCHOR, $this->optionStore, 'A dismissed notice never anchors its window');
     }
 
     public function test_waits_while_a_migration_is_owed_without_anchoring(): void
     {
-        $this->assertSame('', self::render(true, false, true));
-        $this->assertSame('', self::render(false, false, true));
+        $this->assertSame('', self::render(false, true));
         $this->assertArrayNotHasKey(self::ANCHOR, $this->optionStore, 'The window starts only once the notice can show');
     }
 
@@ -150,25 +117,23 @@ class ReleaseNoticeTest extends IntegrationTestCase
     {
         // Migrations disabled, or init priority 70 has not built the manager yet.
         $this->assertNull(\SlimStat\Migration\MigrationService::manager());
-        $this->assertStringContainsString('slimstat-notice-latest-news', self::render(true, false, null));
+        $this->assertStringContainsString('slimstat-notice-latest-news', self::render(false, null));
     }
 
     public function test_first_render_anchors_the_window(): void
     {
         $this->assertArrayNotHasKey(self::ANCHOR, $this->optionStore);
-        self::render(true);
+        self::render();
         $this->assertEqualsWithDelta(time(), $this->optionStore[self::ANCHOR], 2);
     }
 
-    public function test_short_form_expires_after_7_days_long_form_after_15(): void
+    public function test_expires_after_7_days(): void
     {
-        $this->optionStore[self::ANCHOR] = time() - 8 * DAY_IN_SECONDS;
-        $this->assertSame('', self::render(true), 'Day 8: gone from Dashboard and Plugins');
-        $this->assertStringContainsString('slimstat-whats-new', self::render(false), 'Day 8: still on SlimStat screens');
+        $this->optionStore[self::ANCHOR] = time() - 6 * DAY_IN_SECONDS;
+        $this->assertStringContainsString('slimstat-notice-latest-news', self::render(), 'Day 6: still showing');
 
-        $this->optionStore[self::ANCHOR] = time() - 16 * DAY_IN_SECONDS;
-        $this->assertSame('', self::render(true));
-        $this->assertSame('', self::render(false), 'Day 16: gone everywhere');
+        $this->optionStore[self::ANCHOR] = time() - 8 * DAY_IN_SECONDS;
+        $this->assertSame('', self::render(), 'Day 8: gone');
     }
 
     public function test_new_badge_window_length_is_a_parameter(): void
@@ -181,28 +146,21 @@ class ReleaseNoticeTest extends IntegrationTestCase
         $this->assertSame(15, $m->getParameters()[1]->getDefaultValue(), 'Menu pills keep their 15-day window');
     }
 
-    public function test_no_purchase_link_in_any_variant(): void
+    public function test_no_purchase_link_in_either_variant(): void
     {
-        foreach ([true, false] as $compact) {
-            foreach ([true, false] as $is_pro) {
-                $html = self::render($compact, $is_pro, false, true);
-                $this->assertStringNotContainsString('wp-slimstat.com', $html);
-                $this->assertStringNotContainsString('pricing', $html);
-                $this->assertStringNotContainsString('page=slimpro', $html);
-                $this->assertStringNotContainsString('Upgrade', $html);
-            }
+        foreach ([true, false] as $is_pro) {
+            $html = self::render($is_pro);
+            $this->assertStringNotContainsString('wp-slimstat.com', $html);
+            $this->assertStringNotContainsString('pricing', $html);
+            $this->assertStringNotContainsString('page=slimpro', $html);
+            $this->assertStringNotContainsString('Upgrade', $html);
         }
     }
 
     public function test_pro_variant_says_what_pro_3_adds(): void
     {
-        $free = self::render(false, false);
-        $pro  = self::render(false, true);
-
-        $this->assertStringNotContainsString('SlimStat Pro 3.0.0', $free);
-        $this->assertStringContainsString('SlimStat Pro 3.0.0 adds heatmap page previews', $pro);
-        $this->assertStringContainsString('Open Heatmaps', $pro);
-        $this->assertStringContainsString('SlimStat Pro 3.0.0 adds', self::render(true, true));
+        $this->assertStringNotContainsString('SlimStat Pro 3.0.0', self::render(false));
+        $this->assertStringContainsString('SlimStat Pro 3.0.0 adds heatmap page previews and Ecommerce email reports.', self::render(true));
     }
 
     public function test_hook_callback_ignores_the_empty_string_core_passes(): void

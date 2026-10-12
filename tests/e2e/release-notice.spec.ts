@@ -1,9 +1,8 @@
 /**
  * The 6.0 release notice. After an update from 5.x, administrators see one dismissible
- * notice: two lines on the Dashboard and Plugins screens for 7 days, one row per new
- * feature on SlimStat screens for 15 days, both counted from one anchor option written on
- * the first render. It waits while a database migration is owed, and one dismissal hides
- * it everywhere.
+ * notice on the Dashboard and Plugins screens, never on SlimStat's own, for 7 days counted
+ * from an anchor option written on the first render. It waits while a database migration
+ * is owed, and one dismissal hides it on both screens.
  *
  * The update is simulated by switching notice_latest_news on and deleting the anchor; the
  * migration probe transient decides whether a migration is owed. Touches only options and
@@ -70,7 +69,7 @@ test.describe('6.0 release notice', () => {
     await closeDb();
   });
 
-  test('after an update: two lines on Dashboard and Plugins, feature rows on SlimStat screens, nothing elsewhere', async ({ page }, testInfo) => {
+  test('after an update: on the Dashboard and Plugins, nowhere else', async ({ page }, testInfo) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await simulateUpdate(page);
@@ -79,35 +78,19 @@ test.describe('6.0 release notice', () => {
     for (const url of [DASHBOARD, PLUGINS]) {
       await page.goto(url);
       await expect(notice(page), url).toBeVisible();
+      await expect(notice(page).locator('.slimstat-release-notice__title')).toHaveText('SlimStat 6 is here.');
       await expect(notice(page).getByRole('link', { name: 'Explore SlimStat 6' })).toHaveAttribute('href', /admin\.php\?page=slimview2$/);
       await expect(notice(page).getByRole('link', { name: 'Review migration' })).toHaveAttribute('href', /admin\.php\?page=slimstat_migration$/);
-      await expect(notice(page).locator('.slimstat-whats-new')).toHaveCount(0);
+      await expect(notice(page).locator('a[href*="wp-slimstat.com"], a[href*="page=slimpro"]')).toHaveCount(0);
     }
     expect(Number(await getOptionValue(ANCHOR)), 'the first render anchors the window').toBeGreaterThanOrEqual(before - 5);
+    await page.goto(DASHBOARD);
+    await notice(page).screenshot({ path: testInfo.outputPath('release-notice-dashboard.png') });
 
-    await page.goto('/wp-admin/edit.php');
-    await expect(notice(page)).toHaveCount(0);
-
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto(OVERVIEW);
-    const rows = notice(page).locator('.slimstat-whats-new > li');
-    const woocommerce = (await getOptionValue('active_plugins') ?? '').includes('woocommerce/');
-    await expect(rows).toHaveCount(woocommerce ? 4 : 3);
-    for (const row of await rows.all()) await expect(row.locator('a')).toHaveCount(1);
-    await expect(notice(page).locator('.dashicons:not([aria-hidden="true"])')).toHaveCount(0);
-    await expect(notice(page).getByRole('link', { name: 'Open Traffic Sources' })).toHaveAttribute('href', /page=slimview5$/);
-    await expect(notice(page).getByRole('link', { name: 'Open Heatmaps' })).toHaveAttribute('href', /page=slimheatmap$/);
-    await expect(notice(page).getByRole('link', { name: 'Open Shortcodes' })).toHaveAttribute('href', /page=slimshortcodes$/);
-    await expect(notice(page).getByRole('link', { name: 'Open Ecommerce' })).toHaveCount(woocommerce ? 1 : 0);
-    await expect(notice(page).getByRole('link', { name: 'Review migration' })).toBeVisible();
-    await expect(notice(page).locator('a[href*="wp-slimstat.com"], a[href*="page=slimpro"]')).toHaveCount(0);
-
-    const tracks = () => notice(page).locator('.slimstat-whats-new').evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
-    expect(await tracks(), 'two columns on a desktop').toBe(2);
-    await notice(page).screenshot({ path: testInfo.outputPath('release-notice-desktop.png') });
-    await page.setViewportSize({ width: 600, height: 900 });
-    expect(await tracks(), 'one column on a phone').toBe(1);
-    await notice(page).screenshot({ path: testInfo.outputPath('release-notice-mobile.png') });
+    for (const url of ['/wp-admin/edit.php', OVERVIEW, '/wp-admin/admin.php?page=slimview5']) {
+      await page.goto(url);
+      await expect(notice(page), url).toHaveCount(0);
+    }
     expect(errors).toEqual([]);
   });
 
@@ -128,26 +111,9 @@ test.describe('6.0 release notice', () => {
     });
   }
 
-  test('dismissed once on a SlimStat screen, it is gone everywhere', async ({ page }) => {
-    await simulateUpdate(page);
-    await page.goto(OVERVIEW);
-    await dismissIn(page);
-    expect(noticeSetting()).toBe('no');
-    await page.goto(DASHBOARD);
-    await expect(notice(page)).toHaveCount(0);
-  });
-
-  test('it leaves the Dashboard after 7 days and SlimStat screens after 15', async ({ page }) => {
+  test('it leaves after 7 days', async ({ page }) => {
     await simulateUpdate(page, { anchorDaysAgo: 8 });
     for (const url of [DASHBOARD, PLUGINS]) {
-      await page.goto(url);
-      await expect(notice(page), url).toHaveCount(0);
-    }
-    await page.goto(OVERVIEW);
-    await expect(notice(page).locator('.slimstat-whats-new')).toBeVisible();
-
-    await simulateUpdate(page, { anchorDaysAgo: 16 });
-    for (const url of [DASHBOARD, PLUGINS, OVERVIEW]) {
       await page.goto(url);
       await expect(notice(page), url).toHaveCount(0);
     }
@@ -155,11 +121,9 @@ test.describe('6.0 release notice', () => {
 
   test('it waits while a database migration is owed, and its window does not start', async ({ page }) => {
     await simulateUpdate(page, { migrationOwed: true });
-    for (const url of [DASHBOARD, OVERVIEW]) {
-      await page.goto(url);
-      await expect(page.locator('.slimstat-migration-notice'), url).toBeVisible();
-      await expect(notice(page), url).toHaveCount(0);
-    }
+    await page.goto(DASHBOARD);
+    await expect(page.locator('.slimstat-migration-notice')).toBeVisible();
+    await expect(notice(page)).toHaveCount(0);
     expect(await getOptionValue(ANCHOR)).toBeNull();
   });
 
@@ -169,10 +133,8 @@ test.describe('6.0 release notice', () => {
     const author = await browser.newContext({ storageState: path.join(here, '.auth/author.json') });
     try {
       const authorPage = await author.newPage();
-      for (const url of [DASHBOARD, OVERVIEW]) {
-        await authorPage.goto(url);
-        await expect(notice(authorPage), url).toHaveCount(0);
-      }
+      await authorPage.goto(DASHBOARD);
+      await expect(notice(authorPage)).toHaveCount(0);
     } finally { await author.close(); }
     expect(await getOptionValue(ANCHOR), 'a hidden notice never anchors').toBeNull();
   });
@@ -187,9 +149,6 @@ test.describe('6.0 release notice', () => {
     await simulateUpdate(page);
     await page.goto(DASHBOARD);
     await expect(notice(page)).toContainText('SlimStat Pro 3.0.0 adds heatmap page previews and Ecommerce email reports.');
-    await page.goto(OVERVIEW);
-    await expect(notice(page)).toContainText('SlimStat Pro 3.0.0 adds heatmap page previews, Ecommerce email reports and the Heatmap insights email.');
-    await expect(notice(page).getByRole('link', { name: 'Open Heatmaps' })).toBeVisible();
     await expect(notice(page).locator('a[href*="wp-slimstat.com"], a[href*="page=slimpro"]')).toHaveCount(0);
   });
 });

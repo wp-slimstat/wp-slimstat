@@ -127,16 +127,13 @@ $gate = $gate[0] ?? '';
 check('' !== $gate, 'Release notice: the gate in init() is present');
 check(false !== strpos($gate, "current_user_can('manage_options')") && false === strpos($gate, 'is_super_admin'), 'Release notice: the gate uses the capability notices_handler() checks, not is_super_admin()');
 preg_match_all("/'([\w-]+\.php)'/", $gate, $pages);
-check(['index.php', 'plugins.php'] === $pages[1], 'Release notice: outside SlimStat it shows on the Dashboard and Plugins screens only');
+check(['index.php', 'plugins.php'] === $pages[1] && false === strpos($gate, 'slimview'), 'Release notice: it shows on the Dashboard and Plugins screens only, never on SlimStat\'s own');
 preg_match('/function release_notice_dismiss_script\(\)\s*\{(.*?)\n    \}/s', $admin, $dismiss);
 $dismiss = $dismiss[1] ?? '';
-check(false !== strpos($dismiss, "wp_add_inline_script('common'") && false !== strpos($dismiss, "'slimstat_notice_latest_news'") && false !== strpos($dismiss, "wp_create_nonce('meta-box-order')"), 'Release notice: the off-SlimStat dismiss posts the existing AJAX action with its nonce, on core\'s common handle');
-preg_match('/if \(\$compact\) \{(.*?)\n        \}/s', $admin, $compactForm);
-check(false !== strpos($compactForm[1] ?? '', 'self::release_notice_dismiss_script();'), 'Release notice: the short form (Dashboard, Plugins) adds the dismiss script only when it renders');
+check(false !== strpos($dismiss, "wp_add_inline_script('common'") && false !== strpos($dismiss, "'slimstat_notice_latest_news'") && false !== strpos($dismiss, "wp_create_nonce('meta-box-order')"), 'Release notice: the dismiss posts the existing AJAX action with its nonce, on core\'s common handle');
+preg_match('/function show_latest_news\(.*?\n    \}/s', $admin, $render);
+check((bool) preg_match("/self::show_message\(\\\$html, 'info', 'latest-news'\);\s*self::release_notice_dismiss_script\(\);/", $render[0] ?? ''), 'Release notice: the dismiss script is added right after the notice renders, never on an early return');
 check(false !== strpos($dismiss, 'if(!window.SlimStatAdminParams&&'), 'Release notice: the dismiss script stands down where admin.js handles the click (no double POST on the Dashboard)');
-preg_match_all('/([^{}]*slimstat-whats-new[^{}]*)\{([^}]*)\}/', read_or_die('admin/assets/css/tokens.css'), $rules);
-check(count($rules[0]) >= 5, 'Release notice: tokens.css styles the what\'s-new rows');
-check(!preg_match('/\b(margin|padding)-(left|right)\s*:|\bfloat\s*:|text-align\s*:\s*(left|right)/', implode("\n", $rules[2])), 'Release notice: what\'s-new rows use logical properties only (no RTL stylesheet exists)');
 check(false !== strpos(read_or_die('src/Migration/MigrationService.php'), 'public static function manager(): ?MigrationManager'), 'Release notice: MigrationService exposes the manager so the notice can wait for migrations');
 
 // --- Pro links (tests/Integration/ProLinksTest.php covers Export and the Channels row) ---
