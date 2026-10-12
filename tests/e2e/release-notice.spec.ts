@@ -14,7 +14,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runWordPressFixture } from './helpers/chart';
 import {
-  closeDb, getPool, restoreOption, snapshotOption, restoreSlimstatOptions, snapshotSlimstatOptions, setSlimstatOption,
+  closeDb, getOptionValue, restoreOption, setOptionValue, snapshotOption, restoreSlimstatOptions, snapshotSlimstatOptions, setSlimstatOption,
 } from './helpers/setup';
 import { requireProBooted } from './helpers/pro-state';
 
@@ -31,32 +31,16 @@ const OVERVIEW = '/wp-admin/admin.php?page=slimview2';
 const notice = (page: Page) => page.locator('#slimstat-notice-latest-news');
 const now = () => Math.floor(Date.now() / 1000);
 
-async function setOption(name: string, value: string | null): Promise<void> {
-  if (value === null) {
-    await getPool().execute('DELETE FROM wp_options WHERE option_name = ?', [name]);
-    return;
-  }
-  await getPool().execute(
-    "INSERT INTO wp_options (option_name, option_value, autoload) VALUES (?, ?, 'no') ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)",
-    [name, value],
-  );
-}
-
-async function optionValue(name: string): Promise<string | null> {
-  const [rows] = await getPool().execute('SELECT option_value FROM wp_options WHERE option_name = ?', [name]) as any;
-  return rows.length ? String(rows[0].option_value) : null;
-}
-
 const noticeSetting = () => runWordPressFixture("<?php echo get_option('slimstat_options')['notice_latest_news'] ?? '';").trim();
 
 /** A site that just updated: the notice is on, its window not yet anchored. */
 async function simulateUpdate(page: Page, { anchorDaysAgo = null as number | null, migrationOwed = false } = {}): Promise<void> {
   await setSlimstatOption(page, 'notice_latest_news', 'on');
-  await setOption(ANCHOR, anchorDaysAgo === null ? null : String(now() - anchorDaysAgo * DAY));
-  await setOption(PROBE, migrationOwed ? 'dirty' : 'clean');
-  await setOption(PROBE_TIMEOUT, String(now() + DAY));
+  await setOptionValue(ANCHOR, anchorDaysAgo === null ? null : String(now() - anchorDaysAgo * DAY));
+  await setOptionValue(PROBE, migrationOwed ? 'dirty' : 'clean');
+  await setOptionValue(PROBE_TIMEOUT, String(now() + DAY));
   // A dismissed migration set is never owed, whatever the probe says.
-  if (migrationOwed) await setOption(DISMISSED, null);
+  if (migrationOwed) await setOptionValue(DISMISSED, null);
 }
 
 // Exactly one POST: admin.js and the core-screen inline script must not both send it.
@@ -99,7 +83,7 @@ test.describe('6.0 release notice', () => {
       await expect(notice(page).getByRole('link', { name: 'Review migration' })).toHaveAttribute('href', /admin\.php\?page=slimstat_migration$/);
       await expect(notice(page).locator('.slimstat-whats-new')).toHaveCount(0);
     }
-    expect(Number(await optionValue(ANCHOR)), 'the first render anchors the window').toBeGreaterThanOrEqual(before - 5);
+    expect(Number(await getOptionValue(ANCHOR)), 'the first render anchors the window').toBeGreaterThanOrEqual(before - 5);
 
     await page.goto('/wp-admin/edit.php');
     await expect(notice(page)).toHaveCount(0);
@@ -107,7 +91,7 @@ test.describe('6.0 release notice', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(OVERVIEW);
     const rows = notice(page).locator('.slimstat-whats-new > li');
-    const woocommerce = (await optionValue('active_plugins') ?? '').includes('woocommerce/');
+    const woocommerce = (await getOptionValue('active_plugins') ?? '').includes('woocommerce/');
     await expect(rows).toHaveCount(woocommerce ? 4 : 3);
     for (const row of await rows.all()) await expect(row.locator('a')).toHaveCount(1);
     await expect(notice(page).locator('.dashicons:not([aria-hidden="true"])')).toHaveCount(0);
@@ -136,7 +120,7 @@ test.describe('6.0 release notice', () => {
       expect(await page.evaluate(() => 'SlimStatAdminParams' in window), 'admin.js loaded').toBe(adminJs);
       await dismissIn(page);
       expect(noticeSetting()).toBe('no');
-      expect(await optionValue(ANCHOR), 'the anchor stays').not.toBeNull();
+      expect(await getOptionValue(ANCHOR), 'the anchor stays').not.toBeNull();
       for (const url of [DASHBOARD, PLUGINS, OVERVIEW]) {
         await page.goto(url);
         await expect(notice(page), url).toHaveCount(0);
@@ -176,7 +160,7 @@ test.describe('6.0 release notice', () => {
       await expect(page.locator('.slimstat-migration-notice'), url).toBeVisible();
       await expect(notice(page), url).toHaveCount(0);
     }
-    expect(await optionValue(ANCHOR)).toBeNull();
+    expect(await getOptionValue(ANCHOR)).toBeNull();
   });
 
   test('users without manage_options never see it', async ({ page, browser }) => {
@@ -190,7 +174,7 @@ test.describe('6.0 release notice', () => {
         await expect(notice(authorPage), url).toHaveCount(0);
       }
     } finally { await author.close(); }
-    expect(await optionValue(ANCHOR), 'a hidden notice never anchors').toBeNull();
+    expect(await getOptionValue(ANCHOR), 'a hidden notice never anchors').toBeNull();
   });
 
   test('new installs start with it off; upgrades still get it', async () => {

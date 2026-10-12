@@ -18,6 +18,9 @@ class ReleaseNoticeTest extends IntegrationTestCase
 {
     private const ANCHOR = 'slimstat_release_notice_since';
 
+    /** [handle, js] of every wp_add_inline_script() call. */
+    private array $inline = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -27,6 +30,12 @@ class ReleaseNoticeTest extends IntegrationTestCase
         Functions\when('wpautop')->returnArg(1);
         Functions\when('wp_kses_post')->returnArg(1);
         Functions\when('admin_url')->alias(static fn($path = '') => 'https://example.test/wp-admin/' . $path);
+        Functions\when('wp_json_encode')->alias('json_encode');
+        Functions\when('wp_create_nonce')->justReturn('n0nce');
+        Functions\when('wp_add_inline_script')->alias(function ($handle, $js) {
+            $this->inline[] = [$handle, $js];
+            return true;
+        });
         \wp_slimstat::$settings['notice_latest_news'] = 'on';
     }
 
@@ -95,6 +104,20 @@ class ReleaseNoticeTest extends IntegrationTestCase
         foreach (['slimview5', 'slimview7', 'slimheatmap', 'slimshortcodes'] as $page) {
             $this->assertStringNotContainsString($page, $html, "The short form has no $page link");
         }
+    }
+
+    public function test_dismiss_script_is_added_only_when_the_short_form_renders(): void
+    {
+        self::render(true, false, true);
+        self::render(false);
+        $this->assertSame([], $this->inline, 'Nothing when the notice waits, and admin.js covers SlimStat screens');
+
+        self::render(true);
+        $this->assertCount(1, $this->inline);
+        [$handle, $js] = $this->inline[0];
+        $this->assertSame('common', $handle);
+        $this->assertStringContainsString('{"action":"slimstat_notice_latest_news","security":"n0nce"}', $js);
+        $this->assertStringContainsString('#slimstat-notice-latest-news .notice-dismiss', $js);
     }
 
     public function test_paragraphs_are_separated_by_blank_lines_only(): void

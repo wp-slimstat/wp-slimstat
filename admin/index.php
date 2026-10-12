@@ -285,16 +285,12 @@ class wp_slimstat_admin
         }
 
         // 6.0 release notice: SlimStat report screens, the Dashboard and the Plugins screen, for
-        // whoever can dismiss it (notices_handler() checks the same capability). admin.js handles
-        // the dismissal on SlimStat screens; elsewhere a small inline script posts the same action.
-        // The 7/15-day window is checked when it renders, so the anchor starts only once it shows.
+        // whoever can dismiss it (notices_handler() checks the same capability). The 7/15-day
+        // window is checked when it renders, so the anchor starts only once it shows.
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Only compared against a fixed prefix to pick a notice.
         $is_report_screen = !empty($_GET['page']) && is_string($_GET['page']) && 0 === strpos($_GET['page'], 'slimview');
         $is_core_screen   = in_array($GLOBALS['pagenow'] ?? '', ['index.php', 'plugins.php'], true);
         if ('on' === (wp_slimstat::$settings['notice_latest_news'] ?? 'no') && ($is_report_screen || $is_core_screen) && current_user_can('manage_options')) {
-            if (!$is_report_screen) {
-                add_action('admin_enqueue_scripts', [self::class, 'release_notice_dismiss_script']);
-            }
             add_action('admin_notices', [self::class, 'show_latest_news'], 10, 0);
         }
 
@@ -2511,14 +2507,16 @@ class wp_slimstat_admin
             return '<a' . ($class ? ' class="' . esc_attr($class) . '"' : '') . ' href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($text) . '</a>';
         };
         $migration = $link('slimstat_migration', __('Review migration', 'wp-slimstat'));
+        $heading   = '<strong>' . esc_html__('SlimStat 6 is here.', 'wp-slimstat') . '</strong> ';
 
         // show_message() runs wpautop(): paragraphs are separated by one blank line, and no other newline may appear.
         if ($compact) {
-            $html = '<strong>' . esc_html__('SlimStat 6 is here.', 'wp-slimstat') . '</strong> '
+            $html = $heading
                 . esc_html__('Faster reports, Channels and UTM Campaigns, a WooCommerce revenue dashboard, Heatmaps and a Shortcode Playground. Your settings and data carry over, and nothing heavy runs until you click.', 'wp-slimstat')
                 . ($is_pro ? ' ' . esc_html__('SlimStat Pro 3.0.0 adds heatmap page previews and Ecommerce email reports.', 'wp-slimstat') : '')
                 . "\n\n" . $link('slimview2', __('Explore SlimStat 6', 'wp-slimstat'), 'button button-primary') . ' ' . $migration;
             self::show_message($html, 'info', 'latest-news');
+            self::release_notice_dismiss_script();
             return;
         }
 
@@ -2529,7 +2527,7 @@ class wp_slimstat_admin
         $rows[] = ['welcome-view-site', __('Heatmaps', 'wp-slimstat'), __('Every page with clicks.', 'wp-slimstat'), 'slimheatmap', __('Open Heatmaps', 'wp-slimstat')];
         $rows[] = ['editor-code', __('Shortcode Playground', 'wp-slimstat'), __('Preview a report, then copy its shortcode.', 'wp-slimstat'), 'slimshortcodes', __('Open Shortcodes', 'wp-slimstat')];
 
-        $html = '<strong>' . esc_html__('SlimStat 6 is here.', 'wp-slimstat') . '</strong> '
+        $html = $heading
             . esc_html__('Reports are faster, your settings and data carry over, and nothing heavy runs until you click. Includes important security hardening.', 'wp-slimstat')
             . ($is_pro ? ' ' . esc_html__('SlimStat Pro 3.0.0 adds heatmap page previews, Ecommerce email reports and the Heatmap insights email.', 'wp-slimstat') : '')
             . "\n\n" . '<ul class="slimstat-whats-new">';
@@ -2542,12 +2540,13 @@ class wp_slimstat_admin
     }
 
     /**
-     * Persists a release-notice dismissal on core screens. Core's common.js adds the dismiss button;
-     * this posts the action notices_handler() serves, with its nonce in the script because
+     * Persists a release-notice dismissal on core screens, added only when the short form renders
+     * ('common' prints in the footer, after admin_notices). Core's common.js adds the dismiss
+     * button; this posts the action notices_handler() serves, with its nonce in the script because
      * wp_kses_post() strips a hidden input from the notice. Where admin.js runs (the Dashboard with
      * SlimStat widgets) its own notice handler posts, so this one stands down.
      */
-    public static function release_notice_dismiss_script()
+    private static function release_notice_dismiss_script()
     {
         $body = wp_json_encode(['action' => 'slimstat_notice_latest_news', 'security' => wp_create_nonce('meta-box-order')]);
         wp_add_inline_script('common', "document.addEventListener('click',function(e){if(!window.SlimStatAdminParams&&e.target.closest&&e.target.closest('#slimstat-notice-latest-news .notice-dismiss')){fetch(ajaxurl,{method:'POST',credentials:'same-origin',body:new URLSearchParams(" . $body . ')});}});');
