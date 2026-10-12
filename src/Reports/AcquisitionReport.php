@@ -9,6 +9,9 @@ use SlimStat\Utils\Query;
 /** Uses the existing report filters, query cache, network merge and pagination. */
 class AcquisitionReport
 {
+    /** Groups shown without Pro; the rest are named, never counted, in a locked row. */
+    private const FREE_GROUPS = 2;
+
     private static function fields(string $mode): array
     {
         return 'utm' === $mode ? [
@@ -127,6 +130,28 @@ class AcquisitionReport
         echo '</tbody></table></div>';
     }
 
+    /** Names the groups beyond the Free cap, most traffic first, never their numbers. */
+    private static function locked(string $mode, array $names, bool $capped): void
+    {
+        $names = array_values(array_unique($names));
+        $items = array_map(static function (string $name): string {
+            return '<strong>' . htmlspecialchars($name, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</strong>';
+        }, array_slice($names, 0, 5));
+        // A capped query may not have returned every group.
+        if ($capped || count($names) > 5) {
+            $items[] = esc_html__('more', 'wp-slimstat');
+        }
+        $url = current_user_can('manage_options') ? admin_url('admin.php?page=slimpro') : 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=plugin&utm_campaign=' . $mode;
+        echo '<div class="slimstat-acquisition__locked"><span class="dashicons dashicons-lock" aria-hidden="true"></span><span class="slimstat-acquisition__teaser">';
+        /* translators: %s: list of channel or campaign names, such as "Email, Paid Search, and more". */
+        echo wp_kses(sprintf(esc_html__('Also active this period: %s.', 'wp-slimstat'), wp_sprintf_l('%l', $items)), ['strong' => []]);
+        echo '</span><a class="noslimstat slimstat-acquisition__unlock" href="' . esc_url($url) . '">' . esc_html('utm' === $mode ? __('See all campaigns with Pro', 'wp-slimstat') : __('See all channels with Pro', 'wp-slimstat')) . '<span aria-hidden="true">&rarr;</span></a>';
+        if (current_user_can('activate_plugins') && file_exists(WP_PLUGIN_DIR . '/wp-slimstat-pro/wp-slimstat-pro.php')) {
+            echo '<a class="noslimstat slimstat-acquisition__activate" href="' . esc_url(admin_url('plugins.php')) . '">' . esc_html__('Already have Pro? Activate the plugin', 'wp-slimstat') . '</a>';
+        }
+        echo '</div>';
+    }
+
     public static function render(array $args = []): void
     {
         if ('on' === (\wp_slimstat::$settings['async_load'] ?? '') && !wp_doing_ajax() && empty($args['is_widget'])) {
@@ -198,10 +223,13 @@ class AcquisitionReport
             }
             $all = array_values($merged);
             array_multisort(array_map('intval', array_column($all, 'counthits')), SORT_DESC, array_keys($all), $all);
-            if ($all && $start >= count($all)) {
+            $locked = !\wp_slimstat::pro_is_installed() && count($all) > self::FREE_GROUPS;
+            if ($locked) {
+                $start = 0;
+            } elseif ($all && $start >= count($all)) {
                 $start = (int) (floor((count($all) - 1) / $perPage) * $perPage);
             }
-            $rows = array_slice($all, $start, $perPage);
+            $rows = array_slice($all, $start, $locked ? self::FREE_GROUPS : $perPage);
             // One bounded breakdown query for the visible groups, never one query per row.
             $scope = [];
             foreach (array_merge([], ...array_column($rows, 'values')) as $value) {
@@ -243,6 +271,9 @@ class AcquisitionReport
                     : __('No pageviews match this period and these filters. Try a wider date range or clear a filter.', 'wp-slimstat'))) . '</p>';
         } else {
             $network = NetworkMerge::isMerging();
+            $labelOf = static function ($value) use ($groupField): string {
+                return 'traffic_channel' === $groupField ? (Acquisition::labels()[$value ?? ''] ?? __('Unassigned', 'wp-slimstat')) : ('' !== ($value ?? '') ? $value : __('Unassigned', 'wp-slimstat'));
+            };
             $byGroup = [];
             foreach ($details as $detail) {
                 $byGroup[$groupKey($detail)][] = $detail;
@@ -251,7 +282,7 @@ class AcquisitionReport
             foreach ($rows as $row) {
                 // A merged group has no one value to filter by.
                 $value = 1 === count($row['values']) ? $row[$groupField] : null;
-                $label = 'traffic_channel' === $groupField ? (Acquisition::labels()[$value ?? ''] ?? __('Unassigned', 'wp-slimstat')) : ('' !== ($value ?? '') ? $value : __('Unassigned', 'wp-slimstat'));
+                $label = $labelOf($value);
                 $groupRows = $byGroup[$groupKey($row)] ?? [];
                 $count = (int) $row['counthits'];
                 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- htmlspecialchars encodes quotes and existing entities to preserve literal stored tags.
@@ -294,21 +325,29 @@ class AcquisitionReport
                 }
                 echo '</div></details>';
             }
+            if ($locked && is_admin()) {
+                self::locked($mode, array_map(static function (array $row) use ($groupField, $labelOf): string {
+                    return $labelOf(1 === count($row['values']) ? $row[$groupField] : null);
+                }, array_slice($all, self::FREE_GROUPS)), $capped);
+            }
             echo '</div>';
-            // Keep pagination inside this table's AJAX fragment. The legacy .pagination
-            // class is extracted by admin.js for older reports with an external footer.
-            echo '<nav class="slimstat-acquisition__pagination" aria-label="' . esc_attr__('Report pages', 'wp-slimstat') . '"><span>';
-            echo esc_html(sprintf(
-                /* translators: 1: first displayed row, 2: last displayed row, 3: total row count. */
-                __('%1$s–%2$s of %3$s', 'wp-slimstat'), number_format_i18n($start + 1), number_format_i18n($start + count($rows)), number_format_i18n(count($all))
-            )) . '</span>';
-            if (is_admin() && $start > 0) {
-                echo '<a class="button refresh" href="' . esc_url(\wp_slimstat_reports::fs_url('start_from equals ' . max(0, $start - $perPage))) . '">' . esc_html__('Previous', 'wp-slimstat') . '</a>';
+            // Without Pro there is nothing to page to: the locked row stands in for the rest.
+            if (!$locked) {
+                // Keep pagination inside this table's AJAX fragment. The legacy .pagination
+                // class is extracted by admin.js for older reports with an external footer.
+                echo '<nav class="slimstat-acquisition__pagination" aria-label="' . esc_attr__('Report pages', 'wp-slimstat') . '"><span>';
+                echo esc_html(sprintf(
+                    /* translators: 1: first displayed row, 2: last displayed row, 3: total row count. */
+                    __('%1$s–%2$s of %3$s', 'wp-slimstat'), number_format_i18n($start + 1), number_format_i18n($start + count($rows)), number_format_i18n(count($all))
+                )) . '</span>';
+                if (is_admin() && $start > 0) {
+                    echo '<a class="button refresh" href="' . esc_url(\wp_slimstat_reports::fs_url('start_from equals ' . max(0, $start - $perPage))) . '">' . esc_html__('Previous', 'wp-slimstat') . '</a>';
+                }
+                if (is_admin() && $start + $perPage < count($all)) {
+                    echo '<a class="button refresh" href="' . esc_url(\wp_slimstat_reports::fs_url('start_from equals ' . ($start + $perPage))) . '">' . esc_html__('Next', 'wp-slimstat') . '</a>';
+                }
+                echo '</nav>';
             }
-            if (is_admin() && $start + $perPage < count($all)) {
-                echo '<a class="button refresh" href="' . esc_url(\wp_slimstat_reports::fs_url('start_from equals ' . ($start + $perPage))) . '">' . esc_html__('Next', 'wp-slimstat') . '</a>';
-            }
-            echo '</nav>';
             if ($capped) {
                 echo '<p class="slimstat-acquisition__note">' . esc_html__('The report result limit was reached. Narrow your filters to see more detail. Shares use all matching pageviews, including rows beyond this limit.', 'wp-slimstat') . '</p>';
             }

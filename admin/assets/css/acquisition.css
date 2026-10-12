@@ -334,6 +334,71 @@
     border-color: var(--ss-info-fg);
     text-decoration: underline;
 }
+/* Free: the list continues as one locked row that names the hidden groups. */
+.wrap-slimstat .slimstat-acquisition__locked {
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--ss-space-1) var(--ss-space-2);
+    padding: var(--ss-space-3) var(--ss-space-4);
+    border-top: 1px dashed var(--ss-border);
+    color: var(--ss-text-muted);
+    line-height: 1.5;
+}
+.wrap-slimstat .slimstat-acquisition__locked .dashicons {
+    width: 12px;
+    height: 12px;
+    font-size: 12px;
+    line-height: 1;
+    align-self: start;
+    margin-top: 4px;
+}
+.wrap-slimstat .slimstat-acquisition__teaser strong {
+    color: var(--ss-text-primary);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.wrap-slimstat .slimstat-acquisition__unlock {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ss-space-1);
+    padding-block: var(--ss-space-1);
+    color: var(--ss-info-fg);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.wrap-slimstat .slimstat-acquisition__unlock:hover,
+.wrap-slimstat .slimstat-acquisition__unlock:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.wrap-slimstat .slimstat-acquisition__unlock > span {
+    transition: translate var(--ss-duration-fast) cubic-bezier(0.25, 1, 0.5, 1);
+}
+.wrap-slimstat .slimstat-acquisition__unlock:is(:hover, :focus-visible) > span {
+    translate: 2px;
+}
+[dir="rtl"] .wrap-slimstat .slimstat-acquisition__unlock > span {
+    scale: -1 1;
+}
+[dir="rtl"] .wrap-slimstat .slimstat-acquisition__unlock:is(:hover, :focus-visible) > span {
+    translate: -2px;
+}
+.wrap-slimstat .slimstat-acquisition__activate {
+    grid-column: 2 / -1;
+    width: fit-content;
+    color: var(--ss-text-muted);
+    font-size: var(--ss-text-sm);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.wrap-slimstat .slimstat-acquisition__activate:hover {
+    color: var(--ss-info-fg);
+}
+@container (max-width: 420px) {
+    .wrap-slimstat .slimstat-acquisition__unlock { grid-column: 2 / -1; }
+}
 @container (max-width: 520px) {
     .wrap-slimstat .slimstat-acquisition__groups {
         --ss-acquisition-count: 64px;
@@ -341,6 +406,7 @@
     }
     .wrap-slimstat .slimstat-acquisition__group > summary,
     .wrap-slimstat .slimstat-acquisition__columns,
+    .wrap-slimstat .slimstat-acquisition__locked,
     .wrap-slimstat .slimstat-acquisition__breakdown { padding-inline: var(--ss-space-2); }
     .wrap-slimstat .slimstat-acquisition meter { display: none; }
     .wrap-slimstat .slimstat-acquisition th,
