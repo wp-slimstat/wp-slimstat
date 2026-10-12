@@ -1,14 +1,16 @@
-= 6.0.1 - Unreleased =
+= 6.0.0 - 2026-10-12 =
 
+**Reports, upgrades and admin polish**
 * Preserve existing core and Pro preferences through upgrades, including disabled tracking, consent, Heatmaps, legacy user exclusions, and network overrides. Apply full Heatmaps capture defaults only to genuinely fresh Pro installations.
-* Use accessible dialogs for campaign building and report help; show Channels and UTM Campaigns first, include group counts, and link their selected context to Ecommerce sales.
-* Explain Ecommerce chart gaps and small previous periods, clarify purchase rate, include configured WooPayments currencies, and paginate full acquisition reports with consistent bars and export controls.
+* Use accessible dialogs for campaign building and report help; show Channels and UTM Campaigns first, side by side, include group counts, and link their selected context to Ecommerce sales. "Build campaign link" sits in the report header.
+* Without Pro, Channels and UTM Campaigns show the top two groups and a locked row that names up to five others (no numbers) and links to Pro.
+* Without Pro, every exportable report and the Ecommerce Acquisition and Shopping cards show Export. It opens the Pro page for administrators and pricing in a new tab for everyone else, as a plain link; it no longer posts your report filters to wp-slimstat.com.
+* Explain Ecommerce chart gaps and small previous periods, clarify purchase rate, include configured WooPayments currencies, and paginate full acquisition reports with consistent bars and Export on each card's title row.
 * Refresh Heatmaps while visible, keep dates anchored, explain devices and low-data rows, link directly to settings, and require typed confirmation before deleting heatmap data.
 * Mark Traffic Sources (Channels), Ecommerce, Heatmaps and Shortcodes "New" in the SlimStat menu for 15 days after each first appears on a site, alongside Goals & Funnels. Each badge expires independently and per site. Heatmaps now shows its "Pro" badge while Pro is not installed.
 * Restore shortcode chart previews and shared notification controls on Migration. Simplify required updates, completion and retry states, separate optional work, and clarify Danger zone effects.
-* See [the task checklist](docs/october-task-checklist.md) and [validation evidence](docs/october-backlog.md). Original-theme preview verification remains pending under task 18.
-
-= 6.0.0 - 2026-10-06 =
+* Settings fields get borders with at least 3:1 contrast.
+* See [the task checklist](docs/october-task-checklist.md) and [validation evidence](docs/october-backlog.md).
 
 **Shortcodes**
 * Preserve public aggregate counters such as `count` of `ip`, group query-string-free page links before limiting results, and render stored dates correctly. Published shortcode filters are isolated from URL/form fields, and rendering restores the filters and pageview totals of surrounding reports.

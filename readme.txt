@@ -120,18 +120,17 @@ Deleting the plugin no longer erases your analytics. Data is now kept by default
 
 == Changelog ==
 
-= Unreleased =
-* Improve campaign dialogs, Ecommerce reports, Heatmaps freshness and deletion confirmation, shortcode charts and migrations. Preserve existing upgrade settings. See CHANGELOG.md for details.
-
-= 6.0.0 - 2026-10-06 =
+= 6.0.0 - 2026-10-12 =
 * New Shortcode Playground under SlimStat → Shortcodes: browse reports, preview your data, adjust filters and copy a shortcode. New live visitor, page and country counters. Personal data in shortcodes now shows only to people allowed to view analytics.
 * New Heatmaps page: every page with clicks, its pageviews, device split and recorded detail, from the admin menu or the admin bar.
 * Opt-in heatmap recording (clicks on any element, scroll depth, dead and rage clicks) for sites with SlimStat Pro, following consent, Do Not Track and retention settings.
 * New UTM Campaigns and Channels reports under Traffic Sources, with a campaign URL builder. Channels tell AI assistant referrals and AI crawlers apart from search, social, email and paid traffic. Existing pageviews stay unattributed.
 * Clearer admin: consistent wording, empty reports that say why and what to do next, native WordPress buttons and switches, and honest Pro previews.
 * Improve Ecommerce database isolation, retention accuracy and native dates; remove order-access keys from new analytics URLs.
-
-* Explore Ecommerce through selectable metric charts, tabbed revenue rankings and clearer tracking coverage.
+* Explore Ecommerce through selectable metric charts, tabbed revenue rankings and clearer tracking coverage. Full acquisition reports paginate, explain chart gaps and include configured WooPayments currencies.
+* Channels and UTM Campaigns lead Traffic Sources, side by side. Without Pro they show the top two groups, and Export on every exportable report opens the Pro page instead of posting your filters to wp-slimstat.com.
+* Accessible campaign and help dialogs, Heatmaps that refresh while visible, typed confirmation before deleting heatmap data, and "New" menu badges for 15 days on each new page.
+* Upgrades keep your existing settings, including disabled tracking, consent, Heatmaps and network overrides. Shortcode chart previews and the Migration screen work again.
 
 **Performance — measured, not estimated**
 * Admin charts read about half as many database rows: totals now ride the same query as their buckets. Measured on the weekly chart over the 150,000-row reference bench corpus, as deterministic counters rather than timings: rows read 304,454 -> 152,227 and sort work 212,301 -> 106,141. That change alone leaves report output byte-identical; the separate previous-period correction below does move two numbers, on purpose.
