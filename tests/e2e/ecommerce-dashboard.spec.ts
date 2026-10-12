@@ -208,6 +208,10 @@ test('Ecommerce Free is useful alone and WooCommerce deactivation is safe @wooco
     await page.goto(`/wp-admin/admin.php?${new URLSearchParams({ page: 'slimview7', type: 'custom', from: day, to: day })}`);
     await expect(page.locator('.ss-ec-report')).toHaveCount(3, { timeout: 30_000 });
     await expect(page.locator('[data-ecommerce]').getByRole('link', { name: 'Export CSV', exact: true })).toHaveCount(0);
+    // Each tab still shows Export, and it opens the Pro page instead of downloading.
+    const upsells = page.locator('[data-ecommerce] [data-ec-export]');
+    await expect(upsells).toHaveCount(3);
+    for (const upsell of await upsells.all()) await expect(upsell).toHaveAttribute('href', /admin\.php\?page=slimpro$/);
     runWordPressFixture("<?php deactivate_plugins('woocommerce/woocommerce.php');");
     await page.goto('/wp-admin/admin.php?page=slimview7');
     await expect(page.locator('[data-ecommerce]')).toContainText('Activate WooCommerce', { timeout: 30_000 });

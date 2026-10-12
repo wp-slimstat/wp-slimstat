@@ -4297,32 +4297,26 @@ class wp_slimstat_admin
             return $_header_buttons;
         }
 
-        // Define which reports get this new functionality
+        // Every report Pro's Export covers (those with a `raw` callback) gets the same button.
         $callback_args = \wp_slimstat_reports::$reports[$_report_id]['callback_args'] ?? [];
         if (empty($callback_args) || !array_key_exists('raw', $callback_args)) {
             return $_header_buttons;
         }
 
-        // A report may declare itself non-exportable (a bool or a presence probe).
-        // Don't offer an "Export" upgrade link where there's nothing to export —
-        // a download-styled control that only routes to pricing is bait (FN-7/FN-17).
-        if (array_key_exists('exportable', $callback_args)) {
-            $exportable = is_callable($callback_args['exportable'])
-                ? (bool) call_user_func($callback_args['exportable'])
-                : (bool) $callback_args['exportable'];
-            if (!$exportable) {
-                return $_header_buttons;
-            }
-        }
-        $utm_medium = empty($_report_id) ? 'report-unknown' : $_report_id;
-        // 'wp-slimstat', not 'wp-slimstat-pro'. These two were the only strings in the free
-        // plugin bound to Pro's text domain, so neither has ever been translatable here:
-        // free ships no wp-slimstat-pro .mo, and on a site without Pro nothing loads that
-        // domain at all. wp.org's Plugin Check flags it as TextDomainMismatch.
-        //
-        // The URL is built with add_query_arg() and escaped: $utm_medium reached the href
-        // raw, and both translated strings reached an attribute and a text node unescaped.
-        $pricing_url = add_query_arg(
+        return self::pro_export_link(empty($_report_id) ? 'report-unknown' : $_report_id) . ' ' . $_header_buttons;
+    }
+
+    /**
+     * Free's Export: looks like Pro's, opens the Pro page. Administrators stay in wp-admin;
+     * anyone who can't open that page goes to pricing in a new tab.
+     *
+     * Not a .slimstat-filter-link: admin.js turns those clicks into a POST of the filters
+     * form to the link's URL, which sent the date range to the pricing site.
+     */
+    public static function pro_export_link(string $utm_medium, string $attributes = ''): string
+    {
+        $admin = current_user_can('manage_options');
+        $url   = $admin ? admin_url('admin.php?page=slimpro') : add_query_arg(
             [
                 'utm_source'   => 'admin',
                 'utm_medium'   => $utm_medium,
@@ -4331,10 +4325,10 @@ class wp_slimstat_admin
             'https://wp-slimstat.com/pricing/'
         );
 
-        return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="'
-            . esc_attr__('Upgrade to Pro', 'wp-slimstat') . '" href="' . esc_url($pricing_url)
-            . '" target="_blank"><span class="dashicons dashicons-download"></span>'
-            . esc_html__('Export', 'wp-slimstat') . '</a> ' . $_header_buttons;
+        return '<a class="button-export-to-xls slimstat-font-download noslimstat" href="' . esc_url($url) . '"'
+            . ($admin ? '' : ' target="_blank" rel="noopener"') . $attributes
+            . ' title="' . esc_attr__('Export to CSV with Pro', 'wp-slimstat') . '"><span class="dashicons dashicons-download" aria-hidden="true"></span>'
+            . esc_html__('Export', 'wp-slimstat') . '</a>';
     }
 
     /**
