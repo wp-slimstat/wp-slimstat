@@ -186,7 +186,9 @@ test('Ecommerce explains incomplete, empty and loading states and keeps the newe
     await expect(dashboard.locator('[data-metric=net]')).toContainText('0.00');
     await expect(dashboard.getByText('Journey data is not available yet', { exact: true })).toBeVisible();
     await dashboard.locator('[data-chart-metric=rate]').click();
-    await expect(dashboard.locator('[data-chart-empty]')).toBeVisible();
+    // A retained day without visits plots at zero; only expired history leaves the chart empty.
+    await expect(dashboard.locator('[data-chart-empty]')).toBeHidden();
+    expect(await dashboard.locator('canvas').evaluate(canvas => (window as any).Chart.getChart(canvas).data.datasets[0].data.every((v: unknown) => v === 0))).toBe(true);
     await page.setViewportSize({ width: 390, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   } finally {
