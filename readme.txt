@@ -173,7 +173,7 @@ Back up your database first. This update only ADDS columns and never removes a r
 * Your settings carry over, including disabled tracking, consent, Heatmaps, user exclusions and network overrides. New installs turn on bot filtering and async loading.
 * A new Migration screen lists the database steps. Nothing runs until you click, and tracking keeps working. Required steps only add columns (about 8 seconds per 440,000 rows on MySQL 8) and change or remove no data.
 * Two optional table rebuilds, the browser backfill and the utf8mb4 conversion, run only when you pick them by name. To postpone everything, set `SLIMSTAT_DISABLE_MIGRATIONS` to true in `wp-config.php`.
-* On the first admin visit after updating, SlimStat checks its tables and adds anything missing, as in every release.
+* On the first admin visit after updating, SlimStat creates any missing tables and indexes, as in every release. Columns are added only when you run Migration.
 * Back up your database first, as with any major release.
 
 **Rock-solid reliability**
