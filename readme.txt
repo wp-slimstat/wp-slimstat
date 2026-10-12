@@ -149,6 +149,8 @@ Back up your database first. This update only ADDS columns and never removes a r
 * Free screens show what Pro adds honestly, with no blurred mock reports. Email Report previews the weekly email built from your own last 7 days and sends you a sample. Export opens the Pro page instead of posting your filters to wp-slimstat.com.
 * Changing dates keeps your filters, and saved segments keep their dates.
 * "New" badges mark each new menu page for 15 days.
+* After updating, one dismissible notice on the Dashboard, Plugins and SlimStat screens says what is new, once any pending database migration is done. Dismiss it once anywhere, or it hides itself after 7 days (15 on SlimStat screens). New installs never see it.
+* Users without the Settings permission see what Pro adds without purchase links.
 * Clearer labels on At a Glance, Traffic Summary, Access Log, Customize and Migration. Customize cards move by drag or keyboard, and Reset layout asks first.
 
 **Faster**
