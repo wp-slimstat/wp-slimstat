@@ -1,6 +1,6 @@
-=== SlimStat Analytics ===
+=== SlimStat Analytics: Real-Time, Privacy-Friendly WordPress Statistics ===
 Contributors: veronalabs, coolmann, toxicum, parhumm, mostafas1990
-Tags: analytics, statistics, tracking, reports, geolocation
+Tags: analytics, statistics, tracking, reports, privacy
 Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
