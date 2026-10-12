@@ -8,7 +8,7 @@ use Brain\Monkey\Functions;
 
 /**
  * The 6.0 release notice. Sites updating from 5.x see one dismissible notice on
- * the Dashboard and Plugins screens for 7 days, counted from an anchor option
+ * the Dashboard and Plugins screens, one row per new feature, for 7 days, counted from an anchor option
  * written on the first render. It waits while a database migration is owed,
  * carries no purchase link, and new installs never see it (get_fresh_defaults()
  * sets 'no'; the screens and that default are pinned by admin-ui-render-guards-test.php).
@@ -44,11 +44,18 @@ class ReleaseNoticeTest extends IntegrationTestCase
         parent::tearDown();
     }
 
-    private static function render(bool $is_pro = false, ?bool $migration_owed = false): string
+    private static function render(bool $is_pro = false, ?bool $migration_owed = false, bool $commerce = true): string
     {
         ob_start();
-        \wp_slimstat_admin::show_latest_news($is_pro, $migration_owed);
+        \wp_slimstat_admin::show_latest_news($is_pro, $migration_owed, $commerce);
         return (string) ob_get_clean();
+    }
+
+    /** Every <li> of the what's-new list, as raw HTML. */
+    private static function rows(string $html): array
+    {
+        preg_match_all('#<li>(.*?)</li>#s', $html, $m);
+        return $m[1];
     }
 
     private static function badge(string $option, int $days): string
@@ -57,16 +64,35 @@ class ReleaseNoticeTest extends IntegrationTestCase
         return (string) $m->invoke(null, $option, $days);
     }
 
-    public function test_offers_explore_and_review_migration_only(): void
+    public function test_lists_one_row_per_feature_with_one_link_each(): void
     {
         $html = self::render();
 
         $this->assertStringContainsString('id="slimstat-notice-latest-news"', $html);
         $this->assertStringContainsString('<strong class="slimstat-release-notice__title">SlimStat 6 is here.</strong>', $html);
-        $this->assertMatchesRegularExpression('#<a class="button button-primary" href="[^"]*page=slimview2">Explore SlimStat 6</a>#', $html);
-        $this->assertStringContainsString('page=slimstat_migration">Review migration</a>', $html);
-        $this->assertSame(2, substr_count($html, '<a '));
-        $this->assertStringNotContainsString('slimstat-whats-new', $html, 'No per-feature list');
+        $this->assertStringContainsString('<ul class="slimstat-whats-new">', $html);
+        $rows = self::rows($html);
+        $this->assertCount(4, $rows, 'Channels, Ecommerce, Heatmaps, Shortcodes');
+        foreach ($rows as $row) {
+            $this->assertSame(1, substr_count($row, '<a '), "One link per row: $row");
+            $this->assertSame(1, substr_count($row, '<span class="dashicons dashicons-'), "One icon per row: $row");
+            $this->assertSame(1, substr_count($row, 'aria-hidden="true"'), "The icon is hidden from screen readers: $row");
+        }
+        foreach (['slimview5' => 'Open Traffic Sources', 'slimview7' => 'Open Ecommerce', 'slimheatmap' => 'Open Heatmaps', 'slimshortcodes' => 'Open Shortcodes', 'slimstat_migration' => 'Review migration'] as $page => $text) {
+            $this->assertStringContainsString('page=' . $page . '">' . $text . '</a>', $html);
+        }
+        $this->assertStringContainsString('Review migration</a>: optional database steps, nothing runs until you choose.', $html);
+        $this->assertSame(5, substr_count($html, '<a '), 'Four rows and Review migration, no other link');
+        $this->assertStringNotContainsString('Explore SlimStat 6', $html);
+    }
+
+    public function test_drops_the_ecommerce_row_without_woocommerce(): void
+    {
+        $html = self::render(false, false, false);
+
+        $this->assertCount(3, self::rows($html));
+        $this->assertStringNotContainsString('slimview7', $html);
+        $this->assertStringContainsString('slimstat_migration', $html);
     }
 
     public function test_prints_the_brand_mark_style_once_with_no_remote_url(): void
@@ -75,6 +101,7 @@ class ReleaseNoticeTest extends IntegrationTestCase
 
         $this->assertSame(1, substr_count($html, '<style>'));
         $this->assertStringContainsString('#slimstat-notice-latest-news::before{', $html);
+        $this->assertStringContainsString('.slimstat-whats-new{', $html, 'The rows are styled where tokens.css does not load');
         $this->assertSame(0, preg_match('#url\(\s*["\']?(https?:)?//#', $html), 'The mark is inline: no request leaves the site');
     }
 

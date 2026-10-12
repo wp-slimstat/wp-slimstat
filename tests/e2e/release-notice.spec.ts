@@ -1,6 +1,6 @@
 /**
  * The 6.0 release notice. After an update from 5.x, administrators see one dismissible
- * notice on the Dashboard and Plugins screens, never on SlimStat's own, for 7 days counted
+ * notice, one row per new feature, on the Dashboard and Plugins screens, never on SlimStat's own, for 7 days counted
  * from an anchor option written on the first render. It waits while a database migration
  * is owed, and one dismissal hides it on both screens.
  *
@@ -79,8 +79,14 @@ test.describe('6.0 release notice', () => {
       await page.goto(url);
       await expect(notice(page), url).toBeVisible();
       await expect(notice(page).locator('.slimstat-release-notice__title')).toHaveText('SlimStat 6 is here.');
-      await expect(notice(page).getByRole('link', { name: 'Explore SlimStat 6' })).toHaveAttribute('href', /admin\.php\?page=slimview2$/);
-      await expect(notice(page).getByRole('link', { name: 'Review migration' })).toHaveAttribute('href', /admin\.php\?page=slimstat_migration$/);
+      for (const [name, slug] of [['Open Traffic Sources', 'slimview5'], ['Open Heatmaps', 'slimheatmap'], ['Open Shortcodes', 'slimshortcodes'], ['Review migration', 'slimstat_migration']]) {
+        await expect(notice(page).getByRole('link', { name }), name).toHaveAttribute('href', new RegExp(`admin\\.php\\?page=${slug}$`));
+      }
+      // tokens.css does not load here, so the notice brings its own layout: one row of features at 1280px.
+      const tops = await notice(page).locator('.slimstat-whats-new > li').evaluateAll((lis) => lis.map((li) => Math.round(li.getBoundingClientRect().top)));
+      expect(tops.length, 'one row per feature').toBeGreaterThanOrEqual(3);
+      expect(new Set(tops).size, 'the features sit side by side').toBe(1);
+      await expect(notice(page).getByRole('link', { name: 'Explore SlimStat 6' })).toHaveCount(0);
       await expect(notice(page).locator('a[href*="wp-slimstat.com"], a[href*="page=slimpro"]')).toHaveCount(0);
     }
     expect(Number(await getOptionValue(ANCHOR)), 'the first render anchors the window').toBeGreaterThanOrEqual(before - 5);

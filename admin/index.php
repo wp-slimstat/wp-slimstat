@@ -2482,13 +2482,13 @@ class wp_slimstat_admin
     // END: show_message
 
     /**
-     * The 6.0 release notice, once per site after an update from 5.x (see init()): two lines on
-     * the Dashboard and Plugins screens for 7 days, counted from the first render. While a
-     * database migration is owed, the migration notice has the slot to itself. No purchase links.
+     * The 6.0 release notice, once per site after an update from 5.x (see init()): one row per
+     * new feature on the Dashboard and Plugins screens for 7 days, counted from the first render.
+     * While a database migration is owed, the migration notice has the slot to itself. No purchase links.
      *
      * The arguments exist for tests; the admin_notices hook passes none.
      */
-    public static function show_latest_news($is_pro = null, $migration_owed = null)
+    public static function show_latest_news($is_pro = null, $migration_owed = null, $commerce = null)
     {
         if ('on' !== (wp_slimstat::$settings['notice_latest_news'] ?? 'no')) {
             return;
@@ -2498,19 +2498,32 @@ class wp_slimstat_admin
             return;
         }
         $is_pro = $is_pro ?? wp_slimstat::pro_is_installed();
-        $link   = static function ($page, $text, $class = '') {
-            return '<a' . ($class ? ' class="' . esc_attr($class) . '"' : '') . ' href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($text) . '</a>';
+        $link   = static function ($page, $text) {
+            return '<a href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($text) . '</a>';
         };
 
-        // The SlimStat mark beside the title. tokens.css loads only on SlimStat's screens, so the style
-        // prints with the notice, like the menu pills' style. One line: no newline may reach the notice output.
-        echo '<style>#slimstat-notice-latest-news{padding-inline-start:52px}#slimstat-notice-latest-news::before{content:"";position:absolute;inset-inline-start:14px;top:12px;width:26px;height:26px;background:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 30 30\'%3E%3Cpath fill=\'%23F22F46\' fill-rule=\'evenodd\' d=\'M0 15C0 6.71582 6.7069 0 14.9801 0C20.2546 0 24.8865 2.72788 27.5572 6.84316L19.371 15.1743H19.3643V15.1877C19.0765 15.4893 18.5946 15.496 18.2934 15.2011C18.2599 15.1743 18.2331 15.1408 18.2064 15.1005L15.9239 11.9638C13.9627 9.27614 10.047 9.03485 7.77787 11.4678L0.589029 19.1756C0.194112 17.8217 0 16.4142 0 15ZM2.69079 23.5858C5.40167 27.4665 9.89302 30.0067 14.9801 30.0067C23.2533 30.0067 29.9602 23.2909 29.9602 15.0067C29.9602 13.7399 29.8062 12.5134 29.5117 11.3405L22.604 18.3646C20.3148 20.7172 16.466 20.4424 14.5316 17.7949L12.2491 14.6582C12.0015 14.3231 11.5329 14.2426 11.1916 14.4906C11.1514 14.5174 11.1179 14.5509 11.0845 14.5845L2.69079 23.5858Z\'/%3E%3C/svg%3E") center/contain no-repeat}.slimstat-release-notice__title{display:block;margin-bottom:2px;font-size:15px;line-height:1.4}#slimstat-notice-latest-news a{white-space:nowrap}#slimstat-notice-latest-news .button{margin-inline-end:12px}</style>';
+        // The SlimStat mark beside the title and the feature rows: one row on wide screens, two columns, then
+        // one; the link stretches over its row. tokens.css loads only on SlimStat's screens, so the style prints
+        // with the notice, like the menu pills' style. One line: no newline may reach the notice output.
+        echo '<style>#slimstat-notice-latest-news{padding-inline-start:52px}#slimstat-notice-latest-news::before{content:"";position:absolute;inset-inline-start:14px;top:12px;width:26px;height:26px;background:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 30 30\'%3E%3Cpath fill=\'%23F22F46\' fill-rule=\'evenodd\' d=\'M0 15C0 6.71582 6.7069 0 14.9801 0C20.2546 0 24.8865 2.72788 27.5572 6.84316L19.371 15.1743H19.3643V15.1877C19.0765 15.4893 18.5946 15.496 18.2934 15.2011C18.2599 15.1743 18.2331 15.1408 18.2064 15.1005L15.9239 11.9638C13.9627 9.27614 10.047 9.03485 7.77787 11.4678L0.589029 19.1756C0.194112 17.8217 0 16.4142 0 15ZM2.69079 23.5858C5.40167 27.4665 9.89302 30.0067 14.9801 30.0067C23.2533 30.0067 29.9602 23.2909 29.9602 15.0067C29.9602 13.7399 29.8062 12.5134 29.5117 11.3405L22.604 18.3646C20.3148 20.7172 16.466 20.4424 14.5316 17.7949L12.2491 14.6582C12.0015 14.3231 11.5329 14.2426 11.1916 14.4906C11.1514 14.5174 11.1179 14.5509 11.0845 14.5845L2.69079 23.5858Z\'/%3E%3C/svg%3E") center/contain no-repeat}.slimstat-release-notice__title{display:block;margin-bottom:2px;font-size:15px;line-height:1.4}#slimstat-notice-latest-news a{white-space:nowrap}.slimstat-whats-new{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px;margin:12px -8px;padding:0;list-style:none}.slimstat-whats-new li{position:relative;display:grid;grid-template-columns:20px minmax(0,1fr);align-content:start;column-gap:8px;margin:0;padding:8px;border-radius:8px;transition:background-color .15s cubic-bezier(.4,0,.2,1)}.slimstat-whats-new li:hover{background:color-mix(in srgb,var(--wp-admin-theme-color,#2271b1) 7%,transparent)}.slimstat-whats-new .dashicons{grid-column:1;grid-row:1/span 3;color:var(--wp-admin-theme-color,#2271b1)}.slimstat-whats-new strong{font-size:14px}.slimstat-whats-new__why{color:#56585a}.slimstat-whats-new a::before{content:"";position:absolute;inset:0;border-radius:inherit}.slimstat-whats-new a::after{content:"\2192";content:"\2192"/"";display:inline-block;margin-inline-start:4px;transition:transform .15s cubic-bezier(.4,0,.2,1)}.slimstat-whats-new li:hover a::after{transform:translateX(3px)}[dir=rtl] .slimstat-whats-new a::after{content:"\2190";content:"\2190"/""}[dir=rtl] .slimstat-whats-new li:hover a::after{transform:translateX(-3px)}@media (min-width:1280px){.slimstat-whats-new{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}}@media (max-width:782px){.slimstat-whats-new{grid-template-columns:minmax(0,1fr)}.slimstat-whats-new__why{display:none}}@media (prefers-reduced-motion:reduce){.slimstat-whats-new li,.slimstat-whats-new a::after{transition:none}}</style>';
+
+        $rows = [['admin-links', __('Channels and UTM Campaigns', 'wp-slimstat'), __('Side by side, in one report.', 'wp-slimstat'), 'slimview5', __('Open Traffic Sources', 'wp-slimstat')]];
+        if ($commerce ?? \SlimStat\Ecommerce\Integration::available()) {
+            $rows[] = ['cart', __('Ecommerce', 'wp-slimstat'), __('Net sales, orders and top products.', 'wp-slimstat'), 'slimview7', __('Open Ecommerce', 'wp-slimstat')];
+        }
+        $rows[] = ['welcome-view-site', __('Heatmaps', 'wp-slimstat'), __('Every page with clicks.', 'wp-slimstat'), 'slimheatmap', __('Open Heatmaps', 'wp-slimstat')];
+        $rows[] = ['editor-code', __('Shortcode Playground', 'wp-slimstat'), __('Preview a report, then copy its shortcode.', 'wp-slimstat'), 'slimshortcodes', __('Open Shortcodes', 'wp-slimstat')];
 
         // show_message() runs wpautop(): paragraphs are separated by one blank line, and no other newline may appear.
         $html = '<strong class="slimstat-release-notice__title">' . esc_html__('SlimStat 6 is here.', 'wp-slimstat') . '</strong> '
-            . esc_html__('Faster reports, Channels and UTM Campaigns, a WooCommerce revenue dashboard, Heatmaps and a Shortcode Playground. Your settings and data carry over.', 'wp-slimstat')
+            . esc_html__('Reports are faster, and your settings and data carry over. Includes important security hardening.', 'wp-slimstat')
             . ($is_pro ? ' ' . esc_html__('SlimStat Pro 3.0.0 adds heatmap page previews and Ecommerce email reports.', 'wp-slimstat') : '')
-            . "\n\n" . $link('slimview2', __('Explore SlimStat 6', 'wp-slimstat'), 'button button-primary') . ' ' . $link('slimstat_migration', __('Review migration', 'wp-slimstat'));
+            . "\n\n" . '<ul class="slimstat-whats-new">';
+        foreach ($rows as [$icon, $name, $why, $page, $open]) {
+            $html .= '<li><span class="dashicons dashicons-' . esc_attr($icon) . '" aria-hidden="true"></span><strong>' . esc_html($name) . '</strong><span class="slimstat-whats-new__why">' . esc_html($why) . '</span>' . $link($page, $open) . '</li>';
+        }
+        /* translators: %s: "Review migration" link to the Migration screen. */
+        $html .= '</ul>' . "\n\n" . sprintf(esc_html__('%s: optional database steps, nothing runs until you choose.', 'wp-slimstat'), $link('slimstat_migration', __('Review migration', 'wp-slimstat')));
         self::show_message($html, 'info', 'latest-news');
         self::release_notice_dismiss_script();
     }
