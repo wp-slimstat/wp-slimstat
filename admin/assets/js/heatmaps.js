@@ -299,8 +299,9 @@
         const submit = confirmation.form.querySelector('[data-confirm-delete]');
         confirmation.addEventListener('input', () => { submit.disabled = confirmation.value !== 'DELETE'; });
     }
+    // Polling reads the server's one-minute cache, so open tabs share one aggregation; only Refresh forces one.
     function refreshVisible() {
-        if (!document.hidden && !root.querySelector('dialog[open]') && Date.now() / 1000 - state.updated >= 60) load(true, true);
+        if (!document.hidden && !root.querySelector('dialog[open]') && Date.now() / 1000 - state.updated >= 60) load(false, true);
     }
     setInterval(refreshVisible, 60000);
     document.addEventListener('visibilitychange', refreshVisible);

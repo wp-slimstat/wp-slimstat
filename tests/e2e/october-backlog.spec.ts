@@ -44,9 +44,9 @@ test('Task 1: dialogs return focus to a clicked trigger that never took focus', 
 });
 
 test('Tasks 12–16: Heatmaps boundaries, device denominator, polling, date alignment and settings', async ({ page }, info) => {
-  let requests = 0;
+  let requests = 0; const urls: string[] = [];
   await page.route(/heatmap(%2F|\/)pages/, async route => {
-    requests++;
+    requests++; urls.push(route.request().url());
     const row = { page: '/', title: '', clicks: 29, devices: [10, 5, 10], pageviews: 50, full: true, dead: 0, rage: 0, scroll: 40, last: 1, lastText: 'Today', url: '/wp-admin/admin.php?page=slimheatmap&heatmap=/' };
     await route.fulfill({ json: { rows: [row, { ...row, page: '/pricing/', clicks: 30 }], ever: true, updated: Math.floor(Date.now() / 1000) - 61 } });
   });
@@ -64,6 +64,8 @@ test('Tasks 12–16: Heatmaps boundaries, device denominator, polling, date alig
   const count = requests;
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   await expect.poll(() => requests).toBe(count + 1);
+  // Polling shares the one-minute server cache; only an explicit Refresh recomputes.
+  expect(urls[urls.length - 1]).not.toContain('refresh=1');
   await page.locator('[name=q]').fill('pricing');
   await page.locator('.ss-hm-refresh').click();
   await expect(page.locator('[name=q]')).toHaveValue('pricing');
