@@ -1,3 +1,13 @@
+= 6.0.1 - Unreleased =
+
+* Preserve existing core and Pro preferences through upgrades, including disabled tracking, consent, Heatmaps, legacy user exclusions, and network overrides. Apply full Heatmaps capture defaults only to genuinely fresh Pro installations.
+* Use accessible dialogs for campaign building and report help; show Channels and UTM Campaigns first, include group counts, and link their selected context to Ecommerce sales.
+* Explain Ecommerce chart gaps and small previous periods, clarify purchase rate, include configured WooPayments currencies, and paginate full acquisition reports with consistent bars and export controls.
+* Refresh Heatmaps while visible, keep dates anchored, explain devices and low-data rows, link directly to settings, and require typed confirmation before deleting heatmap data.
+* Mark Traffic Sources (Channels), Ecommerce, Heatmaps and Shortcodes "New" in the SlimStat menu for 15 days after each first appears on a site, alongside Goals & Funnels. Each badge expires independently and per site. Heatmaps now shows its "Pro" badge while Pro is not installed.
+* Restore shortcode chart previews and shared notification controls on Migration. Simplify required updates, completion and retry states, separate optional work, and clarify Danger zone effects.
+* See [the task checklist](docs/october-task-checklist.md) and [validation evidence](docs/october-backlog.md). Original-theme preview verification remains pending under task 18.
+
 = 6.0.0 - 2026-10-06 =
 
 **Shortcodes**

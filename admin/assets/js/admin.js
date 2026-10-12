@@ -3770,3 +3770,11 @@ var SlimStatAdmin = {
         }),
         (t.fn.tagEditor.defaults = { initialTags: [], maxTags: 0, maxLength: 50, delimiter: ",;", placeholder: "", forceLowercase: !0, removeDuplicates: !0, clickDelete: !1, animateDelete: 175, sortable: !0, autocomplete: null, onChange: function () {}, beforeTagSave: function () {}, beforeTagDelete: function () {} });
 })(jQuery);
+
+// Settings deep links should put keyboard focus on the requested control.
+jQuery(function () {
+    if (location.hash === '#heatmap_capture') {
+        const field = document.getElementById('heatmap_capture');
+        if (field) { field.focus({ preventScroll: true }); field.scrollIntoView({ block: 'center' }); }
+    }
+});

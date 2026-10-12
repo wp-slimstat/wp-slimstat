@@ -31,7 +31,7 @@ if ($goals > 0) {
 $ecommerce = ['cart', __('Ecommerce Pro', 'wp-slimstat'), __('Compare campaign and landing-page net sales, then explore devices, guest orders, coupons and refunds.', 'wp-slimstat'), __('Store totals and product revenue', 'wp-slimstat'), __('Campaign, device, coupon and refund reports', 'wp-slimstat'), $commerce ? __('Order attribution still depends on recorded visits, consent and available history. Pro does not recreate missing tracking data.', 'wp-slimstat') : __('For WooCommerce stores.', 'wp-slimstat')];
 $converts = [
     ['flag', __('Goals & Funnels', 'wp-slimstat'), __('See where visitors complete each step and where they drop off.', 'wp-slimstat'), __('1 goal, no funnels', 'wp-slimstat'), __('5 goals and 3 funnels', 'wp-slimstat')],
-    ['welcome-view-site', __('Heatmaps', 'wp-slimstat'), __('See which links and buttons visitors click on each page.', 'wp-slimstat'), __('Page list with click counts', 'wp-slimstat'), __('Click overlay on any page', 'wp-slimstat')],
+    ['welcome-view-site', __('Heatmaps', 'wp-slimstat'), __('See click and scroll maps for each page on mobile, tablet, and desktop. Find dead clicks and rage clicks, and view campaign visitors separately.', 'wp-slimstat'), __('Page list with click counts', 'wp-slimstat'), __('Click overlay on any page', 'wp-slimstat'), __('Pro includes desktop, tablet and mobile previews, goal and campaign visitor filters, CSV downloads and the Heatmap insights email report. Scroll depth and dead/rage clicks require full capture; available history follows your tracking and consent settings.', 'wp-slimstat')],
 ];
 if ($commerce) {
     array_unshift($converts, $ecommerce);
@@ -95,7 +95,7 @@ $groups = [
                     <span class="dashicons dashicons-<?php echo esc_attr($icon); ?>" aria-hidden="true"></span>
                     <div>
                         <h3><?php echo esc_html($name); ?></h3>
-                        <p><?php echo esc_html($benefit); ?></p>
+                        <p><?php echo esc_html($benefit); ?></p><?php if ('welcome-view-site' === $icon) : ?><a class="button" href="<?php echo esc_url(admin_url('admin.php?page=slimheatmap')); ?>"><?php esc_html_e('Open Heatmaps', 'wp-slimstat'); ?></a><?php endif; ?>
                         <?php if ($is_pro) : ?>
                         <p class="ss-pro-included"><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e('Included', 'wp-slimstat'); ?></p>
                         <?php else : ?>

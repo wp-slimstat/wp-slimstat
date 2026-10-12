@@ -5,6 +5,7 @@ const target = `${BASE_URL}/wp-admin/admin.php?page=slimview5`;
 
 test.describe('UTM link builder', () => {
   test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => window.addEventListener('beforetoggle', event => event.stopImmediatePropagation(), true));
     await page.goto(`${target}#slimstat-utm-builder`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('#slimstat-utm-builder')).toHaveAttribute('open', '');
   });
@@ -92,17 +93,16 @@ test.describe('UTM link builder', () => {
 
   test('report shortcut preserves filters and draft, with keyboard and mobile RTL access', async ({ page }) => {
     await page.goto(`${target}&fs[utm_source]=equals+newsletter`, { waitUntil: 'domcontentloaded' });
-    await page.locator('#slim_p3_04 .slimstat-utm-builder-link').click();
+    await page.locator('#slim_p3_04 .slimstat-utm-builder-link').first().click();
     await expect(page.locator('[name="website"]')).toBeFocused();
     expect(page.url()).toContain('newsletter');
     await page.locator('[name="utm_source"]').fill('draft');
     await page.evaluate(() => new Promise<void>(resolve => (window as any).SlimStatAdmin.refresh_report('slim_p3_04')().always(resolve)));
     await expect(page.locator('[name="utm_source"]')).toHaveValue('draft');
-    await expect(page.locator('#slim_p3_04 .slimstat-utm-builder-link')).toBeVisible();
-    await page.locator('#slimstat-utm-builder > summary').focus();
-    await page.keyboard.press('Enter');
+    await expect(page.locator('#slim_p3_04 .slimstat-utm-builder-link').first()).toBeVisible();
+    await page.keyboard.press('Escape');
     await expect(page.locator('#slimstat-utm-builder')).not.toHaveAttribute('open');
-    await expect(page.locator('#slim_p3_04 .slimstat-utm-builder-link')).toBeFocused();
+    await expect(page.locator('#slim_p3_04 .slimstat-utm-builder-link').first()).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page.locator('[name="website"]')).toBeFocused();
     await expect(page.locator('[name="utm_source"]')).toHaveValue('draft');

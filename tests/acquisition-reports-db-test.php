@@ -118,6 +118,7 @@ try {
     $db->query("DELETE FROM `{$testPrefix}slim_stats` WHERE author = 'carol'");
     $check(1 === substr_count($channelsHtml, '__label">Unassigned<'), 'Unassigned is one channel group, not one per stored value');
     $check((bool) preg_match('/__label">Unassigned<.*?__number">2</s', $channelsHtml), 'The Unassigned group counts both rows');
+    $check(wp_slimstat::pro_is_installed() || (2 === substr_count($channelsHtml, '<details class="slimstat-acquisition__group">') && false === strpos($channelsHtml, '__locked')), 'Without Pro, public reports show the top two groups and no upsell');
     $check(1 === array_sum(array_column(AcquisitionReport::rows(['mode' => 'utm', 'where' => $db->prepare('author = %s', 'bob')]), 'counthits')), 'Raw callback honors the per-author email scope');
     wp_slimstat_db::$filters_normalized['columns']['author'] = ['equals', 'alice'];
     $check(3 === array_sum(array_column(AcquisitionReport::rows(['mode' => 'utm']), 'counthits')), 'Author scope applies to campaign data');

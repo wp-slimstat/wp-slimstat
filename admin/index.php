@@ -66,9 +66,29 @@ class wp_slimstat_admin
         'count' => [],
     ];
 
-    /**
-     * Init -- Sets things up.
-     */
+    /** Shared header assets, including screens registered outside the report menu. */
+    public static function enqueue_notification_assets(): void
+    {
+        // Enqueue notification assets if notifications are enabled
+        if (wp_slimstat::$settings['display_notifications'] == 'on') {
+            wp_enqueue_style('slimstat_notifications', plugins_url('/admin/assets/css/notifications.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
+            wp_enqueue_style('slimstat_header_notifications', plugins_url('/admin/assets/css/header-notifications.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
+            wp_enqueue_script('slimstat_notifications', plugins_url('/admin/assets/js/notifications.js', __DIR__), ['jquery'], SLIMSTAT_ANALYTICS_VERSION, false);
+
+            // Pass notification data to Javascript
+            $notification_params = [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => wp_create_nonce('wp_rest'),
+                'empty_title' => __('You are up to date!', 'wp-slimstat'),
+                'empty_inbox' => __('No notifications in your inbox.', 'wp-slimstat'),
+                'empty_dismissed' => __('No dismissed notifications.', 'wp-slimstat'),
+            ];
+            wp_localize_script('slimstat_notifications', 'slimstat_admin', $notification_params);
+        }
+
+    }
+
+    /** Init -- Sets things up. */
     // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Fresh table existence check for network activation on the configured analytics connection; no request values enter SQL.
     public static function init()
     {
@@ -120,6 +140,8 @@ class wp_slimstat_admin
                 'lead'            => __('Where visits come from: channels, referring sites, search terms and campaigns.', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_view'],
+                // Channels has no sidebar item of its own: it is the new report here.
+                'new_badge'       => 'slimstat_channels_since',
             ],
             'slimview6' => [
                 'is_report_group' => true,
@@ -129,6 +151,7 @@ class wp_slimstat_admin
                 'lead'            => __('Define the conversions that matter, then string them into funnels to see where visitors drop off.', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_view'],
+                'new_badge'       => 'slimstat_goals_funnels_since',
             ],
             'slimview7' => [
                 'is_report_group' => true,
@@ -137,6 +160,7 @@ class wp_slimstat_admin
                 'lead'  => __('Sales, orders and the traffic that drove them.', 'wp-slimstat'),
                 'capability' => 'can_view',
                 'callback' => [self::class, 'wp_slimstat_include_view'],
+                'new_badge' => 'slimstat_ecommerce_since',
             ],
             'slimheatmap' => [
                 'is_report_group' => false,
@@ -144,6 +168,8 @@ class wp_slimstat_admin
                 'title'           => __('Heatmaps', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_heatmaps'],
+                'new_badge'       => 'slimstat_heatmaps_since',
+                'pro_badge'       => true,
             ],
             'slimemail' => [
                 'is_report_group' => false,
@@ -151,6 +177,7 @@ class wp_slimstat_admin
                 'title'           => __('Email Report', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_email_report'],
+                'pro_badge'       => true,
             ],
             'slimshortcodes' => [
                 'is_report_group' => false,
@@ -158,6 +185,7 @@ class wp_slimstat_admin
                 'title' => __('Shortcodes', 'wp-slimstat'),
                 'capability' => 'can_view',
                 'callback' => [self::class, 'wp_slimstat_include_shortcodes'],
+                'new_badge' => 'slimstat_shortcodes_since',
             ],
             'slimlayout' => [
                 'is_report_group' => false,
@@ -542,30 +570,47 @@ class wp_slimstat_admin
      */
     public static function styling_admin_menu()
     {
-        // The time-limited "New" badge on the Goals & Funnels item renders in the
-        // global sidebar, so its style must load on every admin page (not just
-        // slimview6). Tiny, so always emit it. (#20)
-        echo '<style> #adminmenu .slimstat-gf-new-badge {display:inline-block;margin-inline-start:6px;padding:0 6px;border-radius:9px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;font-size:9px;font-weight:600;line-height:16px;text-transform:uppercase;letter-spacing:.03em;vertical-align:middle;} #adminmenu .slimstat-menu-pro-badge {display:inline-block;margin-inline-start:6px;padding:0 5px;border:1px solid currentColor;border-radius:9px;font-size:9px;font-weight:600;line-height:14px;opacity:.85;vertical-align:middle;} </style>';
+        // The sidebar "New" and "Pro" pills render in the global sidebar, so their
+        // style must load on every admin page (not just SlimStat screens). Tiny,
+        // so always emit it. Both pills share one shape. (#20)
+        echo '<style> #adminmenu .slimstat-menu-new-badge, #adminmenu .slimstat-menu-pro-badge {display:inline-block;margin-inline-start:6px;border-radius:9px;font-size:9px;font-weight:600;vertical-align:middle;} #adminmenu .slimstat-menu-new-badge {padding:0 6px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;line-height:16px;text-transform:uppercase;letter-spacing:.03em;} #adminmenu .slimstat-menu-pro-badge {padding:0 5px;border:1px solid currentColor;line-height:14px;opacity:.85;} </style>';
     }
 
     /**
-     * "New" badge HTML for the Goals & Funnels sidebar item, shown for 15 days
-     * after the feature became available on this site, then it disappears.
-     * Returns '' once the window elapses. The window is anchored the first time
-     * the menu builds after this version ships, so existing installs start their
-     * countdown then. (#20)
+     * "New" pill shown for 15 days after a feature became available on this
+     * site, then ''. $option is the screen's 'new_badge' anchor: a per-site
+     * option set the first time the menu builds after the feature ships, so
+     * existing installs start their own countdown on update. uninstall.php
+     * deletes every anchor. (#20)
      */
-    private static function goals_funnels_new_badge()
+    private static function new_badge($option)
     {
-        $since = (int) get_option('slimstat_goals_funnels_since', 0);
+        $since = (int) get_option($option, 0);
         if ($since <= 0) {
             $since = time();
-            update_option('slimstat_goals_funnels_since', $since);
+            update_option($option, $since);
         }
         if ((time() - $since) >= (15 * DAY_IN_SECONDS)) {
             return '';
         }
-        return ' <span class="slimstat-gf-new-badge">' . esc_html__('New', 'wp-slimstat') . '</span>';
+        return ' <span class="slimstat-menu-new-badge">' . esc_html__('New', 'wp-slimstat') . '</span>';
+    }
+
+    /**
+     * Sidebar label: the screen title, then its "New" pill ('new_badge'), then
+     * its "Pro" pill ('pro_badge', while Pro is missing). The page title
+     * (browser tab) stays plain. (#20)
+     */
+    private static function sidebar_label($screen_info, $pro_installed)
+    {
+        $label = $screen_info['title'];
+        if (!empty($screen_info['new_badge'])) {
+            $label .= self::new_badge($screen_info['new_badge']);
+        }
+        if (!$pro_installed && !empty($screen_info['pro_badge'])) {
+            $label .= ' <span class="slimstat-menu-pro-badge">' . esc_html__('Pro', 'wp-slimstat') . '</span>';
+        }
+        return $label;
     }
 
     /**
@@ -1344,31 +1389,8 @@ class wp_slimstat_admin
 
         // --- END: Updates for version 4.8.2 ---
 
-        // --- Updates for version 4.8.4 ---
-        if (!$recover_settings && version_compare(wp_slimstat::$settings['version'], '4.8.4', '<')) {
-            // Switch option to track WP users (from track to ignore)
-            wp_slimstat::$settings['ignore_wp_users'] = (!empty(wp_slimstat::$settings['track_users']) && 'no' == wp_slimstat::$settings['track_users']) ? 'on' : 'no';
-
-            // Remove unused options
-            unset(wp_slimstat::$settings['track_users']);
-            unset(wp_slimstat::$settings['enable_javascript']);
-            unset(wp_slimstat::$settings['honor_dnt_header']);
-            unset(wp_slimstat::$settings['no_maxmind_warning']);
-            unset(wp_slimstat::$settings['no_browscap_warning']);
-            unset(wp_slimstat::$settings['use_european_separators']);
-            unset(wp_slimstat::$settings['date_format']);
-            unset(wp_slimstat::$settings['time_format']);
-            unset(wp_slimstat::$settings['expand_details']);
-
-            // The four indexes this block used to add by hand are in the manifest, and the
-            // single init_tables() call at the end of this function reconciles them along with
-            // every other. Restating them here was one of the six creators C11 enumerated, and
-            // the one that made a Phase E drop unholdable: an install upgrading from below 4.8.4
-            // re-added four dropped indexes with no way for anything to know it had.
-            wp_slimstat::$settings['db_indexes'] = 'on';
-        }
-
-        // --- END: Updates for version 4.8.4 ---
+        // Legacy option names are mapped using the raw saved options in init(). Keep obsolete extension
+        // keys and the saved db_indexes choice; schema reconciliation below owns indexes.
 
         // --- Updates for version 4.8.4.1 ---
         if (!$recover_settings && version_compare(wp_slimstat::$settings['version'], '4.8.4.1', '<')) {
@@ -1411,17 +1433,6 @@ class wp_slimstat_admin
                 wp_slimstat::$settings['tracking_request_method'] = 'adblock_bypass';
             }
 
-            // Default use_separate_menu to 'on' if not already set
-            if (empty(wp_slimstat::$settings['use_separate_menu'])) {
-                wp_slimstat::$settings['use_separate_menu'] = 'on';
-            }
-        }
-
-        // --- Updates for version 5.4.1 ---
-        // Fix admin bar migration: empty('no') returned false in 5.4.0, missing users with legacy 'no' value
-        // Safe because this runs once (version bumps to 5.4.1 after), users who disable later are already on 5.4.1+
-        if (version_compare(wp_slimstat::$settings['version'], '5.4.1', '<')) {
-            wp_slimstat::$settings['use_separate_menu'] = 'on';
         }
 
         // --- Bring the schema up to the manifest ---
@@ -1585,18 +1596,20 @@ class wp_slimstat_admin
 
         // Report widgets can be moved to any SlimStat screen through Customize.
         wp_enqueue_style('wp-slimstat-tokens', plugins_url('/admin/assets/css/tokens.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
+        wp_enqueue_script('slimstat-report-dialogs', plugins_url('/admin/assets/js/report-dialogs.js', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION, true);
         wp_enqueue_style('wp-slimstat-acquisition', plugins_url('/admin/assets/css/acquisition.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
         if ('slimheatmap' === self::$current_screen) {
             wp_enqueue_style('wp-slimstat-heatmaps', plugins_url('/admin/assets/css/heatmaps.css', __DIR__), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
             wp_enqueue_script('slimstat-heatmaps', plugins_url('/admin/assets/js/heatmaps.js', __DIR__), ['wp-i18n', 'wp-api-fetch'], SLIMSTAT_ANALYTICS_VERSION, true);
-            wp_set_script_translations('slimstat-heatmaps', 'wp-slimstat');
+            self::set_slimstat_script_translations('slimstat-heatmaps');
         }
         if ('slimshortcodes' === self::$current_screen) {
+            \SlimStat\Modules\Chart::enqueueAssets();
             // The preview renders front-end widget markup, so it needs the front-end stylesheet too.
             \SlimStat\Shortcodes\Shortcode::style();
             wp_enqueue_style('wp-slimstat-shortcodes', plugins_url('/admin/assets/css/shortcodes.css', __DIR__), ['wp-slimstat-tokens', 'wp-slimstat-frontend'], SLIMSTAT_ANALYTICS_VERSION);
-            wp_enqueue_script('slimstat-shortcodes', plugins_url('/admin/assets/js/shortcodes.js', __DIR__), ['wp-i18n', 'wp-api-fetch', 'utils'], SLIMSTAT_ANALYTICS_VERSION, true);
-            wp_set_script_translations('slimstat-shortcodes', 'wp-slimstat');
+            wp_enqueue_script('slimstat-shortcodes', plugins_url('/admin/assets/js/shortcodes.js', __DIR__), ['wp-i18n', 'wp-api-fetch', 'utils', 'slimstat_chart'], SLIMSTAT_ANALYTICS_VERSION, true);
+            self::set_slimstat_script_translations('slimstat-shortcodes');
         }
         if ('slimpro' === self::$current_screen) {
             wp_enqueue_style('wp-slimstat-pro-overview', plugins_url('/admin/assets/css/pro.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
@@ -1608,7 +1621,7 @@ class wp_slimstat_admin
             wp_enqueue_style('wp-slimstat-ecommerce', plugins_url('/admin/assets/css/ecommerce.css', __DIR__), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
             wp_enqueue_script('slimstat_chartjs', plugins_url('/admin/assets/js/chartjs/chart.min.js', __DIR__), [], '4.2.1', true);
             wp_enqueue_script('slimstat-ecommerce', plugins_url('/admin/assets/js/ecommerce.js', __DIR__), ['slimstat_admin', 'slimstat_chartjs'], SLIMSTAT_ANALYTICS_VERSION, true);
-            wp_set_script_translations('slimstat-ecommerce', 'wp-slimstat');
+            self::set_slimstat_script_translations('slimstat-ecommerce');
         }
 
 		// Goals & Funnels CSS — only loaded on screens that actually render those reports.
@@ -1802,26 +1815,11 @@ class wp_slimstat_admin
         wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog', 'slimstat-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
         self::set_slimstat_script_translations('slimstat_admin');
         if ('slimview5' === self::$current_screen) {
-            wp_enqueue_script('slimstat-utm-builder', plugins_url('/admin/assets/js/utm-builder.js', __DIR__), ['slimstat-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
+            wp_enqueue_script('slimstat-utm-builder', plugins_url('/admin/assets/js/utm-builder.js', __DIR__), ['slimstat-i18n', 'slimstat-report-dialogs'], SLIMSTAT_ANALYTICS_VERSION, true);
             self::set_slimstat_script_translations('slimstat-utm-builder');
         }
 
-        // Enqueue notification assets if notifications are enabled
-        if (wp_slimstat::$settings['display_notifications'] == 'on') {
-            wp_enqueue_style('slimstat_notifications', plugins_url('/admin/assets/css/notifications.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
-            wp_enqueue_style('slimstat_header_notifications', plugins_url('/admin/assets/css/header-notifications.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
-            wp_enqueue_script('slimstat_notifications', plugins_url('/admin/assets/js/notifications.js', __DIR__), ['jquery'], SLIMSTAT_ANALYTICS_VERSION, false);
-
-            // Pass notification data to Javascript
-            $notification_params = [
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('wp_rest'),
-                'empty_title' => __('You are up to date!', 'wp-slimstat'),
-                'empty_inbox' => __('No notifications in your inbox.', 'wp-slimstat'),
-                'empty_dismissed' => __('No dismissed notifications.', 'wp-slimstat'),
-            ];
-            wp_localize_script('slimstat_notifications', 'slimstat_admin', $notification_params);
-        }
+        self::enqueue_notification_assets();
 
         // Pass some information to Javascript
         $params = [
@@ -1953,6 +1951,7 @@ class wp_slimstat_admin
             'dashicons-chart-area'
         );
 
+        $pro_installed = wp_slimstat::pro_is_installed();
         foreach (self::$screens_info as $a_screen_id => $a_screen_info) {
             if (isset(self::$meta_user_reports[$a_screen_id]) && empty(self::$meta_user_reports[$a_screen_id])) {
                 continue;
@@ -1964,19 +1963,10 @@ class wp_slimstat_admin
             }
 
             if ($a_screen_info['show_in_sidebar']) {
-                // Sidebar label may carry the time-limited "New" badge; the page
-                // title (browser tab) stays plain. (#20)
-                $menu_label = $a_screen_info['title'];
-                if ('slimview6' === $a_screen_id) {
-                    $menu_label .= self::goals_funnels_new_badge();
-                }
-                if (in_array($a_screen_id, ['slimheatmaps', 'slimemail'], true) && !wp_slimstat::pro_is_installed()) {
-                    $menu_label .= ' <span class="slimstat-menu-pro-badge">' . esc_html__('Pro', 'wp-slimstat') . '</span>';
-                }
                 $new_entry[] = add_submenu_page(
                     $parent,
                     $a_screen_info['title'],
-                    $menu_label,
+                    self::sidebar_label($a_screen_info, $pro_installed),
                     $minimum_capability,
                     $a_screen_id,
                     $a_screen_info['callback']
@@ -4307,32 +4297,26 @@ class wp_slimstat_admin
             return $_header_buttons;
         }
 
-        // Define which reports get this new functionality
+        // Every report Pro's Export covers (those with a `raw` callback) gets the same button.
         $callback_args = \wp_slimstat_reports::$reports[$_report_id]['callback_args'] ?? [];
         if (empty($callback_args) || !array_key_exists('raw', $callback_args)) {
             return $_header_buttons;
         }
 
-        // A report may declare itself non-exportable (a bool or a presence probe).
-        // Don't offer an "Export" upgrade link where there's nothing to export —
-        // a download-styled control that only routes to pricing is bait (FN-7/FN-17).
-        if (array_key_exists('exportable', $callback_args)) {
-            $exportable = is_callable($callback_args['exportable'])
-                ? (bool) call_user_func($callback_args['exportable'])
-                : (bool) $callback_args['exportable'];
-            if (!$exportable) {
-                return $_header_buttons;
-            }
-        }
-        $utm_medium = empty($_report_id) ? 'report-unknown' : $_report_id;
-        // 'wp-slimstat', not 'wp-slimstat-pro'. These two were the only strings in the free
-        // plugin bound to Pro's text domain, so neither has ever been translatable here:
-        // free ships no wp-slimstat-pro .mo, and on a site without Pro nothing loads that
-        // domain at all. wp.org's Plugin Check flags it as TextDomainMismatch.
-        //
-        // The URL is built with add_query_arg() and escaped: $utm_medium reached the href
-        // raw, and both translated strings reached an attribute and a text node unescaped.
-        $pricing_url = add_query_arg(
+        return self::pro_export_link(empty($_report_id) ? 'report-unknown' : $_report_id) . ' ' . $_header_buttons;
+    }
+
+    /**
+     * Free's Export: looks like Pro's, opens the Pro page. Administrators stay in wp-admin;
+     * anyone who can't open that page goes to pricing in a new tab.
+     *
+     * Not a .slimstat-filter-link: admin.js turns those clicks into a POST of the filters
+     * form to the link's URL, which sent the date range to the pricing site.
+     */
+    public static function pro_export_link(string $utm_medium, string $attributes = ''): string
+    {
+        $admin = current_user_can('manage_options');
+        $url   = $admin ? admin_url('admin.php?page=slimpro') : add_query_arg(
             [
                 'utm_source'   => 'admin',
                 'utm_medium'   => $utm_medium,
@@ -4341,10 +4325,10 @@ class wp_slimstat_admin
             'https://wp-slimstat.com/pricing/'
         );
 
-        return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="'
-            . esc_attr__('Upgrade to Pro', 'wp-slimstat') . '" href="' . esc_url($pricing_url)
-            . '" target="_blank"><span class="dashicons dashicons-download"></span>'
-            . esc_html__('Export', 'wp-slimstat') . '</a> ' . $_header_buttons;
+        return '<a class="button-export-to-xls slimstat-font-download noslimstat" href="' . esc_url($url) . '"'
+            . ($admin ? '' : ' target="_blank" rel="noopener"') . $attributes
+            . ' title="' . esc_attr__('Export to CSV with Pro', 'wp-slimstat') . '"><span class="dashicons dashicons-download" aria-hidden="true"></span>'
+            . esc_html__('Export', 'wp-slimstat') . '</a>';
     }
 
     /**
@@ -4356,6 +4340,16 @@ class wp_slimstat_admin
     {
         add_filter('slimstat_report_header_buttons', [self::class, 'inject_goals_funnels_header_actions'], 20, 2);
         add_filter('slimstat_report_header_after_title', [self::class, 'inject_goals_funnels_header_subtitle'], 10, 2);
+        add_filter('slimstat_report_header_buttons', [self::class, 'inject_utm_builder_header_link'], 20, 2);
+    }
+
+    /** Channels and UTM Campaigns: the campaign link builder sits left of Export (priority 20 runs after Export prepends). */
+    public static function inject_utm_builder_header_link($_header_buttons = '', $_report_id = '')
+    {
+        if (!in_array($_report_id, ['slim_p3_03', 'slim_p3_04'], true)) {
+            return $_header_buttons;
+        }
+        return '<a class="noslimstat slimstat-utm-builder-link" href="' . esc_url(admin_url('admin.php?page=slimview5#slimstat-utm-builder')) . '"><span class="dashicons dashicons-admin-links" aria-hidden="true"></span>' . esc_html__('Build campaign link', 'wp-slimstat') . '</a>' . $_header_buttons;
     }
 
     /**

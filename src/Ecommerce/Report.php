@@ -223,8 +223,9 @@ final class Report
 				$result[$period][] = [
 					'start' => $first, 'end' => $last, 'label' => self::date('M j, Y H:i', $first) . ' – ' . self::date('M j, Y H:i', $last),
 					'short' => self::date('M j', $first), 'net' => $net, 'orders' => $orders,
-					'aov' => $orders ? $net / $orders : null, 'visits' => $count, 'buyers' => $buyers,
-					'rate' => !$unavailable && $count >= 100 ? 100 * $buyers / $count : null,
+					// Retained intervals without orders or visits plot at zero; only expired history is unavailable.
+					'aov' => $unavailable ? null : ($orders ? $net / $orders : 0.0), 'visits' => $count, 'buyers' => $buyers,
+					'rate' => $unavailable ? null : ($count ? 100 * $buyers / $count : 0.0),
 					'partial' => $partial || $first < Integration::retentionStart(),
 					'provisional' => Integration::provisional($state),
 				];
@@ -266,7 +267,7 @@ final class Report
 		if ($days > 366 && 'daily' === $interval) { $interval = 'weekly'; }
 		if ($days > 2562) { $interval = 'monthly'; }
 		$key = 'slimstat_ec_' . md5(wp_json_encode([
-			$this->requestedRange, $this->currency, $this->scope, $extra, $this->acquisition, get_current_blog_id(), Acquisition::readinessKey(), $details, 3,
+			$this->requestedRange, $this->currency, $this->scope, $extra, $this->acquisition, get_current_blog_id(), Acquisition::readinessKey(), $details, 4,
 		]));
 		$signature = [get_option('slimstat_ecommerce_generation', ''), $state, \wp_slimstat::$settings['auto_purge'] ?? 420];
 		$cached = get_transient($key);
@@ -284,10 +285,22 @@ final class Report
 				'journey' => $this->journey(), 'groups' => [],
 			];
 			foreach ($details ? array_merge(['channel', 'product', 'source'], $extra) : [] as $dimension) {
-				$data['groups'][$dimension] = $this->rows($dimension);
+				$data['groups'][$dimension] = $this->rows($dimension, 1000);
 			}
 			set_transient($key, ['signature' => $signature, 'data' => $data], MINUTE_IN_SECONDS);
 		}
+		// Active WooPayments currencies can have no orders yet; historical order currencies remain available.
+		$currencies = array_column($data['currencies'], 'currency');
+		$currencies[] = get_woocommerce_currency();
+		if (function_exists('WC_Payments_Multi_Currency')) {
+			$multi = WC_Payments_Multi_Currency();
+			if ($multi && is_callable([$multi, 'get_enabled_currencies'])) {
+				$currencies = array_merge($currencies, array_keys($multi->get_enabled_currencies()));
+			}
+		}
+		$currencies = array_values(array_unique(array_filter($currencies, static function ($code) { return is_string($code) && preg_match('/\A[A-Z0-9]{3,8}\z/', $code); })));
+		sort($currencies);
+		$data['currencies'] = array_map(static function ($code) { return ['currency' => $code]; }, $currencies);
 		if (!$details) { return $data; }
 		// Interval changes reuse summaries/rankings and query only their own trend.
 		$this->range['start'] = $data['range'][0]; $this->range['end'] = $data['range'][1];
@@ -322,8 +335,8 @@ final class Report
 				__('Reporting period', 'wp-slimstat') => self::date('Y-m-d H:i', $data['range'][0]) . ' – ' . self::date('Y-m-d H:i', $data['range'][1]) . ' (' . wp_timezone_string() . ')',
 				__('Currency', 'wp-slimstat') => $data['currency'], __('Data quality', 'wp-slimstat') => $quality,
 				__('Net sales', 'wp-slimstat') => self::plainMoney($data['current']['net'], $data['currency']), __('Orders', 'wp-slimstat') => number_format_i18n($orders),
-				__('Average order value', 'wp-slimstat') => $orders ? self::plainMoney((float) $data['current']['net'] / $orders, $data['currency']) : __('Unavailable', 'wp-slimstat'),
-				__('Tracked purchase rate', 'wp-slimstat') => $journey['visits'] >= 100 ? number_format_i18n(100 * $journey['buyers'] / $journey['visits'], 2) . '%' : __('Insufficient observations', 'wp-slimstat'),
+				__('Average order value', 'wp-slimstat') => self::plainMoney($orders ? (float) $data['current']['net'] / $orders : 0.0, $data['currency']),
+				__('Purchase rate (tracked visits)', 'wp-slimstat') => number_format_i18n($journey['visits'] ? 100 * $journey['buyers'] / $journey['visits'] : 0, 2) . '%',
 				__('Tracked buying / eligible visits', 'wp-slimstat') => $journey['buyers'] . ' / ' . $journey['visits'],
 				__('Linked / included orders', 'wp-slimstat') => $data['current']['matched'] . ' / ' . $orders,
 				__('Scope', 'wp-slimstat') => $data['filtered'] ? __('Selected traffic filters; unlinked orders excluded.', 'wp-slimstat') : __('All included orders in this currency and period.', 'wp-slimstat'),

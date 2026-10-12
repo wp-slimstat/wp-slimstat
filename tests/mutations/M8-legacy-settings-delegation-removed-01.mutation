@@ -6,8 +6,8 @@ rationale: Renames the call so init() no longer delegates to the class the test 
 ---
 --- a/wp-slimstat.php
 +++ b/wp-slimstat.php
-@@ -293,3 +293,3 @@
-         // plugins_loaded fires before the rule is registered on 'init' and wastes a DB write.
+@@ -307,3 +307,3 @@
+         // Map legacy consent only when no modern choice was saved; retain all other settings.
 -        $_legacy = \SlimStat\Migration\LegacySettings5460::apply(
 +        $_legacy = \SlimStat\Migration\LegacySettings5460::applyLegacy(
              self::$settings,

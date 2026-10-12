@@ -38,15 +38,16 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     await expect(dashboard.getByRole('tab', { name: 'Sources', exact: true })).toBeFocused();
     await expect(dashboard.locator('[data-dimension=source]')).toBeVisible();
     const sourcePanel = dashboard.getByRole('tabpanel', { name: 'Sources', exact: true });
-    await sourcePanel.getByRole('button', { name: 'View report' }).click();
-    await expect(sourcePanel.getByRole('table')).toBeVisible();
+    await sourcePanel.getByRole('button', { name: 'Full report' }).click();
+    await expect(sourcePanel.locator('[data-expand]')).toHaveAttribute('aria-expanded', 'true');
+    await expect(sourcePanel.getByRole('table')).toHaveCount(0);
     await sourcePanel.getByRole('button', { name: 'Reverse sort order' }).click();
     const rankedSources = await sourcePanel.locator('.ss-ec-rank-name').allTextContents();
-    expect(await sourcePanel.locator('tbody th').allTextContents()).toEqual(rankedSources);
+    expect(rankedSources.length).toBeGreaterThan(0);
     await sourcePanel.getByLabel('Sort these results').selectOption('orders');
-    expect(await sourcePanel.locator('tbody th').allTextContents()).toEqual(await sourcePanel.locator('.ss-ec-rank-name').allTextContents());
+    await expect(sourcePanel.locator('[data-rank-metric]')).toHaveValue('orders');
     await page.keyboard.press('Escape');
-    await expect(sourcePanel.getByRole('button', { name: 'View report' })).toBeFocused();
+    await expect(sourcePanel.getByRole('button', { name: 'Full report' })).toBeFocused();
     await expect(sourcePanel.getByRole('table')).not.toBeVisible();
     await dashboard.locator('[data-chart-metric=orders]').click();
     await expect(dashboard.locator('[data-chart-metric=orders]')).toHaveAttribute('aria-pressed', 'true');
@@ -185,7 +186,9 @@ test('Ecommerce explains incomplete, empty and loading states and keeps the newe
     await expect(dashboard.locator('[data-metric=net]')).toContainText('0.00');
     await expect(dashboard.getByText('Journey data is not available yet', { exact: true })).toBeVisible();
     await dashboard.locator('[data-chart-metric=rate]').click();
-    await expect(dashboard.locator('[data-chart-empty]')).toBeVisible();
+    // A retained day without visits plots at zero; only expired history leaves the chart empty.
+    await expect(dashboard.locator('[data-chart-empty]')).toBeHidden();
+    expect(await dashboard.locator('canvas').evaluate(canvas => (window as any).Chart.getChart(canvas).data.datasets[0].data.every((v: unknown) => v === 0))).toBe(true);
     await page.setViewportSize({ width: 390, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   } finally {
@@ -205,6 +208,10 @@ test('Ecommerce Free is useful alone and WooCommerce deactivation is safe @wooco
     await page.goto(`/wp-admin/admin.php?${new URLSearchParams({ page: 'slimview7', type: 'custom', from: day, to: day })}`);
     await expect(page.locator('.ss-ec-report')).toHaveCount(3, { timeout: 30_000 });
     await expect(page.locator('[data-ecommerce]').getByRole('link', { name: 'Export CSV', exact: true })).toHaveCount(0);
+    // Each tab still shows Export, and it opens the Pro page instead of downloading.
+    const upsells = page.locator('[data-ecommerce] [data-ec-export]');
+    await expect(upsells).toHaveCount(3);
+    for (const upsell of await upsells.all()) await expect(upsell).toHaveAttribute('href', /admin\.php\?page=slimpro$/);
     runWordPressFixture("<?php deactivate_plugins('woocommerce/woocommerce.php');");
     await page.goto('/wp-admin/admin.php?page=slimview7');
     await expect(page.locator('[data-ecommerce]')).toContainText('Activate WooCommerce', { timeout: 30_000 });

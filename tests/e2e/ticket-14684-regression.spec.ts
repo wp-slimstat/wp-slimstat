@@ -502,7 +502,7 @@ test.describe('Bug 2: Chart timezone offset must match DataBuckets offset', () =
 
 // ─── Bug 3: javascript_mode Migration Gate ──────────────────────────────────────
 
-test.describe('Bug 3: javascript_mode migration must not be gated on banner flag', () => {
+test.describe('Upgrade preservation and explicitly enabled client-side tracking', () => {
 	test.setTimeout(120_000);
 
 	test.beforeAll(() => {
@@ -524,18 +524,10 @@ test.describe('Bug 3: javascript_mode migration must not be gated on banner flag
 		await restoreSlimstatOptions();
 	});
 
-	test('migration resets javascript_mode to on even when use_slimstat_banner is off', async ({
+	test('Task 28: migration preserves javascript_mode off with banner off', async ({
 		page,
 	}) => {
-		/**
-		 * Simulate the scenario where a user:
-		 * 1. Upgraded from 5.3.x to 5.4.0 (javascript_mode defaulted to 'off')
-		 * 2. Turned off use_slimstat_banner while troubleshooting
-		 * 3. Upgrades to 5.4.6 → migration should STILL reset javascript_mode
-		 *
-		 * BEFORE FIX: migration skips reset because banner is 'off'
-		 * AFTER FIX:  migration resets javascript_mode unconditionally
-		 */
+		// Inherited server-side tracking and a disabled banner remain unchanged on upgrade.
 
 		// Set the pre-migration state: banner OFF, javascript_mode OFF
 		await setSlimstatOption(page, 'use_slimstat_banner', 'off');
@@ -558,11 +550,11 @@ test.describe('Bug 3: javascript_mode migration must not be gated on banner flag
 			`Migration with banner=off: javascript_mode=${jsMode}`
 		);
 
-		// After fix: javascript_mode should be 'on' regardless of banner state
+		// Preserve the previous effective tracking transport.
 		expect(
 			jsMode,
-			'javascript_mode was not reset to "on" — migration is still gated on use_slimstat_banner'
-		).toBe('on');
+			'The upgrade must preserve javascript_mode off'
+		).toBe('off');
 	});
 
 	test('client-side tracking sends JS request (not gated by params.id)', async ({

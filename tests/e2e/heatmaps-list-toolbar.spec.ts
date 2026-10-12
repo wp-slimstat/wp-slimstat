@@ -25,9 +25,9 @@ test('counts stay on one line and Delete reads as destructive', async ({ page })
   await page.goto(LIST);
   await expect(page.locator('.ss-hm-table')).toHaveAttribute('aria-busy', 'false');
 
-  const heat = page.locator('.ss-hm-table td:has(.ss-hm-heat)').first();
-  if (await heat.count()) {
-    expect(await heat.evaluate((td) => getComputedStyle(td).whiteSpace)).toBe('nowrap');
+  const count = page.locator('.ss-hm-table tbody td.num.ss-hm-nowrap').first();
+  if (await count.count()) {
+    expect(await count.evaluate((td) => getComputedStyle(td).whiteSpace)).toBe('nowrap');
   }
 
   // Delete renders only once Pro capture has set up the heatmap tables (never on a Free-only

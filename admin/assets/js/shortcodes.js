@@ -108,6 +108,7 @@
         if (!initial) schedule();
     }
     function loading() {
+        $('preview').querySelectorAll('canvas').forEach(canvas => window.Chart?.getChart(canvas)?.destroy());
         $('preview').replaceChildren();
         $('preview').setAttribute('aria-busy', 'true');
         $('preview').classList.add('is-loading');
@@ -123,6 +124,7 @@
             const result = await wp.apiFetch({ path: '/slimstat/v1/shortcode/preview', method: 'POST', data: { shortcode: $('code').value } });
             if (current !== request) return;
             $('preview').innerHTML = result.html;
+            $('preview').querySelectorAll('[id^="slimstat_chart_data_"]').forEach(element => window.reinitializeSlimStatCharts(element.id.replace('slimstat_chart_data_', '')));
             if (!$('preview').textContent.trim()) {
                 const comment = [...$('preview').childNodes].find(child => child.nodeType === Node.COMMENT_NODE);
                 const empty = manual ? __('No pageviews matched. Try a longer period or remove a filter.', 'wp-slimstat') : sprintf(

@@ -8,6 +8,15 @@
     margin-bottom: 0 !important;
     scrollbar-gutter: auto;
 }
+/* Channels and UTM Campaigns share a row; the legacy grid makes .large two-thirds below 1560px. */
+.wrap-slimstat .postbox.slimstat-acquisition-box {
+    width: 49.1%;
+}
+@media screen and (max-width: 800px) {
+    .wrap-slimstat .postbox.slimstat-acquisition-box {
+        width: 99.5%;
+    }
+}
 .wrap-slimstat .slimstat-acquisition {
     container-type: inline-size;
     --ss-acquisition-accent: var(--ss-info-fg);
@@ -16,6 +25,28 @@
     font-size: var(--ss-text-base);
     line-height: 1.5;
     padding: var(--ss-space-4);
+}
+/* Header shortcut beside Export: the same quiet weight, a link icon instead of a button border. */
+.wrap-slimstat .slimstat-header-buttons .slimstat-utm-builder-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-inline-end: var(--ss-space-2);
+    padding: 5px;
+    border-radius: 5px;
+    color: var(--ss-text-tertiary);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+}
+.wrap-slimstat .slimstat-header-buttons .slimstat-utm-builder-link:hover {
+    color: var(--ss-text-primary);
+}
+.wrap-slimstat .slimstat-header-buttons .slimstat-utm-builder-link .dashicons {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
 }
 .wrap-slimstat .slimstat-acquisition__intro {
     display: flex;
@@ -303,6 +334,71 @@
     border-color: var(--ss-info-fg);
     text-decoration: underline;
 }
+/* Free: the list continues as one locked row that names the hidden groups. */
+.wrap-slimstat .slimstat-acquisition__locked {
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--ss-space-1) var(--ss-space-2);
+    padding: var(--ss-space-3) var(--ss-space-4);
+    border-top: 1px dashed var(--ss-border);
+    color: var(--ss-text-muted);
+    line-height: 1.5;
+}
+.wrap-slimstat .slimstat-acquisition__locked .dashicons {
+    width: 12px;
+    height: 12px;
+    font-size: 12px;
+    line-height: 1;
+    align-self: start;
+    margin-top: 4px;
+}
+.wrap-slimstat .slimstat-acquisition__teaser strong {
+    color: var(--ss-text-primary);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.wrap-slimstat .slimstat-acquisition__unlock {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ss-space-1);
+    padding-block: var(--ss-space-1);
+    color: var(--ss-info-fg);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.wrap-slimstat .slimstat-acquisition__unlock:hover,
+.wrap-slimstat .slimstat-acquisition__unlock:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.wrap-slimstat .slimstat-acquisition__unlock > span {
+    transition: translate var(--ss-duration-fast) cubic-bezier(0.25, 1, 0.5, 1);
+}
+.wrap-slimstat .slimstat-acquisition__unlock:is(:hover, :focus-visible) > span {
+    translate: 2px;
+}
+[dir="rtl"] .wrap-slimstat .slimstat-acquisition__unlock > span {
+    scale: -1 1;
+}
+[dir="rtl"] .wrap-slimstat .slimstat-acquisition__unlock:is(:hover, :focus-visible) > span {
+    translate: -2px;
+}
+.wrap-slimstat .slimstat-acquisition__activate {
+    grid-column: 2 / -1;
+    width: fit-content;
+    color: var(--ss-text-muted);
+    font-size: var(--ss-text-sm);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.wrap-slimstat .slimstat-acquisition__activate:hover {
+    color: var(--ss-info-fg);
+}
+@container (max-width: 420px) {
+    .wrap-slimstat .slimstat-acquisition__unlock { grid-column: 2 / -1; }
+}
 @container (max-width: 520px) {
     .wrap-slimstat .slimstat-acquisition__groups {
         --ss-acquisition-count: 64px;
@@ -310,6 +406,7 @@
     }
     .wrap-slimstat .slimstat-acquisition__group > summary,
     .wrap-slimstat .slimstat-acquisition__columns,
+    .wrap-slimstat .slimstat-acquisition__locked,
     .wrap-slimstat .slimstat-acquisition__breakdown { padding-inline: var(--ss-space-2); }
     .wrap-slimstat .slimstat-acquisition meter { display: none; }
     .wrap-slimstat .slimstat-acquisition th,
@@ -448,3 +545,19 @@
     .wrap-slimstat .slimstat-utm-builder input,
     .wrap-slimstat .slimstat-utm-builder textarea { font-size: var(--ss-text-lg); }
 }
+
+/* Shared report overlays use the Goals & Funnels surface tokens. */
+html.ss-report-dialog-open { overflow: hidden; }
+.wrap-slimstat dialog.ss-report-dialog {
+    position: fixed; inset: 0; margin: auto; box-sizing: border-box;
+    width: min(720px, calc(100% - 32px)); max-height: calc(100dvh - 48px);
+    padding: var(--ss-space-6); border: 1px solid var(--ss-border-soft);
+    border-radius: var(--ss-radius-lg); background: var(--ss-surface);
+    color: var(--ss-text-primary); box-shadow: var(--ss-shadow-modal);
+    font-size: var(--ss-text-md); line-height: 1.65; overflow: auto;
+}
+.wrap-slimstat dialog.ss-report-dialog:not([open]) { display: none; }
+.wrap-slimstat dialog.ss-report-dialog::backdrop { background: rgb(20 24 30 / 55%); }
+.ss-report-dialog__heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.wrap-slimstat .ss-report-dialog p { max-width: 70ch; margin-block: 16px; }
+.wrap-slimstat .ss-report-dialog h2 { margin-block: 0 16px; }

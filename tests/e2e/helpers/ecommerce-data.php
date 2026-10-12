@@ -41,6 +41,13 @@ if ('seed' === $mode) {
 	$state['complete'] = true;
 	update_option(Integration::STATE, $state, false);
 	$start = (int) floor((wp_slimstat::now() - 10 * DAY_IN_SECONDS) / DAY_IN_SECONDS) * DAY_IN_SECONDS;
+	// Use a quiet window: unrelated staging visits on the following day must not pollute chart assertions.
+	for ($offset = 10; $offset < 60; ++$offset) {
+		$start = (int) floor((wp_slimstat::now() - $offset * DAY_IN_SECONDS) / DAY_IN_SECONDS) * DAY_IN_SECONDS;
+		$occupied = Integration::db()->get_var(Integration::db()->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE dt BETWEEN %d AND %d", $start - DAY_IN_SECONDS, $start + 2 * DAY_IN_SECONDS - 1));
+		if (!$occupied) { break; }
+	}
+	if ($occupied) { throw new RuntimeException('No isolated Ecommerce fixture window available.'); }
 	$fixture = ['orders' => [], 'products' => [], 'stats' => [], 'start' => $start, 'end' => $start + DAY_IN_SECONDS - 1,
 		'expected' => ['USD' => ['net' => '115.00', 'orders' => 4, 'aov' => '28.75', 'refunds' => '60.00', 'discounts' => '20.00', 'tax' => '14.00', 'shipping' => '5.00', 'product_net' => '110.00', 'net_units' => 3, 'linked_orders' => 2],
 			'EUR' => ['net' => '200.00', 'orders' => 1], 'google_USD' => ['net' => '65.00', 'orders' => 2],
@@ -168,7 +175,7 @@ if ('chart' === $mode) {
 		$same(120, $daily['journey']['visits'], 'Overall visits remain distinct');
 		$same(240, array_sum(array_column($daily['series']['current'], 'visits')), 'A visit active on both days appears in both daily intervals');
 		$same(0.0, (float) $daily['series']['current'][1]['rate'], 'Measured zero purchases is a valid zero rate');
-		$same(null, $daily['series']['current'][1]['aov'], 'No orders is unavailable AOV, not zero');
+		$same(0.0, $daily['series']['current'][1]['aov'], 'No orders plots AOV at zero');
 		$monthly = (new Report())->data('monthly');
 		$same(120, $monthly['series']['current'][0]['visits'], 'Month recomputes distinct visits instead of summing daily counts');
 		$same(100 / 120, $monthly['series']['current'][0]['rate'], 'Month recomputes rate from its own cohort');

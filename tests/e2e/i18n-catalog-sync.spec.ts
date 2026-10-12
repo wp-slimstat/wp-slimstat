@@ -357,4 +357,29 @@ test.describe('Issue #173: i18n catalog sync', () => {
     expect(html).not.toContain('Fatal error');
     expect(html).not.toMatch(/Warning:.*\.php/);
   });
+  test('bundled JavaScript catalogs load on Heatmaps, Shortcodes and Ecommerce', async ({ page }) => {
+    await setWplang('de_DE');
+    const screens = [
+      ['slimheatmap', 'admin/assets/js/heatmaps.js'],
+      ['slimshortcodes', 'admin/assets/js/shortcodes.js'],
+      ['slimview7', 'admin/assets/js/ecommerce.js'],
+    ];
+    for (const [screen, source] of screens) {
+      const file = fs.readdirSync(PLUGIN_LANGUAGES).find(name => name.startsWith('wp-slimstat-de_DE-') && name.endsWith('.json') && JSON.parse(fs.readFileSync(path.join(PLUGIN_LANGUAGES, name), 'utf8')).source === source);
+      expect(file, `Bundled catalog for ${source}`).toBeTruthy();
+      const catalogPath = path.join(PLUGIN_LANGUAGES, file!);
+      const original = fs.readFileSync(catalogPath, 'utf8');
+      const catalog = JSON.parse(original);
+      // A temporary translation proves the plugin-local catalog path, without inventing a shipped translation.
+      catalog.locale_data.messages['October catalog probe'] = ['Katalog geladen'];
+      try {
+        fs.writeFileSync(catalogPath, JSON.stringify(catalog));
+        await page.goto(`/wp-admin/admin.php?page=${screen}`);
+        await expect.poll(() => page.evaluate(() => (window as any).wp?.i18n.__('October catalog probe', 'wp-slimstat'))).toBe('Katalog geladen');
+      } finally {
+        fs.writeFileSync(catalogPath, original);
+      }
+    }
+  });
+
 });

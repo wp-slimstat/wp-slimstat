@@ -19,7 +19,7 @@
     // An empty cell says so instead of looking like a rendering gap.
     const NONE = '\u2014';
     const state = { rows: [], ever: true, sort: 'clicks', dir: -1, page: 0, updated: 0, highlight: new URLSearchParams(location.search).get('highlight') || '' };
-    let request = 0;
+    let request = 0, pending = false, reload = false;
     let previews = 0;
 
     function el(tag, attrs, children) {
@@ -99,24 +99,13 @@
             .catch((error) => list.replaceWith(el('p', {}, [(error && error.message) || __('Heatmap data could not be loaded. Try a shorter date range, then retry.', 'wp-slimstat')])));
     }
 
-    // A neutral split bar plus the leading device in words; the full split is the tooltip.
     function devices(row) {
-        const names = [__('Desktop', 'wp-slimstat'), __('Tablet', 'wp-slimstat'), __('Mobile', 'wp-slimstat')];
-        const label = names.map((name, i) => name + ' ' + number.format(row.devices[i])).join(', ');
+        const names = [__('Desktop', 'wp-slimstat'), __('Tablet', 'wp-slimstat'), __('Mobile', 'wp-slimstat'), __('Unknown', 'wp-slimstat')];
+        const counts = [...row.devices, Math.max(0, row.clicks - row.devices.reduce((sum, n) => sum + n, 0))];
+        const label = counts.map((n, i) => names[i] + ' ' + number.format(row.clicks ? 100 * n / row.clicks : 0) + '%').join(', ');
         const bar = el('span', { class: 'ss-hm-devices', 'aria-hidden': 'true' });
-        row.devices.forEach((n, i) => {
-            if (n) bar.append(el('span', { class: 'ss-hm-device-' + i, style: 'flex-grow:' + n }));
-        });
-        const top = row.devices.indexOf(Math.max(...row.devices));
-        const share = row.clicks ? Math.round((row.devices[top] / row.clicks) * 100) : 0;
-        return el('span', { class: 'ss-hm-device', title: label }, [
-            bar,
-            el('span', {}, [sprintf(
-                /* translators: 1: device name, 2: its share of clicks in percent */
-                __('%1$s %2$s%%', 'wp-slimstat'), names[top], share
-            )]),
-            el('span', { class: 'screen-reader-text' }, [label]),
-        ]);
+        counts.forEach((n, i) => { if (n) bar.append(el('span', { class: 'ss-hm-device-' + i, style: 'flex-grow:' + n })); });
+        return el('span', { class: 'ss-hm-device', tabindex: '0', title: __('Percentage of all recorded clicks in the selected date range and device filter. Unknown means no usable viewport width.', 'wp-slimstat') }, [bar, el('span', {}, [label])]);
     }
 
     function rowNode(row, shown) {
@@ -129,17 +118,19 @@
               ]);
         if (!row.url) action.addEventListener('click', () => openRow(row, tr));
         // No post title (archives, search, 404): the address is the name.
-        const page = el('td', { class: 'ss-hm-page' }, row.title ? [el('strong', {}, [row.title]), el('span', { class: 'ss-hm-path' }, [row.page])] : [el('strong', {}, [row.page])]);
+        let path = row.page;
+        try { path = decodeURI(path); } catch (_) { /* Keep malformed paths readable without throwing. */ }
+        if (path === '/') path = __('Homepage', 'wp-slimstat');
+        const page = el('td', { class: 'ss-hm-page' }, row.title ? [el('strong', {}, [row.title]), el('span', { class: 'ss-hm-path' }, [row.page])] : [el('strong', { title: row.page }, [path])]);
         const dead = null === row.dead ? NONE : sprintf(
             /* translators: 1: dead clicks, 2: rage clicks */
             __('%1$s dead · %2$s rage', 'wp-slimstat'), number.format(row.dead), number.format(row.rage)
         );
         const tr = el('tr', { class: row.page === state.highlight ? 'is-highlighted' : '' }, [
             page,
-            // Heat dot: share of the hottest page in the range; sqrt keeps quiet pages visible.
             el('td', { class: 'num ss-hm-nowrap' }, [
-                el('span', { class: 'ss-hm-heat', style: '--heat:' + Math.max(12, Math.round(Math.sqrt(row.clicks / shown.max) * 100)) + '%', 'aria-hidden': 'true' }),
                 number.format(row.clicks),
+                ...(row.clicks < 30 ? [el('small', { class: 'ss-hm-low-data', tabindex: '0', title: __('Fewer than 30 recorded clicks. Use this as an early indication, not statistical assurance.', 'wp-slimstat') }, [__('Low data', 'wp-slimstat')])] : []),
             ]),
             el('td', { class: 'num' }, [number.format(row.pageviews)]),
             el('td', { class: 'num' }, [row.pageviews ? number.format(row.clicks / row.pageviews) : NONE]),
@@ -178,7 +169,6 @@
             scroll: state.rows.some((r) => null !== r.scroll),
             dead: state.rows.some((r) => null !== r.dead),
             full: 'pro' === config.mode && state.rows.some((r) => r.full),
-            max: Math.max(1, ...state.rows.map((r) => r.clicks)),
         };
         ['scroll', 'dead', 'full'].forEach((key) => {
             table.tHead.querySelector('th[data-sort="' + key + '"]').hidden = !shown[key];
@@ -229,7 +219,10 @@
         )) : '';
     }
 
-    function load(refresh) {
+    function load(refresh, automatic = false) {
+        if (pending) { if (!automatic) { reload = true; ++request; } return; }
+        pending = true;
+        const scroll = { x: window.scrollX, y: window.scrollY };
         const id = ++request;
         const params = new URLSearchParams({ device: form.device.value, from: range.dataset.start, to: range.dataset.end });
         if (refresh) params.set('refresh', '1');
@@ -241,22 +234,25 @@
                 state.rows = data.rows;
                 state.ever = false !== data.ever;
                 state.updated = data.updated;
-                if (state.highlight) {
+                if (state.highlight && !automatic) {
                     const index = visibleRows().findIndex((r) => r.page === state.highlight);
                     if (index >= 0) state.page = Math.floor(index / PER_PAGE);
                 }
                 render();
                 const mark = body.querySelector('.is-highlighted');
-                if (mark) mark.scrollIntoView({ block: 'center' });
+                if (mark && !automatic) mark.scrollIntoView({ block: 'center' });
+                if (automatic) window.scrollTo(scroll.x, scroll.y);
             })
             .catch((error) => {
                 if (id !== request) return;
                 table.hidden = true;
                 pager.hidden = true;
-                showEmpty((error && error.message) || __('Heatmap data could not be loaded. Try a shorter date range, then retry.', 'wp-slimstat'), [[__('Retry', 'wp-slimstat'), () => load()]]);
+                showEmpty((error && error.message) || __('Heatmap data could not be loaded. Try a shorter date range, then retry.', 'wp-slimstat'), [[__('Retry', 'wp-slimstat'), () => load(true)]]);
             })
             .finally(() => {
-                if (id === request) table.classList.remove('is-loading');
+                if (id === request) { table.classList.remove('is-loading'); table.setAttribute('aria-busy', 'false'); }
+                pending = false;
+                if (reload) { reload = false; load(true); }
             });
     }
 
@@ -290,8 +286,23 @@
         render();
     });
     root.querySelectorAll('[data-dialog]').forEach((button) => {
-        button.addEventListener('click', () => document.getElementById(button.dataset.dialog).showModal());
+        button.addEventListener('click', () => {
+            const dialog = document.getElementById(button.dataset.dialog);
+            // Safari does not focus a clicked button, so native focus restoration would land on <body>.
+            dialog.addEventListener('close', () => button.focus(), { once: true });
+            dialog.showModal();
+        });
     });
 
+    const confirmation = root.querySelector('[name="heatmap_delete_confirmation"]');
+    if (confirmation) {
+        const submit = confirmation.form.querySelector('[data-confirm-delete]');
+        confirmation.addEventListener('input', () => { submit.disabled = confirmation.value !== 'DELETE'; });
+    }
+    function refreshVisible() {
+        if (!document.hidden && !root.querySelector('dialog[open]') && Date.now() / 1000 - state.updated >= 60) load(true, true);
+    }
+    setInterval(refreshVisible, 60000);
+    document.addEventListener('visibilitychange', refreshVisible);
     load();
 })();

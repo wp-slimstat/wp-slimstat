@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
-Tested up to: 7.1.2
+Tested up to: 7.1
 Stable tag: 6.0.0
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -119,6 +119,9 @@ Back up your database first. This update only ADDS columns and never removes a r
 Deleting the plugin no longer erases your analytics. Data is now kept by default and removed only if you enabled Settings → Maintenance → "Delete Data on Uninstall" first. Also fixes a rare blank-screen/admin-lockout on plugin load.
 
 == Changelog ==
+
+= Unreleased =
+* Improve campaign dialogs, Ecommerce reports, Heatmaps freshness and deletion confirmation, shortcode charts and migrations. Preserve existing upgrade settings. See CHANGELOG.md for details.
 
 = 6.0.0 - 2026-10-06 =
 * New Shortcode Playground under SlimStat → Shortcodes: browse reports, preview your data, adjust filters and copy a shortcode. New live visitor, page and country counters. Personal data in shortcodes now shows only to people allowed to view analytics.

@@ -19,6 +19,23 @@ test('Top Countries and Traffic Summary share a row', async ({ page }) => {
   expect(await top(page, '#slim_p3_02')).toBe(await top(page, '#slim_p1_13'));
 });
 
+test('Channels and UTM Campaigns share a row at half width', async ({ page }) => {
+  await page.goto(PAGE);
+  expect(await top(page, '#slim_p3_04')).toBe(await top(page, '#slim_p3_03'));
+  const share = await page.locator('#slim_p3_03').evaluate((e) => e.getBoundingClientRect().width / e.parentElement!.getBoundingClientRect().width);
+  expect(share).toBeGreaterThan(0.45); expect(share).toBeLessThan(0.52);
+});
+
+test('the campaign link builder sits in the header left of Export, and the bottom help link is gone', async ({ page }) => {
+  await page.goto(PAGE);
+  for (const id of ['#slim_p3_03', '#slim_p3_04']) {
+    const header = page.locator(`${id} > .slimstat-header-buttons`);
+    expect((await header.locator('a').allTextContents()).map((t) => t.trim()).slice(0, 2)).toEqual(['Build campaign link', 'Export']);
+    await expect(header.locator('.slimstat-utm-builder-link')).toHaveCSS('border-top-width', '0px');
+    await expect(page.locator(id).getByRole('button', { name: 'How to read this report' })).toHaveCount(0);
+  }
+});
+
 test('the chart keeps its last x label clear of the card edge', async ({ page }) => {
   await page.goto(PAGE);
   const gap = () => page.evaluate(() => {
@@ -42,7 +59,7 @@ test('the report guide lines up with the table or empty state, without a legacy 
   // legacy report body pads and underlines every paragraph as a list row.
   for (const range of ['', '&type=custom&from=2001-01-01&to=2001-01-02']) {
     await page.goto(PAGE + range);
-    const blocks = page.locator('#slim_p3_04 :is(.slimstat-acquisition__guide, .slimstat-acquisition__groups, .slimstat-acquisition__empty)');
+    const blocks = page.locator('#slim_p3_04 :is(.slimstat-acquisition__intro, .slimstat-acquisition__groups, .slimstat-acquisition__empty)');
     await expect(blocks).toHaveCount(2);
     const [guide, body] = await blocks.evaluateAll((nodes) => nodes.map((n) => {
       const cs = getComputedStyle(n);
@@ -61,7 +78,7 @@ test('the UTM builder opens only from a report link, and closing it returns focu
   await link.click();
   await expect(builder).toBeVisible();
   await expect(page.locator('[name="website"]')).toBeFocused();
-  await builder.locator('> summary').click();
+  await page.keyboard.press('Escape');
   await expect(builder).toBeHidden();
   await expect(link).toBeFocused();
 });

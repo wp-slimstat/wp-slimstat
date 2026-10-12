@@ -50,12 +50,12 @@ $offered_migrations      = (isset($offered_migrations) && is_array($offered_migr
                     if (!$offered_only) :
                     ?>
                     <div class="slimstat-status-header" aria-live="polite">
-                        <span class="slimstat-status-text" data-label-idle="<?php echo esc_attr__('Ready to start', 'wp-slimstat'); ?>" data-label-running="<?php echo esc_attr__('Migrating database…', 'wp-slimstat'); ?>" data-label-done="<?php echo esc_attr__('Migration complete', 'wp-slimstat'); ?>" data-label-failed="<?php echo esc_attr__('Migration failed', 'wp-slimstat'); ?>"><?php echo esc_html__('Ready to start', 'wp-slimstat'); ?></span>
+                        <span class="slimstat-status-text" data-label-idle="<?php echo esc_attr__('Ready to start', 'wp-slimstat'); ?>" data-label-running="<?php echo esc_attr__('Migrating database…', 'wp-slimstat'); ?>" data-label-done="<?php echo esc_attr__('✓ Database is up to date', 'wp-slimstat'); ?>" data-label-failed="<?php echo esc_attr__('Migration failed', 'wp-slimstat'); ?>"><?php echo esc_html__('Ready to start', 'wp-slimstat'); ?></span>
                         <span class="slimstat-status-badge slimstat-badge-idle"><?php echo esc_html__('Idle', 'wp-slimstat'); ?></span>
                     </div>
 
                     <?php // Present continuous under an "Idle" badge, on a page where nothing had started. ?>
-                    <p class="slimstat-status-intro"><?php echo esc_html__('This will migrate your database to improve SlimStat performance and stability. Keep this page open until the process finishes. You can review each step below.', 'wp-slimstat'); ?></p>
+                    <p class="slimstat-status-intro"><?php echo esc_html__('SlimStat requires a database update. Back up your database first, then select Start Migration. Keep this page open until it finishes. A time estimate is unavailable: duration depends on affected rows and database performance.', 'wp-slimstat'); ?></p>
 
                     <ul class="slimstat-status-metrics">
                         <li><span class="label"><?php echo esc_html__('Total steps', 'wp-slimstat'); ?></span><span class="value" id="slimstat-metrics-total">0</span></li>
@@ -78,32 +78,23 @@ $offered_migrations      = (isset($offered_migrations) && is_array($offered_migr
                     // element, so a failed step reported into something with display:none.
                     // Pinned by tests/migration-notice-visibility-test.php.
                     ?>
-                    <div class="status-note notice inline notice-info slimstat-migration-notice" id="slimstat-status-note">
+                    <div id="slimstat-status-note" class="status-note notice inline slimstat-migration-notice <?php echo $has_required_migrations ? 'notice-info' : 'notice-success'; ?>">
                         <?php if ($has_required_migrations): ?>
                             <?php echo esc_html__('Click "Start Migration" to begin. Progress and details will appear here.', 'wp-slimstat'); ?>
                         <?php else: ?>
                             <?php
-                            printf(
-                                esc_html(
-                                    /* translators: %d: number of optional migration steps. */
-                                    _n(
-                                        'No migration is required. %d optional step is listed below. Start it yourself when you are ready.',
-                                        'No migration is required. %d optional steps are listed below. Start each one yourself when you are ready.',
-                                        count($offered_migrations),
-                                        'wp-slimstat'
-                                    )
-                                ),
-                                count($offered_migrations)
-                            );
+                            echo esc_html__('✓ Database is up to date', 'wp-slimstat');
                             ?>
                         <?php endif; ?>
                     </div>
 
                     <?php // Open when the steps inside it are the only way to act on this page. ?>
-                    <details class="slimstat-details" style="margin:10px 0;"<?php echo $offered_only ? ' open' : ''; ?>>
-                        <summary style="cursor:pointer;"><?php echo esc_html__('Migration Steps & Diagnostics', 'wp-slimstat'); ?></summary>
+                    <details class="slimstat-details" style="margin:10px 0;">
+                        <summary style="cursor:pointer;"><?php echo esc_html__('Technical details', 'wp-slimstat'); ?></summary>
                         <ul id="slimstat-migration-list"></ul>
                     </details>
+
+                    <?php if ($offered_migrations) : ?><details class="slimstat-details"><summary><?php esc_html_e('Advanced (optional)', 'wp-slimstat'); ?></summary><p><?php esc_html_e('These steps are optional and do not block the required update. Review each benefit and any tracking interruption before running it.', 'wp-slimstat'); ?></p><ul id="slimstat-optional-migration-list"></ul></details><?php endif; ?>
 
                     <div class="slimstat-actions" style="margin-top:12px;">
                         <?php if ($has_required_migrations): ?>
