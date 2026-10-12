@@ -2512,7 +2512,7 @@ class wp_slimstat_admin
         // show_message() runs wpautop(): paragraphs are separated by one blank line, and no other newline may appear.
         if ($compact) {
             $html = $heading
-                . esc_html__('Faster reports, Channels and UTM Campaigns, a WooCommerce revenue dashboard, Heatmaps and a Shortcode Playground. Your settings and data carry over, and nothing heavy runs until you click.', 'wp-slimstat')
+                . esc_html__('Faster reports, Channels and UTM Campaigns, a WooCommerce revenue dashboard, Heatmaps and a Shortcode Playground. Your settings and data carry over.', 'wp-slimstat')
                 . ($is_pro ? ' ' . esc_html__('SlimStat Pro 3.0.0 adds heatmap page previews and Ecommerce email reports.', 'wp-slimstat') : '')
                 . "\n\n" . $link('slimview2', __('Explore SlimStat 6', 'wp-slimstat'), 'button button-primary') . ' ' . $migration;
             self::show_message($html, 'info', 'latest-news');
@@ -2528,7 +2528,7 @@ class wp_slimstat_admin
         $rows[] = ['editor-code', __('Shortcode Playground', 'wp-slimstat'), __('Preview a report, then copy its shortcode.', 'wp-slimstat'), 'slimshortcodes', __('Open Shortcodes', 'wp-slimstat')];
 
         $html = $heading
-            . esc_html__('Reports are faster, your settings and data carry over, and nothing heavy runs until you click. Includes important security hardening.', 'wp-slimstat')
+            . esc_html__('Reports are faster, and your settings and data carry over. Includes important security hardening.', 'wp-slimstat')
             . ($is_pro ? ' ' . esc_html__('SlimStat Pro 3.0.0 adds heatmap page previews, Ecommerce email reports and the Heatmap insights email.', 'wp-slimstat') : '')
             . "\n\n" . '<ul class="slimstat-whats-new">';
         foreach ($rows as [$icon, $name, $why, $page, $open]) {

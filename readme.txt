@@ -119,7 +119,7 @@ Back up your database first. This update only ADDS columns and never removes a r
 
 = 6.0.0 - 2026-10-12 =
 
-**SlimStat 6: see where visitors click, which campaigns bring sales, and trust every number.** Update with confidence: your settings and data carry over, and nothing heavy runs until you click.
+**SlimStat 6: see where visitors click, which campaigns bring sales, and trust every number.** Update with confidence: your settings and data carry over, and the optional database steps wait for your click.
 
 **New: Heatmaps**
 * A Heatmaps page lists every page with clicks: clicks, pageviews, clicks per pageview, device split and last click. Search, sort and pick any date range. Open it from the menu or the Heatmap button in the admin bar.

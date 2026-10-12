@@ -32,7 +32,7 @@ $ecommerce = ['cart', __('Ecommerce Pro', 'wp-slimstat'), __('Compare campaign a
 $converts = [
     ['flag', __('Goals & Funnels', 'wp-slimstat'), __('See where visitors complete each step and where they drop off.', 'wp-slimstat'), __('1 goal, no funnels', 'wp-slimstat'), __('5 goals and 3 funnels', 'wp-slimstat')],
     ['welcome-view-site', __('Heatmaps', 'wp-slimstat'), __('See click and scroll maps for each page on mobile, tablet, and desktop. Find dead clicks and rage clicks, and view campaign visitors separately.', 'wp-slimstat'), __('Page list with click counts', 'wp-slimstat'), __('Click overlay on any page', 'wp-slimstat'), __('Pro includes desktop, tablet and mobile previews, goal and campaign visitor filters, CSV downloads and the Heatmap insights email report. Scroll depth and dead/rage clicks require full capture; available history follows your tracking and consent settings.', 'wp-slimstat')],
-    ['chart-area', __('Channels and UTM Campaigns', 'wp-slimstat'), __('See every channel and campaign that brings visitors.', 'wp-slimstat'), __('Top two groups per report', 'wp-slimstat'), __('Every channel and campaign', 'wp-slimstat')],
+    ['chart-area', __('Channels and UTM Campaigns', 'wp-slimstat'), __('See every channel and campaign that brings visitors.', 'wp-slimstat'), __('Top two groups per report', 'wp-slimstat'), __('Every group, up to your SQL limit', 'wp-slimstat')],
 ];
 if ($commerce) {
     array_unshift($converts, $ecommerce);
