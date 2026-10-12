@@ -137,6 +137,17 @@ check(count($rules[0]) >= 5, 'Release notice: tokens.css styles the what\'s-new 
 check(!preg_match('/\b(margin|padding)-(left|right)\s*:|\bfloat\s*:|text-align\s*:\s*(left|right)/', implode("\n", $rules[2])), 'Release notice: what\'s-new rows use logical properties only (no RTL stylesheet exists)');
 check(false !== strpos(read_or_die('src/Migration/MigrationService.php'), 'public static function manager(): ?MigrationManager'), 'Release notice: MigrationService exposes the manager so the notice can wait for migrations');
 
+// --- Pro links (tests/Integration/ProLinksTest.php covers Export and the Channels row) ---
+$upgrade = read_or_die('admin/view/upgrade-pro.php');
+preg_match('/\$converts = \[(.*?)\n\];/s', $upgrade, $converts);
+check(false !== strpos($converts[1] ?? '', "__('Channels and UTM Campaigns', 'wp-slimstat')"), 'Pro page: "See all channels with Pro" lands on a section that lists Channels and UTM Campaigns');
+$proAdds = read_or_die('admin/view/partials/pro-adds.php');
+preg_match('/<\?php if \(current_user_can\(\'manage_options\'\)\) : \?>(.*?)<\?php endif; \?>/s', $proAdds, $proAddsLinks);
+check(2 === substr_count($proAdds, '<a ') && 2 === substr_count($proAddsLinks[1] ?? '', '<a '), 'Pro adds: both buttons render only for manage_options; the sentence stays for everyone');
+$ecommerce = read_or_die('admin/view/partials/ecommerce.php');
+check(false !== strpos($ecommerce, "<?php if (current_user_can('manage_options')) : ?><a class=\"button button-primary\" href=\"<?php echo esc_url(admin_url('admin.php?page=slimpro#ss-pro-converts')); ?>\">"), 'Ecommerce: the discover button opens the converts section, for manage_options only');
+check(false === strpos($ecommerce, 'wp-slimstat.com/pricing') && false === strpos(read_or_die('src/Reports/AcquisitionReport.php'), 'wp-slimstat.com/pricing'), 'Ecommerce and Channels: no pricing link for users who cannot buy');
+
 if ($failures > 0) {
     fwrite(STDERR, "{$failures} check(s) failed in admin-ui-render-guards-test.php\n");
     exit(1);

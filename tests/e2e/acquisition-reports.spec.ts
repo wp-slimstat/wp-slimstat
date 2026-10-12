@@ -362,7 +362,7 @@ test.describe('UTM and channel reports', () => {
       const locked = channels.locator('.slimstat-acquisition__locked');
       await expect(locked.locator('.slimstat-acquisition__teaser')).toHaveText('Also active this period: AI Assistants, AI User-requested Fetches, Internal Navigation, and Paid Search.');
       const unlock = locked.getByRole('link', { name: 'See all channels with Pro', exact: true });
-      await expect(unlock).toHaveAttribute('href', /page=slimpro/);
+      await expect(unlock).toHaveAttribute('href', /admin\.php\?page=slimpro#ss-pro-converts$/);
       await expect(locked.getByRole('link', { name: 'Already have Pro? Activate the plugin' })).toHaveCount(installed ? 1 : 0);
       await expect(channels.locator('.slimstat-acquisition__pagination')).toHaveCount(0);
 
@@ -390,6 +390,8 @@ test.describe('UTM and channel reports', () => {
     await fixture();
     await setSlimstatOption(page, 'restrict_authors_view', 'on');
     await setSlimstatOption(page, 'capability_can_view', 'read');
+    await snapshotOption('active_plugins');
+    runWordPressFixture("<?php deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php', true);");
     const author = await browser.newContext({ storageState: path.join(here, '.auth/author.json') });
     try {
       const authorPage = await author.newPage();
@@ -398,7 +400,11 @@ test.describe('UTM and channel reports', () => {
       await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('2 campaigns - 3 pageviews');
       await expect(utm).not.toContainText('Private campaign');
       await expect(utm.getByRole('link', { name: 'View sales in Ecommerce' })).toHaveCount(0);
-    } finally { await author.close(); }
+      // Without Pro the author still learns which channels are hidden, but gets no purchase link.
+      const locked = authorPage.locator('#slim_p3_03 .slimstat-acquisition__locked');
+      await expect(locked.locator('.slimstat-acquisition__teaser')).toContainText('Also active this period:');
+      await expect(locked.locator('a')).toHaveCount(0);
+    } finally { await author.close(); await restoreOption('active_plugins'); }
     const badNonce = await page.request.post('/wp-admin/admin-ajax.php', { form: { action: 'slimstat_load_report', report_id: 'slim_p3_04', security: 'invalid' } });
     expect(badNonce.status()).toBe(403);
     const anonymous = await browser.newContext({ storageState: { cookies: [], origins: [] } });

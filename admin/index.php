@@ -4369,30 +4369,23 @@ class wp_slimstat_admin
             return $_header_buttons;
         }
 
-        return self::pro_export_link(empty($_report_id) ? 'report-unknown' : $_report_id) . ' ' . $_header_buttons;
+        return self::pro_export_link() . ' ' . $_header_buttons;
     }
 
     /**
-     * Free's Export: looks like Pro's, opens the Pro page. Administrators stay in wp-admin;
-     * anyone who can't open that page goes to pricing in a new tab.
+     * Free's Export: looks like Pro's, opens the Share section of the Pro page. Users who
+     * can't open that page get no button: no purchase link for someone who cannot buy.
      *
      * Not a .slimstat-filter-link: admin.js turns those clicks into a POST of the filters
      * form to the link's URL, which sent the date range to the pricing site.
      */
-    public static function pro_export_link(string $utm_medium, string $attributes = ''): string
+    public static function pro_export_link(string $attributes = ''): string
     {
-        $admin = current_user_can('manage_options');
-        $url   = $admin ? admin_url('admin.php?page=slimpro') : add_query_arg(
-            [
-                'utm_source'   => 'admin',
-                'utm_medium'   => $utm_medium,
-                'utm_campaign' => 'export',
-            ],
-            'https://wp-slimstat.com/pricing/'
-        );
+        if (!current_user_can('manage_options')) {
+            return '';
+        }
 
-        return '<a class="button-export-to-xls slimstat-font-download noslimstat" href="' . esc_url($url) . '"'
-            . ($admin ? '' : ' target="_blank" rel="noopener"') . $attributes
+        return '<a class="button-export-to-xls slimstat-font-download noslimstat" href="' . esc_url(admin_url('admin.php?page=slimpro#ss-pro-share')) . '"' . $attributes
             . ' title="' . esc_attr__('Export to CSV with Pro', 'wp-slimstat') . '"><span class="dashicons dashicons-download" aria-hidden="true"></span>'
             . esc_html__('Export', 'wp-slimstat') . '</a>';
     }
