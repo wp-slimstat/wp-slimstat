@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-12T06:21:14+00:00\n"
+"POT-Creation-Date: 2026-10-12T06:34:54+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -152,8 +152,8 @@ msgstr ""
 #: admin/view/wp-slimstat-reports.php:118
 #: admin/view/wp-slimstat-reports.php:127
 #: src/Reports/AcquisitionReport.php:101
-#: src/Reports/AcquisitionReport.php:253
-#: src/Reports/AcquisitionReport.php:273
+#: src/Reports/AcquisitionReport.php:250
+#: src/Reports/AcquisitionReport.php:270
 #: src/Shortcodes/Shortcode.php:68
 #: src/Shortcodes/Shortcode.php:133
 msgid "Pageviews"
@@ -1010,7 +1010,7 @@ msgstr ""
 #: admin/index.php:663
 #: admin/index.php:708
 #: admin/index.php:733
-#: admin/index.php:4474
+#: admin/index.php:4484
 #: admin/view/addons.php:11
 msgid "Insufficient permissions."
 msgstr ""
@@ -1815,273 +1815,277 @@ msgstr ""
 msgid "Export"
 msgstr ""
 
-#: admin/index.php:4376
+#: admin/index.php:4358
+msgid "Build campaign link"
+msgstr ""
+
+#: admin/index.php:4386
 msgid "A goal is one question you ask of your traffic."
 msgstr ""
 
-#: admin/index.php:4379
+#: admin/index.php:4389
 msgid "String 2 to 5 steps into a journey. A funnel shows the conversion rate and exact drop-off at each stage."
 msgstr ""
 
-#: admin/index.php:4484
+#: admin/index.php:4494
 msgid "Migrations are disabled by SLIMSTAT_DISABLE_MIGRATIONS in wp-config.php."
 msgstr ""
 
-#: admin/index.php:4494
+#: admin/index.php:4504
 msgid "Index already exists."
 msgstr ""
 
-#: admin/index.php:4505
+#: admin/index.php:4515
 msgid "Index added successfully."
 msgstr ""
 
-#: admin/index.php:4507
+#: admin/index.php:4517
 msgid "Unable to add index."
 msgstr ""
 
-#: admin/index.php:4544
+#: admin/index.php:4554
 msgid "Browser detection library"
 msgstr ""
 
-#: admin/index.php:4545
+#: admin/index.php:4555
 msgid "Upload directory setup"
 msgstr ""
 
-#: admin/index.php:4546
+#: admin/index.php:4556
 msgid "Daily IP-hash salt (privacy)"
 msgstr ""
 
-#: admin/index.php:4547
+#: admin/index.php:4557
 msgid "Ad-blocker bypass tracking"
 msgstr ""
 
-#: admin/index.php:4548
+#: admin/index.php:4558
 msgid "REST API tracking endpoints"
 msgstr ""
 
-#: admin/index.php:4549
+#: admin/index.php:4559
 msgid "Consent AJAX handlers"
 msgstr ""
 
-#: admin/index.php:4550
+#: admin/index.php:4560
 msgid "GDPR consent banner setup"
 msgstr ""
 
-#: admin/index.php:4551
+#: admin/index.php:4561
 msgid "GDPR consent banner assets"
 msgstr ""
 
-#: admin/index.php:4552
+#: admin/index.php:4562
 msgid "GDPR consent banner display"
 msgstr ""
 
-#: admin/index.php:4553
+#: admin/index.php:4563
 msgid "REST tracking controller"
 msgstr ""
 
-#: admin/index.php:4554
+#: admin/index.php:4564
 msgid "REST route registration"
 msgstr ""
 
-#: admin/index.php:4555
+#: admin/index.php:4565
 msgid "Consent banner status check"
 msgstr ""
 
-#: admin/index.php:4556
+#: admin/index.php:4566
 msgid "Plugin activation"
 msgstr ""
 
-#: admin/index.php:4557
+#: admin/index.php:4567
 msgid "Plugin deactivation"
 msgstr ""
 
-#: admin/index.php:4558
+#: admin/index.php:4568
 msgid "Setting up sites on this network"
 msgstr ""
 
-#: admin/index.php:4562
+#: admin/index.php:4572
 msgid "Database columns differ from this version"
 msgstr ""
 
-#: admin/index.php:4563
+#: admin/index.php:4573
 msgid "Database schema upgrade"
 msgstr ""
 
-#: admin/index.php:4564
+#: admin/index.php:4574
 msgid "Database repair during tracking"
 msgstr ""
 
-#: admin/index.php:4565
+#: admin/index.php:4575
 msgid "Notes format migration"
 msgstr ""
 
-#: admin/index.php:4566
+#: admin/index.php:4576
 msgid "Analytics settings recovery"
 msgstr ""
 
-#: admin/index.php:4567
+#: admin/index.php:4577
 msgid "Character-set conversion"
 msgstr ""
 
-#: admin/index.php:4568
+#: admin/index.php:4578
 msgid "Database unreachable during migration"
 msgstr ""
 
-#: admin/index.php:4569
+#: admin/index.php:4579
 msgid "Migration: visit identity column"
 msgstr ""
 
-#: admin/index.php:4570
+#: admin/index.php:4580
 msgid "Migration: legacy column widths"
 msgstr ""
 
-#: admin/index.php:4571
+#: admin/index.php:4581
 msgid "Migration: browser dimension column"
 msgstr ""
 
-#: admin/index.php:4572
+#: admin/index.php:4582
 msgid "Event could not be recorded"
 msgstr ""
 
-#: admin/index.php:4573
+#: admin/index.php:4583
 msgid "Cookieless visit grouping"
 msgstr ""
 
-#: admin/index.php:4574
+#: admin/index.php:4584
 msgid "Retention: archiving events"
 msgstr ""
 
-#: admin/index.php:4575
+#: admin/index.php:4585
 msgid "Retention: deleting events"
 msgstr ""
 
-#: admin/index.php:4576
+#: admin/index.php:4586
 msgid "Retention: deleting heatmap clicks"
 msgstr ""
 
-#: admin/index.php:4577
+#: admin/index.php:4587
 msgid "Tracking: saving heatmap clicks"
 msgstr ""
 
-#: admin/index.php:4578
+#: admin/index.php:4588
 msgid "Heatmaps: deleting heatmap data"
 msgstr ""
 
-#: admin/index.php:4579
+#: admin/index.php:4589
 msgid "Retention: archiving pageviews"
 msgstr ""
 
-#: admin/index.php:4580
+#: admin/index.php:4590
 msgid "Retention: deleting pageviews"
 msgstr ""
 
-#: admin/index.php:4581
+#: admin/index.php:4591
 msgid "Retention: archive table columns"
 msgstr ""
 
-#: admin/index.php:4585
+#: admin/index.php:4595
 msgid "Retention has not completed recently"
 msgstr ""
 
-#: admin/index.php:4629
+#: admin/index.php:4639
 msgid "SlimStat Analytics is running with reduced functionality."
 msgstr ""
 
-#: admin/index.php:4630
+#: admin/index.php:4640
 msgid "These features failed to load and were disabled so the rest of your site keeps working. This usually means an interrupted update or a stale server cache. Reinstalling the plugin and flushing your PHP opcache normally clears it."
 msgstr ""
 
-#: admin/index.php:4638
+#: admin/index.php:4648
 msgid "SlimStat reported a problem while running."
 msgstr ""
 
-#: admin/index.php:4639
+#: admin/index.php:4649
 msgid "Tracking and reports kept working. These are maintenance tasks that did not complete, so some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check SlimStat > Migrations and Settings > Maintenance."
 msgstr ""
 
-#: admin/index.php:4675
+#: admin/index.php:4685
 msgid "Currently Online Reports"
 msgstr ""
 
-#: admin/index.php:4676
+#: admin/index.php:4686
 msgid "Index on <code>dt_out</code>"
 msgstr ""
 
-#: admin/index.php:4680
+#: admin/index.php:4690
 msgid "World Map & Country Reports"
 msgstr ""
 
-#: admin/index.php:4681
+#: admin/index.php:4691
 msgid "Index on <code>country</code> and <code>dt</code>"
 msgstr ""
 
-#: admin/index.php:4685
+#: admin/index.php:4695
 msgid "Screen Resolution Reports"
 msgstr ""
 
-#: admin/index.php:4686
+#: admin/index.php:4696
 msgid "Index on <code>dt</code>, <code>screen_width</code>, <code>screen_height</code>"
 msgstr ""
 
-#: admin/index.php:4690
+#: admin/index.php:4700
 msgid "Browser Reports"
 msgstr ""
 
-#: admin/index.php:4691
+#: admin/index.php:4701
 msgid "Index on <code>dt</code>, <code>browser</code>, <code>browser_version</code>"
 msgstr ""
 
-#: admin/index.php:4695
+#: admin/index.php:4705
 msgid "Platform Reports"
 msgstr ""
 
-#: admin/index.php:4696
+#: admin/index.php:4706
 msgid "Index on <code>dt</code>, <code>platform</code>"
 msgstr ""
 
-#: admin/index.php:4700
+#: admin/index.php:4710
 msgid "Visitor Counter Performance"
 msgstr ""
 
-#: admin/index.php:4701
+#: admin/index.php:4711
 msgid "Index on <code>dt</code>, <code>visit_id</code>"
 msgstr ""
 
-#: admin/index.php:4721
+#: admin/index.php:4731
 #: admin/view/index.php:50
 #: src/Components/DateRangeHelper.php:226
 msgid "Apply"
 msgstr ""
 
-#: admin/index.php:4737
+#: admin/index.php:4747
 msgid "Improve SlimStat Report Performance"
 msgstr ""
 
-#: admin/index.php:4738
+#: admin/index.php:4748
 msgid "To speed up SlimStat reports, please apply the following database optimizations. These changes are safe and will not affect your data."
 msgstr ""
 
-#: admin/index.php:4756
+#: admin/index.php:4766
 msgid "Apply All"
 msgstr ""
 
-#: admin/index.php:4757
+#: admin/index.php:4767
 msgid "Do not close this tab until all optimizations are complete."
 msgstr ""
 
-#: admin/index.php:4784
+#: admin/index.php:4794
 msgid "Please wait for SlimStat optimizations to finish."
 msgstr ""
 
-#: admin/index.php:4792
+#: admin/index.php:4802
 msgid "In progress..."
 msgstr ""
 
-#: admin/index.php:4800
+#: admin/index.php:4810
 msgid "Done!"
 msgstr ""
 
-#: admin/index.php:4804
+#: admin/index.php:4814
 msgid "Error: "
 msgstr ""
 
@@ -2367,13 +2371,13 @@ msgstr ""
 
 #: admin/view/heatmaps.php:168
 #: admin/view/partials/ecommerce.php:136
-#: src/Reports/AcquisitionReport.php:309
+#: src/Reports/AcquisitionReport.php:306
 msgid "Previous"
 msgstr ""
 
 #: admin/view/heatmaps.php:170
 #: admin/view/partials/ecommerce.php:136
-#: src/Reports/AcquisitionReport.php:312
+#: src/Reports/AcquisitionReport.php:309
 msgid "Next"
 msgstr ""
 
@@ -2944,7 +2948,7 @@ msgid "No retained visit links in this period. Sales remain unattributed here."
 msgstr ""
 
 #: admin/view/partials/ecommerce.php:136
-#: src/Reports/AcquisitionReport.php:303
+#: src/Reports/AcquisitionReport.php:300
 msgid "Report pages"
 msgstr ""
 
@@ -3768,7 +3772,7 @@ msgid "UTM link builder"
 msgstr ""
 
 #: admin/view/partials/utm-builder.php:20
-#: src/Reports/AcquisitionReport.php:319
+#: src/Reports/AcquisitionReport.php:317
 msgid "Close"
 msgstr ""
 
@@ -4415,7 +4419,7 @@ msgstr ""
 
 #: admin/view/upgrade-pro.php:143
 #: admin/view/wp-slimstat-reports.php:1325
-#: src/Reports/AcquisitionReport.php:240
+#: src/Reports/AcquisitionReport.php:237
 msgid "Build your first campaign link"
 msgstr ""
 
@@ -5417,7 +5421,7 @@ msgstr ""
 
 #. translators: 1: first displayed row, 2: last displayed row, 3: total row count.
 #: admin/view/wp-slimstat-reports.php:1202
-#: src/Reports/AcquisitionReport.php:306
+#: src/Reports/AcquisitionReport.php:303
 #: admin/assets/js/ecommerce.js:62
 #, php-format,js-format
 msgid "%1$s–%2$s of %3$s"
@@ -8143,7 +8147,7 @@ msgstr ""
 #: src/Ecommerce/Report.php:421
 #: src/Reports/AcquisitionReport.php:73
 #: src/Reports/AcquisitionReport.php:75
-#: src/Reports/AcquisitionReport.php:257
+#: src/Reports/AcquisitionReport.php:254
 #: src/Tracker/Acquisition.php:97
 msgid "Unassigned"
 msgstr ""
@@ -8534,7 +8538,7 @@ msgid "Source breakdown"
 msgstr ""
 
 #: src/Reports/AcquisitionReport.php:101
-#: src/Reports/AcquisitionReport.php:253
+#: src/Reports/AcquisitionReport.php:250
 msgid "Share"
 msgstr ""
 
@@ -8542,32 +8546,28 @@ msgstr ""
 msgid "More tags"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:154
-msgid "Build campaign link"
-msgstr ""
-
-#: src/Reports/AcquisitionReport.php:158
+#: src/Reports/AcquisitionReport.php:155
 msgid "UTM and channel reports need a database update. Existing tracking continues while setup is pending."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:160
+#: src/Reports/AcquisitionReport.php:157
 msgid "Set up reports"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:221
+#: src/Reports/AcquisitionReport.php:218
 msgid "This report could not be loaded. Check the database connection and report setup, then refresh."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:225
+#: src/Reports/AcquisitionReport.php:222
 msgid "What are campaigns? How do they work?"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:225
+#: src/Reports/AcquisitionReport.php:222
 msgid "What are channels?"
 msgstr ""
 
 #. translators: %s: campaign count.
-#: src/Reports/AcquisitionReport.php:228
+#: src/Reports/AcquisitionReport.php:225
 #, php-format
 msgid "%s campaign"
 msgid_plural "%s campaigns"
@@ -8575,7 +8575,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: channel count.
-#: src/Reports/AcquisitionReport.php:229
+#: src/Reports/AcquisitionReport.php:226
 #, php-format
 msgid "%s channel"
 msgid_plural "%s channels"
@@ -8583,75 +8583,71 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: counted groups, such as 20 campaigns.
-#: src/Reports/AcquisitionReport.php:230
+#: src/Reports/AcquisitionReport.php:227
 #, php-format
 msgid "At least %s"
 msgstr ""
 
 #. translators: %s: pageview count.
-#: src/Reports/AcquisitionReport.php:232
+#: src/Reports/AcquisitionReport.php:229
 #, php-format
 msgid "%s pageview"
 msgid_plural "%s pageviews"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Reports/AcquisitionReport.php:235
-#: src/Reports/AcquisitionReport.php:281
+#: src/Reports/AcquisitionReport.php:232
+#: src/Reports/AcquisitionReport.php:278
 msgid "View sales in Ecommerce"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:240
+#: src/Reports/AcquisitionReport.php:237
 msgid "Need a campaign link?"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:243
+#: src/Reports/AcquisitionReport.php:240
 msgid "No tagged pageviews in this period. Add utm_source, utm_medium and utm_campaign to your incoming links, or choose another date range."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:245
+#: src/Reports/AcquisitionReport.php:242
 msgid "No pageviews in this period. Try a wider date range."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:246
+#: src/Reports/AcquisitionReport.php:243
 msgid "No pageviews match this period and these filters. Try a wider date range or clear a filter."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:278
+#: src/Reports/AcquisitionReport.php:275
 msgid "Filter by this campaign"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:278
+#: src/Reports/AcquisitionReport.php:275
 msgid "Filter by this channel"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:285
+#: src/Reports/AcquisitionReport.php:282
 msgid "Linked orders uses these dates and filters to find orders associated with matching tracked visits. Orders without a visit link are excluded; pageview share is not a purchase rate."
 msgstr ""
 
 #. translators: 1: shown pageviews, 2: complete group pageviews.
-#: src/Reports/AcquisitionReport.php:295
+#: src/Reports/AcquisitionReport.php:292
 #, php-format
 msgid "Showing %1$s of %2$s pageviews in this breakdown. The result limit was reached; filter this group or narrow your filters for more detail."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:316
+#: src/Reports/AcquisitionReport.php:313
 msgid "The report result limit was reached. Narrow your filters to see more detail. Shares use all matching pageviews, including rows beyond this limit."
 msgstr ""
 
 #: src/Reports/AcquisitionReport.php:319
-msgid "How to read this report"
-msgstr ""
-
-#: src/Reports/AcquisitionReport.php:321
 msgid "Campaign totals combine all sources and tags. Expand a campaign for each combination of tags on a recorded page URL, not a session or conversion. Values keep their original case. More tags reveals content, term and campaign ID when present. Unassigned means that tag was absent. Use consistent names and tag incoming links, not internal links."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:322
+#: src/Reports/AcquisitionReport.php:320
 msgid "Channel totals combine all sources. Expand a channel for its source breakdown. These are pageview channels, not session attribution. Campaign tags take priority over referring sites. Internal navigation is separate. Direct / unknown means no usable source was sent; it can include untagged email, private messages or apps. Unassigned means the pageview predates report setup."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:324
+#: src/Reports/AcquisitionReport.php:322
 msgid "AI Assistants identifies referrals or tagged links from known assistants. AI Crawlers and AI User-requested Fetches identify automated requests by their claimed user agent, not verified identity. They appear only when your tracking settings collect them. Google AI Overviews cannot reliably be separated from Organic Search. Unknown tagged media appear as Unassigned."
 msgstr ""
 

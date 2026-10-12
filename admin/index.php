@@ -4346,6 +4346,16 @@ class wp_slimstat_admin
     {
         add_filter('slimstat_report_header_buttons', [self::class, 'inject_goals_funnels_header_actions'], 20, 2);
         add_filter('slimstat_report_header_after_title', [self::class, 'inject_goals_funnels_header_subtitle'], 10, 2);
+        add_filter('slimstat_report_header_buttons', [self::class, 'inject_utm_builder_header_link'], 20, 2);
+    }
+
+    /** Channels and UTM Campaigns: the campaign link builder sits left of Export (priority 20 runs after Export prepends). */
+    public static function inject_utm_builder_header_link($_header_buttons = '', $_report_id = '')
+    {
+        if (!in_array($_report_id, ['slim_p3_03', 'slim_p3_04'], true)) {
+            return $_header_buttons;
+        }
+        return '<a class="noslimstat slimstat-utm-builder-link" href="' . esc_url(admin_url('admin.php?page=slimview5#slimstat-utm-builder')) . '"><span class="dashicons dashicons-admin-links" aria-hidden="true"></span>' . esc_html__('Build campaign link', 'wp-slimstat') . '</a>' . $_header_buttons;
     }
 
     /**

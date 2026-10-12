@@ -26,6 +26,28 @@
     line-height: 1.5;
     padding: var(--ss-space-4);
 }
+/* Header shortcut beside Export: the same quiet weight, a link icon instead of a button border. */
+.wrap-slimstat .slimstat-header-buttons .slimstat-utm-builder-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-inline-end: var(--ss-space-2);
+    padding: 5px;
+    border-radius: 5px;
+    color: var(--ss-text-tertiary);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+}
+.wrap-slimstat .slimstat-header-buttons .slimstat-utm-builder-link:hover {
+    color: var(--ss-text-primary);
+}
+.wrap-slimstat .slimstat-header-buttons .slimstat-utm-builder-link .dashicons {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+}
 .wrap-slimstat .slimstat-acquisition__intro {
     display: flex;
     align-items: center;

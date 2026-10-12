@@ -150,9 +150,6 @@ class AcquisitionReport
     private static function content(array $args): void
     {
         echo '<div class="slimstat-acquisition">';
-        if (is_admin()) {
-            echo '<a class="button slimstat-utm-builder-link" href="' . esc_url(admin_url('admin.php?page=slimview5#slimstat-utm-builder')) . '">' . esc_html__('Build campaign link', 'wp-slimstat') . '</a>';
-        }
         $ready = is_admin() ? Acquisition::checkSchema() : '1' === get_option(Acquisition::readinessKey(), '0');
         if (!$ready) {
             echo '<p class="slimstat-acquisition__empty">' . esc_html__('UTM and channel reports need a database update. Existing tracking continues while setup is pending.', 'wp-slimstat') . '</p>';
@@ -316,7 +313,8 @@ class AcquisitionReport
                 echo '<p class="slimstat-acquisition__note">' . esc_html__('The report result limit was reached. Narrow your filters to see more detail. Shares use all matching pageviews, including rows beyond this limit.', 'wp-slimstat') . '</p>';
             }
         }
-        echo '<button type="button" class="button-link" data-report-dialog="' . esc_attr($helpId) . '">' . esc_html__('How to read this report', 'wp-slimstat') . '</button><dialog class="ss-report-dialog" id="' . esc_attr($helpId) . '" aria-labelledby="' . esc_attr($helpId) . '-title"><div class="ss-report-dialog__heading"><h2 id="' . esc_attr($helpId) . '-title">' . esc_html($helpLabel) . '</h2><button type="button" class="button" data-dialog-close>' . esc_html__('Close', 'wp-slimstat') . '</button></div>';
+        // Opened from the intro's help link.
+        echo '<dialog class="ss-report-dialog" id="' . esc_attr($helpId) . '" aria-labelledby="' . esc_attr($helpId) . '-title"><div class="ss-report-dialog__heading"><h2 id="' . esc_attr($helpId) . '-title">' . esc_html($helpLabel) . '</h2><button type="button" class="button" data-dialog-close>' . esc_html__('Close', 'wp-slimstat') . '</button></div>';
         echo '<p>' . esc_html('utm' === $mode
             ? __('Campaign totals combine all sources and tags. Expand a campaign for each combination of tags on a recorded page URL, not a session or conversion. Values keep their original case. More tags reveals content, term and campaign ID when present. Unassigned means that tag was absent. Use consistent names and tag incoming links, not internal links.', 'wp-slimstat')
             : __('Channel totals combine all sources. Expand a channel for its source breakdown. These are pageview channels, not session attribution. Campaign tags take priority over referring sites. Internal navigation is separate. Direct / unknown means no usable source was sent; it can include untagged email, private messages or apps. Unassigned means the pageview predates report setup.', 'wp-slimstat')) . '</p>';

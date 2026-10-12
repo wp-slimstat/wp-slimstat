@@ -216,7 +216,7 @@ test.describe('UTM and channel reports', () => {
     await utm.getByRole('link', { name: 'Next', exact: true }).click();
     await expect(utm.locator('tbody tr')).toHaveCount(1);
     await expect(utm.locator('.slimstat-acquisition__groups')).toContainText('Search');
-    const help = utm.getByRole('button', { name: 'How to read this report', exact: true });
+    const help = utm.getByRole('button', { name: 'What are campaigns? How do they work?', exact: true });
     await help.focus();
     await page.keyboard.press('Enter');
     await expect(utm.locator('dialog')).toBeVisible();

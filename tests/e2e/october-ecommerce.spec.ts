@@ -65,6 +65,9 @@ test('Tasks 5–11, 26–27: currency, comparisons, full report, export and char
     await expect(panel.locator('[data-expand]')).toHaveAttribute('aria-expanded','true');
     const exportLink = panel.locator('[data-ec-export]');
     await expect(exportLink).toBeVisible();
+    // Export sits on the card's title row, like a report box's header Export.
+    const [exportBox, titleBox] = [await exportLink.boundingBox(), await page.locator('.ss-ec-card', { has: panel }).locator('h3').boundingBox()];
+    expect(Math.abs(exportBox!.y + exportBox!.height / 2 - (titleBox!.y + titleBox!.height / 2))).toBeLessThan(4);
     const csv = await page.request.get((await exportLink.getAttribute('href'))!);
     expect(csv.ok()).toBeTruthy(); expect(await csv.text()).toContain('source-23');
     await info.attach('source-export.csv', { body: await csv.body(), contentType: 'text/csv' });
