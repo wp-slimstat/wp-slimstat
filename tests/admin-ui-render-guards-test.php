@@ -117,6 +117,26 @@ check((bool) preg_match('/\.slimstat-access-log-legend \.little-color-box\s*\{[^
 // QA R12: the pill rule for settings inputs also rounded checkboxes, so Email Report's picks read as radio buttons.
 check(false === strpos($admincss, '.wrap-slimstat .form-table tr td input{') && false !== strpos($admincss, '.wrap-slimstat .form-table tr td input:not([type=checkbox]):not([type=radio]){'), 'R12: form-table pill inputs leave checkboxes and radios native');
 
+// --- 6.0 release notice (tests/Integration/ReleaseNoticeTest.php covers the rendering) ---
+$admin = read_or_die('admin/index.php');
+check(false !== strpos(read_or_die('wp-slimstat.php'), "\$defaults['notice_latest_news'] = 'no';"), 'Release notice: new installs never see it (get_fresh_defaults sets no)');
+check(false !== strpos(read_or_die('uninstall.php'), "delete_option('slimstat_release_notice_since')"), 'Release notice: uninstall deletes its anchor');
+check((bool) preg_match("/if \(version_compare\([^;]*'6\.0\.0', '<'\)\) \{\s*wp_slimstat::\\\$settings\['notice_latest_news'\] = 'on';/", $admin), 'Release notice: only an upgrade from 5.x turns it on, so a 6.0.x update does not undo a dismissal');
+preg_match("/\/\/ 6\.0 release notice:.*?add_action\('admin_notices', \[self::class, 'show_latest_news'\], 10, 0\);/s", $admin, $gate);
+$gate = $gate[0] ?? '';
+check('' !== $gate, 'Release notice: the gate in init() is present');
+check(false !== strpos($gate, "current_user_can('manage_options')") && false === strpos($gate, 'is_super_admin'), 'Release notice: the gate uses the capability notices_handler() checks, not is_super_admin()');
+preg_match_all("/'([\w-]+\.php)'/", $gate, $pages);
+check(['index.php', 'plugins.php'] === $pages[1], 'Release notice: outside SlimStat it shows on the Dashboard and Plugins screens only');
+preg_match('/function release_notice_dismiss_script\(\)\s*\{(.*?)\n    \}/s', $admin, $dismiss);
+$dismiss = $dismiss[1] ?? '';
+check(false !== strpos($dismiss, "wp_add_inline_script('common'") && false !== strpos($dismiss, "'slimstat_notice_latest_news'") && false !== strpos($dismiss, "wp_create_nonce('meta-box-order')"), 'Release notice: the off-SlimStat dismiss posts the existing AJAX action with its nonce, on core\'s common handle');
+check(false !== strpos($gate, "'release_notice_dismiss_script'"), 'Release notice: the gate registers the dismiss script off SlimStat screens');
+preg_match_all('/([^{}]*slimstat-whats-new[^{}]*)\{([^}]*)\}/', read_or_die('admin/assets/css/tokens.css'), $rules);
+check(count($rules[0]) >= 5, 'Release notice: tokens.css styles the what\'s-new rows');
+check(!preg_match('/\b(margin|padding)-(left|right)\s*:|\bfloat\s*:|text-align\s*:\s*(left|right)/', implode("\n", $rules[2])), 'Release notice: what\'s-new rows use logical properties only (no RTL stylesheet exists)');
+check(false !== strpos(read_or_die('src/Migration/MigrationService.php'), 'public static function manager(): ?MigrationManager'), 'Release notice: MigrationService exposes the manager so the notice can wait for migrations');
+
 if ($failures > 0) {
     fwrite(STDERR, "{$failures} check(s) failed in admin-ui-render-guards-test.php\n");
     exit(1);

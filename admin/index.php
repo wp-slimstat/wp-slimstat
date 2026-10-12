@@ -29,7 +29,6 @@ class wp_slimstat_admin
     public static $meta_user_reports = [];
     public static $settings = [];
     public static $user_reports = [];
-    public static $admin_notice    = '';
     public static $main_menu_slug = 'slimview1';
 
     /**
@@ -285,11 +284,18 @@ class wp_slimstat_admin
             add_action('in_plugin_update_message-' . plugin_basename(SLIMSTAT_FILE), [self::class, 'show_update_message'], 10, 2);
         }
 
-        // Display a notice that hightlights this version's features
-        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Screen keys are checked against screens_info; nonce is verified directly and page/URI values only select assets or notices.
-        if (!empty($_GET['page']) && is_string($_GET['page']) && false !== strpos($_GET['page'], 'slimview') && (!empty(self::$admin_notice) && 'on' == wp_slimstat::$settings['notice_latest_news'] && is_super_admin())) {
-            add_action('admin_notices', [self::class, 'show_latest_news']);
-
+        // 6.0 release notice: SlimStat report screens, the Dashboard and the Plugins screen, for
+        // whoever can dismiss it (notices_handler() checks the same capability). admin.js handles
+        // the dismissal on SlimStat screens; elsewhere a small inline script posts the same action.
+        // The 7/15-day window is checked when it renders, so the anchor starts only once it shows.
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Only compared against a fixed prefix to pick a notice.
+        $is_report_screen = !empty($_GET['page']) && is_string($_GET['page']) && 0 === strpos($_GET['page'], 'slimview');
+        $is_core_screen   = in_array($GLOBALS['pagenow'] ?? '', ['index.php', 'plugins.php'], true);
+        if ('on' === (wp_slimstat::$settings['notice_latest_news'] ?? 'no') && ($is_report_screen || $is_core_screen) && current_user_can('manage_options')) {
+            if (!$is_report_screen) {
+                add_action('admin_enqueue_scripts', [self::class, 'release_notice_dismiss_script']);
+            }
+            add_action('admin_notices', [self::class, 'show_latest_news'], 10, 0);
         }
 
         // Remove spammers from the database
@@ -577,20 +583,20 @@ class wp_slimstat_admin
     }
 
     /**
-     * "New" pill shown for 15 days after a feature became available on this
-     * site, then ''. $option is the screen's 'new_badge' anchor: a per-site
+     * "New" pill shown for $days (15) days after a feature became available on
+     * this site, then ''. The release notice reuses the window with its own anchor. $option is the screen's 'new_badge' anchor: a per-site
      * option set the first time the menu builds after the feature ships, so
      * existing installs start their own countdown on update. uninstall.php
      * deletes every anchor. (#20)
      */
-    private static function new_badge($option)
+    private static function new_badge($option, $days = 15)
     {
         $since = (int) get_option($option, 0);
         if ($since <= 0) {
             $since = time();
             update_option($option, $since);
         }
-        if ((time() - $since) >= (15 * DAY_IN_SECONDS)) {
+        if ((time() - $since) >= ($days * DAY_IN_SECONDS)) {
             return '';
         }
         return ' <span class="slimstat-menu-new-badge">' . esc_html__('New', 'wp-slimstat') . '</span>';
@@ -1507,8 +1513,12 @@ class wp_slimstat_admin
 
         // Now we can update the version stored in the database
         unset(wp_slimstat::$settings['_settings_recovery']);
-        wp_slimstat::$settings['version']            = SLIMSTAT_ANALYTICS_VERSION;
-        wp_slimstat::$settings['notice_latest_news'] = 'on';
+        // The 6.0 release notice is for sites arriving from 5.x: a 6.0.x update must not bring
+        // back a notice the admin already dismissed.
+        if (version_compare((string) (wp_slimstat::$settings['version'] ?? '0'), '6.0.0', '<')) {
+            wp_slimstat::$settings['notice_latest_news'] = 'on';
+        }
+        wp_slimstat::$settings['version'] = SLIMSTAT_ANALYTICS_VERSION;
         wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
 
         return true;
@@ -2479,11 +2489,67 @@ class wp_slimstat_admin
     // END: show_message
 
     /**
-     * Displays a message related to the current version of Slimstat
+     * The 6.0 release notice, once per site after an update from 5.x (see init()). Two lines
+     * on the Dashboard and Plugins screens ($compact, 7 days), one row per new feature on
+     * SlimStat screens (15 days), counted from the first render. While a database migration
+     * is owed, the migration notice has the slot to itself. No purchase links.
+     *
+     * The arguments exist for tests; the admin_notices hook passes none.
      */
-    public static function show_latest_news()
+    public static function show_latest_news($compact = null, $is_pro = null, $migration_owed = null, $commerce = null)
     {
-        self::show_message(self::$admin_notice, 'info', 'latest-news');
+        if ('on' !== (wp_slimstat::$settings['notice_latest_news'] ?? 'no')) {
+            return;
+        }
+        $compact        = $compact ?? 'admin.php' !== ($GLOBALS['pagenow'] ?? '');
+        $migration_owed = $migration_owed ?? (($manager = \SlimStat\Migration\MigrationService::manager()) && $manager->needsMigration());
+        if ($migration_owed || '' === self::new_badge('slimstat_release_notice_since', $compact ? 7 : 15)) {
+            return;
+        }
+        $is_pro    = $is_pro ?? wp_slimstat::pro_is_installed();
+        $link      = static function ($page, $text, $class = '') {
+            return '<a' . ($class ? ' class="' . esc_attr($class) . '"' : '') . ' href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($text) . '</a>';
+        };
+        $migration = $link('slimstat_migration', __('Review migration', 'wp-slimstat'));
+
+        // show_message() runs wpautop(): paragraphs are separated by one blank line, and no other newline may appear.
+        if ($compact) {
+            $html = '<strong>' . esc_html__('SlimStat 6 is here.', 'wp-slimstat') . '</strong> '
+                . esc_html__('Faster reports, Channels and UTM Campaigns, a WooCommerce revenue dashboard, Heatmaps and a Shortcode Playground. Your settings and data carry over, and nothing heavy runs until you click.', 'wp-slimstat')
+                . ($is_pro ? ' ' . esc_html__('SlimStat Pro 3.0.0 adds heatmap page previews and Ecommerce email reports.', 'wp-slimstat') : '')
+                . "\n\n" . $link('slimview2', __('Explore SlimStat 6', 'wp-slimstat'), 'button button-primary') . ' ' . $migration;
+            self::show_message($html, 'info', 'latest-news');
+            return;
+        }
+
+        $rows = [['admin-links', __('Channels and UTM Campaigns', 'wp-slimstat'), __('Side by side, in one report.', 'wp-slimstat'), 'slimview5', __('Open Traffic Sources', 'wp-slimstat')]];
+        if ($commerce ?? \SlimStat\Ecommerce\Integration::available()) {
+            $rows[] = ['cart', __('Ecommerce', 'wp-slimstat'), __('Net sales, orders and top products.', 'wp-slimstat'), 'slimview7', __('Open Ecommerce', 'wp-slimstat')];
+        }
+        $rows[] = ['welcome-view-site', __('Heatmaps', 'wp-slimstat'), __('Every page with clicks.', 'wp-slimstat'), 'slimheatmap', __('Open Heatmaps', 'wp-slimstat')];
+        $rows[] = ['editor-code', __('Shortcode Playground', 'wp-slimstat'), __('Preview a report, then copy its shortcode.', 'wp-slimstat'), 'slimshortcodes', __('Open Shortcodes', 'wp-slimstat')];
+
+        $html = '<strong>' . esc_html__('SlimStat 6 is here.', 'wp-slimstat') . '</strong> '
+            . esc_html__('Reports are faster, your settings and data carry over, and nothing heavy runs until you click. Includes important security hardening.', 'wp-slimstat')
+            . ($is_pro ? ' ' . esc_html__('SlimStat Pro 3.0.0 adds heatmap page previews, Ecommerce email reports and the Heatmap insights email.', 'wp-slimstat') : '')
+            . "\n\n" . '<ul class="slimstat-whats-new">';
+        foreach ($rows as [$icon, $name, $why, $page, $open]) {
+            $html .= '<li><span class="dashicons dashicons-' . esc_attr($icon) . '" aria-hidden="true"></span><strong>' . esc_html($name) . '</strong><span class="slimstat-whats-new__why">' . esc_html($why) . '</span>' . $link($page, $open) . '</li>';
+        }
+        /* translators: %s: "Review migration" link to the Migration screen. */
+        $html .= '</ul>' . "\n\n" . sprintf(esc_html__('%s: optional database steps, nothing runs until you choose.', 'wp-slimstat'), $migration);
+        self::show_message($html, 'info', 'latest-news');
+    }
+
+    /**
+     * Persists a release-notice dismissal on core screens, where admin.js is not loaded. Core's
+     * common.js adds the dismiss button; this posts the action notices_handler() serves, with its
+     * nonce in the script because wp_kses_post() strips a hidden input from the notice.
+     */
+    public static function release_notice_dismiss_script()
+    {
+        $body = wp_json_encode(['action' => 'slimstat_notice_latest_news', 'security' => wp_create_nonce('meta-box-order')]);
+        wp_add_inline_script('common', "document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('#slimstat-notice-latest-news .notice-dismiss')){fetch(ajaxurl,{method:'POST',credentials:'same-origin',body:new URLSearchParams(" . $body . ')});}});');
     }
 
     /**

@@ -324,6 +324,13 @@ body .wrap-slimstat .form-table tr td :is(input:not([type=checkbox]):not([type=r
     color: var(--ss-text-primary);
 }
 .live-analytics-chart--locked .slimstat-pro-adds { margin: 0; border: 0; }
+/* "What's new" rows in the 6.0 release notice (long form, SlimStat screens). Logical properties only: no RTL file. */
+.slimstat-whats-new { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ss-space-3) var(--ss-space-6); margin: var(--ss-space-3) 0; padding: 0; list-style: none; }
+.slimstat-whats-new li { display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: var(--ss-space-2); margin: 0; }
+.slimstat-whats-new .dashicons { grid-column: 1; grid-row: 1 / span 3; color: var(--ss-info-fg); }
+.slimstat-whats-new strong { font-size: var(--ss-text-md); }
+.slimstat-whats-new__why { color: var(--ss-text-muted); }
+@media (max-width: 782px) { .slimstat-whats-new { grid-template-columns: minmax(0, 1fr); } }
 /* Free Email Report: "Send me a sample" under the sample email (QA C1). */
 .slimstat-email-sample-send { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ss-space-2) var(--ss-space-3); margin: var(--ss-space-4) 0; }
 
