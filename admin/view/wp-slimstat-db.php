@@ -2072,6 +2072,8 @@ class wp_slimstat_db
 
         $bounce_rate       = ($total_visits > 0) ? (100 * $single_page_visits / $total_visits) : 0;
         $metrics_per_visit = wp_slimstat_db::get_max_and_average_pages_per_visit();
+        // AVG/MAX over no matching rows is one row of NULLs, so empty() alone misses it;
+        // the casts below turn that into 0 (no visit_id > 0 yet, e.g. before Migration).
         if (empty($metrics_per_visit[0])) {
             $metrics_per_visit[0] = ['avghits' => 0, 'maxhits' => 0];
         }
@@ -2104,10 +2106,10 @@ class wp_slimstat_db
         $results[5]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'browser_type = 1'));
 
         $results[6]['metric'] = __('Pageviews per visit', 'wp-slimstat');
-        $results[6]['value']  = number_format_i18n($metrics_per_visit[0]['avghits'], 2);
+        $results[6]['value']  = number_format_i18n((float) $metrics_per_visit[0]['avghits'], 2);
 
         $results[7]['metric'] = __('Longest visit', 'wp-slimstat');
-        $results[7]['value']  = number_format_i18n($metrics_per_visit[0]['maxhits']) . ' ' . __('pageviews', 'wp-slimstat');
+        $results[7]['value']  = number_format_i18n((int) $metrics_per_visit[0]['maxhits']) . ' ' . __('pageviews', 'wp-slimstat');
 
         return $results;
     }
