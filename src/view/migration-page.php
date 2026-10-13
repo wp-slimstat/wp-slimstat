@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
-// Both are set by MigrationAdmin::renderPage(), this file's only includer — but a template that
+// All three are set by MigrationAdmin::renderPage(), this file's only includer — but a template that
 // READS variables it does not declare is one PHPStan cannot reason about, and
 // `$has_required_migrations might not be defined` had been parked in phpstan-baseline.neon for
 // exactly that reason.
@@ -22,6 +22,7 @@ if (!defined('ABSPATH')) {
 // alone leaves it `mixed`, which passes level 5 only because checkExplicitMixed is off.
 $has_required_migrations = isset($has_required_migrations) ? $has_required_migrations : false;
 $offered_migrations      = (isset($offered_migrations) && is_array($offered_migrations)) ? $offered_migrations : [];
+$analytics_myisam        = !empty($analytics_myisam);
 
 ?>
 
