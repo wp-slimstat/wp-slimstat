@@ -56,7 +56,7 @@ $analytics_myisam        = !empty($analytics_myisam);
                     </div>
 
                     <?php // Present continuous under an "Idle" badge, on a page where nothing had started. ?>
-                    <p class="slimstat-status-intro"><?php echo esc_html__('SlimStat requires a database update. Back up your database first, then select Start Migration. Keep this page open until it finishes. A time estimate is unavailable: duration depends on affected rows and database performance.', 'wp-slimstat'); ?><?php if ($analytics_myisam) { echo ' ' . esc_html__('Your analytics table uses MyISAM. Each step locks the table for writes while it runs, so tracking pauses during the migration.', 'wp-slimstat'); } ?></p>
+                    <p class="slimstat-status-intro"><?php echo esc_html__('SlimStat requires a database update. Back up your database first, then select Start Migration. Keep this page open until it finishes. A time estimate is unavailable: duration depends on affected rows and database performance.', 'wp-slimstat'); ?><?php if ($analytics_myisam) { echo ' ' . esc_html__('A SlimStat analytics table uses MyISAM. Each step on it locks it for writes while it runs, so tracking pauses during the migration.', 'wp-slimstat'); } ?></p>
 
                     <ul class="slimstat-status-metrics">
                         <li><span class="label"><?php echo esc_html__('Total steps', 'wp-slimstat'); ?></span><span class="value" id="slimstat-metrics-total">0</span></li>

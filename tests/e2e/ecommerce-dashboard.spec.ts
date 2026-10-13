@@ -307,6 +307,33 @@ echo $wpdb->get_var($wpdb->prepare('SELECT ENGINE FROM information_schema.TABLES
   }
 });
 
+// B1 follow-up (CodeRabbit, PR #349): a failed rebuild leaves the store ready, so its reason was
+// never read and the page blamed an order import instead.
+test('Ecommerce rebuild that cannot start says why on a ready store @woocommerce', async ({ page }) => {
+  test.setTimeout(90_000);
+  runWordPressFixture("<?php update_option('slimstat_ec_rebuild_test_backup', get_option('slimstat_ecommerce_state', []), false); delete_option('slimstat_ecommerce_state');");
+  try {
+    await page.goto('/wp-admin/admin.php?page=slimview7');
+    await page.getByRole('button', { name: 'Set up Ecommerce', exact: true }).click();
+    await expect(page.locator('[data-metric=net]')).toBeVisible({ timeout: 30_000 });
+
+    // Another import holds the claim, so setup() refuses before touching the projection.
+    runWordPressFixture("<?php update_option('slimstat_ec_import', (string) (time() + 300), false);");
+    await page.locator('#ss-ec-definitions > summary').click();
+    await page.getByRole('button', { name: 'Rebuild reports', exact: true }).click();
+    const alert = page.locator('[data-ecommerce]').getByRole('alert');
+    await expect(alert).toContainText('This report needs attention', { timeout: 30_000 });
+    await expect(alert).toContainText('already running');
+
+    runWordPressFixture("<?php delete_option('slimstat_ec_import');");
+    await alert.getByRole('button', { name: 'Rebuild reports', exact: true }).click();
+    await expect(page.locator('[data-metric=net]')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-ecommerce]')).not.toContainText('already running');
+  } finally {
+    runWordPressFixture("<?php delete_option('slimstat_ec_import'); update_option('slimstat_ecommerce_state', get_option('slimstat_ec_rebuild_test_backup', []), false); delete_option('slimstat_ec_rebuild_test_backup');");
+  }
+});
+
 test('Ecommerce uses the native date control and preserves filters through keyboard presets @woocommerce', async ({ page }, testInfo) => {
   const style = async () => page.locator('.slimstat-date-range-btn').evaluate(el => {
     const s = getComputedStyle(el); return {background:s.backgroundColor,color:s.color,font:s.fontSize,radius:s.borderRadius,height:el.getBoundingClientRect().height};

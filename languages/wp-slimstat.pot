@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-13T11:44:19+00:00\n"
+"POT-Creation-Date: 2026-10-13T12:03:41+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -1570,9 +1570,9 @@ msgstr ""
 
 #: admin/index.php:4180
 #: admin/index.php:4228
-#: src/Migration/Admin/MigrationAdmin.php:289
-#: src/Migration/Admin/MigrationAdmin.php:405
-#: src/Migration/Admin/MigrationAdmin.php:432
+#: src/Migration/Admin/MigrationAdmin.php:292
+#: src/Migration/Admin/MigrationAdmin.php:408
+#: src/Migration/Admin/MigrationAdmin.php:435
 #: wp-slimstat.php:2940
 msgid "Permission denied"
 msgstr ""
@@ -1711,8 +1711,8 @@ msgid "Visits that arrived without a source, such as typed addresses and bookmar
 msgstr ""
 
 #: admin/index.php:4293
-#: src/Ecommerce/Report.php:410
-#: src/Ecommerce/Report.php:424
+#: src/Ecommerce/Report.php:412
+#: src/Ecommerce/Report.php:426
 #: src/Reports/AcquisitionReport.php:76
 #: src/Reports/AcquisitionReport.php:78
 #: src/Reports/AcquisitionReport.php:278
@@ -2687,19 +2687,19 @@ msgid "All devices"
 msgstr ""
 
 #: admin/view/heatmaps.php:122
-#: src/Ecommerce/Report.php:416
+#: src/Ecommerce/Report.php:418
 #: admin/assets/js/heatmaps.js:103
 msgid "Desktop"
 msgstr ""
 
 #: admin/view/heatmaps.php:123
-#: src/Ecommerce/Report.php:417
+#: src/Ecommerce/Report.php:419
 #: admin/assets/js/heatmaps.js:103
 msgid "Tablet"
 msgstr ""
 
 #: admin/view/heatmaps.php:124
-#: src/Ecommerce/Report.php:416
+#: src/Ecommerce/Report.php:418
 #: admin/assets/js/heatmaps.js:103
 msgid "Mobile"
 msgstr ""
@@ -8423,7 +8423,7 @@ msgid "Ecommerce reports use one store at a time. Open the store dashboard to re
 msgstr ""
 
 #: src/Ecommerce/Report.php:88
-#: src/Ecommerce/Report.php:375
+#: src/Ecommerce/Report.php:378
 msgid "Ecommerce data could not be loaded. Check reporting setup and the database connection, then retry."
 msgstr ""
 
@@ -8511,19 +8511,19 @@ msgstr ""
 msgid "Store reporting permission is required to view Ecommerce."
 msgstr ""
 
-#: src/Ecommerce/Report.php:413
+#: src/Ecommerce/Report.php:415
 msgid "Deleted product"
 msgstr ""
 
-#: src/Ecommerce/Report.php:417
+#: src/Ecommerce/Report.php:419
 msgid "Guest checkout"
 msgstr ""
 
-#: src/Ecommerce/Report.php:418
+#: src/Ecommerce/Report.php:420
 msgid "Registered account"
 msgstr ""
 
-#: src/Ecommerce/Report.php:422
+#: src/Ecommerce/Report.php:424
 msgid "No campaign"
 msgstr ""
 
@@ -8621,7 +8621,7 @@ msgid "Failed"
 msgstr ""
 
 #: src/Migration/Admin/MigrationAdmin.php:129
-#: src/Migration/Admin/MigrationAdmin.php:397
+#: src/Migration/Admin/MigrationAdmin.php:400
 #: src/view/migration-page.php:54
 #: src/view/migration-page.php:87
 msgid "✓ Database is up to date"
@@ -8656,33 +8656,33 @@ msgstr ""
 msgid "A step failed. Please check the logs and retry."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:258
+#: src/Migration/Admin/MigrationAdmin.php:261
 msgid "SlimStat Database Migration"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:259
+#: src/Migration/Admin/MigrationAdmin.php:262
 msgid "SlimStat database migration required"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:260
+#: src/Migration/Admin/MigrationAdmin.php:263
 msgid "SlimStat requires a database update. Reports that depend on the pending schema remain unavailable until it completes. Back up your database first."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:264
+#: src/Migration/Admin/MigrationAdmin.php:267
 #: src/view/migration-page.php:94
 msgid "Technical details"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:280
+#: src/Migration/Admin/MigrationAdmin.php:283
 #: src/view/migration-page.php:103
 msgid "Start Migration"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:397
+#: src/Migration/Admin/MigrationAdmin.php:400
 msgid "Migrations completed, but some may still be needed."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:436
+#: src/Migration/Admin/MigrationAdmin.php:439
 msgid "Migration dismissal reset"
 msgstr ""
 
@@ -9658,7 +9658,7 @@ msgid "SlimStat requires a database update. Back up your database first, then se
 msgstr ""
 
 #: src/view/migration-page.php:59
-msgid "Your analytics table uses MyISAM. Each step locks the table for writes while it runs, so tracking pauses during the migration."
+msgid "A SlimStat analytics table uses MyISAM. Each step on it locks it for writes while it runs, so tracking pauses during the migration."
 msgstr ""
 
 #: src/view/migration-page.php:62

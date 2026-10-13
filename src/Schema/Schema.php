@@ -982,7 +982,9 @@ final class Schema
     /** The storage engine of $table, or '' when the status cannot be read. */
     public static function tableEngine(wpdb $db, string $table): string
     {
-        $status = $db->get_row($db->prepare('SHOW TABLE STATUS LIKE %s', $db->esc_like($table)), ARRAY_A);
+        $suppressed = $db->suppress_errors(true);
+        $status     = $db->get_row($db->prepare('SHOW TABLE STATUS LIKE %s', $db->esc_like($table)), ARRAY_A);
+        $db->suppress_errors($suppressed);
 
         return is_array($status) ? (string) ($status['Engine'] ?? '') : '';
     }

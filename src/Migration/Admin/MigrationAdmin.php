@@ -222,8 +222,11 @@ class MigrationAdmin
 		$offered_migrations = $this->manager->getOfferedMigrations();
 		$has_required_migrations = !empty($required_migrations);
 		// MyISAM has no online index build: each step locks the table for writes while it runs.
-		$analytics_myisam = $has_required_migrations
-			&& 0 === strcasecmp(Schema::tableEngine(MigrationService::analyticsConnection(), $GLOBALS['wpdb']->prefix . 'slim_stats'), 'MyISAM');
+		// Required steps write to both tables tracking writes to (idx_events_notes_dt is on slim_events).
+		$db = MigrationService::analyticsConnection();
+		$analytics_myisam = $has_required_migrations && (bool) array_filter(['slim_stats', 'slim_events'], static function (string $table) use ($db): bool {
+			return 0 === strcasecmp(Schema::tableEngine($db, $GLOBALS['wpdb']->prefix . $table), 'MyISAM');
+		});
 
 		include plugin_dir_path(__FILE__) . '/../../view/migration-page.php';
 	}

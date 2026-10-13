@@ -4,6 +4,8 @@
  * its identity clause unconditionally. Before AddVisitIdentity adds the column, MySQL rejects
  * the whole statement (1054), the ip/visit_id match that used to claim the anonymous row is
  * lost, and the upgrade inserts a duplicate visit.
+ *
+ * @license GPL-2.0-or-later
  */
 
 declare(strict_types=1);

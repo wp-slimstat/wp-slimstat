@@ -104,7 +104,10 @@ class IntegrationFailureTest extends WpSlimstatTestCase
         $db = \Mockery::mock(\wpdb::class);
         $db->shouldReceive('esc_like')->andReturnUsing(static fn($v) => addcslashes($v, '_%\\'));
         $db->shouldReceive('prepare')->with('SHOW TABLE STATUS LIKE %s', 'wp\_slim\_stats')->andReturn('probe');
-        $db->shouldReceive('get_row')->once()->with('probe', ARRAY_A)->andReturn($status);
+        // The probe runs before setupAction() redirects, so a printed DB error would block the redirect.
+        $db->shouldReceive('suppress_errors')->once()->with(true)->ordered()->andReturn(false);
+        $db->shouldReceive('get_row')->once()->with('probe', ARRAY_A)->ordered()->andReturn($status);
+        $db->shouldReceive('suppress_errors')->once()->with(false)->ordered();
         $db->shouldNotReceive('query');
         return $db;
     }
