@@ -195,6 +195,46 @@ foreach ($adds as $suffix => $columns) {
     }
 }
 
+// ── B2 (release review 2026-10-13): a deferred index must have a builder ────────────────
+//
+// ensure() skips every `migration_indexes` entry on upgrade and leaves it to the Migration page.
+// Declaring one with no registered AbstractIndexMigration behind it would leave every upgraded
+// install without that index, permanently, while fresh installs get it inline.
+$service    = (string) file_get_contents($plugin_root . '/src/Migration/MigrationService.php');
+$builders   = [];
+foreach ($files as $file) {
+    $src = slimstat_blank_comments((string) file_get_contents($file));
+    if (preg_match('/class (\w+) extends AbstractIndexMigration/', $src, $class)
+        && preg_match("/function getIndexKey\(\): string\s*\{\s*return '([^']+)';/", $src, $key)
+        && preg_match("/function getTableSuffix\(\): string\s*\{\s*return '([^']+)';/", $src, $suffix)
+        && false !== strpos($service, 'new ' . $class[1] . '(')) {
+        $builders[$suffix[1]][$key[1]] = true;
+    }
+}
+$deferred = 0;
+foreach (Schema::tables() as $suffix) {
+    foreach (array_keys(Schema::indexes($suffix)) as $index) {
+        if (!Schema::isMigrationIndex($suffix, $index)) {
+            continue;
+        }
+        $deferred++;
+        if (!isset($builders[$suffix][$index])) {
+            $failures[] = "`{$suffix}.{$index}` is a migration_indexes entry, so ensure() never builds it on "
+                . 'upgrade, but no registered AbstractIndexMigration does either';
+        }
+    }
+}
+if ($deferred < 3) {
+    $failures[] = "only {$deferred} migration_indexes entr(ies) found; the manifest declares three — the scan broke";
+}
+// And ensure() must actually skip them: the declaration alone changes nothing.
+$ensure = slimstat_find_function_body(slimstat_blank_comments((string) file_get_contents($plugin_root . '/src/Schema/Schema.php')), 'ensure') ?? '';
+$skip   = strpos($ensure, 'self::isMigrationIndex($suffix, $index)');
+if (false === $skip || $skip > (int) strpos($ensure, 'createIndexSql(')) {
+    $failures[] = 'Schema::ensure() builds missing indexes without consulting isMigrationIndex(), so the '
+        . 'first admin page after an update sits through prefix-index builds over the fact table';
+}
+
 // VACUITY FLOOR 2. If no manifest index depends on a migration-added column, this gate examined
 // nothing. That is a legitimate state for the schema to reach — but it must be noticed, not
 // mistaken for a pass, because it is also what a broken $adds map looks like.
@@ -213,4 +253,4 @@ if ($failures) {
 }
 
 echo 'PASS: all ' . $examined . " manifest index/migration-added-column pair(s) are built by the "
-    . "migration that adds the column\n";
+    . "migration that adds the column; all {$deferred} migration-owned index(es) have a registered builder\n";

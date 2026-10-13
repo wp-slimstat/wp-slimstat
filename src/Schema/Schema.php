@@ -202,6 +202,7 @@ final class Schema
                 '{prefix}slim_stat_events_idx' => 'dt',
                 'idx_events_notes_dt'          => 'dt, notes(64)',
             ],
+            'migration_indexes' => ['idx_events_notes_dt'],
         ],
 
         'slim_events_archive' => [
@@ -379,6 +380,10 @@ final class Schema
                 'idx_ecommerce_visit'               => 'visit_id, dt, id',
             ],
             'on_demand_indexes' => ['idx_ecommerce_visit'],
+            // Built from the Migration page, never by ensure() on admin_init: each is a prefix
+            // index over the whole fact table (release review 2026-10-13, B2). Fresh installs
+            // still get them inline from createTableSql().
+            'migration_indexes' => ['idx_goal_queries', 'idx_funnel_queries'],
         ],
 
         'slim_stats_archive' => [
@@ -809,6 +814,12 @@ final class Schema
         return in_array($name, $definition['on_demand_indexes'] ?? [], true);
     }
 
+    /** Upgrades build these from the Migration page (an AbstractIndexMigration), not ensure(). */
+    public static function isMigrationIndex(string $suffix, string $name): bool
+    {
+        return in_array($name, self::table($suffix)['migration_indexes'] ?? [], true);
+    }
+
     public static function engine(): string
     {
         return self::ENGINE;
@@ -931,6 +942,21 @@ final class Schema
             'CREATE INDEX %s ON %s (%s)',
             self::resolve($index, $prefix),
             $prefix . $suffix,
+            self::indexes($suffix)[$index]
+        );
+    }
+
+    /**
+     * createIndexSql() in ALTER TABLE form, for callers that append the comma-separated
+     * `ALGORITHM=INPLACE, LOCK=NONE` hint (AbstractMigration::alterOnline()); CREATE INDEX
+     * rejects that spelling, so every hinted attempt would fall through to the locking build.
+     */
+    public static function addIndexSql(string $suffix, string $index, string $prefix): string
+    {
+        return sprintf(
+            'ALTER TABLE %s ADD INDEX %s (%s)',
+            $prefix . $suffix,
+            self::resolve($index, $prefix),
             self::indexes($suffix)[$index]
         );
     }
@@ -1089,6 +1115,7 @@ final class Schema
             // failed: a CREATE INDEX here loses on every admin_init until the migration
             // lands, stamping failures for a state that is expected and self-healing.
             'indexes_skipped_missing_column' => [],
+            'indexes_deferred_to_migration'  => [],
         ];
         $existing = self::existingTables($db, $prefix);
         $resolved = null;
@@ -1141,6 +1168,11 @@ final class Schema
             $columns_absent = array_flip($columns['missing']);
 
             foreach ($state['missing'] as $index) {
+                if (self::isMigrationIndex($suffix, $index)) {
+                    $report['indexes_deferred_to_migration'][] = self::resolve($index, $prefix);
+                    continue;
+                }
+
                 // An index can only be built from columns the table has. The manifest may
                 // declare both together while a migration delivers the column later, so
                 // "column not there yet" is a skip with a name, never an attempt.
