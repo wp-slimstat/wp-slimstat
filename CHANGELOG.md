@@ -1,3 +1,82 @@
+= 6.0.0 - 2026-10-12 =
+
+**SlimStat 6: see where visitors click, which campaigns bring sales, and trust every number.** Update with confidence: your settings and data carry over, and the optional database steps wait for your click.
+
+**New: Heatmaps**
+* A Heatmaps page lists every page with clicks: clicks, pageviews, clicks per pageview, device split and last click. Search, sort and pick any date range. Open it from the menu or the Heatmap button in the admin bar.
+* Your existing link and button clicks show up right away. Without Pro, "View heatmap" reveals each page's five most clicked links and buttons.
+* With SlimStat Pro, opt-in recording captures clicks on any element, scroll depth, dead clicks and rage clicks on a sampled share of the pages you choose. It follows consent and Do Not Track and never stores what visitors type.
+* Heatmap data lives in its own tables, respects restricted-author permissions and follows your retention, privacy-erasure and uninstall settings. Deleting it asks you to type a confirmation.
+
+**New: Channels and UTM Campaigns**
+* Traffic Sources opens with Channels and UTM Campaigns side by side: pageviews, shares and source breakdowns, with exact totals even under result caps.
+* Channels tell AI assistants, AI crawlers and AI fetches apart from search, social, email and paid traffic. Direct visits are no longer mistaken for internal navigation, and campaign tags keep their case.
+* Build and copy campaign links from the report header. The builder checks required tags and keeps your URL's own parameters.
+* Without Pro, each report shows its top two groups and names up to five more.
+* Attribution starts with new pageviews; existing pageviews stay unattributed.
+
+**New: WooCommerce revenue dashboard**
+* Net sales, orders, period comparisons, top products, acquisition and a consented purchase journey, with interactive metric charts, tabbed revenue rankings and inline drill-downs.
+* Currency, refunds, purchase rate and unmatched orders have clear definitions, configured WooPayments currencies are included, and charts explain their gaps.
+* Setup is opt-in. Order sync runs in small background jobs, supports HPOS and legacy storage, and follows your dates, filters, saved segments, retention and privacy erasure. See [the Ecommerce guide](docs/ecommerce.md).
+* If setup cannot finish, the Ecommerce page says why and offers a retry. A MyISAM analytics table is named as the cause, with the fix: convert it to InnoDB.
+
+**New: Shortcode Playground**
+* Under SlimStat → Shortcodes: browse reports, preview them with your data, tune filters, then copy or test the shortcode.
+* New live visitor, page and country counters and Ecommerce KPI tables. Shortcodes support multiple columns and UTM and channel counts.
+
+**A cleaner, friendlier admin**
+* One voice and native WordPress controls everywhere: consistent wording, accessible dialogs, the WordPress focus ring, higher-contrast fields and one pagination style.
+* Empty reports explain why and what to do next, and a Get started panel helps new sites record their first pageview.
+* Free screens show what Pro adds honestly, with no blurred mock reports. Email Report previews the weekly email built from your own last 7 days and sends you a sample. Export opens the Pro page instead of posting your filters to wp-slimstat.com.
+* Changing dates keeps your filters, and saved segments keep their dates.
+* "New" badges mark each new menu page for 15 days.
+* After updating, one dismissible notice on the Dashboard and Plugins screens says what is new, once any pending database migration is done. Dismiss it, or it hides itself after 7 days. New installs never see it.
+* The Help (?) panel is rewritten in plain language. It opens on the topic for the screen you are on, explains every filter under the name the filter list uses, and covers Channels and UTM, Goals and funnels, Ecommerce, Heatmaps, Shortcodes and what Pro adds.
+* Users without the Settings permission see what Pro adds without purchase links.
+* Clearer labels on At a Glance, Traffic Summary, Access Log, Customize and Migration. Customize cards move by drag or keyboard, and Reset layout asks first.
+
+**Faster**
+* Admin charts read half as many database rows (304,454 → 152,227 on the weekly chart over a 150,000-row test corpus).
+* Tracking writes 62% fewer option updates per pageview and 96% fewer per blocked bot.
+* Pages per visit reads 49.5% fewer rows, and the post-update table check runs 4 statements instead of 14.
+* The Heatmaps list answers search, sort and auto-refresh from one cached query.
+
+**Numbers you can trust** (some change on purpose, to their true value)
+* Sites that had "Enable CDN" on start recording again. The setting is gone: it loaded a tracker file that did not exist yet. The snippet for tracking external pages now points at your own site; replace any copy of the old one.
+* No more double counting: consent given through the WP Consent API updates the original pageview, also before you run Migration, anonymous same-page refreshes count once, and overlapping funnel steps stop inflating. Some totals go down.
+* Form-submit, tel: and mailto: goals work, one hit per press. Funnels no longer show silent zeros.
+* Overview "Today" and "Yesterday" no longer read 0, "Currently Online" follows the date filter, and unique browser and country counts are no longer capped at 28 days.
+* The weekly chart's previous-period total matches its bars.
+* Cookieless visits no longer split every 5 minutes, and anonymous IDs are full-length private hashes that cannot collide.
+* Multisite: subsites created on WordPress 5.1+ or activated with WP-CLI now track, and Network View totals are truly network-wide.
+* Per-author email reports show each author's own numbers.
+* Archived events appear, top lists keep a stable order, numbers and their bars round the same way, ranges across midnight keep browser versions apart, and missing names are left out instead of shown as Guest.
+* External-database installs read the right database and never create a second schema or show the hostname.
+
+**Upgrade with confidence**
+* Your settings carry over, including disabled tracking, consent, Heatmaps, user exclusions and network overrides. New installs turn on bot filtering and async loading.
+* A new Migration screen lists the database steps. Nothing runs until you click, and tracking keeps working. Required steps only add columns and indexes (about 8 seconds per 440,000 rows on MySQL 8) and change or remove no data. A notice on the Dashboard, Plugins and Updates screens says when a step is waiting, and the Migration screen warns if a MyISAM analytics table will pause tracking while a step runs.
+* Two optional table rebuilds, the browser backfill and the utf8mb4 conversion, run only when you pick them by name. To postpone everything, set `SLIMSTAT_DISABLE_MIGRATIONS` to true in `wp-config.php`.
+* On the first admin visit after updating, SlimStat creates any missing tables and small indexes, as in every release. Columns and the three new indexes over page addresses and event notes are added only when you run Migration.
+* Back up your database first, as with any major release.
+
+**Rock-solid reliability**
+* Deleting the plugin keeps your analytics. Data is removed only if you turned on "Delete Data on Uninstall" under Settings → Maintenance. ([#327](https://github.com/wp-slimstat/wp-slimstat/issues/327))
+* No more white-screen lockouts: if a plugin file is out of sync after an interrupted update, SlimStat loads it directly or switches off only that feature and tells administrators what stopped. If a blank screen persists, flush your host's PHP opcache. ([#325](https://github.com/wp-slimstat/wp-slimstat/issues/325))
+* Uninstall always removes the rebuildable browser-detection cache; the geolocation database goes only with full data deletion. Deactivating clears the daily salt task.
+* Migrations never run twice at once, resume from checkpoints and can be switched off. The heat-map position repair finishes instead of offering itself forever.
+* Reports verified byte-identical on MySQL 5.6, 5.7 and 8.0. Supports PHP 7.4+ and WordPress 5.6+, tested up to WordPress 7.1, with fewer PHP notices on older setups.
+* Dependencies build reproducibly from the lockfile with WP Scoper. ([#339](https://github.com/wp-slimstat/wp-slimstat/issues/339))
+
+**Security and privacy**
+* Fixed a SQL injection that any logged-in user could reach on sites with the "Posts and Pages" report column turned on (off by default). Found in-house; no report of it in the wild.
+* Shortcodes show personal data, access logs and user reports only to people allowed to view analytics; visitors see nothing.
+* WooCommerce order-access keys are removed from newly stored page URLs and referrers.
+* Shortcode text and campaign values stay escaped and inert across forms, AJAX, summaries and shortcodes.
+
+**Translators:** new and reworded strings need translation; a few labels show in English until then.
+
 = 5.5.0 - 2026-06-24 =
 
 **New: Goals & Funnels**

@@ -1,0 +1,17 @@
+target:    tests/campaign-phase-gate-test.php
+gate:      composer test:campaign-phase-gate
+kind:      guard-removal
+expect:    fixture "phase 2 opened while phase 1 is open" expected REJECT, got ACCEPT
+rationale: Disables the one invariant the unwritten run-blind-campaign.sh was named to enforce: a phase may not be opened until the phase before it has a closed Run. The plan cited that script in three handoff blocks across five Runs and it was never written, so for the whole programme the rule existed only as a sentence. This gate is what replaced it -- over STATE.json, which is where the invariant actually lives and what every handoff reads -- and the mutation restores the state the programme was in when the rule was enforced by nothing at all.
+---
+--- a/tests/campaign-phase-gate-test.php
++++ b/tests/campaign-phase-gate-test.php
+@@ -97,7 +97,7 @@
+     $phase = $campaign['phase'] ?? null;
+     if (!is_int($phase)) {
+         $problems[] = 'campaign.phase is absent or is not an integer';
+-    } elseif ($phase > $highest_closed + 1) {
++    } elseif (false) {
+         $problems[] = sprintf(
+             'campaign.phase is %d but the highest CLOSED phase is %d — phase %d was opened without closing phase %d',
+             $phase,

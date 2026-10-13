@@ -1,3 +1,8 @@
+<?php
+if (!defined('ABSPATH')) {
+    exit;
+}
+?>
 <div class="slimstat-notification-sidebar__card <?php echo esc_attr($notification->backgroundColor()); ?> slimstat-notification-<?php echo esc_attr($notification->getID()) ?>">
     <?php if ($notification->getIcon()): ?>
         <div class="slimstat-notification-sidebar__card-icon">
@@ -37,4 +42,3 @@
         </div>
     </div>
 </div>
-

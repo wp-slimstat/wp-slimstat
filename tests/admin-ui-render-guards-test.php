@@ -75,7 +75,7 @@ check(
     'C8: legend is gated on !$is_dashboard (hidden in the compact widget)'
 );
 // All five categories and their swatch classes are present.
-foreach (['From search result page', 'Has Left Comments', 'WP User', 'Other Human', 'Bot or Crawler'] as $label) {
+foreach (['From search result page', 'Has left comments', 'WordPress user', 'Other human', 'Bot or crawler'] as $label) {
     check(false !== strpos($legendBlock, $label), "C8: legend has the \"{$label}\" category");
 }
 foreach (['is-search-engine', 'is-known-visitor', 'is-known-user', 'is-direct'] as $cls) {
@@ -91,6 +91,78 @@ check(false !== strpos($legendBlock, 'title='), 'C8: each swatch carries a toolt
 $admincss = read_or_die('admin/assets/css/admin.css');
 check((bool) preg_match('/\.slimstat-access-log-legend[^{]*\{[^}]*display:\s*flex/', $admincss), 'C8: legend is laid out with flex');
 check((bool) preg_match('/\.slimstat-access-log-legend \.little-color-box\s*\{[^}]*float:\s*none/', $admincss), 'C8: legend swatches override float:left');
+
+// B11: legend swatches are dots, not checkbox-like squares; "Pages live" is not
+// underlined like a link; the performance line names its units in words.
+check((bool) preg_match('/\.slimstat-access-log-legend \.little-color-box\s*\{[^}]*border-radius:\s*50%/', $admincss), 'B11: legend swatches are round');
+check(!preg_match('/\.pages-label\s*\{[^}]*underline/', read_or_die('admin/assets/css/live-analytics.css')), 'B11: "Pages live" label is not underlined');
+// C2: rate rows render with a % sign. The suffix is added by the renderer, not the
+// data row, because the report-answer contract pins the raw value ("66.67").
+$reports = read_or_die('admin/view/wp-slimstat-reports.php');
+check((bool) preg_match('/\$percent_metrics\s*=\s*\[__\(\'Bounce rate\', \'wp-slimstat\'\), __\(\'New Visitors Rate\', \'wp-slimstat\'\)\]/', $reports), 'C2: Bounce rate and New Visitors Rate are listed as percentages');
+check(false !== strpos($reports, 'in_array($a_result[\'metric\'], $percent_metrics, true) ? \'%\' : \'\''), 'C2: the summary renderer appends % to rate rows');
+check(false === strpos($rightnow, "__('SL'") && false === strpos($rightnow, "__('PS'"), 'B11: no SL/PS abbreviations in the Access Log');
+// QA §5: the count floated right AFTER the label, so a label that wrapped pushed its count onto
+// a line of its own. The row is flex instead; DOM order (which the parity harness reads) is kept.
+check((bool) preg_match('/p\.slimstat-tooltip-trigger:has\(>\s*\.slimstat-count-pct\)\s*\{[^}]*display:\s*flex/', $admincss), 'QA §5: a report row with a count is a flex row');
+check((bool) preg_match('/p span\.slimstat-count-pct\s*\{[^}]*float:\s*none[^}]*margin-inline-start:\s*auto/', $admincss), 'QA §5: the count stops floating and sits at the end of the first line');
+// A4: Delete heatmap data takes the destructive role. It renders only once Pro capture has set up
+// the heatmap tables, so a Free-only E2E install never shows it; this is the check that always runs.
+check(false !== strpos(read_or_die('admin/view/heatmaps.php'), '<p class="ss-hm-delete"><button type="button" class="button-link button-link-delete"'), 'A4: Delete heatmap data uses the destructive button role');
+// QA D11: "Build your first campaign link" read one way on the Upgrade page and another on Reports.
+$campaignLink = "__('Tag an incoming link to see its recorded pageviews in UTM Campaigns.', 'wp-slimstat')";
+check(false !== strpos($reports, $campaignLink) && false !== strpos(read_or_die('admin/view/upgrade-pro.php'), str_replace('__(', 'esc_html_e(', $campaignLink)), 'D11: one description for "Build your first campaign link"');
+// QA D7: the #aaa base border around a pale 10px fill read as a hollow ring, not the row colour it names.
+check((bool) preg_match('/\.slimstat-access-log-legend \.little-color-box\s*\{[^}]*width:\s*12px[^}]*border-color:\s*rgba\(0,\s*0,\s*0,\s*\.12\)/', $admincss), 'D7: legend swatches are filled dots with a hairline, not #aaa rings');
+// QA R12: the pill rule for settings inputs also rounded checkboxes, so Email Report's picks read as radio buttons.
+check(false === strpos($admincss, '.wrap-slimstat .form-table tr td input{') && false !== strpos($admincss, '.wrap-slimstat .form-table tr td input:not([type=checkbox]):not([type=radio]){'), 'R12: form-table pill inputs leave checkboxes and radios native');
+
+// --- 6.0 release notice (tests/Integration/ReleaseNoticeTest.php covers the rendering) ---
+$admin = read_or_die('admin/index.php');
+check(false !== strpos(read_or_die('wp-slimstat.php'), "\$defaults['notice_latest_news'] = 'no';"), 'Release notice: new installs never see it (get_fresh_defaults sets no)');
+check(false !== strpos(read_or_die('uninstall.php'), "delete_option('slimstat_release_notice_since')"), 'Release notice: uninstall deletes its anchor');
+check((bool) preg_match("/if \(version_compare\([^;]*'6\.0\.0', '<'\)\) \{\s*wp_slimstat::\\\$settings\['notice_latest_news'\] = 'on';/", $admin), 'Release notice: only an upgrade from 5.x turns it on, so a 6.0.x update does not undo a dismissal');
+preg_match("/\/\/ 6\.0 release notice:.*?add_action\('admin_notices', \[self::class, 'show_latest_news'\], 10, 0\);/s", $admin, $gate);
+$gate = $gate[0] ?? '';
+check('' !== $gate, 'Release notice: the gate in init() is present');
+check(false !== strpos($gate, "current_user_can('manage_options')") && false === strpos($gate, 'is_super_admin'), 'Release notice: the gate uses the capability notices_handler() checks, not is_super_admin()');
+preg_match_all("/'([\w-]+\.php)'/", $gate, $pages);
+check(['index.php', 'plugins.php'] === $pages[1] && false === strpos($gate, 'slimview'), 'Release notice: it shows on the Dashboard and Plugins screens only, never on SlimStat\'s own');
+preg_match('/function release_notice_dismiss_script\(\)\s*\{(.*?)\n    \}/s', $admin, $dismiss);
+$dismiss = $dismiss[1] ?? '';
+check(false !== strpos($dismiss, "wp_add_inline_script('common'") && false !== strpos($dismiss, "'slimstat_notice_latest_news'") && false !== strpos($dismiss, "wp_create_nonce('meta-box-order')"), 'Release notice: the dismiss posts the existing AJAX action with its nonce, on core\'s common handle');
+preg_match('/function show_latest_news\(.*?\n    \}/s', $admin, $render);
+check((bool) preg_match("/self::show_message\(\\\$html, 'info', 'latest-news'\);\s*self::release_notice_dismiss_script\(\);/", $render[0] ?? ''), 'Release notice: the dismiss script is added right after the notice renders, never on an early return');
+check(false !== strpos($dismiss, 'if(!window.SlimStatAdminParams&&'), 'Release notice: the dismiss script stands down where admin.js handles the click (no double POST on the Dashboard)');
+check(false !== strpos(read_or_die('src/Migration/MigrationService.php'), 'public static function manager(): ?MigrationManager'), 'Release notice: MigrationService exposes the manager so the notice can wait for migrations');
+
+// --- Pro links (tests/Integration/ProLinksTest.php covers Export and the Channels row) ---
+$upgrade = read_or_die('admin/view/upgrade-pro.php');
+preg_match('/\$converts = \[(.*?)\n\];/s', $upgrade, $converts);
+check(false !== strpos($converts[1] ?? '', "__('Channels and UTM Campaigns', 'wp-slimstat')"), 'Pro page: "See all channels with Pro" lands on a section that lists Channels and UTM Campaigns');
+$proAdds = read_or_die('admin/view/partials/pro-adds.php');
+preg_match('/<\?php if \(current_user_can\(\'manage_options\'\)\) : \?>(.*?)<\?php endif; \?>/s', $proAdds, $proAddsLinks);
+check(2 === substr_count($proAdds, '<a ') && 2 === substr_count($proAddsLinks[1] ?? '', '<a '), 'Pro adds: both buttons render only for manage_options; the sentence stays for everyone');
+$ecommerce = read_or_die('admin/view/partials/ecommerce.php');
+check(false !== strpos($ecommerce, "<?php if (current_user_can('manage_options')) : ?><a class=\"button button-primary\" href=\"<?php echo esc_url(admin_url('admin.php?page=slimpro#ss-pro-converts')); ?>\">"), 'Ecommerce: the discover button opens the converts section, for manage_options only');
+// B1 (release review 2026-10-13): the setup-failure reason renders before the setup CTA, or the
+// admin is sent back to the same button with no explanation, forever.
+$setupError = strpos($ecommerce, 'elseif (!Integration::ready() && \'\' !== $error)');
+$setupCta = strpos($ecommerce, 'elseif (!Integration::ready()) :');
+check(false !== $setupError && false !== $setupCta && $setupError < $setupCta, 'Ecommerce: a failed setup shows its reason before the "Set up Ecommerce" button');
+$integration = read_or_die('src/Ecommerce/Integration.php');
+preg_match('/function setup\(\): void(.*?)\n\t}\n/s', $integration, $setupBody);
+$engineCheck = strpos($setupBody[1] ?? '', 'self::requireInnoDb(');
+check(false !== $engineCheck && $engineCheck < (int) strpos($setupBody[1] ?? '', 'createTableSql('), 'Ecommerce: setup names a MyISAM analytics table before it creates the foreign-keyed table');
+// S3 (release review 2026-10-13): MyISAM has no online index build, so the Migration page says
+// tracking pauses while it runs, and only when the controller found a MyISAM table.
+$migrationPage = read_or_die('src/view/migration-page.php');
+check((bool) preg_match('/<\?php if \(\$analytics_myisam\) \{ echo \' \' \. esc_html__\(\'[^\']*MyISAM[^\']*tracking pauses/', $migrationPage), 'Migration page: the MyISAM sentence is drawn only under $analytics_myisam');
+$migrationAdmin = read_or_die('src/Migration/Admin/MigrationAdmin.php');
+check(false !== strpos($migrationAdmin, 'Schema::tableEngine('), 'Migration page: renderPage() reads the analytics table engine');
+// Required steps also build idx_events_notes_dt, which write-locks a MyISAM slim_events (CodeRabbit, PR #349).
+check((bool) preg_match("/\['slim_stats', 'slim_events'\]/", $migrationAdmin), 'Migration page: the MyISAM probe covers slim_stats and slim_events');
+check(false === strpos($ecommerce, 'wp-slimstat.com/pricing') && false === strpos(read_or_die('src/Reports/AcquisitionReport.php'), 'wp-slimstat.com/pricing'), 'Ecommerce and Channels: no pricing link for users who cannot buy');
 
 if ($failures > 0) {
     fwrite(STDERR, "{$failures} check(s) failed in admin-ui-render-guards-test.php\n");

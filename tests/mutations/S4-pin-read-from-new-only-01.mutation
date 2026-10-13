@@ -1,0 +1,20 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+expect:    P48-a-pin-on-the-other-arm-only-is-not-a-pin-either
+kind:      guard-removal
+rationale: BOTH arms must be pinned for a window to be pinned: a window pinned on one side only leaves
+           the other free to move, so a difference cannot be attributed to the code. The `and` is
+           what says so. S4-pin-reads-as-or-01 covers `and` becoming `or`; this covers the OLD
+           side being dropped entirely, which the same asymmetric-plant gap left undefended.
+---
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -612,7 +612,7 @@
+                   for name in ("clock_dependent", "calendar_day_dependent")),
+         # BOTH arms must be pinned for the pin to help. A window pinned on one side only leaves
+         # the other free to move, which is the state the pin exists to prevent.
+-        pinned=_flag(old_env, "pinned") and _flag(new_env, "pinned"),
++        pinned=_flag(new_env, "pinned"),
+         observable=observable,
+         register_hit=hit,
+         register_near=tuple(near),

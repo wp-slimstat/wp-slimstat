@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    NULL against a value is a difference verdict
+rationale: Makes NULL equal to a value. R16 is a defect that lived entirely in this distinction - count(ip) skipped NULLs in a function answering PAGES per visit - so a differ for which NULL equals 0 cannot see the class of bug it was built for. Unreachable through an answer TRIPLE, because check_envelope refuses an `ok` envelope carrying None, which is exactly why it is asserted directly against compare_scalar: the oracle families call it that way.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -368,7 +368,7 @@ def compare_scalar(a, b, places=None):
+     if a is None and b is None:
+         return _diff(EQUAL, "both-null", "scalar", "both sides are NULL")
+     if a is None or b is None:
+-        return _diff(DIFFER, "null-vs-value", "scalar",
++        return _diff(EQUAL, "null-vs-value", "scalar",
+                      "NULL on one side and a value on the other: %r vs %r — NULL is not '' and "
+                      "not 0" % (a, b), a=a, b=b)
+ 

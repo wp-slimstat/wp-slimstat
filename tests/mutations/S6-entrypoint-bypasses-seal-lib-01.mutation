@@ -1,0 +1,16 @@
+target:    tests/docker/verify-change.sh
+gate:      composer test:seal-entrypoint
+kind:      construct-removal
+expect:    writes a run directory and never calls seal_flip
+rationale: Removes the real entry point's seal-library import while leaving its directional comparison procedure in place. The static half of the entry-point gate must refuse before a shell error, timeout or unrelated artifact scan can masquerade as detection; this is the exact control-flow bypass that made the pre-S6 archive look blind while writing identity-bearing artifacts.
+---
+--- a/tests/docker/verify-change.sh
++++ b/tests/docker/verify-change.sh
+@@ -25,7 +25,6 @@
+ set -uo pipefail
+ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ source "$HERE/lib.sh"
+-source "$HERE/seal-lib.sh"
+ 
+ BEFORE="${1:?before ref}"
+ AFTER="${2:?after ref}"

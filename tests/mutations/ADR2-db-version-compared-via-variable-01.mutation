@@ -1,0 +1,21 @@
+target:    src/Schema/Schema.php
+gate:      php tests/db-floor-metadata-test.php
+kind:      introduce-defect
+expect:    compares a database server version with version_compare()
+rationale: The SAME defect written the way anyone would actually write it - fetch the version into a variable, then compare it. Measured before this gate was widened: 3 of 4 realistic spellings escaped it, and the only other mutation against it happened to use the one spelling it caught. That is the workspace's recurring shape - a guard that looked like it worked - and it is why this second spelling is registered rather than assumed covered.
+---
+--- a/src/Schema/Schema.php
++++ b/src/Schema/Schema.php
+@@ -702,6 +702,12 @@
+      */
+     public static function targetCollation(wpdb $core): string
+     {
++        $serverVersion = $core->db_version();
++
++        if (version_compare($serverVersion, '5.6', '<')) {
++            return 'utf8_general_ci';
++        }
++
+         $collation = $core->get_var($core->prepare(
+             "SELECT COLLATION_NAME FROM information_schema.COLUMNS
+               WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'user_login'",

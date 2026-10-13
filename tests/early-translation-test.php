@@ -67,7 +67,12 @@ et_assert(
 // AND that it co-occurs with the add_action('init', static function wrapper.
 // ═══════════════════════════════════════════════════════════════════════════
 et_assert(
-    str_contains($source, "_n(") && str_contains($source, "'wp-slimstat'"),
+    // strpos, not str_contains: this script loads nothing, so the Symfony Php80 polyfill that
+    // wp-slimstat.php pulls in is not in scope, and str_contains() is a fatal on ADR-2's declared
+    // 7.4 floor — the very lane this test was just folded into CI to cover. The repo's own
+    // php74-no-php80-functions guard scans wp-slimstat.php, admin/ and src/ but NOT tests/, so it
+    // could not see this.
+    false !== strpos($source, "_n(") && false !== strpos($source, "'wp-slimstat'"),
     "TEST 2a: _n() with 'wp-slimstat' textdomain must exist in source for plural-aware cookie duration"
 );
 

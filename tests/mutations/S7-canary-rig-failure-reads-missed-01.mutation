@@ -1,0 +1,17 @@
+target:    tests/docker/canary/compute-canary-verdict.py
+gate:      composer test:canary-verdict
+kind:      guard-narrowing
+expect:    the patch changed nothing: expected INVALID, got MISSED
+rationale: Collapses the rig/detection distinction so every control failure reads MISSED -- which is what this file did until the S7 review. MISSED is the most expensive word the drill can print: CANARY-C1.md makes it failure protocol 3, under which the adjudication layer is rejected and every prior blind adjudication is void and re-done. A patch that failed to apply, a mistyped ref pair, a red seal control and a pre-declaration edited after the fact are none of them evidence about the adjudicators. The pre-declaration already separates the two -- its 'What counts as a MISS' list is entirely adjudication outcomes and the rig checks live in its Controls table -- so the mutation restores a state in which the code contradicts the document it implements.
+---
+--- a/tests/docker/canary/compute-canary-verdict.py
++++ b/tests/docker/canary/compute-canary-verdict.py
+@@ -203,7 +203,7 @@
+ 
+     rig_ok = all(r["status"] == "PASS" for r in controls if r["kind"] == RIG)
+     det_ok = all(r["status"] == "PASS" for r in controls if r["kind"] == DETECTION)
+-    verdict = "CAUGHT" if rig_ok and det_ok else ("INVALID" if not rig_ok else "MISSED")
++    verdict = "CAUGHT" if rig_ok and det_ok else "MISSED"
+     return {
+         "verdict": verdict,
+         "caught": verdict == "CAUGHT",

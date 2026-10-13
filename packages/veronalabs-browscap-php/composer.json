@@ -2,6 +2,18 @@
   "name": "veronalabs/browscap-php",
   "version": "dev-standalone",
   "type": "library",
-  "description": "Browscap-PHP stub — actual files already embedded via Mozart in src/Dependencies/",
-  "autoload": {}
+  "description": "Reproducible source snapshot for SlimStat's private dependency bundle",
+  "autoload": {
+    "psr-4": {
+      "BrowscapPHP\\": "src/BrowscapPHP/",
+      "GeoIp2\\": "src/GeoIp2/",
+      "GuzzleHttp\\": "src/GuzzleHttp/",
+      "League\\": "src/League/",
+      "MatthiasMullie\\": "src/MatthiasMullie/",
+      "MaxMind\\Db\\": "src/MaxMind/Db/",
+      "MaxMind\\WebService\\": "src/MaxMind/WebService/",
+      "Psr\\": "src/Psr/",
+      "Symfony\\": "src/Symfony/"
+    }
+  }
 }

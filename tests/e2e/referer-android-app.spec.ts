@@ -1,16 +1,13 @@
 /**
  * E2E regression tests for #306 — android-app:// (Google Discover) referers.
  *
- * Before the fix, Ajax.php / Processor.php ran the referer through sanitize_url(),
- * which strips any scheme absent from wp_allowed_protocols() — emptying
- * `android-app://com.google.android.googlequicksearchbox/`. The fix swaps both
- * call sites to sanitize_text_field(); the scheme allowlist in Processor::process()
- * (http/https/android-app) remains the XSS boundary.
+ * The server tracker reads the incoming request's HTTP_REFERER and preserves
+ * allowed http/https/android-app schemes. JavaScript tracking instead supplies
+ * document.referrer explicitly; an empty value means direct traffic and must
+ * never fall back to the tracking endpoint's HTTP header.
  *
- * Strategy: navigate directly (no prior page → empty document.referrer → empty JS
- * `ref`), so Processor falls back to $_SERVER['HTTP_REFERER'], which the
- * header-injector mu-plugin sets from e2e-header-overrides.json. This exercises the
- * Processor server-fallback path end-to-end.
+ * Exercise the actual server tracker with headers supplied by the test-only
+ * injector, including disallowed schemes that browsers cannot send normally.
  */
 import { test, expect } from '@playwright/test';
 import * as mysql from 'mysql2/promise';
@@ -55,11 +52,6 @@ async function waitForStatRow(
   return null;
 }
 
-/**
- * Poll until a row for the marker has a non-empty referer. In REST/JS transport a
- * pageview row can be inserted before the server-side referer fallback populates it,
- * so asserting on the first row that appears is racy — wait for the column instead.
- */
 async function waitForReferer(
   marker: string,
   timeoutMs = 15_000,
@@ -97,7 +89,8 @@ test.describe('Issue #306 — android-app referers preserved through tracker', (
   test.beforeEach(async ({ page }) => {
     await snapshotSlimstatOptions();
     await clearStatsTable();
-    await setSlimstatOption(page, 'tracking_request_method', 'rest');
+    await setSlimstatOption(page, 'javascript_mode', 'off');
+    await setSlimstatOption(page, 'ignore_wp_users', 'off');
     await setSlimstatOption(page, 'gdpr_enabled', 'off');
     clearHeaderOverrides();
   });

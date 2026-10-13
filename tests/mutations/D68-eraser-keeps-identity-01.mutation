@@ -1,0 +1,18 @@
+target:    src/Services/Privacy/DataEraser.php
+gate:      php tests/anonymous-identity-test.php
+kind:      guard-removal
+expect:    does not clear vid_hash
+rationale: Drops the vid_hash clause from the anonymization UPDATE while the schema probe and its $has_vid_hash variable stay — so a scan for the bare name "vid_hash" in the function body still succeeds. The gate must demand the SET fragment itself ("vid_hash = NULL"), because the defect is precisely an "anonymized" row keeping a value derived from the fingerprint the same statement just erased.
+---
+diff --git a/src/Services/Privacy/DataEraser.php b/src/Services/Privacy/DataEraser.php
+--- a/src/Services/Privacy/DataEraser.php
++++ b/src/Services/Privacy/DataEraser.php
+@@ -275,7 +275,7 @@ class DataEraser
+ 				    other_ip = '',
+ 				    username = '',
+ 				    email = '',
+-				    fingerprint = ''" . ($has_vid_hash ? ', vid_hash = NULL' : '') . '
++				    fingerprint = ''" . ($has_vid_hash ? '' : '') . '
+ 				WHERE ip = %s
+ 				LIMIT %d',
+ 				$ip_address,

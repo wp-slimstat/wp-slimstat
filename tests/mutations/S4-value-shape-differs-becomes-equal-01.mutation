@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    P43-rows-against-a-scalar-is-a-changed-answer label
+rationale: The value-level twin: a report that used to answer with rows and now answers with a number compares equal. Registered separately from the scalar branch because a rule-name coverage loop sees one name for two call sites, and one of them being reached says nothing about the other (PITFALLS 62's shape - a guard whose scope is a file and whose subject is a call site).
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -661,7 +661,7 @@ def compare_values(a, b, contract=None):
+     if a_is_rows and b_is_rows:
+         return compare_banded(a, b, contract)
+     if a_is_rows != b_is_rows:
+-        return _diff(DIFFER, "shape-differs", "value",
++        return _diff(EQUAL, "shape-differs", "value",
+                      "one answer is a row list and the other is a scalar (%r vs %r)"
+                      % (type(a).__name__, type(b).__name__))
+     return compare_scalar(a, b, contract["places"])

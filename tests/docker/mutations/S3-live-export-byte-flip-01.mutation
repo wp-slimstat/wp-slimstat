@@ -1,0 +1,47 @@
+target:    tests/bench/lib/export-snapshot.php
+gate:      tests/docker/run-rollup-floor.sh (lane: fp_live_mutations, cell 80)
+kind:      restore-defect
+expect:    CHAINED HASH differs
+precondition: SELECT COUNT(*) FROM wp_slim_stats WHERE CAST(resource AS BINARY) <> CAST(UPPER(resource) AS BINARY)
+rationale: NOT A REGISTRY ENTRY, and deliberately so — its gate is a live MySQL-to-SQLite round
+           trip inside a docker cell, which `composer test:mutations` cannot run and must not be
+           made to depend on. It lives here, in the format the registry uses, so that the live
+           lane's mutations are pre-declared files a reviewer can read rather than sed
+           expressions buried in a shell array.
+
+           WHAT IT PROVES. The registered sibling (S3-export-collapses-null-to-empty-01) is a
+           NULL defect: it is caught by whichever side treats NULL specially, and the corpus
+           must contain a NULL for it to fire at all. This one is pure byte corruption on a
+           value that IS present — every lowercase letter in every exported string becomes
+           uppercase on the way into SQLite — so it fires on ordinary data and it fires in the
+           one direction the export's whole design is about: SQLite must not reinterpret the
+           bytes MySQL held. The PHP-side chained hash is computed from the ROW, not from what
+           was stored, so the failure localises exactly as the gate's diagnostic claims:
+           mysql == php != python, "the drift is in the export write or the Python re-encode".
+
+           WHY strtoupper AND NOT A ONE-BYTE FLIP. A single flipped byte in a single row is the
+           weaker mutation: it can only be observed if that row is exported, so a gate that
+           exported ten rows and stopped would still catch it while proving nothing about the
+           other 29,990. Corrupting every string makes the mutation's reach the corpus's reach,
+           and CONTROL 2 already performs the single-byte case in process, on the real export.
+
+           PRECONDITION. Measured before the diff is applied, and measured in BYTES. The first
+           version read `resource REGEXP '[a-z]'`, which MySQL evaluates under the column's
+           case-insensitive collation and therefore matches an all-uppercase corpus — reporting
+           "precondition satisfied" for data on which strtoupper() is a no-op. The predicate now
+           is literally "strtoupper would change this value". A mutation that cannot fire is
+           indistinguishable from a gate that works, which is the shape PITFALLS 44 records, and
+           a precondition that cannot fail is that same shape one layer out.
+---
+diff --git a/tests/bench/lib/export-snapshot.php b/tests/bench/lib/export-snapshot.php
+--- a/tests/bench/lib/export-snapshot.php
++++ b/tests/bench/lib/export-snapshot.php
+@@ -143,7 +143,7 @@ if (!function_exists('slimstat_fp2_export_snapshot')) {
+                     } else {
+                         // Strings, and integers too wide for SQLite's signed 64-bit INTEGER:
+                         // raw bytes, which SQLite must not reinterpret.
+-                        $insert->bindValue($i + 1, (string) $value, SQLITE3_BLOB);
++                        $insert->bindValue($i + 1, strtoupper((string) $value), SQLITE3_BLOB);
+                     }
+                 }
+                 $insert->execute();

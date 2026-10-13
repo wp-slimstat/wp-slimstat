@@ -1,0 +1,22 @@
+target:    tests/docker/lib.sh
+gate:      php tests/rehearsal-arm-resolution-test.php
+kind:      restore-defect
+expect:    a ZIP whose digest disagrees is refused
+rationale: The substitution case, and the only one nobody would notice by eye. Without the digest comparison a ZIP with the right name and the wrong contents installs and the cell runs to completion -- 7a would report the 4.8.1 DDL path green having migrated from whatever bytes were on disk. The pin is the entire reason the harness may install code it did not build, so removing the comparison removes the permission, not just a check. The gate notices because the tampered fixture now resolves with exit 0 and prints a path.
+---
+--- a/tests/docker/lib.sh
++++ b/tests/docker/lib.sh
+@@ -103,13 +103,6 @@
+ 
+   [ -s "$zip" ] || { err "arm ZIP not found or empty: $zip" >&2; return 1; }
+ 
+-  if [ -n "$ver" ]; then
+-    got=$(digest "$zip")
+-    [ "$got" = "$want" ] || {
+-      err "arm ZIP for $ver is not the pinned bytes: expected $want, got $got" >&2
+-      return 1
+-    }
+-  fi
+ 
+   printf '%s\n' "$zip"
+ }

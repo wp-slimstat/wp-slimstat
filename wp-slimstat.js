@@ -48,8 +48,34 @@ var SlimStat = (function () {
         }
     }
 
+    function rebaseQueuedInteractions(id) {
+        requestQueue.forEach(function (queued) {
+            if (queued.opts && queued.opts.interactionRaw) {
+                queued.payload = "action=slimtrack&id=" + id + queued.opts.interactionRaw;
+            }
+        });
+    }
+
     // Offline persistence helpers will be defined in the outer scope and assigned here
     var OFFLINE_KEY = "slimstat_offline_queue";
+    var PENDING_SESSION_KEY = "slimstat_pending_session";
+
+    function pendingSessionToken() {
+        try {
+            var token = sessionStorage.getItem(PENDING_SESSION_KEY) || "";
+            if (/^[0-9a-f]{32}$/.test(token)) return token;
+            if (!window.crypto || !window.crypto.getRandomValues) return "";
+            var bytes = new Uint8Array(16);
+            window.crypto.getRandomValues(bytes);
+            token = Array.prototype.map.call(bytes, function (byte) {
+                return ("0" + byte.toString(16)).slice(-2);
+            }).join("");
+            sessionStorage.setItem(PENDING_SESSION_KEY, token);
+            return token;
+        } catch (e) {
+            return "";
+        }
+    }
 
     // -------------------------- Generic Helpers -------------------------- //
     function utf8Encode(string) {
@@ -407,6 +433,13 @@ var SlimStat = (function () {
         if (isEmpty(payload)) return false;
         opts = opts || {};
 
+        // Beacon acceptance does not mean delivery while the browser is offline.
+        if (navigator.onLine === false) {
+            storeOffline(payload);
+            if (typeof opts.onComplete === "function") opts.onComplete(false);
+            return true;
+        }
+
         // All requests now go through the queue to ensure consistent handling.
         // Immediate sends are pushed to the front.
         var item = { payload: payload, useBeacon: useBeacon, opts: opts, attempts: 0 };
@@ -553,11 +586,11 @@ var SlimStat = (function () {
                 if (raw) {
                     bufferInteraction(raw);
                 }
+                requiresIdResponse = true;
+                payload = buildPageviewBase(currentSlimStatParams(), false) + buildSlimStatData({});
+                item.payload = payload;
                 debugRecord(transport, url, 200, "stale_id_recovery", null, -101);
-                setTimeout(function () {
-                    SlimStat._send_pageview({ isIdRecovery: true });
-                }, 0);
-                callback({ success: false, handled: true });
+                sendXHR(url, onFail, xhrOpts);
                 return true;
             }
 
@@ -631,10 +664,12 @@ var SlimStat = (function () {
                     if (xhr.status === 200) {
                         var response = classifyResponseBody(xhr.responseText);
                         if (response.isPositive) {
+                            clearSessionState(PENDING_SESSION_KEY);
                             // Write to current global params (not local ref which may be stale
                             // if extractSlimStatParams replaced window.SlimStatParams)
                             currentSlimStatParams().id = response.responseBody;
                             params.id = response.responseBody; // keep local ref in sync too
+                            if (requiresIdResponse) rebaseQueuedInteractions(response.responseBody);
                             // Mark that we've successfully tracked the initial pageview for this load
                             try {
                                 window.slimstatPageviewTracked = true;
@@ -713,8 +748,8 @@ var SlimStat = (function () {
             var method = order[i];
             var url = endpoints[method];
             if (!url) return trySend(i + 1);
-            if (useBeacon && navigator.sendBeacon && i === 0) {
-                // Beacon is fire-and-forget; we assume success for queue processing
+            if (useBeacon && !requiresIdResponse && navigator.sendBeacon && i === 0) {
+                // Fire-and-forget is only valid once the pageview ID is known.
                 var ok = navigator.sendBeacon(url, payload);
                 if (ok) {
                     debugRecord(method, url, 0, "beacon", null, null);
@@ -739,6 +774,27 @@ var SlimStat = (function () {
     }
 
     // -------------------------- Interaction Tracking -------------------------- //
+
+    // The one definition of "pressing this submits its form". Three places need it —
+    // the click delegation (which must stand aside), the submit listener (which must
+    // find the control that fired), and the note classifier — and when they each
+    // carried their own, they disagreed: an attribute test sees neither <button> with
+    // no type attribute, whose default type IS submit, nor type="image".
+    function isSubmitControl(el) {
+        // `.type` is the IDL property, so it reports the default rather than the
+        // literal attribute. `.form` is load-bearing, not a redundant precondition:
+        // a submit control outside a form submits nothing, so no submit event will
+        // ever follow and the click must still be tracked.
+        return !!(el && el.form && (el.type === "submit" || el.type === "image"));
+    }
+
+    // Fallback for browsers or code paths that give no SubmitEvent.submitter.
+    function findSubmitControl(form) {
+        return form && form.querySelector
+            ? form.querySelector('[type="submit"], [type="image"], button:not([type])')
+            : null;
+    }
+
     function trackInteraction(event, note, useBeacon) {
         var params = currentSlimStatParams();
         if (isEmpty(params.id) || isNaN(parseInt(params.id, 10)) || parseInt(params.id, 10) <= 0) {
@@ -797,7 +853,7 @@ var SlimStat = (function () {
         // Override type for tel/mailto links and submit buttons
         if (resourceUrl && resourceUrl.indexOf("tel:") === 0) noteObj.type = "tel";
         else if (resourceUrl && resourceUrl.indexOf("mailto:") === 0) noteObj.type = "mailto";
-        else if (target.getAttribute && target.getAttribute("type") === "submit") noteObj.type = "submit";
+        else if (isSubmitControl(target)) noteObj.type = "submit";
 
         if (event.type === "keypress") noteObj.key = String.fromCharCode(parseInt(event.which, 10));
         else if (event.type === "mousedown") noteObj.button = event.which === 1 ? "left" : event.which === 2 ? "middle" : "right";
@@ -865,6 +921,7 @@ var SlimStat = (function () {
 
     // -------------------------- Consent Helpers -------------------------- //
     var lastConsentSnapshot = null;
+    var pendingConsentUpgrade = null;
     var CONSENT_UPGRADE_STATE_KEY = "slimstat_consent_upgrade_state";
     var CONSENT_UPGRADE_TS_KEY = "slimstat_consent_upgrade_ts";
 
@@ -935,6 +992,16 @@ var SlimStat = (function () {
 
     function requestConsentUpgrade(extraOptions) {
         extraOptions = extraOptions || {};
+        var decision = slimstatConsentAllowed(currentSlimStatParams(), { isConsentRetry: true });
+        if (!decision.allowed || decision.mode !== "full") {
+            return false;
+        }
+        // A grant can arrive before the anonymous pageview has released its lock.
+        // Keep that grant until completion instead of consuming its upgrade slot.
+        if (window.sendingSlimStatPageview) {
+            pendingConsentUpgrade = extraOptions;
+            return false;
+        }
         var force = extraOptions.force === true;
 
         if (!claimConsentUpgradeSlot(force)) {
@@ -1424,13 +1491,18 @@ var SlimStat = (function () {
 
             if (cmpAllows === null) {
                 if (anonMode) {
-                    cmpAllows = true;
+                    // Permission to count anonymously is not permission to collect PII.
+                    cmpAllows = false;
                 } else if (collectsPII && integrationKey && integrationKey !== "") {
                     cmpAllows = false;
                 } else {
                     cmpAllows = true;
                 }
             }
+        }
+
+        if (cmpAllows === false) {
+            markConsentUpgradeDone(false);
         }
 
         if (anonMode) {
@@ -1461,10 +1533,13 @@ var SlimStat = (function () {
         return allowedResult;
     }
 
-    function buildPageviewBase(params) {
+    function buildPageviewBase(params, allowPendingSession) {
         if (!isEmpty(params.id) && parseInt(params.id, 10) > 0) return "action=slimtrack&id=" + params.id;
         var base = "action=slimtrack&ref=" + base64Encode(document.referrer) + "&res=" + base64Encode(window.location.href);
         if (!isEmpty(params.ci)) base += "&ci=" + params.ci;
+        if (!allowPendingSession) clearSessionState(PENDING_SESSION_KEY);
+        var pendingSession = allowPendingSession ? pendingSessionToken() : "";
+        if (pendingSession) base += "&sid=" + pendingSession;
         return base;
     }
 
@@ -1498,6 +1573,7 @@ var SlimStat = (function () {
         });
 
         if (!consentDecision.allowed) {
+            clearSessionState(PENDING_SESSION_KEY);
             window.sendingSlimStatPageview = false;
             delete window[requestKey];
             return;
@@ -1531,7 +1607,10 @@ var SlimStat = (function () {
             params.id = null;
         }
 
-        var payloadBase = buildPageviewBase(params);
+        var payloadBase = buildPageviewBase(
+            params,
+            consentDecision.mode === "full" && params.set_tracker_cookie === "on"
+        );
 
         if (!payloadBase) {
             window.sendingSlimStatPageview = false;
@@ -1557,7 +1636,7 @@ var SlimStat = (function () {
         lastPageviewPayload = payloadBase;
         lastPageviewSentAt = now;
         var waitForId = SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
-        var useBeacon = !waitForId; // need sync response when creating id
+        var useBeacon = !waitForId && !options.consentUpgrade; // creation and consent upgrades need an acknowledged response
 
         // Avoid parallel initial pageview duplication
         if (inflightPageview && waitForId) {
@@ -1580,13 +1659,18 @@ var SlimStat = (function () {
                 pageviewInProgress = false;
                 window.sendingSlimStatPageview = false;
                 delete window[requestKey];
+                if (pendingConsentUpgrade) {
+                    var upgrade = pendingConsentUpgrade;
+                    pendingConsentUpgrade = null;
+                    requestConsentUpgrade(upgrade);
+                }
             }, 200);
         };
 
         var onComplete = function (success) {
             try {
                 if (options.consentUpgrade) {
-                    markConsentUpgradeDone(!!success);
+                    markConsentUpgradeDone(!!success && consentDecision.mode === "full");
                 }
             } finally {
                 resetPageviewFlags();
@@ -1655,14 +1739,17 @@ var SlimStat = (function () {
     function storeOffline(payload) {
         try {
             var offline = loadOfflineQueue();
-            offline.push({ p: payload, t: Date.now() });
-            saveOfflineQueue(offline);
+            if (!offline.some(function (item) { return item.p === payload; })) {
+                offline.push({ p: payload, t: Date.now() });
+                saveOfflineQueue(offline);
+            }
         } catch (e) {
             // Silently fail if localStorage is not available
         }
     }
 
     function flushOfflineQueue() {
+        if (navigator.onLine === false) return;
         try {
             var offline = loadOfflineQueue();
             if (!offline.length) return;
@@ -1726,6 +1813,11 @@ var SlimStat = (function () {
         get_cookie: getCookie,
         send_to_server: sendToServer,
         ss_track: trackInteraction,
+        // Exposed because the delegation that must stand aside for submit controls
+        // lives in the runtime IIFE below, outside this module's scope — the same
+        // reason add_event and ss_track are exposed.
+        is_submit_control: isSubmitControl,
+        find_submit_control: findSubmitControl,
         init_fingerprint_hash: initFingerprintHash,
         get_slimstat_data: buildSlimStatData,
         get_component_value: getComponentValue,
@@ -1857,6 +1949,201 @@ if (!window.requestIdleCallback) {
             return false;
         };
 
+    // -------------------------- Heatmap capture -------------------------- //
+    // Runs only when the server sent SlimStatParams.hm ({l: "main"|"full", r: rate per 10000}),
+    // which needs capture on, this page listed and a heatmap viewer installed. Stored per
+    // element: selector plus the offset inside it, so the viewer can place clicks at any width.
+    // The server re-checks every gate; this side only keeps the visitor's cost low.
+    var HM_FLUSH_AT = 20;
+    var HM_MAX_CLICKS = 200;
+    var HM_INTERACTIVE = "a,button,input,select,textarea,label,summary,[role=button],[onclick]";
+    var HM_UNSTABLE = /\d{3,}|^(is|has|js)-|active|hover|focus|open|current|selected|visible|hidden/;
+    var heatmap = null; // { id, key: checksummed id, seq, sel: {selector: index}, s: [], r: [], maxY }
+    var heatmapSeq = {}; // last id -> next seq; the id can blink out (stale-id recovery) and come back
+    var recentClicks = [];
+
+    function heatmapParams() {
+        var hm = currentSlimStatParams().hm;
+        return hm && (hm.l === "main" || hm.l === "full") ? hm : null;
+    }
+
+    function heatmapId() {
+        var id = parseInt(currentSlimStatParams().id, 10);
+        return id > 0 ? id : 0;
+    }
+
+    function heatmapSampled(id, hm) {
+        return id % 10000 < parseInt(hm.r, 10);
+    }
+
+    // The batch for the current pageview. Navigation clears or replaces the id, so a batch
+    // whose id no longer matches is sent first, under the checksummed id it was captured with.
+    function heatmapBatch() {
+        var id = heatmapId();
+        if (heatmap && heatmap.id && heatmap.id !== id) heatmapFlush(false);
+        if (!heatmap) heatmap = { id: 0, key: "", seq: 0, sel: {}, s: [], r: [], maxY: window.innerHeight || 0 };
+        if (!heatmap.id && id) {
+            // Rows (id, kind, seq) are unique server side; a reused seq would be dropped.
+            var base = heatmapSeq[id] || 0;
+            heatmap.r.forEach(function (row) {
+                row[0] += base;
+            });
+            heatmap.seq += base;
+            heatmap.id = id;
+            heatmap.key = String(currentSlimStatParams().id);
+        }
+        return heatmap;
+    }
+
+    function stableToken(token) {
+        return /^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(token) && !HM_UNSTABLE.test(token);
+    }
+
+    // #id, or tag.class.class:nth-of-type(n), up to 6 levels joined by " > ", at most 255 chars.
+    function heatmapSelector(el) {
+        var parts = [];
+        var length = 0;
+        while (el && el.nodeType === 1 && el !== document.body && el !== document.documentElement && parts.length < 6) {
+            var id = el.getAttribute("id");
+            var part;
+            if (id && stableToken(id)) {
+                part = "#" + id;
+            } else {
+                part = el.nodeName.toLowerCase();
+                if (!/^[a-z][a-z0-9-]*$/.test(part)) return parts.join(" > ");
+                var classes = (el.getAttribute("class") || "").split(/\s+/).filter(stableToken).slice(0, 2);
+                if (classes.length) part += "." + classes.join(".");
+                var n = 1;
+                var same = false;
+                for (var sib = el.parentNode && el.parentNode.firstElementChild; sib; sib = sib.nextElementSibling) {
+                    if (sib === el) continue;
+                    if (sib.nodeName === el.nodeName) {
+                        same = true;
+                        if (sib.compareDocumentPosition(el) & 4) n++;
+                    }
+                }
+                if (same) part += ":nth-of-type(" + n + ")";
+            }
+            if (length + part.length + 3 > 255) break;
+            parts.unshift(part);
+            length += part.length + 3;
+            if (part.charAt(0) === "#") break;
+            el = el.parentNode;
+        }
+        return parts.join(" > ");
+    }
+
+    function closestMatch(el, selector) {
+        while (el && el.nodeType === 1) {
+            if (el.matches(selector)) return el;
+            el = el.parentNode;
+        }
+        return null;
+    }
+
+    function heatmapClick(e) {
+        var hm = heatmapParams();
+        if (!hm || !e || e.isTrusted === false || e.detail === 0) return;
+        var id = heatmapId();
+        if (id && !heatmapSampled(id, hm)) return;
+        var target = e.target && e.target.nodeType === 1 ? e.target : e.target && e.target.parentNode;
+        if (!target || closestMatch(target, ".noslimstat,[data-slimstat-hm-ignore]")) return;
+        try {
+            if (window.getSelection && String(window.getSelection()).length) return;
+        } catch (err) {
+            /* ignore */
+        }
+
+        var batch = heatmapBatch();
+        if (batch.seq >= HM_MAX_CLICKS) return;
+        var anchor = closestMatch(target, HM_INTERACTIVE);
+        if (!anchor && hm.l !== "full") return;
+        var el = anchor || target;
+        var flags = anchor ? 1 : 0;
+        if (!anchor) {
+            try {
+                if (window.getComputedStyle(el).cursor !== "pointer") flags |= 2;
+            } catch (err) {
+                /* ignore */
+            }
+        }
+
+        var now = Date.now();
+        recentClicks = recentClicks.filter(function (c) {
+            return now - c.t < 1000 && Math.abs(c.x - e.clientX) <= 30 && Math.abs(c.y - e.clientY) <= 30;
+        });
+        recentClicks.push({ t: now, x: e.clientX, y: e.clientY });
+        if (recentClicks.length >= 3) flags |= 4;
+
+        var index = -1;
+        var selector = heatmapSelector(el);
+        if (selector) {
+            if (!Object.prototype.hasOwnProperty.call(batch.sel, selector)) {
+                // Labels only from interactive elements, never what a visitor typed.
+                var label = anchor ? (el.getAttribute("aria-label") || (/^(input|select|textarea)$/i.test(el.nodeName) ? "" : el.textContent) || "") : "";
+                batch.sel[selector] = batch.s.length;
+                batch.s.push([selector, label.replace(/\s+/g, " ").trim().slice(0, 40)]);
+            }
+            index = batch.sel[selector];
+        }
+        var rect = el.getBoundingClientRect();
+        var rx = rect.width ? Math.round(((e.clientX - rect.left) / rect.width) * 10000) : 0;
+        var ry = rect.height ? Math.round(((e.clientY - rect.top) / rect.height) * 10000) : 0;
+        var clamp = function (v) {
+            return Math.max(0, Math.min(10000, v));
+        };
+        batch.r.push([batch.seq++, flags, index, clamp(rx), clamp(ry), Math.max(0, Math.round(e.pageX)), Math.max(0, Math.round(e.pageY))]);
+        if (batch.r.length >= HM_FLUSH_AT) heatmapFlush(false);
+    }
+
+    function heatmapScroll() {
+        var hm = heatmapParams();
+        if (!hm || hm.l !== "full") return;
+        var ticking = false;
+        window.addEventListener(
+            "scroll",
+            function () {
+                if (ticking) return;
+                ticking = true;
+                window.requestAnimationFrame(function () {
+                    ticking = false;
+                    var batch = heatmapBatch();
+                    batch.maxY = Math.max(batch.maxY, Math.round((window.pageYOffset || 0) + window.innerHeight));
+                });
+            },
+            { passive: true }
+        );
+    }
+
+    // The batch as an &hm= parameter, or "" when there is nothing to send. With final, a full
+    // level batch carries the scroll row, which also marks the pageview as captured.
+    function takeHeatmap(id, final) {
+        var hm = heatmapParams();
+        var batch = heatmap;
+        if (!hm || !batch || !id || (batch.id && batch.id !== id) || !heatmapSampled(id, hm)) return "";
+        var scroll = final && hm.l === "full";
+        if (!batch.r.length && !scroll) return "";
+        var consent = SlimStat.consent.checkAllowed(currentSlimStatParams());
+        if (!consent || !consent.allowed || consent.mode !== "full") return "";
+        var data = { v: 1, vw: window.innerWidth || 0, vh: window.innerHeight || 0, s: batch.s, r: batch.r };
+        if (scroll) data.sc = [batch.maxY, Math.round(document.documentElement.scrollHeight || 0)];
+        // Selectors are per request; seq keeps counting so retries overwrite, never duplicate.
+        batch.r = [];
+        batch.s = [];
+        batch.sel = {};
+        return "&hm=" + encodeURIComponent(JSON.stringify(data));
+    }
+
+    function heatmapFlush(final) {
+        if (!heatmap || !heatmap.id) return;
+        var batch = heatmap;
+        heatmapSeq = {}; // an earlier pageview's id never returns, so one entry is enough
+        heatmapSeq[batch.id] = batch.seq;
+        var raw = takeHeatmap(batch.id, final);
+        if (raw) SlimStat.send_to_server("action=slimtrack&id=" + batch.key + raw, true, { priority: "normal" });
+        if (batch.id !== heatmapId()) heatmap = null;
+    }
+
     // Track whether we've already finalized the current pageview (avoid duplicate beacons)
     var finalizedPageviews = {};
     // Track currently in-flight finalization requests to avoid races
@@ -1894,8 +2181,11 @@ if (!window.requestIdleCallback) {
         // Mark in-flight to prevent concurrent senders (race protection)
         inFlightFinalizations[p.id] = true;
 
-        // Old behavior: send a simple finalize to let the server compute dt_out
-        var payload = "action=slimtrack&id=" + p.id + (reason ? "&fv=" + encodeURIComponent(reason) : "");
+        // Old behavior: send a simple finalize to let the server compute dt_out.
+        // The heatmap batch rides along, so most pageviews cost no extra request.
+        // ponytail: clicks after a finalize (tab hidden, then shown again) wait for the next 20.
+        if (heatmapParams()) heatmapBatch();
+        var payload = "action=slimtrack&id=" + p.id + (reason ? "&fv=" + encodeURIComponent(reason) : "") + takeHeatmap(parseInt(p.id, 10), true);
         SlimStat.send_to_server(payload, true, { priority: "high", immediate: false });
 
         // Mark finalized and clear in-flight after a short window
@@ -2036,10 +2326,10 @@ if (!window.requestIdleCallback) {
 
                     // Clear consent upgrade state when consent is denied
                     if (!hasConsent) {
-                        markConsentUpgradeDone(false);
+                        SlimStat.consent.checkAllowed(params, {});
                     }
 
-                    var parsedConsent = normalizeConsent({
+                    var parsedConsent = SlimStat.consent.normalize({
                         statistics: hasConsent ? "allow" : "deny",
                     });
 
@@ -2048,7 +2338,7 @@ if (!window.requestIdleCallback) {
                         pageviewId = parseInt(params.id, 10);
                     }
 
-                    sendConsentChangeToServer("wp_consent_api", parsedConsent, pageviewId);
+                    SlimStat.consent.sendChange("wp_consent_api", parsedConsent, pageviewId);
                 } catch (consentError) {}
             }
         }
@@ -2073,8 +2363,8 @@ if (!window.requestIdleCallback) {
         }
 
         if (integrationKey === "real_cookie_banner" || integrationKey === "rcb" || integrationKey === "realcookie") {
-            var rcbConsent = detectRealCookieBannerConsent(selectedCategory);
-            if (rcbConsent === false) {
+            var rcbConsent = SlimStat.consent.checkAllowed(params, { isConsentRetry: true });
+            if (!rcbConsent.allowed || rcbConsent.mode !== "full") {
                 return;
             }
         }
@@ -2143,12 +2433,12 @@ if (!window.requestIdleCallback) {
 
             // Send consent change to server via REST API
             try {
-                var parsedConsent = normalizeConsent(consentData || { statistics: ok });
+                var parsedConsent = SlimStat.consent.normalize(consentData || { statistics: ok });
                 var pageviewId = null;
                 if (params.id && parseInt(params.id, 10) > 0) {
                     pageviewId = parseInt(params.id, 10);
                 }
-                sendConsentChangeToServer("real_cookie_banner", parsedConsent, pageviewId);
+                SlimStat.consent.sendChange("real_cookie_banner", parsedConsent, pageviewId);
             } catch (rcbError) {}
 
             if (!ok) {
@@ -2258,6 +2548,11 @@ if (!window.requestIdleCallback) {
 
     function setupClickDelegation() {
         SlimStat.add_event(document.body, "click", function (e) {
+            try {
+                heatmapClick(e);
+            } catch (err) {
+                /* never let capture break the legacy events below */
+            }
             var target = e.target;
             while (target && target !== document.body) {
                 // Skip GDPR consent buttons to avoid duplicate processing
@@ -2265,6 +2560,19 @@ if (!window.requestIdleCallback) {
                     break;
                 }
                 if (target.matches && target.matches("a,button,input,area")) {
+                    // Stand aside: the form's own submit event, below, records this
+                    // interaction. Tracking the click too counts every button-clicked
+                    // conversion twice, and clicking the button is how most people
+                    // submit a form.
+                    //
+                    // Deliberate consequence: when the submission does not happen —
+                    // constraint validation fails, or site code cancels it — no submit
+                    // event fires and nothing is recorded. That is the intended
+                    // reading. Nothing was submitted, so there is no conversion, and
+                    // filing it as a click would put a phantom in the funnel.
+                    if (SlimStat.is_submit_control(target)) {
+                        break;
+                    }
                     SlimStat.ss_track(e, null, null);
                     break;
                 }
@@ -2282,8 +2590,11 @@ if (!window.requestIdleCallback) {
             // Skip consent forms
             if (form.hasAttribute && form.hasAttribute("data-consent")) return;
 
-            // Use submit button as target if available, fallback to form
-            var submitBtn = form.querySelector('[type="submit"]');
+            // e.submitter names the control that actually triggered this submission;
+            // the selector fallback can only guess the first one. The target matters
+            // because ss_track derives the tracked resource from it — a button yields
+            // its form's action, a form yields nothing.
+            var submitBtn = e.submitter || SlimStat.find_submit_control(form);
             var syntheticEvent = {
                 type: "submit",
                 target: submitBtn || form,
@@ -2382,6 +2693,7 @@ if (!window.requestIdleCallback) {
 
     // Setup interaction tracking
     setupClickDelegation();
+    heatmapScroll();
     setupNavigationHooks();
 
     /**
@@ -2575,12 +2887,12 @@ if (!window.requestIdleCallback) {
 
                 // Send consent change to server via REST API
                 try {
-                    var parsedConsent = normalizeConsent(consent);
+                    var parsedConsent = SlimStat.consent.normalize(consent);
                     var pageviewId = null;
                     if (params.id && parseInt(params.id, 10) > 0) {
                         pageviewId = parseInt(params.id, 10);
                     }
-                    sendConsentChangeToServer("slimstat_banner", parsedConsent, pageviewId);
+                    SlimStat.consent.sendChange("slimstat_banner", parsedConsent, pageviewId);
                 } catch (apiError) {}
 
                 try {
@@ -2589,8 +2901,8 @@ if (!window.requestIdleCallback) {
             } else if (consent === "denied") {
                 // Send consent change to server via REST API
                 try {
-                    var parsedConsentDenied = normalizeConsent(consent);
-                    sendConsentChangeToServer("slimstat_banner", parsedConsentDenied, null);
+                    var parsedConsentDenied = SlimStat.consent.normalize(consent);
+                    SlimStat.consent.sendChange("slimstat_banner", parsedConsentDenied, null);
                 } catch (apiError) {}
 
                 // Call revocation handler to delete tracking cookie

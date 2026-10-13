@@ -1,4 +1,5 @@
 <?php
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Included by a report/admin rendering method; these are local template variables, not plugin globals.
 /**
  * Funnel summary line — shared by funnels-card.php (SSR'd active tab) and
  * goals-funnels.js (AJAX-rendered sibling tabs).
@@ -47,7 +48,7 @@ $is_healthy_100    = ($total_cr !== null && (float) $total_cr === 100.0 && $unre
 <?php else : ?>
     <span class="slimstat-gf-summary">
         <?php echo esc_html(sprintf(
-            /* translators: 1: number of steps, 2: conversion rate */
+            /* translators: 1: step count, 2: conversion rate */
             __('%1$d-step funnel · %2$s%% conversion rate', 'wp-slimstat'),
             $step_count,
             number_format_i18n((float) $total_cr, (is_int($total_cr) ? 0 : 1))

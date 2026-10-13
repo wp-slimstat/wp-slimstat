@@ -1,0 +1,22 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      php tests/funnel-step-identity-test.php
+kind:      guard-removal
+expect:    no longer guards the vid_hash tier
+rationale: Removes the schema-presence guard around the vid_hash tier, restoring the defect measured live (debug.log, 2026-08-16): on an upgraded table without the column - a state the deferred-DDL upgrade contract makes legitimate for an unbounded window - every goal, funnel and unique-visitor count became "Unknown column 't1.vid_hash'", which get_results() reports identically to "no visitors". Proves the scan pins the GUARD construct, not the tier's name (the mutated body still says vid_hash).
+---
+diff --git a/admin/view/wp-slimstat-db.php b/admin/view/wp-slimstat-db.php
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -2104,11 +2104,9 @@
+         $tiers = [];
+         if (self::fact_column_present('fingerprint')) {
+             $tiers[] = $prefix . 'fingerprint';
+         }
+-        if (self::fact_column_present('vid_hash')) {
+-            $tiers[] = sprintf('HEX(%svid_hash)', $prefix);
+-        }
++        $tiers[] = sprintf('HEX(%svid_hash)', $prefix);
+         $tiers[] = sprintf("CONCAT('v_', %svisit_id)", $prefix);
+         $tiers[] = sprintf("CONCAT('ip_', %sip)", $prefix);
+ 
+         return 'COALESCE(' . implode(', ', $tiers) . ')';

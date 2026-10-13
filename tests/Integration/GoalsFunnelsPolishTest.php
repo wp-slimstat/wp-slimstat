@@ -27,8 +27,8 @@ class GoalsFunnelsPolishTest extends TestCase
         // (title + lead), not via a hardcoded screen-id branch.
         $php = file_get_contents($this->viewIndexPath());
         $this->assertStringContainsString("\$current_screen_info['lead']", $php, 'Page intro must render from the registry lead (FN-13)');
-        $this->assertStringContainsString('<h1 class="slimstat-gf-pageintro__title"', $php, 'Page intro must use an <h1> (FN-13)');
-        $this->assertStringContainsString("echo esc_html(\$current_screen_info['title'])", $php, 'H1 text must come from the registry title, not a duplicated literal (FN-13)');
+        $this->assertStringContainsString('<h1 class="slimstat-pageintro__title"', file_get_contents(dirname(__DIR__, 2) . '/admin/view/partials/header.php'), 'Page intro must use an <h1> (FN-13, A6)');
+        $this->assertStringContainsString("'title'  => \$current_screen_info['title']", $php, 'H1 text must come from the registry title, not a duplicated literal (FN-13)');
     }
 
     // ── FN-15: zero-data goal row shows a hint, not 0/0/0% ──

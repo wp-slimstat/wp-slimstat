@@ -1,0 +1,17 @@
+target:    uninstall.php
+gate:      php tests/uninstall-data-safety-test.php
+kind:      constant-weakening
+expect:    sweeps all three transient families
+rationale: Narrow the sweep back to one prefix. This is the shape that shipped - a hand-maintained list of specific keys, which named four of the sixteen families in use and had already gone stale twice. The gate must see the difference between sweeping a family and sweeping a favourite, because a list that is merely SHORTER still deletes rows and still looks like it works.
+---
+--- a/uninstall.php
++++ b/uninstall.php
+@@ -181,8 +181,6 @@
+     // went stale, and leaving a timeout behind strands an expiry for a value that is gone.
+     $families = [
+         '_transient_slimstat_',
+-        '_transient_wp_slimstat_',
+-        '_transient_wp-slimstat-',
+     ];
+ 
+     $patterns = [];

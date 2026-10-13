@@ -33,7 +33,7 @@
     font-size: 14px;
 }
 
-#chartjs-tooltip {
+#slimstat-chartjs-tooltip {
     transition: 0.3s all ease-in-out;
     pointer-events: none !important;
     background: white;
@@ -51,13 +51,13 @@
         opacity: 0.3;
     }
 
-    .slimstat-postbox-chart--item[data-index].active .tooltip-item-content {
+    .slimstat-postbox-chart--item[data-index].active .slimstat-tooltip-item-content {
         color: #000 !important;
     }
 }
 
 @media (max-width: 600px) {
-    #chartjs-tooltip {
+    #slimstat-chartjs-tooltip {
         min-width: 120px;
         max-width: 98vw;
         font-size: 12px;
@@ -303,8 +303,8 @@ body.index-php {
     text-align: left;
 }
 
-[dir="rtl"] #chartjs-tooltip,
-.rtl #chartjs-tooltip {
+[dir="rtl"] #slimstat-chartjs-tooltip,
+.rtl #slimstat-chartjs-tooltip {
     direction: rtl;
     text-align: right;
     font-family: "Open Sans", sans-serif !important;
@@ -326,23 +326,23 @@ body.index-php {
     font-family: "Open Sans", sans-serif !important;
 }
 
-[dir="rtl"] .tooltip-item-title,
-.rtl .tooltip-item-title,
-[dir="rtl"] .tooltip-item-content,
-.rtl .tooltip-item-content {
+[dir="rtl"] .slimstat-tooltip-item-title,
+.rtl .slimstat-tooltip-item-title,
+[dir="rtl"] .slimstat-tooltip-item-content,
+.rtl .slimstat-tooltip-item-content {
     direction: rtl;
     text-align: right;
     font-family: "Open Sans", sans-serif !important;
 }
 
-[dir="rtl"] #chartjs-tooltip table,
-.rtl #chartjs-tooltip table {
+[dir="rtl"] #slimstat-chartjs-tooltip table,
+.rtl #slimstat-chartjs-tooltip table {
     direction: rtl;
     text-align: right;
 }
 
-[dir="rtl"] #chartjs-tooltip tr.slimstat-postbox-chart--item td,
-.rtl #chartjs-tooltip tr.slimstat-postbox-chart--item td {
+[dir="rtl"] #slimstat-chartjs-tooltip tr.slimstat-postbox-chart--item td,
+.rtl #slimstat-chartjs-tooltip tr.slimstat-postbox-chart--item td {
     padding-right: 0;
     padding-left: 8px;
 }
@@ -353,7 +353,7 @@ body.index-php {
     gap: 8px;
 }
 
-[dir="rtl"] #chartjs-tooltip tr.slimstat-postbox-chart--item {
+[dir="rtl"] #slimstat-chartjs-tooltip tr.slimstat-postbox-chart--item {
     flex-direction: unset !important;
 }
 
@@ -377,8 +377,8 @@ body.index-php {
     margin-right: 10px !important;
 }
 
-[dir="rtl"] #chartjs-tooltip .slimstat-postbox-chart--item .slimstat-postbox-chart--item--color,
-.rtl #chartjs-tooltip .slimstat-postbox-chart--item .slimstat-postbox-chart--item--color {
+[dir="rtl"] #slimstat-chartjs-tooltip .slimstat-postbox-chart--item .slimstat-postbox-chart--item--color,
+.rtl #slimstat-chartjs-tooltip .slimstat-postbox-chart--item .slimstat-postbox-chart--item--color {
     margin-left: 10px !important;
     margin-right: 10px !important;
 }
@@ -396,13 +396,13 @@ body.index-php {
     margin: 0 3px 0 0;
 }
 
-[dir="rtl"] .tooltip-item-title,
-.rtl .tooltip-item-title {
+[dir="rtl"] .slimstat-tooltip-item-title,
+.rtl .slimstat-tooltip-item-title {
     text-align: right;
 }
 
-[dir="rtl"] .tooltip-item-content,
-.rtl .tooltip-item-content {
+[dir="rtl"] .slimstat-tooltip-item-content,
+.rtl .slimstat-tooltip-item-content {
     direction: rtl;
     text-align: right;
 }
@@ -446,11 +446,11 @@ body.index-php {
     -ms-filter: "FlipH";
     left: 0;
 }
-.tooltip-item-title {
+.slimstat-tooltip-item-title {
     font-size: 13px;
     font-weight: 500;
 }
-.tooltip-item-content {
+.slimstat-tooltip-item-content {
     font-size: 13px;
     font-weight: normal;
     font-style: italic;
@@ -491,7 +491,7 @@ body.index-php {
 }
 
 /* Animation for bar charts */
-@keyframes barChartLoad {
+@keyframes slimstatBarChartLoad {
     from {
         opacity: 0;
         transform: scaleY(0);
@@ -504,7 +504,7 @@ body.index-php {
 }
 
 .chart-bar .slimstat-postbox-chart--canvas {
-    animation: barChartLoad 0.6s ease-out;
+    animation: slimstatBarChartLoad 0.6s ease-out;
 }
 
 /* Responsive bar chart adjustments */
@@ -530,10 +530,6 @@ body.index-php {
     filter: blur(1px);
 }
 
-/* Bar chart peak highlighting */
-.chart-bar .bar-peak {
-    background: linear-gradient(135deg, #e8294c 0%, #ff6b7d 100%) !important;
-    box-shadow: 0 4px 12px rgba(232, 41, 76, 0.3) !important;
-    transform: scaleY(1.1);
-    z-index: 10;
-}
+
+.slimstat-shortcode-notice { padding: 1em; border: 1px solid currentColor; font-size: .9em; }
+.slimstat-shortcode-notice a { text-decoration: underline; }

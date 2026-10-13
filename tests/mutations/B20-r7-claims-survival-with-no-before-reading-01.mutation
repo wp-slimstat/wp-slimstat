@@ -1,0 +1,20 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      guard-removal
+expect:    R1 reads the OLD arm tracking, so R7 compares rather than assumes
+rationale: R7 asserts that the previous version STILL tracks after a migration. Without a reading taken before the migration, that leg cannot distinguish "the rollback broke tracking" from "this arm never tracked in this container" -- and it asserts the first, which is a claim about the rollback supported by no evidence about the rollback. Deleting the R1 hit restores that: every other leg still passes, R7 still prints the same sentence, and the cell has quietly gone back to reporting an unattributable red as a specific finding.
+---
+diff --git a/tests/docker/rehearse-upgrade.sh b/tests/docker/rehearse-upgrade.sh
+index cf049d04..d7e795f6 100755
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -523,9 +523,6 @@ echo "  the eight columns nothing may touch:    $FP_CORE_0"
+ # and the cell asserted the first. A leg that claims a property SURVIVED must hold a reading of
+ # that property from before. The hit lands ABOVE BASE_MAX_ID, so no fingerprint in this cell
+ # sees it, exactly as R2's and R5's do. PITFALLS 136.
+-HIT_0=$(track_hit "rehearse-old-code-baseline")
+-[ "${HIT_0:-0}" -gt 0 ] && check "the OLD version tracks before anything is migrated" 0 "row id $HIT_0" \
+-  || check "the OLD version tracks before anything is migrated" 1 "no row appeared"
+ # R2 counts its single row from HERE. The control above has just written one, and a delta still
+ # anchored to the hydrated count would absorb it — which is a delta that would absorb a duplicate.
+ ROWS_0=$(stats_rows)

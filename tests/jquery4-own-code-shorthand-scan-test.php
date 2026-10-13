@@ -8,7 +8,7 @@
  * 4.0. Migrated own-code to `.trigger('submit'|'click')` / `.on('click', …)`.
  * This scanner is RED before the migration and green after.
  *
- * IMPORTANT: admin.js bundles vendored qTip2 + bootstrap-switch AFTER the
+ * IMPORTANT: admin.js bundles vendored qTip2 + caret AFTER the
  * "END: SLIMSTATADMIN HELPER FUNCTIONS" banner — those minified third-party
  * regions are out of scope (shimmed by jQuery Migrate, tracked by the
  * wp56-jquery-migrate-console E2E watchdog), so this scanner reads only the

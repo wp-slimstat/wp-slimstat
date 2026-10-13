@@ -25,6 +25,7 @@ class TrackingRestController implements RestControllerInterface
     {
         status_header($status);
         header('Content-Type: text/plain; charset=UTF-8');
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- plain-text tracking protocol; HTML escaping would change the response bytes.
         echo (string) $result;
         exit;
     }

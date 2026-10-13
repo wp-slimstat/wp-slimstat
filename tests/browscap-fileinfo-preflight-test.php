@@ -77,12 +77,22 @@ fileinfo_assert(
     false !== strpos($view_src, "notice_browscap_fileinfo"),
     'TEST 5a: admin/view/index.php must reference notice_browscap_fileinfo setting'
 );
+// The predicate must be Browscap::has_fileinfo(), not a bare extension_loaded(): this file
+// has no namespace, so a bare call binds to the PHP built-in and no simulation can reach it.
+// That is what made the E2E notice test unpassable and its negative twin vacuous.
 fileinfo_assert(
     (bool) preg_match(
-        "/enable_browscap[\\s\\S]{0,200}?!\\s*extension_loaded\\(\\s*'fileinfo'\\s*\\)[\\s\\S]{0,200}?notice_browscap_fileinfo/",
+        "/enable_browscap[\\s\\S]{0,200}?!\\s*\\\\?SlimStat\\\\Services\\\\Browscap::has_fileinfo\\(\\s*\\)[\\s\\S]{0,200}?notice_browscap_fileinfo/",
         $view_src
     ),
-    'TEST 5b: Notice condition must combine enable_browscap, missing fileinfo, and notice flag'
+    'TEST 5b: Notice condition must combine enable_browscap, Browscap::has_fileinfo() being false, and the notice flag'
+);
+fileinfo_assert(
+    (bool) preg_match(
+        "/public\\s+static\\s+function\\s+has_fileinfo\\s*\\(\\s*\\)\\s*:\\s*bool\\s*\\{\\s*return\\s+extension_loaded\\(\\s*'fileinfo'\\s*\\)\\s*;/",
+        $browscap_src
+    ),
+    'TEST 5d: Browscap::has_fileinfo() must answer from inside SlimStat\\Services so the E2E shim can reach it'
 );
 fileinfo_assert(
     false !== strpos($view_src, "'browscap_fileinfo'"),

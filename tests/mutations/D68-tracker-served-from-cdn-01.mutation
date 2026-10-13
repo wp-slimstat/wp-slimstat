@@ -1,0 +1,17 @@
+target:    wp-slimstat.php
+gate:      php tests/tracker-script-origin-test.php
+kind:      restore-defect
+expect:    serves the tracker from jsDelivr
+rationale: Put the CDN branch back. It registers the tracker from jsDelivr's mirror of wp.org's SVN tags, which resolves only for a version wp.org has already published - so on every beta, and in the whole window between tagging and the wp.org sync, it is a 404 with no fallback, no onerror and no recorded degradation. The site records nothing at all and nothing says so. Opt-in and off by default, which is why it survived: the people most likely to enable a performance toggle are the least likely to be running a published version.
+---
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -1709,6 +1709,8 @@
+         if ('adblock_bypass' === $method) {
+             $hash_js  = md5(site_url() . 'slimstat');
+             wp_register_script('wp_slimstat', home_url(sprintf('/%s.js/', $hash_js)), $dependencies, SLIMSTAT_ANALYTICS_VERSION, true);
++        } elseif ('on' == self::$settings['enable_cdn']) {
++            wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js', $dependencies, null, true);
+         } else {
+             // Stat the file only on the arm that reads the result. This runs on every
+             // front-end page view, and the adblock-bypass arm versions on the constant.

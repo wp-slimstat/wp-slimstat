@@ -1,0 +1,14 @@
+target:    tests/ci-matrix-coverage-test.php
+gate:      php tests/ci-matrix-coverage-test.php
+kind:      guard-removal
+expect:    PHP 7.4
+rationale: PHP 7.4 lost its wp-env execution lanes because their Debian metadata expired. Removing the explicit Docker replacement exception would make the coverage report silently claim a complete matrix while 7.4 has only static CI coverage. Killed because every static-only supported runtime must carry a named replacement-evidence reason.
+---
+--- a/tests/ci-matrix-coverage-test.php
++++ b/tests/ci-matrix-coverage-test.php
+@@ -213,5 +213,4 @@
+ // here so it is visible in the gate's own output rather than hidden behind a green.
+ $execution_exempt = [
+-    '7.4' => 'wp-env PHP 7.4 image has expired Debian metadata; release qualification uses the PHP 7.4 Docker cells',
+     '8.0' => 'PHPUnit needs PHP ^8.1 and no Tier 2 E2E pair uses 8.0; static scans only',
+ ];

@@ -39,10 +39,40 @@ class DataBuckets
 
     private $points;
 
+    /**
+     * The database server's UTC offset in seconds, asked for once per request.
+     *
+     * The single source for this figure. It was issued twice over per chart — once
+     * here, once in Chart — and one DataBuckets is constructed per chart, so a report
+     * screen paid four round trips for a value that changes twice a year.
+     *
+     * Returns the raw signed offset and nothing else. Callers apply their own sign
+     * convention (Chart's is deliberately inverted, to cancel an implicit shift), so
+     * sharing the probe leaves that logic exactly where it is.
+     *
+     * Static rather than a transient: the answer is a property of the database
+     * connection, so caching it across requests would outlive a server timezone change
+     * or a failover to a differently configured replica, and it is far too cheap to be
+     * worth that risk. (D60)
+     *
+     * @return int
+     */
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Connection-specific timezone offset is memoized for the request; no WordPress API exposes the external database offset.
+    public static function serverTimezoneOffset(): int
+    {
+        static $offset = null;
+
+        if (null === $offset) {
+            $wpdb   = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+            $offset = (int) $wpdb->get_var('SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())');
+        }
+
+        return $offset;
+    }
+    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+
     public function __construct(string $labelFormat, string $gran, int $start, int $end, int $prevStart, int $prevEnd, array $totals = [])
     {
-        $wpdb = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
-
         $this->labelFormat = $labelFormat;
         $this->gran        = $gran;
         $this->start       = $start;
@@ -51,7 +81,7 @@ class DataBuckets
         $this->prevEnd     = $prevEnd;
         $this->totals      = $totals;
 
-        $offset_seconds = $wpdb->get_var('SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())');
+        $offset_seconds = self::serverTimezoneOffset();
         $sign           = ($offset_seconds < 0) ? '-' : '+';
         $abs            = abs($offset_seconds);
         $h              = floor($abs / 3600);
@@ -69,7 +99,13 @@ class DataBuckets
                 $this->initSeq(3600);
                 break;
             case 'DAY':
-                $this->initSeq(86400);
+                // The label sequence and addRow()'s offsets must count from the same calendar base,
+                // or a range that starts mid-day is one bucket short and today falls off the end.
+                $this->initSeq(
+                    86400,
+                    strtotime(gmdate('Y-m-d', $this->start)),
+                    strtotime(gmdate('Y-m-d', $this->end)) + 86400
+                );
                 break;
             case 'WEEK':
                 $this->initSeqWeek();
@@ -83,13 +119,15 @@ class DataBuckets
         }
     }
 
-    private function initSeq(int $interval): void
+    private function initSeq(int $interval, ?int $start = null, ?int $end = null): void
     {
-        $range = $this->end - $this->start;
+        $start = $start ?? $this->start;
+        $end   = $end ?? $this->end;
+        $range = $end - $start;
         $count = (int)ceil($range / $interval);
-        $time  = $this->start;
+        $time  = $start;
         for ($i = 0; $i < $count; $i++) {
-            $label          = date($this->labelFormat, $time);
+            $label          = gmdate($this->labelFormat, $time);
             $this->labels[] = sprintf("'%s'", $label);
             foreach (['v1', 'v2'] as $k) {
                 $this->datasets[$k][]     = 0;
@@ -157,8 +195,8 @@ class DataBuckets
 
     private function initSeqYear(): void
     {
-        $startYear = (int)date('Y', $this->start);
-        $endYear   = (int)date('Y', $this->end);
+        $startYear = (int)gmdate('Y', $this->start);
+        $endYear   = (int)gmdate('Y', $this->end);
         for ($y = $startYear; $y <= $endYear; $y++) {
             $this->labels[] = sprintf("'%d'", $y);
             foreach (['v1', 'v2'] as $k) {
@@ -173,14 +211,15 @@ class DataBuckets
     public function addRow(int $dt, int $v1, int $v2, string $period): void
     {
         $base = 'current' === $period ? $this->start : $this->prevStart;
-        $base = strtotime(date('Y-m-d H:i:s', $base));
+        $base = strtotime(gmdate('Y-m-d H:i:s', $base));
 
         $dt    = strtotime(wp_date('Y-m-d H:i:s', $dt, new \DateTimeZone($this->tzOffset)));
         $start = $this->start;
         if ('HOUR' === $this->gran) {
-            $dt     = strtotime(date('Y-m-d H:00:00', $dt));
+            $dt     = strtotime(gmdate('Y-m-d H:00:00', $dt));
             $offset = floor(($dt - $base) / 3600);
         } elseif ('DAY' === $this->gran) {
+            $base   = strtotime(gmdate('Y-m-d', $base));
             $offset = floor(($dt - $base) / 86400);
         } elseif ('MONTH' === $this->gran) {
             $start  = new \DateTime('@' . $base);
@@ -234,7 +273,7 @@ class DataBuckets
             $baseTime = $params['previous_start'];
             $offset = sprintf('+%s %s', $index, $params['granularity']);
             $timestamp = strtotime($offset, $baseTime);
-            return date($params['data_points_label'], $timestamp);
+            return gmdate($params['data_points_label'], $timestamp);
         }, $labels, array_keys($labels));
     }
 
@@ -245,9 +284,9 @@ class DataBuckets
     private function getWeekStartTimestamp(int $timestamp): int
     {
         $startOfWeek = (int) get_option('start_of_week', 1);
-        $dayOfWeek = (int) date('w', $timestamp); // 0=Sun, 6=Sat
+        $dayOfWeek = (int) gmdate('w', $timestamp); // 0=Sun, 6=Sat
         $diff = ($dayOfWeek - $startOfWeek + 7) % 7;
-        return strtotime(date('Y-m-d', strtotime("-{$diff} days", $timestamp)));
+        return strtotime(gmdate('Y-m-d', strtotime("-{$diff} days", $timestamp)));
     }
 
     private function shiftDatasets(): void

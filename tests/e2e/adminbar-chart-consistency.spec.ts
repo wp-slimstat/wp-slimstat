@@ -7,11 +7,12 @@
  * Issue: https://github.com/wp-slimstat/wp-slimstat/issues/221
  *
  * Note: The chart data consistency comparison (test 1) only applies when
- * Pro is active/licensed. Free users see decorative placeholder data in
- * the admin bar chart, which is expected behavior.
+ * Pro is active/licensed. Free renders no chart and shows a "Pro" badge
+ * in place of Views and Referrals (audit F3).
  */
 import { test, expect } from '@playwright/test';
 import { BASE_URL } from './helpers/env';
+import { requireProBooted } from './helpers/pro-state';
 
 test.describe('AC-221: Admin Bar Chart Consistency', () => {
   test.setTimeout(60_000);
@@ -29,13 +30,10 @@ test.describe('AC-221: Admin Bar Chart Consistency', () => {
       return bar?.is_pro === true || bar?.is_pro === '1';
     });
 
-    if (!isPro) {
-      // Free users get decorative placeholder data in admin bar chart.
-      // The chart shows fake values for visual appeal, not real analytics.
-      // This is expected behavior — skip the data comparison.
-      test.skip(true, 'Pro not active — admin bar chart shows decorative placeholder data (expected)');
-      return;
-    }
+    // Skips only where Pro is genuinely absent (Free CI lanes); an installed Pro that
+    // failed to boot fails here by name rather than passing as "free behaviour".
+    await requireProBooted(page);
+    expect(isPro, 'SlimStatAdminBar.is_pro must be true once Pro has booted').toBe(true);
 
     // 2. Extract chart bar data-count values from the admin bar CSS chart
     const adminBarData = await page.evaluate(() => {
@@ -101,15 +99,20 @@ test.describe('AC-221: Admin Bar Chart Consistency', () => {
     expect(html).not.toMatch(/PHP Warning:.*\.php/);
     expect(html).not.toMatch(/Class.*LiveAnalyticsReport.*not found/);
 
-    // Admin bar chart bars should exist (both Pro and Free render 30 bars)
+    // Pro renders 30 bars; Free renders no chart at all (audit F3)
+    const isPro = await page.evaluate(() => {
+      const bar = (window as any).SlimStatAdminBar;
+      return bar?.is_pro === true || bar?.is_pro === '1';
+    });
     const barCount = await page.locator('.slimstat-adminbar__chart-bar').count();
-    expect(barCount).toBe(30);
+    expect(barCount).toBe(isPro ? 30 : 0);
   });
 
   test('admin bar chart data values are non-negative integers', async ({ page }) => {
     await page.goto(`${BASE_URL}/wp-admin/index.php`, {
       waitUntil: 'domcontentloaded',
     });
+    await requireProBooted(page);
 
     const data = await page.evaluate(() => {
       const bars = document.querySelectorAll('.slimstat-adminbar__chart-bar');
@@ -132,42 +135,10 @@ test.describe('AC-221: Admin Bar Chart Consistency', () => {
     expect(data[data.length - 1].minutesAgo).toBe(0);
   });
 
-  test('admin bar chart uses LiveAnalyticsReport when Pro is active', async ({ page }) => {
-    await page.goto(`${BASE_URL}/wp-admin/index.php`, {
+  test('free users see real figures only: no chart, Pro badges, no invented numbers (audit F3)', async ({ page }) => {
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
       waitUntil: 'domcontentloaded',
     });
-    await page.waitForTimeout(3000);
-
-    const isPro = await page.evaluate(() => {
-      const bar = (window as any).SlimStatAdminBar;
-      return bar?.is_pro === true || bar?.is_pro === '1';
-    });
-
-    if (!isPro) {
-      test.skip(true, 'Pro not active — cannot verify LiveAnalyticsReport usage');
-      return;
-    }
-
-    // When Pro is active, the admin bar chart should show real data from
-    // LiveAnalyticsReport::get_users_chart_data(), not the fake placeholder array.
-    // The placeholder array is: [3,5,4,7,6,8,5,9,7,6,8,10,7,5,6,8,9,7,6,5,8,10,9,7,6,8,5,7,6,8]
-    const adminBarData = await page.evaluate(() => {
-      const bars = document.querySelectorAll('.slimstat-adminbar__chart-bar');
-      return Array.from(bars).map((bar) => parseInt(bar.getAttribute('data-count') || '0', 10));
-    });
-
-    const fakeData = [3, 5, 4, 7, 6, 8, 5, 9, 7, 6, 8, 10, 7, 5, 6, 8, 9, 7, 6, 5, 8, 10, 9, 7, 6, 8, 5, 7, 6, 8];
-
-    // If Pro is active, the data should NOT be the placeholder array
-    // (unless by extraordinary coincidence the real data matches exactly)
-    expect(adminBarData).not.toEqual(fakeData);
-  });
-
-  test('free users see decorative chart with valid structure', async ({ page }) => {
-    await page.goto(`${BASE_URL}/wp-admin/index.php`, {
-      waitUntil: 'domcontentloaded',
-    });
-    await page.waitForTimeout(3000);
 
     const isPro = await page.evaluate(() => {
       const bar = (window as any).SlimStatAdminBar;
@@ -175,29 +146,20 @@ test.describe('AC-221: Admin Bar Chart Consistency', () => {
     });
 
     if (isPro) {
+      // NAMED DISPOSITION: the only Pro-related skip the suite keeps. This test asserts
+      // FREE behaviour, so it is meaningless with Pro booted; it is not a Pro spec
+      // skipping on a missing Pro.
       test.skip(true, 'Pro is active — this test validates free-user behavior');
       return;
     }
 
-    // Free users should still see 30 chart bars with valid structure
-    const barCount = await page.locator('.slimstat-adminbar__chart-bar').count();
-    expect(barCount).toBe(30);
-
-    // Bars should have valid data-count and data-minutes-ago attributes
-    const firstBar = await page.locator('.slimstat-adminbar__chart-bar').first();
-    const lastBar = await page.locator('.slimstat-adminbar__chart-bar').last();
-
-    expect(await firstBar.getAttribute('data-minutes-ago')).toBe('29');
-    expect(await lastBar.getAttribute('data-minutes-ago')).toBe('0');
-
-    // Chart should have visible height (not all 0%)
-    const hasVisibleBars = await page.evaluate(() => {
-      const bars = document.querySelectorAll('.slimstat-adminbar__chart-bar');
-      return Array.from(bars).some((bar) => {
-        const height = (bar as HTMLElement).style.height;
-        return height && parseInt(height) > 3;
-      });
-    });
-    expect(hasVisibleBars).toBe(true);
+    await expect(page.locator('.slimstat-adminbar__chart-bar')).toHaveCount(0);
+    await expect(page.locator('#wpadminbar .slimstat-adminbar__pro-badge')).toHaveCount(2);
+    const stats = await page.locator('#wpadminbar .slimstat-adminbar__stats-grid').textContent();
+    expect(stats).not.toMatch(/\b(248|312)\b/);
+    // The upsell line shows on SlimStat screens only (audit F7).
+    await expect(page.locator('#wpadminbar .slimstat-adminbar__cta-link')).toHaveCount(1);
+    await page.goto(`${BASE_URL}/wp-admin/index.php`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#wpadminbar .slimstat-adminbar__cta')).toHaveCount(0);
   });
 });

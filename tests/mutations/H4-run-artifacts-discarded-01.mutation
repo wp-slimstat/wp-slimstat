@@ -1,0 +1,20 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:e2e-harness-contract
+kind:      restore-defect
+expect:    never uploads that directory
+rationale: Goes back to collecting only the HTML report. The JSON and blob reporters keep writing results.json on the runner and the runner keeps throwing it away, so the only durable record of a run is a truncated log tail. That is not a cosmetic loss: reading the tail is how 38 failures with one shared cause were counted as 38 problems for months, because the per-spec census that would have grouped them by error string existed and was never retrievable. Sec.4 fires only while playwright.config.ts actually writes there, so it cannot outlive the thing it protects.
+---
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -514,9 +514,7 @@
+           # report was collected, so the per-spec census existed on the runner and
+           # was thrown away -- which is why one shared cause behind 38 failures was
+           # read, for months, as 38 unrelated ones.
+-          path: |
+-            tests/e2e/playwright-report/
+-            tests/e2e/run-artifacts/
++          path: tests/e2e/playwright-report/
+           retention-days: 7
+ 
+       - name: Stop wp-env

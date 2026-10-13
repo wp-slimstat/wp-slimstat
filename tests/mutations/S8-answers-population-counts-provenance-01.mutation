@@ -1,0 +1,17 @@
+target:    tests/docker/answers_population.py
+gate:      composer test:answers-population
+kind:      restore-defect
+expect:    population: provenance keys are never reports
+rationale: Restores the denominator defect Run 61 found: counts the _arm_ provenance keys as reports. Those three keys are asserted DIFFERENT by the arms_differ control and are deliberately skipped by the diff loop, so counting them inflates the denominator of every non-identical run by exactly three while the numerator stays right. It reached Run 50 ('2 of 26 core reports differ'), Run 58 ('DIFFERENCES in 2 of 26') and Run 60 ('3 of 26'); all are 'of 23'. Nothing caught it for ten runs because compare-answers.sh's two verdict branches are never taken by the same run, so no single log ever showed both numbers -- the IDENTICAL branch printed 23 and the DIFFERENCES branch printed 26 from the same document shape. Found by counting a packet by hand during an adversarial re-derivation of S1's closure, not by any gate.
+---
+--- a/tests/docker/answers_population.py
++++ b/tests/docker/answers_population.py
+@@ -42,7 +42,7 @@
+     Union rather than intersection, deliberately: a key present on one arm and absent on the other
+     is a real difference and must be in the denominator. Only the `_arm_` prefix is stripped.
+     """
+-    return sorted(k for k in set(a) | set(b) if not k.startswith(ARM_PREFIX))
++    return sorted(set(a) | set(b))
+ 
+ 
+ def _selftest() -> int:

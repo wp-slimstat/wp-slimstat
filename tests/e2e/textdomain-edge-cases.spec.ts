@@ -16,6 +16,33 @@ import {
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
 
+/**
+ * Switch back on every SlimStat plugin this spec's deactivation took down.
+ *
+ * S06 deactivates Free through plugins.php. Pro requires Free, so on that very
+ * request Pro's requirement guard deactivates Pro too — its documented fail-soft,
+ * not a defect. Reactivating only Free therefore leaves Pro off for the rest of
+ * the worker: in the 6c399579 census this spec ran ~160 tests before the Pro
+ * specs, and every one of them then failed or never ran ("wp-slimstat-pro is
+ * installed but not activated"), 12 tests attributed to Pro for a state this
+ * spec created.
+ *
+ * Free first — activating Pro while Free is off just makes Pro switch itself
+ * off again. Rows are addressed by `data-plugin` (the plugin file, always
+ * emitted by the list table) rather than `data-slug`, which WordPress derives
+ * from the plugin *name* when no update-API slug is known.
+ */
+async function reactivateSlimstatPlugins(page: import('@playwright/test').Page): Promise<void> {
+  await page.goto('/wp-admin/plugins.php', { waitUntil: 'domcontentloaded' });
+  for (const file of ['wp-slimstat/wp-slimstat.php', 'wp-slimstat-pro/wp-slimstat-pro.php']) {
+    const activate = page.locator(`tr[data-plugin="${file}"] .activate a`);
+    if (await activate.count() === 0) continue; // not installed, or already active
+    await activate.first().click();
+    // WordPress redirects back to plugins.php, so the next row is on the page already.
+    await page.waitForLoadState('domcontentloaded');
+  }
+}
+
 test.describe('Suite 06: Textdomain Edge Cases', () => {
   test.setTimeout(60_000);
 
@@ -27,8 +54,12 @@ test.describe('Suite 06: Textdomain Edge Cases', () => {
     await snapshotSlimstatOptions();
   });
 
-  test.afterEach(async () => {
+  // Unconditional, and after every test rather than after S06 only: a test that
+  // fails halfway through the deactivate/reactivate flow is exactly the one that
+  // leaves plugins switched off for the rest of the worker.
+  test.afterEach(async ({ page }) => {
     await restoreSlimstatOptions();
+    await reactivateSlimstatPlugins(page);
   });
 
   test.afterAll(async () => {

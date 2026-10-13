@@ -66,7 +66,7 @@ async function withAnonymousContext(
   cookies?: { name: string; value: string; domain: string; path: string }[],
 ): Promise<{ trackingRequests: string[]; cleanup: () => Promise<void> }> {
   const browser = page.context().browser()!;
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const newPage = await ctx.newPage();
 
   if (cookies) {

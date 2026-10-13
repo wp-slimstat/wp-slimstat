@@ -1,0 +1,18 @@
+target:    tests/bench/lib/fingerprint-v2.php
+gate:      php tests/fingerprint-v2-encoding-test.php
+kind:      restore-defect
+expect:    int_zero_and_string_zero_collide_by_design row encoding
+rationale: Restores the "HEX is not one function" trap the spec's per-type table exists to close (encoding-spec.md, "Field encoding"). Under the mutation the PHP side uses dechex() of the value, so 255 encodes as '3:FF' where the SQL side still emits '6:323535'. The two encoders silently stop implementing one spec - and because each arm is fingerprinted by the same side, the disagreement never surfaces as a failure, only as two corpora that never compare equal and a campaign that cannot proceed for a reason nobody can locate. It also drops through (int), which truncates the BIGINT UNSIGNED maximum on a 64-bit signed platform: the width boundary this gate covers.
+---
+diff --git a/tests/bench/lib/fingerprint-v2.php b/tests/bench/lib/fingerprint-v2.php
+--- a/tests/bench/lib/fingerprint-v2.php
++++ b/tests/bench/lib/fingerprint-v2.php
+@@ -103,7 +103,7 @@ if (!function_exists('slimstat_fp2_encode_field')) {
+             return '\\NUL';
+         }
+         if ('int' === $kind) {
+-            return strtoupper(bin2hex(slimstat_fp2_canonical_int($value)));
++            return strtoupper(dechex((int) $value));
+         }
+         $raw = (string) $value;
+         if ('' === $raw) {

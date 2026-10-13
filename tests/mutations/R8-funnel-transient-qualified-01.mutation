@@ -1,0 +1,17 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      php tests/funnel-step-identity-test.php
+kind:      name-only
+expect:    holds 2 set_transient call(s) where exactly 1 was expected
+rationale: The first qualified-name mutation in the FREE registry, which is the point of it. Pro measured this hazard in two of its gates and fixed them; free carried the same T_STRING-only matching with a larger population - 201 fully qualified function calls across its src/ against Pro's six - and nothing here could fail if the clauses were deleted. The census figure is Pro's and is quoted, not re-derived; a re-count on the current tree gives 165 across 18 files, which is the same argument at a different size. This mutation adds a SECOND cache write inside get_funnel_results(), spelled with a leading backslash. It is the same function, identical behaviour, and the exact defect the gate exists to forbid - a second chance to cache an errored chain. On PHP 8 the tokeniser emits one T_NAME_FULLY_QUALIFIED token for that call, so the pre-fix scan counted 1, printed PASS, and reported "an errored chain is never cached" over code that caches it twice. Measured both ways before this entry was written: old form 1 call / PASS, new form 2 calls / RED. This direction is what makes it worth a registry slot - free's other T_STRING gates assert must-be-PRESENT and fail CLOSED when they go blind (a false alarm, annoying and safe), while a count assertion fails OPEN.
+---
+diff --git a/admin/view/wp-slimstat-db.php b/admin/view/wp-slimstat-db.php
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -2792,6 +2792,7 @@
+         if (!$had_error) {
+             set_transient($cache_key, $results, 5 * MINUTE_IN_SECONDS);
+         }
++        \set_transient($cache_key . '_dup', $results, 600);
+ 
+         // Memo for the rest of THIS request even on error (the transient is
+         // skipped above, so the next request still recomputes and self-heals).

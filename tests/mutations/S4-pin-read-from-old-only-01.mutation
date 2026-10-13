@@ -1,0 +1,20 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+expect:    P41-a-pin-on-one-arm-only-is-not-a-pin
+kind:      guard-removal
+rationale: The mirror of S4-pin-read-from-new-only-01. Registered as its own entry rather than folded in,
+           because the two are killed by DIFFERENT plants — this one by P41 and its sibling by P48
+           — and a single entry would leave whichever plant it did not name undefended the next
+           time the set is trimmed.
+---
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -612,7 +612,7 @@
+                   for name in ("clock_dependent", "calendar_day_dependent")),
+         # BOTH arms must be pinned for the pin to help. A window pinned on one side only leaves
+         # the other free to move, which is the state the pin exists to prevent.
+-        pinned=_flag(old_env, "pinned") and _flag(new_env, "pinned"),
++        pinned=_flag(old_env, "pinned"),
+         observable=observable,
+         register_hit=hit,
+         register_near=tuple(near),

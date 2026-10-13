@@ -1,0 +1,17 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    nothing reads $settings["version"] any more
+rationale: The defect as it shipped and as Run 65 cell 7a found it. `wp_slimstat::$settings` is array_merge(init_options(), $stored) with stored winning, and init_options() carries `version => SLIMSTAT_ANALYTICS_VERSION` -- so an options row with no version key reads back as the version of the code doing the reading. A 4.8.1 arm introduced itself to update_tables_and_options() as 6.0.0, every version_compare block decided it had already run, and the cell printed "the legacy upgrade path completed -- 1 pass(es), 3.1s" having executed none of the 4.8.x DDL or the notes conversion. Nothing downstream can distinguish that from a fast upgrade: the timing looks good, the pass count looks good, and the five checks that then fail all name symptoms three legs away from the cause.
+---
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -621,7 +621,7 @@
+ # legacy upgrade path completed -- 1 pass(es), 3.1s" having executed none of it. The `-z`
+ # fallback immediately below was written for precisely the unstamped case and could never fire,
+ # because the value it tested is never empty. Run 65 cell 7a, PITFALLS 133.
+-LEGACY_FROM=$(stored_plugin_version)
++LEGACY_FROM=$(wpc eval 'echo isset(wp_slimstat::$settings["version"]) ? wp_slimstat::$settings["version"] : "";' 2>/dev/null | tr -d '[:space:]')
+ if [ -z "$LEGACY_FROM" ] && [ -n "${ARM_FREE_VERSION:-}" ]; then
+   # The arm's own installer was invoked directly (H2) rather than through its activation hook, so
+   # the stored version may never have been stamped. Unstamped reads as "older than everything"
