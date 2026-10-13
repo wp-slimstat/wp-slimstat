@@ -1247,6 +1247,8 @@ class wp_slimstat
         $defaults['geolocation_provider'] = 'dbip';
         // Heatmaps start on for new installs only; init_options() keeps upgrades opted out.
         $defaults['heatmap_capture'] = self::pro_is_installed() ? 'full' : 'off';
+        // The release notice is for updated sites; new installs get Get started instead.
+        $defaults['notice_latest_news'] = 'no';
         return $defaults;
     }
 

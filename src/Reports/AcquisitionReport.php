@@ -141,11 +141,14 @@ class AcquisitionReport
         if ($capped || count($names) > 5) {
             $items[] = esc_html__('more', 'wp-slimstat');
         }
-        $url = current_user_can('manage_options') ? admin_url('admin.php?page=slimpro') : 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=plugin&utm_campaign=' . $mode;
         echo '<div class="slimstat-acquisition__locked"><span class="dashicons dashicons-lock" aria-hidden="true"></span><span class="slimstat-acquisition__teaser">';
         /* translators: %s: list of channel or campaign names, such as "Email, Paid Search, and more". */
         echo wp_kses(sprintf(esc_html__('Also active this period: %s.', 'wp-slimstat'), wp_sprintf_l('%l', $items)), ['strong' => []]);
-        echo '</span><a class="noslimstat slimstat-acquisition__unlock" href="' . esc_url($url) . '">' . esc_html('utm' === $mode ? __('See all campaigns with Pro', 'wp-slimstat') : __('See all channels with Pro', 'wp-slimstat')) . '<span aria-hidden="true">&rarr;</span></a>';
+        echo '</span>';
+        // The teaser is for everyone; the link only for whoever can buy (the Pro page needs manage_options).
+        if (current_user_can('manage_options')) {
+            echo '<a class="noslimstat slimstat-acquisition__unlock" href="' . esc_url(admin_url('admin.php?page=slimpro#ss-pro-converts')) . '">' . esc_html('utm' === $mode ? __('See all campaigns with Pro', 'wp-slimstat') : __('See all channels with Pro', 'wp-slimstat')) . '<span aria-hidden="true">&rarr;</span></a>';
+        }
         if (current_user_can('activate_plugins') && file_exists(WP_PLUGIN_DIR . '/wp-slimstat-pro/wp-slimstat-pro.php')) {
             echo '<a class="noslimstat slimstat-acquisition__activate" href="' . esc_url(admin_url('plugins.php')) . '">' . esc_html__('Already have Pro? Activate the plugin', 'wp-slimstat') . '</a>';
         }

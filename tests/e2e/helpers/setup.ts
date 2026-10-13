@@ -577,15 +577,26 @@ export async function snapshotOption(optionName: string): Promise<void> {
 export async function restoreOption(optionName: string): Promise<void> {
   const snap = optionSnapshots.get(optionName);
   if (!snap) return;
-  if (!snap.exists) {
-    await getPool().execute('DELETE FROM wp_options WHERE option_name = ?', [optionName]);
-  } else {
-    await getPool().execute(
-      "INSERT INTO wp_options (option_name, option_value, autoload) VALUES (?, ?, 'yes') ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)",
-      [optionName, snap.value]
-    );
-  }
+  await setOptionValue(optionName, snap.exists ? snap.value : null);
   optionSnapshots.delete(optionName);
+}
+
+/** Write one wp_options row directly; null deletes it. */
+export async function setOptionValue(optionName: string, value: string | null): Promise<void> {
+  if (value === null) {
+    await getPool().execute('DELETE FROM wp_options WHERE option_name = ?', [optionName]);
+    return;
+  }
+  await getPool().execute(
+    "INSERT INTO wp_options (option_name, option_value, autoload) VALUES (?, ?, 'yes') ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)",
+    [optionName, value]
+  );
+}
+
+/** One wp_options row's value, or null when the row is absent. */
+export async function getOptionValue(optionName: string): Promise<string | null> {
+  const [rows] = await getPool().execute('SELECT option_value FROM wp_options WHERE option_name = ?', [optionName]) as any;
+  return rows.length ? String(rows[0].option_value) : null;
 }
 
 export async function restoreAllOptions(): Promise<void> {

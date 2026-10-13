@@ -26,6 +26,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await expect(dashboard.getByRole('heading', { name: 'Find your next revenue opportunity' })).toBeVisible();
     await dashboard.getByRole('link', { name: 'See what Pro adds to Ecommerce' }).click();
     await expect(page.getByRole('heading', { name: 'Turn store activity into your next decision' })).toBeVisible();
+    await expect(page).toHaveURL(/admin\.php\?page=slimpro#ss-pro-converts$/);
     const [checkout, footerCta] = [page.locator('.ss-pro-cta').first(), page.locator('.ss-pro-cta').last()];
     // The page's own two calls to action; the WordPress menu and the brand bar say it too.
     await expect(page.locator('.ss-pro').getByRole('link', { name: 'Upgrade to Pro' })).toHaveCount(2);
@@ -34,7 +35,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await expect(checkout).toHaveAttribute('rel', /noopener/);
     expect(new URL(await checkout.getAttribute('href') || '').searchParams.get('utm_content')).toBe('hero');
     const features = page.locator('.ss-pro-feature h3');
-    await expect(features).toHaveCount(11);
+    await expect(features).toHaveCount(12);
     await expect(features.first()).toHaveText('Ecommerce Pro');
     await expect(page.locator('#ss-pro-live .ss-pro-lede')).toHaveText(/right now|next visitor arrives/);
     const footer = new URL(await footerCta.getAttribute('href') || '');
@@ -98,7 +99,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await page.goto('/wp-admin/admin.php?page=slimpro');
     await expect(page.getByRole('heading', { name: 'What Pro adds to your reports' })).toBeVisible();
     await expect(page.getByText('Pro is active on this site')).toBeVisible();
-    await expect(page.locator('.ss-pro-feature h3')).toHaveCount(11);
+    await expect(page.locator('.ss-pro-feature h3')).toHaveCount(12);
     await expect(page.getByRole('link', { name: 'Upgrade to Pro' })).toHaveCount(0);
     await expect(page.getByText('Will I lose my existing reports or settings?')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Upload Pro in WordPress' })).toHaveCount(0);

@@ -23,6 +23,15 @@ use SlimStat\Migration\Migrations\RecoverCorruptedHeatmapPositions;
  */
 class MigrationService
 {
+    /** Built by init() on admin requests; null when migrations are disabled or before init priority 70. */
+    private static ?MigrationManager $manager = null;
+
+    /** The manager init() built, so other admin notices can wait while a migration is owed. */
+    public static function manager(): ?MigrationManager
+    {
+        return self::$manager;
+    }
+
     /**
      * The connection the slim_* tables are on.
      *
@@ -104,6 +113,7 @@ class MigrationService
             // and transients APIs, which are always core-side. Passing a handle here
             // advertised a scoping it does not have.
             $manager = new MigrationManager();
+            self::$manager = $manager;
 
             // Register all migrations
             $manager->register(new Migrations\AddAcquisitionColumns($analytics, $core));
