@@ -259,7 +259,31 @@ test('Ecommerce setup is visible, protected and repeatable in the native report 
 // B1 (release review 2026-10-13): a failed setup used to send the admin back to the same button.
 test('Ecommerce setup on a MyISAM analytics table says why it stopped and offers a retry @woocommerce', async ({ page }) => {
   test.setTimeout(90_000);
-  const engine = (to: string) => runWordPressFixture(`<?php if (DB_NAME !== 'tests-wordpress') throw new RuntimeException('Disposable database required'); global $wpdb; $t = $wpdb->prefix . 'slim_stats'; $wpdb->query('SET FOREIGN_KEY_CHECKS=0'); $wpdb->query("ALTER TABLE {$t} ENGINE=${to}"); $wpdb->query('SET FOREIGN_KEY_CHECKS=1'); echo $wpdb->get_var($wpdb->prepare('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', $t));`);
+  // MySQL will not change the engine of a foreign-key parent, even with checks off, and a real
+  // MyISAM install has no foreign keys at all. So the children's constraints are dropped first and
+  // re-added, from their own SHOW CREATE TABLE text, on the way back.
+  const engine = (to: string) => runWordPressFixture(`<?php if (DB_NAME !== 'tests-wordpress') throw new RuntimeException('Disposable database required');
+global $wpdb; $t = $wpdb->prefix . 'slim_stats'; $q = chr(96);
+$wpdb->query('SET FOREIGN_KEY_CHECKS=0');
+if ('MyISAM' === '${to}') {
+  $fks = [];
+  foreach ($wpdb->get_results($wpdb->prepare('SELECT TABLE_NAME, CONSTRAINT_NAME FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME = %s', $t)) as $fk) {
+    if (preg_match('/CONSTRAINT ' . $q . preg_quote($fk->CONSTRAINT_NAME, '/') . $q . ' FOREIGN KEY [^\\n]*?(?=,?\\n)/', (string) $wpdb->get_var("SHOW CREATE TABLE {$fk->TABLE_NAME}", 1), $m)) {
+      $fks[$fk->TABLE_NAME] = $m[0];
+      $wpdb->query("ALTER TABLE {$fk->TABLE_NAME} DROP FOREIGN KEY {$fk->CONSTRAINT_NAME}");
+    }
+  }
+  update_option('slimstat_ec_myisam_test_fks', $fks, false);
+  $wpdb->query("ALTER TABLE {$t} ENGINE=MyISAM");
+} else {
+  $wpdb->query("ALTER TABLE {$t} ENGINE=InnoDB");
+  foreach ((array) get_option('slimstat_ec_myisam_test_fks', []) as $child => $clause) { $wpdb->query("ALTER TABLE {$child} ADD {$clause}"); }
+  delete_option('slimstat_ec_myisam_test_fks');
+}
+$wpdb->query('SET FOREIGN_KEY_CHECKS=1');
+echo $wpdb->get_var($wpdb->prepare('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', $t));`);
+  const foreignKeys = () => runWordPressFixture(`<?php global $wpdb; echo $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME = %s', $wpdb->prefix . 'slim_stats'));`);
+  const keysBefore = foreignKeys();
   runWordPressFixture("<?php update_option('slimstat_ec_myisam_test_backup', get_option('slimstat_ecommerce_state', []), false); delete_option('slimstat_ecommerce_state');");
   try {
     // A conversion that silently did nothing would make this test pass for the wrong reason.
@@ -273,6 +297,7 @@ test('Ecommerce setup on a MyISAM analytics table says why it stopped and offers
     await expect(dashboard.getByRole('button', { name: 'Set up Ecommerce', exact: true })).toHaveCount(0);
 
     expect(engine('InnoDB')).toBe('InnoDB');
+    expect(foreignKeys()).toBe(keysBefore);
     await dashboard.getByRole('button', { name: 'Try setup again', exact: true }).click();
     await expect(page.locator('[data-metric=net]')).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('[data-ecommerce]')).not.toContainText('Setup did not finish');
