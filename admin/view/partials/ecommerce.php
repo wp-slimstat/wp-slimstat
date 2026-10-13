@@ -28,6 +28,8 @@ $setup = static function ($label) {
 	<p class="ss-ec-feedback screen-reader-text" role="status" aria-live="polite"></p>
 	<?php if (!$available) : ?>
 		<div class="ss-ec-state"><span class="dashicons dashicons-cart" aria-hidden="true"></span><h2><?php esc_html_e('Bring your store into focus', 'wp-slimstat'); ?></h2><p><?php esc_html_e('Activate WooCommerce 8.3 or later on 64-bit PHP to connect orders with your SlimStat traffic. Existing traffic reports continue to work.', 'wp-slimstat'); ?></p><?php if (current_user_can('activate_plugins')) : ?><a class="button" href="<?php echo esc_url(admin_url('plugins.php')); ?>"><?php esc_html_e('Manage plugins', 'wp-slimstat'); ?></a><?php endif; ?></div>
+	<?php elseif (!Integration::ready() && '' !== $error) : ?>
+		<div class="ss-ec-state" role="alert"><h2><?php esc_html_e('Setup did not finish', 'wp-slimstat'); ?></h2><p><?php echo esc_html($error); ?></p><?php $setup(__('Try setup again', 'wp-slimstat')); ?></div>
 	<?php elseif (!Integration::ready()) : ?>
 		<div class="ss-ec-state"><h2><?php esc_html_e('Understand what drives your sales', 'wp-slimstat'); ?></h2><p><?php esc_html_e('Connect your WooCommerce orders to see net sales, products, acquisition and the observed purchase journey in one place.', 'wp-slimstat'); ?></p><p><?php esc_html_e('Setup builds a reporting table and a visit index, then imports orders in the background. The index can take time on a large site. WooCommerce orders stay unchanged; visit association follows your existing consent and tracking settings.', 'wp-slimstat'); ?></p><?php $setup(__('Set up Ecommerce', 'wp-slimstat')); ?></div>
 	<?php elseif ($error) : ?>

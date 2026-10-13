@@ -374,6 +374,9 @@ final class Report
 			} catch (\Throwable $exception) {
 				$error = $exception instanceof \RuntimeException ? $exception->getMessage() : __('Ecommerce data could not be loaded. Check reporting setup and the database connection, then retry.', 'wp-slimstat');
 			}
+		} elseif ($available) {
+			// Why the last setup attempt stopped; cleared when setup succeeds.
+			$error = (string) ($state['error_message'] ?? '');
 		}
 		include dirname(__DIR__, 2) . '/admin/view/partials/ecommerce.php';
 		if (wp_doing_ajax()) {

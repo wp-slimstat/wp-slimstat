@@ -145,6 +145,15 @@ preg_match('/<\?php if \(current_user_can\(\'manage_options\'\)\) : \?>(.*?)<\?p
 check(2 === substr_count($proAdds, '<a ') && 2 === substr_count($proAddsLinks[1] ?? '', '<a '), 'Pro adds: both buttons render only for manage_options; the sentence stays for everyone');
 $ecommerce = read_or_die('admin/view/partials/ecommerce.php');
 check(false !== strpos($ecommerce, "<?php if (current_user_can('manage_options')) : ?><a class=\"button button-primary\" href=\"<?php echo esc_url(admin_url('admin.php?page=slimpro#ss-pro-converts')); ?>\">"), 'Ecommerce: the discover button opens the converts section, for manage_options only');
+// B1 (release review 2026-10-13): the setup-failure reason renders before the setup CTA, or the
+// admin is sent back to the same button with no explanation, forever.
+$setupError = strpos($ecommerce, 'elseif (!Integration::ready() && \'\' !== $error)');
+$setupCta = strpos($ecommerce, 'elseif (!Integration::ready()) :');
+check(false !== $setupError && false !== $setupCta && $setupError < $setupCta, 'Ecommerce: a failed setup shows its reason before the "Set up Ecommerce" button');
+$integration = read_or_die('src/Ecommerce/Integration.php');
+preg_match('/function setup\(\): void(.*?)\n\t}\n/s', $integration, $setupBody);
+$engineCheck = strpos($setupBody[1] ?? '', 'self::requireInnoDb(');
+check(false !== $engineCheck && $engineCheck < (int) strpos($setupBody[1] ?? '', 'createTableSql('), 'Ecommerce: setup names a MyISAM analytics table before it creates the foreign-keyed table');
 check(false === strpos($ecommerce, 'wp-slimstat.com/pricing') && false === strpos(read_or_die('src/Reports/AcquisitionReport.php'), 'wp-slimstat.com/pricing'), 'Ecommerce and Channels: no pricing link for users who cannot buy');
 
 if ($failures > 0) {

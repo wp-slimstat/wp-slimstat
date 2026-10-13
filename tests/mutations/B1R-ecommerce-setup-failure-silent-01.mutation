@@ -1,0 +1,17 @@
+target:    admin/view/partials/ecommerce.php
+gate:      php tests/admin-ui-render-guards-test.php
+kind:      restore-defect
+expect:    a failed setup shows its reason before the "Set up Ecommerce" button
+rationale: Returns the shipped 6.0.0-beta shape (release review 2026-10-13, B1). A setup that failed - a MyISAM analytics table refusing the foreign key, or a server refusing the online index build - set state[error] and nothing else, and the partial tested !ready() before $error, so the admin was sent back to the same "Set up Ecommerce" button with no reason, click after click. The stored reason is pinned by tests/Unit/Ecommerce/IntegrationFailureTest.php; this gate is the vendor-independent half that sees the branch order.
+---
+--- a/admin/view/partials/ecommerce.php
++++ b/admin/view/partials/ecommerce.php
+@@ -28,8 +28,6 @@ $setup = static function ($label) {
+ 	<p class="ss-ec-feedback screen-reader-text" role="status" aria-live="polite"></p>
+ 	<?php if (!$available) : ?>
+ 		<div class="ss-ec-state"><span class="dashicons dashicons-cart" aria-hidden="true"></span><h2><?php esc_html_e('Bring your store into focus', 'wp-slimstat'); ?></h2><p><?php esc_html_e('Activate WooCommerce 8.3 or later on 64-bit PHP to connect orders with your SlimStat traffic. Existing traffic reports continue to work.', 'wp-slimstat'); ?></p><?php if (current_user_can('activate_plugins')) : ?><a class="button" href="<?php echo esc_url(admin_url('plugins.php')); ?>"><?php esc_html_e('Manage plugins', 'wp-slimstat'); ?></a><?php endif; ?></div>
+-	<?php elseif (!Integration::ready() && '' !== $error) : ?>
+-		<div class="ss-ec-state" role="alert"><h2><?php esc_html_e('Setup did not finish', 'wp-slimstat'); ?></h2><p><?php echo esc_html($error); ?></p><?php $setup(__('Try setup again', 'wp-slimstat')); ?></div>
+ 	<?php elseif (!Integration::ready()) : ?>
+ 		<div class="ss-ec-state"><h2><?php esc_html_e('Understand what drives your sales', 'wp-slimstat'); ?></h2><p><?php esc_html_e('Connect your WooCommerce orders to see net sales, products, acquisition and the observed purchase journey in one place.', 'wp-slimstat'); ?></p><p><?php esc_html_e('Setup builds a reporting table and a visit index, then imports orders in the background. The index can take time on a large site. WooCommerce orders stay unchanged; visit association follows your existing consent and tracking settings.', 'wp-slimstat'); ?></p><?php $setup(__('Set up Ecommerce', 'wp-slimstat')); ?></div>
+ 	<?php elseif ($error) : ?>
