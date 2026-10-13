@@ -948,7 +948,7 @@ final class Schema
 
     /**
      * createIndexSql() in ALTER TABLE form, for callers that append the comma-separated
-     * `ALGORITHM=INPLACE, LOCK=NONE` hint (AbstractMigration::alterOnline()); CREATE INDEX
+     * `ALGORITHM=INPLACE, LOCK=NONE` hint (Schema::alterOnline()); CREATE INDEX
      * rejects that spelling, so every hinted attempt would fall through to the locking build.
      */
     public static function addIndexSql(string $suffix, string $index, string $prefix): string
@@ -959,6 +959,32 @@ final class Schema
             self::resolve($index, $prefix),
             self::indexes($suffix)[$index]
         );
+    }
+
+    /**
+     * Run an ALTER TABLE online first; the bare retry runs only when the server refuses the hint
+     * (MyISAM, or a change INPLACE cannot do). The one owner of that policy: migrations and
+     * Ecommerce setup both build through it.
+     *
+     * @return int|bool wpdb::query() result.
+     */
+    public static function alterOnline(wpdb $db, string $sql)
+    {
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Schema builds DDL from its allowlisted manifest and the core table prefix; no request values are interpolated.
+        $result = $db->query($sql . ', ALGORITHM=INPLACE, LOCK=NONE');
+        if (false === $result) {
+            $result = $db->query($sql);
+        }
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
+        return $result;
+    }
+
+    /** The storage engine of $table, or '' when the status cannot be read. */
+    public static function tableEngine(wpdb $db, string $table): string
+    {
+        $status = $db->get_row($db->prepare('SHOW TABLE STATUS LIKE %s', $db->esc_like($table)), ARRAY_A);
+
+        return is_array($status) ? (string) ($status['Engine'] ?? '') : '';
     }
 
     /**

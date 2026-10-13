@@ -2,8 +2,8 @@
 /**
  * B1 (release review 2026-10-13): a failed Ecommerce setup looped the admin back to the same
  * "Set up Ecommerce" button with no reason. These pin the three parts of the fix: the reason is
- * kept, a refused online index build gets one bare retry, and a MyISAM analytics table is named
- * before the foreign key is attempted.
+ * kept, a refused online index build gets one bare retry (Schema::alterOnline(), which setup
+ * now builds through), and a MyISAM analytics table is named before the foreign key is attempted.
  *
  * @license GPL-2.0-or-later
  */
@@ -14,6 +14,7 @@ namespace WpSlimstat\Tests\Unit\Ecommerce;
 
 use Brain\Monkey\Functions;
 use SlimStat\Ecommerce\Integration;
+use SlimStat\Schema\Schema;
 use WpSlimstat\Tests\Unit\WpSlimstatTestCase;
 
 class IntegrationFailureTest extends WpSlimstatTestCase
@@ -75,18 +76,18 @@ class IntegrationFailureTest extends WpSlimstatTestCase
     public function test_a_refused_online_build_is_retried_once_without_the_hint(): void
     {
         $db = \Mockery::mock(\wpdb::class);
-        $db->shouldReceive('query')->once()->with('CREATE INDEX x ON t (a) ALGORITHM=INPLACE LOCK=NONE')->andReturn(false);
-        $db->shouldReceive('query')->once()->with('CREATE INDEX x ON t (a)')->andReturn(0);
+        $db->shouldReceive('query')->once()->with('ALTER TABLE t ADD INDEX x (a), ALGORITHM=INPLACE, LOCK=NONE')->andReturn(false);
+        $db->shouldReceive('query')->once()->with('ALTER TABLE t ADD INDEX x (a)')->andReturn(0);
 
-        self::assertTrue(self::call('createIndexOnline', $db, 'CREATE INDEX x ON t (a)'));
+        self::assertNotFalse(Schema::alterOnline($db, 'ALTER TABLE t ADD INDEX x (a)'));
     }
 
     public function test_an_accepted_online_build_is_not_repeated(): void
     {
         $db = \Mockery::mock(\wpdb::class);
-        $db->shouldReceive('query')->once()->with('CREATE INDEX x ON t (a) ALGORITHM=INPLACE LOCK=NONE')->andReturn(0);
+        $db->shouldReceive('query')->once()->with('ALTER TABLE t ADD INDEX x (a), ALGORITHM=INPLACE, LOCK=NONE')->andReturn(0);
 
-        self::assertTrue(self::call('createIndexOnline', $db, 'CREATE INDEX x ON t (a)'));
+        self::assertNotFalse(Schema::alterOnline($db, 'ALTER TABLE t ADD INDEX x (a)'));
     }
 
     public function test_both_attempts_failing_reports_failure(): void
@@ -94,7 +95,7 @@ class IntegrationFailureTest extends WpSlimstatTestCase
         $db = \Mockery::mock(\wpdb::class);
         $db->shouldReceive('query')->twice()->andReturn(false);
 
-        self::assertFalse(self::call('createIndexOnline', $db, 'CREATE INDEX x ON t (a)'));
+        self::assertFalse(Schema::alterOnline($db, 'ALTER TABLE t ADD INDEX x (a)'));
     }
 
     /** @return \Mockery\MockInterface */

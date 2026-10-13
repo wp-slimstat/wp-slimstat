@@ -5,6 +5,7 @@ namespace SlimStat\Migration\Admin;
 
 use SlimStat\Migration\MigrationManager;
 use SlimStat\Migration\MigrationService;
+use SlimStat\Schema\Schema;
 use wp_slimstat_admin;
 
 class MigrationAdmin
@@ -221,12 +222,8 @@ class MigrationAdmin
 		$offered_migrations = $this->manager->getOfferedMigrations();
 		$has_required_migrations = !empty($required_migrations);
 		// MyISAM has no online index build: each step locks the table for writes while it runs.
-		$analytics_myisam = false;
-		if ($has_required_migrations) {
-			$db               = MigrationService::analyticsConnection();
-			$status           = $db->get_row($db->prepare('SHOW TABLE STATUS LIKE %s', $db->esc_like($GLOBALS['wpdb']->prefix . 'slim_stats')), ARRAY_A);
-			$analytics_myisam = is_array($status) && 0 === strcasecmp((string) ($status['Engine'] ?? ''), 'MyISAM');
-		}
+		$analytics_myisam = $has_required_migrations
+			&& 0 === strcasecmp(Schema::tableEngine(MigrationService::analyticsConnection(), $GLOBALS['wpdb']->prefix . 'slim_stats'), 'MyISAM');
 
 		include plugin_dir_path(__FILE__) . '/../../view/migration-page.php';
 	}

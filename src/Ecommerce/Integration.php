@@ -135,7 +135,7 @@ final class Integration
 			$indexes = Schema::indexState($db, 'slim_ecommerce', $GLOBALS['wpdb']->prefix);
 			if ($indexes['malformed'] || (!$indexes['present'] && !$indexes['missing'])) { self::fail(__('The Ecommerce reporting indexes need repair.', 'wp-slimstat')); }
 			foreach ($indexes['missing'] as $name) {
-				if (!self::createIndexOnline($db, Schema::createIndexSql('slim_ecommerce', $name, $GLOBALS['wpdb']->prefix))) {
+				if (false === Schema::alterOnline($db, Schema::addIndexSql('slim_ecommerce', $name, $GLOBALS['wpdb']->prefix))) {
 					self::fail(__('An Ecommerce reporting index could not be created.', 'wp-slimstat'));
 				}
 			}
@@ -143,7 +143,7 @@ final class Integration
 			if (!is_array($index) || ($index && !Schema::indexMatches($index, 'visit_id, dt, id'))) {
 				self::fail(__('The Ecommerce visit index on the analytics table needs repair.', 'wp-slimstat'));
 			}
-			if (!$index && !self::createIndexOnline($db, Schema::createIndexSql('slim_stats', 'idx_ecommerce_visit', $GLOBALS['wpdb']->prefix))) {
+			if (!$index && false === Schema::alterOnline($db, Schema::addIndexSql('slim_stats', 'idx_ecommerce_visit', $GLOBALS['wpdb']->prefix))) {
 				self::fail(__('The Ecommerce visit index on the analytics table could not be created.', 'wp-slimstat'));
 			}
 			$state = get_option(self::STATE, []);
@@ -576,16 +576,10 @@ final class Integration
 		update_option(self::STATE, $state, false);
 	}
 
-	/** Online first; one bare retry when the server refuses the hint, as AbstractMigration::alterOnline() does. */
-	private static function createIndexOnline(\wpdb $db, string $sql): bool
-	{
-		return false !== $db->query($sql . ' ALGORITHM=INPLACE LOCK=NONE') || false !== $db->query($sql);
-	}
-
 	private static function requireInnoDb(\wpdb $db, string $table): void
 	{
-		$status = $db->get_row($db->prepare('SHOW TABLE STATUS LIKE %s', $db->esc_like($table)), ARRAY_A);
-		if (is_array($status) && !empty($status['Engine']) && 0 !== strcasecmp((string) $status['Engine'], 'InnoDB')) {
+		$engine = Schema::tableEngine($db, $table);
+		if ('' !== $engine && 0 !== strcasecmp($engine, 'InnoDB')) {
 			self::fail(__('Your SlimStat analytics table uses the MyISAM storage engine, and Ecommerce needs InnoDB. Ask your host to convert the table to InnoDB, then set up Ecommerce again.', 'wp-slimstat'));
 		}
 	}
