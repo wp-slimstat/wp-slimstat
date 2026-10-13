@@ -19,6 +19,7 @@
 * Net sales, orders, period comparisons, top products, acquisition and a consented purchase journey, with interactive metric charts, tabbed revenue rankings and inline drill-downs.
 * Currency, refunds, purchase rate and unmatched orders have clear definitions, configured WooPayments currencies are included, and charts explain their gaps.
 * Setup is opt-in. Order sync runs in small background jobs, supports HPOS and legacy storage, and follows your dates, filters, saved segments, retention and privacy erasure. See [the Ecommerce guide](docs/ecommerce.md).
+* If setup cannot finish, the Ecommerce page says why and offers a retry. A MyISAM analytics table is named as the cause, with the fix: convert it to InnoDB.
 
 **New: Shortcode Playground**
 * Under SlimStat → Shortcodes: browse reports, preview them with your data, tune filters, then copy or test the shortcode.
@@ -43,7 +44,7 @@
 
 **Numbers you can trust** (some change on purpose, to their true value)
 * Sites that had "Enable CDN" on start recording again. The setting is gone: it loaded a tracker file that did not exist yet. The snippet for tracking external pages now points at your own site; replace any copy of the old one.
-* No more double counting: consent given through the WP Consent API updates the original pageview, anonymous same-page refreshes count once, and overlapping funnel steps stop inflating. Some totals go down.
+* No more double counting: consent given through the WP Consent API updates the original pageview, also before you run Migration, anonymous same-page refreshes count once, and overlapping funnel steps stop inflating. Some totals go down.
 * Form-submit, tel: and mailto: goals work, one hit per press. Funnels no longer show silent zeros.
 * Overview "Today" and "Yesterday" no longer read 0, "Currently Online" follows the date filter, and unique browser and country counts are no longer capped at 28 days.
 * The weekly chart's previous-period total matches its bars.
@@ -55,9 +56,9 @@
 
 **Upgrade with confidence**
 * Your settings carry over, including disabled tracking, consent, Heatmaps, user exclusions and network overrides. New installs turn on bot filtering and async loading.
-* A new Migration screen lists the database steps. Nothing runs until you click, and tracking keeps working. Required steps only add columns (about 8 seconds per 440,000 rows on MySQL 8) and change or remove no data.
+* A new Migration screen lists the database steps. Nothing runs until you click, and tracking keeps working. Required steps only add columns and indexes (about 8 seconds per 440,000 rows on MySQL 8) and change or remove no data. A notice on the Dashboard, Plugins and Updates screens says when a step is waiting, and the Migration screen warns if a MyISAM analytics table will pause tracking while a step runs.
 * Two optional table rebuilds, the browser backfill and the utf8mb4 conversion, run only when you pick them by name. To postpone everything, set `SLIMSTAT_DISABLE_MIGRATIONS` to true in `wp-config.php`.
-* On the first admin visit after updating, SlimStat creates any missing tables and indexes, as in every release. Columns are added only when you run Migration.
+* On the first admin visit after updating, SlimStat creates any missing tables and small indexes, as in every release. Columns and the three new indexes over page addresses and event notes are added only when you run Migration.
 * Back up your database first, as with any major release.
 
 **Rock-solid reliability**
