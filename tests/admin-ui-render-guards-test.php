@@ -154,6 +154,11 @@ $integration = read_or_die('src/Ecommerce/Integration.php');
 preg_match('/function setup\(\): void(.*?)\n\t}\n/s', $integration, $setupBody);
 $engineCheck = strpos($setupBody[1] ?? '', 'self::requireInnoDb(');
 check(false !== $engineCheck && $engineCheck < (int) strpos($setupBody[1] ?? '', 'createTableSql('), 'Ecommerce: setup names a MyISAM analytics table before it creates the foreign-keyed table');
+// S3 (release review 2026-10-13): MyISAM has no online index build, so the Migration page says
+// tracking pauses while it runs, and only when the controller found a MyISAM table.
+$migrationPage = read_or_die('src/view/migration-page.php');
+check((bool) preg_match('/<\?php if \(\$analytics_myisam\) \{ echo \' \' \. esc_html__\(\'[^\']*MyISAM[^\']*tracking pauses/', $migrationPage), 'Migration page: the MyISAM sentence is drawn only under $analytics_myisam');
+check(false !== strpos(read_or_die('src/Migration/Admin/MigrationAdmin.php'), "'SHOW TABLE STATUS LIKE %s'"), 'Migration page: renderPage() reads the analytics table engine');
 check(false === strpos($ecommerce, 'wp-slimstat.com/pricing') && false === strpos(read_or_die('src/Reports/AcquisitionReport.php'), 'wp-slimstat.com/pricing'), 'Ecommerce and Channels: no pricing link for users who cannot buy');
 
 if ($failures > 0) {
