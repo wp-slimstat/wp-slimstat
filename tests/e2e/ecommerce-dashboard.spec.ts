@@ -256,6 +256,84 @@ test('Ecommerce setup is visible, protected and repeatable in the native report 
   }
 });
 
+// B1 (release review 2026-10-13): a failed setup used to send the admin back to the same button.
+test('Ecommerce setup on a MyISAM analytics table says why it stopped and offers a retry @woocommerce', async ({ page }) => {
+  test.setTimeout(90_000);
+  // MySQL will not change the engine of a foreign-key parent, even with checks off, and a real
+  // MyISAM install has no foreign keys at all. So the children's constraints are dropped first and
+  // re-added, from their own SHOW CREATE TABLE text, on the way back.
+  const engine = (to: string) => runWordPressFixture(`<?php if (DB_NAME !== 'tests-wordpress') throw new RuntimeException('Disposable database required');
+global $wpdb; $t = $wpdb->prefix . 'slim_stats'; $q = chr(96);
+$wpdb->query('SET FOREIGN_KEY_CHECKS=0');
+if ('MyISAM' === '${to}') {
+  $fks = [];
+  foreach ($wpdb->get_results($wpdb->prepare('SELECT TABLE_NAME, CONSTRAINT_NAME FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME = %s', $t)) as $fk) {
+    if (preg_match('/CONSTRAINT ' . $q . preg_quote($fk->CONSTRAINT_NAME, '/') . $q . ' FOREIGN KEY [^\\n]*?(?=,?\\n)/', (string) $wpdb->get_var("SHOW CREATE TABLE {$fk->TABLE_NAME}", 1), $m)) {
+      $fks[$fk->TABLE_NAME] = $m[0];
+      $wpdb->query("ALTER TABLE {$fk->TABLE_NAME} DROP FOREIGN KEY {$fk->CONSTRAINT_NAME}");
+    }
+  }
+  update_option('slimstat_ec_myisam_test_fks', $fks, false);
+  $wpdb->query("ALTER TABLE {$t} ENGINE=MyISAM");
+} else {
+  $wpdb->query("ALTER TABLE {$t} ENGINE=InnoDB");
+  foreach ((array) get_option('slimstat_ec_myisam_test_fks', []) as $child => $clause) { $wpdb->query("ALTER TABLE {$child} ADD {$clause}"); }
+  delete_option('slimstat_ec_myisam_test_fks');
+}
+$wpdb->query('SET FOREIGN_KEY_CHECKS=1');
+echo $wpdb->get_var($wpdb->prepare('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', $t));`);
+  const foreignKeys = () => runWordPressFixture(`<?php global $wpdb; echo $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME = %s', $wpdb->prefix . 'slim_stats'));`);
+  const keysBefore = foreignKeys();
+  runWordPressFixture("<?php update_option('slimstat_ec_myisam_test_backup', get_option('slimstat_ecommerce_state', []), false); delete_option('slimstat_ecommerce_state');");
+  try {
+    // A conversion that silently did nothing would make this test pass for the wrong reason.
+    expect(engine('MyISAM')).toBe('MyISAM');
+    await page.goto('/wp-admin/admin.php?page=slimview7');
+    await page.getByRole('button', { name: 'Set up Ecommerce', exact: true }).click();
+    const dashboard = page.locator('[data-ecommerce]');
+    await expect(dashboard.getByRole('alert')).toContainText('Setup did not finish', { timeout: 30_000 });
+    await expect(dashboard.getByRole('alert')).toContainText('InnoDB');
+    await expect(dashboard.getByRole('button', { name: 'Try setup again', exact: true })).toBeVisible();
+    await expect(dashboard.getByRole('button', { name: 'Set up Ecommerce', exact: true })).toHaveCount(0);
+
+    expect(engine('InnoDB')).toBe('InnoDB');
+    expect(foreignKeys()).toBe(keysBefore);
+    await dashboard.getByRole('button', { name: 'Try setup again', exact: true }).click();
+    await expect(page.locator('[data-metric=net]')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-ecommerce]')).not.toContainText('Setup did not finish');
+  } finally {
+    engine('InnoDB');
+    runWordPressFixture("<?php update_option('slimstat_ecommerce_state', get_option('slimstat_ec_myisam_test_backup', []), false); delete_option('slimstat_ec_myisam_test_backup');");
+  }
+});
+
+// B1 follow-up (CodeRabbit, PR #349): a failed rebuild leaves the store ready, so its reason was
+// never read and the page blamed an order import instead.
+test('Ecommerce rebuild that cannot start says why on a ready store @woocommerce', async ({ page }) => {
+  test.setTimeout(90_000);
+  runWordPressFixture("<?php update_option('slimstat_ec_rebuild_test_backup', get_option('slimstat_ecommerce_state', []), false); delete_option('slimstat_ecommerce_state');");
+  try {
+    await page.goto('/wp-admin/admin.php?page=slimview7');
+    await page.getByRole('button', { name: 'Set up Ecommerce', exact: true }).click();
+    await expect(page.locator('[data-metric=net]')).toBeVisible({ timeout: 30_000 });
+
+    // Another import holds the claim, so setup() refuses before touching the projection.
+    runWordPressFixture("<?php update_option('slimstat_ec_import', (string) (time() + 300), false);");
+    await page.locator('#ss-ec-definitions > summary').click();
+    await page.getByRole('button', { name: 'Rebuild reports', exact: true }).click();
+    const alert = page.locator('[data-ecommerce]').getByRole('alert');
+    await expect(alert).toContainText('This report needs attention', { timeout: 30_000 });
+    await expect(alert).toContainText('already running');
+
+    runWordPressFixture("<?php delete_option('slimstat_ec_import');");
+    await alert.getByRole('button', { name: 'Rebuild reports', exact: true }).click();
+    await expect(page.locator('[data-metric=net]')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-ecommerce]')).not.toContainText('already running');
+  } finally {
+    runWordPressFixture("<?php delete_option('slimstat_ec_import'); update_option('slimstat_ecommerce_state', get_option('slimstat_ec_rebuild_test_backup', []), false); delete_option('slimstat_ec_rebuild_test_backup');");
+  }
+});
+
 test('Ecommerce uses the native date control and preserves filters through keyboard presets @woocommerce', async ({ page }, testInfo) => {
   const style = async () => page.locator('.slimstat-date-range-btn').evaluate(el => {
     const s = getComputedStyle(el); return {background:s.backgroundColor,color:s.color,font:s.fontSize,radius:s.borderRadius,height:el.getBoundingClientRect().height};

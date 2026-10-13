@@ -447,6 +447,23 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         );
     }
 
+    public function testEnsureDefersMigrationOwnedIndexes(): void
+    {
+        // B2 (release review 2026-10-13): these three are prefix indexes over the whole fact
+        // table, and ensure() runs on admin_init right after the update. Built there, the
+        // first admin page after updating sits through them; the Migration page owns them.
+        [$tables, $indexes] = $this->healthy();
+        $deferred = ['idx_goal_queries', 'idx_funnel_queries'];
+        $indexes['wp_slim_stats']  = array_values(array_diff($indexes['wp_slim_stats'], $deferred));
+        $indexes['wp_slim_events'] = array_values(array_diff($indexes['wp_slim_events'], ['idx_events_notes_dt']));
+
+        $report = Schema::ensure($this->db($tables, $indexes), 'wp_', static fn() => 'utf8mb4_unicode_ci');
+
+        $this->assertSame([], $this->queries, 'ensure() must leave migration-owned indexes to the Migration page');
+        $this->assertSame([...$deferred, 'idx_events_notes_dt'], $report['indexes_deferred_to_migration']);
+        $this->assertSame([], $report['failed']);
+    }
+
     public function testColumnStateReportsAHealthyTableAsFullyPresent(): void
     {
         [$tables, $indexes] = $this->healthy();

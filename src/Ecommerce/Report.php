@@ -366,7 +366,10 @@ final class Report
 		$error = '';
 		$state = get_option(Integration::STATE, []);
 		$available = Integration::available();
-		if ($available && Integration::ready()) {
+		// Why the last setup attempt stopped; cleared when setup succeeds. A failed rebuild leaves
+		// the store ready, so the reason is checked here too or the page blames an order import.
+		$setup_error = (string) ($state['error_message'] ?? '');
+		if ($available && Integration::ready() && '' === $setup_error) {
 			try {
 				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only aggregation selector; canView gates the report and the AJAX route checks its nonce.
 				$interval = isset($_POST['ecommerce_interval']) && is_string($_POST['ecommerce_interval']) ? sanitize_key(wp_unslash($_POST['ecommerce_interval'])) : 'auto';
@@ -374,6 +377,8 @@ final class Report
 			} catch (\Throwable $exception) {
 				$error = $exception instanceof \RuntimeException ? $exception->getMessage() : __('Ecommerce data could not be loaded. Check reporting setup and the database connection, then retry.', 'wp-slimstat');
 			}
+		} elseif ($available) {
+			$error = $setup_error;
 		}
 		include dirname(__DIR__, 2) . '/admin/view/partials/ecommerce.php';
 		if (wp_doing_ajax()) {

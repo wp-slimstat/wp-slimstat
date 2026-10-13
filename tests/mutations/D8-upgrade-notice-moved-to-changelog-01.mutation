@@ -13,7 +13,7 @@ rationale: Deletes the Upgrade Notice entry and makes the changelog heading `= 6
 +== Changelog ==
 +
  = 6.0.0 =
--Back up your database first. This update only ADDS columns and never removes a row; older versions keep working on the updated tables, but the added columns stay. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — see the changelog.
+-Back up your database first. This update only ADDS columns and indexes, never removes a row; older versions keep working on the updated tables, but the added columns stay. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — see the changelog.
 -
 -
 -== Changelog ==

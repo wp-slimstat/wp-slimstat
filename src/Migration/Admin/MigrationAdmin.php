@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace SlimStat\Migration\Admin;
 
 use SlimStat\Migration\MigrationManager;
+use SlimStat\Migration\MigrationService;
+use SlimStat\Schema\Schema;
 use wp_slimstat_admin;
 
 class MigrationAdmin
@@ -219,6 +221,12 @@ class MigrationAdmin
 		// how a wrong one survives review.
 		$offered_migrations = $this->manager->getOfferedMigrations();
 		$has_required_migrations = !empty($required_migrations);
+		// MyISAM has no online index build: each step locks the table for writes while it runs.
+		// Required steps write to both tables tracking writes to (idx_events_notes_dt is on slim_events).
+		$db = MigrationService::analyticsConnection();
+		$analytics_myisam = $has_required_migrations && (bool) array_filter(['slim_stats', 'slim_events'], static function (string $table) use ($db): bool {
+			return 0 === strcasecmp(Schema::tableEngine($db, $GLOBALS['wpdb']->prefix . $table), 'MyISAM');
+		});
 
 		include plugin_dir_path(__FILE__) . '/../../view/migration-page.php';
 	}
@@ -230,7 +238,9 @@ class MigrationAdmin
 		}
 
 		$screen = get_current_screen();
-		if (!$screen || $screen->base !== 'dashboard' && !$this->isSlimStatPage($screen)) {
+		// Plugins and Updates too: that is where the update happens, so the admin learns there
+		// that reports are waiting on a database step.
+		if (!$screen || !in_array($screen->base, ['dashboard', 'plugins', 'update-core'], true) && !$this->isSlimStatPage($screen)) {
 			return;
 		}
 

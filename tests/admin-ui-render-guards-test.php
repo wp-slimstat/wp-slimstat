@@ -145,6 +145,23 @@ preg_match('/<\?php if \(current_user_can\(\'manage_options\'\)\) : \?>(.*?)<\?p
 check(2 === substr_count($proAdds, '<a ') && 2 === substr_count($proAddsLinks[1] ?? '', '<a '), 'Pro adds: both buttons render only for manage_options; the sentence stays for everyone');
 $ecommerce = read_or_die('admin/view/partials/ecommerce.php');
 check(false !== strpos($ecommerce, "<?php if (current_user_can('manage_options')) : ?><a class=\"button button-primary\" href=\"<?php echo esc_url(admin_url('admin.php?page=slimpro#ss-pro-converts')); ?>\">"), 'Ecommerce: the discover button opens the converts section, for manage_options only');
+// B1 (release review 2026-10-13): the setup-failure reason renders before the setup CTA, or the
+// admin is sent back to the same button with no explanation, forever.
+$setupError = strpos($ecommerce, 'elseif (!Integration::ready() && \'\' !== $error)');
+$setupCta = strpos($ecommerce, 'elseif (!Integration::ready()) :');
+check(false !== $setupError && false !== $setupCta && $setupError < $setupCta, 'Ecommerce: a failed setup shows its reason before the "Set up Ecommerce" button');
+$integration = read_or_die('src/Ecommerce/Integration.php');
+preg_match('/function setup\(\): void(.*?)\n\t}\n/s', $integration, $setupBody);
+$engineCheck = strpos($setupBody[1] ?? '', 'self::requireInnoDb(');
+check(false !== $engineCheck && $engineCheck < (int) strpos($setupBody[1] ?? '', 'createTableSql('), 'Ecommerce: setup names a MyISAM analytics table before it creates the foreign-keyed table');
+// S3 (release review 2026-10-13): MyISAM has no online index build, so the Migration page says
+// tracking pauses while it runs, and only when the controller found a MyISAM table.
+$migrationPage = read_or_die('src/view/migration-page.php');
+check((bool) preg_match('/<\?php if \(\$analytics_myisam\) \{ echo \' \' \. esc_html__\(\'[^\']*MyISAM[^\']*tracking pauses/', $migrationPage), 'Migration page: the MyISAM sentence is drawn only under $analytics_myisam');
+$migrationAdmin = read_or_die('src/Migration/Admin/MigrationAdmin.php');
+check(false !== strpos($migrationAdmin, 'Schema::tableEngine('), 'Migration page: renderPage() reads the analytics table engine');
+// Required steps also build idx_events_notes_dt, which write-locks a MyISAM slim_events (CodeRabbit, PR #349).
+check((bool) preg_match("/\['slim_stats', 'slim_events'\]/", $migrationAdmin), 'Migration page: the MyISAM probe covers slim_stats and slim_events');
 check(false === strpos($ecommerce, 'wp-slimstat.com/pricing') && false === strpos(read_or_die('src/Reports/AcquisitionReport.php'), 'wp-slimstat.com/pricing'), 'Ecommerce and Channels: no pricing link for users who cannot buy');
 
 if ($failures > 0) {
