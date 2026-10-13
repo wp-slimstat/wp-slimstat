@@ -61,3 +61,9 @@ security.md
 
 # Developer report specification; available in the source repository.
 ACQUISITION-REPORTS.md
+
+# Source maps point at sources the package does not ship. Listed by path: the leak checks
+# (tests/dist-manifest-test.php, build-free.sh, /zip-wp-slimstat) read entries literally, not as globs.
+/admin/assets/css/admin.css.map
+/admin/assets/js/chartjs/chart.umd.js.map
+/wp-slimstat.min.js.map
