@@ -230,7 +230,9 @@ class MigrationAdmin
 		}
 
 		$screen = get_current_screen();
-		if (!$screen || $screen->base !== 'dashboard' && !$this->isSlimStatPage($screen)) {
+		// Plugins and Updates too: that is where the update happens, so the admin learns there
+		// that reports are waiting on a database step.
+		if (!$screen || !in_array($screen->base, ['dashboard', 'plugins', 'update-core'], true) && !$this->isSlimStatPage($screen)) {
 			return;
 		}
 
