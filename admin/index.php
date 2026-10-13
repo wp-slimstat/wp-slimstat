@@ -782,6 +782,14 @@ class wp_slimstat_admin
             $my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
         }
 
+        // Activation creates the tables before init() has stored any settings, so the next
+        // request would read "no settings, tables present" as an install that lost its settings
+        // and apply upgrade defaults: no DB-IP, heatmaps off with Pro, the 6.0 release notice.
+        // Store the new-install defaults while the database still shows a new site.
+        if (false === get_option('slimstat_options') && \SlimStat\Migration\MissingSettingsRecovery::isFresh($my_wpdb, $GLOBALS['wpdb']->prefix)) {
+            add_option('slimstat_options', wp_slimstat::get_fresh_defaults());
+        }
+
         // Create the tables and reconcile every index in the manifest. The five probe-and-create
         // blocks that used to live here were four of the six independent index creators C11
         // enumerated; they duplicated entries init_tables() already handled, each with its own

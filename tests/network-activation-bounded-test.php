@@ -165,6 +165,11 @@ class wp_slimstat_admin
     function get_option($name, $default = false)
     {
         $blog = $GLOBALS['__current_blog'] ?? 1;
+        // Every blog already has settings, so init_environment()'s fresh-install seeding (which
+        // needs a real wpdb; tests/fresh-activation-settings-test.php covers it) stays idle.
+        if ('slimstat_options' === $name && !isset($GLOBALS['__options'][$blog][$name])) {
+            return ['version' => '6.0.0'];
+        }
 
         return $GLOBALS['__options'][$blog][$name] ?? $default;
     }
