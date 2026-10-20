@@ -1970,14 +1970,16 @@ class wp_slimstat_admin
             }
         }
 
-        // Add the main menu
+        // Add the main menu, above Appearance (60) and its separator (59); without a
+        // position WordPress appends it below Settings. Core offsets a taken position.
         add_menu_page(
             __('SlimStat', 'wp-slimstat'),
             $menu_title,
             $minimum_capability,
             $parent,
             [self::class, 'wp_slimstat_include_view'],
-            'dashicons-chart-area'
+            'dashicons-chart-area',
+            58
         );
 
         $pro_installed = wp_slimstat::pro_is_installed();

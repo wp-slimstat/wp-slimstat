@@ -119,6 +119,9 @@ check(false === strpos($admincss, '.wrap-slimstat .form-table tr td input{') && 
 
 // --- 6.0 release notice (tests/Integration/ReleaseNoticeTest.php covers the rendering) ---
 $admin = read_or_die('admin/index.php');
+// Menu position: with no $position, add_menu_page() appends SlimStat below Settings. 58 sits
+// after Comments (25), before the separator (59) and Appearance (60).
+check((bool) preg_match("/add_menu_page\([^;]*'dashicons-chart-area',\s*58\s*\);/", $admin), 'Menu: SlimStat sits above Appearance (position 58)');
 check(false !== strpos(read_or_die('wp-slimstat.php'), "\$defaults['notice_latest_news'] = 'no';"), 'Release notice: new installs never see it (get_fresh_defaults sets no)');
 check(false !== strpos(read_or_die('uninstall.php'), "delete_option('slimstat_release_notice_since')"), 'Release notice: uninstall deletes its anchor');
 check((bool) preg_match("/if \(version_compare\([^;]*'6\.0\.0', '<'\)\) \{\s*wp_slimstat::\\\$settings\['notice_latest_news'\] = 'on';/", $admin), 'Release notice: only an upgrade from 5.x turns it on, so a 6.0.x update does not undo a dismissal');
