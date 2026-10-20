@@ -574,6 +574,18 @@ class wp_slimstat_admin
         // style must load on every admin page (not just SlimStat screens). Tiny,
         // so always emit it. Both pills share one shape. (#20)
         echo '<style> #adminmenu .slimstat-menu-label{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:13px}#adminmenu .wp-not-current-submenu .wp-submenu:has(.slimstat-menu-label),.folded #adminmenu .wp-submenu:has(.slimstat-menu-label){min-width:180px;width:max-content;max-width:calc(100vw - 48px)}#adminmenu a[href*="page=slimpro"]{color:#f78a9a;font-weight:600}#adminmenu .slimstat-menu-new-badge, #adminmenu .slimstat-menu-pro-badge {display:inline-block;flex:none;margin-inline-start:0;border-radius:9px;font-size:9px;font-weight:600;vertical-align:middle;} #adminmenu .slimstat-menu-new-badge {padding:0 6px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;line-height:16px;text-transform:uppercase;letter-spacing:.03em;} #adminmenu .slimstat-menu-pro-badge {padding:0 5px;border:1px solid currentColor;line-height:14px;opacity:.85;} </style>';
+
+        // Dashboard only, once per load: the three data points of the chart-area glyph turn
+        // SlimStat red left to right, then fade back; the rest of the icon keeps the scheme's
+        // color. A red ::after masked to the glyph's rings; position:relative loses to core's
+        // folded/auto-fold absolute. Nothing for reduced motion or the mobile menu (it would
+        // replay on every open); @supports stops a maskless browser painting a red square.
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        if ($screen && 'dashboard' === $screen->id) {
+            $icon  = '#toplevel_page_' . sanitize_html_class(self::$main_menu_slug) . ' div.wp-menu-image';
+            $rings = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 20 20\' fill=\'none\' stroke=\'%23000\' stroke-width=\'1.2\'%3E%3Ccircle cx=\'5\' cy=\'11\' r=\'1.5\'/%3E%3Ccircle cx=\'10.85\' cy=\'14\' r=\'1.5\'/%3E%3Ccircle cx=\'17\' cy=\'4\' r=\'1.5\'/%3E%3C/svg%3E") center/100% no-repeat';
+            echo '<style>@keyframes slimstat-menu-plot{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:cubic-bezier(.25,1,.5,1)}33%,55%{clip-path:inset(0);opacity:1;animation-timing-function:ease-in-out}100%{clip-path:inset(0);opacity:0}}@media (prefers-reduced-motion:no-preference) and (min-width:783px){@supports (clip-path:inset(0)) and ((mask-size:100%) or (-webkit-mask-size:100%)){' . $icon . '{position:relative}' . $icon . '::after{content:"";position:absolute;top:7px;left:0;right:0;width:20px;height:20px;margin:0 auto;background:#e8294c;-webkit-mask:' . $rings . ';mask:' . $rings . ';opacity:0;pointer-events:none;animation:slimstat-menu-plot 1.8s .6s both}}}</style>';
+        }
     }
 
     /**
