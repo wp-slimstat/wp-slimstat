@@ -1970,8 +1970,10 @@ class wp_slimstat_admin
             }
         }
 
-        // Add the main menu, above Appearance (60) and its separator (59); without a
-        // position WordPress appends it below Settings. Core offsets a taken position.
+        // Add the main menu just above Appearance (60); without a position WordPress appends it below
+        // Settings. 59 is the separator's slot, so core always moves SlimStat to a free 59.xxxxx (at most
+        // +0.99999 before WP 6.0, +0.65535 since) and never overwrites another menu. Not a float: WP < 6.0
+        // truncates a free float key to an int, so 59.5 would replace the separator.
         add_menu_page(
             __('SlimStat', 'wp-slimstat'),
             $menu_title,
@@ -1979,7 +1981,7 @@ class wp_slimstat_admin
             $parent,
             [self::class, 'wp_slimstat_include_view'],
             'dashicons-chart-area',
-            58
+            59
         );
 
         $pro_installed = wp_slimstat::pro_is_installed();
