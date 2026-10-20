@@ -13,7 +13,7 @@
 .ss-hm-card code { display: block; margin-top: 6px; white-space: pre-wrap; }
 
 .ss-hm-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-block: 0 12px; font-size: 13px; }
-.ss-hm-toolbar :is(select,input) { min-height: 32px; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-xs); background: var(--ss-surface); font-size: 13px; }
+.ss-hm-toolbar :is(select,input) { min-height: 32px; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-xs); background-color: var(--ss-surface); font-size: 13px; }
 .ss-hm-search input { min-width: 240px; }
 /* The global date picker sits in the toolbar here, not pinned to the report header. */
 .ss-hm-toolbar #slimstat-date-filters { position: static; margin: 0; border: 0; }
