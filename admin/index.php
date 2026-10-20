@@ -2562,7 +2562,9 @@ class wp_slimstat_admin
             $links['slimshortcodes'] = __('Shortcodes', 'wp-slimstat');
         }
         self::enqueue_promotions();
-        echo '<aside id="slimstat-notice-latest-news" class="slimstat-release-bar" aria-label="' . esc_attr__('New in SlimStat 6', 'wp-slimstat') . '" data-dismiss-nonce="' . esc_attr(wp_create_nonce('meta-box-order')) . '" data-ajax-url="' . esc_url(admin_url('admin-ajax.php')) . '"><strong>' . esc_html__('New in SlimStat 6', 'wp-slimstat') . '</strong><nav aria-label="' . esc_attr__('Explore features', 'wp-slimstat') . '">';
+        // On core screens a div.notice lets common.js move it below the page title, clear of Screen Options.
+        $tag = 'notice' === $placement ? 'div' : 'aside';
+        echo '<' . $tag . ' id="slimstat-notice-latest-news" class="' . ('div' === $tag ? 'notice ' : '') . 'slimstat-release-bar"' . ('div' === $tag ? ' role="region"' : '') . ' aria-label="' . esc_attr__('New in SlimStat 6', 'wp-slimstat') . '" data-dismiss-nonce="' . esc_attr(wp_create_nonce('meta-box-order')) . '" data-ajax-url="' . esc_url(admin_url('admin-ajax.php')) . '"><strong>' . esc_html__('New in SlimStat 6', 'wp-slimstat') . '</strong><nav aria-label="' . esc_attr__('Explore features', 'wp-slimstat') . '">';
         foreach ($links as $page => $label) {
             echo '<a href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($label) . '</a>';
         }
@@ -2570,7 +2572,7 @@ class wp_slimstat_admin
         if (!$is_pro && current_user_can('manage_options')) {
             echo '<a class="slimstat-release-bar__pro" href="' . esc_url(\SlimStat\Utils\ProLinks::url('notice' === $placement ? 'whats-new' : 'banner', 'notice' === $placement ? 'notice' : 'header-strip', true)) . '">' . esc_html__('Explore Pro', 'wp-slimstat') . '</a>';
         }
-        echo '<button type="button" class="slimstat-release-dismiss" aria-label="' . esc_attr__('Dismiss SlimStat 6 announcement', 'wp-slimstat') . '">×</button><span role="status" class="screen-reader-text"></span></aside>';
+        echo '<button type="button" class="slimstat-release-dismiss" aria-label="' . esc_attr__('Dismiss SlimStat 6 announcement', 'wp-slimstat') . '">×</button><span role="status" class="screen-reader-text"></span></' . $tag . '>';
     }
 
     /**

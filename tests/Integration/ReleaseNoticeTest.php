@@ -43,7 +43,12 @@ class ReleaseNoticeTest extends IntegrationTestCase
     {
         $html = $this->render();
         foreach (['slimview5', 'slimview7', 'slimheatmap', 'slimshortcodes', 'page=slimpro', 'utm_campaign=whats-new', 'utm_content=notice', 'aria-label="Dismiss SlimStat 6 announcement"', 'data-dismiss-nonce="n0nce"', 'role="status"'] as $value) { $this->assertStringContainsString($value, $html); }
-        $this->assertSame(1, substr_count($html, '<aside'));
+        // Core screens: a div.notice that common.js moves below the title, clear of Screen Options.
+        $this->assertSame(1, substr_count($html, '<div id="slimstat-notice-latest-news" class="notice slimstat-release-bar" role="region"'));
+        $this->assertStringNotContainsString('<aside', $html);
+        $bar = $this->render(false, false, true, 'bar');
+        $this->assertSame(1, substr_count($bar, '<aside id="slimstat-notice-latest-news" class="slimstat-release-bar"'));
+        $this->assertStringEndsWith('</aside>', $bar);
         $this->assertSame(5, substr_count($html, '<a '));
         $this->assertContains('slimstat-promotions', $this->scripts);
         $this->assertStringNotContainsString('wp-slimstat.com/pricing', $html, 'the release bar is a secondary internal action');

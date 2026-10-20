@@ -560,4 +560,4 @@ html.ss-report-dialog-open { overflow: hidden; }
 .wrap-slimstat .ss-report-dialog p { max-width: 70ch; margin-block: 16px; }
 .wrap-slimstat .ss-report-dialog h2 { margin-block: 0 16px; }
 
-.slimstat-acquisition__locked .slimstat-pro-adds{text-align:center}.slimstat-acquisition__locked .slimstat-locked-rows{width:100%}
+.slimstat-acquisition__locked .slimstat-pro-adds{text-align:center;justify-content:center}.slimstat-acquisition__locked .slimstat-locked-rows{width:100%}

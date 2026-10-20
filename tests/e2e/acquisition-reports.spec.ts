@@ -231,7 +231,7 @@ test.describe('UTM and channel reports', () => {
       await expect(utm.locator('.slimstat-acquisition__group')).toHaveCount(1);
       await expect(utm.locator('.slimstat-acquisition__groups')).toContainText('Search');
     } else {
-      await expect(utm.locator('.slimstat-acquisition__locked')).toContainText('Unlock all results');
+      await expect(utm.locator('.slimstat-acquisition__locked')).toContainText(/See .*campaign.* with Pro\./);
       await expect(utm.locator('.slimstat-acquisition__locked')).not.toContainText('Search');
     }
     const help = utm.getByRole('button', { name: 'What are campaigns? How do they work?', exact: true });
@@ -422,7 +422,7 @@ test.describe('UTM and channel reports', () => {
       await expect(utm.getByRole('link', { name: 'View sales in Ecommerce' })).toHaveCount(0);
       // Without Pro the author still learns which channels are hidden, but gets no purchase link.
       const locked = authorPage.locator('#slim_p3_03 .slimstat-acquisition__locked');
-      await expect(locked).toContainText('Unlock all results');
+      await expect(locked).toContainText(/See .*channel.* with Pro\./);
       await expect(locked).not.toContainText('AI Assistants');
       await expect(locked.locator('a')).toHaveCount(0);
     } finally { await author.close(); await restoreOption('active_plugins'); }

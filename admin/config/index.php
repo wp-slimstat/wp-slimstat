@@ -1090,8 +1090,15 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
         <?php if (!wp_slimstat::pro_is_installed() && current_user_can('manage_options') && in_array($current_tab, [7, 8], true)) : ?>
             <section class="slimstat-settings-preview">
                 <h2><?php echo esc_html(8 === $current_tab ? __('License', 'wp-slimstat') : __('Pro settings', 'wp-slimstat')); ?></h2>
-                <p><?php esc_html_e('Pro adds scheduled email reports, exports, detailed heatmaps and advanced reporting settings. Install and activate the Pro plugin to configure these features. A license enables Pro updates and support; activating the plugin and activating a license are separate steps.', 'wp-slimstat'); ?></p>
-                <?php wp_slimstat_admin::get_template('pro-adds', ['text' => __('Your current Free settings stay unchanged.', 'wp-slimstat'), 'campaign' => 'settings', 'content' => 8 === $current_tab ? 'license-tab' : 'pro-tab']); ?>
+                <p><?php echo esc_html(8 === $current_tab
+                    ? __('Install and activate the Pro plugin, then enter your license key here. Activating the plugin and activating a license are separate steps. Your current Free settings stay unchanged.', 'wp-slimstat')
+                    : __('Install and activate the Pro plugin to configure these settings. Your current Free settings stay unchanged.', 'wp-slimstat')); ?></p>
+                <?php wp_slimstat_admin::get_template('pro-adds', [
+                    'text' => 8 === $current_tab
+                        ? __('A Pro license gives you plugin updates and support.', 'wp-slimstat')
+                        : __('With Pro, choose which pages heatmaps track and how often, use an internal IP location lookup and keep stats in an external database.', 'wp-slimstat'),
+                    'campaign' => 'settings', 'content' => 8 === $current_tab ? 'license-tab' : 'pro-tab',
+                ]); ?>
             </section>
         <?php elseif (!empty($settings[$current_tab]['rows'])) : ?>
 

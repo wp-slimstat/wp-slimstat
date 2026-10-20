@@ -165,17 +165,29 @@ class AcquisitionReport
     }
 
     /** Illustrative rows never include protected labels or values. */
-    private static function locked(string $mode, bool $more): void
+    private static function locked(string $mode, int $hidden, bool $capped = false): void
     {
+        $utm = 'utm' === $mode;
+        if ($capped) {
+            $text = $utm ? __('See every campaign and its source breakdown with Pro.', 'wp-slimstat') : __('See every channel and its source breakdown with Pro.', 'wp-slimstat');
+        } elseif ($hidden > 0) {
+            $text = sprintf($utm
+                /* translators: %s: number of campaigns hidden in Free. */
+                ? _n('See %s more campaign and every source breakdown with Pro.', 'See %s more campaigns and every source breakdown with Pro.', $hidden, 'wp-slimstat')
+                /* translators: %s: number of channels hidden in Free. */
+                : _n('See %s more channel and every source breakdown with Pro.', 'See %s more channels and every source breakdown with Pro.', $hidden, 'wp-slimstat'), number_format_i18n($hidden));
+        } else {
+            $text = $utm ? __('See the sources behind each campaign with Pro.', 'wp-slimstat') : __('See the sources behind each channel with Pro.', 'wp-slimstat');
+        }
         echo '<div class="slimstat-acquisition__locked">';
-        if ($more) {
+        if ($hidden > 0) {
             echo '<div class="slimstat-locked-rows" aria-hidden="true"><span></span><span></span></div>';
             echo '<p class="slimstat-preview-caption">' . esc_html__('Illustrative preview of additional results.', 'wp-slimstat') . '</p>';
         }
         \wp_slimstat_admin::get_template('pro-adds', [
-            'text' => __('Unlock all results and source breakdowns with Pro.', 'wp-slimstat'),
+            'text' => $text,
             'action' => __('Upgrade to see more', 'wp-slimstat'),
-            'campaign' => 'traffic-sources', 'content' => 'utm' === $mode ? 'campaigns' : 'channels',
+            'campaign' => 'traffic-sources', 'content' => $utm ? 'campaigns' : 'channels',
         ]);
         echo '</div>';
     }
@@ -340,7 +352,7 @@ class AcquisitionReport
                 echo '</div></details>';
             }
             if (!\wp_slimstat::pro_is_installed() && is_admin()) {
-                self::locked($mode, count($all) > self::FREE_GROUPS);
+                self::locked($mode, max(0, count($all) - self::FREE_GROUPS), $capped);
             }
             echo '</div>';
             // Without Pro there is nothing to page to: the locked row stands in for the rest.

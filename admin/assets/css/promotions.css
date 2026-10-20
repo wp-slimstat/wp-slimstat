@@ -1,20 +1,24 @@
-.slimstat-release-bar{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:8px 18px;margin:12px 0;padding:12px 44px 12px 16px;border:1px solid #edc7ce;border-radius:6px;background:#fff5f7;color:#29242a;font-size:13px;line-height:1.5}
+.slimstat-release-bar{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:8px 18px;margin:12px 0;padding:12px 44px 12px 16px;border:1px solid #c5d9ed;border-inline-start:4px solid #2271b1;border-radius:4px;background:#f0f6fc;color:#1d2327;box-shadow:none;font-size:13px;line-height:1.5}
 .slimstat-release-bar nav{display:flex;flex-wrap:wrap;gap:8px 16px;flex:1}
-.slimstat-release-bar a{color:#983047;text-decoration:underline;text-underline-offset:3px}
-.slimstat-release-dismiss{position:absolute;inset-inline-end:4px;top:4px;width:36px;height:36px;border:0;background:transparent;color:#5c4349;font-size:24px;cursor:pointer}
+.slimstat-release-bar a{color:#2271b1;text-decoration:underline;text-underline-offset:3px}.slimstat-release-bar a:hover{color:#135e96}.slimstat-release-bar__pro{font-weight:600}
+.slimstat-release-dismiss{position:absolute;inset-inline-end:4px;top:4px;width:36px;height:36px;border:0;background:transparent;color:#50575e;font-size:24px;cursor:pointer}
 .slimstat-release-bar a:focus-visible,.slimstat-release-dismiss:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 .slimstat-pro-adds .slimstat-upgrade-action,.wrap-slimstat .slimstat-upgrade-action{background:#bc2442;border-color:#bc2442;color:#fff7f9;white-space:normal;text-align:center}
 .slimstat-pro-adds .slimstat-upgrade-action:hover,.wrap-slimstat .slimstat-upgrade-action:hover{background:#98203a;border-color:#98203a;color:#fff7f9}
 .slimstat-preview{position:relative;overflow:hidden;width:100%;box-sizing:border-box;min-height:140px}
 .slimstat-preview__chart{display:flex;align-items:end;gap:8px;height:170px;padding:16px;filter:blur(5px);opacity:.45;pointer-events:none;user-select:none}
-.slimstat-preview__chart span{flex:1;background:#bc2442;border-radius:3px 3px 0 0;height:40%}
+.slimstat-preview__chart span{flex:1;background:#72aee6;border-radius:3px 3px 0 0;height:40%}
 .slimstat-preview__chart span:nth-child(3n){height:80%}.slimstat-preview__chart span:nth-child(3n + 1){height:55%}
-.slimstat-preview>.slimstat-pro-adds{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:8px;background:rgb(255 247 249 / 70%);text-align:center}
-.slimstat-preview>.slimstat-pro-adds p{flex-basis:100%;margin:0 12px 8px}
+.slimstat-preview>.slimstat-pro-adds{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:8px;background:rgb(255 255 255 / 72%);text-align:center}
+.slimstat-preview>.slimstat-pro-adds p{flex-basis:100%;max-width:none;margin:0 12px 8px}
+/* Report boxes break-all their paragraphs (admin.css); upsell copy must wrap at word boundaries. */
+[id^="slim_"] .slimstat-pro-adds p,[id^="slim_"] .slimstat-preview-caption{word-break:normal}
 .slimstat-locked-rows{display:grid;gap:14px;margin:16px 0;filter:blur(4px);opacity:.5;pointer-events:none;user-select:none}
-.slimstat-locked-rows span{display:block;height:18px;border-radius:3px;background:linear-gradient(90deg,#b9b3b7 0 38%,transparent 38% 52%,#d1a5b0 52% 72%,transparent 72% 80%,#b9b3b7 80%)}
+.slimstat-locked-rows span{display:block;height:18px;border-radius:3px;background:linear-gradient(90deg,#c3c4c7 0 38%,transparent 38% 52%,#9ec2e6 52% 72%,transparent 72% 80%,#c3c4c7 80%)}
 .slimstat-preview-caption{font-size:12px;color:#675961;text-align:center}
-@media(max-width:600px){.slimstat-release-bar{align-items:start}.slimstat-release-bar nav{flex-basis:100%}.slimstat-preview__chart{height:190px}}
+@media(max-width:600px){.slimstat-release-bar{align-items:start}.slimstat-release-bar nav{flex-basis:100%}.slimstat-preview__chart{height:190px}
+/* The fixed-height Real-time row would clip the locked overlay; let it grow instead. */
+.wrap-slimstat .live-analytics-container:has(.live-analytics-chart--locked),.wrap-slimstat .live-analytics-grid:has(.live-analytics-chart--locked),.wrap-slimstat .live-analytics-chart--locked{height:auto}}
 /* Reserve enough sidebar space for translated labels and enlarged text. */
 @media (min-width: 961px) {
     body.slimstat-menu-fit:not(.folded) #adminmenu, body.slimstat-menu-fit:not(.folded) #adminmenuwrap, body.slimstat-menu-fit:not(.folded) #adminmenuback { width: var(--slimstat-menu-width, 160px); }

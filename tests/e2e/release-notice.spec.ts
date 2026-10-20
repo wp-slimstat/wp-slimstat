@@ -79,6 +79,21 @@ test.describe('6.0 release notice', () => {
     await expect(notice(page)).toHaveCount(0);
   });
 
+  test('core-screen bar sits below the page title, clear of Screen Options and Help', async ({ page }) => {
+    await simulateUpdate(page);
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const url of PAGES.slice(0,2)) {
+        await page.goto(url);
+        const bar = (await notice(page).boundingBox())!;
+        const title = (await page.locator('.wrap h1').first().boundingBox())!;
+        expect(bar.y, `${url} @${width}`).toBeGreaterThanOrEqual(title.y + title.height);
+        const meta = await page.locator('#screen-meta-links').boundingBox();
+        if (meta) expect(bar.y >= meta.y + meta.height || bar.x + bar.width <= meta.x, `${url} @${width} overlaps Screen Options`).toBe(true);
+      }
+    }
+  });
+
   for (const at of PAGES.slice(0,3)) {
     test(`keyboard dismissal at ${at} is one request and persists across placements`, async ({ page }) => {
       await simulateUpdate(page);
