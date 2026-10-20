@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions, closeDb } from './helpers/setup';
+import { snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions, closeDb, getPool, snapshotOption, restoreOption } from './helpers/setup';
 import { getProState } from './helpers/pro-state';
+import { ADMIN_USER } from './helpers/env';
 
 test('promotion impressions are visible, session-deduplicated and local; clicks retain their origin', async ({ page }) => {
   const full = (await getProState(page)).pro_activated;
@@ -100,5 +101,31 @@ test('post and page heatmap shortcuts respect publication state and disabled col
   } finally {
     runWordPressFixture(`<?php foreach (${JSON.stringify(ids)} as $id) wp_delete_post($id,true);`);
     await restoreSlimstatOptions(); await closeDb();
+  }
+});
+
+test('the Free Dashboard preview preserves saved Access Log data and the widget preference', async ({ page }) => {
+  const { runWordPressFixture } = await import('./helpers/chart');
+  const pool=getPool();
+  await snapshotSlimstatOptions(); await snapshotOption('active_plugins');
+  const [users]=await pool.execute('SELECT ID FROM wp_users WHERE user_login=?',[ADMIN_USER]) as any;
+  const user=Number(users[0].ID), pattern='%meta-box-order_%slimlayout%';
+  const [saved]=await pool.execute('SELECT meta_key,meta_value FROM wp_usermeta WHERE user_id=? AND meta_key LIKE ?',[user,pattern]) as any;
+  const resource='/october-dashboard-access-log';
+  try {
+    await pool.execute('DELETE FROM wp_usermeta WHERE user_id=? AND meta_key LIKE ?',[user,pattern]);
+    runWordPressFixture(`<?php deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php',true); update_user_option(${user},'meta-box-order_slimstat_page_slimlayout',['dashboard'=>'slim_p7_02'],true);`);
+    await setSlimstatOptions({add_dashboard_widgets:'on',notice_latest_news:'no'});
+    await pool.execute('INSERT INTO wp_slim_stats (dt,resource,ip,browser,platform) VALUES (?,?,?, ?,?)',[Math.floor(Date.now()/1000)-60,resource,'127.0.0.1','Firefox','linux']);
+    await page.goto('/wp-admin/index.php');
+    await expect(page.locator('#slim_p7_02 a[href*="october-dashboard-access-log"]').first()).toBeAttached();
+    await expect(page.locator('#slim_p7_02 .slimstat-preview')).toBeAttached();
+    await setSlimstatOptions({add_dashboard_widgets:'no'}); await page.reload();
+    await expect(page.locator('#slim_p7_02')).toHaveCount(0);
+  } finally {
+    await pool.execute('DELETE FROM wp_slim_stats WHERE resource=?',[resource]);
+    await pool.execute('DELETE FROM wp_usermeta WHERE user_id=? AND meta_key LIKE ?',[user,pattern]);
+    for(const row of saved) await pool.execute('INSERT INTO wp_usermeta (user_id,meta_key,meta_value) VALUES (?,?,?)',[user,row.meta_key,row.meta_value]);
+    await restoreOption('active_plugins'); await restoreSlimstatOptions(); await closeDb();
   }
 });

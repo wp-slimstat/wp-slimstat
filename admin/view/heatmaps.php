@@ -140,7 +140,7 @@ if ('' !== $error) {
                     <tr>
                         <?php foreach ($columns as $key => [$label, $help]) : ?>
                             <th scope="col" data-sort="<?php echo esc_attr($key); ?>" <?php echo 'clicks' === $key ? 'aria-sort="descending"' : ''; ?>>
-                                <button type="button" title="<?php echo esc_attr($help); ?>"><?php echo esc_html($label); ?></button>
+                                <button type="button" title="<?php echo esc_attr($help); ?>" <?php disabled(!$is_pro && in_array($key, ['devices', 'scroll', 'dead'], true)); ?>><?php echo esc_html($label); ?></button>
                             </th>
                         <?php endforeach; ?>
                         <th scope="col"><span class="screen-reader-text"><?php esc_html_e('Actions', 'wp-slimstat'); ?></span></th>

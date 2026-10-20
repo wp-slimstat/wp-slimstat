@@ -50,7 +50,7 @@ test.describe('Help panel', () => {
       await expect(panel.locator('a[href*="/pricing/"]')).toHaveCount(0);
     } else {
       await expect(panel).toContainText('SlimStat Pro adds:');
-      await expect(panel.getByRole('link', { name: 'Upgrade to Pro' })).toHaveAttribute('href', /\/pricing\/\?.*utm_medium=help/);
+      await expect(panel.getByRole('link', { name: 'Upgrade to Pro' })).toHaveAttribute('href', /\/pricing\/\?utm_source=wp-slimstat&utm_medium=link&utm_campaign=pro&utm_content=help-panel$/);
     }
   });
 });

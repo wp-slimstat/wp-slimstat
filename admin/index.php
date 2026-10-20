@@ -1563,8 +1563,9 @@ class wp_slimstat_admin
         }
     }
 
-    public static function dashboard_pro_preview(): void
+    public static function dashboard_pro_preview($post, $args): void
     {
+        wp_slimstat_reports::callback_wrapper($post, $args);
         // A hidden existing widget remains hidden, and an eligible release notice takes priority.
         if (self::release_notice_visible(false)) {
             echo '<p>' . esc_html__('Live charts are available with SlimStat Pro.', 'wp-slimstat') . '</p>';
@@ -2271,7 +2272,7 @@ class wp_slimstat_admin
         }
 
         // Add CTA node: Free, and only on SlimStat screens, which add this body-class filter on load (audit F7).
-        if (!$is_pro && false !== has_filter('admin_body_class', [self::class, 'add_admin_body_class'])) {
+        if (!$is_pro && current_user_can('manage_options') && false !== has_filter('admin_body_class', [self::class, 'add_admin_body_class'])) {
             $cta_html = '<div class="slimstat-adminbar__cta">'
                 . '<div class="slimstat-adminbar__cta-text">'
                 . esc_html__('Pro adds today\'s views, referrals and the live chart.', 'wp-slimstat')
@@ -4294,7 +4295,8 @@ class wp_slimstat_admin
         $screen = get_current_screen();
 
         $doc = static function (string $path, string $campaign, string $text): string {
-            $url = 'https://wp-slimstat.com/' . $path . '?utm_source=wp-slimstat&utm_medium=help&utm_campaign=' . $campaign;
+            $url = 'pricing/' === $path ? \SlimStat\Utils\ProLinks::url($campaign, 'help-panel')
+                : 'https://wp-slimstat.com/' . $path . '?utm_source=wp-slimstat&utm_medium=help&utm_campaign=' . $campaign;
             return '<a href="' . esc_url($url) . '" target="_blank" rel="noopener">' . esc_html($text) . '</a>';
         };
         $p    = static fn(string ...$lines): string => '<p>' . implode('</p><p>', $lines) . '</p>';
@@ -4397,7 +4399,7 @@ class wp_slimstat_admin
             esc_html__('Connects WooCommerce orders to your traffic: sales, orders, top products, and the channels and sites that brought buyers.', 'wp-slimstat'),
             esc_html__('Needs WooCommerce 8.3 or later on 64-bit PHP. Setup imports past orders in the background, and your orders are not changed.', 'wp-slimstat'),
             esc_html__('An order shows its source only when SlimStat tracked that visit, so consent choices and exclusions can leave some orders without one.', 'wp-slimstat'),
-            esc_html__('Pro adds revenue by campaign, landing page and device, guest orders, coupons, refunds, export to CSV and scheduled email reports.', 'wp-slimstat'),
+            esc_html__('Free includes Net sales and two channel, source and product rows. Pro adds Orders, Average order value, Purchase rate, full rankings, campaign and landing-page revenue, coupons, refunds, CSV export and scheduled email reports.', 'wp-slimstat'),
             $doc('resources/woocommerce-ecommerce-analytics/', 'ecommerce', __('Guide: WooCommerce analytics', 'wp-slimstat'))
         )];
 

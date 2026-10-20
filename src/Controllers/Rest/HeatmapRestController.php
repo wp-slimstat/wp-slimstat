@@ -95,10 +95,11 @@ class HeatmapRestController implements RestControllerInterface
         if (!$pro) {
             $q = (string) $request['q'];
             $matches = array_values(array_filter($matches, static function ($row) use ($q) { return '' === $q || false !== stripos($row['page'], $q); }));
-            $sort = (string) ($request['sort'] ?: 'clicks'); $dir = 1 === (int) $request['dir'] ? 1 : -1;
+            $sort = (string) ($request['sort'] ?: 'clicks');
+            if (!in_array($sort, ['page', 'clicks', 'pageviews', 'cpp', 'last'], true)) { $sort = 'clicks'; }
+            $dir = 1 === (int) $request['dir'] ? 1 : -1;
             $value = static function ($row) use ($sort) {
                 if ('cpp' === $sort) { return $row['pageviews'] ? $row['clicks'] / $row['pageviews'] : 0; }
-                if ('dead' === $sort) { return ($row['dead'] ?? 0) + ($row['rage'] ?? 0); }
                 return $row[$sort] ?? 0;
             };
             usort($matches, static function ($a, $b) use ($value, $dir) { return ($value($a) <=> $value($b)) * $dir ?: strcmp($a['page'], $b['page']); });

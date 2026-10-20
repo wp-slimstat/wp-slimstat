@@ -29,7 +29,11 @@ test('without Pro, report Export opens the Pro page in wp-admin', async ({ page 
 
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview6`);
     for (const id of ['#slim_p9_01', '#slim_p9_02']) {
-      await expect(page.locator(exportIn(id))).toHaveAttribute('href', /admin\.php\?page=slimpro#ss-pro-share$/);
+      const url = new URL((await page.locator(exportIn(id)).getAttribute('href'))!);
+      expect(url.searchParams.get('page')).toBe('slimpro');
+      expect(url.searchParams.get('utm_campaign')).toBe('export');
+      expect(url.searchParams.get('utm_content')).toBe(id.slice(1));
+      expect(url.hash).toBe('#ss-pro-share');
     }
 
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`);
@@ -40,7 +44,7 @@ test('without Pro, report Export opens the Pro page in wp-admin', async ({ page 
     const nav = page.waitForRequest((r) => r.isNavigationRequest() && /page=slimpro/.test(r.url()));
     await link.click();
     expect((await nav).method()).toBe('GET');
-    await expect(page).toHaveURL(/admin\.php\?page=slimpro#ss-pro-share$/);
+    await expect(page).toHaveURL(/admin\.php\?page=slimpro&utm_campaign=export&utm_content=slim_p1_08#ss-pro-share$/);
     expect(external).toEqual([]);
   } finally {
     await restoreOption('active_plugins');
@@ -59,8 +63,7 @@ test('without Pro, a user without manage_options sees no Export button', async (
     await authorPage.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`);
     await expect(authorPage.locator('#slim_p1_08')).toBeVisible();
     await expect(authorPage.locator('.button-export-to-xls')).toHaveCount(0);
-    // The header's "Upgrade to Pro" pill is shared chrome and stays; the reports carry none.
-    await expect(authorPage.locator('.postbox a[href*="wp-slimstat.com/pricing"]')).toHaveCount(0);
+    expect(await authorPage.locator('a[href*="wp-slimstat.com/pricing"]').evaluateAll(links => links.map(link => link.outerHTML))).toEqual([]);
   } finally {
     await author.close();
     await restoreSlimstatOptions();

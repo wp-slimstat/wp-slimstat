@@ -103,7 +103,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         // Funnels: locked preview, brand CTA, no Add button.
         await expect(page.locator('.slimstat-gf-funnels--locked')).toBeVisible();
-        const funnelCtas = page.locator('.slimstat-gf-funnels .slimstat-gf-cta');
+        const funnelCtas = page.locator('.slimstat-gf-funnels .slimstat-upgrade-action');
         await expect(funnelCtas).toHaveCount(1);
         await expect(funnelCtas.first()).toHaveText(/Upgrade to Pro/);
 

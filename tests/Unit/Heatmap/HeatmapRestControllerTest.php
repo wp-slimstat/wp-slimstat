@@ -64,12 +64,13 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 	{
 		$row = ['page' => '/about', 'clicks' => 8, 'desktop' => 3, 'tablet' => 1, 'mobile' => 4, 'dead' => 1, 'rage' => 1, 'scroll' => 62, 'last' => 1759449600, 'full' => true, 'pageviews' => 20, 'content_id' => 5];
 		$keys = [];
+		$rows = [$row];
 		$updated = time();
 		Functions\when('get_current_blog_id')->justReturn(1);
 		Functions\when('wp_json_encode')->alias('json_encode');
-		Functions\when('get_transient')->alias(static function ($key) use (&$keys, $row, $updated) {
+		Functions\when('get_transient')->alias(static function ($key) use (&$keys, &$rows, $updated) {
 			$keys[] = $key;
-			return ['signature' => ['', \wp_slimstat::$settings['auto_purge'] ?? 0, false], 'data' => ['rows' => [$row], 'updated' => $updated]];
+			return ['signature' => ['', \wp_slimstat::$settings['auto_purge'] ?? 0, false], 'data' => ['rows' => $rows, 'updated' => $updated]];
 		});
 		Functions\when('_prime_post_caches')->justReturn(null);
 		Functions\when('get_the_title')->justReturn('<em>About</em> us');
@@ -87,6 +88,13 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 		self::assertNull($free['rows'][0]['devices'], 'device data is absent from the Free response');
         foreach (['scroll', 'dead', 'rage'] as $metric) { self::assertNull($free['rows'][0][$metric], 'cached Pro metrics stay private'); }
 		self::assertTrue($free['ever'], 'rows in range: the site has clicks, no extra query (no wpdb here)');
+
+        $rows[] = array_merge($row, ['page' => '/locked-rank', 'clicks' => 1, 'scroll' => 99, 'dead' => 99]);
+        foreach (['scroll', 'dead', 'devices'] as $sort) {
+            $sorted = (new HeatmapRestController())->pages(new \WP_REST_Request(['to' => '2026-10-03', 'days' => 7, 'device' => '', 'refresh' => false, 'sort' => $sort]));
+            self::assertSame('/about', $sorted['rows'][0]['page'], 'Locked metrics cannot influence Free ordering');
+        }
+        $rows = [$row];
 
 		Functions\when('apply_filters')->alias(static fn($hook, $url, $page) => 'slimstat_heatmap_row_url' === $hook ? 'https://example.test/view?page=' . rawurlencode($page) : $url);
         \wp_slimstat::$pro = true;

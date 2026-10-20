@@ -19,9 +19,11 @@ test('Search Terms keeps a previous-only 468 / 24 period visible and tooltips de
     for (const granularity of ['daily','weekly']) {
       await select.selectOption(granularity);
       await expect.poll(() => page.locator('#slimstat_chart_data_slim_p1_19_01').getAttribute('data-granularity')).toBe(granularity);
+      await expect(page.locator('.postbox .loading')).toHaveCount(0);
       await canvas.scrollIntoViewIfNeeded();
       const evidence = await canvas.evaluate((element: HTMLCanvasElement) => {
         const chart = (window as any).Chart.getChart(element);
+        chart.stop(); chart.update('none');
         const previous = chart.data.datasets.find((d: any) => d.isPrevious && d.key==='v1');
         const datasetIndex = chart.data.datasets.indexOf(previous);
         const index = previous.data.findIndex((value: number) => value>0);
@@ -41,7 +43,8 @@ test('Search Terms keeps a previous-only 468 / 24 period visible and tooltips de
       await expect(termRow).toContainText(String(evidence.value));
       await expect(termRow).toContainText(/Apr|May|Jun/);
       const swatch = termRow.locator('.slimstat-postbox-chart--item--color').first();
-      expect(await swatch.evaluate(el => (el as HTMLElement).style.backgroundColor)).not.toBe('');
+      const expectedColor = await page.evaluate(color => { const el=document.createElement('span'); el.style.backgroundColor=color; return el.style.backgroundColor; },evidence.color);
+      expect(await swatch.evaluate(el => (el as HTMLElement).style.backgroundColor)).toBe(expectedColor);
     }
     const [reference] = await pool.execute('SELECT COUNT(*) AS total, COUNT(DISTINCT searchterms) AS distinct_terms FROM wp_slim_stats WHERE resource=?',[resource]) as any;
     expect(reference[0]).toEqual({total:468,distinct_terms:24});
