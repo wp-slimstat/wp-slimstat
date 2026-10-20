@@ -100,6 +100,7 @@ test('post and page heatmap shortcuts respect publication state and disabled col
       await page.goto(`/wp-admin/edit.php?post_type=${type}&s=October+heatmap+shortcut`);
       const link = page.locator(`#post-${ids[offset]}`).getByRole('link',{ name:'View heatmap',exact:true });
       await expect(link).toBeVisible();
+      expect((await link.boundingBox())!.height).toBeLessThan(30);
       await expect(link).toHaveAttribute('title', /Recorded activity is required/);
       await expect(link).toHaveAttribute('href', full ? /page=slimheatmap.*heatmap=/ : /page=slimpro.*utm_campaign=heatmaps.*utm_content=post-list#ss-pro-converts$/);
       for (const delta of [1,2]) await expect(page.locator(`#post-${ids[offset+delta]}`).getByRole('link',{ name:'View heatmap' })).toHaveCount(0);
