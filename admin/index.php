@@ -573,7 +573,7 @@ class wp_slimstat_admin
         // The sidebar "New" and "Pro" pills render in the global sidebar, so their
         // style must load on every admin page (not just SlimStat screens). Tiny,
         // so always emit it. Both pills share one shape. (#20)
-        echo '<style> #adminmenu .slimstat-menu-label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}#adminmenu .slimstat-menu-label{font-size:12px;gap:4px}#adminmenu .wp-not-current-submenu .wp-submenu:has(.slimstat-menu-label),.folded #adminmenu .wp-submenu:has(.slimstat-menu-label){min-width:180px;width:max-content;max-width:calc(100vw - 48px)}#adminmenu a[href*="page=slimpro"]{color:#f78a9a;font-weight:600}#adminmenu .slimstat-menu-new-badge, #adminmenu .slimstat-menu-pro-badge {display:inline-block;flex:none;margin-inline-start:0;border-radius:9px;font-size:9px;font-weight:600;vertical-align:middle;} #adminmenu .slimstat-menu-new-badge {padding:0 6px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;line-height:16px;text-transform:uppercase;letter-spacing:.03em;} #adminmenu .slimstat-menu-pro-badge {padding:0 5px;border:1px solid currentColor;line-height:14px;opacity:.85;} </style>';
+        echo '<style> #adminmenu .slimstat-menu-label{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:13px}#adminmenu .wp-not-current-submenu .wp-submenu:has(.slimstat-menu-label),.folded #adminmenu .wp-submenu:has(.slimstat-menu-label){min-width:180px;width:max-content;max-width:calc(100vw - 48px)}#adminmenu a[href*="page=slimpro"]{color:#f78a9a;font-weight:600}#adminmenu .slimstat-menu-new-badge, #adminmenu .slimstat-menu-pro-badge {display:inline-block;flex:none;margin-inline-start:0;border-radius:9px;font-size:9px;font-weight:600;vertical-align:middle;} #adminmenu .slimstat-menu-new-badge {padding:0 6px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;line-height:16px;text-transform:uppercase;letter-spacing:.03em;} #adminmenu .slimstat-menu-pro-badge {padding:0 5px;border:1px solid currentColor;line-height:14px;opacity:.85;} </style>';
     }
 
     /**
@@ -1566,7 +1566,7 @@ class wp_slimstat_admin
     public static function dashboard_pro_preview(): void
     {
         // A hidden existing widget remains hidden, and an eligible release notice takes priority.
-        if (self::release_notice_visible()) {
+        if (self::release_notice_visible(false)) {
             echo '<p>' . esc_html__('Live charts are available with SlimStat Pro.', 'wp-slimstat') . '</p>';
             return;
         }
@@ -2530,7 +2530,7 @@ class wp_slimstat_admin
     }
 
     /** One release window per user, shared by every placement and patch version. */
-    public static function release_notice_visible(): bool
+    public static function release_notice_visible(bool $start_window = true): bool
     {
         $user = get_current_user_id();
         if (!$user || 'on' !== (wp_slimstat::$settings['notice_latest_news'] ?? 'no')
@@ -2538,7 +2538,7 @@ class wp_slimstat_admin
             return false;
         }
         $since = (int) get_user_meta($user, 'slimstat_release_60_since', true);
-        if (!$since) {
+        if (!$since && $start_window) {
             add_user_meta($user, 'slimstat_release_60_since', time(), true);
             $since = (int) get_user_meta($user, 'slimstat_release_60_since', true);
         }

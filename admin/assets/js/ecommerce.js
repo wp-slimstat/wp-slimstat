@@ -260,7 +260,11 @@
     document.addEventListener('click', event => {
         const target = event.target.closest('button,a'); if (!target || !root()?.contains(target)) return;
         if (target.matches('[data-chart-metric]')) {
-            if (target.dataset.proLocked) { root().querySelector('#ss-ec-unlock').focus(); return; }
+            if (target.dataset.proLocked) {
+                const unlock = root().querySelector('#ss-ec-unlock');
+                (unlock.querySelector('a') || unlock).focus();
+                return;
+            }
             state.metric = target.dataset.chartMetric; draw();
         }
         if (target.matches('[role=tab]')) selectTab(target, false);

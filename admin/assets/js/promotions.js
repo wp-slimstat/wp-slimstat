@@ -2,6 +2,22 @@
 (function () {
     'use strict';
     var config = window.SlimStatPromotions || {};
+    // Keep translated labels and badges together without covering the report.
+    var menuLabels = document.querySelectorAll('#adminmenu .wp-has-current-submenu .slimstat-menu-label');
+    function fitMenu() {
+        var width = 160;
+        menuLabels.forEach(function (label) { width = Math.max(width, Math.ceil(label.getBoundingClientRect().width) + 24); });
+        document.body.style.setProperty('--slimstat-menu-width', Math.min(width, window.innerWidth - 48) + 'px');
+    }
+    if (menuLabels.length) {
+        document.body.classList.add('slimstat-menu-fit');
+        fitMenu();
+        window.addEventListener('resize', fitMenu);
+        if (typeof ResizeObserver === 'function') {
+            var menuObserver = new ResizeObserver(fitMenu);
+            menuLabels.forEach(function (label) { menuObserver.observe(label); });
+        }
+    }
     var storageKey = 'slimstat-promotions:6.0:' + (config.scope || '');
     document.querySelectorAll('#adminmenu a[href*="page=slimpro"]').forEach(function (link) {
         var url = new URL(link.href, location.href);

@@ -78,7 +78,8 @@ test('@woocommerce the sync banner names the failed order and counts this report
   await expect(summary).not.toContainText('Some orders could not be imported');
   if ((await getProState(page)).pro_activated) await expect(summary).toContainText(/orders in this report linked|No orders in this report/);
   else { await expect(summary).toContainText('WooCommerce Net sales'); await expect(summary).not.toContainText(/orders.*linked/); }
-  await expect(page.locator('.ss-ec-steps')).not.toContainText('included order');
+  if ((await getProState(page)).pro_activated) await expect(page.locator('.ss-ec-steps')).not.toContainText('included order');
+  else await expect(page.locator('.ss-ec-steps')).toHaveCount(0);
 });
 
 test('@woocommerce the comparison line says what it compares, exact times in a tooltip (QA U5)', async ({ page }) => {

@@ -87,8 +87,8 @@ test.describe('Sidebar "New" badges (#20)', () => {
     await page.goto('/wp-admin/index.php');
     // Collapsed flyout: present and styled, though not on screen until hovered.
     for (const screen of SCREENS) await expect(newPill(page, screen), screen).toHaveCount(1);
-    const display = await newPill(page, 'slimview7').evaluate((el) => getComputedStyle(el).display);
-    expect(display).toBe('inline-block');
+    const style = await newPill(page, 'slimview7').evaluate((el) => ({radius:getComputedStyle(el).borderRadius,parent:getComputedStyle(el.parentElement!).display}));
+    expect(style).toEqual({radius:'9px',parent:'inline-flex'});
   });
 
   test('windows run independently: an elapsed window hides only its own badge', async ({ page }) => {
@@ -158,6 +158,34 @@ test.describe('Sidebar "New" badges (#20)', () => {
     } finally {
       await restoreOption('active_plugins');
     }
+  });
+
+  test('translated labels stay attached in expanded, folded, RTL and enlarged navigation', async ({ page }) => {
+    await setAnchor('slimview5', 1);
+    await page.setViewportSize({width:1440,height:1000});
+    await page.goto(SETTINGS);
+    const label = item(page,'slimview5').locator('.slimstat-menu-label');
+    await label.evaluate(el => { el.firstChild!.textContent='Besucherquellen und Kampagnen '; });
+    for (const size of [13,26]) {
+      await label.evaluate((el,size) => { (el as HTMLElement).style.fontSize=size+'px'; },size);
+      await expect.poll(() => label.evaluate(el => {
+        const menu=document.getElementById('adminmenuwrap')!.getBoundingClientRect();
+        const label=el.getBoundingClientRect();
+        return label.left>=menu.left && label.right<=menu.right;
+      })).toBe(true);
+      expect(await page.locator('#wpcontent').evaluate(el => parseFloat(getComputedStyle(el).marginInlineStart))).toBeGreaterThanOrEqual(await page.locator('#adminmenuwrap').evaluate(el=>el.getBoundingClientRect().width));
+    }
+    await label.evaluate(el => { (el as HTMLElement).style.fontSize='13px'; });
+    for (const direction of ['ltr','rtl']) {
+      await page.evaluate(dir => { document.documentElement.dir=dir; document.body.classList.add('folded'); },direction);
+      await page.locator('#toplevel_page_slimview1 > a').hover();
+      await expect(label).toBeVisible();
+      expect(await label.evaluate(el => el.scrollWidth<=el.parentElement!.clientWidth)).toBe(true);
+    }
+    await page.setViewportSize({width:390,height:844});
+    await page.evaluate(() => { document.documentElement.dir='ltr'; document.body.classList.remove('folded'); document.body.classList.add('wp-responsive-open'); });
+    await expect(label).toBeVisible();
+    expect(await label.evaluate(el => el.getBoundingClientRect().right<=innerWidth)).toBe(true);
   });
 
   test('with Pro active, Heatmaps shows "New" and no "Pro"', async ({ page }, testInfo) => {

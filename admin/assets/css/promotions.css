@@ -15,3 +15,11 @@
 .slimstat-locked-rows span{display:block;height:18px;border-radius:3px;background:linear-gradient(90deg,#b9b3b7 0 38%,transparent 38% 52%,#d1a5b0 52% 72%,transparent 72% 80%,#b9b3b7 80%)}
 .slimstat-preview-caption{font-size:12px;color:#675961;text-align:center}
 @media(max-width:600px){.slimstat-release-bar{align-items:start}.slimstat-release-bar nav{flex-basis:100%}.slimstat-preview__chart{height:190px}}
+/* Reserve enough sidebar space for translated labels and enlarged text. */
+@media (min-width: 961px) {
+    body.slimstat-menu-fit:not(.folded) #adminmenu, body.slimstat-menu-fit:not(.folded) #adminmenuwrap, body.slimstat-menu-fit:not(.folded) #adminmenuback { width: var(--slimstat-menu-width, 160px); }
+    body.slimstat-menu-fit:not(.folded) #wpcontent, body.slimstat-menu-fit:not(.folded) #wpfooter { margin-inline-start: var(--slimstat-menu-width, 160px); }
+}
+@media (max-width: 782px) {
+    .slimstat-menu-fit.wp-responsive-open #adminmenuwrap, .slimstat-menu-fit.wp-responsive-open #adminmenu { width: max(190px, var(--slimstat-menu-width, 190px)); }
+}
