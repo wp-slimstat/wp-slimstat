@@ -50,7 +50,7 @@ class MenuNewBadgeTest extends IntegrationTestCase
 
     private static function heatmaps(): array
     {
-        return ['title' => 'Heatmaps', 'new_badge' => 'slimstat_heatmaps_since', 'pro_badge' => true];
+        return ['title' => 'Heatmaps', 'new_badge' => 'slimstat_heatmaps_since'];
     }
 
     private static function adminSource(): string
@@ -86,11 +86,11 @@ class MenuNewBadgeTest extends IntegrationTestCase
         foreach (self::OPTIONS as $screen => $option) {
             $this->assertMatchesRegularExpression("/'new_badge'\s*=>\s*'$option'/", self::screenEntry($source, $screen), "$screen carries $option");
         }
-        foreach (['slimheatmap', 'slimemail'] as $screen) {
+        foreach (['slimemail'] as $screen) {
             $this->assertMatchesRegularExpression("/'pro_badge'\s*=>\s*true/", self::screenEntry($source, $screen), "$screen carries the Pro pill");
         }
         $this->assertSame(count(self::OPTIONS), preg_match_all("/'new_badge'\s*=>/", $source), 'No other screen carries a New pill');
-        $this->assertSame(2, preg_match_all("/'pro_badge'\s*=>/", $source), 'No other screen carries a Pro pill');
+        $this->assertSame(1, preg_match_all("/'pro_badge'\s*=>/", $source), 'No other screen carries a Pro pill');
     }
 
     /**
@@ -170,33 +170,33 @@ class MenuNewBadgeTest extends IntegrationTestCase
         $this->assertSame(array_values(self::OPTIONS), array_keys($this->optionStore), 'Site B anchored its own windows');
     }
 
-    public function test_heatmaps_label_carries_new_then_pro_without_pro(): void
+    public function test_heatmaps_label_carries_new_without_implying_the_whole_page_needs_pro(): void
     {
         $this->assertSame(
-            'Heatmaps <span class="slimstat-menu-new-badge">New</span> <span class="slimstat-menu-pro-badge">Pro</span>',
+            '<span class="slimstat-menu-label">Heatmaps <span class="slimstat-menu-new-badge">New</span></span>',
             self::label(self::heatmaps(), false)
         );
     }
 
     public function test_heatmaps_label_drops_pro_when_pro_is_installed(): void
     {
-        $this->assertSame('Heatmaps <span class="slimstat-menu-new-badge">New</span>', self::label(self::heatmaps(), true));
+        $this->assertSame('<span class="slimstat-menu-label">Heatmaps <span class="slimstat-menu-new-badge">New</span></span>', self::label(self::heatmaps(), true));
     }
 
-    public function test_heatmaps_keeps_pro_after_its_new_window(): void
+    public function test_heatmaps_has_no_pro_badge_after_its_new_window(): void
     {
         $this->optionStore['slimstat_heatmaps_since'] = time() - (16 * DAY_IN_SECONDS);
-        $this->assertSame('Heatmaps <span class="slimstat-menu-pro-badge">Pro</span>', self::label(self::heatmaps(), false));
-        $this->assertSame('Heatmaps', self::label(self::heatmaps(), true));
+        $this->assertSame('<span class="slimstat-menu-label">Heatmaps</span>', self::label(self::heatmaps(), false));
+        $this->assertSame('<span class="slimstat-menu-label">Heatmaps</span>', self::label(self::heatmaps(), true));
     }
 
     public function test_email_report_keeps_pro_only_and_goals_funnels_new_only(): void
     {
         $email = ['title' => 'Email Report', 'pro_badge' => true];
-        $this->assertSame('Email Report <span class="slimstat-menu-pro-badge">Pro</span>', self::label($email, false));
-        $this->assertSame('Email Report', self::label($email, true));
+        $this->assertSame('<span class="slimstat-menu-label">Email Report <span class="slimstat-menu-pro-badge">Pro</span></span>', self::label($email, false));
+        $this->assertSame('<span class="slimstat-menu-label">Email Report</span>', self::label($email, true));
         $this->assertSame(
-            'Goals &amp; Funnels <span class="slimstat-menu-new-badge">New</span>',
+            '<span class="slimstat-menu-label">Goals &amp; Funnels <span class="slimstat-menu-new-badge">New</span></span>',
             self::label(['title' => 'Goals &amp; Funnels', 'new_badge' => 'slimstat_goals_funnels_since'], false)
         );
     }
@@ -204,8 +204,8 @@ class MenuNewBadgeTest extends IntegrationTestCase
     public function test_unbadged_screens_get_a_plain_label_and_write_nothing(): void
     {
         $this->optionStore = [];
-        $this->assertSame('Overview', self::label(['title' => 'Overview'], false));
-        $this->assertSame('Overview', self::label(['title' => 'Overview'], true));
+        $this->assertSame('<span class="slimstat-menu-label">Overview</span>', self::label(['title' => 'Overview'], false));
+        $this->assertSame('<span class="slimstat-menu-label">Overview</span>', self::label(['title' => 'Overview'], true));
         $this->assertSame([], $this->optionStore);
     }
 

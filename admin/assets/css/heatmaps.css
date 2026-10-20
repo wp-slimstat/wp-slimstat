@@ -101,3 +101,5 @@
 .ss-hm-devices .ss-hm-device-2 { background: var(--ss-funnel-bar); }
 /* Unknown stays a pale neutral so it never reads as a fourth device. */
 .ss-hm-devices .ss-hm-device-3 { background: color-mix(in srgb, var(--ss-text-muted) 40%, var(--ss-surface)); }
+
+.ss-hm-toolbar #slimstat-date-filters{margin-inline-start:auto}.ss-hm-device-locked{display:inline-block;filter:blur(4px);pointer-events:none;user-select:none;opacity:.5}.ss-hm-upgrade{text-align:center}.ss-hm-locked-preview td{padding:16px}.ss-hm-locked-preview .slimstat-locked-rows{margin:0}@media(max-width:600px){.ss-hm-toolbar #slimstat-date-filters{width:100%;display:flex;justify-content:flex-end}.ss-hm-search{flex-basis:100%}}

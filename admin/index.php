@@ -91,6 +91,8 @@ class wp_slimstat_admin
     // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Fresh table existence check for network activation on the configured analytics connection; no request values enter SQL.
     public static function init()
     {
+        add_action('admin_enqueue_scripts', [self::class, 'enqueue_promotions']);
+
         // Action for reset layout
         add_action('admin_post_slimstat_reset_layout', ['wp_slimstat_admin', 'handle_reset_layout']);
         add_action('admin_post_slimstat_email_sample', ['wp_slimstat_admin', 'handle_email_sample']);
@@ -168,7 +170,6 @@ class wp_slimstat_admin
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_heatmaps'],
                 'new_badge'       => 'slimstat_heatmaps_since',
-                'pro_badge'       => true,
             ],
             'slimemail' => [
                 'is_report_group' => false,
@@ -572,7 +573,7 @@ class wp_slimstat_admin
         // The sidebar "New" and "Pro" pills render in the global sidebar, so their
         // style must load on every admin page (not just SlimStat screens). Tiny,
         // so always emit it. Both pills share one shape. (#20)
-        echo '<style> #adminmenu .slimstat-menu-new-badge, #adminmenu .slimstat-menu-pro-badge {display:inline-block;margin-inline-start:6px;border-radius:9px;font-size:9px;font-weight:600;vertical-align:middle;} #adminmenu .slimstat-menu-new-badge {padding:0 6px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;line-height:16px;text-transform:uppercase;letter-spacing:.03em;} #adminmenu .slimstat-menu-pro-badge {padding:0 5px;border:1px solid currentColor;line-height:14px;opacity:.85;} </style>';
+        echo '<style> #adminmenu .slimstat-menu-label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}#adminmenu .slimstat-menu-label{font-size:12px;gap:4px}#adminmenu .wp-not-current-submenu .wp-submenu:has(.slimstat-menu-label),.folded #adminmenu .wp-submenu:has(.slimstat-menu-label){min-width:180px;width:max-content;max-width:calc(100vw - 48px)}#adminmenu a[href*="page=slimpro"]{color:#f78a9a;font-weight:600}#adminmenu .slimstat-menu-new-badge, #adminmenu .slimstat-menu-pro-badge {display:inline-block;flex:none;margin-inline-start:0;border-radius:9px;font-size:9px;font-weight:600;vertical-align:middle;} #adminmenu .slimstat-menu-new-badge {padding:0 6px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;line-height:16px;text-transform:uppercase;letter-spacing:.03em;} #adminmenu .slimstat-menu-pro-badge {padding:0 5px;border:1px solid currentColor;line-height:14px;opacity:.85;} </style>';
     }
 
     /**
@@ -609,7 +610,7 @@ class wp_slimstat_admin
         if (!$pro_installed && !empty($screen_info['pro_badge'])) {
             $label .= ' <span class="slimstat-menu-pro-badge">' . esc_html__('Pro', 'wp-slimstat') . '</span>';
         }
-        return $label;
+        return '<span class="slimstat-menu-label">' . $label . '</span>';
     }
 
     /**
@@ -1553,9 +1554,24 @@ class wp_slimstat_admin
                 if (in_array($a_report_id, ['slim_p9_01', 'slim_p9_02', 'slim_p3_03', 'slim_p3_04'], true)) {
                     wp_slimstat_reports::$reports[$a_report_id]['callback_args']['is_widget'] = true;
                 }
+                if (!wp_slimstat::pro_is_installed() && 'slim_p7_02' === $a_report_id) {
+                    wp_add_dashboard_widget($a_report_id, wp_slimstat_reports::$reports[$a_report_id]['title'], [self::class, 'dashboard_pro_preview']);
+                } else {
                 wp_add_dashboard_widget($a_report_id, wp_slimstat_reports::$reports[$a_report_id]['title'], ['wp_slimstat_reports', 'callback_wrapper']);
+                }
             }
         }
+    }
+
+    public static function dashboard_pro_preview(): void
+    {
+        // A hidden existing widget remains hidden, and an eligible release notice takes priority.
+        if (self::release_notice_visible()) {
+            echo '<p>' . esc_html__('Live charts are available with SlimStat Pro.', 'wp-slimstat') . '</p>';
+            return;
+        }
+        self::enqueue_promotions();
+        self::get_template('locked-preview', ['text' => __('Follow live visitors, pages and countries with Pro.', 'wp-slimstat'), 'campaign' => 'dashboard', 'content' => 'live-widget']);
     }
 
     // END: add_dashboard_widgets
@@ -1766,6 +1782,7 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_enqueue_scripts($_hook = '')
     {
+        self::enqueue_promotions();
         $current_screen = get_current_screen();
         if ($current_screen && false !== strpos((string) ($current_screen->id ?? ''), 'slim')) {
             wp_enqueue_script('dashboard');
@@ -2178,7 +2195,7 @@ class wp_slimstat_admin
         }
         $view_url = get_admin_url($GLOBALS['blog_id'], 'admin.php?page=');
         $overview_url = $view_url . 'slimview2';
-        $upgrade_url = 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=adminbar';
+        $upgrade_url = \SlimStat\Utils\ProLinks::url('adminbar', 'cta');
 
         // Add parent node
         $GLOBALS['wp_admin_bar']->add_menu([
@@ -2462,6 +2479,16 @@ class wp_slimstat_admin
         $count = empty(self::$data_for_column['count'][$_post_id]) ? 0 : self::$data_for_column['count'][$_post_id];
 
         echo '<a href="' . esc_url(wp_slimstat_reports::fs_url('resource starts_with ' . self::$data_for_column['url'][$_post_id] . '&&&interval equals -' . wp_slimstat::$settings['posts_column_day_interval'])) . '">' . esc_html($count) . '</a>';
+        $post = get_post($_post_id);
+        if (self::can_view_stats() && $post && 'publish' === $post->post_status && in_array($post->post_type, ['post', 'page'], true) && current_user_can('read_post', $_post_id)) {
+            $page = \SlimStat\Heatmap\Query::pageKeyFromUrl((string) get_permalink($post));
+            $url = wp_slimstat::pro_is_installed()
+                ? apply_filters('slimstat_heatmap_row_url', admin_url('admin.php?page=slimheatmap'), $page)
+                : (current_user_can('manage_options')
+                    ? \SlimStat\Utils\ProLinks::url('heatmaps', 'post-list', true, 'ss-pro-converts')
+                    : add_query_arg(['highlight' => $page], admin_url('admin.php?page=slimheatmap')));
+            echo '<br><a href="' . esc_url($url) . '" title="' . esc_attr__('Check heatmap availability for this page. Recorded activity is required.', 'wp-slimstat') . '">' . esc_html__('View heatmap', 'wp-slimstat') . '</a>';
+        }
         return null;
     }
 
@@ -2489,64 +2516,60 @@ class wp_slimstat_admin
 
     // END: show_message
 
-    /**
-     * The 6.0 release notice, once per site after an update from 5.x (see init()): one row per
-     * new feature on the Dashboard and Plugins screens for 7 days, counted from the first render.
-     * While a database migration is owed, the migration notice has the slot to itself. No purchase links.
-     *
-     * The arguments exist for tests; the admin_notices hook passes none.
-     */
-    public static function show_latest_news($is_pro = null, $migration_owed = null, $commerce = null)
+    public static function enqueue_promotions(): void
     {
-        if ('on' !== (wp_slimstat::$settings['notice_latest_news'] ?? 'no')) {
-            return;
+        if (!self::can_view_stats()) { return; }
+        wp_enqueue_style('slimstat-promotions', plugins_url('admin/assets/css/promotions.css', SLIMSTAT_FILE), [], SLIMSTAT_ANALYTICS_VERSION);
+        wp_enqueue_script('slimstat-promotions', plugins_url('admin/assets/js/promotions.js', SLIMSTAT_FILE), [], SLIMSTAT_ANALYTICS_VERSION, true);
+        wp_localize_script('slimstat-promotions', 'SlimStatPromotions', [
+            'scope' => current_user_can('manage_options') ? get_current_blog_id() . ':' . get_current_user_id() : '',
+            'page' => get_current_screen() ? get_current_screen()->id : '',
+            'edition' => wp_slimstat::pro_is_installed() ? 'pro' : 'free',
+            'dismissError' => __('Could not save dismissal. Try again.', 'wp-slimstat'),
+        ]);
+    }
+
+    /** One release window per user, shared by every placement and patch version. */
+    public static function release_notice_visible(): bool
+    {
+        $user = get_current_user_id();
+        if (!$user || 'on' !== (wp_slimstat::$settings['notice_latest_news'] ?? 'no')
+            || get_user_meta($user, 'slimstat_release_60_dismissed', true)) {
+            return false;
         }
+        $since = (int) get_user_meta($user, 'slimstat_release_60_since', true);
+        if (!$since) {
+            add_user_meta($user, 'slimstat_release_60_since', time(), true);
+            $since = (int) get_user_meta($user, 'slimstat_release_60_since', true);
+        }
+        return $since > 0 && time() - $since < 14 * DAY_IN_SECONDS;
+    }
+
+    public static function show_latest_news($is_pro = null, $migration_owed = null, $commerce = null, $placement = 'notice')
+    {
         $migration_owed = $migration_owed ?? (($manager = \SlimStat\Migration\MigrationService::manager()) && $manager->needsMigration());
-        if ($migration_owed || '' === self::new_badge('slimstat_release_notice_since', 7)) {
+        if ($migration_owed || !self::can_view_stats() || !self::release_notice_visible()) {
             return;
         }
         $is_pro = $is_pro ?? wp_slimstat::pro_is_installed();
-        $link   = static function ($page, $text) {
-            return '<a href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($text) . '</a>';
-        };
-
-        // The SlimStat mark beside the title and the feature rows: one row on wide screens, two columns, then
-        // one; the link stretches over its row. tokens.css loads only on SlimStat's screens, so the style prints
-        // with the notice, like the menu pills' style. One line: no newline may reach the notice output.
-        echo '<style>#slimstat-notice-latest-news{padding-inline-start:52px}#slimstat-notice-latest-news::before{content:"";position:absolute;inset-inline-start:14px;top:12px;width:26px;height:26px;background:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 30 30\'%3E%3Cpath fill=\'%23F22F46\' fill-rule=\'evenodd\' d=\'M0 15C0 6.71582 6.7069 0 14.9801 0C20.2546 0 24.8865 2.72788 27.5572 6.84316L19.371 15.1743H19.3643V15.1877C19.0765 15.4893 18.5946 15.496 18.2934 15.2011C18.2599 15.1743 18.2331 15.1408 18.2064 15.1005L15.9239 11.9638C13.9627 9.27614 10.047 9.03485 7.77787 11.4678L0.589029 19.1756C0.194112 17.8217 0 16.4142 0 15ZM2.69079 23.5858C5.40167 27.4665 9.89302 30.0067 14.9801 30.0067C23.2533 30.0067 29.9602 23.2909 29.9602 15.0067C29.9602 13.7399 29.8062 12.5134 29.5117 11.3405L22.604 18.3646C20.3148 20.7172 16.466 20.4424 14.5316 17.7949L12.2491 14.6582C12.0015 14.3231 11.5329 14.2426 11.1916 14.4906C11.1514 14.5174 11.1179 14.5509 11.0845 14.5845L2.69079 23.5858Z\'/%3E%3C/svg%3E") center/contain no-repeat}.slimstat-release-notice__title{display:block;margin-bottom:2px;font-size:15px;line-height:1.4}#slimstat-notice-latest-news a{white-space:nowrap}.slimstat-whats-new{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px;margin:12px -8px;padding:0;list-style:none}.slimstat-whats-new li{position:relative;display:grid;grid-template-columns:20px minmax(0,1fr);align-content:start;column-gap:8px;margin:0;padding:8px;border-radius:8px;transition:background-color .15s cubic-bezier(.4,0,.2,1)}.slimstat-whats-new li:hover{background:color-mix(in srgb,var(--wp-admin-theme-color,#2271b1) 7%,transparent)}.slimstat-whats-new .dashicons{grid-column:1;grid-row:1/span 3;color:var(--wp-admin-theme-color,#2271b1)}.slimstat-whats-new strong{font-size:14px}.slimstat-whats-new__why{color:#56585a}.slimstat-whats-new a::before{content:"";position:absolute;inset:0;border-radius:inherit}.slimstat-whats-new a::after{content:"\2192";content:"\2192"/"";display:inline-block;margin-inline-start:4px;transition:transform .15s cubic-bezier(.4,0,.2,1)}.slimstat-whats-new li:hover a::after{transform:translateX(3px)}[dir=rtl] .slimstat-whats-new a::after{content:"\2190";content:"\2190"/""}[dir=rtl] .slimstat-whats-new li:hover a::after{transform:translateX(-3px)}@media (min-width:1280px){.slimstat-whats-new{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}}@media (max-width:782px){.slimstat-whats-new{grid-template-columns:minmax(0,1fr)}.slimstat-whats-new__why{display:none}}@media (prefers-reduced-motion:reduce){.slimstat-whats-new li,.slimstat-whats-new a::after{transition:none}}</style>';
-
-        $rows = [['admin-links', __('Channels and UTM Campaigns', 'wp-slimstat'), __('Side by side, in one report.', 'wp-slimstat'), 'slimview5', __('Open Traffic Sources', 'wp-slimstat')]];
-        if ($commerce ?? \SlimStat\Ecommerce\Integration::available()) {
-            $rows[] = ['cart', __('Ecommerce', 'wp-slimstat'), __('Net sales, orders and top products.', 'wp-slimstat'), 'slimview7', __('Open Ecommerce', 'wp-slimstat')];
+        $links = ['slimview5' => __('Channels / UTM Campaigns', 'wp-slimstat')];
+        if (($commerce ?? \SlimStat\Ecommerce\Integration::available()) && \SlimStat\Ecommerce\Report::canView()) {
+            $links['slimview7'] = $is_pro ? __('Open Ecommerce', 'wp-slimstat') : __('Ecommerce: Net sales in Free', 'wp-slimstat');
         }
-        $rows[] = ['welcome-view-site', __('Heatmaps', 'wp-slimstat'), __('Every page with clicks.', 'wp-slimstat'), 'slimheatmap', __('Open Heatmaps', 'wp-slimstat')];
-        $rows[] = ['editor-code', __('Shortcode Playground', 'wp-slimstat'), __('Preview a report, then copy its shortcode.', 'wp-slimstat'), 'slimshortcodes', __('Open Shortcodes', 'wp-slimstat')];
-
-        // show_message() runs wpautop(): paragraphs are separated by one blank line, and no other newline may appear.
-        $html = '<strong class="slimstat-release-notice__title">' . esc_html__('SlimStat 6 is here.', 'wp-slimstat') . '</strong> '
-            . esc_html__('Reports are faster, and your settings and data carry over. Includes important security hardening.', 'wp-slimstat')
-            . ($is_pro ? ' ' . esc_html__('SlimStat Pro 3.0.0 adds heatmap page previews and Ecommerce email reports.', 'wp-slimstat') : '')
-            . "\n\n" . '<ul class="slimstat-whats-new">';
-        foreach ($rows as [$icon, $name, $why, $page, $open]) {
-            $html .= '<li><span class="dashicons dashicons-' . esc_attr($icon) . '" aria-hidden="true"></span><strong>' . esc_html($name) . '</strong><span class="slimstat-whats-new__why">' . esc_html($why) . '</span>' . $link($page, $open) . '</li>';
+        $links['slimheatmap'] = $is_pro ? __('Open Heatmaps', 'wp-slimstat') : __('Heatmaps: page previews, detail in Pro', 'wp-slimstat');
+        if (current_user_can('manage_options')) {
+            $links['slimshortcodes'] = __('Shortcodes', 'wp-slimstat');
         }
-        /* translators: %s: "Review migration" link to the Migration screen. */
-        $html .= '</ul>' . "\n\n" . sprintf(esc_html__('%s: optional database steps, nothing runs until you choose.', 'wp-slimstat'), $link('slimstat_migration', __('Review migration', 'wp-slimstat')));
-        self::show_message($html, 'info', 'latest-news');
-        self::release_notice_dismiss_script();
-    }
-
-    /**
-     * Persists a release-notice dismissal, added only when the notice renders
-     * ('common' prints in the footer, after admin_notices). Core's common.js adds the dismiss
-     * button; this posts the action notices_handler() serves, with its nonce in the script because
-     * wp_kses_post() strips a hidden input from the notice. Where admin.js runs (the Dashboard with
-     * SlimStat widgets) its own notice handler posts, so this one stands down.
-     */
-    private static function release_notice_dismiss_script()
-    {
-        $body = wp_json_encode(['action' => 'slimstat_notice_latest_news', 'security' => wp_create_nonce('meta-box-order')]);
-        wp_add_inline_script('common', "document.addEventListener('click',function(e){if(!window.SlimStatAdminParams&&e.target.closest&&e.target.closest('#slimstat-notice-latest-news .notice-dismiss')){fetch(ajaxurl,{method:'POST',credentials:'same-origin',body:new URLSearchParams(" . $body . ')});}});');
+        self::enqueue_promotions();
+        echo '<aside id="slimstat-notice-latest-news" class="slimstat-release-bar" aria-label="' . esc_attr__('New in SlimStat 6', 'wp-slimstat') . '" data-dismiss-nonce="' . esc_attr(wp_create_nonce('meta-box-order')) . '" data-ajax-url="' . esc_url(admin_url('admin-ajax.php')) . '"><strong>' . esc_html__('New in SlimStat 6', 'wp-slimstat') . '</strong><nav aria-label="' . esc_attr__('Explore features', 'wp-slimstat') . '">';
+        foreach ($links as $page => $label) {
+            echo '<a href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($label) . '</a>';
+        }
+        echo '</nav>';
+        if (!$is_pro && current_user_can('manage_options')) {
+            echo '<a class="slimstat-release-bar__pro" href="' . esc_url(\SlimStat\Utils\ProLinks::url('notice' === $placement ? 'whats-new' : 'banner', 'notice' === $placement ? 'notice' : 'header-strip', true)) . '">' . esc_html__('Explore Pro', 'wp-slimstat') . '</a>';
+        }
+        echo '<button type="button" class="slimstat-release-dismiss" aria-label="' . esc_attr__('Dismiss SlimStat 6 announcement', 'wp-slimstat') . '">×</button><span role="status" class="screen-reader-text"></span></aside>';
     }
 
     /**
@@ -2570,6 +2593,9 @@ class wp_slimstat_admin
         }
 
         echo '<br><strong>' . esc_html(wp_strip_all_tags((string) $response->upgrade_notice)) . '</strong>';
+        if (!wp_slimstat::pro_is_installed() && current_user_can('manage_options')) {
+            echo ' <a href="' . esc_url(\SlimStat\Utils\ProLinks::url('update-notice', 'upgrade-notice', true)) . '">' . esc_html__('Explore Pro', 'wp-slimstat') . '</a>';
+        }
     }
 
     // END: show_latest_news
@@ -2582,10 +2608,14 @@ class wp_slimstat_admin
     {
         $tag = current_filter();
 
-        if (!empty($tag) && current_user_can('manage_options') && isset($_POST['security']) && is_string($_POST['security'])
+        if (!empty($tag) && ('wp_ajax_slimstat_notice_latest_news' === $tag ? self::can_view_stats() : current_user_can('manage_options')) && isset($_POST['security']) && is_string($_POST['security'])
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- String nonce is unslashed and verified directly; it is never stored or rendered.
             && wp_verify_nonce(wp_unslash($_POST['security']), 'meta-box-order')) {
             $tag                         = str_replace('wp_ajax_slimstat_', '', $tag);
+            if ('notice_latest_news' === $tag) {
+                update_user_meta(get_current_user_id(), 'slimstat_release_60_dismissed', 1);
+                wp_send_json_success();
+            }
             wp_slimstat::$settings[$tag] = 'no';
 
             // Save the default values in the database
@@ -3816,6 +3846,10 @@ class wp_slimstat_admin
             $limit = 500; // Reset to default if out of reasonable range
         }
 
+        // A small client may ask for fewer suggestions, never raise the configured ceiling.
+        $requested_limit = isset($_POST['limit']) && is_scalar($_POST['limit']) ? absint($_POST['limit']) : 0;
+        if ($requested_limit) { $limit = min($limit, $requested_limit); }
+
         // Sanitize column name to prevent SQL injection (only allow known columns)
         $allowed_columns = array_keys(wp_slimstat_db::$columns_names);
         if (!in_array($dimension, $allowed_columns, true)) {
@@ -4368,7 +4402,7 @@ class wp_slimstat_admin
         )];
 
         $tabs['heatmaps'] = [__('Heatmaps', 'wp-slimstat'), $p(
-            esc_html__('Free lists the pages that get clicks and the most-clicked links and buttons on each, from the clicks SlimStat already records.', 'wp-slimstat'),
+            esc_html__('Free previews two pages and their most-clicked links and buttons, from the clicks SlimStat already records. Pro unlocks the remaining pages and device insights.', 'wp-slimstat'),
             esc_html__('On your site, the Heatmap button in the admin bar opens the heatmap for the page you are viewing.', 'wp-slimstat'),
             esc_html__('Pro shows the page itself with the clicks on top, on phone, tablet and desktop. It adds scroll depth, dead clicks (clicks that do nothing), rage clicks (fast repeated clicks), filters by goal or campaign, export to CSV and a Heatmap insights email.', 'wp-slimstat'),
             $doc('resources/how-to-enable-and-view-the-heatmap/', 'heatmaps', __('Guide: heatmaps', 'wp-slimstat'))
@@ -4462,7 +4496,7 @@ class wp_slimstat_admin
             return $_header_buttons;
         }
 
-        return self::pro_export_link() . ' ' . $_header_buttons;
+        return self::pro_export_link('', $_report_id) . ' ' . $_header_buttons;
     }
 
     /**
@@ -4472,13 +4506,13 @@ class wp_slimstat_admin
      * Not a .slimstat-filter-link: admin.js turns those clicks into a POST of the filters
      * form to the link's URL, which sent the date range to the pricing site.
      */
-    public static function pro_export_link(string $attributes = ''): string
+    public static function pro_export_link(string $attributes = '', string $report = 'report'): string
     {
         if (!current_user_can('manage_options')) {
             return '';
         }
 
-        return '<a class="button-export-to-xls slimstat-font-download noslimstat" href="' . esc_url(admin_url('admin.php?page=slimpro#ss-pro-share')) . '"' . $attributes
+        return '<a class="button-export-to-xls slimstat-font-download noslimstat" href="' . esc_url(\SlimStat\Utils\ProLinks::url('export', $report, true, 'ss-pro-share')) . '"' . $attributes
             . ' title="' . esc_attr__('Export to CSV with Pro', 'wp-slimstat') . '"><span class="dashicons dashicons-download" aria-hidden="true"></span>'
             . esc_html__('Export', 'wp-slimstat') . '</a>';
     }

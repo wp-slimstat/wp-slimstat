@@ -112,7 +112,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Upgrade Notice ==
 
 = 6.0.0 =
-Back up your database first. This update only ADDS columns and indexes, never removes a row; older versions keep working on the updated tables, but the added columns stay. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — see the changelog.
+Back up first. Adds columns/indexes and removes no rows. Older versions keep working; added columns stay. Migration steps wait for your click. Some metrics change: see changelog. Pro adds detailed heatmaps and scheduled reports.
 
 
 == Changelog ==

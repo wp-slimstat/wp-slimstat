@@ -10,8 +10,8 @@ rationale: Appends one sentence to the 6.0.0 notice, taking it to 354 bytes; the
  == Upgrade Notice ==
  
  = 6.0.0 =
--Back up your database first. This update only ADDS columns and indexes, never removes a row; older versions keep working on the updated tables, but the added columns stay. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — see the changelog.
-+Back up your database first. This update only ADDS columns and indexes, never removes a row; older versions keep working on the updated tables, but the added columns stay. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — see the changelog. Read the full notes on wordpress.org before you begin.
+-Back up first. Adds columns/indexes and removes no rows. Older versions keep working; added columns stay. Migration steps wait for your click. Some metrics change: see changelog. Pro adds detailed heatmaps and scheduled reports.
++Back up first. Adds columns/indexes and removes no rows. Older versions keep working; added columns stay. Migration steps wait for your click. Some metrics change: see changelog. Pro adds detailed heatmaps and scheduled reports. Read the full release notes and review every migration step on wordpress.org before you begin this update. Keep a separate backup for recovery.
  
  
  == Changelog ==

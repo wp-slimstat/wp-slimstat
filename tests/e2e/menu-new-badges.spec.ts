@@ -1,7 +1,7 @@
 /**
  * #20: sidebar items for new features carry a "New" pill for 15 days after the
  * feature first appears on the site, each on its own per-site anchor option, so
- * the windows run independently. Heatmaps also carries "Pro" while Pro is missing.
+ * the windows run independently. Heatmaps has a Free preview, so its page is not labeled Pro.
  *
  * Touches only the five anchor options and active_plugins, and restores them; no
  * stats rows are read or written.
@@ -126,7 +126,7 @@ test.describe('Sidebar "New" badges (#20)', () => {
     }
   });
 
-  test('without Pro, Heatmaps shows "New" then "Pro", and both fit the sidebar', async ({ page }, testInfo) => {
+  test('without Pro, Heatmaps shows only "New" and fits the sidebar', async ({ page }, testInfo) => {
     await snapshotOption('active_plugins');
     try {
       runWordPressFixture("<?php deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php', true);");
@@ -135,8 +135,8 @@ test.describe('Sidebar "New" badges (#20)', () => {
       await page.goto(SETTINGS);
       const heatmaps = item(page, 'slimheatmap');
       await expect(newPill(page, 'slimheatmap')).toBeVisible();
-      await expect(proPill(page, 'slimheatmap')).toBeVisible();
-      await expect(heatmaps).toHaveText(/^Heatmaps\s*New\s*Pro$/);
+      await expect(proPill(page, 'slimheatmap')).toHaveCount(0);
+      await expect(heatmaps).toHaveText(/^Heatmaps\s*New$/);
       // Email Report keeps its "Pro" pill and gains no "New".
       await expect(proPill(page, 'slimemail')).toBeVisible();
       await expect(newPill(page, 'slimemail')).toHaveCount(0);
@@ -150,11 +150,11 @@ test.describe('Sidebar "New" badges (#20)', () => {
       expect(fit).toEqual({ overflow: 0, past: 0 });
       await page.locator('#adminmenu li.wp-has-current-submenu').screenshot({ path: testInfo.outputPath('sidebar-no-pro.png') });
 
-      // After its window, Heatmaps keeps only "Pro".
+      // After its window, the page label remains plain.
       await setAnchor('slimheatmap', 16);
       await page.goto(SETTINGS);
       await expect(newPill(page, 'slimheatmap')).toHaveCount(0);
-      await expect(heatmaps).toHaveText(/^Heatmaps\s*Pro$/);
+      await expect(heatmaps).toHaveText(/^Heatmaps$/);
     } finally {
       await restoreOption('active_plugins');
     }

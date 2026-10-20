@@ -27,6 +27,7 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 	protected function tearDown(): void
 	{
 		\wp_slimstat::$settings = $this->settings;
+        \wp_slimstat::$pro = false;
 		$GLOBALS['slimstat_test_options'] = [];
 		parent::tearDown();
 	}
@@ -83,16 +84,31 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 		self::assertSame(['from' => '2026-09-27', 'to' => '2026-10-03', 'updated' => $updated], array_slice($free, 0, 3), 'seven days ending on to');
 		self::assertSame('', $free['rows'][0]['url'], 'Free: no viewer, the row opens the preview');
 		self::assertSame('About us', $free['rows'][0]['title']);
-		self::assertSame([3, 1, 4], $free['rows'][0]['devices']);
+		self::assertNull($free['rows'][0]['devices'], 'device data is absent from the Free response');
+        foreach (['scroll', 'dead', 'rage'] as $metric) { self::assertNull($free['rows'][0][$metric], 'cached Pro metrics stay private'); }
 		self::assertTrue($free['ever'], 'rows in range: the site has clicks, no extra query (no wpdb here)');
 
 		Functions\when('apply_filters')->alias(static fn($hook, $url, $page) => 'slimstat_heatmap_row_url' === $hook ? 'https://example.test/view?page=' . rawurlencode($page) : $url);
+        \wp_slimstat::$pro = true;
 		$pro = (new HeatmapRestController())->pages($request);
+        self::assertSame([3, 1, 4], $pro['rows'][0]['devices']);
 		self::assertSame('https://example.test/view?page=%2Fabout&from=2026-09-27&to=2026-10-03', $pro['rows'][0]['url'], 'the viewer opens on the list\'s range');
 		self::assertCount(1, array_unique($keys), 'one cache entry per range and device');
 	}
 
 	/** QA C2: Free's preview of a page's heatmap, behind the report gate. */
+    public function test_free_device_filters_cannot_reconstruct_locked_breakdowns(): void
+    {
+        \wp_slimstat::$pro = false;
+        $controller = new HeatmapRestController();
+        $request = new \WP_REST_Request(['page' => '/pricing', 'from' => '2026-10-01', 'to' => '2026-10-03', 'days' => 30, 'device' => 'mobile']);
+        foreach (['pages', 'targets'] as $method) {
+            $result = $controller->$method($request);
+            self::assertInstanceOf(\WP_Error::class, $result);
+            self::assertSame('slimstat_heatmap_device_pro', $result->code);
+        }
+    }
+
 	public function test_targets_are_the_pages_top_five_links_and_buttons_by_name(): void
 	{
 		$routes = [];

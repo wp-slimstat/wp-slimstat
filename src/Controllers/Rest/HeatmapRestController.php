@@ -26,7 +26,7 @@ class HeatmapRestController implements RestControllerInterface
             'methods'             => 'GET',
             'callback'            => [$this, 'pages'],
             'permission_callback' => [self::class, 'canView'],
-            'args'                => self::rangeArgs() + ['refresh' => ['type' => 'boolean', 'default' => false]],
+            'args'                => self::rangeArgs() + ['refresh' => ['type' => 'boolean', 'default' => false], 'q' => ['type' => 'string', 'maxLength' => 200, 'default' => ''], 'sort' => ['type' => 'string', 'enum' => ['page', 'clicks', 'pageviews', 'cpp', 'scroll', 'dead', 'last'], 'default' => 'clicks'], 'dir' => ['type' => 'integer', 'enum' => [-1, 1], 'default' => -1]],
         ]);
         register_rest_route('slimstat/v1', '/heatmap/targets', [
             'methods'             => 'GET',
@@ -78,6 +78,9 @@ class HeatmapRestController implements RestControllerInterface
         if (is_wp_error($range)) {
             return $range;
         }
+        if (!\wp_slimstat::pro_is_installed() && !empty($request['device'])) {
+            return new \WP_Error('slimstat_heatmap_device_pro', __('Device insights are available with Pro.', 'wp-slimstat'), ['status' => 403]);
+        }
 
         try {
             $data = Query::cachedPages($range['start'], $range['end'], (string) $request['device'], (bool) $request['refresh']);
@@ -87,6 +90,21 @@ class HeatmapRestController implements RestControllerInterface
             return new \WP_Error('slimstat_heatmap_read', $e->getMessage(), ['status' => 500]);
         }
 
+        $pro = \wp_slimstat::pro_is_installed();
+        $matches = $data['rows'];
+        if (!$pro) {
+            $q = (string) $request['q'];
+            $matches = array_values(array_filter($matches, static function ($row) use ($q) { return '' === $q || false !== stripos($row['page'], $q); }));
+            $sort = (string) ($request['sort'] ?: 'clicks'); $dir = 1 === (int) $request['dir'] ? 1 : -1;
+            $value = static function ($row) use ($sort) {
+                if ('cpp' === $sort) { return $row['pageviews'] ? $row['clicks'] / $row['pageviews'] : 0; }
+                if ('dead' === $sort) { return ($row['dead'] ?? 0) + ($row['rage'] ?? 0); }
+                return $row[$sort] ?? 0;
+            };
+            usort($matches, static function ($a, $b) use ($value, $dir) { return ($value($a) <=> $value($b)) * $dir ?: strcmp($a['page'], $b['page']); });
+        }
+        $total = count($matches);
+        $data['rows'] = $pro ? $matches : array_slice($matches, 0, 2);
         $ids = array_filter(array_column($data['rows'], 'content_id'));
         if ($ids && function_exists('_prime_post_caches')) {
             _prime_post_caches($ids, false, false);
@@ -100,10 +118,10 @@ class HeatmapRestController implements RestControllerInterface
                 'title'     => $row['content_id'] ? wp_strip_all_tags(get_the_title($row['content_id'])) : '',
                 'clicks'    => $row['clicks'],
                 'pageviews' => $row['pageviews'],
-                'devices'   => [$row['desktop'], $row['tablet'], $row['mobile']],
-                'scroll'    => $row['scroll'],
-                'dead'      => $row['dead'],
-                'rage'      => $row['rage'],
+                'devices'   => $pro ? [$row['desktop'], $row['tablet'], $row['mobile']] : null,
+                'scroll'    => $pro ? $row['scroll'] : null,
+                'dead'      => $pro ? $row['dead'] : null,
+                'rage'      => $pro ? $row['rage'] : null,
                 'last'      => $row['last'],
                 'lastText'  => \wp_slimstat::date_i18n($format, $row['last']),
                 'full'      => $row['full'],
@@ -112,7 +130,7 @@ class HeatmapRestController implements RestControllerInterface
             ];
         }
 
-        return rest_ensure_response(['from' => $range['from'], 'to' => $range['to'], 'updated' => $data['updated'], 'rows' => $rows, 'ever' => $ever]);
+        return rest_ensure_response(['from' => $range['from'], 'to' => $range['to'], 'updated' => $data['updated'], 'rows' => $rows, 'total' => $total, 'locked' => !$pro, 'ever' => $ever]);
     }
 
     /** Free's preview of a page's heatmap: its five most clicked links and buttons, by their text. */
@@ -121,6 +139,9 @@ class HeatmapRestController implements RestControllerInterface
         $range = self::range($request);
         if (is_wp_error($range)) {
             return $range;
+        }
+        if (!\wp_slimstat::pro_is_installed() && !empty($request['device'])) {
+            return new \WP_Error('slimstat_heatmap_device_pro', __('Device insights are available with Pro.', 'wp-slimstat'), ['status' => 403]);
         }
 
         try {

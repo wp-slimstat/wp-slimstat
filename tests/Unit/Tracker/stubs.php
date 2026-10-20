@@ -100,6 +100,10 @@ if (!class_exists('wp_slimstat')) {
 
         // Fixed unscoped fixture for unit callers; real author/DB scopes are exercised
         // by tests/report-author-scope-test.php using the actual production helper.
+        public static bool $pro = false;
+
+        public static function pro_is_installed(): bool { return self::$pro; }
+
         public static function report_scope(): array
         {
             return ['where' => '1=1', 'cache' => 'unit-default-report-scope'];

@@ -108,21 +108,15 @@ if ('' !== $error) {
 
         <?php if ($is_admin && $is_pro) : ?><p><a class="button" href="<?php echo esc_url(admin_url('admin.php?page=slimconfig&tab=7#heatmap_capture')); ?>"><?php esc_html_e('Heatmap settings', 'wp-slimstat'); ?></a></p><?php endif; ?>
         <form class="ss-hm-toolbar" role="search" onsubmit="return false">
-            <?php
-            wp_slimstat_admin::get_template('date-range-picker', [
-                'label' => DateRangeHelper::format_date_range($range['start'], $range['end'], $range['preset']),
-                'start' => $day('Y-m-d', $range['start']),
-                'end'   => $day('Y-m-d', $range['end']),
-            ]);
-            ?>
             <label>
                 <span class="screen-reader-text"><?php esc_html_e('Device', 'wp-slimstat'); ?></span>
-                <select name="device">
+                <select name="device" <?php disabled(!$is_pro); ?> aria-describedby="ss-hm-device-access">
                     <option value=""><?php esc_html_e('All devices', 'wp-slimstat'); ?></option>
                     <option value="desktop"><?php esc_html_e('Desktop', 'wp-slimstat'); ?></option>
                     <option value="tablet"><?php esc_html_e('Tablet', 'wp-slimstat'); ?></option>
                     <option value="mobile"><?php esc_html_e('Mobile', 'wp-slimstat'); ?></option>
                 </select>
+                <span id="ss-hm-device-access" class="screen-reader-text"><?php if (!$is_pro) { esc_html_e('Device insights are available with Pro.', 'wp-slimstat'); } ?></span>
             </label>
             <label class="ss-hm-search">
                 <span class="screen-reader-text"><?php esc_html_e('Search pages', 'wp-slimstat'); ?></span>
@@ -130,6 +124,14 @@ if ('' !== $error) {
             </label>
             <span class="ss-hm-updated" aria-live="polite"></span>
             <button type="button" class="button-link ss-hm-refresh"><?php esc_html_e('Refresh', 'wp-slimstat'); ?></button>
+            <?php
+            wp_slimstat_admin::get_template('date-range-picker', [
+                'label' => DateRangeHelper::format_date_range($range['start'], $range['end'], $range['preset']),
+                'start' => $day('Y-m-d', $range['start']),
+                'end'   => $day('Y-m-d', $range['end']),
+            ]);
+            ?>
+
         </form>
 
         <div class="ss-hm-table-wrap">
@@ -151,6 +153,7 @@ if ('' !== $error) {
                 </tbody>
             </table>
         </div>
+        <?php if (!$is_pro) : ?><div class="ss-hm-upgrade"><?php wp_slimstat_admin::get_template('pro-adds', ['text' => __('Unlock device insights, every page and full click and scroll heatmaps with Pro.', 'wp-slimstat'), 'campaign' => 'heatmaps', 'content' => 'list-blur']); ?></div><?php endif; ?>
         <div class="ss-hm-empty" hidden role="status"></div>
         <template id="ss-hm-demo">
             <svg class="ss-hm-demo" viewBox="0 0 120 72" aria-hidden="true" focusable="false">
@@ -203,7 +206,7 @@ if ('' !== $error) {
                     <ol class="ss-hm-targets" aria-busy="true"></ol>
                     <p><?php esc_html_e('SlimStat Pro shows these on the page itself, with every other click, how far visitors scroll, and dead and rage clicks.', 'wp-slimstat'); ?></p>
                     <p class="ss-hm-preview-actions">
-                        <a class="button button-primary" target="_blank" rel="noopener" href="<?php echo esc_url('https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=heatmaps'); ?>"><?php esc_html_e('Get SlimStat Pro', 'wp-slimstat'); ?></a>
+                        <a class="button button-primary" target="_blank" rel="noopener" href="<?php echo esc_url(\SlimStat\Utils\ProLinks::url('heatmaps', 'page-preview')); ?>"><?php esc_html_e('Get SlimStat Pro', 'wp-slimstat'); ?></a>
                         <a href="<?php echo esc_url(admin_url('plugin-install.php?tab=upload')); ?>"><?php esc_html_e('Already have Pro? Install it', 'wp-slimstat'); ?></a>
                     </p>
                 </div>

@@ -20,7 +20,7 @@
     const NONE = '\u2014';
     const state = { rows: [], ever: true, sort: 'clicks', dir: -1, page: 0, updated: 0, highlight: new URLSearchParams(location.search).get('highlight') || '' };
     let request = 0, pending = false, reload = false;
-    let previews = 0;
+    let previews = 0, searchTimer;
 
     function el(tag, attrs, children) {
         const node = document.createElement(tag);
@@ -100,6 +100,7 @@
     }
 
     function devices(row) {
+        if (row.devices === null) return el('span', {title: __('Unlock device insights with Pro', 'wp-slimstat')}, [el('span', {class: 'ss-hm-device-locked', 'aria-hidden': 'true'}, ['▬▬ ▬▬ ▬▬']), el('span', {class: 'screen-reader-text'}, [__('Device insights: Pro', 'wp-slimstat')])]);
         const names = [__('Desktop', 'wp-slimstat'), __('Tablet', 'wp-slimstat'), __('Mobile', 'wp-slimstat'), __('Unknown', 'wp-slimstat')];
         const counts = [...row.devices, Math.max(0, row.clicks - row.devices.reduce((sum, n) => sum + n, 0))];
         const label = counts.map((n, i) => names[i] + ' ' + number.format(row.clicks ? 100 * n / row.clicks : 0) + '%').join(', ');
@@ -161,6 +162,8 @@
 
     function render() {
         const rows = visibleRows();
+        const deviceSort = table.tHead.querySelector('[data-sort=devices] button');
+        if (deviceSort) deviceSort.disabled = config.mode === 'free';
         const pages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
         state.page = Math.min(state.page, pages - 1);
         // Columns only full tracking fills stay hidden until some row in the range has them.
@@ -174,6 +177,12 @@
             table.tHead.querySelector('th[data-sort="' + key + '"]').hidden = !shown[key];
         });
         body.replaceChildren(...rows.slice(state.page * PER_PAGE, (state.page + 1) * PER_PAGE).map((row) => rowNode(row, shown)));
+        if (state.locked && state.total > rows.length) {
+            const preview = el('div', {class: 'slimstat-locked-rows', 'aria-hidden': 'true'}, [el('span'), el('span')]);
+            body.append(el('tr', {class: 'ss-hm-locked-preview'}, [el('td', {colspan: '10'}, [preview,
+                /* translators: %s: number of additional pages in the selected range. */
+                el('p', {class: 'slimstat-preview-caption'}, [sprintf(__('%s additional pages. Illustrative preview; unlock with Pro.', 'wp-slimstat'), number.format(state.total - rows.length))])])]));
+        }
         table.setAttribute('aria-busy', 'false');
         table.hidden = !rows.length;
         empty.hidden = true;
@@ -226,12 +235,13 @@
         const id = ++request;
         const params = new URLSearchParams({ device: form.device.value, from: range.dataset.start, to: range.dataset.end });
         if (refresh) params.set('refresh', '1');
+        if (config.mode === 'free') { params.set('q', form.q.value.trim()); params.set('sort', state.sort); params.set('dir', state.dir); }
         table.setAttribute('aria-busy', 'true');
         table.classList.add('is-loading');
         wp.apiFetch({ path: config.route + '?' + params })
             .then((data) => {
                 if (id !== request) return;
-                state.rows = data.rows;
+                state.rows = data.rows; state.total = data.total; state.locked = data.locked;
                 state.ever = false !== data.ever;
                 state.updated = data.updated;
                 if (state.highlight && !automatic) {
@@ -263,6 +273,7 @@
     });
     form.q.addEventListener('input', () => {
         state.page = 0;
+        if (config.mode === 'free') { clearTimeout(searchTimer); searchTimer = setTimeout(load, 300); return; }
         render();
     });
     root.querySelector('.ss-hm-refresh').addEventListener('click', () => load(true));
@@ -278,12 +289,13 @@
         if (!th) return;
         const key = th.dataset.sort;
         state.dir = key === state.sort ? -state.dir : 'page' === key ? 1 : -1;
+        if (config.mode === 'free' && key === 'devices') return;
         state.sort = key;
         table.tHead.querySelectorAll('th[data-sort]').forEach((cell) => {
             if (cell === th) cell.setAttribute('aria-sort', state.dir > 0 ? 'ascending' : 'descending');
             else cell.removeAttribute('aria-sort');
         });
-        render();
+        if (config.mode === 'free') load(); else render();
     });
     root.querySelectorAll('[data-dialog]').forEach((button) => {
         button.addEventListener('click', () => {

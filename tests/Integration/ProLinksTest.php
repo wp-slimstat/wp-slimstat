@@ -31,14 +31,14 @@ class ProLinksTest extends IntegrationTestCase
         $m = new \ReflectionMethod(\SlimStat\Reports\AcquisitionReport::class, 'locked');
         $m->setAccessible(true);
         ob_start();
-        $m->invoke(null, $mode, ['Email', 'Paid Search'], false);
+        $m->invoke(null, $mode, true);
         return (string) ob_get_clean();
     }
 
     public function test_export_link_opens_the_share_section_for_administrators(): void
     {
         $html = \wp_slimstat_admin::pro_export_link();
-        $this->assertStringContainsString('href="https://example.test/wp-admin/admin.php?page=slimpro#ss-pro-share"', $html);
+        $this->assertStringContainsString('href="https://example.test/wp-admin/admin.php?page=slimpro&utm_campaign=export&utm_content=report#ss-pro-share"', $html);
         $this->assertStringContainsString('button-export-to-xls', $html);
         $this->assertStringNotContainsString('wp-slimstat.com', $html);
         $this->assertStringNotContainsString('target=', $html);
@@ -52,14 +52,15 @@ class ProLinksTest extends IntegrationTestCase
         $this->assertSame('', \wp_slimstat_admin::pro_export_link(' data-ec-export'));
     }
 
-    public function test_channels_unlock_link_opens_the_converts_section_for_administrators(): void
+    public function test_channels_unlock_links_are_attributed_and_do_not_reveal_locked_labels(): void
     {
-        foreach (['channel' => 'See all channels with Pro', 'utm' => 'See all campaigns with Pro'] as $mode => $text) {
+        foreach (['channel' => 'channels', 'utm' => 'campaigns'] as $mode => $content) {
             $html = self::locked($mode);
-            $this->assertStringContainsString('Also active this period:', $html);
-            $this->assertStringContainsString('href="https://example.test/wp-admin/admin.php?page=slimpro#ss-pro-converts"', $html);
-            $this->assertStringContainsString($text, $html);
-            $this->assertStringNotContainsString('wp-slimstat.com', $html);
+            $this->assertStringContainsString('utm_campaign=traffic-sources&utm_content=' . $content, $html);
+            $this->assertStringContainsString('Upgrade to see more', $html);
+            $this->assertStringContainsString('Illustrative preview', $html);
+            $this->assertStringNotContainsString('Email', $html);
+            $this->assertStringNotContainsString('Paid Search', $html);
         }
     }
 
@@ -67,7 +68,7 @@ class ProLinksTest extends IntegrationTestCase
     {
         $this->admin = false;
         $html = self::locked('channel');
-        $this->assertStringContainsString('Also active this period: <strong>Email</strong>, <strong>Paid Search</strong>.', $html);
+        $this->assertStringContainsString('Unlock all results and source breakdowns with Pro.', $html);
         $this->assertStringNotContainsString('<a', $html);
     }
 }

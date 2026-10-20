@@ -217,6 +217,8 @@ class wp_slimstat_reports
                     'type'    => 'top',
                     'columns' => 'searchterms',
                     'where'   => 'searchterms <> "_" AND searchterms <> "" AND searchterms IS NOT NULL',
+                    'empty_title' => __('No search terms in this date range.', 'wp-slimstat'),
+                    'empty_hint' => __('Only pageviews with a recorded search term appear here. Dashed chart lines show the previous period.', 'wp-slimstat'),
                     'raw'     => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
@@ -2333,7 +2335,7 @@ class wp_slimstat_reports
             echo '<div class="slimstat-funnel-overlay">';
             echo '<h3>' . esc_html__('Visualize every step of the journey', 'wp-slimstat') . '</h3>';
             echo '<p>' . esc_html__('Visualize conversion funnels with step-by-step drop-off analysis.', 'wp-slimstat') . '</p>';
-            echo '<a href="https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=funnel" class="button button-primary" target="_blank" rel="noopener noreferrer">' . esc_html__('Upgrade to Pro', 'wp-slimstat') . '</a>';
+            wp_slimstat_admin::get_template('pro-adds', ['text' => __('Unlock funnel reports with Pro.', 'wp-slimstat'), 'campaign' => 'funnel', 'content' => 'widget']);
             echo '</div></div></div>';
             return;
         }

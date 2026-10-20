@@ -134,7 +134,42 @@ final class Report
 
 	/** Bounded rankings; callers render the remaining value as Other, not a false total. */
 	public function rows(string $dimension, int $limit = 10): array
-	{
+    {
+        if (\wp_slimstat::pro_is_installed()) { return $this->queryRows($dimension, $limit); }
+        if (!in_array($dimension, ['channel', 'source', 'product'], true)) { return []; }
+        return array_map([self::class, 'freeRow'], $this->queryRows($dimension, min(2, $limit)));
+    }
+
+    private static function freeRow(array $row): array
+    {
+        return array_intersect_key($row, array_flip(['dimension', 'label', 'net'])) + ['can_filter' => !empty($row['matched'])];
+    }
+
+    /** Remove locked fields after cache reads so a previously cached Pro response stays private. */
+    public static function freeData(array $data): array
+    {
+        $data['has_orders'] = !empty($data['current']['orders']);
+        foreach (['current', 'previous'] as $period) {
+            $data[$period] = array_intersect_key($data[$period], ['net' => true]);
+            if (isset($data['series'][$period])) {
+                $data['series'][$period] = array_map(static function ($point) {
+                    return array_intersect_key($point, array_flip(['start', 'end', 'label', 'short', 'net', 'partial', 'provisional']));
+                }, $data['series'][$period]);
+            }
+        }
+        unset($data['journey']);
+        foreach ($data['groups'] ?? [] as $dimension => $rows) {
+            if (!in_array($dimension, ['channel', 'source', 'product'], true)) {
+                unset($data['groups'][$dimension]); continue;
+            }
+            $data['group_totals'][$dimension] = count($rows);
+            $data['groups'][$dimension] = array_map([self::class, 'freeRow'], array_slice($rows, 0, 2));
+        }
+        return $data;
+    }
+
+    private function queryRows(string $dimension, int $limit = 10): array
+    {
 		$dimensions = $this->dimensions();
 		if (!isset($dimensions[$dimension])) {
 			throw new \InvalidArgumentException('Unknown Ecommerce dimension.');
@@ -258,6 +293,12 @@ final class Report
 	/** Cached response; email omits interactive rankings/series that it does not render. */
 	public function data(string $interval = 'auto', bool $details = true): array
 	{
+		$data = $this->queryData($interval, $details);
+		return \wp_slimstat::pro_is_installed() ? $data : self::freeData($data);
+	}
+
+	private function queryData(string $interval = 'auto', bool $details = true): array
+	{
 		$this->context();
 		$state = get_option(Integration::STATE, []);
 		$extra = array_values(array_intersect(['campaign', 'landing', 'device', 'customer', 'coupon'], (array) apply_filters('slimstat_ecommerce_dimensions', [])));
@@ -285,7 +326,7 @@ final class Report
 				'journey' => $this->journey(), 'groups' => [],
 			];
 			foreach ($details ? array_merge(['channel', 'product', 'source'], $extra) : [] as $dimension) {
-				$data['groups'][$dimension] = $this->rows($dimension, 1000);
+				$data['groups'][$dimension] = $this->queryRows($dimension, 1000);
 			}
 			set_transient($key, ['signature' => $signature, 'data' => $data], MINUTE_IN_SECONDS);
 		}
@@ -327,6 +368,12 @@ final class Report
 		unset(\wp_slimstat_db::$filters_normalized['columns']['addon_e2e_id'], \wp_slimstat_db::$filters_normalized['columns']['addon_e2e_nonce']);
 		try {
 			$data = (new self())->data('auto', false);
+            if (!\wp_slimstat::pro_is_installed()) {
+                return [
+                    ['metric' => __('Currency', 'wp-slimstat'), 'value' => $data['currency']],
+                    ['metric' => __('Net sales', 'wp-slimstat'), 'value' => self::plainMoney($data['current']['net'], $data['currency'])],
+                ];
+            }
 			$state = get_option(Integration::STATE, []);
 			$orders = (int) $data['current']['orders']; $journey = $data['journey'];
 			$quality = Integration::provisional($state) ? __('Provisional: synchronization is incomplete.', 'wp-slimstat') : (!empty($state['error']) ? __('Some orders could not be imported, so totals may miss them.', 'wp-slimstat') : __('WooCommerce totals; attribution covers retained tracked visits only.', 'wp-slimstat'));

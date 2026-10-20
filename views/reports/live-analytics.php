@@ -130,10 +130,11 @@ $chart_id = 'live_chart_' . uniqid();
 		<?php else : ?>
 			<div class="live-analytics-chart live-analytics-chart--locked">
 				<?php
-				// Free: one inline panel instead of a blurred mock chart (audit F4).
-				wp_slimstat_admin::get_template('pro-adds', [
+				// Static chart structure only; protected live queries remain Pro-only.
+				wp_slimstat_admin::get_template('locked-preview', [
 					'text'     => __('Pro adds a minute-by-minute chart of who is on your site.', 'wp-slimstat'),
 					'campaign' => 'barchart',
+                    'content' => 'live-chart',
 				]);
 				?>
 			</div>

@@ -1,160 +1,137 @@
-/**
- * The 6.0 release notice. After an update from 5.x, administrators see one dismissible
- * notice, one row per new feature, on the Dashboard and Plugins screens, never on SlimStat's own, for 7 days counted
- * from an anchor option written on the first render. It waits while a database migration
- * is owed, and one dismissal hides it on both screens.
- *
- * The update is simulated by switching notice_latest_news on and deleting the anchor; the
- * migration probe transient decides whether a migration is owed. Touches only options and
- * restores them; no stats rows are read or written.
- */
+/** One per-user release window shared by core and SlimStat screens. */
 import { test, expect, Page, Request } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runWordPressFixture } from './helpers/chart';
+import { ADMIN_USER, AUTHOR_USER } from './helpers/env';
 import {
-  closeDb, getOptionValue, restoreOption, setOptionValue, snapshotOption, restoreSlimstatOptions, snapshotSlimstatOptions, setSlimstatOption,
+  closeDb, getPool, restoreOption, setOptionValue, snapshotOption,
+  restoreSlimstatOptions, snapshotSlimstatOptions, setSlimstatOption,
 } from './helpers/setup';
-import { requireProBooted } from './helpers/pro-state';
+import { getProState, requireProBooted } from './helpers/pro-state';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const ANCHOR = 'slimstat_release_notice_since';
+const ANCHOR = 'slimstat_release_60_since';
+const DISMISS = 'slimstat_release_60_dismissed';
 const PROBE = '_transient_slimstat_migration_probe';
-const PROBE_TIMEOUT = '_transient_timeout_slimstat_migration_probe';
-const DISMISSED = 'slimstat_migration_dismissed';
-const DAY = 24 * 60 * 60;
-const DASHBOARD = '/wp-admin/index.php';
-const PLUGINS = '/wp-admin/plugins.php';
-const OVERVIEW = '/wp-admin/admin.php?page=slimview2';
-
+const OPTIONS = [PROBE, '_transient_timeout_slimstat_migration_probe', 'slimstat_migration_dismissed'];
+const DAY = 86400;
+const PAGES = ['/wp-admin/index.php', '/wp-admin/plugins.php', '/wp-admin/admin.php?page=slimview2', '/wp-admin/admin.php?page=slimview5'];
 const notice = (page: Page) => page.locator('#slimstat-notice-latest-news');
 const now = () => Math.floor(Date.now() / 1000);
-
-const noticeSetting = () => runWordPressFixture("<?php echo get_option('slimstat_options')['notice_latest_news'] ?? '';").trim();
-
-/** A site that just updated: the notice is on, its window not yet anchored. */
-async function simulateUpdate(page: Page, { anchorDaysAgo = null as number | null, migrationOwed = false } = {}): Promise<void> {
-  await setSlimstatOption(page, 'notice_latest_news', 'on');
-  await setOptionValue(ANCHOR, anchorDaysAgo === null ? null : String(now() - anchorDaysAgo * DAY));
-  await setOptionValue(PROBE, migrationOwed ? 'dirty' : 'clean');
-  await setOptionValue(PROBE_TIMEOUT, String(now() + DAY));
-  // A dismissed migration set is never owed, whatever the probe says.
-  if (migrationOwed) await setOptionValue(DISMISSED, null);
+let admin: number, author: number;
+let saved: any[] = [];
+async function meta(user: number, key: string, value?: string | null): Promise<string | null> {
+  const db = getPool();
+  if (value !== undefined) {
+    await db.execute('DELETE FROM wp_usermeta WHERE user_id=? AND meta_key=?', [user, key]);
+    if (value !== null) await db.execute('INSERT INTO wp_usermeta (user_id,meta_key,meta_value) VALUES (?,?,?)', [user,key,value]);
+  }
+  const [rows] = await db.execute('SELECT meta_value FROM wp_usermeta WHERE user_id=? AND meta_key=?', [user,key]) as any;
+  return rows[0]?.meta_value ?? null;
 }
-
-// Exactly one POST: admin.js and the core-screen inline script must not both send it.
-async function dismissIn(page: Page): Promise<void> {
-  const isDismissal = (r: Request) => r.url().includes('admin-ajax.php') && (r.postData() ?? '').includes('slimstat_notice_latest_news');
-  let posts = 0;
-  page.on('request', (r) => { if (isDismissal(r)) posts++; });
-  const posted = page.waitForResponse((r) => isDismissal(r.request()));
-  await notice(page).locator('.notice-dismiss').click();
-  expect((await posted).status()).toBe(200);
-  await expect(notice(page)).toHaveCount(0);
-  await page.waitForLoadState('networkidle');
-  expect(posts, 'one dismissal POST').toBe(1);
+async function simulateUpdate(page: Page, days?: number, migrationOwed = false) {
+  await setSlimstatOption(page, 'notice_latest_news', 'on');
+  for (const user of [admin, author]) {
+    await meta(user, ANCHOR, days === undefined ? null : String(now() - days * DAY));
+    await meta(user, DISMISS, null);
+  }
+  await setOptionValue(PROBE, migrationOwed ? 'dirty' : 'clean');
+  await setOptionValue(OPTIONS[1], String(now() + DAY));
+  if (migrationOwed) await setOptionValue(OPTIONS[2], null);
 }
 
 test.describe('6.0 release notice', () => {
   test.describe.configure({ mode: 'serial' });
-
   test.beforeAll(async () => {
     await snapshotSlimstatOptions();
-    for (const option of [ANCHOR, PROBE, PROBE_TIMEOUT, DISMISSED]) await snapshotOption(option);
+    for (const option of OPTIONS) await snapshotOption(option);
+    const [users] = await getPool().execute('SELECT ID,user_login FROM wp_users WHERE user_login IN (?,?)', [ADMIN_USER,AUTHOR_USER]) as any;
+    admin = users.find((u: any) => u.user_login === ADMIN_USER).ID;
+    author = users.find((u: any) => u.user_login === AUTHOR_USER).ID;
+    [saved] = await getPool().execute('SELECT user_id,meta_key,meta_value FROM wp_usermeta WHERE user_id IN (?,?) AND meta_key IN (?,?)', [admin,author,ANCHOR,DISMISS]) as any;
   });
-
   test.afterAll(async () => {
+    for (const user of [admin, author]) for (const key of [ANCHOR, DISMISS]) await meta(user,key,null);
+    for (const row of saved) await getPool().execute('INSERT INTO wp_usermeta (user_id,meta_key,meta_value) VALUES (?,?,?)', [row.user_id,row.meta_key,row.meta_value]);
     await restoreSlimstatOptions();
-    for (const option of [ANCHOR, PROBE, PROBE_TIMEOUT, DISMISSED]) await restoreOption(option);
+    for (const option of OPTIONS) await restoreOption(option);
     await closeDb();
   });
 
-  test('after an update: on the Dashboard and Plugins, nowhere else', async ({ page }, testInfo) => {
-    const errors: string[] = [];
-    page.on('pageerror', (e) => errors.push(e.message));
+  test('one compact bar shares its first-display time across Dashboard, Plugins and report pages', async ({ page }, info) => {
     await simulateUpdate(page);
     const before = now();
-
-    for (const url of [DASHBOARD, PLUGINS]) {
+    const pro = (await getProState(page)).pro_activated;
+    for (const url of PAGES) {
       await page.goto(url);
-      await expect(notice(page), url).toBeVisible();
-      await expect(notice(page).locator('.slimstat-release-notice__title')).toHaveText('SlimStat 6 is here.');
-      for (const [name, slug] of [['Open Traffic Sources', 'slimview5'], ['Open Heatmaps', 'slimheatmap'], ['Open Shortcodes', 'slimshortcodes'], ['Review migration', 'slimstat_migration']]) {
-        await expect(notice(page).getByRole('link', { name }), name).toHaveAttribute('href', new RegExp(`admin\\.php\\?page=${slug}$`));
-      }
-      // tokens.css does not load here, so the notice brings its own layout: one row of features at 1280px.
-      const tops = await notice(page).locator('.slimstat-whats-new > li').evaluateAll((lis) => lis.map((li) => Math.round(li.getBoundingClientRect().top)));
-      expect(tops.length, 'one row per feature').toBeGreaterThanOrEqual(3);
-      expect(new Set(tops).size, 'the features sit side by side').toBe(1);
-      await expect(notice(page).getByRole('link', { name: 'Explore SlimStat 6' })).toHaveCount(0);
-      await expect(notice(page).locator('a[href*="wp-slimstat.com"], a[href*="page=slimpro"]')).toHaveCount(0);
+      await expect(notice(page)).toHaveCount(1);
+      await expect(notice(page)).toContainText('New in SlimStat 6');
+      for (const slug of ['slimview5','slimheatmap','slimshortcodes']) await expect(notice(page).locator(`a[href$="page=${slug}"]`)).toBeVisible();
+      await expect(notice(page).getByRole('link', { name: 'Explore Pro', exact: true })).toHaveCount(pro ? 0 : 1);
     }
-    expect(Number(await getOptionValue(ANCHOR)), 'the first render anchors the window').toBeGreaterThanOrEqual(before - 5);
-    await page.goto(DASHBOARD);
-    await notice(page).screenshot({ path: testInfo.outputPath('release-notice-dashboard.png') });
-
-    for (const url of ['/wp-admin/edit.php', OVERVIEW, '/wp-admin/admin.php?page=slimview5']) {
-      await page.goto(url);
-      await expect(notice(page), url).toHaveCount(0);
-    }
-    expect(errors).toEqual([]);
+    const anchored = Number(await meta(admin,ANCHOR));
+    expect(anchored).toBeGreaterThanOrEqual(before - 5);
+    await page.reload();
+    expect(Number(await meta(admin,ANCHOR))).toBe(anchored);
+    await notice(page).screenshot({ path: info.outputPath('shared-release-bar.png') });
+    await page.goto('/wp-admin/edit.php');
+    await expect(notice(page)).toHaveCount(0);
   });
 
-  // Plugins has only the inline script; the Dashboard also loads admin.js for SlimStat's widgets.
-  for (const [where, at, adminJs] of [['Plugins', PLUGINS, false], ['Dashboard', DASHBOARD, true]] as const) {
-    test(`dismissed once on ${where}, it is gone everywhere`, async ({ page }) => {
-      await setSlimstatOption(page, 'add_dashboard_widgets', 'on');
+  for (const at of PAGES.slice(0,3)) {
+    test(`keyboard dismissal at ${at} is one request and persists across placements`, async ({ page }) => {
       await simulateUpdate(page);
       await page.goto(at);
-      expect(await page.evaluate(() => 'SlimStatAdminParams' in window), 'admin.js loaded').toBe(adminJs);
-      await dismissIn(page);
-      expect(noticeSetting()).toBe('no');
-      expect(await getOptionValue(ANCHOR), 'the anchor stays').not.toBeNull();
-      for (const url of [DASHBOARD, PLUGINS, OVERVIEW]) {
-        await page.goto(url);
-        await expect(notice(page), url).toHaveCount(0);
-      }
+      const isDismissal = (r: Request) => r.url().includes('admin-ajax.php') && (r.postData() ?? '').includes('action=slimstat_notice_latest_news');
+      let posts = 0;
+      page.on('request', r => { if (isDismissal(r)) posts++; });
+      const response = page.waitForResponse(r => isDismissal(r.request()));
+      await notice(page).getByRole('button', { name: 'Dismiss SlimStat 6 announcement' }).focus();
+      await page.keyboard.press('Enter');
+      expect((await response).ok()).toBe(true);
+      await expect(notice(page)).toHaveCount(0);
+      expect(await meta(admin,DISMISS)).toBe('1');
+      expect(await meta(author,DISMISS)).toBeNull();
+      expect(runWordPressFixture("<?php echo get_option('slimstat_options')['notice_latest_news'];").trim()).toBe('on');
+      for (const url of PAGES) { await page.goto(url); await expect(notice(page)).toHaveCount(0); }
+      expect(posts).toBe(1);
     });
   }
 
-  test('it leaves after 7 days', async ({ page }) => {
-    await simulateUpdate(page, { anchorDaysAgo: 8 });
-    for (const url of [DASHBOARD, PLUGINS]) {
-      await page.goto(url);
-      await expect(notice(page), url).toHaveCount(0);
-    }
+  test('day 13 is visible and day 14 expires across all placements', async ({ page }) => {
+    await simulateUpdate(page,13);
+    await page.goto(PAGES[2]); await expect(notice(page)).toBeVisible();
+    await simulateUpdate(page,14);
+    for (const url of PAGES) { await page.goto(url); await expect(notice(page)).toHaveCount(0); }
   });
-
-  test('it waits while a database migration is owed, and its window does not start', async ({ page }) => {
-    await simulateUpdate(page, { migrationOwed: true });
-    await page.goto(DASHBOARD);
+  test('migration defers first exposure', async ({ page }) => {
+    await simulateUpdate(page,undefined,true);
+    await page.goto(PAGES[0]);
     await expect(page.locator('.slimstat-migration-notice')).toBeVisible();
     await expect(notice(page)).toHaveCount(0);
-    expect(await getOptionValue(ANCHOR)).toBeNull();
+    expect(await meta(admin,ANCHOR)).toBeNull();
   });
-
-  test('users without manage_options never see it', async ({ page, browser }) => {
+  test('another user has an independent window and no purchase action', async ({ page, browser }) => {
     await simulateUpdate(page);
-    await setSlimstatOption(page, 'capability_can_view', 'read');
-    const author = await browser.newContext({ storageState: path.join(here, '.auth/author.json') });
+    await setSlimstatOption(page,'capability_can_view','read');
+    await meta(admin,DISMISS,'1');
+    const context = await browser.newContext({ storageState: path.join(here,'.auth/author.json') });
     try {
-      const authorPage = await author.newPage();
-      await authorPage.goto(DASHBOARD);
-      await expect(notice(authorPage)).toHaveCount(0);
-    } finally { await author.close(); }
-    expect(await getOptionValue(ANCHOR), 'a hidden notice never anchors').toBeNull();
+      const p = await context.newPage();
+      await p.goto(PAGES[0]); await expect(notice(p)).toHaveCount(0);
+      expect(await meta(author,ANCHOR)).toBeNull();
+      await p.goto(PAGES[2]); await expect(notice(p)).toBeVisible();
+      await expect(notice(p).getByRole('link',{ name:'Explore Pro' })).toHaveCount(0);
+      expect(await meta(author,ANCHOR)).not.toBeNull();
+    } finally { await context.close(); }
   });
-
-  test('new installs start with it off; upgrades still get it', async () => {
-    const out = runWordPressFixture("<?php echo wp_slimstat::get_fresh_defaults()['notice_latest_news'], ',', wp_slimstat::init_options()['notice_latest_news'];").trim();
-    expect(out).toBe('no,on');
+  test('new installs opt out while upgrades retain their existing setting', () => {
+    expect(runWordPressFixture("<?php echo wp_slimstat::get_fresh_defaults()['notice_latest_news'], ',', wp_slimstat::init_options()['notice_latest_news'];").trim()).toBe('no,on');
   });
-
-  test('with Pro active it says what Pro 3.0.0 adds and links to no purchase page', async ({ page }) => {
-    await requireProBooted(page);
-    await simulateUpdate(page);
-    await page.goto(DASHBOARD);
-    await expect(notice(page)).toContainText('SlimStat Pro 3.0.0 adds heatmap page previews and Ecommerce email reports.');
-    await expect(notice(page).locator('a[href*="wp-slimstat.com"], a[href*="page=slimpro"]')).toHaveCount(0);
+  test('Pro opens available features without a purchase action', async ({ page }) => {
+    await requireProBooted(page); await simulateUpdate(page); await page.goto(PAGES[2]);
+    await expect(notice(page).getByRole('link',{ name:'Open Heatmaps' })).toBeVisible();
+    await expect(notice(page).locator('a[href*="page=slimpro"]')).toHaveCount(0);
   });
 });

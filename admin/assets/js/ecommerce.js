@@ -27,6 +27,7 @@
         if (focus) tab.focus();
     }
     function expand(panel, open, focus) {
+        if (!panel.querySelector('[data-expand]')) return;
         panel.querySelector('[data-expand]').setAttribute('aria-expanded', String(open));
         panel.querySelector('.ss-ec-report-detail').hidden = !open;
         panel.querySelector('[data-expand]').textContent = open ? __('Close report', 'wp-slimstat') : __('Full report', 'wp-slimstat');
@@ -47,13 +48,10 @@
         rows.sort((a, b) => (value(b) - value(a)) * (ascending ? -1 : 1));
         rows.forEach((row, index) => {
             row.parentElement.append(row);
-            const detail = panel.querySelector('tr[data-rank-index="' + row.dataset.rankIndex + '"]');
-            if (detail) detail.parentElement.append(detail);
             row.hidden = expanded ? index < page * size || index >= (page + 1) * size : index >= 5;
-            if (detail) detail.hidden = row.hidden;
             /* translators: 1: order count, 2: formatted monetary amount. */
-            row.title = sprintf(__('%1$s orders · %2$s', 'wp-slimstat'), row.dataset.rankOrders, row.dataset.rankMoney);
-            row.querySelector('.ss-ec-rank-value').textContent = metric === 'orders' ? Number(row.dataset.rankOrders).toLocaleString(document.documentElement.lang) : row.dataset.rankMoney;
+            row.title = row.dataset.rankOrders === undefined ? row.dataset.rankMoney : sprintf(__('%1$s orders · %2$s', 'wp-slimstat'), row.dataset.rankOrders, row.dataset.rankMoney);
+            row.querySelector('.ss-ec-rank-value').textContent = (panel.dataset.dimension === 'coupon' ? __('Discounts', 'wp-slimstat') : __('Net sales', 'wp-slimstat')) + ': ' + row.dataset.rankMoney;
             row.querySelector('.ss-ec-rank-bar').style.setProperty('--ss-ec-share', (max ? 100 * Math.abs(value(row)) / max : 0) + '%');
             row.classList.toggle('is-negative', value(row) < 0);
         });
@@ -261,7 +259,10 @@
     };
     document.addEventListener('click', event => {
         const target = event.target.closest('button,a'); if (!target || !root()?.contains(target)) return;
-        if (target.matches('[data-chart-metric]')) { state.metric = target.dataset.chartMetric; draw(); }
+        if (target.matches('[data-chart-metric]')) {
+            if (target.dataset.proLocked) { root().querySelector('#ss-ec-unlock').focus(); return; }
+            state.metric = target.dataset.chartMetric; draw();
+        }
         if (target.matches('[role=tab]')) selectTab(target, false);
         if (target.matches('[data-expand]')) expand(target.closest('.ss-ec-report'), target.getAttribute('aria-expanded') !== 'true', false);
         if (target.matches('[data-page-step]')) { const panel = target.closest('.ss-ec-report'); state.pages[panel.dataset.dimension] += Number(target.dataset.pageStep); rank(panel); }

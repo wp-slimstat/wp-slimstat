@@ -9,7 +9,7 @@ use SlimStat\Utils\Query;
 /** Uses the existing report filters, query cache, network merge and pagination. */
 class AcquisitionReport
 {
-    /** Groups shown without Pro; the rest are named, never counted, in a locked row. */
+    /** Readable summary groups in Free; all breakdowns stay protected. */
     private const FREE_GROUPS = 2;
 
     private static function fields(string $mode): array
@@ -40,6 +40,40 @@ class AcquisitionReport
     }
 
     public static function rows(array $args = []): array
+    {
+        if (\wp_slimstat::pro_is_installed()) { return self::queryRows($args); }
+        // Every raw consumer, including shortcodes and exports, shares the Free boundary.
+        $args['summary'] = true;
+        return array_map(static function ($row) { unset($row['values']); return $row; }, array_slice(
+            self::mergeSummaries(self::queryRows($args), ($args['mode'] ?? '') === 'utm' ? 'utm_campaign' : 'traffic_channel'), 0, self::FREE_GROUPS
+        ));
+    }
+
+    private static function summaryKey(array $row, string $groupField): string
+    {
+        $value = $row[$groupField] ?? null;
+        return serialize([(int) ($row['blog_id'] ?? 0), 'traffic_channel' === $groupField && !isset(Acquisition::labels()[$value ?? '']) ? 'unassigned' : (string) $value]);
+    }
+
+    private static function mergeSummaries(array $all, string $groupField): array
+    {
+        // Values that read the same are one group: no channel yet and the unassigned channel, or a NULL and an empty tag.
+        $merged = [];
+        foreach ($all as $row) {
+            $key = self::summaryKey($row, $groupField);
+            if (isset($merged[$key])) {
+                $merged[$key]['counthits'] = (int) $merged[$key]['counthits'] + (int) $row['counthits'];
+                $merged[$key]['values'][] = $row[$groupField] ?? null;
+            } else {
+                $merged[$key] = $row + ['values' => [$row[$groupField] ?? null]];
+            }
+        }
+        $all = array_values($merged);
+        array_multisort(array_map('intval', array_column($all, 'counthits')), SORT_DESC, array_keys($all), $all);
+        return $all;
+    }
+
+    private static function queryRows(array $args = []): array
     {
         // CSV/email callbacks also run while setup is pending, without the rendered setup state.
         if ('1' !== get_option(Acquisition::readinessKey(), '0')) {
@@ -130,28 +164,19 @@ class AcquisitionReport
         echo '</tbody></table></div>';
     }
 
-    /** Names the groups beyond the Free cap, most traffic first, never their numbers. */
-    private static function locked(string $mode, array $names, bool $capped): void
+    /** Illustrative rows never include protected labels or values. */
+    private static function locked(string $mode, bool $more): void
     {
-        $names = array_values(array_unique($names));
-        $items = array_map(static function (string $name): string {
-            return '<strong>' . htmlspecialchars($name, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</strong>';
-        }, array_slice($names, 0, 5));
-        // A capped query may not have returned every group.
-        if ($capped || count($names) > 5) {
-            $items[] = esc_html__('more', 'wp-slimstat');
+        echo '<div class="slimstat-acquisition__locked">';
+        if ($more) {
+            echo '<div class="slimstat-locked-rows" aria-hidden="true"><span></span><span></span></div>';
+            echo '<p class="slimstat-preview-caption">' . esc_html__('Illustrative preview of additional results.', 'wp-slimstat') . '</p>';
         }
-        echo '<div class="slimstat-acquisition__locked"><span class="dashicons dashicons-lock" aria-hidden="true"></span><span class="slimstat-acquisition__teaser">';
-        /* translators: %s: list of channel or campaign names, such as "Email, Paid Search, and more". */
-        echo wp_kses(sprintf(esc_html__('Also active this period: %s.', 'wp-slimstat'), wp_sprintf_l('%l', $items)), ['strong' => []]);
-        echo '</span>';
-        // The teaser is for everyone; the link only for whoever can buy (the Pro page needs manage_options).
-        if (current_user_can('manage_options')) {
-            echo '<a class="noslimstat slimstat-acquisition__unlock" href="' . esc_url(admin_url('admin.php?page=slimpro#ss-pro-converts')) . '">' . esc_html('utm' === $mode ? __('See all campaigns with Pro', 'wp-slimstat') : __('See all channels with Pro', 'wp-slimstat')) . '<span aria-hidden="true">&rarr;</span></a>';
-        }
-        if (current_user_can('activate_plugins') && file_exists(WP_PLUGIN_DIR . '/wp-slimstat-pro/wp-slimstat-pro.php')) {
-            echo '<a class="noslimstat slimstat-acquisition__activate" href="' . esc_url(admin_url('plugins.php')) . '">' . esc_html__('Already have Pro? Activate the plugin', 'wp-slimstat') . '</a>';
-        }
+        \wp_slimstat_admin::get_template('pro-adds', [
+            'text' => __('Unlock all results and source breakdowns with Pro.', 'wp-slimstat'),
+            'action' => __('Upgrade to see more', 'wp-slimstat'),
+            'campaign' => 'traffic-sources', 'content' => 'utm' === $mode ? 'campaigns' : 'channels',
+        ]);
         echo '</div>';
     }
 
@@ -206,26 +231,10 @@ class AcquisitionReport
         $db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
         $suppressed = $db->suppress_errors(true);
         try {
-            $all = self::rows(['mode' => $mode, 'summary' => true]);
+            $all = self::queryRows(['mode' => $mode, 'summary' => true]);
             $failed = '' !== (string) $db->last_error;
             $capped = count($all) >= (int) \wp_slimstat::$settings['limit_results'];
-            // Values that read the same are one group: no channel yet and the unassigned channel, or a NULL and an empty tag.
-            $groupKey = static function (array $row) use ($groupField): string {
-                $value = $row[$groupField] ?? null;
-                return serialize([(int) ($row['blog_id'] ?? 0), 'traffic_channel' === $groupField && !isset(Acquisition::labels()[$value ?? '']) ? 'unassigned' : (string) $value]);
-            };
-            $merged = [];
-            foreach ($all as $row) {
-                $key = $groupKey($row);
-                if (isset($merged[$key])) {
-                    $merged[$key]['counthits'] = (int) $merged[$key]['counthits'] + (int) $row['counthits'];
-                    $merged[$key]['values'][] = $row[$groupField] ?? null;
-                } else {
-                    $merged[$key] = $row + ['values' => [$row[$groupField] ?? null]];
-                }
-            }
-            $all = array_values($merged);
-            array_multisort(array_map('intval', array_column($all, 'counthits')), SORT_DESC, array_keys($all), $all);
+            $all = self::mergeSummaries($all, $groupField);
             $locked = !\wp_slimstat::pro_is_installed() && count($all) > self::FREE_GROUPS;
             if ($locked) {
                 $start = 0;
@@ -238,7 +247,7 @@ class AcquisitionReport
             foreach (array_merge([], ...array_column($rows, 'values')) as $value) {
                 $scope[] = null === $value ? $groupField . ' IS NULL' : $db->prepare($groupField . ' = %s', $value);
             }
-            $details = $rows ? self::rows(['mode' => $mode, 'where' => '(' . implode(' OR ', array_unique($scope)) . ')']) : [];
+            $details = $rows && \wp_slimstat::pro_is_installed() ? self::queryRows(['mode' => $mode, 'where' => '(' . implode(' OR ', array_unique($scope)) . ')']) : [];
             $failed = $failed || '' !== (string) $db->last_error;
             $total = \wp_slimstat_db::count_records('id', self::where($mode));
             $failed = $failed || '' !== (string) $db->last_error;
@@ -279,14 +288,14 @@ class AcquisitionReport
             };
             $byGroup = [];
             foreach ($details as $detail) {
-                $byGroup[$groupKey($detail)][] = $detail;
+                $byGroup[self::summaryKey($detail, $groupField)][] = $detail;
             }
             echo '<div class="slimstat-acquisition__groups"><div class="slimstat-acquisition__columns" aria-hidden="true"><span>' . esc_html($fields[$groupField]) . '</span><span>' . esc_html__('Pageviews', 'wp-slimstat') . '</span><span>' . esc_html__('Share', 'wp-slimstat') . '</span></div>';
             foreach ($rows as $row) {
                 // A merged group has no one value to filter by.
                 $value = 1 === count($row['values']) ? $row[$groupField] : null;
                 $label = $labelOf($value);
-                $groupRows = $byGroup[$groupKey($row)] ?? [];
+                $groupRows = $byGroup[self::summaryKey($row, $groupField)] ?? [];
                 $count = (int) $row['counthits'];
                 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- htmlspecialchars encodes quotes and existing entities to preserve literal stored tags.
                 echo '<details class="slimstat-acquisition__group"><summary><span class="slimstat-acquisition__identity"><span class="slimstat-acquisition__label">' . htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</span>';
@@ -318,9 +327,11 @@ class AcquisitionReport
                 }
                 if ($groupRows) {
                     self::breakdown($groupRows, $fields, $total);
+                } elseif (!\wp_slimstat::pro_is_installed()) {
+                    echo '<div class="slimstat-locked-rows" aria-hidden="true"><span></span><span></span></div><p>' . esc_html__('Source breakdowns are available with Pro. Illustrative preview.', 'wp-slimstat') . '</p>';
                 }
                 $shown = array_sum(array_column($groupRows, 'counthits'));
-                if ($shown < $count) {
+                if (\wp_slimstat::pro_is_installed() && $shown < $count) {
                     echo '<p class="slimstat-acquisition__note">' . esc_html(sprintf(
                         /* translators: 1: shown pageviews, 2: complete group pageviews. */
                         __('Showing %1$s of %2$s pageviews in this breakdown. The result limit was reached; filter this group or narrow your filters for more detail.', 'wp-slimstat'), number_format_i18n($shown), number_format_i18n($count)
@@ -328,10 +339,8 @@ class AcquisitionReport
                 }
                 echo '</div></details>';
             }
-            if ($locked && is_admin()) {
-                self::locked($mode, array_map(static function (array $row) use ($groupField, $labelOf): string {
-                    return $labelOf(1 === count($row['values']) ? $row[$groupField] : null);
-                }, array_slice($all, self::FREE_GROUPS)), $capped);
+            if (!\wp_slimstat::pro_is_installed() && is_admin()) {
+                self::locked($mode, count($all) > self::FREE_GROUPS);
             }
             echo '</div>';
             // Without Pro there is nothing to page to: the locked row stands in for the rest.
