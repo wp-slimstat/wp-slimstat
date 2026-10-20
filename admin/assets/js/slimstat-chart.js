@@ -252,7 +252,7 @@ document.addEventListener("DOMContentLoaded", function () {
             (function (iCopy, labelTextCopy, valuesCopy, keyCopy) {
                 var color = colors[iCopy % colors.length];
                 var dataset = {
-                    label: isPrevious ? "Previous " + labelTextCopy : labelTextCopy,
+                    label: isPrevious ? wp.i18n.sprintf(slimstat_chart_vars.previous_series, labelTextCopy) : labelTextCopy,
                     key: keyCopy,
                     isPrevious: isPrevious,
                     data: valuesCopy,
@@ -617,8 +617,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (dataset.skipLegend) {
                     return;
                 }
-                var isPrevious = dataset.label.indexOf("Previous") !== -1;
-                if (isPrevious) {
+                if (dataset.isPrevious) {
                     return;
                 }
 
@@ -700,7 +699,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             for (var di2 = 0; di2 < chart.data.datasets.length; di2++) {
                 var dataset2 = chart.data.datasets[di2];
-                if (dataset2.label.indexOf("Previous") !== -1) {
+                if (dataset2.isPrevious) {
                     var correspondingCurrentMeta = chart.getDatasetMeta(di2 - currentDatasets.length);
                     chart.getDatasetMeta(di2).hidden = previousVisible ? correspondingCurrentMeta.hidden : true;
                 }

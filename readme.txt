@@ -1,4 +1,4 @@
-=== SlimStat Analytics: Real-Time, Privacy-Friendly WordPress Statistics ===
+=== SlimStat Analytics ===
 Contributors: veronalabs, coolmann, toxicum, parhumm, mostafas1990
 Tags: analytics, statistics, tracking, reports, privacy
 Text Domain: wp-slimstat

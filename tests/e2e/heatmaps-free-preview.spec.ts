@@ -10,6 +10,30 @@ import { closeDb, getPool, restoreOption, snapshotOption } from './helpers/setup
 
 const PAGE = '/e2e-heatmap-preview';
 
+test('Free additional-page captions use translated singular and plural forms', async ({ page }) => {
+  await snapshotOption('active_plugins');
+  let total = 3;
+  try {
+    runWordPressFixture("<?php deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php');");
+    await page.route(url => decodeURIComponent(url.href).includes('/slimstat/v1/heatmap/pages'), route => route.fulfill({json: {
+      locked:true, total, ever:true, updated:Math.floor(Date.now()/1000),
+      rows:['/qa-first','/qa-second'].map(path => ({page:path,title:path,clicks:2,pageviews:5,devices:null,scroll:null,dead:null,rage:null,last:1,lastText:'',full:false,url:''})),
+    }}));
+    await page.goto('/wp-admin/admin.php?page=slimheatmap');
+    const caption = page.locator('.ss-hm-locked-preview .slimstat-preview-caption');
+    await expect(caption).toHaveText('1 additional page. Illustrative preview; unlock with Pro.');
+    await page.evaluate(() => (window as any).wp.i18n.setLocaleData({
+      '':{lang:'de_DE','plural-forms':'nplurals=2; plural=(n != 1);'},
+      '%s additional page. Illustrative preview; unlock with Pro.':['Eine weitere Seite: %s.','Weitere Seiten: %s.'],
+    }, 'wp-slimstat'));
+    await page.locator('.ss-hm-refresh').click();
+    await expect(caption).toHaveText('Eine weitere Seite: 1.');
+    total = 4;
+    await page.locator('.ss-hm-refresh').click();
+    await expect(caption).toHaveText('Weitere Seiten: 2.');
+  } finally { await restoreOption('active_plugins'); await closeDb(); }
+});
+
 test('Free: View heatmap lists the page\'s most clicked links and buttons inline', async ({ page }, testInfo) => {
   const pool = getPool();
   const now = Math.floor(Date.now() / 1000);

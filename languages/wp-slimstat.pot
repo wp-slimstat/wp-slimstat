@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-20T13:26:37+00:00\n"
+"POT-Creation-Date: 2026-10-20T14:53:35+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -8946,6 +8946,12 @@ msgstr ""
 msgid "Invalid SQL expression in chart data. Only whitelisted aggregate functions on valid columns are allowed."
 msgstr ""
 
+#. translators: %s: metric name, such as Search Terms.
+#: src/Modules/Chart.php:753
+#, php-format
+msgid "Previous %s"
+msgstr ""
+
 #: src/Reports/Abstracts/AbstractReport.php:363
 msgid "No content available for this report."
 msgstr ""
@@ -10350,8 +10356,10 @@ msgstr ""
 #. translators: %s: number of additional pages in the selected range.
 #: admin/assets/js/heatmaps.js:184
 #, js-format
-msgid "%s additional pages. Illustrative preview; unlock with Pro."
-msgstr ""
+msgid "%s additional page. Illustrative preview; unlock with Pro."
+msgid_plural "%s additional pages. Illustrative preview; unlock with Pro."
+msgstr[0] ""
+msgstr[1] ""
 
 #: admin/assets/js/heatmaps.js:193
 msgid "No clicks recorded on this site yet. SlimStat records link and button clicks on every tracked page. Open your homepage, click a link, then select Refresh."

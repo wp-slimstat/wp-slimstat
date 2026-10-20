@@ -737,7 +737,7 @@ class Chart
 		wp_enqueue_script(
 			'slimstat_chart',
 			plugins_url('/admin/assets/js/slimstat-chart.js', SLIMSTAT_FILE),
-			['slimstat_chartjs'],
+			['slimstat_chartjs', 'wp-i18n'],
 			SLIMSTAT_ANALYTICS_VERSION,
 			true
 		);
@@ -749,6 +749,8 @@ class Chart
 			'end_date_string' => isset($args['end']) ? gmdate('Y/m/d H:i:s', $args['end']) : null,
 			'timezone'        => get_option('timezone_string') ?: 'UTC',
 			'start_of_week'   => get_option('start_of_week', 1),
+			/* translators: %s: metric name, such as Search Terms. */
+			'previous_series' => __('Previous %s', 'wp-slimstat'),
 		]);
 	}
 

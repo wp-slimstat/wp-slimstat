@@ -3,6 +3,13 @@ import { closeDb, getPool } from './helpers/setup';
 import { runWordPressFixture } from './helpers/chart';
 
 test('Search Terms keeps a previous-only 468 / 24 period visible and tooltips describe the correct series', async ({ page }) => {
+  await page.addInitScript(() => {
+    let config: any;
+    Object.defineProperty(window, 'slimstat_chart_vars', {
+      configurable: true, get: () => config,
+      set: value => { config = value; if ('previous_series' in value) config.previous_series = 'Vorherige %1$s'; },
+    });
+  });
   const resource = '/october-search-reconciliation';
   const pool = getPool();
   try {
@@ -28,10 +35,11 @@ test('Search Terms keeps a previous-only 468 / 24 period visible and tooltips de
         const datasetIndex = chart.data.datasets.indexOf(previous);
         const index = previous.data.findIndex((value: number) => value>0);
         const point = chart.getDatasetMeta(datasetIndex).data[index];
-        return { sum:previous.data.reduce((a:number,b:number)=>a+Number(b),0), max:chart.scales.y.max,
+        return { label:previous.label, sum:previous.data.reduce((a:number,b:number)=>a+Number(b),0), max:chart.scales.y.max,
           peak:Math.max(...previous.data), x:point.x,y:point.y,value:previous.data[index],color:previous.borderColor };
       });
       expect(evidence.sum).toBe(468);
+      expect(evidence.label).toMatch(/^Vorherige /);
       expect(evidence.max).toBeGreaterThanOrEqual(evidence.peak);
       expect(evidence.max).toBeGreaterThan(1);
       const box = (await canvas.boundingBox())!;
@@ -46,6 +54,17 @@ test('Search Terms keeps a previous-only 468 / 24 period visible and tooltips de
       const expectedColor = await page.evaluate(color => { const el=document.createElement('span'); el.style.backgroundColor=color; return el.style.backgroundColor; },evidence.color);
       expect(await swatch.evaluate(el => (el as HTMLElement).style.backgroundColor)).toBe(expectedColor);
     }
+    const comparison = page.locator('.slimstat-toggle-prev-datasets.slimstat-postbox-chart--item-slim_p1_19_01');
+    await comparison.click();
+    expect(await canvas.evaluate(element => {
+      const chart = (window as any).Chart.getChart(element);
+      return chart.data.datasets.every((dataset: any, index: number) => !dataset.isPrevious || chart.getDatasetMeta(index).hidden);
+    })).toBe(true);
+    await comparison.click();
+    expect(await canvas.evaluate(element => {
+      const chart = (window as any).Chart.getChart(element);
+      return chart.data.datasets.some((dataset: any, index: number) => dataset.isPrevious && !chart.getDatasetMeta(index).hidden);
+    })).toBe(true);
     const [reference] = await pool.execute('SELECT COUNT(*) AS total, COUNT(DISTINCT searchterms) AS distinct_terms FROM wp_slim_stats WHERE resource=?',[resource]) as any;
     expect(reference[0]).toEqual({total:468,distinct_terms:24});
   } finally { await pool.execute('DELETE FROM wp_slim_stats WHERE resource=?',[resource]); await closeDb(); }

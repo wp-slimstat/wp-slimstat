@@ -181,7 +181,7 @@
             const preview = el('div', {class: 'slimstat-locked-rows', 'aria-hidden': 'true'}, [el('span'), el('span')]);
             body.append(el('tr', {class: 'ss-hm-locked-preview'}, [el('td', {colspan: '10'}, [preview,
                 /* translators: %s: number of additional pages in the selected range. */
-                el('p', {class: 'slimstat-preview-caption'}, [sprintf(__('%s additional pages. Illustrative preview; unlock with Pro.', 'wp-slimstat'), number.format(state.total - rows.length))])])]));
+                el('p', {class: 'slimstat-preview-caption'}, [sprintf(_n('%s additional page. Illustrative preview; unlock with Pro.', '%s additional pages. Illustrative preview; unlock with Pro.', state.total - rows.length, 'wp-slimstat'), number.format(state.total - rows.length))])])]));
         }
         table.setAttribute('aria-busy', 'false');
         table.hidden = !rows.length;
