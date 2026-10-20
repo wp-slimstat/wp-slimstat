@@ -59,16 +59,17 @@ test.describe('6.0 release notice', () => {
     await closeDb();
   });
 
-  test('one compact bar shares its first-display time across Dashboard, Plugins and report pages', async ({ page }, info) => {
+  test('Dashboard and Plugins feature card and the report bar share their first-display time', async ({ page }, info) => {
     await simulateUpdate(page);
     const before = now();
     const pro = (await getProState(page)).pro_activated;
-    for (const url of PAGES) {
+    for (const [i, url] of PAGES.entries()) {
+      const core = i < 2;
       await page.goto(url);
       await expect(notice(page)).toHaveCount(1);
-      await expect(notice(page)).toContainText('New in SlimStat 6');
+      await expect(notice(page)).toContainText(core ? 'SlimStat 6 is here.' : 'New in SlimStat 6');
       for (const slug of ['slimview5','slimheatmap','slimshortcodes']) await expect(notice(page).locator(`a[href$="page=${slug}"]`)).toBeVisible();
-      await expect(notice(page).getByRole('link', { name: 'Explore Pro', exact: true })).toHaveCount(pro ? 0 : 1);
+      await expect(notice(page).getByRole('link', { name: 'Explore Pro', exact: true })).toHaveCount(pro || core ? 0 : 1);
     }
     const anchored = Number(await meta(admin,ANCHOR));
     expect(anchored).toBeGreaterThanOrEqual(before - 5);

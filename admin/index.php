@@ -2552,27 +2552,53 @@ class wp_slimstat_admin
         if ($migration_owed || !self::can_view_stats() || !self::release_notice_visible()) {
             return;
         }
-        $is_pro = $is_pro ?? wp_slimstat::pro_is_installed();
+        $is_pro   = $is_pro ?? wp_slimstat::pro_is_installed();
+        $commerce = ($commerce ?? \SlimStat\Ecommerce\Integration::available()) && \SlimStat\Ecommerce\Report::canView();
+        self::enqueue_promotions();
+        $attributes = ' aria-label="' . esc_attr__('New in SlimStat 6', 'wp-slimstat') . '" data-dismiss-nonce="' . esc_attr(wp_create_nonce('meta-box-order')) . '" data-ajax-url="' . esc_url(admin_url('admin-ajax.php')) . '">';
+        $dismiss    = '<button type="button" class="slimstat-release-dismiss" aria-label="' . esc_attr__('Dismiss SlimStat 6 announcement', 'wp-slimstat') . '">×</button><span role="status" class="screen-reader-text"></span>';
+
+        if ('notice' === $placement) {
+            // Dashboard and Plugins: one row per new feature, no purchase links. A div.notice lets
+            // common.js move it below the page title, clear of Screen Options.
+            $link = static function ($page, $text) {
+                return '<a href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($text) . '</a>';
+            };
+            $rows = [['admin-links', __('Channels and UTM Campaigns', 'wp-slimstat'), __('Side by side, in one report.', 'wp-slimstat'), 'slimview5', __('Open Traffic Sources', 'wp-slimstat')]];
+            if ($commerce) {
+                $rows[] = ['cart', __('Ecommerce', 'wp-slimstat'), __('Net sales, orders and top products.', 'wp-slimstat'), 'slimview7', __('Open Ecommerce', 'wp-slimstat')];
+            }
+            $rows[] = ['welcome-view-site', __('Heatmaps', 'wp-slimstat'), __('Every page with clicks.', 'wp-slimstat'), 'slimheatmap', __('Open Heatmaps', 'wp-slimstat')];
+            $rows[] = ['editor-code', __('Shortcode Playground', 'wp-slimstat'), __('Preview a report, then copy its shortcode.', 'wp-slimstat'), 'slimshortcodes', __('Open Shortcodes', 'wp-slimstat')];
+            echo '<div id="slimstat-notice-latest-news" class="notice notice-info slimstat-release-notice" role="region"' . $attributes
+                . '<p><strong class="slimstat-release-notice__title">' . esc_html__('SlimStat 6 is here.', 'wp-slimstat') . '</strong> '
+                . esc_html__('Reports are faster, and your settings and data carry over. Includes important security hardening.', 'wp-slimstat')
+                . ($is_pro ? ' ' . esc_html__('SlimStat Pro 3.0.0 adds heatmap page previews and Ecommerce email reports.', 'wp-slimstat') : '') . '</p><ul class="slimstat-whats-new">';
+            foreach ($rows as [$icon, $name, $why, $page, $open]) {
+                echo '<li><span class="dashicons dashicons-' . esc_attr($icon) . '" aria-hidden="true"></span><strong>' . esc_html($name) . '</strong><span class="slimstat-whats-new__why">' . esc_html($why) . '</span>' . $link($page, $open) . '</li>';
+            }
+            /* translators: %s: "Review migration" link to the Migration screen. */
+            echo '</ul><p>' . sprintf(esc_html__('%s: optional database steps, nothing runs until you choose.', 'wp-slimstat'), $link('slimstat_migration', __('Review migration', 'wp-slimstat'))) . '</p>' . $dismiss . '</div>';
+            return;
+        }
+
         $links = ['slimview5' => __('Channels / UTM Campaigns', 'wp-slimstat')];
-        if (($commerce ?? \SlimStat\Ecommerce\Integration::available()) && \SlimStat\Ecommerce\Report::canView()) {
+        if ($commerce) {
             $links['slimview7'] = $is_pro ? __('Open Ecommerce', 'wp-slimstat') : __('Ecommerce: Net sales in Free', 'wp-slimstat');
         }
         $links['slimheatmap'] = $is_pro ? __('Open Heatmaps', 'wp-slimstat') : __('Heatmaps: page previews, detail in Pro', 'wp-slimstat');
         if (current_user_can('manage_options')) {
             $links['slimshortcodes'] = __('Shortcodes', 'wp-slimstat');
         }
-        self::enqueue_promotions();
-        // On core screens a div.notice lets common.js move it below the page title, clear of Screen Options.
-        $tag = 'notice' === $placement ? 'div' : 'aside';
-        echo '<' . $tag . ' id="slimstat-notice-latest-news" class="' . ('div' === $tag ? 'notice ' : '') . 'slimstat-release-bar"' . ('div' === $tag ? ' role="region"' : '') . ' aria-label="' . esc_attr__('New in SlimStat 6', 'wp-slimstat') . '" data-dismiss-nonce="' . esc_attr(wp_create_nonce('meta-box-order')) . '" data-ajax-url="' . esc_url(admin_url('admin-ajax.php')) . '"><strong>' . esc_html__('New in SlimStat 6', 'wp-slimstat') . '</strong><nav aria-label="' . esc_attr__('Explore features', 'wp-slimstat') . '">';
+        echo '<aside id="slimstat-notice-latest-news" class="slimstat-release-bar"' . $attributes . '<strong>' . esc_html__('New in SlimStat 6', 'wp-slimstat') . '</strong><nav aria-label="' . esc_attr__('Explore features', 'wp-slimstat') . '">';
         foreach ($links as $page => $label) {
             echo '<a href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($label) . '</a>';
         }
         echo '</nav>';
         if (!$is_pro && current_user_can('manage_options')) {
-            echo '<a class="slimstat-release-bar__pro" href="' . esc_url(\SlimStat\Utils\ProLinks::url('notice' === $placement ? 'whats-new' : 'banner', 'notice' === $placement ? 'notice' : 'header-strip', true)) . '">' . esc_html__('Explore Pro', 'wp-slimstat') . '</a>';
+            echo '<a class="slimstat-release-bar__pro" href="' . esc_url(\SlimStat\Utils\ProLinks::url('banner', 'header-strip', true)) . '">' . esc_html__('Explore Pro', 'wp-slimstat') . '</a>';
         }
-        echo '<button type="button" class="slimstat-release-dismiss" aria-label="' . esc_attr__('Dismiss SlimStat 6 announcement', 'wp-slimstat') . '">×</button><span role="status" class="screen-reader-text"></span></' . $tag . '>';
+        echo $dismiss . '</aside>';
     }
 
     /**

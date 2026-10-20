@@ -62,7 +62,7 @@
     document.addEventListener('click', function (event) {
         var dismiss = event.target.closest('.slimstat-release-dismiss');
         if (dismiss) {
-            var bar = dismiss.closest('.slimstat-release-bar');
+            var bar = dismiss.closest('#slimstat-notice-latest-news');
             dismiss.disabled = true;
             fetch(bar.dataset.ajaxUrl, {method: 'POST', credentials: 'same-origin', body: new URLSearchParams({
                 action: 'slimstat_notice_latest_news', security: bar.dataset.dismissNonce
