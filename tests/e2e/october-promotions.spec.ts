@@ -64,6 +64,15 @@ test('Free settings previews are non-editable and report previews fit narrow and
       for (const id of ['slimview1','slimview5','slimheatmap']) {
         await page.goto(`/wp-admin/admin.php?page=${id}`);
         await expect(page.locator('.slimstat-release-bar')).toHaveCount(1);
+        if (id === 'slimview1') {
+          const preview = page.locator('.slimstat-preview');
+          const bounds = (await preview.boundingBox())!;
+          const panel = (await page.locator('.live-analytics-chart--locked').boundingBox())!;
+          const action = (await preview.locator('.slimstat-upgrade-action').boundingBox())!;
+          expect(bounds.width).toBeGreaterThan(panel.width * 0.8);
+          expect(action.y).toBeGreaterThanOrEqual(bounds.y);
+          expect(action.y + action.height).toBeLessThanOrEqual(bounds.y + bounds.height + 1);
+        }
         for (const direction of ['ltr','rtl']) {
           await page.evaluate(dir => { document.documentElement.dir=dir; }, direction);
           expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth+1), `${id} ${width} ${direction}`).toBe(true);

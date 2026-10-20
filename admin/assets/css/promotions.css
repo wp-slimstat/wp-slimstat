@@ -5,7 +5,7 @@
 .slimstat-release-bar a:focus-visible,.slimstat-release-dismiss:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 .slimstat-pro-adds .slimstat-upgrade-action,.wrap-slimstat .slimstat-upgrade-action{background:#bc2442;border-color:#bc2442;color:#fff7f9;white-space:normal;text-align:center}
 .slimstat-pro-adds .slimstat-upgrade-action:hover,.wrap-slimstat .slimstat-upgrade-action:hover{background:#98203a;border-color:#98203a;color:#fff7f9}
-.slimstat-preview{position:relative;overflow:hidden;min-height:140px}
+.slimstat-preview{position:relative;overflow:hidden;width:100%;box-sizing:border-box;min-height:140px}
 .slimstat-preview__chart{display:flex;align-items:end;gap:8px;height:170px;padding:16px;filter:blur(5px);opacity:.45;pointer-events:none;user-select:none}
 .slimstat-preview__chart span{flex:1;background:#bc2442;border-radius:3px 3px 0 0;height:40%}
 .slimstat-preview__chart span:nth-child(3n){height:80%}.slimstat-preview__chart span:nth-child(3n + 1){height:55%}

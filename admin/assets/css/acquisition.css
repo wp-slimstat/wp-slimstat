@@ -334,12 +334,10 @@
     border-color: var(--ss-info-fg);
     text-decoration: underline;
 }
-/* Free: the list continues as one locked row that names the hidden groups. */
+/* Free: compact illustrative rows followed by the shared unlock action. */
 .wrap-slimstat .slimstat-acquisition__locked {
-    display: grid;
-    grid-template-columns: 12px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--ss-space-1) var(--ss-space-2);
+    display: block;
+    text-align: center;
     padding: var(--ss-space-3) var(--ss-space-4);
     border-top: 1px dashed var(--ss-border);
     color: var(--ss-text-muted);
@@ -562,4 +560,4 @@ html.ss-report-dialog-open { overflow: hidden; }
 .wrap-slimstat .ss-report-dialog p { max-width: 70ch; margin-block: 16px; }
 .wrap-slimstat .ss-report-dialog h2 { margin-block: 0 16px; }
 
-.slimstat-acquisition__locked{display:block;text-align:center}.slimstat-acquisition__locked .slimstat-pro-adds{text-align:center}.slimstat-acquisition__locked .slimstat-locked-rows{width:100%}
+.slimstat-acquisition__locked .slimstat-pro-adds{text-align:center}.slimstat-acquisition__locked .slimstat-locked-rows{width:100%}

@@ -368,6 +368,16 @@ test.describe('UTM and channel reports', () => {
       const channels = page.locator('#slim_p3_03');
       const utm = page.locator('#slim_p3_04');
       await expect(channels.locator('.slimstat-acquisition__intro strong')).toHaveText('6 channels - 13 pageviews');
+      const readableCaptions = async () => {
+        for (const card of [channels, utm]) {
+          const caption = card.locator('.slimstat-acquisition__locked .slimstat-preview-caption');
+          await expect(caption).toBeVisible();
+          const box = (await caption.boundingBox())!;
+          expect(box.width).toBeGreaterThan(150);
+          expect(box.height).toBeLessThan(80);
+        }
+      };
+      await readableCaptions();
       await expect(channels.locator('.slimstat-acquisition__label')).toHaveText(['Email', 'Unassigned']);
       const locked = channels.locator('.slimstat-acquisition__locked');
       await expect(locked.locator('.slimstat-locked-rows > span')).toHaveCount(2);
@@ -390,6 +400,7 @@ test.describe('UTM and channel reports', () => {
 
       await page.setViewportSize({ width: 390, height: 844 });
       await utm.scrollIntoViewIfNeeded();
+      await readableCaptions();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
       await page.screenshot({ path: 'tests/e2e/run-artifacts/acquisition-free-locked.png', fullPage: true });
     } finally { await restoreOption('active_plugins'); }
