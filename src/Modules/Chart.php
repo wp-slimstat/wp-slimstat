@@ -319,38 +319,9 @@ class Chart
 
     private function calculatePreviousArgs(array $args): array
     {
-        $rangeSeconds = $args['end'] - $args['start'];
-
-        \wp_timezone();
-        $dtStart = (new \DateTime())->setTimestamp($args['start']);
-        $dtEnd   = (new \DateTime())->setTimestamp($args['end']);
-
-        // Both ends shift by the range and NEITHER is snapped. The start used to take a
-        // ->setTime(0, 0, 0), which made the previous window longer than the current one by the
-        // current start's time-of-day — 9h17m on a live 60-day chart, measured.
-        //
-        // That surplus is what produced a total no bar accounted for. The totals are a SQL
-        // aggregate over the window, so they counted it; DataBuckets::addRow() drops anything
-        // outside `[0, points)`, so no bar showed it; and nothing reconciles the two, because the
-        // totals are passed INTO DataBuckets and returned verbatim. On R20260824-2c8d1a that was
-        // 2,475 hits — chart_weekly reported a previous total of 47,552 over bars summing to
-        // 45,077, and the headline "up 14.2%" should have read up 20.5%.
-        //
-        // It also put the previous LABELS on a different week grid from the previous VALUES:
-        // mapPrevLabels() steps `+N WEEK` from previous_start while the buckets are aligned by
-        // getWeekStartTimestamp(), so a midnight-snapped start drifted the two apart — Sundays
-        // against Mondays in that run.
-        //
-        // Two windows of equal length that abut is what "the previous period" means, and the
-        // bucket alignment and the reconciliation both follow from it rather than being patched
-        // separately.
-        $dtStart->modify(sprintf('-%s seconds', $rangeSeconds));
-        $dtEnd->modify(sprintf('-%s seconds', $rangeSeconds));
-
-        return [
-            'start' => $dtStart->getTimestamp(),
-            'end'   => $dtEnd->getTimestamp(),
-        ];
+        // SQL ranges are inclusive: use the same number of seconds without sharing an endpoint.
+        $length = $args['end'] - $args['start'] + 1;
+        return ['start' => $args['start'] - $length, 'end' => $args['start'] - 1];
     }
 
     private function buildSql(array $args, array $prevArgs): array
@@ -713,18 +684,20 @@ class Chart
 
     private function processResults(array $rows, array $totals, array $params, int $start, int $end, int $prevStart, int $prevEnd): array
     {
-        // Normalize totals to array of stdClass for backward compatibility
-        $totalsObjects = array_map(function ($t) {
-            if (is_object($t)) {
-                return $t;
-            }
-
-            $o         = new \stdClass();
-            $o->v1     = isset($t['v1']) ? (int) $t['v1'] : 0;
-            $o->v2     = isset($t['v2']) ? (int) $t['v2'] : 0;
-            $o->period = isset($t['period']) ? (string) $t['period'] : '';
-            return $o;
-        }, $totals);
+        // ROLLUP omits an empty period. Keep explicit slots for both consumers.
+        $totalsObjects = [
+            (object) ['v1' => 0, 'v2' => 0, 'period' => 'current'],
+            (object) ['v1' => 0, 'v2' => 0, 'period' => 'previous'],
+        ];
+        foreach ($totals as $total) {
+            $period = self::rowField($total, 'period');
+            if (!in_array($period, ['current', 'previous'], true)) { continue; }
+            $totalsObjects['current' === $period ? 0 : 1] = (object) [
+                'v1' => (int) self::rowField($total, 'v1'),
+                'v2' => (int) self::rowField($total, 'v2'),
+                'period' => $period,
+            ];
+        }
 
         $buckets = new DataBuckets($params['label'], $params['gran'], $start, $end, $prevStart, $prevEnd, $totalsObjects);
         foreach ($rows as $row) {
@@ -764,7 +737,7 @@ class Chart
 		wp_enqueue_script(
 			'slimstat_chart',
 			plugins_url('/admin/assets/js/slimstat-chart.js', SLIMSTAT_FILE),
-			['slimstat_chartjs'],
+			['slimstat_chartjs', 'wp-i18n'],
 			SLIMSTAT_ANALYTICS_VERSION,
 			true
 		);
@@ -776,6 +749,8 @@ class Chart
 			'end_date_string' => isset($args['end']) ? gmdate('Y/m/d H:i:s', $args['end']) : null,
 			'timezone'        => get_option('timezone_string') ?: 'UTC',
 			'start_of_week'   => get_option('start_of_week', 1),
+			/* translators: %s: metric name, such as Search Terms. */
+			'previous_series' => __('Previous %s', 'wp-slimstat'),
 		]);
 	}
 

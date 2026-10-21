@@ -26,19 +26,20 @@ class ProLinksTest extends IntegrationTestCase
         Functions\when('current_user_can')->alias(fn($cap) => 'manage_options' === $cap && $this->admin);
     }
 
-    private static function locked(string $mode): string
+    private static function locked(string $mode, int $hidden = 13, bool $capped = false): string
     {
+        Functions\when('_n')->alias(static fn($one, $many, $n) => 1 === $n ? $one : $many);
         $m = new \ReflectionMethod(\SlimStat\Reports\AcquisitionReport::class, 'locked');
         $m->setAccessible(true);
         ob_start();
-        $m->invoke(null, $mode, ['Email', 'Paid Search'], false);
+        $m->invoke(null, $mode, $hidden, $capped);
         return (string) ob_get_clean();
     }
 
     public function test_export_link_opens_the_share_section_for_administrators(): void
     {
         $html = \wp_slimstat_admin::pro_export_link();
-        $this->assertStringContainsString('href="https://example.test/wp-admin/admin.php?page=slimpro#ss-pro-share"', $html);
+        $this->assertStringContainsString('href="https://example.test/wp-admin/admin.php?page=slimpro&utm_campaign=export&utm_content=report#ss-pro-share"', $html);
         $this->assertStringContainsString('button-export-to-xls', $html);
         $this->assertStringNotContainsString('wp-slimstat.com', $html);
         $this->assertStringNotContainsString('target=', $html);
@@ -52,14 +53,15 @@ class ProLinksTest extends IntegrationTestCase
         $this->assertSame('', \wp_slimstat_admin::pro_export_link(' data-ec-export'));
     }
 
-    public function test_channels_unlock_link_opens_the_converts_section_for_administrators(): void
+    public function test_channels_unlock_links_are_attributed_and_do_not_reveal_locked_labels(): void
     {
-        foreach (['channel' => 'See all channels with Pro', 'utm' => 'See all campaigns with Pro'] as $mode => $text) {
+        foreach (['channel' => 'channels', 'utm' => 'campaigns'] as $mode => $content) {
             $html = self::locked($mode);
-            $this->assertStringContainsString('Also active this period:', $html);
-            $this->assertStringContainsString('href="https://example.test/wp-admin/admin.php?page=slimpro#ss-pro-converts"', $html);
-            $this->assertStringContainsString($text, $html);
-            $this->assertStringNotContainsString('wp-slimstat.com', $html);
+            $this->assertStringContainsString('utm_campaign=traffic-sources&utm_content=' . $content, $html);
+            $this->assertStringContainsString('Upgrade to see more', $html);
+            $this->assertStringContainsString('Illustrative preview', $html);
+            $this->assertStringNotContainsString('Email', $html);
+            $this->assertStringNotContainsString('Paid Search', $html);
         }
     }
 
@@ -67,7 +69,17 @@ class ProLinksTest extends IntegrationTestCase
     {
         $this->admin = false;
         $html = self::locked('channel');
-        $this->assertStringContainsString('Also active this period: <strong>Email</strong>, <strong>Paid Search</strong>.', $html);
+        $this->assertStringContainsString('See 13 more channels and every source breakdown with Pro.', $html);
         $this->assertStringNotContainsString('<a', $html);
+    }
+
+    public function test_channels_teaser_names_only_results_that_exist(): void
+    {
+        $this->assertStringContainsString('See 1 more campaign and every source breakdown with Pro.', self::locked('utm', 1));
+        $none = self::locked('channel', 0);
+        $this->assertStringContainsString('See the sources behind each channel with Pro.', $none);
+        $this->assertStringNotContainsString('more', strip_tags(str_replace('Upgrade to see more', '', $none)), 'no hidden results, so no "more" claim');
+        $this->assertStringNotContainsString('Illustrative preview', $none);
+        $this->assertStringContainsString('See every campaign and its source breakdown with Pro.', self::locked('utm', 998, true), 'a capped count is a lower bound, never a total');
     }
 }

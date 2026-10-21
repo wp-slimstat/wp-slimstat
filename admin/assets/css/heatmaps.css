@@ -13,7 +13,7 @@
 .ss-hm-card code { display: block; margin-top: 6px; white-space: pre-wrap; }
 
 .ss-hm-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-block: 0 12px; font-size: 13px; }
-.ss-hm-toolbar :is(select,input) { min-height: 32px; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-xs); background: var(--ss-surface); font-size: 13px; }
+.ss-hm-toolbar :is(select,input) { min-height: 32px; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-xs); background-color: var(--ss-surface); font-size: 13px; }
 .ss-hm-search input { min-width: 240px; }
 /* The global date picker sits in the toolbar here, not pinned to the report header. */
 .ss-hm-toolbar #slimstat-date-filters { position: static; margin: 0; border: 0; }
@@ -101,3 +101,5 @@
 .ss-hm-devices .ss-hm-device-2 { background: var(--ss-funnel-bar); }
 /* Unknown stays a pale neutral so it never reads as a fourth device. */
 .ss-hm-devices .ss-hm-device-3 { background: color-mix(in srgb, var(--ss-text-muted) 40%, var(--ss-surface)); }
+
+.ss-hm-toolbar #slimstat-date-filters{margin-inline-start:auto}.ss-hm-device-locked{display:inline-block;filter:blur(4px);pointer-events:none;user-select:none;opacity:.5}.ss-hm-upgrade{text-align:center}.ss-hm-locked-preview td{padding:16px}.ss-hm-locked-preview .slimstat-locked-rows{margin:0}@media(max-width:600px){.ss-hm-toolbar #slimstat-date-filters{width:100%;display:flex;justify-content:flex-end}.ss-hm-search{flex-basis:100%}}

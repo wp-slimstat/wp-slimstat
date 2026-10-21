@@ -77,6 +77,10 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
     protected function stubWpFunctions(): void
     {
         Functions\stubs([
+            'sanitize_key' => static fn($v) => preg_replace('/[^a-z0-9_-]/', '', strtolower($v)),
+            'admin_url' => static fn($p = '') => 'https://example.test/wp-admin/' . $p,
+            'plugins_url' => static fn($p = '') => 'https://example.test/plugins/' . $p,
+            'add_query_arg' => static fn($args, $url) => $url . (strpos($url, '?') === false ? '?' : '&') . http_build_query($args),
             'sanitize_text_field' => static fn($v) => is_string($v) ? trim($v) : '',
             'wp_unslash'          => static fn($v) => is_array($v) ? array_map('stripslashes', $v) : (is_string($v) ? stripslashes($v) : $v),
             '__'                  => static fn($text, $domain = 'default') => $text,

@@ -262,6 +262,18 @@ if (strpos($render, 'slimstat-adminbar__chart-axis') === false || strpos($render
 if (stripos(slimstat_function_body($source, 'styling_admin_menu'), '#f22f46') !== false) {
     $failures[] = 'styling_admin_menu() still paints the Upgrade menu item red (F7)';
 }
+// The menu-icon moment: Dashboard only, one run, none under reduced motion or on the mobile
+// menu, and a selector no stronger than core's folded/auto-fold position:absolute (1,2,1).
+$menu_style = slimstat_function_body($source, 'styling_admin_menu');
+if (strpos($menu_style, "'dashboard' === \$screen->id") === false) {
+    $failures[] = 'styling_admin_menu() animates the menu icon outside the Dashboard';
+}
+if (!preg_match('/@media \(prefers-reduced-motion:no-preference\) and \(min-width:783px\)\{@supports \(clip-path:inset\(0\)\) and \(\(mask-size:100%\) or \(-webkit-mask-size:100%\)\)\{[^@]*animation:slimstat-menu-plot 1\.8s \.6s both\}\}\}/', $menu_style)) {
+    $failures[] = 'styling_admin_menu(): the menu-icon animation must run once, inside the no-preference, desktop-only media query and the mask/clip-path @supports';
+}
+if (!preg_match("/\\\$icon\s+= '#toplevel_page_' \. sanitize_html_class\(self::\\\$main_menu_slug\) \. ' div\.wp-menu-image';/", $menu_style)) {
+    $failures[] = 'styling_admin_menu(): the menu-icon selector must stay #toplevel_page_<slug> div.wp-menu-image, or its position:relative breaks the folded menu';
+}
 
 // ── Report ─────────────────────────────────────────────────────────────────
 if ($failures !== []) {

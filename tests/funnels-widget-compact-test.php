@@ -103,6 +103,17 @@ if (!class_exists('wp_slimstat_db')) {
 }
 
 $plugin_root = dirname(__DIR__);
+define('ABSPATH', $plugin_root . '/');
+define('WP_PLUGIN_DIR', dirname($plugin_root));
+class wp_slimstat { public static function pro_is_installed() { return false; } }
+function current_user_can($cap) { return 'manage_options' === $cap; }
+function sanitize_key($value) { return preg_replace('/[^a-z0-9_-]/', '', strtolower($value)); }
+function admin_url($path) { return '/wp-admin/' . $path; }
+function add_query_arg($args, $url) { return $url . (strpos($url, '?') === false ? '?' : '&') . http_build_query($args); }
+function esc_url($value) { return htmlspecialchars($value, ENT_QUOTES); }
+function esc_html_e($value, $domain) { echo esc_html($value); }
+require_once $plugin_root . '/src/Utils/ProLinks.php';
+require_once $plugin_root . '/admin/index.php';
 require_once $plugin_root . '/admin/view/wp-slimstat-reports.php';
 
 $render = static function (int $max_funnels, array $funnels): string {

@@ -9,7 +9,7 @@ rationale: The correct domain STILL APPEARS at the call site, spelled as a conca
 @@ -4386,7 +4386,7 @@
          }
  
-         return '<a class="button-export-to-xls slimstat-font-download noslimstat" href="' . esc_url(admin_url('admin.php?page=slimpro#ss-pro-share')) . '"' . $attributes
+         return '<a class="button-export-to-xls slimstat-font-download noslimstat" href="' . esc_url(\SlimStat\Utils\ProLinks::url('export', $report, true, 'ss-pro-share')) . '"' . $attributes
 -            . ' title="' . esc_attr__('Export to CSV with Pro', 'wp-slimstat') . '"><span class="dashicons dashicons-download" aria-hidden="true"></span>'
 +            . ' title="' . esc_attr__('Export to CSV with Pro', 'wp-slimstat' . '-pro') . '"><span class="dashicons dashicons-download" aria-hidden="true"></span>'
              . esc_html__('Export', 'wp-slimstat') . '</a>';

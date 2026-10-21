@@ -22,10 +22,11 @@ function evidence(run: string): any {
     }
     wp_slimstat_db::init(); wp_slimstat_db::$filters_normalized['columns']=['utm_campaign'=>['equals','${run}']];
     wp_slimstat_db::$filters_normalized['utime']=['start'=>wp_slimstat::now()-3600,'end'=>wp_slimstat::now()];
-    SlimStat\\Ecommerce\\Integration::invalidate(); $report=(new SlimStat\\Ecommerce\\Report())->data();
+    $query = new ReflectionMethod(SlimStat\\Ecommerce\\Report::class, 'queryData'); $query->setAccessible(true);
+    SlimStat\\Ecommerce\\Integration::invalidate(); $report=$query->invoke(new SlimStat\\Ecommerce\\Report());
     $events=SlimStat\\Ecommerce\\Integration::db()->get_results("SELECT e.id,e.dt,e.notes,s.visit_id FROM {$GLOBALS['wpdb']->prefix}slim_events e JOIN {$GLOBALS['wpdb']->prefix}slim_stats s ON s.id=e.id WHERE e.notes='[ec:cart]'",ARRAY_A);
     wp_slimstat_db::$filters_normalized['columns']=[];
-    $commerce=(new SlimStat\\Ecommerce\\Report())->data('auto',false)['current'];
+    $commerce=$query->invoke(new SlimStat\\Ecommerce\\Report(), 'auto',false)['current'];
     $timeline=SlimStat\\Ecommerce\\Integration::db()->get_results("SELECT id,dt,notes FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE notes LIKE '%[ec:%' ORDER BY dt,id",ARRAY_A);
     echo wp_json_encode(compact('saved','report','events','commerce','timeline'));
   `);

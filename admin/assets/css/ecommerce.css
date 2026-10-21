@@ -173,3 +173,7 @@
 .ss-ec [data-chart-gaps] { margin-block: 12px; max-height: 180px; overflow: auto; }
 
 .ss-ec-rank-both { display: block; color: var(--ss-text-muted); font-size: 11px; }
+
+.ss-ec-locked-number{display:inline-block;filter:blur(4px);user-select:none}.ss-ec-kpi[data-pro-locked]{background:linear-gradient(175deg,transparent 70%,#dbe7f3 71%,transparent 85%)}.ss-ec .slimstat-pro-adds{text-align:center;justify-content:center}.ss-ec #ss-ec-unlock:focus{outline:2px solid var(--ss-focus,#2271b1);outline-offset:4px}
+
+.ss-ec .ss-ec-locked-chart{display:flex;align-items:end;gap:5px;height:24px;filter:blur(3px);opacity:.45;pointer-events:none}.ss-ec .ss-ec-locked-chart i{background:#72aee6;height:60%;flex:1}.ss-ec .ss-ec-locked-chart i:nth-child(2n){height:90%}.ss-ec .ss-ec-rank-value{font-size:12px}

@@ -25,7 +25,7 @@ $formatted_online_visitors = number_format_i18n($online_visitors);
 $support_url   = 'https://wp-slimstat.com/contact/?utm_source=plugin&utm_medium=header&utm_campaign=support';
 $docs_url      = 'https://wp-slimstat.com/resources/?utm_source=plugin&utm_medium=header&utm_campaign=docs';
 $settings_url  = admin_url('admin.php?page=slimconfig');
-$upgrade_url   = 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=header';
+$upgrade_url   = \SlimStat\Utils\ProLinks::url('header', 'cta');
 $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-logo.png';
 ?>
 
@@ -110,7 +110,7 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
                 </span>
                 <span class="slimstat-header__status-text"><?php esc_html_e('Pro', 'wp-slimstat'); ?></span>
             </span>
-        <?php else: ?>
+        <?php elseif (current_user_can('manage_options')): ?>
             <a href="<?php echo esc_url($upgrade_url); ?>" class="slimstat-header__cta slimstat-upgrade-pro" target="_blank" >
                 <span class="slimstat-header__cta-icon" aria-hidden="true">
                     <svg width="11" height="13" viewBox="0 0 11 13" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -128,6 +128,8 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
         <?php endif; ?>
     </div>
 </div>
+
+<?php wp_slimstat_admin::show_latest_news(null, null, null, 'bar'); ?>
 
 <?php if (!empty($title)) : // One page heading on every screen, directly under the brand bar (audit A6). ?>
 <div class="slimstat-pageintro">

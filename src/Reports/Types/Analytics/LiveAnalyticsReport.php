@@ -269,6 +269,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * @return array
 	 */
 	private function get_chart_data_for_metric( string $metric = 'users' ): array {
+        if (!\wp_slimstat::pro_is_installed()) { return $this->get_empty_chart_data(); }
 		$wpdb = \wp_slimstat::$wpdb;
 
 		if ( ! $this->is_tracking_enabled() ) {

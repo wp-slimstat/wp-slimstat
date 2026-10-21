@@ -1070,7 +1070,7 @@ if ([] !== $missing_indexes) {
 
 $tabs_html = '';
 foreach ($settings as $a_tab_id => $a_tab_info) {
-    if (!empty($a_tab_info['rows'])) {
+    if (!empty($a_tab_info['rows']) || (current_user_can('manage_options') && in_array($a_tab_id, [7, 8], true))) {
         $tabs_html .= "<li class='nav-tab nav-tab" . (($current_tab == $a_tab_id) ? '-active' : '-inactive') . "'><a href='" . esc_url(wp_slimstat_admin::$config_url . $a_tab_id) . sprintf("'>%s</a></li>", esc_html($a_tab_info['title']));
     }
 }
@@ -1087,7 +1087,20 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
             <?php echo wp_kses_post(__('<strong>AdBlock browser extension detected.</strong> If you see this notice, it means that your browser is not loading our stylesheet and/or JavaScript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat')); ?>
         </div>
 
-        <?php if (!empty($settings[$current_tab]['rows'])) : ?>
+        <?php if (!wp_slimstat::pro_is_installed() && current_user_can('manage_options') && in_array($current_tab, [7, 8], true)) : ?>
+            <section class="slimstat-settings-preview">
+                <h2><?php echo esc_html(8 === $current_tab ? __('License', 'wp-slimstat') : __('Pro settings', 'wp-slimstat')); ?></h2>
+                <p><?php echo esc_html(8 === $current_tab
+                    ? __('Install and activate the Pro plugin, then enter your license key here. Activating the plugin and activating a license are separate steps. Your current Free settings stay unchanged.', 'wp-slimstat')
+                    : __('Install and activate the Pro plugin to configure these settings. Your current Free settings stay unchanged.', 'wp-slimstat')); ?></p>
+                <?php wp_slimstat_admin::get_template('pro-adds', [
+                    'text' => 8 === $current_tab
+                        ? __('A Pro license gives you plugin updates and support.', 'wp-slimstat')
+                        : __('With Pro, choose which pages heatmaps track and how often, use an internal IP location lookup and keep stats in an external database.', 'wp-slimstat'),
+                    'campaign' => 'settings', 'content' => 8 === $current_tab ? 'license-tab' : 'pro-tab',
+                ]); ?>
+            </section>
+        <?php elseif (!empty($settings[$current_tab]['rows'])) : ?>
 
             <form action="<?php echo esc_url(wp_slimstat_admin::$config_url . $current_tab) ?>" method="post" id="slimstat-options-<?php echo esc_attr((string) $current_tab) ?>">
                 <?php wp_nonce_field('slimstat_update_settings', 'slimstat_update_settings'); ?>

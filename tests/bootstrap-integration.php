@@ -14,6 +14,9 @@ $root = dirname(__DIR__);
 
 define('ABSPATH', $root . '/');
 define('WPINC', 'wp-includes');
+define('WP_PLUGIN_DIR', dirname($root));
+define('SLIMSTAT_FILE', $root . '/wp-slimstat.php');
+define('SLIMSTAT_ANALYTICS_VERSION', '6.0.0');
 define('WP_CONTENT_DIR', dirname(dirname($root)));
 
 require_once $root . '/vendor/autoload.php';

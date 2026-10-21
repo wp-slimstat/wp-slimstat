@@ -1,3 +1,4 @@
+import { getProState } from './helpers/pro-state';
 /**
  * Ecommerce layout from the 2026-10-04 screenshot audit. The page once failed to parse
  * (a `//` comment inside a one-line object), so nothing below ran; the first test
@@ -75,8 +76,10 @@ test('@woocommerce the sync banner names the failed order and counts this report
   // "Some orders could not be imported" beside "58 of 58 orders linked" read as a contradiction.
   const summary = page.locator('#ss-ec-quality > summary');
   await expect(summary).not.toContainText('Some orders could not be imported');
-  await expect(summary).toContainText(/orders in this report linked|No orders in this report/);
-  await expect(page.locator('.ss-ec-steps')).not.toContainText('included order');
+  if ((await getProState(page)).pro_activated) await expect(summary).toContainText(/orders in this report linked|No orders in this report/);
+  else { await expect(summary).toContainText('WooCommerce Net sales'); await expect(summary).not.toContainText(/orders.*linked/); }
+  if ((await getProState(page)).pro_activated) await expect(page.locator('.ss-ec-steps')).not.toContainText('included order');
+  else await expect(page.locator('.ss-ec-steps')).toHaveCount(0);
 });
 
 test('@woocommerce the comparison line says what it compares, exact times in a tooltip (QA U5)', async ({ page }) => {
@@ -114,6 +117,7 @@ test('@woocommerce the page sits on the WordPress admin grey, and journey bars s
   const [body, behind] = await page.evaluate(() => [getComputedStyle(document.body).backgroundColor, getComputedStyle(document.querySelector('.backdrop-container')!).backgroundColor]);
   expect(['rgba(0, 0, 0, 0)', body]).toContain(behind);
 
+  if (!(await getProState(page)).pro_activated) { await expect(page.locator('.ss-ec-journey')).toHaveCount(0); return; }
   const edge = await page.locator('.ss-ec-journey').evaluate((j) => j.getBoundingClientRect().right);
   for (const meter of await page.locator('.ss-ec-steps meter').all()) {
     expect((await meter.boundingBox())!.x + (await meter.boundingBox())!.width).toBeLessThanOrEqual(edge + 0.5);

@@ -119,7 +119,7 @@ class ChartPreviousWindowTest extends WpSlimstatTestCase
     /**
      * @dataProvider windows
      */
-    public function test_the_previous_period_ends_where_the_current_one_begins(string $from, string $to): void
+    public function test_the_previous_period_ends_one_second_before_the_current_one_begins(string $from, string $to): void
     {
         // The vacuity control for the case above: two windows of equal length prove nothing if
         // they do not abut. A previous period that floats anywhere would satisfy the length
@@ -130,9 +130,9 @@ class ChartPreviousWindowTest extends WpSlimstatTestCase
         $previous = $this->previousFor($start, $end);
 
         $this->assertSame(
-            $start,
+            $start - 1,
             $previous['end'],
-            'the previous period does not end where the current one starts, so the two either '
+            'the previous period does not end immediately before the current one starts, so the two either '
                 . 'overlap (double-counting the seam) or leave a gap (losing it)'
         );
     }
