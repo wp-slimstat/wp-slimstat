@@ -3377,6 +3377,7 @@ class wp_slimstat_admin
             && isset($details[0], $details[1])
             && is_string($details[0])
             && is_scalar($details[1])
+            && false === strpos($label, 'no_filter')
             && (isset(wp_slimstat_db::$all_columns_names[$label]) || 1 === preg_match('/\Aaddon_[a-z0-9_-]+\z/', $label))
             && isset(wp_slimstat_db::$operator_names[$details[0]]);
     }

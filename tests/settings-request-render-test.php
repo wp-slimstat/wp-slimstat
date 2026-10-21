@@ -153,13 +153,14 @@ $start = strpos($handler, '$new_filter =');
 $end = strpos($handler, '// Check if this filter is already saved', $start);
 check($start !== false && $end !== false, 'saved filter validation missing');
 $validation = str_replace('self::', 'SlimstatAdminRenderProbe::', substr($handler, $start, $end - $start));
-wp_slimstat_db::$all_columns_names = ['resource' => ['Permalink', 'varchar'], 'content_id' => ['Content ID', 'int']];
+wp_slimstat_db::$all_columns_names = ['resource' => ['Permalink', 'varchar'], 'content_id' => ['Content ID', 'int'], 'no_filter_selected_2' => ['', 'none']];
 wp_slimstat_db::$operator_names = ['equals' => 'equals', 'contains' => 'contains'];
 // The label and operator are listed back in Saved Filters, so only known ones are kept.
 $unknown_label = json_encode(['<img src=x>' => ['equals', 'a']]);
 $unsafe_addon_label = json_encode(['addon_<img src=x>' => ['equals', 'a']]);
+$placeholder_label = json_encode(['no_filter_selected_2' => ['equals', 'a']]);
 $unknown_operator = json_encode(['resource' => ['<b>attack</b>', 'a']]);
-foreach (['null', 'false', '"scalar"', '{broken', '[]', '{"resource":["equals",[]]}', $unknown_label, $unsafe_addon_label, $unknown_operator] as $bad) {
+foreach (['null', 'false', '"scalar"', '{broken', '[]', '{"resource":["equals",[]]}', $unknown_label, $unsafe_addon_label, $placeholder_label, $unknown_operator] as $bad) {
     $_POST = ['filter_array' => $bad];
     try { eval($validation); throw new RuntimeException('malformed filter accepted: ' . $bad); }
     catch (LogicException $error) { check($error->getMessage() === 'Invalid filter data.', 'wrong filter rejection'); }
