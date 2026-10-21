@@ -8,7 +8,8 @@ function check($ok, $message) { if (!$ok) { throw new RuntimeException($message)
 function __($text, $domain = '') { return $text; }
 function esc_html__($text, $domain = '') { return esc_html($text); }
 function esc_attr_e($text, $domain = '') { echo esc_attr($text); }
-function esc_html($text) { return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8'); }
+// Match WordPress: recognized entities are not double-encoded.
+function esc_html($text) { return htmlspecialchars((string) $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', false); }
 function esc_attr($text) { return esc_html($text); }
 function esc_attr__($text, $domain = '') { return esc_attr($text); }
 function esc_textarea($text) { return esc_html($text); }
@@ -129,7 +130,7 @@ function get_option($name, $default = []) { return $GLOBALS['saved_filters_fixtu
 class wp_slimstat_reports { public static function fs_url($filters) { return '/admin?filter="onmouseover="attack'; } }
 $admin = file_get_contents(__DIR__ . '/../admin/index.php');
 $methods = '';
-foreach (['wp_slimstat_userdefined_stylesheet' => '', 'add_column_header' => '$_columns = []', 'add_post_column' => '$_column_name, $_post_id', 'show_message' => '$_message = "", $_type = "info", $_dismiss_handle = ""', 'is_valid_saved_filter' => '$label, $details'] as $name => $args) {
+foreach (['wp_slimstat_userdefined_stylesheet' => '', 'add_column_header' => '$_columns = []', 'add_post_column' => '$_column_name, $_post_id', 'show_message' => '$_message = "", $_type = "info", $_dismiss_handle = ""', 'is_valid_saved_filter' => '$label, $details', 'saved_filter_display_html' => '$label, $operator, $encoded_value'] as $name => $args) {
     $methods .= 'public static function ' . $name . '(' . $args . ') {' . slimstat_function_body($admin, $name) . '}';
 }
 eval('class SlimstatAdminRenderProbe { public static $data_for_column = []; ' . $methods . '}');
@@ -173,6 +174,13 @@ $addon_filter = ['addon_ecommerce_currency' => ['equals', 'USD']];
 $_POST = ['filter_array' => json_encode($addon_filter)];
 eval($validation);
 check($new_filter === $addon_filter, 'machine-safe add-on filter rejected');
+$special_value      = 'A&B + %20 = x &&& y "quoted" &amp; \\ literal';
+$encoded_value      = htmlentities($special_value, ENT_QUOTES, 'UTF-8');
+$saved_filter_html  = SlimstatAdminRenderProbe::saved_filter_display_html('resource', 'equals', $encoded_value);
+check('permalink equals ' . $encoded_value === $saved_filter_html, 'saved-filter display changed literal entity text');
+check(strpos($saved_filter_html, '&amp;amp;') !== false, 'literal &amp; text would be decoded by the browser');
+$saved_xss_html = SlimstatAdminRenderProbe::saved_filter_display_html('resource', 'equals', htmlentities('<img src=x onerror=alert(1)>', ENT_QUOTES, 'UTF-8'));
+check(strpos($saved_xss_html, '&lt;img src=x onerror=alert(1)&gt;') !== false && strpos($saved_xss_html, '<img') === false, 'saved-filter value is not inert text');
 echo "PASS: admin CSS, headers, links and notices escape by context; malformed or unknown saved filters refused; valid filter JSON preserved\n";
 
 function is_admin() { return true; }

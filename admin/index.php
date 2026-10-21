@@ -3343,13 +3343,13 @@ class wp_slimstat_admin
                         $filter_value = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label
                             ? (string) $a_filter_details[1] : str_replace('\\', '', (string) $a_filter_details[1]);
                         $filter_value_no_slashes = htmlentities($filter_value, ENT_QUOTES, 'UTF-8');
-                        $filter_html[]           = strtolower(wp_slimstat_db::$all_columns_names[$a_filter_label][0] ?? $a_filter_label) . ' ' . wp_slimstat_db::$operator_names[$a_filter_details[0]] . ' ' . $filter_value;
+                        $filter_html[]           = self::saved_filter_display_html($a_filter_label, $a_filter_details[0], $filter_value_no_slashes);
                         $filter_url_value = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label
                             ? rawurlencode((string) $a_filter_details[1]) : $filter_value_no_slashes;
                         $filter_strings[]        = sprintf('%s %s %s', $a_filter_label, $a_filter_details[0], $filter_url_value);
                     }
 
-                    echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="' . esc_attr($a_filter_id) . '" title="' . esc_attr__('Delete this filter', 'wp-slimstat') . '" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . esc_url(wp_slimstat_reports::fs_url(implode('&&&', $filter_strings))) . '">' . esc_html(implode(', ', $filter_html)) . '</a></p>';
+                    echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="' . esc_attr($a_filter_id) . '" title="' . esc_attr__('Delete this filter', 'wp-slimstat') . '" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . esc_url(wp_slimstat_reports::fs_url(implode('&&&', $filter_strings))) . '">' . wp_kses_post(implode(', ', $filter_html)) . '</a></p>';
                 }
 
                 echo '</div>';
@@ -3380,6 +3380,25 @@ class wp_slimstat_admin
             && false === strpos($label, 'no_filter')
             && (isset(wp_slimstat_db::$all_columns_names[$label]) || 1 === preg_match('/\Aaddon_[a-z0-9_-]+\z/', $label))
             && isset(wp_slimstat_db::$operator_names[$details[0]]);
+    }
+
+    /**
+     * Build inert saved-filter text without changing literal entity text in values.
+     *
+     * The value is already encoded with htmlentities() so esc_html() preserves its
+     * entities instead of letting the browser decode a literal "&amp;" into "&".
+     *
+     * @param string $label
+     * @param string $operator
+     * @param string $encoded_value
+     * @return string
+     */
+    private static function saved_filter_display_html($label, $operator, $encoded_value)
+    {
+        $column_name   = strtolower(wp_slimstat_db::$all_columns_names[$label][0] ?? $label);
+        $operator_name = wp_slimstat_db::$operator_names[$operator];
+
+        return esc_html($column_name) . ' ' . esc_html($operator_name) . ' ' . esc_html($encoded_value);
     }
 
     /**
