@@ -3363,9 +3363,8 @@ class wp_slimstat_admin
 
     /**
      * A saved filter entry is a known column, a known operator and a scalar value.
-     * The label and operator are shown in the Saved Filters list, so anything outside
-     * the two lists the filter form itself offers is refused when saving and skipped
-     * when listing.
+     * Add-ons use their namespaced machine keys without registering a display label,
+     * so preserve that contract while refusing markup and other arbitrary labels.
      *
      * @param mixed $label
      * @param mixed $details
@@ -3378,7 +3377,7 @@ class wp_slimstat_admin
             && isset($details[0], $details[1])
             && is_string($details[0])
             && is_scalar($details[1])
-            && isset(wp_slimstat_db::$all_columns_names[$label])
+            && (isset(wp_slimstat_db::$all_columns_names[$label]) || 1 === preg_match('/\Aaddon_[a-z0-9_-]+\z/', $label))
             && isset(wp_slimstat_db::$operator_names[$details[0]]);
     }
 

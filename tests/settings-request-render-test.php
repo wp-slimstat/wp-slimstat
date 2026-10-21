@@ -157,8 +157,9 @@ wp_slimstat_db::$all_columns_names = ['resource' => ['Permalink', 'varchar'], 'c
 wp_slimstat_db::$operator_names = ['equals' => 'equals', 'contains' => 'contains'];
 // The label and operator are listed back in Saved Filters, so only known ones are kept.
 $unknown_label = json_encode(['<img src=x>' => ['equals', 'a']]);
+$unsafe_addon_label = json_encode(['addon_<img src=x>' => ['equals', 'a']]);
 $unknown_operator = json_encode(['resource' => ['<b>attack</b>', 'a']]);
-foreach (['null', 'false', '"scalar"', '{broken', '[]', '{"resource":["equals",[]]}', $unknown_label, $unknown_operator] as $bad) {
+foreach (['null', 'false', '"scalar"', '{broken', '[]', '{"resource":["equals",[]]}', $unknown_label, $unsafe_addon_label, $unknown_operator] as $bad) {
     $_POST = ['filter_array' => $bad];
     try { eval($validation); throw new RuntimeException('malformed filter accepted: ' . $bad); }
     catch (LogicException $error) { check($error->getMessage() === 'Invalid filter data.', 'wrong filter rejection'); }
@@ -167,6 +168,10 @@ $filter = ['resource' => ['contains', '<tag> & "literal"'], 'content_id' => ['eq
 $_POST = ['filter_array' => addslashes(json_encode($filter))];
 eval($validation);
 check($new_filter === $filter, 'valid saved filter values changed during JSON parsing');
+$addon_filter = ['addon_ecommerce_currency' => ['equals', 'USD']];
+$_POST = ['filter_array' => json_encode($addon_filter)];
+eval($validation);
+check($new_filter === $addon_filter, 'machine-safe add-on filter rejected');
 echo "PASS: admin CSS, headers, links and notices escape by context; malformed or unknown saved filters refused; valid filter JSON preserved\n";
 
 function is_admin() { return true; }
