@@ -151,7 +151,7 @@ Back up first. Adds columns/indexes and removes no rows. Older versions keep wor
 * Changing dates keeps your filters, and saved segments keep their dates.
 * "New" badges mark each new menu page for 15 days.
 * The SlimStat menu moves up the sidebar, above Appearance, instead of sitting below Settings.
-* After updating, one dismissible notice on the Dashboard and Plugins screens says what is new, once any pending database migration is done. Dismiss it, or it hides itself after 7 days. New installs never see it.
+* After updating, a SlimStat 6 card on the Dashboard and Plugins screens and a compact bar on SlimStat's own pages say what is new, once any pending database migration is done. Dismissing either hides both for you; otherwise they hide after 14 days. New installs never see them.
 * The Help (?) panel is rewritten in plain language. It opens on the topic for the screen you are on, explains every filter under the name the filter list uses, and covers Channels and UTM, Goals and funnels, Ecommerce, Heatmaps, Shortcodes and what Pro adds.
 * Users without the Settings permission see what Pro adds without purchase links.
 * Clearer labels on At a Glance, Traffic Summary, Access Log, Customize and Migration. Customize cards move by drag or keyboard, and Reset layout asks first.
