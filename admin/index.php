@@ -3359,7 +3359,7 @@ class wp_slimstat_admin
                     wp_die(esc_html__('Invalid filter data.', 'wp-slimstat'), '', ['response' => 400]);
                 }
                 foreach ($new_filter as $label => $details) {
-                    if (!is_string($label) || !is_array($details) || !isset($details[0], $details[1]) || !is_string($details[0]) || !is_scalar($details[1])) {
+                    if (!self::is_valid_saved_filter($label, $details)) {
                         wp_die(esc_html__('Invalid filter data.', 'wp-slimstat'), '', ['response' => 400]);
                     }
                 }
@@ -3411,13 +3411,14 @@ class wp_slimstat_admin
                     $filter_html    = [];
                     $filter_strings = [];
                     foreach ($a_filter_data as $a_filter_label => $a_filter_details) {
-                        if (!is_array($a_filter_details) || !isset($a_filter_details[0], $a_filter_details[1]) || !is_string($a_filter_details[0]) || !is_scalar($a_filter_details[1])) {
+                        // Filters saved before the allowlist existed are skipped, not shown.
+                        if (!self::is_valid_saved_filter($a_filter_label, $a_filter_details)) {
                             continue;
                         }
                         $filter_value = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label
-                            ? $a_filter_details[1] : str_replace('\\', '', $a_filter_details[1]);
+                            ? (string) $a_filter_details[1] : str_replace('\\', '', (string) $a_filter_details[1]);
                         $filter_value_no_slashes = htmlentities($filter_value, ENT_QUOTES, 'UTF-8');
-                        $filter_html[]           = strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0] ?? $a_filter_label) . ' ' . (wp_slimstat_db::$operator_names[$a_filter_details[0]] ?? str_replace('_', ' ', $a_filter_details[0])) . ' ' . $filter_value_no_slashes;
+                        $filter_html[]           = self::saved_filter_display_html($a_filter_label, $a_filter_details[0], $filter_value_no_slashes);
                         $filter_url_value = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label
                             ? rawurlencode((string) $a_filter_details[1]) : $filter_value_no_slashes;
                         $filter_strings[]        = sprintf('%s %s %s', $a_filter_label, $a_filter_details[0], $filter_url_value);
@@ -3434,6 +3435,46 @@ class wp_slimstat_admin
     }
 
     // END: manage_filters
+
+    /**
+     * A saved filter entry is a known column, a known operator and a scalar value.
+     * Add-ons use their namespaced machine keys without registering a display label,
+     * so preserve that contract while refusing markup and other arbitrary labels.
+     *
+     * @param mixed $label
+     * @param mixed $details
+     * @return bool
+     */
+    private static function is_valid_saved_filter($label, $details)
+    {
+        return is_string($label)
+            && is_array($details)
+            && isset($details[0], $details[1])
+            && is_string($details[0])
+            && is_scalar($details[1])
+            && false === strpos($label, 'no_filter')
+            && (isset(wp_slimstat_db::$all_columns_names[$label]) || 1 === preg_match('/\Aaddon_[a-z0-9_-]+\z/', $label))
+            && isset(wp_slimstat_db::$operator_names[$details[0]]);
+    }
+
+    /**
+     * Build inert saved-filter text without changing literal entity text in values.
+     *
+     * The value is already encoded with htmlentities() so esc_html() preserves its
+     * entities instead of letting the browser decode a literal "&amp;" into "&".
+     *
+     * @param string $label
+     * @param string $operator
+     * @param string $encoded_value
+     * @return string
+     */
+    private static function saved_filter_display_html($label, $operator, $encoded_value)
+    {
+        $column_name   = strtolower(wp_slimstat_db::$all_columns_names[$label][0] ?? $label);
+        $operator_name = wp_slimstat_db::$operator_names[$operator];
+
+        return esc_html($column_name) . ' ' . esc_html($operator_name) . ' ' . esc_html($encoded_value);
+    }
 
     /**
      * Check AJAX capability for view access.
