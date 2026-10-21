@@ -129,7 +129,7 @@ function get_option($name, $default = []) { return $GLOBALS['saved_filters_fixtu
 class wp_slimstat_reports { public static function fs_url($filters) { return '/admin?filter="onmouseover="attack'; } }
 $admin = file_get_contents(__DIR__ . '/../admin/index.php');
 $methods = '';
-foreach (['wp_slimstat_userdefined_stylesheet' => '', 'add_column_header' => '$_columns = []', 'add_post_column' => '$_column_name, $_post_id', 'show_message' => '$_message = "", $_type = "info", $_dismiss_handle = ""'] as $name => $args) {
+foreach (['wp_slimstat_userdefined_stylesheet' => '', 'add_column_header' => '$_columns = []', 'add_post_column' => '$_column_name, $_post_id', 'show_message' => '$_message = "", $_type = "info", $_dismiss_handle = ""', 'is_valid_saved_filter' => '$label, $details'] as $name => $args) {
     $methods .= 'public static function ' . $name . '(' . $args . ') {' . slimstat_function_body($admin, $name) . '}';
 }
 eval('class SlimstatAdminRenderProbe { public static $data_for_column = []; ' . $methods . '}');
@@ -152,8 +152,13 @@ $handler = slimstat_function_body($admin, 'manage_filters');
 $start = strpos($handler, '$new_filter =');
 $end = strpos($handler, '// Check if this filter is already saved', $start);
 check($start !== false && $end !== false, 'saved filter validation missing');
-$validation = substr($handler, $start, $end - $start);
-foreach (['null', 'false', '"scalar"', '{broken', '[]', '{"resource":["equals",[]]}'] as $bad) {
+$validation = str_replace('self::', 'SlimstatAdminRenderProbe::', substr($handler, $start, $end - $start));
+wp_slimstat_db::$all_columns_names = ['resource' => ['Permalink', 'varchar'], 'content_id' => ['Content ID', 'int']];
+wp_slimstat_db::$operator_names = ['equals' => 'equals', 'contains' => 'contains'];
+// The label and operator are listed back in Saved Filters, so only known ones are kept.
+$unknown_label = json_encode(['<img src=x>' => ['equals', 'a']]);
+$unknown_operator = json_encode(['resource' => ['<b>attack</b>', 'a']]);
+foreach (['null', 'false', '"scalar"', '{broken', '[]', '{"resource":["equals",[]]}', $unknown_label, $unknown_operator] as $bad) {
     $_POST = ['filter_array' => $bad];
     try { eval($validation); throw new RuntimeException('malformed filter accepted: ' . $bad); }
     catch (LogicException $error) { check($error->getMessage() === 'Invalid filter data.', 'wrong filter rejection'); }
@@ -162,10 +167,10 @@ $filter = ['resource' => ['contains', '<tag> & "literal"'], 'content_id' => ['eq
 $_POST = ['filter_array' => addslashes(json_encode($filter))];
 eval($validation);
 check($new_filter === $filter, 'valid saved filter values changed during JSON parsing');
-echo "PASS: admin CSS, headers, links and notices escape by context; malformed saved filters refused; valid filter JSON preserved\n";
+echo "PASS: admin CSS, headers, links and notices escape by context; malformed or unknown saved filters refused; valid filter JSON preserved\n";
 
 function is_admin() { return true; }
-class wp_slimstat_db { public static $debug_message = ''; }
+class wp_slimstat_db { public static $debug_message = ''; public static $all_columns_names = []; public static $operator_names = []; }
 $reports = file_get_contents(__DIR__ . '/../admin/view/wp-slimstat-reports.php');
 eval('class SlimstatSummaryProbe { public static function raw_results_to_html($_args = []) {' . slimstat_function_body($reports, 'raw_results_to_html') . '} }');
 wp_slimstat::$settings['async_load'] = 'no';
