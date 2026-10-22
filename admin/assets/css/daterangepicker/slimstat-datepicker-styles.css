@@ -120,6 +120,7 @@
 .slimstat-daterangepicker .ranges ul li {
     padding: 6px 12px;
     margin: 0;
+    transition: background-color 0.15s, color 0.15s;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -128,10 +129,6 @@
 /* Position dropdown below the button */
 .slimstat-daterangepicker.daterangepicker.drops-down {
     margin-top: 0;
-}
-
-.slimstat-daterangepicker.daterangepicker.opens-right {
-    left: auto !important;
 }
 
 /* Ensure proper positioning relative to button */
@@ -239,11 +236,6 @@
         min-width: 160px;
     }
 }
-.slimstat-daterangepicker{
-    left: unset !important;
-    right: 20px !important;
-}
-
 .datepicker-badge-elements{
     display: flex;
     align-content: center;

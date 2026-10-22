@@ -1,0 +1,80 @@
+[
+  {
+    "version": "5.4.0",
+    "pass": 1,
+    "keys": 106,
+    "changed_keys": [],
+    "effective_capture": "off"
+  },
+  {
+    "version": "5.4.0",
+    "pass": 2,
+    "keys": 106,
+    "changed_keys": [],
+    "effective_capture": "off"
+  },
+  {
+    "version": "5.4.5",
+    "pass": 1,
+    "keys": 106,
+    "changed_keys": [],
+    "effective_capture": "off"
+  },
+  {
+    "version": "5.4.5",
+    "pass": 2,
+    "keys": 106,
+    "changed_keys": [],
+    "effective_capture": "off"
+  },
+  {
+    "version": "5.5.0",
+    "pass": 1,
+    "keys": 106,
+    "changed_keys": [],
+    "effective_capture": "off"
+  },
+  {
+    "version": "5.5.0",
+    "pass": 2,
+    "keys": 106,
+    "changed_keys": [],
+    "effective_capture": "off"
+  },
+  {
+    "version": "6.0.0",
+    "pass": 1,
+    "keys": 106,
+    "changed_keys": [],
+    "effective_capture": "off"
+  },
+  {
+    "version": "6.0.0",
+    "pass": 2,
+    "keys": 106,
+    "changed_keys": [],
+    "effective_capture": "off"
+  },
+  {
+    "capture": "off",
+    "fresh_pro": "full"
+  },
+  {
+    "fresh": {
+      "pro": {
+        "capture": "full",
+        "effective": "full"
+      },
+      "core": {
+        "capture": "off",
+        "effective": "off"
+      }
+    }
+  },
+  {
+    "missingOptionsWithExistingData": {
+      "capture": "off",
+      "recovery": true
+    }
+  }
+]

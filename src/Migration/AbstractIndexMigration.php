@@ -65,17 +65,7 @@ abstract class AbstractIndexMigration extends AbstractMigration
     public function run(): bool
     {
         if ($this->shouldRun()) {
-            $sql = sprintf(
-                'CREATE INDEX %s ON %s (%s)',
-                $this->getIndexName(),
-                $this->getTableName(),
-                implode(', ', $this->getIndexColumns())
-            );
-
-            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- DDL identifiers come from the migration definition and core table prefix, never request parameters.
-            $result = $this->wpdb->query($sql);
-            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
-            if (false === $result) {
+            if (false === $this->alterOnline(Schema::addIndexSql($this->getTableSuffix(), $this->getIndexKey(), $this->tablePrefix()))) {
                 // Optionally log error: $this->wpdb->last_error
                 return false;
             }

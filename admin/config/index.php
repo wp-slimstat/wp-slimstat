@@ -691,7 +691,7 @@ $settings = [
             'auto_purge_delete' => [
                 'title'       => __('Archive mode', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('<strong>How to handle old data:</strong><br/><br/><strong>Enabled (Archive):</strong> Old records are moved to separate archive tables (<code>wp_slim_stats_archive</code>, <code>wp_slim_events_archive</code>) instead of being permanently deleted. This improves query performance by keeping the main tables smaller, while still allowing you to access historical data if needed. <strong>Note:</strong> Archived data still counts as data retention under GDPR requirements.<br/><br/><strong>Disabled (Delete):</strong> Old records are permanently deleted from the database. This is the most GDPR-compliant approach and frees up database space immediately. <strong>Warning:</strong> Deleted data cannot be recovered.<br/><br/><strong>Important:</strong> Archive tables are <strong>permanently deleted</strong> when you uninstall SlimStat. Always <strong>backup your data</strong> before uninstalling if you need to retain it.', 'wp-slimstat'),
+                'description' => __('<strong>How to handle old data:</strong><br/><br/><strong>Enabled (Archive):</strong> Old records are moved to separate archive tables (<code>wp_slim_stats_archive</code>, <code>wp_slim_events_archive</code>) instead of being permanently deleted. This improves query performance by keeping the main tables smaller, while still allowing you to access historical data if needed. <strong>Note:</strong> Archived data still counts as data retention under GDPR requirements.<br/><br/><strong>Disabled (Delete):</strong> Old records are permanently deleted from the database. This is the most GDPR-compliant approach and frees up database space immediately. <strong>Warning:</strong> Deleted data cannot be recovered.<br/><br/><strong>Important:</strong> Archive tables are deleted on uninstall only when <strong>Delete data on uninstall</strong> is enabled. Back up your database before uninstalling.', 'wp-slimstat'),
             ],
 
             // Maintenance - Troubleshooting
@@ -747,7 +747,7 @@ $settings = [
                 'title'             => __('Data', 'wp-slimstat'),
                 'type'              => 'plain-text',
                 'after_input_field' => '<a class="button-link button-link-delete" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=truncate-table&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '" onclick="return( confirm( \'' . esc_js(__('Delete all records from your database? This cannot be undone.', 'wp-slimstat')) . '\' ) )">' . esc_html__('Delete Records', 'wp-slimstat') . '</a>',
-                'description'       => __('Delete all the information collected by SlimStat so far, but not the archived records (stored in <code>wp_slim_stats_archive</code>). This operation <strong>does not</strong> reset your settings and it can be undone by manually copying your records from the archive table, if you have the corresponding option enabled.', 'wp-slimstat'),
+                'description'       => __('Permanently delete active pageview and event records, including linked full Heatmaps records through database relationships. Archives, Ecommerce order summaries, and settings remain. Archive tables may contain older records, but are not a backup of the records being deleted. Restore a database backup to recover deleted records.', 'wp-slimstat'),
             ],
             'reset_all_settings' => [
                 'title'             => __('Settings', 'wp-slimstat'),
@@ -758,7 +758,7 @@ $settings = [
             'delete_data_on_uninstall' => [
                 'title'       => __('Delete data on uninstall', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('<strong>Off (default):</strong> deleting the plugin keeps all your analytics and settings, so reinstalling restores everything. <strong>On:</strong> deleting the plugin <strong>permanently</strong> erases every SlimStat table, all collected visits and all plugin settings. This cannot be undone. Turn it on only if you really want the data gone.', 'wp-slimstat'),
+                'description' => __('<strong>Off (default):</strong> deleting the plugin keeps analytics tables and report settings. Scheduled jobs and cached files are removed. Custom database credentials are cleared and must be entered again after reinstalling. <strong>On:</strong> deleting the plugin <strong>permanently</strong> erases every SlimStat table, all collected visits and all plugin settings. This cannot be undone. Turn it on only if you really want the data gone.', 'wp-slimstat'),
             ],
         ],
     ],
@@ -1070,7 +1070,7 @@ if ([] !== $missing_indexes) {
 
 $tabs_html = '';
 foreach ($settings as $a_tab_id => $a_tab_info) {
-    if (!empty($a_tab_info['rows'])) {
+    if (!empty($a_tab_info['rows']) || (current_user_can('manage_options') && in_array($a_tab_id, [7, 8], true))) {
         $tabs_html .= "<li class='nav-tab nav-tab" . (($current_tab == $a_tab_id) ? '-active' : '-inactive') . "'><a href='" . esc_url(wp_slimstat_admin::$config_url . $a_tab_id) . sprintf("'>%s</a></li>", esc_html($a_tab_info['title']));
     }
 }
@@ -1087,7 +1087,20 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
             <?php echo wp_kses_post(__('<strong>AdBlock browser extension detected.</strong> If you see this notice, it means that your browser is not loading our stylesheet and/or JavaScript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat')); ?>
         </div>
 
-        <?php if (!empty($settings[$current_tab]['rows'])) : ?>
+        <?php if (!wp_slimstat::pro_is_installed() && current_user_can('manage_options') && in_array($current_tab, [7, 8], true)) : ?>
+            <section class="slimstat-settings-preview">
+                <h2><?php echo esc_html(8 === $current_tab ? __('License', 'wp-slimstat') : __('Pro settings', 'wp-slimstat')); ?></h2>
+                <p><?php echo esc_html(8 === $current_tab
+                    ? __('Install and activate the Pro plugin, then enter your license key here. Activating the plugin and activating a license are separate steps. Your current Free settings stay unchanged.', 'wp-slimstat')
+                    : __('Install and activate the Pro plugin to configure these settings. Your current Free settings stay unchanged.', 'wp-slimstat')); ?></p>
+                <?php wp_slimstat_admin::get_template('pro-adds', [
+                    'text' => 8 === $current_tab
+                        ? __('A Pro license gives you plugin updates and support.', 'wp-slimstat')
+                        : __('With Pro, choose which pages heatmaps track and how often, use an internal IP location lookup and keep stats in an external database.', 'wp-slimstat'),
+                    'campaign' => 'settings', 'content' => 8 === $current_tab ? 'license-tab' : 'pro-tab',
+                ]); ?>
+            </section>
+        <?php elseif (!empty($settings[$current_tab]['rows'])) : ?>
 
             <form action="<?php echo esc_url(wp_slimstat_admin::$config_url . $current_tab) ?>" method="post" id="slimstat-options-<?php echo esc_attr((string) $current_tab) ?>">
                 <?php wp_nonce_field('slimstat_update_settings', 'slimstat_update_settings'); ?>

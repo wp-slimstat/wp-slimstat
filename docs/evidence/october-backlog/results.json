@@ -1,0 +1,709 @@
+{
+  "date": "2026-10-11",
+  "environment": {
+    "wordpress": "7.1.3",
+    "php": "8.3.35",
+    "database": "disposable tests-wordpress",
+    "browser": "Playwright Chromium admin"
+  },
+  "browser": {
+    "stats": {
+      "startTime": "2026-10-11T18:41:21.796Z",
+      "duration": 321617.091,
+      "expected": 39,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "specs": [
+      "acquisition-reports.spec.ts",
+      "ecommerce-dashboard.spec.ts",
+      "heatmaps-list-toolbar.spec.ts",
+      "october-backlog.spec.ts",
+      "october-ecommerce.spec.ts",
+      "october-heatmap-delete.spec.ts",
+      "october-migration.spec.ts",
+      "october-preview.spec.ts",
+      "october-upgrade.spec.ts",
+      "shortcodes-page.spec.ts",
+      "traffic-sources-layout.spec.ts",
+      "utm-builder.spec.ts"
+    ],
+    "tests": [
+      {
+        "file": "acquisition-reports.spec.ts",
+        "test": "builder links retain all six tags through real tracking and the UTM report",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 3586
+          }
+        ]
+      },
+      {
+        "file": "acquisition-reports.spec.ts",
+        "test": "rest tracking preserves encoded campaign values and zero",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 2802
+          }
+        ]
+      },
+      {
+        "file": "acquisition-reports.spec.ts",
+        "test": "ajax tracking preserves encoded campaign values and zero",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 2342
+          }
+        ]
+      },
+      {
+        "file": "acquisition-reports.spec.ts",
+        "test": "server tracking separates AI referrals, fetches, internal navigation and bot exclusions",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 1536
+          }
+        ]
+      },
+      {
+        "file": "acquisition-reports.spec.ts",
+        "test": "reports render exact counts, preserve filters and export through Pro when installed",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 3201
+          }
+        ]
+      },
+      {
+        "file": "acquisition-reports.spec.ts",
+        "test": "collapsed totals combine sources and remain exact when breakdowns reach the result limit",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 1579
+          }
+        ]
+      },
+      {
+        "file": "acquisition-reports.spec.ts",
+        "test": "small screens, RTL, keyboard help and pagination remain usable",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 3011
+          }
+        ]
+      },
+      {
+        "file": "acquisition-reports.spec.ts",
+        "test": "date picker and saved segments retain exact campaign filters across ranges",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 6983
+          }
+        ]
+      },
+      {
+        "file": "acquisition-reports.spec.ts",
+        "test": "empty state explains tagging and stored markup remains inert",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 2603
+          }
+        ]
+      },
+      {
+        "file": "acquisition-reports.spec.ts",
+        "test": "Customizer can move the reports to Overview and the WordPress Dashboard",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 5251
+          }
+        ]
+      },
+      {
+        "file": "acquisition-reports.spec.ts",
+        "test": "author scope applies and report AJAX rejects missing authentication or nonce",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 1747
+          }
+        ]
+      },
+      {
+        "file": "ecommerce-dashboard.spec.ts",
+        "test": "Ecommerce reconciles known WC data, shared filters, refresh and responsive reports @woocommerce",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 31889
+          }
+        ]
+      },
+      {
+        "file": "ecommerce-dashboard.spec.ts",
+        "test": "Ecommerce explains incomplete, empty and loading states and keeps the newest chart request @woocommerce",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 17895
+          }
+        ]
+      },
+      {
+        "file": "ecommerce-dashboard.spec.ts",
+        "test": "Ecommerce Free is useful alone and WooCommerce deactivation is safe @woocommerce",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 28157
+          }
+        ]
+      },
+      {
+        "file": "ecommerce-dashboard.spec.ts",
+        "test": "Ecommerce setup is visible, protected and repeatable in the native report @woocommerce",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 5408
+          }
+        ]
+      },
+      {
+        "file": "ecommerce-dashboard.spec.ts",
+        "test": "Ecommerce uses the native date control and preserves filters through keyboard presets @woocommerce",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 2079
+          }
+        ]
+      },
+      {
+        "file": "heatmaps-list-toolbar.spec.ts",
+        "test": "the list uses the global date picker, and its range reaches the request",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 620
+          }
+        ]
+      },
+      {
+        "file": "heatmaps-list-toolbar.spec.ts",
+        "test": "counts stay on one line and Delete reads as destructive",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 545
+          }
+        ]
+      },
+      {
+        "file": "october-backlog.spec.ts",
+        "test": "Tasks 1\u20134, 25: report dialogs keep focus, scroll and reading order",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 1651
+          }
+        ]
+      },
+      {
+        "file": "october-backlog.spec.ts",
+        "test": "Tasks 12\u201316: Heatmaps boundaries, device denominator, polling, date alignment and settings",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 2064
+          }
+        ]
+      },
+      {
+        "file": "october-backlog.spec.ts",
+        "test": "Tasks 19, 23: email search retains hidden selections and header notifications stay closed",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 25176
+          }
+        ]
+      },
+      {
+        "file": "october-backlog.spec.ts",
+        "test": "Task 20: chart previews render and redraw from the generated shortcode",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 11905
+          }
+        ]
+      },
+      {
+        "file": "october-backlog.spec.ts",
+        "test": "Task 15: polling pauses when hidden, serializes requests and recovers from failures",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 985
+          }
+        ]
+      },
+      {
+        "file": "october-ecommerce.spec.ts",
+        "test": "Tasks 5\u201311, 26\u201327: currency, comparisons, full report, export and chart gaps",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 38052
+          }
+        ]
+      },
+      {
+        "file": "october-heatmap-delete.spec.ts",
+        "test": "Task 14: typed confirmation, cancellation and server rejection protect disposable full-capture data",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 16478
+          }
+        ]
+      },
+      {
+        "file": "october-migration.spec.ts",
+        "test": "Task 22: pending banner, failed request, retry, completion and optional-only state",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 12667
+          }
+        ]
+      },
+      {
+        "file": "october-preview.spec.ts",
+        "test": "Task 18: missing-theme explanation, fallback context and retry into standard-theme click/scroll previews",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 17623
+          }
+        ]
+      },
+      {
+        "file": "october-upgrade.spec.ts",
+        "test": "Tasks 17/28: stored settings survive core upgrades, repeats and Pro reactivation",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 41332
+          }
+        ]
+      },
+      {
+        "file": "shortcodes-page.spec.ts",
+        "test": "Playground builds, previews, copies and handles errors without stale responses",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 5594
+          }
+        ]
+      },
+      {
+        "file": "shortcodes-page.spec.ts",
+        "test": "Free samples, persistent hints and frontend privacy",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 8339
+          }
+        ]
+      },
+      {
+        "file": "shortcodes-page.spec.ts",
+        "test": "RTL layout keeps native controls and code usable",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 1824
+          }
+        ]
+      },
+      {
+        "file": "traffic-sources-layout.spec.ts",
+        "test": "Top Countries and Traffic Summary share a row",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 654
+          }
+        ]
+      },
+      {
+        "file": "traffic-sources-layout.spec.ts",
+        "test": "the chart keeps its last x label clear of the card edge",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 1459
+          }
+        ]
+      },
+      {
+        "file": "traffic-sources-layout.spec.ts",
+        "test": "the report guide lines up with the table or empty state, without a legacy row divider",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 2461
+          }
+        ]
+      },
+      {
+        "file": "traffic-sources-layout.spec.ts",
+        "test": "the UTM builder opens only from a report link, and closing it returns focus there",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 1514
+          }
+        ]
+      },
+      {
+        "file": "traffic-sources-layout.spec.ts",
+        "test": "Recent Search Terms shows when each search happened",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 1396
+          }
+        ]
+      },
+      {
+        "file": "utm-builder.spec.ts",
+        "test": "requires source, medium and either campaign name or ID, and clears stale output",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 958
+          }
+        ]
+      },
+      {
+        "file": "utm-builder.spec.ts",
+        "test": "preserves query bytes and fragments, replaces duplicate tags and copies exact encoded values",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 908
+          }
+        ]
+      },
+      {
+        "file": "utm-builder.spec.ts",
+        "test": "report shortcut preserves filters and draft, with keyboard and mobile RTL access",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration_ms": 3137
+          }
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "Task 18: original slimstats theme, affected /pricing/ and real interactions on that theme unavailable. Standard-theme preview and direct fallback use controlled overlay data.",
+    "Versioned stored-settings fixtures exercise current upgrade code, not every historical plugin binary.",
+    "WooPayments enabled-currency API contract exercised; authenticated service not contacted."
+  ],
+  "php": {
+    "core_unit": {
+      "tests": 607,
+      "assertions": 1511,
+      "skipped": 1,
+      "skip_reason": "AF_INET6 is unavailable in the container build."
+    },
+    "core_integration": {
+      "tests": 159,
+      "assertions": 399
+    },
+    "pro_unit": {
+      "tests": 152,
+      "assertions": 371
+    },
+    "standalone_regressions": {
+      "core": 14,
+      "pro": 6,
+      "preservation_assertions": 118
+    }
+  },
+  "pro_browser": {
+    "spec": "heatmap-v2-ui.spec.ts",
+    "passed": 13,
+    "failed": 0
+  },
+  "followup_browser": {
+    "stats": {
+      "startTime": "2026-10-11T18:54:48.548Z",
+      "duration": 81904.335,
+      "expected": 21,
+      "skipped": 1,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "tests": [
+      {
+        "file": "heatmap-position-sanitization.spec.ts",
+        "test": "click event preserves comma-separated position via REST transport",
+        "status": "expected"
+      },
+      {
+        "file": "heatmap-position-sanitization.spec.ts",
+        "test": "click event preserves comma-separated position via AJAX transport",
+        "status": "expected"
+      },
+      {
+        "file": "heatmap-position-sanitization.spec.ts",
+        "test": "default position 0,0 is stored as no position",
+        "status": "expected"
+      },
+      {
+        "file": "heatmap-position-sanitization.spec.ts",
+        "test": "heatmap endpoint excludes corrupted positions and returns numeric coordinates and counts",
+        "status": "expected"
+      },
+      {
+        "file": "heatmap-position-sanitization.spec.ts",
+        "test": "multiple clicks aggregate correctly in heatmap data",
+        "status": "expected"
+      },
+      {
+        "file": "heatmap-position-sanitization.spec.ts",
+        "test": "GDPR enabled with granted consent records interaction position via browser click",
+        "status": "expected"
+      },
+      {
+        "file": "heatmap-position-sanitization.spec.ts",
+        "test": "GDPR enabled with denied consent does not send interaction tracking",
+        "status": "expected"
+      },
+      {
+        "file": "heatmap-position-sanitization.spec.ts",
+        "test": "browser DNT signal blocks interaction tracking requests",
+        "status": "expected"
+      },
+      {
+        "file": "i18n-catalog-sync.spec.ts",
+        "test": "all .po files contain expected msgid count",
+        "status": "expected"
+      },
+      {
+        "file": "i18n-catalog-sync.spec.ts",
+        "test": "de_DE locale renders known German translations on Settings page",
+        "status": "expected"
+      },
+      {
+        "file": "i18n-catalog-sync.spec.ts",
+        "test": "calendar uses the WordPress locale and preserves Sunday week starts",
+        "status": "expected"
+      },
+      {
+        "file": "i18n-catalog-sync.spec.ts",
+        "test": "dynamic notification empty states use localized text safely",
+        "status": "expected"
+      },
+      {
+        "file": "i18n-catalog-sync.spec.ts",
+        "test": "fr_FR locale renders known French translations on Settings page",
+        "status": "expected"
+      },
+      {
+        "file": "i18n-catalog-sync.spec.ts",
+        "test": "untranslated strings fall back to English without broken markup",
+        "status": "expected"
+      },
+      {
+        "file": "i18n-catalog-sync.spec.ts",
+        "test": "restoring en_US shows English strings without regressions",
+        "status": "expected"
+      },
+      {
+        "file": "i18n-catalog-sync.spec.ts",
+        "test": "all PHP strings have translation entries \u2014 .pot file exists and is non-empty",
+        "status": "expected"
+      },
+      {
+        "file": "i18n-catalog-sync.spec.ts",
+        "test": ".po files that declare plural forms have valid Plural-Forms header",
+        "status": "expected"
+      },
+      {
+        "file": "i18n-catalog-sync.spec.ts",
+        "test": "no duplicate msgid entries in any .po file",
+        "status": "expected"
+      },
+      {
+        "file": "i18n-catalog-sync.spec.ts",
+        "test": "no orphaned msgid entries in .po files (all msgids exist in .pot)",
+        "status": "expected"
+      },
+      {
+        "file": "i18n-catalog-sync.spec.ts",
+        "test": "es_ES locale renders without PHP errors on Settings page",
+        "status": "skipped"
+      },
+      {
+        "file": "october-ecommerce.spec.ts",
+        "test": "Tasks 5\u201311, 26\u201327: currency, comparisons, full report, export and chart gaps",
+        "status": "expected"
+      },
+      {
+        "file": "october-migration.spec.ts",
+        "test": "Task 22: pending banner, failed request, retry, completion and optional-only state",
+        "status": "expected"
+      }
+    ],
+    "skip_reason": "Spanish catalog is absent; existing es_ES locale test skips.",
+    "log": "followup-browser.txt"
+  },
+  "network_settings": [
+    {
+      "scope": "network",
+      "exit_code": 0,
+      "output": "{\"multisite\":true,\"scope\":\"network admin\",\"checked_keys\":102,\"changed_user_keys\":[],\"effective_capture\":\"off\",\"effective_rate\":0}"
+    },
+    {
+      "scope": "child",
+      "exit_code": 0,
+      "output": "{\"multisite\":true,\"scope\":\"site\",\"checked_keys\":102,\"changed_user_keys\":[],\"effective_capture\":\"off\",\"effective_rate\":0}"
+    }
+  ],
+  "heatmap_freshness": {
+    "legacy_before_refresh": 0,
+    "legacy_after_refresh": 1,
+    "after_full_capture_write": 2,
+    "forced_query_ms": 2.03,
+    "timestamp": "computation time"
+  },
+  "source_level": {
+    "core": "composer test:source-level passed",
+    "pro": "composer test:source-level passed",
+    "runtime": "Host PHP 8.5; production core autoloader generated for source gates"
+  },
+  "static_analysis": {
+    "core": "PHPStan level 5 passed",
+    "pro": "PHPStan level 5 passed",
+    "runtime": "PHP 8.3.35"
+  },
+  "pro_scoped_runtime": "passed",
+  "legacy_upgrade_browser": {
+    "passed": 6,
+    "failed": 0,
+    "specs": [
+      "migration-cookie-restore.spec.ts",
+      "ticket-14684-regression.spec.ts"
+    ],
+    "selection": "Task 28:",
+    "log": "legacy-upgrade-browser.txt"
+  },
+  "mutation_checks": [
+    {
+      "mutation": "C11-second-index-creator-01",
+      "baseline_exit": 0,
+      "mutant_exit": 1,
+      "expected_failure": "DDL statement(s) name a concrete table or index outside src/Schema/Schema.php",
+      "matched": true
+    },
+    {
+      "mutation": "G1-migration-note-hidden-by-own-css-01",
+      "baseline_exit": 0,
+      "mutant_exit": 1,
+      "expected_failure": "so migration.css hides it",
+      "matched": true
+    },
+    {
+      "mutation": "M7-legacy-settings-preference-reset-01",
+      "baseline_exit": 0,
+      "mutant_exit": 255,
+      "expected_failure": "User configuration changed for 0",
+      "matched": true
+    },
+    {
+      "mutation": "M8-legacy-settings-delegation-removed-01",
+      "baseline_exit": 0,
+      "mutant_exit": 255,
+      "expected_failure": "init() calls LegacySettings5460::apply() exactly once",
+      "matched": true
+    },
+    {
+      "mutation": "D8-upgrade-notice-moved-to-changelog-01",
+      "baseline_exit": 0,
+      "mutant_exit": 1,
+      "expected_failure": "has no `= 6.0.0 =` entry under `== Upgrade Notice ==`",
+      "matched": true
+    }
+  ],
+  "prerequisite_matrix": {
+    "paired": {
+      "passed": 8,
+      "skipped": 0,
+      "log": "paired-prerequisites-browser.txt"
+    },
+    "core_only": {
+      "passed": 6,
+      "skipped": 4,
+      "skip_reason": "Private Pro plugin intentionally absent; existing requireProBooted helper skips only absent plugins and fails installed-but-broken Pro.",
+      "log": "core-only-browser.txt"
+    }
+  }
+}

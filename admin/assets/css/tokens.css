@@ -284,6 +284,17 @@ body .wrap-slimstat .button-secondary:hover {
 .slimstat-segmented input:focus-visible + span,
 .wrap-slimstat input.slimstat-switch:focus-visible { outline: 2px solid var(--wp-admin-theme-color, #2271b1); outline-offset: 2px; }
 
+/* Settings fields keep a 3:1 edge (WCAG 1.4.11); the legacy #f3f3f3 border was 1.1:1 on white
+   and also hid WordPress's focus border. */
+body .wrap-slimstat .form-table tr td :is(input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]), textarea, select) {
+    border: 1px solid var(--ss-border-control);
+}
+body .wrap-slimstat .form-table tr td :is(input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]), textarea, select):focus {
+    border-color: var(--wp-admin-theme-color, #2271b1);
+    box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #2271b1);
+    outline: 2px solid transparent;
+}
+
 /* Long settings descriptions stay readable (audit C1). */
 .wrap-slimstat .form-table tr td .description { max-width: 72ch; }
 

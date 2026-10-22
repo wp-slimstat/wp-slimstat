@@ -1,7 +1,7 @@
 <?php
 /**
  * Source-level: the readme.txt "Tested up to:" header matches the expected
- * WordPress version, and is a major.minor with an optional patch version.
+ * WordPress version, and is a major.minor as required by WordPress.org.
  *
  * PINS the WP "Tested up to" readiness: $expected and the header move in the same commit,
  * RED before and green after.
@@ -18,7 +18,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/lib/source-scan.php';
 
 $plugin_root = dirname(__DIR__);
-$expected    = '7.1.2'; // Exact tested release; bumped with readme.txt and the CI lane.
+$expected    = '7.1'; // WordPress.org requires major.minor; CI pins the tested patch release.
 
 $readme = file_get_contents($plugin_root . '/readme.txt');
 if (false === $readme) { fwrite(STDERR, "FAIL: cannot read readme.txt\n"); exit(1); }
@@ -33,29 +33,37 @@ if ($actual !== $expected) {
     fwrite(STDERR, "FAIL: readme.txt Tested up to is '{$actual}', expected '{$expected}'.\n");
     exit(1);
 }
-// Accept a pinned patch release as well as a major.minor release.
-if (!preg_match('/^\d+\.\d+(?:\.\d+)?$/', $actual)) {
+// The public header uses major.minor; the CI lane may pin a patch.
+if (!preg_match('/^\d+\.\d+$/', $actual)) {
     fwrite(STDERR, "FAIL: Tested up to must be a WordPress release version (got '{$actual}').\n");
     exit(1);
 }
 
 // THE LANE. A version tested by nothing is not tested.
-$ci = (string) file_get_contents($plugin_root . '/.github/workflows/ci.yml');
+$ci = slimstat_yaml_strip_comments((string) file_get_contents($plugin_root . '/.github/workflows/ci.yml'));
 if ('' === $ci) {
     fwrite(STDERR, "FAIL: cannot read .github/workflows/ci.yml\n");
     exit(1);
 }
-if (!preg_match('/^  standard:\s*$.*?(?=^  [a-zA-Z0-9_-]+:\s*$|\z)/ms', $ci, $matches)) {
+$ci_jobs = slimstat_ci_job_blocks($ci);
+if (!isset($ci_jobs['standard'])) {
 	fwrite(STDERR, "FAIL: cannot find the Tier 2 standard job in .github/workflows/ci.yml\n");
 	exit(1);
 }
-$tier_two      = $matches[0];
+$tier_two      = $ci_jobs['standard'];
 $tier_two_code = slimstat_yaml_strip_comments($tier_two);
 $wp_lanes      = slimstat_ci_wp_lanes($tier_two);
-if ('8.3' !== ($wp_lanes[$actual] ?? null) || false === strpos($tier_two_code, 'npm run test:e2e')) {
-    fwrite(STDERR, "FAIL: readme.txt says Tested up to {$actual}, and no Tier 2 runtime lane "
-        . "runs that WordPress on PHP 8.3.\n");
-    exit(1);
+$tested_lane   = false;
+foreach ($wp_lanes as $wp_version => $php_version) {
+	if (($actual === $wp_version || 0 === strpos($wp_version, $actual . '.')) && '8.3' === $php_version) {
+		$tested_lane = true;
+		break;
+	}
+}
+if (!$tested_lane || false === strpos($tier_two_code, 'npm run test:e2e')) {
+	fwrite(STDERR, "FAIL: readme.txt says Tested up to {$actual}, and no focused Tier 2 runtime "
+		. "lane runs that WordPress release on PHP 8.3.\n");
+	exit(1);
 }
 
 // Pull requests should exercise the focused compatibility flow, while pushes may retain the

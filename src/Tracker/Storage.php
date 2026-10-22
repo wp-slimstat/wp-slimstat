@@ -141,7 +141,7 @@ class Storage
 	 *
 	 * @return string[]
 	 */
-	private static function presentColumns($table)
+	public static function presentColumns($table)
 	{
 		static $columns = [];
 

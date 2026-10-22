@@ -1,0 +1,1 @@
+{"legacy_before_refresh":0,"legacy_after_refresh":1,"after_full_capture_write":2,"forced_query_ms":2.03,"timestamp":"computation time"}

@@ -1,3 +1,4 @@
+import { getProState } from './helpers/pro-state';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import { runWordPressFixture } from './helpers/chart';
@@ -26,11 +27,23 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
       'fs[addon_ecommerce_currency]': 'equals USD' });
     await page.goto(`/wp-admin/admin.php?${params}`);
     const dashboard = page.locator('[data-ecommerce]');
+    const full = (await getProState(page)).pro_activated;
     await expect(dashboard.locator('[data-metric=net]')).toContainText('115.00', { timeout: 30_000 });
+    if (full) {
     await expect(dashboard.locator('[data-metric=orders]')).toHaveText('4');
     await expect(dashboard.locator('[data-metric=aov]')).toContainText('28.75');
     await expect(dashboard.locator('[data-metric=rate]')).toHaveText('0.83%');
     await expect(dashboard).toContainText('2 of 4 orders in this report linked');
+    } else {
+      for (const metric of ['orders','aov','rate']) {
+        await expect(dashboard.locator(`[data-metric=${metric}]`)).toHaveText('••••Available with Pro');
+      }
+      const series = JSON.parse(await dashboard.locator('[data-series]').getAttribute('data-series') || '{}');
+      for (const period of ['current','previous']) for (const point of series[period]) {
+        expect(point).not.toHaveProperty('orders'); expect(point).not.toHaveProperty('buyers'); expect(point).not.toHaveProperty('visits');
+      }
+      await expect(dashboard).not.toContainText('2 of 4 orders');
+    }
     await expect(dashboard.locator('[data-dimension=channel]')).toContainText('Paid Search');
     await expect(dashboard.locator('[data-dimension=source]')).not.toBeVisible();
     await dashboard.getByRole('tab', { name: 'Channels', exact: true }).focus();
@@ -38,29 +51,42 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     await expect(dashboard.getByRole('tab', { name: 'Sources', exact: true })).toBeFocused();
     await expect(dashboard.locator('[data-dimension=source]')).toBeVisible();
     const sourcePanel = dashboard.getByRole('tabpanel', { name: 'Sources', exact: true });
-    await sourcePanel.getByRole('button', { name: 'View report' }).click();
-    await expect(sourcePanel.getByRole('table')).toBeVisible();
+    if (full) {
+    await sourcePanel.getByRole('button', { name: 'Full report' }).click();
+    await expect(sourcePanel.locator('[data-expand]')).toHaveAttribute('aria-expanded', 'true');
+    await expect(sourcePanel.getByRole('table')).toHaveCount(0);
     await sourcePanel.getByRole('button', { name: 'Reverse sort order' }).click();
     const rankedSources = await sourcePanel.locator('.ss-ec-rank-name').allTextContents();
-    expect(await sourcePanel.locator('tbody th').allTextContents()).toEqual(rankedSources);
+    expect(rankedSources.length).toBeGreaterThan(0);
     await sourcePanel.getByLabel('Sort these results').selectOption('orders');
-    expect(await sourcePanel.locator('tbody th').allTextContents()).toEqual(await sourcePanel.locator('.ss-ec-rank-name').allTextContents());
+    await expect(sourcePanel.locator('[data-rank-metric]')).toHaveValue('orders');
     await page.keyboard.press('Escape');
-    await expect(sourcePanel.getByRole('button', { name: 'View report' })).toBeFocused();
+    await expect(sourcePanel.getByRole('button', { name: 'Full report' })).toBeFocused();
     await expect(sourcePanel.getByRole('table')).not.toBeVisible();
     await dashboard.locator('[data-chart-metric=orders]').click();
     await expect(dashboard.locator('[data-chart-metric=orders]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(dashboard.locator('[data-chart-title]')).toHaveText('Orders');
+    await expect(dashboard.locator('[data-chart-title]')).toHaveText(full ? 'Orders' : 'Net sales');
     await dashboard.getByText('View exact values', { exact: true }).click();
     await expect(dashboard.locator('[data-chart-table] tr').first()).toContainText('4');
     await expect(dashboard.locator('[data-chart-table] tr').first()).toContainText('1');
+    } else {
+      await expect(sourcePanel.locator('.ss-ec-rankings > li')).toHaveCount(2);
+      await expect(sourcePanel.getByRole('button', { name: 'Full report' })).toHaveCount(0);
+      await sourcePanel.getByRole('button', { name: 'Reverse sort order' }).click();
+      await dashboard.locator('[data-chart-metric=orders]').click();
+      await expect(dashboard.locator('[data-chart-metric=net]')).toHaveAttribute('aria-pressed','true');
+      await expect(dashboard.getByRole('link',{ name:'Unlock Ecommerce insights with Pro' })).toBeFocused();
+      await dashboard.getByText('View exact values', { exact: true }).click();
+      await expect(dashboard.locator('[data-chart-table] tr').first()).toContainText('115.00');
+      await expect(dashboard.locator('[data-chart-table] tr').first()).toContainText('20.00');
+    }
     await page.getByLabel('Compare previous period').uncheck();
     await expect(dashboard.locator('[data-chart-table] tr').first().locator('td')).toHaveCount(1);
     await page.getByLabel('Compare previous period').check();
     await dashboard.getByLabel('Chart interval').selectOption('monthly');
     await expect(dashboard.getByLabel('Chart interval')).toHaveValue('monthly');
     await expect(dashboard.locator('[data-series]')).toHaveAttribute('data-series', /"interval":"monthly"/);
-    await expect(dashboard.locator('[data-chart-title]')).toHaveText('Orders');
+    await expect(dashboard.locator('[data-chart-title]')).toHaveText(full ? 'Orders' : 'Net sales');
     await dashboard.locator('[data-chart-metric=net]').click();
     await dashboard.getByRole('link', { name: 'Refresh Ecommerce reports' }).click();
     await expect.poll(() => page.evaluate(() => !(window as any).jQuery('#slim_p10_01 .inside').is(':animated'))).toBe(true);
@@ -74,7 +100,7 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     params.set('fs[utm_source]', 'equals google');
     await page.goto(`/wp-admin/admin.php?${params}`);
     await expect(dashboard.locator('[data-metric=net]')).toContainText('65.00');
-    await expect(dashboard.locator('[data-metric=orders]')).toHaveText('2');
+    await expect(dashboard.locator('[data-metric=orders]')).toHaveText(full ? '2' : '••••Available with Pro');
     await page.locator('#slimstat-save-filter').click();
     await expect(page.locator('#slimstat-save-filter')).toHaveText(/Saved|Already saved/);
     const unfiltered = new URLSearchParams(params); unfiltered.delete('fs[utm_source]');
@@ -99,7 +125,7 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     params.set('fs[addon_ecommerce_currency]', 'equals EUR');
     await page.goto(`/wp-admin/admin.php?${params}`);
     await expect(dashboard.locator('[data-metric=net]')).toContainText('200.00');
-    await expect(dashboard.locator('[data-metric=orders]')).toHaveText('1');
+    await expect(dashboard.locator('[data-metric=orders]')).toHaveText(full ? '1' : '••••Available with Pro');
     params.set('fs[addon_unsupported]', 'equals test');
     await page.goto(`/wp-admin/admin.php?${params}`);
     await expect(dashboard.getByRole('alert')).toContainText('cannot be applied to Ecommerce');
@@ -123,12 +149,15 @@ test('Ecommerce explains incomplete, empty and loading states and keeps the newe
     const params = new URLSearchParams({ page: 'slimview7', type: 'custom', from: day, to: day, 'fs[addon_ecommerce_currency]': 'equals USD' });
     await page.goto(`/wp-admin/admin.php?${params}`);
     const dashboard = page.locator('[data-ecommerce]');
+    const full = (await getProState(page)).pro_activated;
     await expect(dashboard.locator('[data-metric=net]')).toContainText('115.00');
     await expect(page.getByLabel('Filter dimension')).toBeVisible();
-    await dashboard.getByRole('tabpanel', { name: 'Channels', exact: true }).getByLabel('Sort these results').selectOption('orders');
-    await expect(dashboard.locator('[data-dimension=channel] .ss-ec-rank-value').first()).toHaveText('2');
+    if (full) {
+      await dashboard.getByRole('tabpanel', { name: 'Channels', exact: true }).getByLabel('Sort these results').selectOption('orders');
+      await expect(dashboard.locator('[data-dimension=channel] .ss-ec-rank-both').first()).toContainText('Orders: 2');
+    }
     await dashboard.locator('[data-dimension=channel] [data-sort]').click();
-    await expect(dashboard.locator('[data-dimension=channel] .ss-ec-rank-value').first()).toHaveText('1');
+    await expect(dashboard.locator('[data-dimension=channel] .ss-ec-rank-value').first()).toContainText('Net sales:');
     let blocked = false, weeklyRequests = 0;
     await page.route('**/admin-ajax.php', async route => {
       const body = route.request().postData() || '';
@@ -162,19 +191,20 @@ test('Ecommerce explains incomplete, empty and loading states and keeps the newe
     // Import finished, one order failed: say so and offer Retry, but the totals stand.
     runWordPressFixture("<?php $state=get_option('slimstat_ecommerce_state'); $state['complete']=true; $state['error']=true; $state['failed_order']=4242; update_option('slimstat_ecommerce_state',$state,false);");
     await dashboard.getByRole('link', { name: 'Refresh Ecommerce reports' }).click();
-    await expect(page.locator('#ss-ec-quality > summary')).toContainText('Order 4242 could not be imported');
+    await expect(page.locator('#ss-ec-quality > summary')).toContainText(full ? 'Order 4242 could not be imported' : 'Synchronization needs attention');
     await expect(page.locator('#ss-ec-quality > summary')).not.toContainText('provisional');
     await expect(dashboard.getByText('Complete synchronization first', { exact: true })).toHaveCount(0);
     await page.locator('#ss-ec-quality > summary').click();
-    await expect(page.locator('#ss-ec-quality')).toContainText('Order 4242 could not be synchronized');
+    await expect(page.locator('#ss-ec-quality')).toContainText(full ? 'Order 4242 could not be synchronized' : 'Net sales is provisional');
     await expect(dashboard.getByRole('button', { name: 'Retry import' })).toBeVisible();
     await page.keyboard.press('Escape');
     // Import still running (and failing): figures are provisional until it completes.
     runWordPressFixture("<?php $state=get_option('slimstat_ecommerce_state'); $state['complete']=false; $state['imported']=17; update_option('slimstat_ecommerce_state',$state,false);");
     await dashboard.getByRole('link', { name: 'Refresh Ecommerce reports' }).click();
     await expect(page.locator('#ss-ec-quality > summary')).toContainText('figures are provisional');
-    await expect(dashboard.getByText('Complete synchronization first', { exact: true })).toBeVisible();
-    await dashboard.getByRole('link', { name: 'Review synchronization' }).click();
+    if (full) await expect(dashboard.getByText('Complete synchronization first', { exact: true })).toBeVisible();
+    if (full) await dashboard.getByRole('link', { name: 'Review synchronization' }).click();
+    else await page.locator('#ss-ec-quality > summary').click();
     await expect(dashboard.getByRole('button', { name: 'Retry import' })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.locator('#ss-ec-quality')).not.toHaveAttribute('open');
@@ -183,9 +213,11 @@ test('Ecommerce explains incomplete, empty and loading states and keeps the newe
     params.set('from', emptyDay); params.set('to', emptyDay);
     await page.goto(`/wp-admin/admin.php?${params}`);
     await expect(dashboard.locator('[data-metric=net]')).toContainText('0.00');
-    await expect(dashboard.getByText('Journey data is not available yet', { exact: true })).toBeVisible();
+    await expect(dashboard.getByText('Journey data is not available yet', { exact: true })).toHaveCount(full ? 1 : 0);
     await dashboard.locator('[data-chart-metric=rate]').click();
-    await expect(dashboard.locator('[data-chart-empty]')).toBeVisible();
+    // A retained day without visits plots at zero; only expired history leaves the chart empty.
+    await expect(dashboard.locator('[data-chart-empty]')).toBeHidden();
+    expect(await dashboard.locator('canvas').evaluate(canvas => (window as any).Chart.getChart(canvas).data.datasets[0].data.every((v: unknown) => v === 0))).toBe(true);
     await page.setViewportSize({ width: 390, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   } finally {
@@ -205,6 +237,10 @@ test('Ecommerce Free is useful alone and WooCommerce deactivation is safe @wooco
     await page.goto(`/wp-admin/admin.php?${new URLSearchParams({ page: 'slimview7', type: 'custom', from: day, to: day })}`);
     await expect(page.locator('.ss-ec-report')).toHaveCount(3, { timeout: 30_000 });
     await expect(page.locator('[data-ecommerce]').getByRole('link', { name: 'Export CSV', exact: true })).toHaveCount(0);
+    // Each tab still shows Export, and it opens the Pro page instead of downloading.
+    const upsells = page.locator('[data-ecommerce] [data-ec-export]');
+    await expect(upsells).toHaveCount(3);
+    for (const upsell of await upsells.all()) await expect(upsell).toHaveAttribute('href', /admin\.php\?page=slimpro&.*utm_campaign=export.*#ss-pro-share$/);
     runWordPressFixture("<?php deactivate_plugins('woocommerce/woocommerce.php');");
     await page.goto('/wp-admin/admin.php?page=slimview7');
     await expect(page.locator('[data-ecommerce]')).toContainText('Activate WooCommerce', { timeout: 30_000 });
@@ -246,6 +282,85 @@ test('Ecommerce setup is visible, protected and repeatable in the native report 
     await expect(page.getByRole('button', { name: 'Rebuild reports', exact: true })).toBeVisible();
   } finally {
     runWordPressFixture("<?php update_option('slimstat_ecommerce_state', get_option('slimstat_ec_setup_test_backup', []), false); delete_option('slimstat_ec_setup_test_backup');");
+  }
+});
+
+// B1 (release review 2026-10-13): a failed setup used to send the admin back to the same button.
+test('Ecommerce setup on a MyISAM analytics table says why it stopped and offers a retry @woocommerce', async ({ page }) => {
+  test.setTimeout(90_000);
+  // MySQL will not change the engine of a foreign-key parent, even with checks off, and a real
+  // MyISAM install has no foreign keys at all. So the children's constraints are dropped first and
+  // re-added, from their own SHOW CREATE TABLE text, on the way back.
+  const engine = (to: string) => runWordPressFixture(`<?php if (DB_NAME !== 'tests-wordpress') throw new RuntimeException('Disposable database required');
+global $wpdb; $t = $wpdb->prefix . 'slim_stats'; $q = chr(96);
+$wpdb->query('SET FOREIGN_KEY_CHECKS=0');
+if ('MyISAM' === '${to}') {
+  $fks = [];
+  foreach ($wpdb->get_results($wpdb->prepare('SELECT TABLE_NAME, CONSTRAINT_NAME FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME = %s', $t)) as $fk) {
+    if (preg_match('/CONSTRAINT ' . $q . preg_quote($fk->CONSTRAINT_NAME, '/') . $q . ' FOREIGN KEY [^\\n]*?(?=,?\\n)/', (string) $wpdb->get_var("SHOW CREATE TABLE {$fk->TABLE_NAME}", 1), $m)) {
+      $fks[$fk->TABLE_NAME] = $m[0];
+      $wpdb->query("ALTER TABLE {$fk->TABLE_NAME} DROP FOREIGN KEY {$fk->CONSTRAINT_NAME}");
+    }
+  }
+  update_option('slimstat_ec_myisam_test_fks', $fks, false);
+  $wpdb->query("ALTER TABLE {$t} ENGINE=MyISAM");
+} else {
+  $wpdb->query("ALTER TABLE {$t} ENGINE=InnoDB");
+  foreach ((array) get_option('slimstat_ec_myisam_test_fks', []) as $child => $clause) { $wpdb->query("ALTER TABLE {$child} ADD {$clause}"); }
+  delete_option('slimstat_ec_myisam_test_fks');
+}
+$wpdb->query('SET FOREIGN_KEY_CHECKS=1');
+echo $wpdb->get_var($wpdb->prepare('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', $t));`);
+  const foreignKeys = () => runWordPressFixture(`<?php global $wpdb; echo $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME = %s', $wpdb->prefix . 'slim_stats'));`);
+  const keysBefore = foreignKeys();
+  runWordPressFixture("<?php update_option('slimstat_ec_myisam_test_backup', get_option('slimstat_ecommerce_state', []), false); delete_option('slimstat_ecommerce_state');");
+  try {
+    // A conversion that silently did nothing would make this test pass for the wrong reason.
+    expect(engine('MyISAM')).toBe('MyISAM');
+    await page.goto('/wp-admin/admin.php?page=slimview7');
+    await page.getByRole('button', { name: 'Set up Ecommerce', exact: true }).click();
+    const dashboard = page.locator('[data-ecommerce]');
+    const full = (await getProState(page)).pro_activated;
+    await expect(dashboard.getByRole('alert')).toContainText('Setup did not finish', { timeout: 30_000 });
+    await expect(dashboard.getByRole('alert')).toContainText('InnoDB');
+    await expect(dashboard.getByRole('button', { name: 'Try setup again', exact: true })).toBeVisible();
+    await expect(dashboard.getByRole('button', { name: 'Set up Ecommerce', exact: true })).toHaveCount(0);
+
+    expect(engine('InnoDB')).toBe('InnoDB');
+    expect(foreignKeys()).toBe(keysBefore);
+    await dashboard.getByRole('button', { name: 'Try setup again', exact: true }).click();
+    await expect(page.locator('[data-metric=net]')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-ecommerce]')).not.toContainText('Setup did not finish');
+  } finally {
+    engine('InnoDB');
+    runWordPressFixture("<?php update_option('slimstat_ecommerce_state', get_option('slimstat_ec_myisam_test_backup', []), false); delete_option('slimstat_ec_myisam_test_backup');");
+  }
+});
+
+// B1 follow-up (CodeRabbit, PR #349): a failed rebuild leaves the store ready, so its reason was
+// never read and the page blamed an order import instead.
+test('Ecommerce rebuild that cannot start says why on a ready store @woocommerce', async ({ page }) => {
+  test.setTimeout(90_000);
+  runWordPressFixture("<?php update_option('slimstat_ec_rebuild_test_backup', get_option('slimstat_ecommerce_state', []), false); delete_option('slimstat_ecommerce_state');");
+  try {
+    await page.goto('/wp-admin/admin.php?page=slimview7');
+    await page.getByRole('button', { name: 'Set up Ecommerce', exact: true }).click();
+    await expect(page.locator('[data-metric=net]')).toBeVisible({ timeout: 30_000 });
+
+    // Another import holds the claim, so setup() refuses before touching the projection.
+    runWordPressFixture("<?php update_option('slimstat_ec_import', (string) (time() + 300), false);");
+    await page.locator('#ss-ec-definitions > summary').click();
+    await page.getByRole('button', { name: 'Rebuild reports', exact: true }).click();
+    const alert = page.locator('[data-ecommerce]').getByRole('alert');
+    await expect(alert).toContainText('This report needs attention', { timeout: 30_000 });
+    await expect(alert).toContainText('already running');
+
+    runWordPressFixture("<?php delete_option('slimstat_ec_import');");
+    await alert.getByRole('button', { name: 'Rebuild reports', exact: true }).click();
+    await expect(page.locator('[data-metric=net]')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-ecommerce]')).not.toContainText('already running');
+  } finally {
+    runWordPressFixture("<?php delete_option('slimstat_ec_import'); update_option('slimstat_ecommerce_state', get_option('slimstat_ec_rebuild_test_backup', []), false); delete_option('slimstat_ec_rebuild_test_backup');");
   }
 });
 

@@ -1,0 +1,42 @@
+# Task 12 calendar bounds and Task 22 migration race — 11 October 2026
+# Disposable WordPress 7.1.3 / PHP 8.3.35, Playwright Chromium admin. Core tree: fix/october-task-backlog after 1ee63468 plus the calendar/test changes in this commit.
+
+## 1. Final focused run (calendar + native date control + locale calendar + migration)
+  ✓  1 [admin] › tests/e2e/ecommerce-dashboard.spec.ts:253:1 › Ecommerce uses the native date control and preserves filters through keyboard presets @woocommerce (1.8s)
+  ✓  2 [admin] › tests/e2e/i18n-catalog-sync.spec.ts:120:3 › Issue #173: i18n catalog sync › calendar uses the WordPress locale and preserves Sunday week starts (753ms)
+  ✓  3 [admin] › tests/e2e/october-backlog.spec.ts:30:1 › Tasks 12–16: Heatmaps boundaries, device denominator, polling, date alignment and settings (1.8s)
+  ✓  4 [admin] › tests/e2e/october-migration.spec.ts:5:1 › Task 22: pending banner, failed request, retry, completion and optional-only state (9.1s)
+  4 passed (17.2s)
+
+## 2. Negative control A: pre-fix JS and CSS (HEAD 1ee63468 assets), new test — must fail at the anchor assertion
+  ✘  1 [admin] › tests/e2e/october-backlog.spec.ts:30:1 › Tasks 12–16: Heatmaps boundaries, device denominator, polling, date alignment and settings (1.4s)
+    Expected: <= 1
+    Received:    368
+    > 66 |       expect(Math.abs(box!.x - Math.max(8, Math.min(desired, width - box!.width - 8)))).toBeLessThanOrEqual(1);
+  1 failed
+
+## 3. Negative control B: pre-fix JS with new CSS — must fail at the viewport-bottom assertion
+  ✘  1 [admin] › tests/e2e/october-backlog.spec.ts:30:1 › Tasks 12–16: Heatmaps boundaries, device denominator, polling, date alignment and settings (1.6s)
+    Expected: <= 893
+    Received:    894
+    > 69 |       expect(box!.y + box!.height).toBeLessThanOrEqual(page.viewportSize()!.height - 7);
+  1 failed
+
+## 4. Wider browser run on the calendar change (83 tests: prior 70-test suite plus date-picker-label, chart-granularity-bugfixes, wp56-jquery-migrate-console)
+  -  58 [admin] › tests/e2e/i18n-catalog-sync.spec.ts:339:3 › Issue #173: i18n catalog sync › es_ES locale renders without PHP errors on Settings page
+  ✘  67 [admin] › tests/e2e/october-migration.spec.ts:5:1 › Task 22: pending banner, failed request, retry, completion and optional-only state (9.9s)
+  1 failed
+  1 skipped
+  81 passed (6.4m)
+Task 22 failed only in this ordered run (badge stayed Idle after Start) and passed 3/3 alone.
+
+## 5. Task 22 race proof: temporary copies of the old and fixed spec, each with migration.js delayed 2 s by page.route (copies deleted afterwards)
+Pre-fix test (waits only for toBeEnabled):
+  ✘  1 [admin] › tests/e2e/zz-race-old.spec.ts:6:1 › Task 22: pending banner, failed request, retry, completion and optional-only state (10.5s)
+    Error: expect(locator).toContainText(expected) failed
+    Expected substring: "Running"
+    Received string:    "Idle"
+Fixed test (waitForURL ... waitUntil: 'load'):
+  ✓  1 [admin] › tests/e2e/zz-race-new.spec.ts:6:1 › Task 22: pending banner, failed request, retry, completion and optional-only state (12.8s)
+  1 passed (16.2s)
+Conclusion: the markup enables Start before the footer script binds it; the test now waits for the loaded page. No product change.

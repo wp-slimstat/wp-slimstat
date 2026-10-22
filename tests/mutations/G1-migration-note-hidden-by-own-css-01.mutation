@@ -6,8 +6,12 @@ rationale: Drops the exemption class from the migration page's own status note -
 ---
 --- a/src/view/migration-page.php
 +++ b/src/view/migration-page.php
-@@ -54,3 +54,3 @@
+@@ -78,7 +78,7 @@
+                     // element, so a failed step reported into something with display:none.
+                     // Pinned by tests/migration-notice-visibility-test.php.
                      ?>
--                    <div class="status-note notice inline notice-info slimstat-migration-notice" id="slimstat-status-note">
-+                    <div class="status-note notice inline notice-info" id="slimstat-status-note">
+-                    <div id="slimstat-status-note" class="status-note notice inline slimstat-migration-notice <?php echo $has_required_migrations ? 'notice-info' : 'notice-success'; ?>">
++                    <div id="slimstat-status-note" class="status-note notice inline <?php echo $has_required_migrations ? 'notice-info' : 'notice-success'; ?>">
                          <?php if ($has_required_migrations): ?>
+                             <?php echo esc_html__('Click "Start Migration" to begin. Progress and details will appear here.', 'wp-slimstat'); ?>
+                         <?php else: ?>

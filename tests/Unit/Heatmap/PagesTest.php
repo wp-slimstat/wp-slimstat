@@ -202,6 +202,11 @@ class PagesTest extends WpSlimstatTestCase
 		self::assertSame($first, Query::cachedPages(1, 999), 'hit');
 		self::assertCount($count, $this->queries, 'a hit runs no query');
 
+		foreach ($store as &$entry) { $entry['data']['updated'] = time() - 61; }
+		unset($entry);
+		Query::cachedPages(1, 999);
+		self::assertGreaterThan($count, count($this->queries), 'legacy clicks cannot stay cached beyond one minute');
+		$count = count($this->queries);
 		Query::cachedPages(1, 999, '', true);
 		self::assertGreaterThan($count, count($this->queries), 'refresh recomputes');
 

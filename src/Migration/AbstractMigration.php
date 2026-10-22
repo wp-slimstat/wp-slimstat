@@ -308,13 +308,7 @@ abstract class AbstractMigration implements MigrationInterface
 	 */
 	protected function alterOnline(string $sql)
 	{
-		// phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Schema builds DDL from its allowlisted manifest and the core table prefix; no request values are interpolated.
-		$result = $this->wpdb->query($sql . ', ALGORITHM=INPLACE, LOCK=NONE');
-		if (false === $result) {
-			$result = $this->wpdb->query($sql);
-		}
-		// phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
-		return $result;
+		return \SlimStat\Schema\Schema::alterOnline($this->wpdb, $sql);
 	}
 
 	/**

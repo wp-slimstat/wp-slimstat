@@ -115,7 +115,7 @@ if ([10, 0, 0, 0, 5] !== $out['datasets']['v1']) {
 $dayStart = strtotime('2026-09-08');
 $dayEnd = strtotime('2026-09-10') + 86399;
 $previousStart = strtotime('2026-09-05') + 1;
-$buckets = new \SlimStat\Helpers\DataBuckets('Y/m/d', 'DAY', $dayStart, $dayEnd, $previousStart, $dayStart);
+$buckets = new \SlimStat\Helpers\DataBuckets('Y/m/d', 'DAY', $dayStart, $dayEnd, $previousStart, $dayStart - 1);
 $buckets->addRow(strtotime('2026-09-05'), 649, 238, 'previous');
 $buckets->addRow(strtotime('2026-09-06'), 579, 233, 'previous');
 $buckets->addRow(strtotime('2026-09-07'), 574, 223, 'previous');

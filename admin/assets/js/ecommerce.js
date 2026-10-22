@@ -3,7 +3,7 @@
     'use strict';
     const { __, sprintf } = window.wpSlimstatI18n;
     let chart, request, requestKey, feedbackTimer, serial = 0, reportHashHandled = false;
-    const state = { metric: 'net', interval: 'auto', compare: true, tabs: {}, expanded: {}, sort: {} };
+    const state = { metric: 'net', interval: 'auto', compare: true, tabs: {}, expanded: {}, sort: {}, pages: {} };
     const root = () => document.querySelector('.ss-ec[data-ecommerce]');
     const announce = (message, visible = false) => {
         const target = document.querySelector('.ss-ec-feedback');
@@ -27,9 +27,10 @@
         if (focus) tab.focus();
     }
     function expand(panel, open, focus) {
+        if (!panel.querySelector('[data-expand]')) return;
         panel.querySelector('[data-expand]').setAttribute('aria-expanded', String(open));
         panel.querySelector('.ss-ec-report-detail').hidden = !open;
-        panel.querySelector('[data-expand]').textContent = open ? __('Close report', 'wp-slimstat') : __('View report', 'wp-slimstat');
+        panel.querySelector('[data-expand]').textContent = open ? __('Close report', 'wp-slimstat') : __('Full report', 'wp-slimstat');
         state.expanded[panel.dataset.dimension] = open;
         rank(panel);
         if (focus) panel.querySelector('[data-expand]').focus();
@@ -38,18 +39,27 @@
         const metric = panel.querySelector('[data-rank-metric]').value;
         const ascending = panel.querySelector('[data-sort]').getAttribute('aria-pressed') === 'true';
         const rows = Array.from(panel.querySelectorAll('.ss-ec-rankings > li'));
+        const expanded = Boolean(state.expanded[panel.dataset.dimension]);
+        const size = Number(panel.dataset.pageSize) || 20;
+        const page = Math.min(state.pages[panel.dataset.dimension] || 0, Math.max(0, Math.ceil(rows.length / size) - 1));
+        state.pages[panel.dataset.dimension] = page;
         const value = row => Number(metric === 'orders' ? row.dataset.rankOrders : row.dataset.rankValue);
         const max = Math.max(0, ...rows.map(row => Math.abs(value(row))));
         rows.sort((a, b) => (value(b) - value(a)) * (ascending ? -1 : 1));
         rows.forEach((row, index) => {
             row.parentElement.append(row);
-            const detail = panel.querySelector('tr[data-rank-index="' + row.dataset.rankIndex + '"]');
-            if (detail) detail.parentElement.append(detail);
-            row.hidden = index >= 5 && !state.expanded[panel.dataset.dimension];
-            row.querySelector('.ss-ec-rank-value').textContent = metric === 'orders' ? Number(row.dataset.rankOrders).toLocaleString(document.documentElement.lang) : row.dataset.rankMoney;
+            row.hidden = expanded ? index < page * size || index >= (page + 1) * size : index >= 5;
+            /* translators: 1: order count, 2: formatted monetary amount. */
+            row.title = row.dataset.rankOrders === undefined ? row.dataset.rankMoney : sprintf(__('%1$s orders · %2$s', 'wp-slimstat'), row.dataset.rankOrders, row.dataset.rankMoney);
+            row.querySelector('.ss-ec-rank-value').textContent = (panel.dataset.dimension === 'coupon' ? __('Discounts', 'wp-slimstat') : __('Net sales', 'wp-slimstat')) + ': ' + row.dataset.rankMoney;
             row.querySelector('.ss-ec-rank-bar').style.setProperty('--ss-ec-share', (max ? 100 * Math.abs(value(row)) / max : 0) + '%');
             row.classList.toggle('is-negative', value(row) < 0);
         });
+        const pager = panel.querySelector('.ss-ec-pages');
+        pager.hidden = !expanded || rows.length <= size;
+        pager.querySelector('[data-page-label]').textContent = sprintf(__('%1$s–%2$s of %3$s', 'wp-slimstat'), page * size + 1, Math.min((page + 1) * size, rows.length), rows.length);
+        pager.querySelector('[data-page-step="-1"]').disabled = page === 0;
+        pager.querySelector('[data-page-step="1"]').disabled = (page + 1) * size >= rows.length;
         state.sort[panel.dataset.dimension] = { metric, ascending };
     }
     function pointNote(point) {
@@ -83,22 +93,43 @@
             });
             tbody.append(row);
         });
+        let gaps = dashboard.querySelector('[data-chart-gaps]');
+        if (!gaps) { gaps = document.createElement('details'); gaps.dataset.chartGaps = ''; performance.querySelector('.ss-ec-canvas').after(gaps); }
+        gaps.replaceChildren();
+        const summary = document.createElement('summary');
+        summary.textContent = __('Unavailable intervals', 'wp-slimstat'); gaps.append(summary);
+        const list = document.createElement('ul'); gaps.append(list);
+        ['current', ...(state.compare ? ['previous'] : [])].forEach(period => series[period].forEach(point => {
+            if (point[metric] !== null) return;
+            const item = document.createElement('li'); item.textContent = (period === 'current' ? __('Selected period', 'wp-slimstat') : __('Previous period', 'wp-slimstat')) + ': ' + point.label + ' · ' + point.formatted[metric]; list.append(item);
+        }));
+        gaps.hidden = !list.children.length;
         const colors = getComputedStyle(dashboard);
         const primary = colors.getPropertyValue('--ss-chart-1').trim();
         const muted = colors.getPropertyValue('--ss-chart-compare').trim();
         const text = colors.getPropertyValue('--ss-text-muted').trim();
         const line = ['rate', 'aov'].includes(metric);
+        // A lone measured value has no line segment: keep its marker visible, including zero.
+        const isolated = (points, i) => points[i][metric] !== null
+            && (!points[i - 1] || points[i - 1][metric] === null)
+            && (!points[i + 1] || points[i + 1][metric] === null);
         const datasets = [{
-            label: __('Selected period', 'wp-slimstat'), type: line ? 'line' : 'bar',
+            label: __('Selected period', 'wp-slimstat'), period: 'current', type: line ? 'line' : 'bar',
             data: series.current.map(p => p[metric]), borderColor: primary, backgroundColor: line ? primary + '12' : series.current.map(p => p.partial ? primary + 'cc' : primary),
             borderWidth: line ? 2 : 0, borderRadius: 3, maxBarThickness: 38, fill: line, tension: 0,
-            pointRadius: series.current.map(p => p.partial || series.current.length < 3 ? 4 : 0), pointStyle: series.current.map(p => p.partial ? 'triangle' : 'circle'), pointHitRadius: 12, spanGaps: false,
+            pointRadius: series.current.map((p, i) => p.partial || series.current.length < 3 || isolated(series.current, i) ? 4 : 0), pointStyle: series.current.map(p => p.partial ? 'triangle' : 'circle'), pointHitRadius: 12, spanGaps: false,
         }];
         if (state.compare) datasets.push({
-            label: __('Previous period', 'wp-slimstat'), type: 'line', data: series.previous.map(p => p[metric]),
+            label: __('Previous period', 'wp-slimstat'), period: 'previous', type: 'line', data: series.previous.map(p => p[metric]),
             borderColor: muted, backgroundColor: muted, borderDash: [5, 4], borderWidth: 2,
             pointBackgroundColor: colors.getPropertyValue('--ss-surface').trim(),
-            pointRadius: series.previous.length < 3 ? 4 : 0, pointHitRadius: 12, tension: 0, spanGaps: false, order: -1,
+            pointRadius: series.previous.map((p, i) => series.previous.length < 3 || isolated(series.previous, i) ? 4 : 0), pointHitRadius: 12, tension: 0, spanGaps: false, order: -1,
+        });
+        // Index-mode tooltips skip null points, so an invisible baseline point keeps expired intervals hoverable.
+        const gap = series.current.map(p => p[metric] === null ? 0 : null);
+        if (gap.some(v => v !== null)) datasets.push({
+            label: __('Selected period', 'wp-slimstat'), period: 'current', gap: true, type: 'line', data: gap, showLine: false,
+            borderColor: text, backgroundColor: text, pointRadius: 0, pointHoverRadius: 0, pointHitRadius: 12, order: -2,
         });
         dashboard.querySelector('[data-chart-empty]').hidden = series.current.some(p => p[metric] !== null);
         if (chart) chart.destroy();
@@ -112,16 +143,18 @@
                     legend: { display: false },
                     tooltip: { padding: 12, displayColors: true, callbacks: {
                         title: items => items.length ? series.current[items[0].dataIndex].label : '',
-                        label: item => {
-                            const point = (item.datasetIndex ? series.previous : series.current)[item.dataIndex];
-                            return item.dataset.label + ': ' + point.formatted[metric];
-                        },
+                        label: item => item.dataset.label + ': ' + series[item.dataset.period][item.dataIndex].formatted[metric],
                         afterBody: items => {
                             if (!items.length) return [];
                             const index = items[0].dataIndex, point = series.current[index];
                             const notes = [pointNote(point)];
                             if (metric === 'rate') notes.push(sprintf(__('%1$s buying / %2$s eligible visits', 'wp-slimstat'), point.buyers, point.visits));
-                            if (state.compare) notes.push(series.previous[index].label, pointNote(series.previous[index]));
+                            if (state.compare) {
+                                const before = series.previous[index];
+                                notes.push(before.label, pointNote(before));
+                                // A null previous point has no tooltip item of its own.
+                                if (before[metric] === null) notes.push(__('Previous period', 'wp-slimstat') + ': ' + before.formatted[metric]);
+                            }
                             return notes.filter(Boolean);
                         },
                     } },
@@ -139,7 +172,9 @@
         if (!panel || !root()?.contains(panel) || !panel.matches('.ss-ec-report')) return;
         reportHashHandled = true;
         selectTab(document.getElementById(panel.getAttribute('aria-labelledby')), false);
-        panel.focus();
+        expand(panel, true, false);
+        panel.focus({ preventScroll: true });
+        panel.scrollIntoView({ block: 'center' });
     }
     setInterval(() => {
         const updated = root()?.querySelector('.ss-ec-updated'); if (!updated) return;
@@ -224,13 +259,21 @@
     };
     document.addEventListener('click', event => {
         const target = event.target.closest('button,a'); if (!target || !root()?.contains(target)) return;
-        if (target.matches('[data-chart-metric]')) { state.metric = target.dataset.chartMetric; draw(); }
+        if (target.matches('[data-chart-metric]')) {
+            if (target.dataset.proLocked) {
+                const unlock = root().querySelector('#ss-ec-unlock');
+                (unlock.querySelector('a') || unlock).focus();
+                return;
+            }
+            state.metric = target.dataset.chartMetric; draw();
+        }
         if (target.matches('[role=tab]')) selectTab(target, false);
         if (target.matches('[data-expand]')) expand(target.closest('.ss-ec-report'), target.getAttribute('aria-expanded') !== 'true', false);
+        if (target.matches('[data-page-step]')) { const panel = target.closest('.ss-ec-report'); state.pages[panel.dataset.dimension] += Number(target.dataset.pageStep); rank(panel); }
         if (target.matches('[data-sort]')) { target.setAttribute('aria-pressed', String(target.getAttribute('aria-pressed') !== 'true')); rank(target.closest('.ss-ec-report')); }
         if (target.matches('[data-open-report]')) {
             const panel = root().querySelector('[data-dimension="' + target.dataset.openReport + '"]');
-            if (panel) { selectTab(document.getElementById(panel.getAttribute('aria-labelledby')), false); expand(panel, true, true); panel.scrollIntoView({ block: 'center' }); }
+            if (panel) { selectTab(document.getElementById(panel.getAttribute('aria-labelledby')), false); expand(panel, true, false); panel.focus({ preventScroll: true }); panel.scrollIntoView({ block: 'center' }); }
         }
         if (target.matches('a[href^="#"]:not(.refresh)')) {
             const destination = document.querySelector(target.getAttribute('href'));

@@ -1,0 +1,198 @@
+{
+    "translation-revision-date": "2019-06-10 15:36-0400",
+    "generator": "WP-CLI\/2.12.0",
+    "source": "admin\/assets\/js\/goals-funnels.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "ru",
+                "plural-forms": "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);"
+            },
+            "Cancel": [
+                ""
+            ],
+            "Delete": [
+                "\u0423\u0434\u0430\u043b\u0438\u0442\u044c"
+            ],
+            "Delete this?": [
+                ""
+            ],
+            "Historical data stays. Only the definition is removed, and you can rebuild it.": [
+                ""
+            ],
+            "No data yet for this funnel.": [
+                ""
+            ],
+            "Unique visitors who reached this step": [
+                ""
+            ],
+            "%1$s: %2$s visitors": [
+                ""
+            ],
+            "No visitors reached this step in the selected date range": [
+                ""
+            ],
+            "\u2193 %1$s dropped (%2$s%%)": [
+                ""
+            ],
+            "Funnels need between 2 and 5 steps.": [
+                ""
+            ],
+            "No visitors matched in this date range": [
+                ""
+            ],
+            "Healthy pass-through \u00b7 %d-step funnel": [
+                ""
+            ],
+            "%d-step funnel \u00b7 Conversion rate pending": [
+                ""
+            ],
+            "%1$d-step funnel \u00b7 %2$s%% conversion rate": [
+                ""
+            ],
+            "%d step had no visitors in range": [
+                ""
+            ],
+            "WooCommerce purchase": [
+                ""
+            ],
+            "Checkout completion": [
+                ""
+            ],
+            "Landing to contact": [
+                ""
+            ],
+            "Homepage to pricing to checkout": [
+                ""
+            ],
+            "Landing to thank-you (advanced)": [
+                ""
+            ],
+            "See templates": [
+                ""
+            ],
+            "Checkout": [
+                ""
+            ],
+            "Product": [
+                ""
+            ],
+            "Cart": [
+                ""
+            ],
+            "Order received": [
+                ""
+            ],
+            "Homepage": [
+                ""
+            ],
+            "Contact page": [
+                ""
+            ],
+            "Pricing": [
+                ""
+            ],
+            "Form page": [
+                ""
+            ],
+            "Thank-you page": [
+                ""
+            ],
+            "Request failed.": [
+                ""
+            ],
+            "Network error.": [
+                ""
+            ],
+            "Goal name is required.": [
+                ""
+            ],
+            "Value is required for this operator.": [
+                ""
+            ],
+            "Delete goal?": [
+                ""
+            ],
+            "Delete \"%s\"?": [
+                ""
+            ],
+            "Delete this goal?": [
+                ""
+            ],
+            "Historical data stays. Only the goal definition is removed, and you can rebuild it.": [
+                ""
+            ],
+            "Keep goal": [
+                ""
+            ],
+            "Delete goal": [
+                ""
+            ],
+            "Step %d": [
+                ""
+            ],
+            "Hide templates": [
+                ""
+            ],
+            "Step %d added": [
+                ""
+            ],
+            "Step removed, %d steps remaining": [
+                ""
+            ],
+            "Funnel name is required.": [
+                ""
+            ],
+            "Step %d needs a value for its operator.": [
+                ""
+            ],
+            "Delete funnel?": [
+                ""
+            ],
+            "Delete this funnel?": [
+                ""
+            ],
+            "Historical data stays. Only the funnel definition is removed, and you can rebuild it from the same goals.": [
+                ""
+            ],
+            "Keep funnel": [
+                ""
+            ],
+            "Delete funnel": [
+                ""
+            ],
+            "Not applicable for this operator": [
+                ""
+            ],
+            "Type or pick a value": [
+                ""
+            ],
+            "Search or type\u2026": [
+                ""
+            ],
+            "No matches. Type any value to use it.": [
+                ""
+            ],
+            "No matches": [
+                ""
+            ],
+            "Loading\u2026": [
+                ""
+            ],
+            "Step": [
+                ""
+            ],
+            "Testing\u2026": [
+                ""
+            ],
+            "%s unique visitor": [
+                ""
+            ],
+            "Reorder step, position %1$d of %2$d": [
+                ""
+            ]
+        }
+    }
+}

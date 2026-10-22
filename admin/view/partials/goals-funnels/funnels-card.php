@@ -49,12 +49,7 @@ if ($locked) :
             <p class="slimstat-gf-funnel-lock__caption"><?php esc_html_e('Example funnel', 'wp-slimstat'); ?></p>
             <h3><?php esc_html_e('See where visitors drop off, step by step.', 'wp-slimstat'); ?></h3>
             <p><?php esc_html_e('Build 2 to 5 step funnels and see exactly where visitors drop off at each stage. Available in SlimStat Pro.', 'wp-slimstat'); ?></p>
-            <a class="button button-primary slimstat-gf-cta"
-               href="https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=funnel"
-               target="_blank"
-               rel="noopener noreferrer">
-                <?php esc_html_e('Upgrade to Pro', 'wp-slimstat'); ?>
-            </a>
+            <?php wp_slimstat_admin::get_template('pro-adds', ['text' => __('Unlock funnel reports with Pro.', 'wp-slimstat'), 'campaign' => 'funnel', 'content' => 'card']); ?>
         </div>
     </div>
 </section>

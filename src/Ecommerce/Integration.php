@@ -105,7 +105,7 @@ final class Integration
 		try {
 			self::setup();
 		} catch (\Throwable $error) {
-			self::failure();
+			self::failure($error);
 		}
 		wp_safe_redirect(admin_url('admin.php?page=slimview7'));
 		exit;
@@ -115,41 +115,43 @@ final class Integration
 	public static function setup(): void
 	{
 		if (!self::available() || MigrationService::migrationsDisabled()) {
-			throw new \RuntimeException('Ecommerce setup is unavailable.');
+			self::fail(__('Ecommerce setup is unavailable.', 'wp-slimstat'));
 		}
 		$token = self::claim('slimstat_ec_import', 300);
-		if (null === $token) { throw new \RuntimeException('Ecommerce setup/import is already running.'); }
+		if (null === $token) { self::fail(__('Ecommerce setup or import is already running. Try again in a few minutes.', 'wp-slimstat')); }
 		try {
 			$db = self::db();
+			$stats = $GLOBALS['wpdb']->prefix . 'slim_stats';
+			// The projection's foreign key needs an InnoDB parent; MyISAM refuses it with no useful error.
+			self::requireInnoDb($db, $stats);
 			$sql = Schema::createTableSql('slim_ecommerce', $GLOBALS['wpdb']->prefix, Schema::targetCollation($GLOBALS['wpdb']));
 			if (false === $db->query($sql)) {
-				throw new \RuntimeException('Ecommerce schema is unavailable.');
+				self::fail(__('The Ecommerce reporting table could not be created.', 'wp-slimstat'));
 			}
 			$columns = Schema::columnState($db, 'slim_ecommerce', $GLOBALS['wpdb']->prefix);
 			if (!$columns['present'] || $columns['missing'] || $columns['narrow'] || $db->last_error) {
-				throw new \RuntimeException('Ecommerce schema needs repair.');
+				self::fail(__('The Ecommerce reporting table needs repair.', 'wp-slimstat'));
 			}
 			$indexes = Schema::indexState($db, 'slim_ecommerce', $GLOBALS['wpdb']->prefix);
-			if ($indexes['malformed'] || (!$indexes['present'] && !$indexes['missing'])) { throw new \RuntimeException('Ecommerce indexes need repair.'); }
+			if ($indexes['malformed'] || (!$indexes['present'] && !$indexes['missing'])) { self::fail(__('The Ecommerce reporting indexes need repair.', 'wp-slimstat')); }
 			foreach ($indexes['missing'] as $name) {
-				if (false === $db->query(Schema::createIndexSql('slim_ecommerce', $name, $GLOBALS['wpdb']->prefix) . ' ALGORITHM=INPLACE LOCK=NONE')) {
-					throw new \RuntimeException('Ecommerce index is unavailable.');
+				if (false === Schema::alterOnline($db, Schema::addIndexSql('slim_ecommerce', $name, $GLOBALS['wpdb']->prefix))) {
+					self::fail(__('An Ecommerce reporting index could not be created.', 'wp-slimstat'));
 				}
 			}
-			$stats = $GLOBALS['wpdb']->prefix . 'slim_stats';
 			$index = $db->get_results("SHOW INDEX FROM {$stats} WHERE Key_name = 'idx_ecommerce_visit'", ARRAY_A);
 			if (!is_array($index) || ($index && !Schema::indexMatches($index, 'visit_id, dt, id'))) {
-				throw new \RuntimeException('Ecommerce visit index needs repair.');
+				self::fail(__('The Ecommerce visit index on the analytics table needs repair.', 'wp-slimstat'));
 			}
-			if (!$index && false === $db->query(Schema::createIndexSql('slim_stats', 'idx_ecommerce_visit', $GLOBALS['wpdb']->prefix) . ' ALGORITHM=INPLACE LOCK=NONE')) {
-				throw new \RuntimeException('Ecommerce visit index is unavailable.');
+			if (!$index && false === Schema::alterOnline($db, Schema::addIndexSql('slim_stats', 'idx_ecommerce_visit', $GLOBALS['wpdb']->prefix))) {
+				self::fail(__('The Ecommerce visit index on the analytics table could not be created.', 'wp-slimstat'));
 			}
 			$state = get_option(self::STATE, []);
 			$last = wc_get_orders(['type' => 'shop_order', 'status' => array_keys(wc_get_order_statuses()), 'limit' => 1, 'orderby' => 'ID', 'order' => 'DESC', 'return' => 'ids']);
 			$state = array_merge($state, [
 				'version' => self::VERSION, 'started' => $state['started'] ?? \wp_slimstat::now(),
 				'cursor' => 0, 'ceiling' => max((int) ($last[0] ?? 0), (int) $db->get_var('SELECT MAX(order_id) FROM ' . self::table())), 'imported' => 0,
-				'complete' => false, 'error' => false, 'failed_order' => 0, 'needs_rebuild' => false, 'timezone' => wp_timezone_string(), 'database' => Acquisition::readinessKey(),
+				'complete' => false, 'error' => false, 'error_message' => '', 'failed_order' => 0, 'needs_rebuild' => false, 'timezone' => wp_timezone_string(), 'database' => Acquisition::readinessKey(),
 			]);
 			update_option(self::STATE, $state, false);
 			self::invalidate();
@@ -562,10 +564,30 @@ final class Integration
 		return $won ? $token : null;
 	}
 
-	private static function failure(): void
+	/** Setup passes its exception so the admin sees why it stopped instead of the same button again. */
+	private static function failure(?\Throwable $error = null): void
 	{
 		$state = get_option(self::STATE, []);
 		$state['error'] = true;
+		if ($error) {
+			$message = $error instanceof \RuntimeException ? $error->getMessage() : __('Ecommerce setup stopped unexpectedly. Check the PHP error log, then try again.', 'wp-slimstat');
+			$state['error_message'] = mb_substr(sanitize_text_field($message), 0, 500);
+		}
 		update_option(self::STATE, $state, false);
+	}
+
+	private static function requireInnoDb(\wpdb $db, string $table): void
+	{
+		$engine = Schema::tableEngine($db, $table);
+		if ('' !== $engine && 0 !== strcasecmp($engine, 'InnoDB')) {
+			self::fail(__('Your SlimStat analytics table uses the MyISAM storage engine, and Ecommerce needs InnoDB. Ask your host to convert the table to InnoDB, then set up Ecommerce again.', 'wp-slimstat'));
+		}
+	}
+
+	/** @return never */
+	private static function fail(string $message)
+	{
+		// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; the setup notice escapes the stored message.
+		throw new \RuntimeException($message);
 	}
 }

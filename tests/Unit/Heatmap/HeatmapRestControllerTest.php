@@ -27,6 +27,7 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 	protected function tearDown(): void
 	{
 		\wp_slimstat::$settings = $this->settings;
+        \wp_slimstat::$pro = false;
 		$GLOBALS['slimstat_test_options'] = [];
 		parent::tearDown();
 	}
@@ -63,11 +64,13 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 	{
 		$row = ['page' => '/about', 'clicks' => 8, 'desktop' => 3, 'tablet' => 1, 'mobile' => 4, 'dead' => 1, 'rage' => 1, 'scroll' => 62, 'last' => 1759449600, 'full' => true, 'pageviews' => 20, 'content_id' => 5];
 		$keys = [];
+		$rows = [$row];
+		$updated = time();
 		Functions\when('get_current_blog_id')->justReturn(1);
 		Functions\when('wp_json_encode')->alias('json_encode');
-		Functions\when('get_transient')->alias(static function ($key) use (&$keys, $row) {
+		Functions\when('get_transient')->alias(static function ($key) use (&$keys, &$rows, $updated) {
 			$keys[] = $key;
-			return ['signature' => ['', \wp_slimstat::$settings['auto_purge'] ?? 0, false], 'data' => ['rows' => [$row], 'updated' => 77]];
+			return ['signature' => ['', \wp_slimstat::$settings['auto_purge'] ?? 0, false], 'data' => ['rows' => $rows, 'updated' => $updated]];
 		});
 		Functions\when('_prime_post_caches')->justReturn(null);
 		Functions\when('get_the_title')->justReturn('<em>About</em> us');
@@ -79,19 +82,41 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 
 		Functions\when('apply_filters')->returnArg(2);
 		$free = (new HeatmapRestController())->pages($request);
-		self::assertSame(['from' => '2026-09-27', 'to' => '2026-10-03', 'updated' => 77], array_slice($free, 0, 3), 'seven days ending on to');
+		self::assertSame(['from' => '2026-09-27', 'to' => '2026-10-03', 'updated' => $updated], array_slice($free, 0, 3), 'seven days ending on to');
 		self::assertSame('', $free['rows'][0]['url'], 'Free: no viewer, the row opens the preview');
 		self::assertSame('About us', $free['rows'][0]['title']);
-		self::assertSame([3, 1, 4], $free['rows'][0]['devices']);
+		self::assertNull($free['rows'][0]['devices'], 'device data is absent from the Free response');
+        foreach (['scroll', 'dead', 'rage'] as $metric) { self::assertNull($free['rows'][0][$metric], 'cached Pro metrics stay private'); }
 		self::assertTrue($free['ever'], 'rows in range: the site has clicks, no extra query (no wpdb here)');
 
+        $rows[] = array_merge($row, ['page' => '/locked-rank', 'clicks' => 1, 'scroll' => 99, 'dead' => 99]);
+        foreach (['scroll', 'dead', 'devices'] as $sort) {
+            $sorted = (new HeatmapRestController())->pages(new \WP_REST_Request(['to' => '2026-10-03', 'days' => 7, 'device' => '', 'refresh' => false, 'sort' => $sort]));
+            self::assertSame('/about', $sorted['rows'][0]['page'], 'Locked metrics cannot influence Free ordering');
+        }
+        $rows = [$row];
+
 		Functions\when('apply_filters')->alias(static fn($hook, $url, $page) => 'slimstat_heatmap_row_url' === $hook ? 'https://example.test/view?page=' . rawurlencode($page) : $url);
+        \wp_slimstat::$pro = true;
 		$pro = (new HeatmapRestController())->pages($request);
+        self::assertSame([3, 1, 4], $pro['rows'][0]['devices']);
 		self::assertSame('https://example.test/view?page=%2Fabout&from=2026-09-27&to=2026-10-03', $pro['rows'][0]['url'], 'the viewer opens on the list\'s range');
 		self::assertCount(1, array_unique($keys), 'one cache entry per range and device');
 	}
 
 	/** QA C2: Free's preview of a page's heatmap, behind the report gate. */
+    public function test_free_device_filters_cannot_reconstruct_locked_breakdowns(): void
+    {
+        \wp_slimstat::$pro = false;
+        $controller = new HeatmapRestController();
+        $request = new \WP_REST_Request(['page' => '/pricing', 'from' => '2026-10-01', 'to' => '2026-10-03', 'days' => 30, 'device' => 'mobile']);
+        foreach (['pages', 'targets'] as $method) {
+            $result = $controller->$method($request);
+            self::assertInstanceOf(\WP_Error::class, $result);
+            self::assertSame('slimstat_heatmap_device_pro', $result->code);
+        }
+    }
+
 	public function test_targets_are_the_pages_top_five_links_and_buttons_by_name(): void
 	{
 		$routes = [];

@@ -91,12 +91,11 @@ $own_files = slimstat_own_php_files(
 $own_files[] = $plugin_root . '/wp-slimstat.php';
 $own_files[] = $plugin_root . '/uninstall.php';
 
-// AbstractIndexMigration builds `CREATE INDEX %s ON %s (%s)` from values it is handed; that is
-// the runner for the manifest, not a second declaration of it. Assertion 4 pins that its
-// subclasses supply those values from Schema rather than restating them.
+// AbstractIndexMigration used to build `CREATE INDEX %s ON %s (%s)` itself and was exempt here;
+// since B2 (release review 2026-10-13) it asks Schema::addIndexSql(), so nothing is exempt but
+// the manifest. Assertion 4 still pins that its subclasses name a manifest key.
 $ddl_exempt = [
     $schema_rel,
-    'src/Migration/AbstractIndexMigration.php',
 ];
 
 // What is forbidden is a DDL statement carrying a CONCRETE object name — a slim_ table, or an

@@ -1,0 +1,39 @@
+{
+    "translation-revision-date": "",
+    "generator": "WP-CLI\/2.12.0",
+    "source": "admin\/assets\/js\/utm-builder.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "fa",
+                "plural-forms": "nplurals=1; plural=0;"
+            },
+            "Use no more than 191 characters per tag.": [
+                ""
+            ],
+            "Use plain text without HTML or control characters.": [
+                ""
+            ],
+            "Enter a value for this required field.": [
+                ""
+            ],
+            "Enter a campaign name or campaign ID.": [
+                ""
+            ],
+            "Enter a full http:\/\/ or https:\/\/ URL without login credentials.": [
+                ""
+            ],
+            "This URL is too long to track. Shorten its existing query parameters.": [
+                ""
+            ],
+            "Campaign URL copied.": [
+                ""
+            ],
+            "Link selected. Use your browser\u2019s Copy command.": [
+                ""
+            ]
+        }
+    }
+}

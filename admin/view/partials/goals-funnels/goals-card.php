@@ -165,14 +165,7 @@ $show_upsell = $at_max && !$is_pro;
         ?>
         <div class="slimstat-gf-upsell" role="note">
             <strong><?php esc_html_e('Free plans include one goal.', 'wp-slimstat'); ?></strong>
-            <?php echo wp_kses(
-                sprintf(
-                    /* translators: %s is a link */
-                    __('%s to track up to 5 goals and unlock 3 drop-off funnels.', 'wp-slimstat'),
-                    '<a href="https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=goals" target="_blank" rel="noopener noreferrer">' . esc_html__('Upgrade to Pro', 'wp-slimstat') . '</a>'
-                ),
-                ['a' => ['href' => [], 'target' => [], 'rel' => []]]
-            ); ?>
+            <?php wp_slimstat_admin::get_template('pro-adds', ['text' => __('Track up to 5 goals and unlock 3 drop-off funnels with Pro.', 'wp-slimstat'), 'campaign' => 'goals', 'content' => 'card']); ?>
         </div>
     <?php elseif ($at_max && $is_pro) : ?>
         <p class="slimstat-gf-hint">

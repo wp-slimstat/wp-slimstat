@@ -217,6 +217,8 @@ class wp_slimstat_reports
                     'type'    => 'top',
                     'columns' => 'searchterms',
                     'where'   => 'searchterms <> "_" AND searchterms <> "" AND searchterms IS NOT NULL',
+                    'empty_title' => __('No search terms in this date range.', 'wp-slimstat'),
+                    'empty_hint' => __('Only pageviews with a recorded search term appear here. Dashed chart lines show the previous period.', 'wp-slimstat'),
                     'raw'     => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
@@ -577,7 +579,7 @@ class wp_slimstat_reports
                 'title' => __('Channels', 'wp-slimstat'),
                 'callback' => [\SlimStat\Reports\AcquisitionReport::class, 'render'],
                 'callback_args' => ['mode' => 'channels', 'raw' => [\SlimStat\Reports\AcquisitionReport::class, 'rows']],
-                'classes' => ['extralarge', 'slimstat-acquisition-box'],
+                'classes' => ['large', 'slimstat-acquisition-box'],
                 'locations' => ['slimview5'],
                 'tooltip' => __('Pageview sources, classified from campaign tags, referring sites and user agents. AI referrals and automated requests are reported separately.', 'wp-slimstat'),
             ],
@@ -585,7 +587,7 @@ class wp_slimstat_reports
                 'title' => __('UTM Campaigns', 'wp-slimstat'),
                 'callback' => [\SlimStat\Reports\AcquisitionReport::class, 'render'],
                 'callback_args' => ['mode' => 'utm', 'raw' => [\SlimStat\Reports\AcquisitionReport::class, 'rows']],
-                'classes' => ['extralarge', 'slimstat-acquisition-box'],
+                'classes' => ['large', 'slimstat-acquisition-box'],
                 'locations' => ['slimview5'],
                 'tooltip' => __('Compare tagged pageviews by campaign, source and medium. Campaign values are case-sensitive; missing values are shown explicitly.', 'wp-slimstat'),
             ],
@@ -959,11 +961,6 @@ class wp_slimstat_reports
                     'type'    => 'top',
                     'columns' => 'goal_name',
                     'raw'     => ['wp_slimstat_db', 'get_goals_raw'],
-                    // The Free "Export" upgrade link only makes sense once there's
-                    // something to export — no goals defined → nothing to offer.
-                    'exportable' => function () {
-                        return !empty(self::get_goals_card_state()['goals']);
-                    },
                 ],
                 'classes'   => ['full-width', 'tall'],
                 'locations' => ['slimview6'],
@@ -979,11 +976,6 @@ class wp_slimstat_reports
                     'type'    => 'top',
                     'columns' => 'funnel_step',
                     'raw'     => ['wp_slimstat_db', 'get_funnels_raw'],
-                    // Funnels are locked in Free (no data), so the Free "Export"
-                    // upgrade link is never appropriate here — it's bait.
-                    'exportable' => function () {
-                        return !empty(self::get_funnels_card_state()['funnels']);
-                    },
                 ],
                 'classes'   => ['full-width', 'extralarge'],
                 'locations' => ['slimview6'],
@@ -2343,7 +2335,7 @@ class wp_slimstat_reports
             echo '<div class="slimstat-funnel-overlay">';
             echo '<h3>' . esc_html__('Visualize every step of the journey', 'wp-slimstat') . '</h3>';
             echo '<p>' . esc_html__('Visualize conversion funnels with step-by-step drop-off analysis.', 'wp-slimstat') . '</p>';
-            echo '<a href="https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=funnel" class="button button-primary" target="_blank" rel="noopener noreferrer">' . esc_html__('Upgrade to Pro', 'wp-slimstat') . '</a>';
+            wp_slimstat_admin::get_template('pro-adds', ['text' => __('Unlock funnel reports with Pro.', 'wp-slimstat'), 'campaign' => 'funnel', 'content' => 'widget']);
             echo '</div></div></div>';
             return;
         }

@@ -408,6 +408,10 @@ final class Store
 		if (!current_user_can('manage_options')) {
 			wp_die(esc_html__('You are not allowed to delete heatmap data.', 'wp-slimstat'), 403);
 		}
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Exact allowlist validation; arrays and every string except DELETE are rejected.
+		if ('DELETE' !== wp_unslash($_POST['heatmap_delete_confirmation'] ?? '')) {
+			wp_die(esc_html__('Type DELETE to confirm deletion.', 'wp-slimstat'), 400);
+		}
 		$deleted = self::ready() ? self::deleteAll() : true;
 		self::backToList(['deleted' => $deleted ? '1' : '0']);
 	}

@@ -34,7 +34,8 @@ if (!$is_pro) {
         <?php
         wp_slimstat_admin::get_template('pro-adds', [
             'text'     => __('Pro sends a daily, weekly or monthly summary of your top pages, sources and goals to your team.', 'wp-slimstat'),
-            'campaign' => 'email-report',
+            'campaign' => 'email',
+            'content' => 'report',
         ]);
         ?>
     </div>

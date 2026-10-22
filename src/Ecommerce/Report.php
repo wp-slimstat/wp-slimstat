@@ -134,7 +134,42 @@ final class Report
 
 	/** Bounded rankings; callers render the remaining value as Other, not a false total. */
 	public function rows(string $dimension, int $limit = 10): array
-	{
+    {
+        if (\wp_slimstat::pro_is_installed()) { return $this->queryRows($dimension, $limit); }
+        if (!in_array($dimension, ['channel', 'source', 'product'], true)) { return []; }
+        return array_map([self::class, 'freeRow'], $this->queryRows($dimension, min(2, $limit)));
+    }
+
+    private static function freeRow(array $row): array
+    {
+        return array_intersect_key($row, array_flip(['dimension', 'label', 'net'])) + ['can_filter' => !empty($row['matched'])];
+    }
+
+    /** Remove locked fields after cache reads so a previously cached Pro response stays private. */
+    public static function freeData(array $data): array
+    {
+        $data['has_orders'] = !empty($data['current']['orders']);
+        foreach (['current', 'previous'] as $period) {
+            $data[$period] = array_intersect_key($data[$period], ['net' => true]);
+            if (isset($data['series'][$period])) {
+                $data['series'][$period] = array_map(static function ($point) {
+                    return array_intersect_key($point, array_flip(['start', 'end', 'label', 'short', 'net', 'partial', 'provisional']));
+                }, $data['series'][$period]);
+            }
+        }
+        unset($data['journey']);
+        foreach ($data['groups'] ?? [] as $dimension => $rows) {
+            if (!in_array($dimension, ['channel', 'source', 'product'], true)) {
+                unset($data['groups'][$dimension]); continue;
+            }
+            $data['group_totals'][$dimension] = count($rows);
+            $data['groups'][$dimension] = array_map([self::class, 'freeRow'], array_slice($rows, 0, 2));
+        }
+        return $data;
+    }
+
+    private function queryRows(string $dimension, int $limit = 10): array
+    {
 		$dimensions = $this->dimensions();
 		if (!isset($dimensions[$dimension])) {
 			throw new \InvalidArgumentException('Unknown Ecommerce dimension.');
@@ -223,8 +258,9 @@ final class Report
 				$result[$period][] = [
 					'start' => $first, 'end' => $last, 'label' => self::date('M j, Y H:i', $first) . ' – ' . self::date('M j, Y H:i', $last),
 					'short' => self::date('M j', $first), 'net' => $net, 'orders' => $orders,
-					'aov' => $orders ? $net / $orders : null, 'visits' => $count, 'buyers' => $buyers,
-					'rate' => !$unavailable && $count >= 100 ? 100 * $buyers / $count : null,
+					// Retained intervals without orders or visits plot at zero; only expired history is unavailable.
+					'aov' => $unavailable ? null : ($orders ? $net / $orders : 0.0), 'visits' => $count, 'buyers' => $buyers,
+					'rate' => $unavailable ? null : ($count ? 100 * $buyers / $count : 0.0),
 					'partial' => $partial || $first < Integration::retentionStart(),
 					'provisional' => Integration::provisional($state),
 				];
@@ -257,6 +293,12 @@ final class Report
 	/** Cached response; email omits interactive rankings/series that it does not render. */
 	public function data(string $interval = 'auto', bool $details = true): array
 	{
+		$data = $this->queryData($interval, $details);
+		return \wp_slimstat::pro_is_installed() ? $data : self::freeData($data);
+	}
+
+	private function queryData(string $interval = 'auto', bool $details = true): array
+	{
 		$this->context();
 		$state = get_option(Integration::STATE, []);
 		$extra = array_values(array_intersect(['campaign', 'landing', 'device', 'customer', 'coupon'], (array) apply_filters('slimstat_ecommerce_dimensions', [])));
@@ -266,7 +308,7 @@ final class Report
 		if ($days > 366 && 'daily' === $interval) { $interval = 'weekly'; }
 		if ($days > 2562) { $interval = 'monthly'; }
 		$key = 'slimstat_ec_' . md5(wp_json_encode([
-			$this->requestedRange, $this->currency, $this->scope, $extra, $this->acquisition, get_current_blog_id(), Acquisition::readinessKey(), $details, 3,
+			$this->requestedRange, $this->currency, $this->scope, $extra, $this->acquisition, get_current_blog_id(), Acquisition::readinessKey(), $details, 4,
 		]));
 		$signature = [get_option('slimstat_ecommerce_generation', ''), $state, \wp_slimstat::$settings['auto_purge'] ?? 420];
 		$cached = get_transient($key);
@@ -284,10 +326,22 @@ final class Report
 				'journey' => $this->journey(), 'groups' => [],
 			];
 			foreach ($details ? array_merge(['channel', 'product', 'source'], $extra) : [] as $dimension) {
-				$data['groups'][$dimension] = $this->rows($dimension);
+				$data['groups'][$dimension] = $this->queryRows($dimension, 1000);
 			}
 			set_transient($key, ['signature' => $signature, 'data' => $data], MINUTE_IN_SECONDS);
 		}
+		// Active WooPayments currencies can have no orders yet; historical order currencies remain available.
+		$currencies = array_column($data['currencies'], 'currency');
+		$currencies[] = get_woocommerce_currency();
+		if (function_exists('WC_Payments_Multi_Currency')) {
+			$multi = WC_Payments_Multi_Currency();
+			if ($multi && is_callable([$multi, 'get_enabled_currencies'])) {
+				$currencies = array_merge($currencies, array_keys($multi->get_enabled_currencies()));
+			}
+		}
+		$currencies = array_values(array_unique(array_filter($currencies, static function ($code) { return is_string($code) && preg_match('/\A[A-Z0-9]{3,8}\z/', $code); })));
+		sort($currencies);
+		$data['currencies'] = array_map(static function ($code) { return ['currency' => $code]; }, $currencies);
 		if (!$details) { return $data; }
 		// Interval changes reuse summaries/rankings and query only their own trend.
 		$this->range['start'] = $data['range'][0]; $this->range['end'] = $data['range'][1];
@@ -314,6 +368,12 @@ final class Report
 		unset(\wp_slimstat_db::$filters_normalized['columns']['addon_e2e_id'], \wp_slimstat_db::$filters_normalized['columns']['addon_e2e_nonce']);
 		try {
 			$data = (new self())->data('auto', false);
+            if (!\wp_slimstat::pro_is_installed()) {
+                return [
+                    ['metric' => __('Currency', 'wp-slimstat'), 'value' => $data['currency']],
+                    ['metric' => __('Net sales', 'wp-slimstat'), 'value' => self::plainMoney($data['current']['net'], $data['currency'])],
+                ];
+            }
 			$state = get_option(Integration::STATE, []);
 			$orders = (int) $data['current']['orders']; $journey = $data['journey'];
 			$quality = Integration::provisional($state) ? __('Provisional: synchronization is incomplete.', 'wp-slimstat') : (!empty($state['error']) ? __('Some orders could not be imported, so totals may miss them.', 'wp-slimstat') : __('WooCommerce totals; attribution covers retained tracked visits only.', 'wp-slimstat'));
@@ -322,8 +382,8 @@ final class Report
 				__('Reporting period', 'wp-slimstat') => self::date('Y-m-d H:i', $data['range'][0]) . ' – ' . self::date('Y-m-d H:i', $data['range'][1]) . ' (' . wp_timezone_string() . ')',
 				__('Currency', 'wp-slimstat') => $data['currency'], __('Data quality', 'wp-slimstat') => $quality,
 				__('Net sales', 'wp-slimstat') => self::plainMoney($data['current']['net'], $data['currency']), __('Orders', 'wp-slimstat') => number_format_i18n($orders),
-				__('Average order value', 'wp-slimstat') => $orders ? self::plainMoney((float) $data['current']['net'] / $orders, $data['currency']) : __('Unavailable', 'wp-slimstat'),
-				__('Tracked purchase rate', 'wp-slimstat') => $journey['visits'] >= 100 ? number_format_i18n(100 * $journey['buyers'] / $journey['visits'], 2) . '%' : __('Insufficient observations', 'wp-slimstat'),
+				__('Average order value', 'wp-slimstat') => self::plainMoney($orders ? (float) $data['current']['net'] / $orders : 0.0, $data['currency']),
+				__('Purchase rate (tracked visits)', 'wp-slimstat') => number_format_i18n($journey['visits'] ? 100 * $journey['buyers'] / $journey['visits'] : 0, 2) . '%',
 				__('Tracked buying / eligible visits', 'wp-slimstat') => $journey['buyers'] . ' / ' . $journey['visits'],
 				__('Linked / included orders', 'wp-slimstat') => $data['current']['matched'] . ' / ' . $orders,
 				__('Scope', 'wp-slimstat') => $data['filtered'] ? __('Selected traffic filters; unlinked orders excluded.', 'wp-slimstat') : __('All included orders in this currency and period.', 'wp-slimstat'),
@@ -353,7 +413,10 @@ final class Report
 		$error = '';
 		$state = get_option(Integration::STATE, []);
 		$available = Integration::available();
-		if ($available && Integration::ready()) {
+		// Why the last setup attempt stopped; cleared when setup succeeds. A failed rebuild leaves
+		// the store ready, so the reason is checked here too or the page blames an order import.
+		$setup_error = (string) ($state['error_message'] ?? '');
+		if ($available && Integration::ready() && '' === $setup_error) {
 			try {
 				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only aggregation selector; canView gates the report and the AJAX route checks its nonce.
 				$interval = isset($_POST['ecommerce_interval']) && is_string($_POST['ecommerce_interval']) ? sanitize_key(wp_unslash($_POST['ecommerce_interval'])) : 'auto';
@@ -361,6 +424,8 @@ final class Report
 			} catch (\Throwable $exception) {
 				$error = $exception instanceof \RuntimeException ? $exception->getMessage() : __('Ecommerce data could not be loaded. Check reporting setup and the database connection, then retry.', 'wp-slimstat');
 			}
+		} elseif ($available) {
+			$error = $setup_error;
 		}
 		include dirname(__DIR__, 2) . '/admin/view/partials/ecommerce.php';
 		if (wp_doing_ajax()) {

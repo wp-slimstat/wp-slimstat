@@ -90,6 +90,27 @@ class DataBuckets
         $this->tzOffset = $tzOffset;
 
         $this->initBuckets();
+        $currentLabels = $this->labels;
+        $currentData = $this->datasets;
+        // Equal-duration windows can touch different numbers of calendar weeks/months.
+        // Build each period on its own grid, then pad absent intervals with null (not zero).
+        $this->start = $prevStart;
+        $this->end = $prevEnd;
+        $this->labels = [];
+        $this->datasets = ['v1' => [], 'v2' => []];
+        $this->datasetsPrev = ['v1' => [], 'v2' => []];
+        $this->initBuckets();
+        $this->prev_labels = array_map(static fn($label) => trim($label, "'"), $this->labels);
+        $this->datasetsPrev = $this->datasets;
+        $this->start = $start;
+        $this->end = $end;
+        $this->points = max(count($currentLabels), count($this->prev_labels));
+        $this->labels = array_pad($currentLabels, $this->points, '');
+        $this->prev_labels = array_pad($this->prev_labels, $this->points, '');
+        foreach (['v1', 'v2'] as $key) {
+            $this->datasets[$key] = array_pad($currentData[$key], $this->points, null);
+            $this->datasetsPrev[$key] = array_pad($this->datasetsPrev[$key], $this->points, null);
+        }
     }
 
     private function initBuckets(): void
@@ -267,16 +288,6 @@ class DataBuckets
         }
     }
 
-    public function mapPrevLabels(array $labels, array $params): void
-    {
-        $this->prev_labels = array_map(function($label, $index) use ($params) {
-            $baseTime = $params['previous_start'];
-            $offset = sprintf('+%s %s', $index, $params['granularity']);
-            $timestamp = strtotime($offset, $baseTime);
-            return gmdate($params['data_points_label'], $timestamp);
-        }, $labels, array_keys($labels));
-    }
-
     /**
      * Get the start-of-week timestamp for a given timestamp.
      * Respects WordPress start_of_week setting.
@@ -316,19 +327,15 @@ class DataBuckets
     {
         $this->shiftDatasets();
 
-        $this->mapPrevLabels($this->labels, [
-            'data_points_label' => $this->labelFormat,
-            'granularity'       => $this->gran,
-            'previous_start'    => $this->prevStart,
-        ]);
-
         return [
             'labels'        => $this->labels,
+            'period_end' => $this->end,
+            'previous_end' => $this->prevEnd,
             'totals'        => $this->totals,
             'prev_labels'   => $this->prev_labels,
             'datasets'      => $this->datasets,
             'datasets_prev' => $this->datasetsPrev,
-            'today'         => 'WEEK' === $this->gran && $this->getWeekStartTimestamp($this->end) === $this->getWeekStartTimestamp(time()) ? str_replace("'", '', $this->labels[count($this->labels) - 1]) : wp_date($this->labelFormat, time(), wp_timezone()),
+            'today'         => 'WEEK' === $this->gran && $this->getWeekStartTimestamp($this->end) === $this->getWeekStartTimestamp(time()) ? gmdate($this->labelFormat, max($this->start, $this->getWeekStartTimestamp($this->end))) : wp_date($this->labelFormat, time(), wp_timezone()),
             'granularity'   => $this->gran,
         ];
     }

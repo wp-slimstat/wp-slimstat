@@ -24,6 +24,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/lib/source-scan.php';
+
 if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {
     http_response_code(403);
     exit(1);
@@ -108,11 +110,12 @@ foreach ($files as $path) {
 // author account does not; global setup authenticates both before any spec can run. Pin the
 // provisioning contract so a missing author is reported here instead of as a 60-second browser
 // navigation timeout in every matrix lane.
-$ci_source = (string) file_get_contents($plugin_root . '/.github/workflows/ci.yml');
-if (!preg_match('/^  standard:\s*$.*?(?=^  [a-zA-Z0-9_-]+:\s*$|\z)/ms', $ci_source, $ci_match)) {
+$ci_source    = slimstat_yaml_strip_comments((string) file_get_contents($plugin_root . '/.github/workflows/ci.yml'));
+$ci_jobs      = slimstat_ci_job_blocks($ci_source);
+$standard_job = $ci_jobs['standard'] ?? null;
+if (null === $standard_job) {
 	$failures[] = 'cannot find the Tier 2 standard job in .github/workflows/ci.yml';
 } else {
-	$standard_job          = $ci_match[0];
 	$required_ci_fragments = [
 		'WP_AUTHOR_USER:',
 		'WP_AUTHOR_PASS:',

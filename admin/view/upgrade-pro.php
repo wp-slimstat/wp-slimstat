@@ -3,8 +3,8 @@
 if (!defined('ABSPATH')) { exit; }
 $is_pro = wp_slimstat::pro_is_installed();
 $commerce = \SlimStat\Ecommerce\Integration::available();
-$pricing = 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=plugin&utm_campaign=pro-overview';
-$checkout = 'https://my.wp-slimstat.com/checkout/wp-slimstat-pro?tier=1-site&utm_source=wp-slimstat&utm_medium=plugin&utm_campaign=pro-overview';
+$pricing = \SlimStat\Utils\ProLinks::fromRequest();
+
 
 // This site's own figures, read from the minute caches the admin bar already fills.
 $views = (int) (wp_slimstat_admin::adminbar_today_stats()['views'] ?? 0);
@@ -28,10 +28,11 @@ if ($goals > 0) {
 }
 
 // Each feature: [dashicon, title, benefit, on Free, with Pro, optional note].
-$ecommerce = ['cart', __('Ecommerce Pro', 'wp-slimstat'), __('Compare campaign and landing-page net sales, then explore devices, guest orders, coupons and refunds.', 'wp-slimstat'), __('Store totals and product revenue', 'wp-slimstat'), __('Campaign, device, coupon and refund reports', 'wp-slimstat'), $commerce ? __('Order attribution still depends on recorded visits, consent and available history. Pro does not recreate missing tracking data.', 'wp-slimstat') : __('For WooCommerce stores.', 'wp-slimstat')];
+$ecommerce = ['cart', __('Ecommerce Pro', 'wp-slimstat'), __('Compare campaign and landing-page net sales, then explore devices, guest orders, coupons and refunds.', 'wp-slimstat'), __('Net sales and two revenue-driver rows', 'wp-slimstat'), __('All KPIs, revenue drivers, campaigns, devices, coupons and refunds', 'wp-slimstat'), $commerce ? __('Order attribution still depends on recorded visits, consent and available history. Pro does not recreate missing tracking data.', 'wp-slimstat') : __('For WooCommerce stores.', 'wp-slimstat')];
 $converts = [
     ['flag', __('Goals & Funnels', 'wp-slimstat'), __('See where visitors complete each step and where they drop off.', 'wp-slimstat'), __('1 goal, no funnels', 'wp-slimstat'), __('5 goals and 3 funnels', 'wp-slimstat')],
-    ['welcome-view-site', __('Heatmaps', 'wp-slimstat'), __('See which links and buttons visitors click on each page.', 'wp-slimstat'), __('Page list with click counts', 'wp-slimstat'), __('Click overlay on any page', 'wp-slimstat')],
+    ['welcome-view-site', __('Heatmaps', 'wp-slimstat'), __('See click and scroll maps for each page on mobile, tablet, and desktop. Find dead clicks and rage clicks, and view campaign visitors separately.', 'wp-slimstat'), __('Two pages with click counts', 'wp-slimstat'), __('All pages, device insights and click overlays', 'wp-slimstat'), __('Pro includes desktop, tablet and mobile previews, goal and campaign visitor filters, CSV downloads and the Heatmap insights email report. Scroll depth and dead/rage clicks require full capture; available history follows your tracking and consent settings.', 'wp-slimstat')],
+    ['chart-area', __('Channels and UTM Campaigns', 'wp-slimstat'), __('See every channel and campaign that brings visitors.', 'wp-slimstat'), __('Top two summaries; breakdowns need Pro', 'wp-slimstat'), __('Every group, up to your SQL limit', 'wp-slimstat')],
 ];
 if ($commerce) {
     array_unshift($converts, $ecommerce);
@@ -70,7 +71,7 @@ $groups = [
                         <a class="button button-primary ss-pro-cta" href="<?php echo esc_url(admin_url('admin.php?page=slimconfig&tab=8')); ?>"><?php esc_html_e('Manage your license', 'wp-slimstat'); ?></a>
                         <?php if ($commerce && \SlimStat\Ecommerce\Report::canView()) : ?><a class="ss-pro-link" href="<?php echo esc_url(admin_url('admin.php?page=slimview7')); ?>"><?php esc_html_e('Open Ecommerce', 'wp-slimstat'); ?></a><?php endif; ?>
                     <?php else : ?>
-                        <a class="button ss-pro-cta" href="<?php echo esc_url(add_query_arg('utm_content', 'hero', $checkout)); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Upgrade to Pro', 'wp-slimstat'); ?></a>
+                        <a class="button ss-pro-cta" href="<?php echo esc_url(\SlimStat\Utils\ProLinks::fromRequest(true, 'hero')); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Upgrade to Pro', 'wp-slimstat'); ?></a>
                         <a class="ss-pro-link" href="<?php echo esc_url($pricing); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Compare all plans', 'wp-slimstat'); ?></a>
                     <?php endif; ?>
                 </div>
@@ -95,7 +96,7 @@ $groups = [
                     <span class="dashicons dashicons-<?php echo esc_attr($icon); ?>" aria-hidden="true"></span>
                     <div>
                         <h3><?php echo esc_html($name); ?></h3>
-                        <p><?php echo esc_html($benefit); ?></p>
+                        <p><?php echo esc_html($benefit); ?></p><?php if ('welcome-view-site' === $icon) : ?><a class="button" href="<?php echo esc_url(admin_url('admin.php?page=slimheatmap')); ?>"><?php esc_html_e('Open Heatmaps', 'wp-slimstat'); ?></a><?php endif; ?>
                         <?php if ($is_pro) : ?>
                         <p class="ss-pro-included"><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e('Included', 'wp-slimstat'); ?></p>
                         <?php else : ?>
@@ -117,7 +118,7 @@ $groups = [
                 <li><span class="dashicons dashicons-backup" aria-hidden="true"></span><?php esc_html_e('Your reports and settings carry over.', 'wp-slimstat'); ?></li>
             </ul>
             <div class="ss-pro-actions">
-                <a class="button ss-pro-cta" href="<?php echo esc_url(add_query_arg('utm_content', 'footer', $checkout)); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Upgrade to Pro', 'wp-slimstat'); ?></a>
+                <a class="button ss-pro-cta" href="<?php echo esc_url(\SlimStat\Utils\ProLinks::fromRequest(true, 'footer')); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Upgrade to Pro', 'wp-slimstat'); ?></a>
                 <a class="ss-pro-link" href="<?php echo esc_url($pricing); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Compare all plans', 'wp-slimstat'); ?></a>
             </div>
             <p class="ss-pro-note"><?php esc_html_e('One-site annual license. Review current pricing, renewal terms and taxes at checkout. Checkout opens in a new tab so you can return to your reports.', 'wp-slimstat'); ?></p>

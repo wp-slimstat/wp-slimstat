@@ -117,6 +117,57 @@ check((bool) preg_match('/\.slimstat-access-log-legend \.little-color-box\s*\{[^
 // QA R12: the pill rule for settings inputs also rounded checkboxes, so Email Report's picks read as radio buttons.
 check(false === strpos($admincss, '.wrap-slimstat .form-table tr td input{') && false !== strpos($admincss, '.wrap-slimstat .form-table tr td input:not([type=checkbox]):not([type=radio]){'), 'R12: form-table pill inputs leave checkboxes and radios native');
 
+// --- 6.0 release notice (tests/Integration/ReleaseNoticeTest.php covers the rendering) ---
+$admin = read_or_die('admin/index.php');
+// Menu position: with no $position, add_menu_page() appends SlimStat below Settings. 59 is the
+// separator's slot, so core's collision nudge lands it in (59, 60) on WP 5.6+, never on another menu.
+// Not 58: WooCommerce's Marketing menu is there. Not a float or string: WP < 6.0 truncates a free
+// float key onto the separator, and core types $position as int|float (PHPStan).
+check((bool) preg_match("/add_menu_page\([^;]*'dashicons-chart-area',\s*59\s*\);/", $admin), 'Menu: SlimStat sits between the separator and Appearance (position 59)');
+check(false !== strpos(read_or_die('wp-slimstat.php'), "\$defaults['notice_latest_news'] = 'no';"), 'Release notice: new installs never see it (get_fresh_defaults sets no)');
+check(false !== strpos(read_or_die('uninstall.php'), "delete_option('slimstat_release_notice_since')"), 'Release notice: uninstall deletes its anchor');
+check((bool) preg_match("/if \(version_compare\([^;]*'6\.0\.0', '<'\)\) \{\s*wp_slimstat::\\\$settings\['notice_latest_news'\] = 'on';/", $admin), 'Release notice: only an upgrade from 5.x turns it on, so a 6.0.x update does not undo a dismissal');
+preg_match("/\/\/ 6\.0 release notice:.*?add_action\('admin_notices', \[self::class, 'show_latest_news'\], 10, 0\);/s", $admin, $gate);
+$gate = $gate[0] ?? '';
+check('' !== $gate, 'Release notice: the gate in init() is present');
+check(false !== strpos($gate, "current_user_can('manage_options')") && false === strpos($gate, 'is_super_admin'), 'Release notice: the gate uses the capability notices_handler() checks, not is_super_admin()');
+preg_match_all("/'([\w-]+\.php)'/", $gate, $pages);
+check(['index.php', 'plugins.php'] === $pages[1] && false === strpos($gate, 'slimview'), 'Release notice: it shows on the Dashboard and Plugins screens only, never on SlimStat\'s own');
+$dismiss = read_or_die('admin/assets/js/promotions.js');
+check(false !== strpos($dismiss, "action: 'slimstat_notice_latest_news'") && false !== strpos($dismiss, 'security: bar.dataset.dismissNonce'), 'Release notice: dismissal posts the shared nonce-protected AJAX action');
+check(false !== strpos($admin, "wp_create_nonce('meta-box-order')") && false !== strpos($admin, 'self::enqueue_promotions();'), 'Release notice: rendered bar has its dismiss nonce and shared script');
+check(false !== strpos($dismiss, "closest('.slimstat-release-dismiss')") && false === strpos($dismiss, 'notice-dismiss'), 'Release notice: its dedicated button cannot trigger core notice handlers');
+check(false !== strpos(read_or_die('admin/view/partials/header.php'), "show_latest_news(null, null, null, 'bar')"), 'Release bar: shared header renders it across SlimStat pages');
+check(false !== strpos(read_or_die('src/Migration/MigrationService.php'), 'public static function manager(): ?MigrationManager'), 'Release notice: MigrationService exposes the manager so the notice can wait for migrations');
+
+// --- Pro links (tests/Integration/ProLinksTest.php covers Export and the Channels row) ---
+$upgrade = read_or_die('admin/view/upgrade-pro.php');
+preg_match('/\$converts = \[(.*?)\n\];/s', $upgrade, $converts);
+check(false !== strpos($converts[1] ?? '', "__('Channels and UTM Campaigns', 'wp-slimstat')"), 'Pro page: "See all channels with Pro" lands on a section that lists Channels and UTM Campaigns');
+$proAdds = read_or_die('admin/view/partials/pro-adds.php');
+preg_match('/<\?php if \(current_user_can\(\'manage_options\'\)\) : \?>(.*?)<\?php endif; \?>/s', $proAdds, $proAddsLinks);
+check(3 === substr_count($proAdds, '<a ') && 3 === substr_count($proAddsLinks[1] ?? '', '<a '), 'Pro adds: purchase and alternative activation/comparison links stay inside manage_options');
+$ecommerce = read_or_die('admin/view/partials/ecommerce.php');
+check(false !== strpos($ecommerce, "'action' => __('Unlock Ecommerce insights with Pro', 'wp-slimstat')") && false !== strpos($ecommerce, "'campaign' => 'ecommerce', 'content' => 'kpi-blur'"), 'Ecommerce: the KPI unlock uses the shared capability-aware attributed action');
+// B1 (release review 2026-10-13): the setup-failure reason renders before the setup CTA, or the
+// admin is sent back to the same button with no explanation, forever.
+$setupError = strpos($ecommerce, 'elseif (!Integration::ready() && \'\' !== $error)');
+$setupCta = strpos($ecommerce, 'elseif (!Integration::ready()) :');
+check(false !== $setupError && false !== $setupCta && $setupError < $setupCta, 'Ecommerce: a failed setup shows its reason before the "Set up Ecommerce" button');
+$integration = read_or_die('src/Ecommerce/Integration.php');
+preg_match('/function setup\(\): void(.*?)\n\t}\n/s', $integration, $setupBody);
+$engineCheck = strpos($setupBody[1] ?? '', 'self::requireInnoDb(');
+check(false !== $engineCheck && $engineCheck < (int) strpos($setupBody[1] ?? '', 'createTableSql('), 'Ecommerce: setup names a MyISAM analytics table before it creates the foreign-keyed table');
+// S3 (release review 2026-10-13): MyISAM has no online index build, so the Migration page says
+// tracking pauses while it runs, and only when the controller found a MyISAM table.
+$migrationPage = read_or_die('src/view/migration-page.php');
+check((bool) preg_match('/<\?php if \(\$analytics_myisam\) \{ echo \' \' \. esc_html__\(\'[^\']*MyISAM[^\']*tracking pauses/', $migrationPage), 'Migration page: the MyISAM sentence is drawn only under $analytics_myisam');
+$migrationAdmin = read_or_die('src/Migration/Admin/MigrationAdmin.php');
+check(false !== strpos($migrationAdmin, 'Schema::tableEngine('), 'Migration page: renderPage() reads the analytics table engine');
+// Required steps also build idx_events_notes_dt, which write-locks a MyISAM slim_events (CodeRabbit, PR #349).
+check((bool) preg_match("/\['slim_stats', 'slim_events'\]/", $migrationAdmin), 'Migration page: the MyISAM probe covers slim_stats and slim_events');
+check(false === strpos($ecommerce, 'wp-slimstat.com/pricing') && false === strpos(read_or_die('src/Reports/AcquisitionReport.php'), 'wp-slimstat.com/pricing'), 'Ecommerce and Channels: no pricing link for users who cannot buy');
+
 if ($failures > 0) {
     fwrite(STDERR, "{$failures} check(s) failed in admin-ui-render-guards-test.php\n");
     exit(1);

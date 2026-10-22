@@ -579,24 +579,8 @@ class Processor
 						// is exactly the window a consent upgrade happens in. It also finds
 						// the whole anonymous session regardless of how many visit ids the
 						// old code had split it across.
-						//
-						// OWED, AND THE COMMENT HERE USED TO UNDERSTATE IT. It said the SELECT
-						// "fails softly (finds nothing) … which is the pre-existing degraded
-						// behaviour". Both halves are wrong. The vid_hash test below is OR'd
-						// with the ip and visit_id tests, and MySQL rejects the WHOLE statement
-						// on an unknown column (1054) — so before AddVisitIdentity runs it is
-						// not the vid_hash disjunct that fails, it is the entire lookup, and
-						// the ip match that used to claim the row goes with it. That path
-						// worked before the disjunct was added, so this is a regression, not
-						// the prior behaviour. The consent upgrade silently inserts a duplicate
-						// instead of claiming the anonymous rows.
-						//
-						// Not fixed here: this needs the same probe-and-fall-back treatment
-						// findExistingAnonymousVisitId() now has, plus its own mutation, and
-						// widening this change to restructure the consent-upgrade query is
-						// scope this commit should not take. Narrow but real — it needs
-						// $isConsentUpgrade && $isAnonymousTracking && $piiAllowed on a
-						// pre-migration schema, and it inflates visits rather than losing data.
+						// Column-gated: before AddVisitIdentity runs, MySQL rejects the whole OR'd
+						// lookup on the unknown column (1054) and the ip/visit_id match goes with it.
 						$anonymousVidHash = Session::generateAnonymousVidHash($stat);
 
 						// Build complex WHERE clause: (ID match) OR (VisitID match) OR (IP match)
@@ -610,8 +594,9 @@ class Processor
 							$whereClause[] = $GLOBALS['wpdb']->prepare("visit_id = %d", $stat['visit_id']);
 						}
 
-						if ('' !== $anonymousVidHash) {
-							$whereClause[] = $GLOBALS['wpdb']->prepare('vid_hash = UNHEX(%s)', $anonymousVidHash);
+						$vidHashMatch = self::vidHashMatch($table, $anonymousVidHash);
+						if (null !== $vidHashMatch) {
+							$whereClause[] = $vidHashMatch;
 						}
 
 						if (!empty($searchIp)) {
@@ -996,5 +981,18 @@ class Processor
         }
 
         return true;
+    }
+
+    /**
+     * The consent-upgrade identity predicate, or null while the column does not exist yet.
+     * One memoised SHOW COLUMNS, and only on a consent-upgrade hit, never per pageview.
+     */
+    private static function vidHashMatch(string $table, string $vidHash): ?string
+    {
+        if ('' === $vidHash || !in_array('vid_hash', Storage::presentColumns($table), true)) {
+            return null;
+        }
+
+        return $GLOBALS['wpdb']->prepare('vid_hash = UNHEX(%s)', $vidHash);
     }
 }

@@ -22,6 +22,9 @@ $settings = wp_slimstat::$settings;
 $testPrefix = 'test_acquisition_' . bin2hex(random_bytes(4)) . '_';
 $db = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
 $checks = 0;
+$queryRows = new ReflectionMethod(AcquisitionReport::class, 'queryRows');
+$queryRows->setAccessible(true);
+$rowsForCalculation = static function ($args) use ($queryRows) { return $queryRows->invoke(null, $args); };
 $check = static function ($condition, $message) use (&$checks) {
     ++$checks;
     if (!$condition) {
@@ -55,7 +58,7 @@ try {
     $db->suppress_errors($suppressed);
     $check($stored->isStored(), 'Tracking survives an unexpectedly missing acquisition column');
     $check('0' === get_option(Acquisition::readinessKey()), 'Missing-column fallback disables repeated failed inserts');
-    $check([] === AcquisitionReport::rows(['mode' => 'utm']), 'Raw CSV/email consumers stay safe while setup is pending');
+    $check([] === $rowsForCalculation(['mode' => 'utm']), 'Raw CSV/email consumers stay safe while setup is pending');
     $check($migration->shouldRun() && $migration->run(), 'Partial upgrade resumes safely');
     $db->query("DELETE FROM `{$testPrefix}slim_stats` WHERE resource = '/restored-schema'");
     $check(null === $db->get_var("SELECT traffic_channel FROM `{$testPrefix}slim_stats` WHERE resource = '/legacy'"), 'Historical data stays explicitly unattributed');
@@ -92,20 +95,24 @@ try {
     wp_slimstat_db::$filters_normalized['utime'] = ['start' => $now - 3600, 'end' => $now + 1];
     wp_slimstat_db::$filters_normalized['columns'] = [];
     wp_slimstat_db::$filters_normalized['misc']['start_from'] = 0;
-    $rows = AcquisitionReport::rows(['mode' => 'utm']);
+    if (!wp_slimstat::pro_is_installed()) {
+        $publicRows = AcquisitionReport::rows(['mode' => 'utm']);
+        $check(2 === count($publicRows) && !isset($publicRows[0]['utm_source']), 'Free raw responses contain only two campaign summaries');
+    }
+    $rows = $rowsForCalculation(['mode' => 'utm']);
     $check(3 === count($rows), 'Group all six tags, preserving case, excluding bots and out-of-range rows');
     $check(2 === (int) $rows[0]['counthits'], 'Repeated tagged pageviews aggregate');
     $check('A&B' === $rows[0]['utm_source'] && 'Summer+2026' === $rows[0]['utm_campaign'], 'Encoded delimiters survive the database');
     $check('%20' === $rows[0]['utm_id'] && '0' === $rows[0]['utm_content'], 'Literal percent escapes and zero-valued tags survive');
     $insert('utm_source=second&utm_medium=email&utm_campaign=Summer%2B2026', '');
     wp_slimstat::$settings['limit_results'] = 1;
-    $summary = AcquisitionReport::rows(['mode' => 'utm', 'summary' => true]);
+    $summary = $rowsForCalculation(['mode' => 'utm', 'summary' => true]);
     $check('Summer+2026' === $summary[0]['utm_campaign'] && 3 === (int) $summary[0]['counthits'], 'Campaign summary aggregates distinct tag combinations before applying the result cap');
-    $summary = AcquisitionReport::rows(['mode' => 'channels', 'summary' => true]);
+    $summary = $rowsForCalculation(['mode' => 'channels', 'summary' => true]);
     $check('email' === $summary[0]['traffic_channel'] && 5 === (int) $summary[0]['counthits'], 'Channel summary combines all sources before applying the result cap');
     $db->query("DELETE FROM `{$testPrefix}slim_stats` WHERE utm_source = 'second'");
     wp_slimstat::$settings['limit_results'] = 1000;
-    $rows = AcquisitionReport::rows(['mode' => 'channels']);
+    $rows = $rowsForCalculation(['mode' => 'channels']);
     $check(8 === array_sum(array_column($rows, 'counthits')), 'Channels partition all matching pageviews including legacy and bots');
     $check(1 === (int) array_values(array_filter($rows, static function ($row) { return 'ai_fetcher' === $row['traffic_channel']; }))[0]['counthits'], 'AI fetches stay separate');
     // A row from before setup (no channel) and an unassigned one read the same, so they are one group.
@@ -118,13 +125,14 @@ try {
     $db->query("DELETE FROM `{$testPrefix}slim_stats` WHERE author = 'carol'");
     $check(1 === substr_count($channelsHtml, '__label">Unassigned<'), 'Unassigned is one channel group, not one per stored value');
     $check((bool) preg_match('/__label">Unassigned<.*?__number">2</s', $channelsHtml), 'The Unassigned group counts both rows');
-    $check(1 === array_sum(array_column(AcquisitionReport::rows(['mode' => 'utm', 'where' => $db->prepare('author = %s', 'bob')]), 'counthits')), 'Raw callback honors the per-author email scope');
+    $check(wp_slimstat::pro_is_installed() || (2 === substr_count($channelsHtml, '<details class="slimstat-acquisition__group">') && false === strpos($channelsHtml, 'chatgpt-user')), 'Without Pro, public reports show two groups without hidden source data');
+    $check(1 === array_sum(array_column($rowsForCalculation(['mode' => 'utm', 'where' => $db->prepare('author = %s', 'bob')]), 'counthits')), 'Raw callback honors the per-author email scope');
     wp_slimstat_db::$filters_normalized['columns']['author'] = ['equals', 'alice'];
-    $check(3 === array_sum(array_column(AcquisitionReport::rows(['mode' => 'utm']), 'counthits')), 'Author scope applies to campaign data');
+    $check(3 === array_sum(array_column($rowsForCalculation(['mode' => 'utm']), 'counthits')), 'Author scope applies to campaign data');
     wp_slimstat_db::$filters_normalized['columns']['utm_campaign'] = ['equals', 'Summer+2026'];
-    $check(2 === array_sum(array_column(AcquisitionReport::rows(['mode' => 'utm']), 'counthits')), 'Case-sensitive campaign filters');
+    $check(2 === array_sum(array_column($rowsForCalculation(['mode' => 'utm']), 'counthits')), 'Case-sensitive campaign filters');
     wp_slimstat_db::$filters_normalized['columns']['utm_campaign'] = ['matches', '^Summer'];
-    $check(2 === array_sum(array_column(AcquisitionReport::rows(['mode' => 'utm']), 'counthits')), 'UTF-8 regex filters preserve campaign case');
+    $check(2 === array_sum(array_column($rowsForCalculation(['mode' => 'utm']), 'counthits')), 'UTF-8 regex filters preserve campaign case');
 
     // Imported/externally written empty tags still need a readable group label.
     wp_slimstat_db::$filters_normalized['columns'] = [];
@@ -146,7 +154,7 @@ try {
     $emptyTagHtml = ob_get_clean();
     remove_filter('query', $countAggregate);
     $check(false !== strpos($emptyTagHtml, 'class="slimstat-acquisition__label">Unassigned</span>'), 'An empty campaign gets a readable summary label');
-    $check(3 === $aggregateQueries, 'Report uses three aggregate queries, independent of group count');
+    $check((wp_slimstat::pro_is_installed() ? 3 : 2) === $aggregateQueries, 'Report uses bounded aggregate queries and skips locked breakdowns in Free');
     $check(0 === $schemaQueries, 'Public reports use the readiness marker without probing the schema');
     $db->query("UPDATE `{$testPrefix}slim_stats` SET utm_campaign = NULL WHERE utm_source = 'private'");
 
@@ -157,14 +165,16 @@ try {
     $insert('utm_campaign=winner&utm_source=test&utm_medium=email', '', '', $now - DAY_IN_SECONDS);
     $insert('utm_campaign=winner&utm_source=test&utm_medium=email', '');
     wp_slimstat::$settings['limit_results'] = 1;
-    $rows = AcquisitionReport::rows(['mode' => 'utm']);
+    $rows = $rowsForCalculation(['mode' => 'utm']);
     $check('winner' === $rows[0]['utm_campaign'] && 3 === (int) $rows[0]['counthits'], 'Top-N uses one aggregation across midnight');
     ob_start();
     AcquisitionReport::render(['mode' => 'utm']);
     $html = ob_get_clean();
     $check(false !== strpos($html, '42.9%'), 'Share denominator includes all seven tagged views beyond the cap');
     $check(false !== strpos($html, 'result limit'), 'Result cap is disclosed');
-    $check(false !== strpos($html, 'scope="col"') && false !== strpos($html, 'role="region"'), 'Semantic table and keyboard scroll region');
+    $check(wp_slimstat::pro_is_installed()
+        ? false !== strpos($html, 'scope="col"') && false !== strpos($html, 'role="region"')
+        : false === strpos($html, '<table') && false !== strpos($html, 'Source breakdowns are available with Pro'), 'Accessible Pro breakdown or private Free preview');
     wp_slimstat::$settings['async_load'] = 'on';
     ob_start();
     AcquisitionReport::render(['mode' => 'utm', 'is_widget' => true]);
@@ -182,7 +192,7 @@ try {
         $value = 'traffic_source' === $field ? strtolower($literal) : $literal;
         $parsed = wp_slimstat_db::parse_filters($field . ' equals ' . rawurlencode($value));
         wp_slimstat_db::$filters_normalized['columns'] = $parsed['columns'];
-        $check(1 === array_sum(array_column(AcquisitionReport::rows(['mode' => 'utm']), 'counthits')), 'Literal entities and backslashes match ' . $field);
+        $check(1 === array_sum(array_column($rowsForCalculation(['mode' => 'utm']), 'counthits')), 'Literal entities and backslashes match ' . $field);
     }
     ob_start();
     AcquisitionReport::render(['mode' => 'utm', 'is_widget' => true]);
@@ -209,7 +219,7 @@ try {
     foreach ([1, 30, 96] as $days) {
         wp_slimstat_db::$filters_normalized['utime'] = ['start' => $now - ($days - 1) * DAY_IN_SECONDS, 'end' => $now + 1];
         $start = microtime(true);
-        $rows = AcquisitionReport::rows(['mode' => 'utm']);
+        $rows = $rowsForCalculation(['mode' => 'utm']);
         $timings[$days] = round((microtime(true) - $start) * 1000, 2);
         $check($days * 1024 === array_sum(array_column($rows, 'counthits')), 'Performance fixture totals remain exact');
         if (1 === $days) {
@@ -218,7 +228,7 @@ try {
             $check('range' === $plan['type'], 'Selective report uses an indexed date range');
         }
         $start = microtime(true);
-        $summary = AcquisitionReport::rows(['mode' => 'utm', 'summary' => true]);
+        $summary = $rowsForCalculation(['mode' => 'utm', 'summary' => true]);
         $summaryTimings[$days] = round((microtime(true) - $start) * 1000, 2);
         $check($days * 1024 === array_sum(array_column($summary, 'counthits')), 'Summary totals match the performance fixture');
         if (1 === $days) {

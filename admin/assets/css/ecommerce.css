@@ -69,7 +69,12 @@
 .ss-ec-section-heading { margin: 28px 0 14px; }
 .ss-ec-section-heading p { font-size: 12px !important; }
 .ss-ec-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
-.ss-ec-card { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-md); background: var(--ss-surface); overflow: hidden; }
+.ss-ec-card { position: relative; display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-md); background: var(--ss-surface); overflow: hidden; }
+/* Pro's per-tab Export sits in the card header, styled like a report box's header Export. */
+.ss-ec-card:has([data-ec-export]) .ss-ec-card-heading { padding-inline-end: 110px; }
+.ss-ec .ss-ec-report [data-ec-export] { position: absolute; top: 14px; inset-inline-end: 15px; display: inline-flex; align-items: center; gap: 2px; padding: 5px; border-radius: var(--ss-radius-xs); color: var(--ss-text-tertiary); font-size: 12px; font-weight: 700; line-height: 18px; text-decoration: none; }
+.ss-ec .ss-ec-report [data-ec-export]:hover { color: var(--ss-text-primary); }
+.ss-ec-report [data-ec-export] .dashicons { width: auto; height: auto; font-size: 14px; }
 .ss-ec-card-heading { padding: 18px 20px 12px; }
 .ss-ec-tabs { display: flex; gap: 2px; margin: 0 20px; border-bottom: 1px solid var(--ss-border); overflow-x: auto; }
 .ss-ec-tabs [role=tab] { flex: 0 0 auto; color: var(--ss-text-muted); font-size: 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; padding: 8px 10px; }
@@ -150,7 +155,7 @@
 .ss-ec-skeleton div:first-child { grid-column: 1/-1; min-height: 390px; }
 @media (max-width: 1100px) { .ss-ec-kpi { padding: 12px; } .ss-ec-kpi > strong { font-size: 26px; } .ss-ec-quality-summary { display: block; margin: 2px 0 0; } }
 @media (max-width: 782px) { .ss-ec-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); } }
-@media (max-width: 680px) { .ss-ec { padding-top: 16px; } .ss-ec-grid { grid-template-columns: minmax(0,1fr); } .ss-ec-toolbar > a { margin-inline-start: 0; } .ss-ec-chart { padding: 16px; } .ss-ec-canvas { height: 205px; } .ss-ec-card-heading { padding: 16px 16px 10px; } .ss-ec-tabs { margin-inline: 16px; } .ss-ec-report { padding-inline: 16px; } .ss-ec-steps { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 22px 18px; } .ss-ec-steps li:nth-child(2)::after { content: none; } .ss-ec-definitions dl { grid-template-columns: minmax(0,1fr); gap: 8px; } .ss-ec-definitions dd { margin-bottom: 12px; } .ss-ec-state { padding: 20px; } .ss-ec-quality > summary { align-items: start; } .ss-ec-row-filter { width: 32px; height: 32px; } .ss-ec-tabs [role=tab] { min-height: 40px; } .ss-ec-actions ol { gap: 14px; } }
+@media (max-width: 680px) { .ss-ec { padding-top: 16px; } .ss-ec-grid { grid-template-columns: minmax(0,1fr); } .ss-ec-toolbar > a { margin-inline-start: 0; } .ss-ec-chart { padding: 16px; } .ss-ec-canvas { height: 205px; } .ss-ec-card-heading { padding: 16px 16px 10px; } .ss-ec .ss-ec-report [data-ec-export] { top: 12px; inset-inline-end: 11px; } .ss-ec-tabs { margin-inline: 16px; } .ss-ec-report { padding-inline: 16px; } .ss-ec-steps { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 22px 18px; } .ss-ec-steps li:nth-child(2)::after { content: none; } .ss-ec-definitions dl { grid-template-columns: minmax(0,1fr); gap: 8px; } .ss-ec-definitions dd { margin-bottom: 12px; } .ss-ec-state { padding: 20px; } .ss-ec-quality > summary { align-items: start; } .ss-ec-row-filter { width: 32px; height: 32px; } .ss-ec-tabs [role=tab] { min-height: 40px; } .ss-ec-actions ol { gap: 14px; } }
 @media (prefers-reduced-motion: reduce) { .wrap-slimstat .ss-ec * { transition: none; animation: none; scroll-behavior: auto; } }
 /* Override the legacy report shell's heading and absolute date positions. */
 .wrap-slimstat .slimstat-ecommerce-box .ss-ec h3 { display: block !important; padding: 0; border: 0; background: none; font-size: 15px; font-weight: 600; letter-spacing: 0; }
@@ -160,3 +165,15 @@
 .ss-ec-rankings .is-negative .ss-ec-rank-bar { background: var(--ss-border); }
 .ss-ec-rankings .is-negative .ss-ec-rank-value { color: var(--ss-danger-fg); }
 #slim_p10_01 .ss-ec p { word-break: normal; overflow-wrap: break-word; }
+
+.ss-ec-rankings { max-height: 310px; overflow-y: auto; }
+.ss-ec-pages { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ss-ec-pages[hidden] { display: none; }
+.ss-ec-rate-definition { font-size: var(--ss-text-sm); font-weight: normal; }
+.ss-ec [data-chart-gaps] { margin-block: 12px; max-height: 180px; overflow: auto; }
+
+.ss-ec-rank-both { display: block; color: var(--ss-text-muted); font-size: 11px; }
+
+.ss-ec-locked-number{display:inline-block;filter:blur(4px);user-select:none}.ss-ec-kpi[data-pro-locked]{background:linear-gradient(175deg,transparent 70%,#dbe7f3 71%,transparent 85%)}.ss-ec .slimstat-pro-adds{text-align:center;justify-content:center}.ss-ec #ss-ec-unlock:focus{outline:2px solid var(--ss-focus,#2271b1);outline-offset:4px}
+
+.ss-ec .ss-ec-locked-chart{display:flex;align-items:end;gap:5px;height:24px;filter:blur(3px);opacity:.45;pointer-events:none}.ss-ec .ss-ec-locked-chart i{background:#72aee6;height:60%;flex:1}.ss-ec .ss-ec-locked-chart i:nth-child(2n){height:90%}.ss-ec .ss-ec-rank-value{font-size:12px}

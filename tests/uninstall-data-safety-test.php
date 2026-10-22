@@ -843,11 +843,22 @@ foreach ($minted_options as $option_name => $declared_in) {
 }
 
 // Known residual, written down rather than left to be rediscovered: an option minted from
-// a bare literal has no constant for the scan above to find. Two exist, and both are
-// pinned by name here so that deleting their delete_option() lines still reds something.
+// a bare literal has no constant for the scan above to find. These are pinned by name
+// here so that deleting their delete_option() lines still reds something; five
+// `*_since` ones are the sidebar "New" badge anchors ('new_badge' in admin/index.php's
+// $screens_info), the sixth anchors the 6.0 release notice (show_latest_news()).
 // The real fix is a manifest beside the table one in Schema.php (the C16 shape, see the
 // table list above); it is deliberately deferred past the 6.0.0 beta.
-foreach (['wp_slimstat_notifications', 'slimstat_purge_optimized_at'] as $literal_option) {
+foreach ([
+    'wp_slimstat_notifications',
+    'slimstat_purge_optimized_at',
+    'slimstat_channels_since',
+    'slimstat_goals_funnels_since',
+    'slimstat_ecommerce_since',
+    'slimstat_heatmaps_since',
+    'slimstat_shortcodes_since',
+    'slimstat_release_notice_since',
+] as $literal_option) {
     assert_true(
         in_array($literal_option, $on['deleted'], true),
         "opting in deletes '{$literal_option}' (minted from a bare literal, so no scan finds it)"

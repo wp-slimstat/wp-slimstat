@@ -9,6 +9,9 @@ use SlimStat\Utils\Query;
 /** Uses the existing report filters, query cache, network merge and pagination. */
 class AcquisitionReport
 {
+    /** Readable summary groups in Free; all breakdowns stay protected. */
+    private const FREE_GROUPS = 2;
+
     private static function fields(string $mode): array
     {
         return 'utm' === $mode ? [
@@ -37,6 +40,40 @@ class AcquisitionReport
     }
 
     public static function rows(array $args = []): array
+    {
+        if (\wp_slimstat::pro_is_installed()) { return self::queryRows($args); }
+        // Every raw consumer, including shortcodes and exports, shares the Free boundary.
+        $args['summary'] = true;
+        return array_map(static function ($row) { unset($row['values']); return $row; }, array_slice(
+            self::mergeSummaries(self::queryRows($args), ($args['mode'] ?? '') === 'utm' ? 'utm_campaign' : 'traffic_channel'), 0, self::FREE_GROUPS
+        ));
+    }
+
+    private static function summaryKey(array $row, string $groupField): string
+    {
+        $value = $row[$groupField] ?? null;
+        return serialize([(int) ($row['blog_id'] ?? 0), 'traffic_channel' === $groupField && !isset(Acquisition::labels()[$value ?? '']) ? 'unassigned' : (string) $value]);
+    }
+
+    private static function mergeSummaries(array $all, string $groupField): array
+    {
+        // Values that read the same are one group: no channel yet and the unassigned channel, or a NULL and an empty tag.
+        $merged = [];
+        foreach ($all as $row) {
+            $key = self::summaryKey($row, $groupField);
+            if (isset($merged[$key])) {
+                $merged[$key]['counthits'] = (int) $merged[$key]['counthits'] + (int) $row['counthits'];
+                $merged[$key]['values'][] = $row[$groupField] ?? null;
+            } else {
+                $merged[$key] = $row + ['values' => [$row[$groupField] ?? null]];
+            }
+        }
+        $all = array_values($merged);
+        array_multisort(array_map('intval', array_column($all, 'counthits')), SORT_DESC, array_keys($all), $all);
+        return $all;
+    }
+
+    private static function queryRows(array $args = []): array
     {
         // CSV/email callbacks also run while setup is pending, without the rendered setup state.
         if ('1' !== get_option(Acquisition::readinessKey(), '0')) {
@@ -127,6 +164,34 @@ class AcquisitionReport
         echo '</tbody></table></div>';
     }
 
+    /** Illustrative rows never include protected labels or values. */
+    private static function locked(string $mode, int $hidden, bool $capped = false): void
+    {
+        $utm = 'utm' === $mode;
+        if ($capped) {
+            $text = $utm ? __('See every campaign and its source breakdown with Pro.', 'wp-slimstat') : __('See every channel and its source breakdown with Pro.', 'wp-slimstat');
+        } elseif ($hidden > 0) {
+            $text = sprintf($utm
+                /* translators: %s: number of campaigns hidden in Free. */
+                ? _n('See %s more campaign and every source breakdown with Pro.', 'See %s more campaigns and every source breakdown with Pro.', $hidden, 'wp-slimstat')
+                /* translators: %s: number of channels hidden in Free. */
+                : _n('See %s more channel and every source breakdown with Pro.', 'See %s more channels and every source breakdown with Pro.', $hidden, 'wp-slimstat'), number_format_i18n($hidden));
+        } else {
+            $text = $utm ? __('See the sources behind each campaign with Pro.', 'wp-slimstat') : __('See the sources behind each channel with Pro.', 'wp-slimstat');
+        }
+        echo '<div class="slimstat-acquisition__locked">';
+        if ($hidden > 0) {
+            echo '<div class="slimstat-locked-rows" aria-hidden="true"><span></span><span></span></div>';
+            echo '<p class="slimstat-preview-caption">' . esc_html__('Illustrative preview of additional results.', 'wp-slimstat') . '</p>';
+        }
+        \wp_slimstat_admin::get_template('pro-adds', [
+            'text' => $text,
+            'action' => __('Upgrade to see more', 'wp-slimstat'),
+            'campaign' => 'traffic-sources', 'content' => $utm ? 'campaigns' : 'channels',
+        ]);
+        echo '</div>';
+    }
+
     public static function render(array $args = []): void
     {
         if ('on' === (\wp_slimstat::$settings['async_load'] ?? '') && !wp_doing_ajax() && empty($args['is_widget'])) {
@@ -135,6 +200,7 @@ class AcquisitionReport
         if (!empty($args['is_widget'])) {
             wp_enqueue_style('wp-slimstat-tokens', plugins_url('admin/assets/css/tokens.css', SLIMSTAT_FILE), [], SLIMSTAT_ANALYTICS_VERSION);
             wp_enqueue_style('wp-slimstat-acquisition', plugins_url('admin/assets/css/acquisition.css', SLIMSTAT_FILE), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
+            wp_enqueue_script('slimstat-report-dialogs', plugins_url('admin/assets/js/report-dialogs.js', SLIMSTAT_FILE), [], SLIMSTAT_ANALYTICS_VERSION, true);
             echo '<div class="wrap-slimstat">';
         }
         self::content($args);
@@ -149,9 +215,6 @@ class AcquisitionReport
     private static function content(array $args): void
     {
         echo '<div class="slimstat-acquisition">';
-        if (is_admin()) {
-            echo '<a class="button slimstat-utm-builder-link" href="' . esc_url(admin_url('admin.php?page=slimview5#slimstat-utm-builder')) . '">' . esc_html__('Build a UTM link', 'wp-slimstat') . '</a>';
-        }
         $ready = is_admin() ? Acquisition::checkSchema() : '1' === get_option(Acquisition::readinessKey(), '0');
         if (!$ready) {
             echo '<p class="slimstat-acquisition__empty">' . esc_html__('UTM and channel reports need a database update. Existing tracking continues while setup is pending.', 'wp-slimstat') . '</p>';
@@ -166,7 +229,7 @@ class AcquisitionReport
         $groupField = array_key_first($fields);
         // Navigation needs the complete scope; fs_url() contains only a filter delta.
         $commerceFilters = null;
-        if (is_admin() && !NetworkMerge::isMerging() && \SlimStat\Ecommerce\Integration::available() && \SlimStat\Ecommerce\Report::canView()) {
+        if (is_admin() && \wp_slimstat::pro_is_installed() && !NetworkMerge::isMerging() && \SlimStat\Ecommerce\Integration::available() && \SlimStat\Ecommerce\Report::canView()) {
             $commerceFilters = [];
             foreach (\wp_slimstat_db::$filters_normalized['columns'] ?? [] as $key => $filter) {
                 $commerceFilters[$key] = $filter[0] . ' ' . $filter[1];
@@ -180,36 +243,23 @@ class AcquisitionReport
         $db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
         $suppressed = $db->suppress_errors(true);
         try {
-            $all = self::rows(['mode' => $mode, 'summary' => true]);
+            $all = self::queryRows(['mode' => $mode, 'summary' => true]);
             $failed = '' !== (string) $db->last_error;
             $capped = count($all) >= (int) \wp_slimstat::$settings['limit_results'];
-            // Values that read the same are one group: no channel yet and the unassigned channel, or a NULL and an empty tag.
-            $groupKey = static function (array $row) use ($groupField): string {
-                $value = $row[$groupField] ?? null;
-                return serialize([(int) ($row['blog_id'] ?? 0), 'traffic_channel' === $groupField && !isset(Acquisition::labels()[$value ?? '']) ? 'unassigned' : (string) $value]);
-            };
-            $merged = [];
-            foreach ($all as $row) {
-                $key = $groupKey($row);
-                if (isset($merged[$key])) {
-                    $merged[$key]['counthits'] = (int) $merged[$key]['counthits'] + (int) $row['counthits'];
-                    $merged[$key]['values'][] = $row[$groupField] ?? null;
-                } else {
-                    $merged[$key] = $row + ['values' => [$row[$groupField] ?? null]];
-                }
-            }
-            $all = array_values($merged);
-            array_multisort(array_map('intval', array_column($all, 'counthits')), SORT_DESC, array_keys($all), $all);
-            if ($all && $start >= count($all)) {
+            $all = self::mergeSummaries($all, $groupField);
+            $locked = !\wp_slimstat::pro_is_installed() && count($all) > self::FREE_GROUPS;
+            if ($locked) {
+                $start = 0;
+            } elseif ($all && $start >= count($all)) {
                 $start = (int) (floor((count($all) - 1) / $perPage) * $perPage);
             }
-            $rows = array_slice($all, $start, $perPage);
+            $rows = array_slice($all, $start, $locked ? self::FREE_GROUPS : $perPage);
             // One bounded breakdown query for the visible groups, never one query per row.
             $scope = [];
             foreach (array_merge([], ...array_column($rows, 'values')) as $value) {
                 $scope[] = null === $value ? $groupField . ' IS NULL' : $db->prepare($groupField . ' = %s', $value);
             }
-            $details = $rows ? self::rows(['mode' => $mode, 'where' => '(' . implode(' OR ', array_unique($scope)) . ')']) : [];
+            $details = $rows && \wp_slimstat::pro_is_installed() ? self::queryRows(['mode' => $mode, 'where' => '(' . implode(' OR ', array_unique($scope)) . ')']) : [];
             $failed = $failed || '' !== (string) $db->last_error;
             $total = \wp_slimstat_db::count_records('id', self::where($mode));
             $failed = $failed || '' !== (string) $db->last_error;
@@ -220,19 +270,24 @@ class AcquisitionReport
             echo '<p role="status">' . esc_html__('This report could not be loaded. Check the database connection and report setup, then refresh.', 'wp-slimstat') . '</p></div>';
             return;
         }
-        $description = 'utm' === $mode
-            ? __('Tagged pageviews, excluding detected bots.', 'wp-slimstat')
-            : __('All recorded pageviews, grouped by channel.', 'wp-slimstat');
-        echo '<div class="slimstat-acquisition__intro"><span>' . esc_html($description) . '</span><strong>';
-        echo esc_html(sprintf(
-            /* translators: %s: localized pageview count. */
-            _n('%s pageview', '%s pageviews', $total, 'wp-slimstat'), number_format_i18n($total)
-        )) . '</strong></div>';
-        echo '<p class="slimstat-acquisition__guide">' . esc_html('utm' === $mode
-            ? __('Which campaigns bring visitors? Expand a campaign to compare its sources and tags. Share is the percentage of all matching tagged pageviews.', 'wp-slimstat')
-            : __('Where does your traffic come from? Expand a channel to compare sources. Share is the percentage of all matching pageviews, including recorded bots and internal navigation.', 'wp-slimstat')) . '</p>';
+        $helpId = wp_unique_id('ss-acquisition-help-' . $mode . '-');
+        $helpLabel = 'utm' === $mode ? __('What are campaigns? How do they work?', 'wp-slimstat') : __('What are channels?', 'wp-slimstat');
+        $groupCount = count($all);
+        $countLabel = 'utm' === $mode
+            ? sprintf(/* translators: %s: campaign count. */ _n('%s campaign', '%s campaigns', $groupCount, 'wp-slimstat'), number_format_i18n($groupCount))
+            : sprintf(/* translators: %s: channel count. */ _n('%s channel', '%s channels', $groupCount, 'wp-slimstat'), number_format_i18n($groupCount));
+        if ($capped) { $countLabel = sprintf(/* translators: %s: counted groups, such as 20 campaigns. */ __('At least %s', 'wp-slimstat'), $countLabel); }
+        echo '<div class="slimstat-acquisition__intro"><button type="button" class="button-link" data-report-dialog="' . esc_attr($helpId) . '">' . esc_html($helpLabel) . '</button><strong>';
+        echo esc_html($countLabel . ' - ' . sprintf(/* translators: %s: pageview count. */ _n('%s pageview', '%s pageviews', $total, 'wp-slimstat'), number_format_i18n($total))) . '</strong></div>';
+        if (null !== $commerceFilters) {
+            $url = add_query_arg(['page' => 'slimview7', 'fs' => urlencode_deep($commerceFilters)], admin_url('admin.php')) . '#ss-ec-panel-' . ('utm' === $mode ? 'campaign' : 'channel');
+            echo '<a class="noslimstat" href="' . esc_url($url) . '">' . esc_html__('View sales in Ecommerce', 'wp-slimstat') . '</a>';
+        }
 
         if (!$all) {
+            if ('utm' === $mode && is_admin()) {
+                echo '<p><strong>' . esc_html__('Need a campaign link?', 'wp-slimstat') . '</strong></p><a class="button button-primary slimstat-utm-builder-link" href="' . esc_url(admin_url('admin.php?page=slimview5#slimstat-utm-builder')) . '">' . esc_html__('Build your first campaign link', 'wp-slimstat') . '</a>';
+            }
             echo '<p class="slimstat-acquisition__empty">' . esc_html('utm' === $mode
                 ? __('No tagged pageviews in this period. Add utm_source, utm_medium and utm_campaign to your incoming links, or choose another date range.', 'wp-slimstat')
                 : (empty(\wp_slimstat_db::$filters_normalized['columns'])
@@ -240,16 +295,19 @@ class AcquisitionReport
                     : __('No pageviews match this period and these filters. Try a wider date range or clear a filter.', 'wp-slimstat'))) . '</p>';
         } else {
             $network = NetworkMerge::isMerging();
+            $labelOf = static function ($value) use ($groupField): string {
+                return 'traffic_channel' === $groupField ? (Acquisition::labels()[$value ?? ''] ?? __('Unassigned', 'wp-slimstat')) : ('' !== ($value ?? '') ? $value : __('Unassigned', 'wp-slimstat'));
+            };
             $byGroup = [];
             foreach ($details as $detail) {
-                $byGroup[$groupKey($detail)][] = $detail;
+                $byGroup[self::summaryKey($detail, $groupField)][] = $detail;
             }
             echo '<div class="slimstat-acquisition__groups"><div class="slimstat-acquisition__columns" aria-hidden="true"><span>' . esc_html($fields[$groupField]) . '</span><span>' . esc_html__('Pageviews', 'wp-slimstat') . '</span><span>' . esc_html__('Share', 'wp-slimstat') . '</span></div>';
             foreach ($rows as $row) {
                 // A merged group has no one value to filter by.
                 $value = 1 === count($row['values']) ? $row[$groupField] : null;
-                $label = 'traffic_channel' === $groupField ? (Acquisition::labels()[$value ?? ''] ?? __('Unassigned', 'wp-slimstat')) : ('' !== ($value ?? '') ? $value : __('Unassigned', 'wp-slimstat'));
-                $groupRows = $byGroup[$groupKey($row)] ?? [];
+                $label = $labelOf($value);
+                $groupRows = $byGroup[self::summaryKey($row, $groupField)] ?? [];
                 $count = (int) $row['counthits'];
                 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- htmlspecialchars encodes quotes and existing entities to preserve literal stored tags.
                 echo '<details class="slimstat-acquisition__group"><summary><span class="slimstat-acquisition__identity"><span class="slimstat-acquisition__label">' . htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</span>';
@@ -271,8 +329,8 @@ class AcquisitionReport
                     echo '<div class="slimstat-acquisition__filter">';
                     self::value($groupField, $value, 'utm' === $mode ? __('Filter by this campaign', 'wp-slimstat') : __('Filter by this channel', 'wp-slimstat'));
                     if (null !== $commerceFilters) {
-                        $url = add_query_arg(['page' => 'slimview7', 'fs' => urlencode_deep(array_merge($commerceFilters, [$groupField => 'equals ' . $value]))], admin_url('admin.php'));
-                        echo '<a class="noslimstat" href="' . esc_url($url) . '">' . esc_html__('View linked orders', 'wp-slimstat') . '</a>';
+                        $url = add_query_arg(['page' => 'slimview7', 'fs' => urlencode_deep(array_merge($commerceFilters, [$groupField => 'equals ' . $value]))], admin_url('admin.php')) . '#ss-ec-panel-' . ('utm' === $mode ? 'campaign' : 'channel');
+                        echo '<a class="noslimstat" href="' . esc_url($url) . '">' . esc_html__('View sales in Ecommerce', 'wp-slimstat') . '</a>';
                     }
                     echo '</div>';
                     if (null !== $commerceFilters) {
@@ -281,9 +339,11 @@ class AcquisitionReport
                 }
                 if ($groupRows) {
                     self::breakdown($groupRows, $fields, $total);
+                } elseif (!\wp_slimstat::pro_is_installed()) {
+                    echo '<div class="slimstat-locked-rows" aria-hidden="true"><span></span><span></span></div><p>' . esc_html__('Source breakdowns are available with Pro. Illustrative preview.', 'wp-slimstat') . '</p>';
                 }
                 $shown = array_sum(array_column($groupRows, 'counthits'));
-                if ($shown < $count) {
+                if (\wp_slimstat::pro_is_installed() && $shown < $count) {
                     echo '<p class="slimstat-acquisition__note">' . esc_html(sprintf(
                         /* translators: 1: shown pageviews, 2: complete group pageviews. */
                         __('Showing %1$s of %2$s pageviews in this breakdown. The result limit was reached; filter this group or narrow your filters for more detail.', 'wp-slimstat'), number_format_i18n($shown), number_format_i18n($count)
@@ -291,26 +351,33 @@ class AcquisitionReport
                 }
                 echo '</div></details>';
             }
+            if (!\wp_slimstat::pro_is_installed() && is_admin()) {
+                self::locked($mode, max(0, count($all) - self::FREE_GROUPS), $capped);
+            }
             echo '</div>';
-            // Keep pagination inside this table's AJAX fragment. The legacy .pagination
-            // class is extracted by admin.js for older reports with an external footer.
-            echo '<nav class="slimstat-acquisition__pagination" aria-label="' . esc_attr__('Report pages', 'wp-slimstat') . '"><span>';
-            echo esc_html(sprintf(
-                /* translators: 1: first displayed row, 2: last displayed row, 3: total row count. */
-                __('%1$s–%2$s of %3$s', 'wp-slimstat'), number_format_i18n($start + 1), number_format_i18n($start + count($rows)), number_format_i18n(count($all))
-            )) . '</span>';
-            if (is_admin() && $start > 0) {
-                echo '<a class="button refresh" href="' . esc_url(\wp_slimstat_reports::fs_url('start_from equals ' . max(0, $start - $perPage))) . '">' . esc_html__('Previous', 'wp-slimstat') . '</a>';
+            // Without Pro there is nothing to page to: the locked row stands in for the rest.
+            if (!$locked) {
+                // Keep pagination inside this table's AJAX fragment. The legacy .pagination
+                // class is extracted by admin.js for older reports with an external footer.
+                echo '<nav class="slimstat-acquisition__pagination" aria-label="' . esc_attr__('Report pages', 'wp-slimstat') . '"><span>';
+                echo esc_html(sprintf(
+                    /* translators: 1: first displayed row, 2: last displayed row, 3: total row count. */
+                    __('%1$s–%2$s of %3$s', 'wp-slimstat'), number_format_i18n($start + 1), number_format_i18n($start + count($rows)), number_format_i18n(count($all))
+                )) . '</span>';
+                if (is_admin() && $start > 0) {
+                    echo '<a class="button refresh" href="' . esc_url(\wp_slimstat_reports::fs_url('start_from equals ' . max(0, $start - $perPage))) . '">' . esc_html__('Previous', 'wp-slimstat') . '</a>';
+                }
+                if (is_admin() && $start + $perPage < count($all)) {
+                    echo '<a class="button refresh" href="' . esc_url(\wp_slimstat_reports::fs_url('start_from equals ' . ($start + $perPage))) . '">' . esc_html__('Next', 'wp-slimstat') . '</a>';
+                }
+                echo '</nav>';
             }
-            if (is_admin() && $start + $perPage < count($all)) {
-                echo '<a class="button refresh" href="' . esc_url(\wp_slimstat_reports::fs_url('start_from equals ' . ($start + $perPage))) . '">' . esc_html__('Next', 'wp-slimstat') . '</a>';
-            }
-            echo '</nav>';
             if ($capped) {
                 echo '<p class="slimstat-acquisition__note">' . esc_html__('The report result limit was reached. Narrow your filters to see more detail. Shares use all matching pageviews, including rows beyond this limit.', 'wp-slimstat') . '</p>';
             }
         }
-        echo '<details class="slimstat-acquisition__help"><summary>' . esc_html__('How to read this report', 'wp-slimstat') . '</summary>';
+        // Opened from the intro's help link.
+        echo '<dialog class="ss-report-dialog" id="' . esc_attr($helpId) . '" aria-labelledby="' . esc_attr($helpId) . '-title"><div class="ss-report-dialog__heading"><h2 id="' . esc_attr($helpId) . '-title">' . esc_html($helpLabel) . '</h2><button type="button" class="button" data-dialog-close>' . esc_html__('Close', 'wp-slimstat') . '</button></div>';
         echo '<p>' . esc_html('utm' === $mode
             ? __('Campaign totals combine all sources and tags. Expand a campaign for each combination of tags on a recorded page URL, not a session or conversion. Values keep their original case. More tags reveals content, term and campaign ID when present. Unassigned means that tag was absent. Use consistent names and tag incoming links, not internal links.', 'wp-slimstat')
             : __('Channel totals combine all sources. Expand a channel for its source breakdown. These are pageview channels, not session attribution. Campaign tags take priority over referring sites. Internal navigation is separate. Direct / unknown means no usable source was sent; it can include untagged email, private messages or apps. Unassigned means the pageview predates report setup.', 'wp-slimstat')) . '</p>';
@@ -319,6 +386,6 @@ class AcquisitionReport
         } else {
             echo '<p><code>?utm_source=newsletter&amp;utm_medium=email&amp;utm_campaign=autumn</code></p>';
         }
-        echo '</details></div>';
+        echo '</dialog></div>';
     }
 }

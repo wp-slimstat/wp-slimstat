@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace SlimStat\Migration\Admin;
 
 use SlimStat\Migration\MigrationManager;
+use SlimStat\Migration\MigrationService;
+use SlimStat\Schema\Schema;
 use wp_slimstat_admin;
 
 class MigrationAdmin
@@ -42,14 +44,7 @@ class MigrationAdmin
 			return;
 		}
 
-		// Registered when anything is OWED, and also when anything is merely OFFERED — the
-		// second half was missing and it is what made "opt-in" mean "unreachable". needsMigration()
-		// deliberately ignores optional migrations so they raise no notice; using it alone as the
-		// gate for the page removed the only place they could ever have been run from.
-		if (!$this->manager->needsMigration() && [] === $this->manager->getOfferedMigrations()) {
-			return;
-		}
-
+		// Always registered: with nothing owed or offered the page reports the up-to-date state.
 		$parent = empty(wp_slimstat_admin::$main_menu_slug) ? 'slimview1' : wp_slimstat_admin::$main_menu_slug;
 		$hook = add_submenu_page(
 			$parent,
@@ -88,6 +83,8 @@ class MigrationAdmin
 		// 4.5:1 — not a preference, unreadable. Pinned by tests/admin-header-assets-test.php.
 		wp_register_style('slimstat-header-modern', plugins_url('/admin/assets/css/header-modern.css', SLIMSTAT_FILE), ['slimstat-admin-base'], SLIMSTAT_ANALYTICS_VERSION);
 		wp_enqueue_style('slimstat-header-modern');
+
+		wp_slimstat_admin::enqueue_notification_assets();
 
 		// Migration page extras
 		wp_register_style('slimstat-migration', plugins_url('/admin/assets/css/migration.css', SLIMSTAT_FILE), ['slimstat-header-modern'], SLIMSTAT_ANALYTICS_VERSION);
@@ -129,7 +126,7 @@ class MigrationAdmin
 				'inProgress' => __('In progress…', 'wp-slimstat'),
 				'done' => __('Done', 'wp-slimstat'),
 				'failed' => __('Failed', 'wp-slimstat'),
-				'allFinished' => __('All migrations finished.', 'wp-slimstat'),
+				'allFinished' => __('✓ Database is up to date', 'wp-slimstat'),
 				// S7 error paths. Hardcoding these in migration.js would have been an i18n
 				// regression in a file where every other string is translated.
 				'notComplete' => __('The migration did not complete. Nothing further has been run.', 'wp-slimstat'),
@@ -224,12 +221,12 @@ class MigrationAdmin
 		// how a wrong one survives review.
 		$offered_migrations = $this->manager->getOfferedMigrations();
 		$has_required_migrations = !empty($required_migrations);
-
-		if (!$has_required_migrations && [] === $offered_migrations) {
-			$parent = empty(wp_slimstat_admin::$main_menu_slug) ? 'slimview1' : wp_slimstat_admin::$main_menu_slug;
-			wp_safe_redirect(admin_url('admin.php?page=' . $parent));
-			exit;
-		}
+		// MyISAM has no online index build: each step locks the table for writes while it runs.
+		// Required steps write to both tables tracking writes to (idx_events_notes_dt is on slim_events).
+		$db = MigrationService::analyticsConnection();
+		$analytics_myisam = $has_required_migrations && (bool) array_filter(['slim_stats', 'slim_events'], static function (string $table) use ($db): bool {
+			return 0 === strcasecmp(Schema::tableEngine($db, $GLOBALS['wpdb']->prefix . $table), 'MyISAM');
+		});
 
 		include plugin_dir_path(__FILE__) . '/../../view/migration-page.php';
 	}
@@ -241,7 +238,9 @@ class MigrationAdmin
 		}
 
 		$screen = get_current_screen();
-		if (!$screen || $screen->base !== 'dashboard' && !$this->isSlimStatPage($screen)) {
+		// Plugins and Updates too: that is where the update happens, so the admin learns there
+		// that reports are waiting on a database step.
+		if (!$screen || !in_array($screen->base, ['dashboard', 'plugins', 'update-core'], true) && !$this->isSlimStatPage($screen)) {
 			return;
 		}
 
@@ -259,9 +258,9 @@ class MigrationAdmin
 		$extra_class = 'slimstat-migration-notice-show'; // Always show if checks pass
         $diag = $this->getRequiredDiagnostics();
 
-        echo '<div class="notice slimstat-notice notice-info notice-alt is-dismissible slimstat-migration-notice ' . esc_attr($extra_class) . '" data-nonce="' . esc_attr($nonce) . '" role="region" aria-label="' . esc_attr__('SlimStat Database Migration', 'wp-slimstat') . '">';
+        echo '<div class="notice slimstat-notice notice-info notice-alt slimstat-migration-notice ' . esc_attr($extra_class) . '" data-nonce="' . esc_attr($nonce) . '" role="region" aria-label="' . esc_attr__('SlimStat Database Migration', 'wp-slimstat') . '">';
         echo '<h2>' . esc_html__('SlimStat database migration required', 'wp-slimstat') . '</h2>';
-        echo '<p>' . esc_html__('To improve SlimStat performance and stability, your database needs to be migrated.', 'wp-slimstat') . '</p>';
+        echo '<p>' . esc_html__('SlimStat requires a database update. Reports that depend on the pending schema remain unavailable until it completes. Back up your database first.', 'wp-slimstat') . '</p>';
 
         if ($diag !== []) {
             echo '<details>';
@@ -281,7 +280,7 @@ class MigrationAdmin
         }
 
         echo '<p class="wp-core-ui">';
-        echo '<a href="' . esc_url($url) . '" class="button button-primary">' . esc_html__('Go to Migration Page', 'wp-slimstat') . '</a>';
+        echo '<a href="' . esc_url($url) . '" class="button button-primary">' . esc_html__('Start Migration', 'wp-slimstat') . '</a>';
         echo '</p>';
         echo '</div>';
 	}
@@ -398,7 +397,7 @@ class MigrationAdmin
 		wp_send_json_success([
 			'results' => $result,
 			'all_complete' => $all_complete,
-			'message' => $all_complete ? __('All migrations completed successfully!', 'wp-slimstat') : __('Migrations completed, but some may still be needed.', 'wp-slimstat')
+			'message' => $all_complete ? __('✓ Database is up to date', 'wp-slimstat') : __('Migrations completed, but some may still be needed.', 'wp-slimstat')
 		]);
 	}
 

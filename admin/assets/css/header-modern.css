@@ -231,6 +231,10 @@
     display: none !important;
 }
 
+.slimstat-admin-page .help-tab-content {
+    max-width: 72ch;
+}
+
 @media (max-width: 1024px) {
     .slimstat-header--modern {
         gap: 18px;

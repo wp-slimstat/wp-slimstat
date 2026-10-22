@@ -134,11 +134,12 @@ foreach ($files as $f) {
 }
 
 $ns  = 'SlimStat\\Migration\\Migrations\\';
-// short class => the exact CREATE INDEX statement run() must emit when the index is missing.
+// short class => the exact statement run() must emit when the index is missing: the online
+// form first (B2, release review 2026-10-13), so the build does not lock the table for writes.
 $spec = [
-    'CreateGoalQueriesIndex'   => 'CREATE INDEX idx_goal_queries ON wp_slim_stats (resource(191), dt, fingerprint(20))',
-    'CreateFunnelQueriesIndex' => 'CREATE INDEX idx_funnel_queries ON wp_slim_stats (fingerprint(20), dt, resource(191))',
-    'CreateEventsNotesDtIndex' => 'CREATE INDEX idx_events_notes_dt ON wp_slim_events (dt, notes(64))',
+    'CreateGoalQueriesIndex'   => 'ALTER TABLE wp_slim_stats ADD INDEX idx_goal_queries (resource(191), dt, fingerprint(20)), ALGORITHM=INPLACE, LOCK=NONE',
+    'CreateFunnelQueriesIndex' => 'ALTER TABLE wp_slim_stats ADD INDEX idx_funnel_queries (fingerprint(20), dt, resource(191)), ALGORITHM=INPLACE, LOCK=NONE',
+    'CreateEventsNotesDtIndex' => 'ALTER TABLE wp_slim_events ADD INDEX idx_events_notes_dt (dt, notes(64)), ALGORITHM=INPLACE, LOCK=NONE',
 ];
 
 foreach ($spec as $short => $expectedSql) {
@@ -156,7 +157,7 @@ foreach ($spec as $short => $expectedSql) {
     $fresh = static function ($indexPresent) use ($class, $short, $expectedSql) {
         $db = new wpdb();
         if ($indexPresent) {
-            preg_match('/CREATE INDEX (\w+) ON \w+ \((.*)\)$/', $expectedSql, $index);
+            preg_match('/ADD INDEX (\w+) \((.*)\), ALGORITHM/', $expectedSql, $index);
             foreach (explode(',', $index[2]) as $position => $part) {
                 preg_match('/^(\w+)(?:\((\d+)\))?$/', trim($part), $column);
                 $db->indexRows[] = ['Key_name' => $index[1], 'Seq_in_index' => $position + 1,
@@ -190,7 +191,7 @@ foreach ($spec as $short => $expectedSql) {
     $db->queryReturn = 0;        // wpdb->query() returns int rows on success (>= 0, !== false)
     $db->lastQuery   = '';
     gfim_assert($m->run() === true, "{$short}: run() succeeds when CREATE INDEX succeeds", $failures);
-    gfim_assert($db->lastQuery === $expectedSql, "{$short}: emits correct CREATE INDEX SQL", $failures);
+    gfim_assert($db->lastQuery === $expectedSql, "{$short}: emits the online ALTER TABLE … ADD INDEX first", $failures);
 
     // Failure must propagate (false), not be swallowed.
     [$m, $db] = $fresh(false);

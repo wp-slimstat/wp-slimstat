@@ -1,0 +1,16 @@
+
+Running 6 tests using 1 worker
+
+(node:36079) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36079) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [admin] › tests/e2e/migration-cookie-restore.spec.ts:101:3 › Migration cookie restore bug — no cookies after 5.4.0 › Task 28: migration preserves cookie-off with legacy consent settings (1.0s)
+  ✓  2 [admin] › tests/e2e/migration-cookie-restore.spec.ts:231:3 › Migration cookie restore bug — no cookies after 5.4.0 › Task 28: migration preserves cookie-off with GDPR enabled (643ms)
+  ✓  3 [admin] › tests/e2e/migration-cookie-restore.spec.ts:472:3 › Migration cookie restore bug — no cookies after 5.4.0 › Task 28: existing modern choices survive absent legacy consent signals (644ms)
+  ✓  4 [admin] › tests/e2e/migration-cookie-restore.spec.ts:506:3 › Migration cookie restore bug — no cookies after 5.4.0 › Task 28: third-party CMP migration preserves GDPR and cookie-off (629ms)
+  ✓  5 [admin] › tests/e2e/migration-cookie-restore.spec.ts:539:3 › Migration cookie restore bug — no cookies after 5.4.0 › Task 28: full migration path preserves cookie-off (614ms)
+Migration with banner=off: javascript_mode=off
+  ✓  6 [admin] › tests/e2e/ticket-14684-regression.spec.ts:527:2 › Upgrade preservation and explicitly enabled client-side tracking › Task 28: migration preserves javascript_mode off with banner off (2.6s)
+
+  6 passed (10.1s)

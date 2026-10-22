@@ -13,7 +13,7 @@ test('Playground builds, previews, copies and handles errors without stale respo
   const [stat] = await pool.execute('INSERT INTO wp_slim_stats (dt, resource, utm_campaign, utm_source, traffic_channel) VALUES (UNIX_TIMESTAMP(), ?, ?, ?, ?)', ['/shortcode-fixture', marker, marker, 'email']) as any;
   try {
     await page.goto('/wp-admin/admin.php?page=slimshortcodes');
-    await expect(page.getByRole('link', { name: 'Shortcodes', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: /^Shortcodes( New)?$/ })).toBeVisible(); // The menu shows a "New" pill for 15 days.
     await expect(page.locator('#ss-sc-title')).toHaveText('Visitors online now');
     await expect(page.locator('#ss-sc-preview')).toHaveText(/\d/);
     await page.locator('#ss-sc-search').fill('utm_source');

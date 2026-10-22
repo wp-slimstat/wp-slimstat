@@ -1,0 +1,12 @@
+[
+  {
+    "scope": "network",
+    "exit_code": 0,
+    "output": "{\"multisite\":true,\"scope\":\"network admin\",\"checked_keys\":102,\"changed_user_keys\":[],\"effective_capture\":\"off\",\"effective_rate\":0}"
+  },
+  {
+    "scope": "child",
+    "exit_code": 0,
+    "output": "{\"multisite\":true,\"scope\":\"site\",\"checked_keys\":102,\"changed_user_keys\":[],\"effective_capture\":\"off\",\"effective_rate\":0}"
+  }
+]

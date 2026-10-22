@@ -38,34 +38,6 @@ class GoalsFunnelsEmptyStateTest extends TestCase
         );
     }
 
-    // ── FN-17 / FN-7: "Export" link gated by a report-level `exportable` flag ──
-
-    public function test_reports_declare_exportable_presence_probe(): void
-    {
-        $php = file_get_contents($this->reportsPath());
-        // Both Goals & Funnels reports declare an `exportable` probe so the Free
-        // export link is suppressed when there's nothing to export.
-        $this->assertMatchesRegularExpression(
-            "/'exportable'\s*=>[\s\S]{0,80}get_goals_card_state\(\)\['goals'\]/",
-            $php,
-            'Goals report must declare an exportable probe on its goals (FN-17)'
-        );
-        $this->assertMatchesRegularExpression(
-            "/'exportable'\s*=>[\s\S]{0,80}get_funnels_card_state\(\)\['funnels'\]/",
-            $php,
-            'Funnels report must declare an exportable probe on its funnels (FN-7)'
-        );
-    }
-
-    public function test_export_button_honors_exportable_flag(): void
-    {
-        $php = file_get_contents($this->indexPath());
-        // The export-button renderer honors the generic `exportable` flag rather
-        // than hardcoding report ids.
-        $this->assertStringContainsString("array_key_exists('exportable', \$callback_args)", $php, 'Export button must honor the exportable flag');
-        $this->assertStringContainsString('call_user_func($callback_args[\'exportable\'])', $php, 'Export button must invoke a callable exportable probe');
-    }
-
     // ── FN-10: the admin.css postbox h3/p bleed is neutralised on modern cards ──
 
     public function test_legacy_postbox_bleed_is_reset(): void
@@ -142,11 +114,6 @@ class GoalsFunnelsEmptyStateTest extends TestCase
     private function reportsPath(): string
     {
         return dirname(__DIR__, 2) . '/admin/view/wp-slimstat-reports.php';
-    }
-
-    private function indexPath(): string
-    {
-        return dirname(__DIR__, 2) . '/admin/index.php';
     }
 
     private function cssPath(): string

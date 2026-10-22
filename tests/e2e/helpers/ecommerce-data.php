@@ -41,6 +41,13 @@ if ('seed' === $mode) {
 	$state['complete'] = true;
 	update_option(Integration::STATE, $state, false);
 	$start = (int) floor((wp_slimstat::now() - 10 * DAY_IN_SECONDS) / DAY_IN_SECONDS) * DAY_IN_SECONDS;
+	// Use a quiet window: unrelated staging visits on the following day must not pollute chart assertions.
+	for ($offset = 10; $offset < 60; ++$offset) {
+		$start = (int) floor((wp_slimstat::now() - $offset * DAY_IN_SECONDS) / DAY_IN_SECONDS) * DAY_IN_SECONDS;
+		$occupied = Integration::db()->get_var(Integration::db()->prepare("SELECT COUNT(*) FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE dt BETWEEN %d AND %d", $start - DAY_IN_SECONDS, $start + 2 * DAY_IN_SECONDS - 1));
+		if (!$occupied) { break; }
+	}
+	if ($occupied) { throw new RuntimeException('No isolated Ecommerce fixture window available.'); }
 	$fixture = ['orders' => [], 'products' => [], 'stats' => [], 'start' => $start, 'end' => $start + DAY_IN_SECONDS - 1,
 		'expected' => ['USD' => ['net' => '115.00', 'orders' => 4, 'aov' => '28.75', 'refunds' => '60.00', 'discounts' => '20.00', 'tax' => '14.00', 'shipping' => '5.00', 'product_net' => '110.00', 'net_units' => 3, 'linked_orders' => 2],
 			'EUR' => ['net' => '200.00', 'orders' => 1], 'google_USD' => ['net' => '65.00', 'orders' => 2],
@@ -120,8 +127,13 @@ require_once WP_PLUGIN_DIR . '/wp-slimstat/admin/view/wp-slimstat-db.php';
 wp_slimstat_db::init();
 wp_slimstat_db::$filters_normalized['utime'] = ['start' => $fixture['start'], 'end' => $fixture['end']];
 wp_slimstat_db::$filters_normalized['columns'] = [Report::CURRENCY_FILTER => ['equals', 'USD']];
-$data = (new Report())->data();
-if ('data' === $mode) { echo wp_json_encode($data); return; }
+// Calculation regressions exercise the private query contract independently of edition.
+// The public response is checked separately in the Free browser and access unit tests.
+$queryData = new ReflectionMethod(Report::class, 'queryData');
+$queryData->setAccessible(true);
+$reportData = static function ($interval = 'auto') use ($queryData) { return $queryData->invoke(new Report(), $interval); };
+$data = $reportData();
+if ('data' === $mode) { echo wp_json_encode((new Report())->data()); return; }
 $checks = 0;
 $same = static function ($expected, $actual, $label) use (&$checks) {
 	if ($expected !== $actual) { throw new RuntimeException($label . ': expected ' . json_encode($expected) . ', got ' . json_encode($actual)); }
@@ -142,12 +154,12 @@ $same(1, array_sum(array_column($data['series']['current'], 'buyers')), 'Chart c
 $same(['visits' => 120, 'products' => 120, 'carts' => 1, 'checkouts' => 1, 'buyers' => 1, 'completed' => 1], $data['journey'], 'Ordered journey and distinct converting visits');
 $same(115000000, array_sum(array_map(static function ($row) { return Money::units($row['net']); }, $data['groups']['channel'])), 'Channel reconciliation');
 wp_slimstat_db::$filters_normalized['columns']['utm_source'] = ['equals', 'google'];
-$filtered = (new Report())->data();
+$filtered = $reportData();
 $same('65.000000', $filtered['current']['net'], 'Shared UTM filter scopes orders');
 $same('2', $filtered['current']['orders'], 'Unassociated orders excluded by traffic filter');
 $same(120, $filtered['journey']['visits'], 'Same filter scopes traffic denominator');
 wp_slimstat_db::$filters_normalized['columns'] = [Report::CURRENCY_FILTER => ['equals', 'EUR']];
-$euros = (new Report())->data();
+$euros = $reportData();
 $same('200.000000', $euros['current']['net'], 'Currency isolation');
 $same('1', $euros['current']['orders'], 'EUR order count');
 $same(0, $euros['journey']['buyers'], 'Currency-scoped purchase numerator');
@@ -163,31 +175,31 @@ if ('chart' === $mode) {
 		}
 		wp_slimstat_db::$filters_normalized['utime']['end'] += DAY_IN_SECONDS;
 		Integration::invalidate();
-		$daily = (new Report())->data('daily');
+		$daily = $reportData('daily');
 		$same(2, count($daily['series']['current']), 'Two daily intervals');
 		$same(120, $daily['journey']['visits'], 'Overall visits remain distinct');
 		$same(240, array_sum(array_column($daily['series']['current'], 'visits')), 'A visit active on both days appears in both daily intervals');
 		$same(0.0, (float) $daily['series']['current'][1]['rate'], 'Measured zero purchases is a valid zero rate');
-		$same(null, $daily['series']['current'][1]['aov'], 'No orders is unavailable AOV, not zero');
-		$monthly = (new Report())->data('monthly');
+		$same(0.0, $daily['series']['current'][1]['aov'], 'No orders plots AOV at zero');
+		$monthly = $reportData('monthly');
 		$same(120, $monthly['series']['current'][0]['visits'], 'Month recomputes distinct visits instead of summing daily counts');
 		$same(100 / 120, $monthly['series']['current'][0]['rate'], 'Month recomputes rate from its own cohort');
 		$same(115.0, $monthly['series']['current'][0]['net'], 'Month reconciles revenue');
 		$same(true, $monthly['series']['current'][0]['partial'], 'Mid-month range explicitly partial');
 		foreach ([0, 1, 6] as $weekStart) {
 			update_option('start_of_week', $weekStart); Integration::invalidate();
-			$weekly = (new Report())->data('weekly');
+			$weekly = $reportData('weekly');
 			$same(115.0, array_sum(array_column($weekly['series']['current'], 'net')), 'Week total reconciles');
 			foreach (array_slice($weekly['series']['current'], 1) as $point) { $same((string) $weekStart, gmdate('w', $point['start']), 'Week uses configured start day'); }
 		}
 		wp_slimstat_db::$filters_normalized['utime'] = ['start' => strtotime('2024-02-28 UTC'), 'end' => strtotime('2024-03-02 UTC') - 1];
-		$leap = (new Report())->data('monthly');
+		$leap = $reportData('monthly');
 		$same(2, count($leap['series']['current']), 'Leap month boundary creates two calendar buckets');
 		$same(strtotime('2024-03-01 UTC') - 1, $leap['series']['current'][0]['end'], 'Leap February includes the 29th');
 		$same(null, $leap['series']['current'][0]['net'], 'Expired historical data is unavailable, not zero');
 		wp_slimstat_db::$filters_normalized['utime'] = $oldRange;
 		wp_slimstat_db::$filters_normalized['utime']['start'] -= 400 * DAY_IN_SECONDS;
-		$bounded = (new Report())->data('daily');
+		$bounded = $reportData('daily');
 		$same('weekly', $bounded['series']['interval'], 'Long daily request chooses bounded weekly aggregation');
 		$same(true, count($bounded['series']['current']) <= 366, 'Chart workload stays bounded');
 	} finally {
@@ -268,11 +280,12 @@ if ('safety' === $mode) {
 		$db->update($stats, ['traffic_source' => '', 'utm_campaign' => ''], ['id' => $entry]);
 		$db->update($table, ['source' => 'fallback-must-not-mix', 'campaign' => 'fallback-must-not-mix'], ['order_id' => $fixture['primary']]);
 		Integration::invalidate();
-		$sources = (new Report())->rows('source');
+		$queryRows = new ReflectionMethod(Report::class, 'queryRows'); $queryRows->setAccessible(true);
+		$sources = $queryRows->invoke(new Report(), 'source');
 		$same(false, in_array('fallback-must-not-mix', array_column($sources, 'dimension'), true), 'Attribution uses one provider per order');
 		wp_slimstat_admin::deactivate();
 		$rejected = false;
-		try { (new Report())->data(); } catch (RuntimeException $e) { $rejected = strpos($e->getMessage(), 'Rebuild') !== false; }
+		try { $reportData(); } catch (RuntimeException $e) { $rejected = strpos($e->getMessage(), 'Rebuild') !== false; }
 		$same(true, $rejected, 'Reactivation refuses stale commerce until rebuilt');
 		Integration::setup();
 		$started = get_option(Integration::STATE)['started'];
@@ -305,7 +318,7 @@ if ('safety' === $mode) {
 		$db->query("RENAME TABLE {$table} TO {$table}_fixture_unavailable");
 		try {
 			Integration::invalidate(); $rejected = false;
-			try { (new Report())->data(); } catch (RuntimeException $e) { $rejected = strpos($e->getMessage(), 'could not be loaded') !== false; }
+			try { $reportData(); } catch (RuntimeException $e) { $rejected = strpos($e->getMessage(), 'could not be loaded') !== false; }
 			$same(true, $rejected, 'Query failure is unavailable data');
 		} finally { $db->query("RENAME TABLE {$table}_fixture_unavailable TO {$table}"); }
 		for ($i = 0; $i < 55; ++$i) {
@@ -334,7 +347,7 @@ if ('safety' === $mode) {
 
 if ('edges' === $mode) {
 	wp_slimstat_db::$filters_normalized['columns'] = [Report::CURRENCY_FILTER => ['equals', 'USD']];
-	$report = static function () { return (new Report())->data(); };
+	$report = $reportData;
 	$hold = wc_get_order($fixture['hold']);
 	$hold->update_status('completed'); Integration::sync($hold->get_id());
 	$same('140.000000', $report()['current']['net'], 'Status update invalidates warm cache');

@@ -132,7 +132,8 @@ $methods = '';
 foreach (['wp_slimstat_userdefined_stylesheet' => '', 'add_column_header' => '$_columns = []', 'add_post_column' => '$_column_name, $_post_id', 'show_message' => '$_message = "", $_type = "info", $_dismiss_handle = ""'] as $name => $args) {
     $methods .= 'public static function ' . $name . '(' . $args . ') {' . slimstat_function_body($admin, $name) . '}';
 }
-eval('class SlimstatAdminRenderProbe { public static $data_for_column = []; ' . $methods . '}');
+function get_post($id) { return null; }
+eval('class SlimstatAdminRenderProbe { public static function can_view_stats() { return false; } public static $data_for_column = []; ' . $methods . '}');
 wp_slimstat::$settings['custom_css'] = 'body > p { color: red; }</style><script>attack()</script>';
 ob_start(); SlimstatAdminRenderProbe::wp_slimstat_userdefined_stylesheet(); $css = ob_get_clean();
 check(strpos($css, '<script') === false && substr_count($css, '</style>') === 1, 'custom CSS breaks out of style element');

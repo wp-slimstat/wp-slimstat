@@ -117,7 +117,7 @@ final class Shortcode
 
     public static function pricingUrl(string $touchpoint): string
     {
-        return add_query_arg(['utm_source' => 'wp-slimstat', 'utm_medium' => 'link', 'utm_campaign' => 'shortcodes', 'utm_content' => $touchpoint], 'https://wp-slimstat.com/pricing/');
+        return \SlimStat\Utils\ProLinks::url('shortcodes', $touchpoint);
     }
 
     private static function comment(string $message): string

@@ -4,6 +4,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BASE_URL, MYSQL_CONFIG, assertSafeTestDatabase, AUTHOR_USER, ADMIN_USER } from './helpers/env';
 import { snapshotSlimstatOptions, restoreSlimstatOptions, snapshotOption, restoreOption, setSlimstatOption, clearStatsTable, closeDb } from './helpers/setup';
+import { getProState } from './helpers/pro-state';
+import { runWordPressFixture } from './helpers/chart';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 let db: mysql.Pool;
@@ -136,17 +138,21 @@ test.describe('UTM and channel reports', () => {
     await page.goto('/wp-admin/admin.php?page=slimview5&type=today');
     const channels = page.locator('#slim_p3_03');
     const utm = page.locator('#slim_p3_04');
-    await expect(channels.locator('.slimstat-acquisition__group')).toHaveCount(6);
+    // Without Pro (every CI lane) the top two groups render and a locked row names the rest.
+    const full = (await getProState(page)).pro_activated;
+    await expect(channels.locator('.slimstat-acquisition__group')).toHaveCount(full ? 6 : 2);
     await expect(channels.locator('.slimstat-acquisition__group[open]')).toHaveCount(0);
-    await expect(channels.locator('.slimstat-acquisition__intro strong')).toHaveText('8 pageviews');
+    await expect(channels.locator('.slimstat-acquisition__intro strong')).toHaveText('6 channels - 8 pageviews');
     await expect(channels.locator('.slimstat-acquisition__label').filter({ hasText: /^Unassigned$/ })).toBeVisible();
-    await expect(channels.locator('.slimstat-acquisition__label').filter({ hasText: /^AI User-requested Fetches$/ })).toBeVisible();
-    await expect(utm.locator('tbody tr')).toHaveCount(3);
-    await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('4 pageviews');
+    if (full) await expect(channels.locator('.slimstat-acquisition__label').filter({ hasText: /^AI User-requested Fetches$/ })).toBeVisible();
+    else await expect(channels.locator('.slimstat-acquisition__groups')).not.toContainText('AI User-requested Fetches');
+    await expect(utm.locator('tbody tr')).toHaveCount(full ? 3 : 0);
+    await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('3 campaigns - 4 pageviews');
     const campaign = utm.locator('.slimstat-acquisition__group').filter({ hasText: 'Spring + 20%' });
     await expect(campaign.locator('table')).not.toBeVisible();
     await campaign.locator(':scope > summary').focus();
     await page.keyboard.press('Enter');
+    if (full) {
     await expect(campaign.locator('table')).toBeVisible();
     await expect(campaign.locator('thead th')).toHaveText(['Source', 'Medium', 'Pageviews', 'Share']);
     await expect(campaign).toContainText('50.0%');
@@ -157,12 +163,16 @@ test.describe('UTM and channel reports', () => {
     await expect(tags.locator('dl')).toBeVisible();
     await expect(tags.getByRole('link', { name: '0', exact: true })).toBeVisible();
     await expect(tags.getByRole('link', { name: '%20', exact: true })).toBeVisible();
+    } else {
+      await expect(campaign.locator('table')).toHaveCount(0);
+      await expect(campaign).toContainText('Source breakdowns are available with Pro');
+    }
     await utm.scrollIntoViewIfNeeded();
     await expect(utm.locator('.inside')).toHaveCSS('opacity', '1');
     await page.screenshot({ path: 'tests/e2e/run-artifacts/acquisition-desktop.png', fullPage: true });
     await campaign.getByRole('link', { name: 'Filter by this campaign', exact: true }).click();
-    await expect(utm.locator('tbody tr')).toHaveCount(1);
-    await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('2 pageviews');
+    await expect(utm.locator('.slimstat-acquisition__group')).toHaveCount(1);
+    await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('1 campaign - 2 pageviews');
     await expect(utm.locator('.slimstat-acquisition__group > summary')).toContainText('100.0%');
     const probe = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, { form: { action: 'e2e_get_slimstat_version' } });
     const { data } = await probe.json();
@@ -196,14 +206,17 @@ test.describe('UTM and channel reports', () => {
     await expect(group.locator(':scope > summary')).toContainText('75.0%');
     await expect(group.locator('table')).not.toBeVisible();
     await group.locator(':scope > summary').click();
-    await expect(group.locator('table')).toBeVisible();
-    await expect(group).toContainText('Showing 2 of 3 pageviews');
+    const full = (await getProState(page)).pro_activated;
+    if (full) {
+      await expect(group.locator('table')).toBeVisible();
+      await expect(group).toContainText('Showing 2 of 3 pageviews');
+    } else await expect(group).toContainText('Source breakdowns are available with Pro');
     await group.locator(':scope > summary').click();
     await expect(group.locator('table')).not.toBeVisible();
     const email = page.locator('#slim_p3_03 .slimstat-acquisition__group');
     await expect(email.locator(':scope > summary .slimstat-acquisition__number')).toHaveText('3 Pageviews');
     await email.locator(':scope > summary').click();
-    await expect(email).toContainText('Showing 2 of 3 pageviews');
+    await expect(email).toContainText(full ? 'Showing 2 of 3 pageviews' : 'Source breakdowns are available with Pro');
   });
 
   test('small screens, RTL, keyboard help and pagination remain usable', async ({ page }) => {
@@ -212,14 +225,20 @@ test.describe('UTM and channel reports', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/wp-admin/admin.php?page=slimview5&type=today');
     const utm = page.locator('#slim_p3_04');
-    await expect(utm.locator('tbody tr')).toHaveCount(2);
-    await utm.getByRole('link', { name: 'Next', exact: true }).click();
-    await expect(utm.locator('tbody tr')).toHaveCount(1);
-    await expect(utm.locator('.slimstat-acquisition__groups')).toContainText('Search');
-    const help = utm.locator('.slimstat-acquisition__help summary');
+    await expect(utm.locator('.slimstat-acquisition__group')).toHaveCount(2);
+    if ((await getProState(page)).pro_activated) {
+      await utm.getByRole('link', { name: 'Next', exact: true }).click();
+      await expect(utm.locator('.slimstat-acquisition__group')).toHaveCount(1);
+      await expect(utm.locator('.slimstat-acquisition__groups')).toContainText('Search');
+    } else {
+      await expect(utm.locator('.slimstat-acquisition__locked')).toContainText(/See .*campaign.* with Pro\./);
+      await expect(utm.locator('.slimstat-acquisition__locked')).not.toContainText('Search');
+    }
+    const help = utm.getByRole('button', { name: 'What are campaigns? How do they work?', exact: true });
     await help.focus();
     await page.keyboard.press('Enter');
-    await expect(utm.locator('.slimstat-acquisition__help')).toHaveAttribute('open', '');
+    await expect(utm.locator('dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
     await page.evaluate(() => document.documentElement.setAttribute('dir', 'rtl'));
     await utm.scrollIntoViewIfNeeded();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
@@ -235,9 +254,9 @@ test.describe('UTM and channel reports', () => {
       await db.execute("INSERT INTO wp_slim_stats (dt, resource, traffic_channel, traffic_source, utm_campaign, utm_source, utm_medium) SELECT MAX(dt)-86400, '/yesterday', 'email', 'archive', 'Yesterday only', ?, 'email' FROM wp_slim_stats", [source]);
       await page.goto('/wp-admin/admin.php?page=slimview5&type=today');
       const utm = page.locator('#slim_p3_04');
-      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('4 pageviews');
+      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('3 campaigns - 4 pageviews');
       await utm.locator('.slimstat-acquisition__group').filter({ hasText: 'Spring + 20%' }).locator(':scope > summary').click();
-      await expect(utm.getByRole('link', { name: source, exact: true })).toBeVisible();
+      await expect(utm.getByRole('link', { name: source, exact: true })).toHaveCount((await getProState(page)).pro_activated ? 1 : 0);
       await page.locator('#slimstat-filter-name').selectOption('utm_source', { force: true });
       await page.locator('#slimstat-filter-operator').selectOption('equals', { force: true });
       // The options AJAX mounts a combobox over #slimstat-filter-value; type where a user types (PITFALLS 159).
@@ -245,14 +264,14 @@ test.describe('UTM and channel reports', () => {
       await page.locator('.slimstat-select-search input').fill(source);
       await expect(page.locator('#slimstat-filter-value')).toHaveValue(source);
       await page.locator('#slimstat-filters input[type=submit]').click();
-      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('2 pageviews');
+      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('1 campaign - 2 pageviews');
       await page.locator('#slimstat-save-filter').click();
       await expect(page.locator('#slimstat-save-filter')).toHaveText(/Saved|Already saved/);
 
       await page.locator('.slimstat-date-range-btn').click();
       await page.locator('.daterangepicker:visible .ranges li').filter({ hasText: /^Yesterday$/ }).click();
       await expect(utm.locator('.slimstat-acquisition__groups')).toContainText('Yesterday only');
-      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('1 pageview');
+      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('1 campaign - 1 pageview');
       await expect(page.locator('#slimstat-current-filters')).toContainText(source);
 
       // Clear dimensions but keep yesterday, then load the saved segment through its dialog.
@@ -260,7 +279,7 @@ test.describe('UTM and channel reports', () => {
       await page.locator('#slimstat-load-saved-filters').click();
       await page.locator('#slim_filters_overlay a.slimstat-filter-link').filter({ hasText: source }).click();
       await expect(utm.locator('.slimstat-acquisition__groups')).toContainText('Yesterday only');
-      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('1 pageview');
+      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('1 campaign - 1 pageview');
       await expect(page.locator('#slimstat-current-filters')).toContainText(source);
 
       // A custom date range uses the real picker's Apply event and retains the POST segment.
@@ -271,7 +290,7 @@ test.describe('UTM and channel reports', () => {
         picker.chosenLabel = 'Custom range';
         picker.clickApply();
       });
-      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('3 pageviews');
+      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('2 campaigns - 3 pageviews');
       await expect(page.locator('#slimstat-current-filters')).toContainText(source);
     } finally { await restoreOption('slimstat_filters'); }
   });
@@ -321,9 +340,9 @@ test.describe('UTM and channel reports', () => {
       });
       expect((await savedResponse).ok()).toBeTruthy();
       await page.goto('/wp-admin/admin.php?page=slimview1&type=today');
-      await expect(page.locator('#slim_p3_03 .slimstat-acquisition__intro strong')).toHaveText('8 pageviews');
+      await expect(page.locator('#slim_p3_03 .slimstat-acquisition__intro strong')).toHaveText('6 channels - 8 pageviews');
       await page.goto('/wp-admin/index.php');
-      await expect(page.locator('#slim_p3_04 tbody tr')).toHaveCount(3);
+      await expect(page.locator('#slim_p3_04 .slimstat-acquisition__group')).toHaveCount((await getProState(page)).pro_activated ? 3 : 2);
       await expect(page.locator('#wp-slimstat-acquisition-css')).toBeAttached();
       await page.locator('#slim_p3_04').evaluate(element => { element.style.width = '300px'; });
       expect(await page.locator('#slim_p3_04 .slimstat-acquisition__groups').evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBeTruthy();
@@ -334,20 +353,79 @@ test.describe('UTM and channel reports', () => {
     }
   });
 
+  test('without Pro, two summaries render while hidden names and all breakdown data stay private', async ({ page }) => {
+    await fixture();
+    // Five more one-view campaigns, ranked after Search, so six are hidden; one carries markup.
+    for (const campaign of ['Zeta <b>bold</b>', 'Zeta B', 'Zeta C', 'Zeta D', 'Zeta E']) {
+      await db.execute("INSERT INTO wp_slim_stats (dt, resource, traffic_channel, traffic_source, utm_campaign, utm_source, utm_medium) SELECT MAX(dt), '/zeta', 'email', 'newsletter', ?, 'newsletter', 'email' FROM wp_slim_stats", [campaign]);
+    }
+    await snapshotOption('active_plugins');
+    try {
+      runWordPressFixture("<?php deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php', true);");
+      const { pro_installed: installed } = await getProState(page);
+      // A crafted page offset must not page past the locked row.
+      await page.goto('/wp-admin/admin.php?page=slimview5&type=today&fs%5Bstart_from%5D=equals+2');
+      const channels = page.locator('#slim_p3_03');
+      const utm = page.locator('#slim_p3_04');
+      await expect(channels.locator('.slimstat-acquisition__intro strong')).toHaveText('6 channels - 13 pageviews');
+      const readableCaptions = async () => {
+        for (const card of [channels, utm]) {
+          const caption = card.locator('.slimstat-acquisition__locked .slimstat-preview-caption');
+          await expect(caption).toBeVisible();
+          const box = (await caption.boundingBox())!;
+          expect(box.width).toBeGreaterThan(150);
+          expect(box.height).toBeLessThan(80);
+        }
+      };
+      await readableCaptions();
+      await expect(channels.locator('.slimstat-acquisition__label')).toHaveText(['Email', 'Unassigned']);
+      const locked = channels.locator('.slimstat-acquisition__locked');
+      await expect(locked.locator('.slimstat-locked-rows > span')).toHaveCount(2);
+      await expect(locked).not.toContainText('AI Assistants');
+      const unlock = locked.getByRole('link', { name: 'Upgrade to see more', exact: true });
+      await expect(unlock).toHaveAttribute('href', /utm_campaign=traffic-sources.*utm_content=channels/);
+      await expect(locked.getByRole('link', { name: 'Already have Pro? Activate the plugin' })).toHaveCount(installed ? 1 : 0);
+      await expect(channels.locator('.slimstat-acquisition__pagination')).toHaveCount(0);
+
+      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('8 campaigns - 9 pageviews');
+      await expect(utm.locator('.slimstat-acquisition__label')).toHaveText(['Spring + 20%', 'Private campaign']);
+      await expect(utm.locator('.slimstat-acquisition__locked .slimstat-locked-rows > span')).toHaveCount(2);
+      await expect(utm).not.toContainText('Zeta');
+      await expect(utm.getByRole('link', { name: 'Upgrade to see more', exact: true })).toBeVisible();
+      await expect(utm.locator('.slimstat-acquisition__pagination')).toHaveCount(0);
+      // Even visible summaries keep their breakdown protected in Free.
+      await utm.locator('.slimstat-acquisition__group').first().locator(':scope > summary').click();
+      await expect(utm.locator('.slimstat-acquisition__group').first().locator('table')).toHaveCount(0);
+      await expect(utm.locator('.slimstat-acquisition__group').first()).toContainText('Source breakdowns are available with Pro');
+
+      await page.setViewportSize({ width: 390, height: 844 });
+      await utm.scrollIntoViewIfNeeded();
+      await readableCaptions();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+      await page.screenshot({ path: 'tests/e2e/run-artifacts/acquisition-free-locked.png', fullPage: true });
+    } finally { await restoreOption('active_plugins'); }
+  });
 
   test('author scope applies and report AJAX rejects missing authentication or nonce', async ({ page, browser }) => {
     await fixture();
     await setSlimstatOption(page, 'restrict_authors_view', 'on');
     await setSlimstatOption(page, 'capability_can_view', 'read');
+    await snapshotOption('active_plugins');
+    runWordPressFixture("<?php deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php', true);");
     const author = await browser.newContext({ storageState: path.join(here, '.auth/author.json') });
     try {
       const authorPage = await author.newPage();
       await authorPage.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview5&type=today`);
       const utm = authorPage.locator('#slim_p3_04');
-      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('3 pageviews');
+      await expect(utm.locator('.slimstat-acquisition__intro strong')).toHaveText('2 campaigns - 3 pageviews');
       await expect(utm).not.toContainText('Private campaign');
-      await expect(utm.getByRole('link', { name: 'View linked orders' })).toHaveCount(0);
-    } finally { await author.close(); }
+      await expect(utm.getByRole('link', { name: 'View sales in Ecommerce' })).toHaveCount(0);
+      // Without Pro the author still learns which channels are hidden, but gets no purchase link.
+      const locked = authorPage.locator('#slim_p3_03 .slimstat-acquisition__locked');
+      await expect(locked).toContainText(/See .*channel.* with Pro\./);
+      await expect(locked).not.toContainText('AI Assistants');
+      await expect(locked.locator('a')).toHaveCount(0);
+    } finally { await author.close(); await restoreOption('active_plugins'); }
     const badNonce = await page.request.post('/wp-admin/admin-ajax.php', { form: { action: 'slimstat_load_report', report_id: 'slim_p3_04', security: 'invalid' } });
     expect(badNonce.status()).toBe(403);
     const anonymous = await browser.newContext({ storageState: { cookies: [], origins: [] } });
