@@ -79,7 +79,7 @@ All commerce reports require WooCommerce, reporting setup and the commerce-repor
 
 ## Installation, upgrade and recovery
 
-Requires the paired Free build, WooCommerce 8.3+ and its Action Scheduler, a 64-bit PHP runtime, and the normal SlimStat database permissions. Verified runtime: WooCommerce 10.6.2, WordPress 7.1/7.1.2, PHP 8.2/8.3, MariaDB 12.3/MySQL 8.0. HPOS and legacy order storage use the same WC CRUD implementation. WooCommerce's own WordPress/PHP requirements also apply.
+Requires the paired Free build, WooCommerce 8.3+ and its Action Scheduler, a 64-bit PHP runtime, and the normal SlimStat database permissions. Verified runtime: WooCommerce 10.6.2, WordPress 7.1/7.1.3, PHP 8.2/8.3, MariaDB 12.3/MySQL 8.0. HPOS and legacy order storage use the same WC CRUD implementation. WooCommerce's own WordPress/PHP requirements also apply.
 
 1. Back up the database and install Free, then the paired Pro build if needed. Keep normal scheduled actions running.
 2. Open **SlimStat → Ecommerce → Set up Ecommerce** as a user with SlimStat access and `manage_woocommerce` or `manage_options`. Viewing requires SlimStat access plus `view_woocommerce_reports` or `manage_options`.

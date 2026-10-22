@@ -24,6 +24,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/lib/source-scan.php';
+
 if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {
     http_response_code(403);
     exit(1);
@@ -102,6 +104,33 @@ foreach ($files as $path) {
                 . 'provisions itself with ensureWpUser()', $rel, $hit[1], $hit[2], $hit[1]);
         }
     }
+}
+
+// The standard CI job starts from a fresh wp-env site. Its admin exists by default, but the
+// author account does not; global setup authenticates both before any spec can run. Pin the
+// provisioning contract so a missing author is reported here instead of as a 60-second browser
+// navigation timeout in every matrix lane.
+$ci_source    = slimstat_yaml_strip_comments((string) file_get_contents($plugin_root . '/.github/workflows/ci.yml'));
+$ci_jobs      = slimstat_ci_job_blocks($ci_source);
+$standard_job = $ci_jobs['standard'] ?? null;
+if (null === $standard_job) {
+	$failures[] = 'cannot find the Tier 2 standard job in .github/workflows/ci.yml';
+} else {
+	$required_ci_fragments = [
+		'WP_AUTHOR_USER:',
+		'WP_AUTHOR_PASS:',
+	];
+	foreach ($required_ci_fragments as $fragment) {
+		if (false === strpos($standard_job, $fragment)) {
+			$failures[] = "Tier 2 does not provision the configured author account: missing `{$fragment}`";
+		}
+	}
+
+	$active_commands = preg_replace('/\\\\\R[\t ]*/', ' ', $standard_job);
+	$author_command  = '/^[\t ]*(?!#)(?:npx\s+wp-env\s+run\s+tests-cli\s+--\s+)?wp\s+user\s+create\s+"\$WP_AUTHOR_USER"[^\r\n]*--role=author[^\r\n]*--user_pass="\$WP_AUTHOR_PASS"[^\r\n]*$/m';
+	if (!preg_match($author_command, $active_commands)) {
+		$failures[] = 'Tier 2 does not provision the configured author account with an active wp user create command';
+	}
 }
 
 if ($failures) {
