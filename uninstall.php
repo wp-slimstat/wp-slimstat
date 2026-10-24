@@ -544,6 +544,9 @@ function slimstat_uninstall($_wpdb = '')
     // Minted with bare literals rather than constants, so no convention-based scan can
     // see them; they are here because the gate's own residual gap was written down.
     delete_option('wp_slimstat_notifications');
+    delete_option('slimstat_notification_fetch_state');
+    delete_option('slimstat_notification_execution_lock');
+    delete_option('slimstat_notification_dismissed');
     delete_option('slimstat_purge_optimized_at');
 // Migration runner state. Every option this plugin creates has to be removable — and the
 // run claim especially, since a stranded one is the single thing a user cannot clear from

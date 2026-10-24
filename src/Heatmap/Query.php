@@ -120,21 +120,21 @@ final class Query
 	 * Legacy click points for one page and device.
 	 *
 	 * @param string $scope Prepared WHERE on slim_stats alias t1 (date range, filters), from the caller.
-	 * @return array<int,array{x:int,y:int,vw:int,n:int,id:string,text:string}>
+	 * @return array<int,array{x:int,y:int,vw:int,vh:int,n:int,id:string,text:string}>
 	 */
 	public static function legacyPoints(string $pageKey, string $device, string $scope = '1=1'): array
 	{
 		$scope = '(' . $scope . ') AND ' . self::authorScope('t1.id');
 		$prefix = $GLOBALS['wpdb']->prefix;
-		$rows   = self::rows("SELECT te.notes, te.position, CAST(SUBSTRING_INDEX(t1.resolution,'x',1) AS UNSIGNED) vw, COUNT(*) n
+		$rows   = self::rows("SELECT te.notes, te.position, CAST(SUBSTRING_INDEX(t1.resolution,'x',1) AS UNSIGNED) vw, CAST(SUBSTRING_INDEX(t1.resolution,'x',-1) AS UNSIGNED) vh, COUNT(*) n
 			FROM {$prefix}slim_events te INNER JOIN {$prefix}slim_stats t1 ON te.id = t1.id
 			WHERE " . self::pageWhere($pageKey) . ' AND ' . self::deviceWhere($device) . ' AND ' . self::VALID_POSITION_SQL . self::legacyProbe() . " AND ({$scope})
-			GROUP BY te.notes, te.position, vw ORDER BY n DESC LIMIT " . self::MAX_POINTS);
+			GROUP BY te.notes, te.position, vw, vh ORDER BY n DESC LIMIT " . self::MAX_POINTS);
 
 		$points = [];
 		foreach ($rows as $row) {
 			[$x, $y]  = array_map('intval', explode(',', (string) $row['position'], 2));
-			$points[] = ['x' => $x, 'y' => $y, 'vw' => (int) $row['vw'], 'n' => (int) $row['n']] + self::element((string) $row['notes']);
+			$points[] = ['x' => $x, 'y' => $y, 'vw' => (int) $row['vw'], 'vh' => (int) $row['vh'], 'n' => (int) $row['n']] + self::element((string) $row['notes']);
 		}
 		return $points;
 	}
@@ -289,33 +289,34 @@ final class Query
 
 	/**
 	 * Clicks on one page from slim_heatmap, grouped by element and a 20x20 grid over it.
-	 * rx/ry come back as the grid cell's centre (0..10000 of the element box).
+	 * Coordinates are the rounded centroid of the contributing clicks, grouped by exact viewport.
 	 *
 	 * @param int    $start Inclusive dt bound.
 	 * @param int    $end   Inclusive dt bound.
 	 * @param string $scope Prepared WHERE on slim_stats alias t1 (report filters); '1=1' skips the join.
-	 * @return array<int,array{s:string,l:string,rx:int,ry:int,x:int,y:int,vw:int,n:int,d:int,r:int,f:int}>
+	 * @return array<int,array{s:string,l:string,rx:int,ry:int,x:int,y:int,vw:int,vh:int,n:int,d:int,r:int,f:int}>
 	 */
 	public static function clickBins(string $pageKey, string $device, int $start, int $end, string $scope = '1=1'): array
 	{
 		if (!Store::ready()) {
 			return [];
 		}
-		$rows = self::rows('SELECT e.selector, e.label, b.* FROM (SELECT h.sel, h.rx DIV 500 bx, h.ry DIV 500 `by`, ROUND(AVG(h.x)) x, ROUND(AVG(h.y)) y, ROUND(AVG(h.vw)) vw,
+		$rows = self::rows('SELECT e.selector, e.label, b.* FROM (SELECT h.sel, h.rx DIV 500 bx, h.ry DIV 500 `by`, ROUND(AVG(h.x)) x, ROUND(AVG(h.y)) y, h.vw, h.vh, ROUND(AVG(h.rx)) rx, ROUND(AVG(h.ry)) ry,
 			COUNT(*) n, SUM(h.flags & 2 > 0) dead, SUM(h.flags & 4 > 0) rage, SUM(h.seq = 0) first
 			' . self::heatmapFrom($pageKey, $device, $start, $end, $scope) . ' AND h.kind = 0
-			GROUP BY h.sel, bx, `by` ORDER BY n DESC LIMIT ' . self::MAX_POINTS . ') b LEFT JOIN ' . Store::table('slim_heatmap_elements') . ' e ON e.sel = b.sel');
+			GROUP BY h.sel, h.vw, h.vh, bx, `by` ORDER BY n DESC LIMIT ' . self::MAX_POINTS . ') b LEFT JOIN ' . Store::table('slim_heatmap_elements') . ' e ON e.sel = b.sel');
 
 		$bins = [];
 		foreach ($rows as $row) {
 			$bins[] = [
 				's'  => (string) $row['selector'],
 				'l'  => (string) $row['label'],
-				'rx' => (int) $row['bx'] * 500 + 250,
-				'ry' => (int) $row['by'] * 500 + 250,
+				'rx' => (int) $row['rx'],
+				'ry' => (int) $row['ry'],
 				'x'  => (int) $row['x'],
 				'y'  => (int) $row['y'],
 				'vw' => (int) $row['vw'],
+				'vh' => (int) $row['vh'],
 				'n'  => (int) $row['n'],
 				'd'  => (int) $row['dead'],
 				'r'  => (int) $row['rage'],

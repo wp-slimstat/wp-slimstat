@@ -556,10 +556,7 @@ class wp_slimstat_admin
         if (class_exists('SlimStat\\Services\\Admin\\Notification\\NotificationManager')) {
             new \SlimStat\Services\Admin\Notification\NotificationManager();
         }
-        // Initialize cron manager for notifications
-        if (class_exists('SlimStat\\Services\\CronEventManager')) {
-            new \SlimStat\Services\CronEventManager();
-        }
+
     }
     // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
@@ -1970,12 +1967,12 @@ class wp_slimstat_admin
 		self::$main_menu_slug = $parent;
 
         // Build menu title with notification badge
-        $menu_title = __('SlimStat', 'wp-slimstat');
+        $menu_title = '<span class="slimstat-menu-title">' . esc_html__('SlimStat', 'wp-slimstat') . '</span>';
         if (class_exists(NotificationFactory::class) && wp_slimstat::$settings['display_notifications'] === 'on') {
             $notification_count = NotificationFactory::getNewNotificationCount();
             if ($notification_count > 0) {
                 $menu_title .= sprintf(
-                    ' <span class="update-plugins count-%d"><span class="plugin-count">%s</span></span>',
+                    ' <span class="update-plugins slimstat-menu-notification-count count-%d"><span class="plugin-count">%s</span></span>',
                     $notification_count,
                     number_format_i18n($notification_count)
                 );
@@ -2164,7 +2161,7 @@ class wp_slimstat_admin
         $is_pro = wp_slimstat::pro_is_installed();
 
         // Query minute-by-minute data for the CSS bar chart (30-minute window). Pro only:
-        // Free draws no chart rather than an invented one (audit F3).
+        // Free uses a labelled decorative preview; measured values stay on the Pro path.
         // Reuse LiveAnalyticsReport's session-spanning query for consistent data (#221)
         $minute_data = [];
         $max_count   = 0;
@@ -2186,7 +2183,7 @@ class wp_slimstat_admin
             // added here: both forms divide by $max_count exactly once, so the behaviour when
             // it is 0 is identical before and after. Saying so rather than implying a safety
             // this line does not provide. ADR-17; PITFALLS 72.
-            $height_pct = round((100 * $count) / $max_count);
+            $height_pct = $max_count > 0 ? round((100 * $count) / $max_count) : 0;
             $is_peak = ($count === $max_count && $count > 0);
             $bar_class = $is_peak ? ' slimstat-adminbar__chart-bar--peak' : '';
             $minutes_ago = $total_bars - 1 - $i; // 29 for first bar, 0 for last bar
@@ -2287,20 +2284,20 @@ class wp_slimstat_admin
             ]);
         }
 
-        // Add CTA node: Free, and only on SlimStat screens, which add this body-class filter on load (audit F7).
-        if (!$is_pro && current_user_can('manage_options') && false !== has_filter('admin_body_class', [self::class, 'add_admin_body_class'])) {
-            $cta_html = '<div class="slimstat-adminbar__cta">'
-                . '<div class="slimstat-adminbar__cta-text">'
-                . esc_html__('Pro adds today\'s views, referrals and the live chart.', 'wp-slimstat')
-                . ' <a href="' . esc_url($upgrade_url) . '" target="_blank" class="slimstat-adminbar__cta-link">'
-                . esc_html__('Upgrade to Pro', 'wp-slimstat') . '</a>'
-                . '</div></div>';
-
+        if (!$is_pro && current_user_can('manage_options')) {
+            $preview_bars = '';
+            foreach ([22, 40, 32, 58, 44, 68, 36, 52, 78, 60, 46, 90, 64, 50, 72, 44, 62, 82, 56, 40, 66, 48, 76, 58, 34, 52, 70, 46, 60, 38] as $height) {
+                $preview_bars .= '<div class="slimstat-adminbar__chart-bar" style="height:' . $height . '%"></div>';
+            }
             $GLOBALS['wp_admin_bar']->add_node([
-                'id'     => 'slimstat-adminbar-cta',
+                'id' => 'slimstat-adminbar-chart',
                 'parent' => 'slimstat-header',
-                'title'  => $cta_html,
-                'meta'   => ['class' => 'slimstat-adminbar__cta-wrapper'],
+                'title' => '<div class="slimstat-adminbar__chart-container slimstat-adminbar__chart-preview" role="group" aria-label="' . esc_attr__('Pro traffic chart preview', 'wp-slimstat') . '">'
+                    . '<div class="slimstat-adminbar__chart-bars" aria-hidden="true">' . $preview_bars . '</div>'
+                    . '<div class="slimstat-adminbar__preview-action"><strong>' . esc_html__('See traffic as it happens', 'wp-slimstat') . '</strong>'
+                    . '<a href="' . esc_url($upgrade_url) . '" class="slimstat-adminbar__cta-link" target="_blank" rel="noopener noreferrer">'
+                    . esc_html__('See Pro plans', 'wp-slimstat') . '</a></div></div>',
+                'meta' => ['class' => 'slimstat-adminbar__chart-wrapper'],
             ]);
         }
 

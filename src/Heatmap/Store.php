@@ -181,7 +181,7 @@ final class Store
 	 * because a cached page can carry a stale hm param. Page, device and date come from the
 	 * server; the client only says where on the page it clicked.
 	 *
-	 * Batch: {vw, vh, s: [[selector, label]], r: [[seq, flags, selIdx, rx, ry, x, y]], sc: [y, dh]}.
+	 * Batch: {vw, vh, s: [[selector, label]], r: [[seq, flags, selIdx, rx, ry, x, y, vw?, vh?]], sc: [y, dh]}.
 	 *
 	 * @return int Rows written (0 when the batch was refused).
 	 * @throws \RuntimeException On a database error; the caller records it and the hit goes on.
@@ -230,7 +230,7 @@ final class Store
 		$rows     = [];
 		$elements = [];
 		foreach (array_slice(is_array($batch['r'] ?? null) ? $batch['r'] : [], 0, self::MAX_ROWS) as $row) {
-			if (!is_array($row) || 7 !== count($row)) {
+			if (!is_array($row) || !in_array(count($row), [7, 9], true)) {
 				continue;
 			}
 			[$seq, $flags, $index, $rx, $ry, $x, $y] = array_values($row);
@@ -244,23 +244,22 @@ final class Store
 				$known = $elements[$element[0]] ?? [$element[1], ''];
 				$elements[$element[0]] = [$element[1], ($flags & self::FLAG_INTERACTIVE) ? $element[2] : $known[1]];
 			}
-			$rows[] = [0, self::clamp($seq, self::MAX_ROWS - 1), 0, self::clamp($x, 65535), self::clamp($y, 16777215), $element[0] ?? null, self::clamp($rx, 10000), self::clamp($ry, 10000), $flags];
+			$rows[] = [0, self::clamp($seq, self::MAX_ROWS - 1), 0, self::clamp($x, 65535), self::clamp($y, 16777215), $element[0] ?? null, self::clamp($rx, 10000), self::clamp($ry, 10000), $flags, self::clamp($row[7] ?? $batch['vw'] ?? 0, 65535), self::clamp($row[8] ?? $batch['vh'] ?? 0, 65535)];
 		}
 		if ('full' === $level && is_array($batch['sc'] ?? null) && 2 === count($batch['sc'])) {
 			[$y, $dh] = array_values($batch['sc']);
-			$rows[]   = [1, 0, self::clamp($dh, 16777215), 0, self::clamp($y, 16777215), null, 0, 0, 0];
+			$rows[]   = [1, 0, self::clamp($dh, 16777215), 0, self::clamp($y, 16777215), null, 0, 0, 0, self::clamp($batch['vw'] ?? 0, 65535), self::clamp($batch['vh'] ?? 0, 65535)];
 		}
 		if (!$rows) {
 			return 0;
 		}
 
-		$vw     = self::clamp($batch['vw'] ?? 0, 65535);
-		$common = [$id, SurrogateKey::hex($page), (int) ($view['dt'] ?? 0), Query::DEVICE_CODES[Query::device($vw)] ?? 0, $vw, self::clamp($batch['vh'] ?? 0, 65535)];
+		$common = [$id, SurrogateKey::hex($page), (int) ($view['dt'] ?? 0)];
 		$values = [];
 		$args   = [];
-		foreach ($rows as [$kind, $seq, $dh, $x, $y, $sel, $rx, $ry, $flags]) {
+		foreach ($rows as [$kind, $seq, $dh, $x, $y, $sel, $rx, $ry, $flags, $vw, $vh]) {
 			$values[] = '(%d, %d, %d, UNHEX(%s), %d, %d, %d, %d, %d, %d, %d, ' . (null === $sel ? 'NULL' : 'UNHEX(%s)') . ', %d, %d, %d)';
-			array_push($args, $common[0], $kind, $seq, ...array_slice($common, 1));
+			array_push($args, $common[0], $kind, $seq, $common[1], $common[2], Query::DEVICE_CODES[Query::device($vw)] ?? 0, $vw, $vh);
 			array_push($args, $dh, $x, $y, ...(null === $sel ? [] : [$sel]));
 			array_push($args, $rx, $ry, $flags);
 		}

@@ -519,6 +519,9 @@ class wp_slimstat
 
         \SlimStat\Heatmap\Store::boot();
 
+        // WP-Cron has no logged-in user, so its handlers must boot outside the admin library.
+        new \SlimStat\Services\CronEventManager();
+
         // REST API Support
         add_action('rest_api_init', [self::class, 'register_rest_route']);
 

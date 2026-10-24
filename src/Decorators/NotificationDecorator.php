@@ -46,7 +46,7 @@ class NotificationDecorator
      */
     public function getIcon()
     {
-        return \json_decode($this->notification->icon) ?? null;
+        return \json_decode($this->notification->icon ?? 'null') ?? null;
     }
 
     /**
@@ -56,7 +56,7 @@ class NotificationDecorator
      */
     public function getDescription()
     {
-        $description = \json_decode($this->notification->description) ?? null;
+        $description = \json_decode($this->notification->description ?? 'null') ?? null;
         
         // Additional sanitization for security - wp_kses_post allows only safe HTML tags
         if ($description && is_string($description)) {
@@ -130,7 +130,7 @@ class NotificationDecorator
             'success' => 'slimstat-notification-sidebar__success'
         ];
 
-        return $backgroundColors[$this->notification->background_color] ?? null;
+        return $backgroundColors[$this->notification->background_color ?? ''] ?? null;
     }
 
     /**
@@ -140,7 +140,7 @@ class NotificationDecorator
      */
     public function activatedAt()
     {
-        if ($this->notification->activated_at) {
+        if (!empty($this->notification->activated_at)) {
             $timezoneOffset = \get_option('gmt_offset') * 3600;
 
             $timestamp = \strtotime($this->notification->activated_at);

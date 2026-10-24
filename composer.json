@@ -480,6 +480,7 @@
     "test:settings-cache-family-wp": "wp eval-file tests/settings-cache-family-wp-test.php",
     "test:heatmap-legacy-oracle-wp": "wp eval-file tests/heatmap-legacy-oracle-wp-test.php",
     "test:date-i18n-filter-suspension-wp": "wp eval-file tests/date-i18n-filter-suspension-wp-test.php",
+    "test:notification-delivery-wp": "wp eval-file tests/notification-delivery-wp-test.php",
     "test:acquisition-network": "wp eval-file tests/acquisition-network-test.php"
   },
   "scripts-descriptions": {

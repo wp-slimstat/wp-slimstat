@@ -1506,3 +1506,14 @@
 .slimstat-funnel-bar-fill:not([data-zero]) {
     background: var(--ss-brand-500);
 }
+
+/* Match the report header's inner margin without changing compact widgets. */
+#slim_p9_02 .slimstat-gf-funnels:not(.slimstat-gf-funnels--locked) {
+    padding: var(--ss-space-4);
+    box-sizing: border-box;
+}
+#slim_p9_02 .slimstat-gf-funnel-panel__name,
+#slim_p9_02 .slimstat-gf-step__name { min-width: 0; overflow-wrap: anywhere; }
+#slim_p9_02 .slimstat-gf-step__head { flex-wrap: wrap; gap: var(--ss-space-2); }
+#slim_p9_02 .slimstat-gf-step__count { margin-inline-start: auto; }
+#slim_p9_02 .slimstat-gf-funnel-panel__actions { flex-wrap: wrap; }

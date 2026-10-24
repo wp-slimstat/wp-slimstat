@@ -1135,3 +1135,4 @@ jobs:
           wp eval 'require_once WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php"; wp_slimstat_admin::init_tables($GLOBALS["wpdb"]);' --path="$WP_DIR"
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/shortcode-render-wp-test.php" --path="$WP_DIR"
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/heatmap-author-scope-wp-test.php" --path="$WP_DIR"
+          wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/notification-delivery-wp-test.php" --path="$WP_DIR"

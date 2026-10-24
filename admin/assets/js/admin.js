@@ -1384,7 +1384,7 @@ jQuery(function () {
         jQuery('<form id="slimstat-filters-form" method="post"/>').appendTo("body");
     }
 
-    jQuery(document).on("click", ".slimstat-filter-link, #toplevel_page_slimview1 a, #wp-admin-bar-slimstat-header li a", function (e) {
+    jQuery(document).on("click", ".slimstat-filter-link, #toplevel_page_slimview1 a, #wp-admin-bar-slimstat-header li a:not([target='_blank'])", function (e) {
         url = jQuery(this).attr("href");
 
         // If this link doesn't have a valid HREF attribute, bail
