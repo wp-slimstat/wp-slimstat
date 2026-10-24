@@ -89,7 +89,10 @@ add_action('template_redirect', static function(){
     }
   } finally {
     fs.rmSync(fixture,{force:true});
-    await getPool().query('DELETE FROM wp_slim_stats WHERE resource=?',[resource]);
-    await restoreSlimstatOptions();
+    try {
+      await getPool().query('DELETE FROM wp_slim_stats WHERE resource=?',[resource]);
+    } finally {
+      await restoreSlimstatOptions();
+    }
   }
 });

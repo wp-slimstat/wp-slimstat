@@ -15,7 +15,9 @@ class CronEventManager
 		\add_action('slimstat_initial_notification_fetch', [$this, 'handleInitialFetch']);
 
 		// Schedule initial fetch if needed (non-blocking)
-		$this->maybeScheduleInitialFetch();
+		if (\is_admin() || \wp_doing_cron() || (defined('WP_CLI') && WP_CLI)) {
+			$this->maybeScheduleInitialFetch();
+		}
 	}
 
 	/**
@@ -67,13 +69,14 @@ class CronEventManager
 		\do_action('slimstat_daily_license_check');
 
 		if ('on' === \wp_slimstat::$settings['display_notifications']) {
-			$this->fetchNotification();
+			// A late run yesterday must not cause today's scheduled check to skip a day.
+			$this->fetchNotification(true);
 		}
 	}
 
-	private function fetchNotification()
+	private function fetchNotification($force = false)
 	{
 		$notificationFetcher = new NotificationFetcher();
-		$notificationFetcher->fetchNotification();
+		$notificationFetcher->fetchNotification($force);
 	}
 }

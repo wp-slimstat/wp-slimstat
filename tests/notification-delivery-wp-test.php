@@ -39,14 +39,29 @@ $http = static function ($pre, $args, $url) use (&$requests, &$payload, &$respon
 add_filter('pre_http_request', $http, 10, 3);
 try {
     \wp_slimstat::$settings['display_notifications'] = 'on';
+    // Simulate a separate worker inserting after our cached option miss.
+    $race = static function ($sql) use (&$race) {
+        global $wpdb;
+        if (strpos($sql, "INSERT INTO `{$wpdb->options}`") === 0 && strpos($sql, "'slimstat_notification_dismissed'") !== false) {
+            remove_filter('query', $race);
+            $wpdb->insert($wpdb->options, ['option_name'=>'slimstat_notification_dismissed', 'option_value'=>serialize([987650=>true]), 'autoload'=>'no']);
+        }
+        return $sql;
+    };
+    add_filter('query', $race);
+    $same(true, NotificationProcessor::dismissNotification(987651), 'First dismissal retries a competing insert despite cached absence');
+    $same([987650=>true,987651=>true], get_option('slimstat_notification_dismissed'), 'Concurrent first dismissals are both preserved');
+    remove_filter('query', $race);
     $next = wp_next_scheduled('slimstat_daily_cron_hook');
     wp_schedule_event($next + 1000, 'daily', 'slimstat_daily_cron_hook');
+    remove_all_actions('slimstat_daily_cron_hook'); remove_all_actions('slimstat_initial_notification_fetch');
     new CronEventManager();
     $jobs = 0;
     foreach (_get_cron_array() as $events) $jobs += count($events['slimstat_daily_cron_hook'] ?? []);
     $same(1, $jobs, 'Duplicate daily schedules repaired');
     $same($next, wp_next_scheduled('slimstat_daily_cron_hook'), 'Repair preserves next due time');
     wp_clear_scheduled_hook('slimstat_daily_cron_hook');
+    remove_all_actions('slimstat_daily_cron_hook'); remove_all_actions('slimstat_initial_notification_fetch');
     new CronEventManager();
     $same(true, (bool) wp_next_scheduled('slimstat_daily_cron_hook'), 'Missing daily schedule repaired');
     $fetcher = new NotificationFetcher();
@@ -75,6 +90,7 @@ try {
     $payload = ['data' => []];
     $same(true, $fetcher->fetchNotification(true), 'Empty feed is successful');
     wp_clear_scheduled_hook('slimstat_initial_notification_fetch');
+    remove_all_actions('slimstat_daily_cron_hook'); remove_all_actions('slimstat_initial_notification_fetch');
     new CronEventManager();
     $same(false, wp_next_scheduled('slimstat_initial_notification_fetch'), 'Empty successful feed does not reschedule initialization');
     $payload = ['data' => [['id' => 987654, 'title' => 'Fixture', 'activated_at' => '2020-01-01']]];
@@ -86,11 +102,11 @@ try {
     $same(0, NotificationFactory::getNewNotificationCount(), 'Conditional response preserves dismissal');
     $responseCode = 200;
     $payload['data'][] = ['id' => 987655, 'title' => 'New', 'activated_at' => '2020-01-01'];
-    $GLOBALS['notification_test_now'] += DAY_IN_SECONDS;
+    $GLOBALS['notification_test_now'] += DAY_IN_SECONDS - HOUR_IN_SECONDS;
     $started = microtime(true); $queries = $GLOBALS['wpdb']->num_queries; $attempts = $requests;
     do_action('slimstat_daily_cron_hook');
     $cronMetrics = ['ms' => round((microtime(true) - $started) * 1000, 3), 'queries' => $GLOBALS['wpdb']->num_queries - $queries, 'http' => $requests - $attempts];
-    $same(1, NotificationFactory::getNewNotificationCount(), 'New eligible item arrives on next due daily check');
+    $same(1, NotificationFactory::getNewNotificationCount(), 'A due daily check fetches even when yesterday ran an hour late');
     $valid = get_option('wp_slimstat_notifications');
     foreach (['invalid-json', ['unexpected' => []], ['data' => [['id' => []]]], ['data' => [['id'=>9,'title'=>'Bad','background_color'=>[]]]], ['data' => [['id'=>9,'title'=>'Bad','description'=>'[1,2]']]]] as $bad) {
         $payload = $bad;
@@ -120,6 +136,7 @@ try {
     echo "PASS: automatic delivery, cache, empty feed, unchanged writes, scope, concurrency, expiry, backoff and recovery\n";
     echo wp_json_encode(['cached_render'=>$renderMetrics, 'due_job_mocked_http'=>$cronMetrics]) . "\n";
 } finally {
+    if (isset($race)) remove_filter('query', $race);
     remove_filter('pre_http_request', $http, 10);
     \wp_slimstat::$settings = $saved;
     foreach ($before as $key => $value) { $value === false ? delete_option($key) : update_option($key, $value); }

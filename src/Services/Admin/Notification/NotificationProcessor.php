@@ -129,6 +129,7 @@ class NotificationProcessor
 				: OptionClaim::compareAndSwap($key, serialize($old), serialize($new));
 			if ($won) return true;
 			\wp_cache_delete($key, 'options');
+			\wp_cache_delete('notoptions', 'options');
 		}
 		return false;
 	}
