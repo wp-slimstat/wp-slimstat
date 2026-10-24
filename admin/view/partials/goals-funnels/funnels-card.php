@@ -45,7 +45,7 @@ if ($locked) :
                 <div class="slimstat-gf-funnel-bar" style="width:12%;"></div>
             </div>
         </div>
-        <h3 class="slimstat-gf-upsell__title"><?php esc_html_e('Find the step where visitors leave', 'wp-slimstat'); ?></h3>
+        <strong class="slimstat-gf-upsell__title"><?php esc_html_e('Find the step where visitors leave', 'wp-slimstat'); ?></strong>
         <?php wp_slimstat_admin::get_template('pro-adds', ['text' => __('Pick the steps that lead to a sale or sign-up, such as product, cart and checkout. Pro funnels read the visits SlimStat already records, so your first report covers past traffic with no extra tracking code.', 'wp-slimstat'), 'campaign' => 'funnel', 'content' => 'card']); ?>
     </div>
 </section>

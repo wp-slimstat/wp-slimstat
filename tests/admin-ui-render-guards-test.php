@@ -18,6 +18,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/lib/source-scan.php';
+
 $failures = 0;
 function check(bool $ok, string $msg): void
 {
@@ -141,8 +143,8 @@ check(false !== strpos(read_or_die('admin/view/partials/header.php'), "show_late
 check(false !== strpos(read_or_die('src/Migration/MigrationService.php'), 'public static function manager(): ?MigrationManager'), 'Release notice: MigrationService exposes the manager so the notice can wait for migrations');
 // Plugin Check (WordPress.Security.EscapeOutput) flags `echo $var` even when $var holds escaped
 // pieces, so each placement is assembled first and echoed once through wp_kses_post().
-preg_match('/public static function show_latest_news\(.*?\n    \}\n/s', $admin, $notice);
-check(2 === preg_match_all('/\becho\b/', $notice[0] ?? '') && 2 === substr_count($notice[0] ?? '', 'echo wp_kses_post('), 'Release notice: both placements echo once, through wp_kses_post()');
+$notice = slimstat_function_body($admin, 'show_latest_news');
+check(2 === preg_match_all('/\becho\b/', $notice) && 2 === substr_count($notice, 'echo wp_kses_post('), 'Release notice: both placements echo once, through wp_kses_post()');
 
 // --- Pro links (tests/Integration/ProLinksTest.php covers Export and the Channels row) ---
 $upgrade = read_or_die('admin/view/upgrade-pro.php');

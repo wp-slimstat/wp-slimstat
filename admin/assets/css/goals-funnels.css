@@ -48,6 +48,10 @@
     overflow: visible !important;
 }
 
+/* The legacy report body reserves a 45px footer gap; the modern cards have no footer. */
+.postbox:has(> .inside > .slimstat-gf-card) > .inside,
+.postbox:has(> .inside > * > .slimstat-gf-card) > .inside { margin-bottom: 0 !important; }
+
 /* Comfortable internal padding for the compact dashboard widgets — their content
    would otherwise sit flush against the postbox edges. The Funnels widget pads
    itself (.slimstat-funnel-widget below), so zero its postbox padding to avoid
@@ -99,8 +103,13 @@
    - wp_slimstat_admin::inject_goals_funnels_header_subtitle()
    - wp_slimstat_admin::inject_goals_funnels_header_actions() */
 
-.slimstat-gf-postbox-subtitle {
-    margin: var(--ss-space-1) 0 var(--ss-space-2);
+/* `.postbox` scoping outranks the legacy `[id^="slim_"] p` row rule (10px inset, divider,
+   min-height); the subtitle sits under the title text, on the h3's 15px inset. */
+.postbox .slimstat-gf-postbox-subtitle {
+    min-height: 0;
+    margin: calc(-1 * var(--ss-space-2)) 0 0;
+    padding: 0 15px;
+    border-bottom: 0;
     font-size: var(--ss-text-base);
     font-weight: normal;
     color: var(--ss-text-secondary);
@@ -373,9 +382,9 @@
     font-weight: 600;
 }
 
-/* The IDs outrank the legacy `.wrap-slimstat .meta-box-sortables .postbox h3` header rule. */
-#slim_p9_01 .slimstat-gf-upsell__title,
-#slim_p9_02 .slimstat-gf-upsell__title {
+/* A <strong>, not a heading: the postbox already has its h3, so the legacy
+   `.wrap-slimstat .meta-box-sortables .postbox h3` rule never reaches this title. */
+.slimstat-gf-upsell__title {
     display: block;
     margin: 0 0 var(--ss-space-1);
     padding: 0;
@@ -396,7 +405,8 @@
     background: transparent;
 }
 
-/* Beats the legacy `[id^="slim_"] p` row rule (10px inset, divider). */
+/* tokens.css already flattens `.slimstat-pro-adds p`; this resets the legacy row rule's
+   min-height and sets the tighter measure and quieter colour the panel wants. */
 .slimstat-gf-upsell .slimstat-pro-adds p {
     max-width: none;
     min-height: 0;
@@ -1517,19 +1527,7 @@
     box-sizing: border-box;
 }
 /* The card padding now supplies part of the empty state's 32px/20px inset. */
-#slim_p9_01 .slimstat-gf-empty { padding: var(--ss-space-4) var(--ss-space-1); }
-/* The legacy report body reserves a 45px footer gap; these cards have no footer. */
-.postbox:has(> .inside > .slimstat-gf-card) > .inside,
-.postbox:has(> .inside > * > .slimstat-gf-card) > .inside { margin-bottom: 0 !important; }
-/* The legacy `[id^="slim_"] p` row rule (10px inset, divider) beats the subtitle's
-   class; sit it under the title text, on the h3's 15px inset. */
-#slim_p9_01 .slimstat-gf-postbox-subtitle,
-#slim_p9_02 .slimstat-gf-postbox-subtitle {
-    min-height: 0;
-    margin: calc(-1 * var(--ss-space-2)) 0 0;
-    padding: 0 15px;
-    border-bottom: 0;
-}
+.slimstat-gf-card .slimstat-gf-empty { padding: var(--ss-space-4) var(--ss-space-1); }
 #slim_p9_01 .slimstat-gf-rule-chip { flex-wrap: wrap; }
 #slim_p9_02 .slimstat-gf-funnel-panel__name,
 #slim_p9_02 .slimstat-gf-step__name { min-width: 0; overflow-wrap: anywhere; }
