@@ -359,7 +359,7 @@
 
 .slimstat-gf-upsell {
     margin: var(--ss-space-4) 0 0;
-    padding: var(--ss-space-3) var(--ss-space-4);
+    padding: var(--ss-space-4);
     background: var(--ss-warning-bg);
     /* Full 1px border + tint, not a colored side-stripe (impeccable ban, FN-5). */
     border: 1px solid var(--ss-warning-fg);
@@ -1508,10 +1508,34 @@
 }
 
 /* Match the report header's inner margin without changing compact widgets. */
+#slim_p9_01 .slimstat-gf-goals,
 #slim_p9_02 .slimstat-gf-funnels:not(.slimstat-gf-funnels--locked) {
     padding: var(--ss-space-4);
     box-sizing: border-box;
 }
+/* The card padding now supplies part of the empty state's 32px/20px inset. */
+#slim_p9_01 .slimstat-gf-empty { padding: var(--ss-space-4) var(--ss-space-1); }
+/* The legacy report body reserves a 45px footer gap; these cards have no footer. */
+.postbox:has(> .inside > .slimstat-gf-card) > .inside,
+.postbox:has(> .inside > * > .slimstat-gf-card) > .inside { margin-bottom: 0 !important; }
+/* The legacy `[id^="slim_"] p` row rule (10px inset, divider) beats the subtitle's
+   class; sit it under the title text, on the h3's 15px inset. */
+#slim_p9_01 .slimstat-gf-postbox-subtitle,
+#slim_p9_02 .slimstat-gf-postbox-subtitle {
+    min-height: 0;
+    margin: calc(-1 * var(--ss-space-2)) 0 0;
+    padding: 0 15px;
+    border-bottom: 0;
+}
+/* One callout, not a card inside a card: the yellow note holds the Pro pitch directly. */
+.slimstat-gf-upsell .slimstat-pro-adds {
+    margin: var(--ss-space-2) 0 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+.slimstat-gf-upsell .slimstat-pro-adds p { font-size: inherit; color: inherit; }
+#slim_p9_01 .slimstat-gf-rule-chip { flex-wrap: wrap; }
 #slim_p9_02 .slimstat-gf-funnel-panel__name,
 #slim_p9_02 .slimstat-gf-step__name { min-width: 0; overflow-wrap: anywhere; }
 #slim_p9_02 .slimstat-gf-step__head { flex-wrap: wrap; gap: var(--ss-space-2); }

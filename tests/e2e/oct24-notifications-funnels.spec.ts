@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { runWordPressFixture } from './helpers/chart';
 import { closeDb, snapshotOption, restoreOption, snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions } from './helpers/setup';
-import { seedFunnels, forceLimits, restoreDefaultLimits, clearAll } from './helpers/goals-funnels';
+import { seedFunnels, seedGoals, forceLimits, restoreDefaultLimits, clearAll } from './helpers/goals-funnels';
+import { getProState } from './helpers/pro-state';
 import { WP_ROOT } from './helpers/env';
 import path from 'path';
 
@@ -77,6 +78,55 @@ test('funnel content retains inner margins with long titles, five steps, mobile 
   } finally {
     await restoreDefaultLimits(content);
     await restoreOption('slimstat_funnels');
+    await restoreSlimstatOptions();
+  }
+});
+
+test('goals box keeps inner margins, a flat upsell and no footer gap on desktop, mobile and RTL', async ({page}, info) => {
+  await snapshotSlimstatOptions();
+  await snapshotOption('slimstat_goals');
+  const content=path.join(WP_ROOT,'wp-content');
+  try {
+    await setSlimstatOptions({async_load:'no'});
+    await restoreDefaultLimits(content);
+    await seedGoals([{name:'Long goal title '.repeat(6),dimension:'resource',operator:'contains',value:'/?utm_source=facebook&utm_medium=paid_social&utm_campaign=fall-sale-2026&utm_content=video-15s'}]);
+    const pro=await getProState(page);
+    for(const width of [1440,390]) {
+      await page.setViewportSize({width,height:900});
+      await page.goto('/wp-admin/admin.php?page=slimview6');
+      const box=page.locator('#slim_p9_01');
+      await expect(box.locator('.slimstat-gf-goal')).toBeVisible();
+      // Free at its one-goal cap shows the upsell; Pro has room for five.
+      await expect(box.locator('.slimstat-gf-upsell')).toHaveCount(pro.pro_activated?0:1);
+      for(const dir of ['ltr','rtl']) {
+        await page.evaluate(dir=>document.documentElement.dir=dir,dir);
+        const m=await box.evaluate((box,rtl)=>{
+          const card=box.querySelector('.slimstat-gf-goals').getBoundingClientRect();
+          const inset=el=>{const r=el.getBoundingClientRect();return {left:r.left-card.left,right:card.right-r.right};};
+          const blocks=[...box.querySelectorAll('.slimstat-gf-goal, .slimstat-gf-upsell')];
+          const title=box.querySelector('h3 .slimstat-nowrap').getBoundingClientRect();
+          const range=document.createRange();range.selectNodeContents(box.querySelector('.slimstat-gf-postbox-subtitle'));
+          const sub=range.getBoundingClientRect();
+          const nested=box.querySelector('.slimstat-gf-upsell .slimstat-pro-adds');
+          const style=nested&&getComputedStyle(nested);
+          return {
+            insets:blocks.map(inset),
+            subtitleOffset:rtl?title.right-sub.right:sub.left-title.left,
+            footerGap:box.getBoundingClientRect().bottom-blocks[blocks.length-1].getBoundingClientRect().bottom,
+            nestedCard:!!style&&(style.borderTopWidth!=='0px'||style.backgroundColor!=='rgba(0, 0, 0, 0)'),
+            overflow:box.scrollWidth>box.clientWidth+1,
+          };
+        },dir==='rtl');
+        for(const b of m.insets){expect(b.left).toBeGreaterThanOrEqual(15);expect(b.right).toBeGreaterThanOrEqual(15);}
+        expect(Math.abs(m.subtitleOffset)).toBeLessThanOrEqual(2);
+        expect(m.footerGap).toBeLessThanOrEqual(24);
+        expect(m.nestedCard).toBe(false);
+        expect(m.overflow).toBe(false);
+        await box.screenshot({path:info.outputPath(`goals-${width}-${dir}.png`)});
+      }
+    }
+  } finally {
+    await restoreOption('slimstat_goals');
     await restoreSlimstatOptions();
   }
 });
