@@ -1,11 +1,12 @@
-= 6.0.0 - 2026-10-12 =
+= 6.0.0 - 2026-10-24 =
 
-**SlimStat 6: see where visitors click, which campaigns bring sales, and trust every number.** Update with confidence: your settings and data carry over, and the optional database steps wait for your click.
+**SlimStat 6 is here: see where visitors click, which campaigns bring sales, and trust every number.** It is the biggest SlimStat release in years and the safest to install: your settings and data carry over, nothing in your database changes until you click, and older versions keep working if you ever go back.
 
 **New: Heatmaps**
-* A Heatmaps page lists every page with clicks: clicks, pageviews, clicks per pageview, device split and last click. Search, sort and pick any date range. Open it from the menu or the Heatmap button in the admin bar.
-* Your existing link and button clicks show up right away. Without Pro, "View heatmap" reveals each page's five most clicked links and buttons.
+* A Heatmaps page lists every page visitors click on: clicks, pageviews, clicks per pageview, device split and the last click. Search, sort and pick any date range. Open it from the SlimStat menu or the Heatmap button in the admin bar.
+* The link and button clicks SlimStat already recorded show up right away. Without Pro, "View heatmap" reveals each page's five most clicked links and buttons.
 * With SlimStat Pro, opt-in recording captures clicks on any element, scroll depth, dead clicks and rage clicks on a sampled share of the pages you choose. It follows consent and Do Not Track and never stores what visitors type.
+* Every click keeps the screen size it was recorded at, so heatmap points land where people really clicked, on phones, tablets and desktops alike.
 * Heatmap data lives in its own tables, respects restricted-author permissions and follows your retention, privacy-erasure and uninstall settings. Deleting it asks you to type a confirmation.
 
 **New: Channels and UTM Campaigns**
@@ -16,7 +17,7 @@
 * Attribution starts with new pageviews; existing pageviews stay unattributed.
 
 **New: WooCommerce revenue dashboard**
-* Net sales, orders, period comparisons, top products, acquisition and a consented purchase journey, with interactive metric charts, tabbed revenue rankings and inline drill-downs.
+* Your store's numbers next to your traffic, on your own server: net sales, orders, period comparisons, top products, acquisition and a consented purchase journey, with interactive metric charts, tabbed revenue rankings and inline drill-downs.
 * Currency, refunds, purchase rate and unmatched orders have clear definitions, configured WooPayments currencies are included, and charts explain their gaps.
 * Setup is opt-in. Order sync runs in small background jobs, supports HPOS and legacy storage, and follows your dates, filters, saved segments, retention and privacy erasure. See [the Ecommerce guide](docs/ecommerce.md).
 * If setup cannot finish, the Ecommerce page says why and offers a retry. A MyISAM analytics table is named as the cause, with the fix: convert it to InnoDB.
@@ -29,6 +30,9 @@
 * One voice and native WordPress controls everywhere: consistent wording, accessible dialogs, the WordPress focus ring, higher-contrast fields and one pagination style.
 * Empty reports explain why and what to do next, and a Get started panel helps new sites record their first pageview.
 * Free screens show what Pro adds honestly, with no blurred mock reports. Email Report previews the weekly email built from your own last 7 days and sends you a sample. Export opens the Pro page instead of posting your filters to wp-slimstat.com.
+* Goals and Funnels share one tidy Pro panel in both boxes, with even spacing, and the locked Funnels preview names the five ready-made templates Pro ships instead of a vague sample.
+* The admin bar's Online preview is back, chart included, with "See traffic as it happens" and a keyboard-accessible "See Pro plans" action for administrators.
+* Notifications arrive on schedule again, not only when you press Refresh. Dismissals stick across the site, and drawing a report never makes a notification request.
 * Changing dates keeps your filters, and saved segments keep their dates.
 * "New" badges mark each new menu page for 15 days.
 * The SlimStat menu moves up the sidebar, above Appearance, instead of sitting below Settings.
@@ -68,6 +72,7 @@
 * Uninstall always removes the rebuildable browser-detection cache; the geolocation database goes only with full data deletion. Deactivating clears the daily salt task.
 * Migrations never run twice at once, resume from checkpoints and can be switched off. The heat-map position repair finishes instead of offering itself forever.
 * Reports verified byte-identical on MySQL 5.6, 5.7 and 8.0. Supports PHP 7.4+ and WordPress 5.6+, tested up to WordPress 7.1, with fewer PHP notices on older setups.
+* Passes the WordPress.org Plugin Check, apart from the bundled third-party libraries and the long-standing note about the plugin's own slug.
 * Dependencies build reproducibly from the lockfile with WP Scoper. ([#339](https://github.com/wp-slimstat/wp-slimstat/issues/339))
 
 **Security and privacy**

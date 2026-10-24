@@ -6,19 +6,18 @@ rationale: Deletes the Upgrade Notice entry and makes the changelog heading `= 6
 ---
 --- a/readme.txt
 +++ b/readme.txt
-@@ -111,13 +111,9 @@
+@@ -125,13 +125,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
  
  == Upgrade Notice ==
  
-+== Changelog ==
-+
- = 6.0.0 =
--Back up first. Adds columns/indexes and removes no rows. Older versions keep working; added columns stay. Migration steps wait for your click. Some metrics change: see changelog. Pro adds detailed heatmaps and scheduled reports.
+-= 6.0.0 =
+-SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster reports. Back up first. The update adds columns and indexes and removes no rows; older versions keep working and the added columns stay. Database steps wait for your click. Some totals change on purpose: see changelog.
 -
 -
--== Changelog ==
--
--= 6.0.0 - 2026-10-12 =
+ == Changelog ==
  
- **SlimStat 6: see where visitors click, which campaigns bring sales, and trust every number.** Update with confidence: your settings and data carry over, and the optional database steps wait for your click.
+-= 6.0.0 - 2026-10-24 =
++= 6.0.0 =
+ 
+ **SlimStat 6 is here: see where visitors click, which campaigns bring sales, and trust every number.** It is the biggest SlimStat release in years and the safest to install: your settings and data carry over, nothing in your database changes until you click, and older versions keep working if you ever go back.
  

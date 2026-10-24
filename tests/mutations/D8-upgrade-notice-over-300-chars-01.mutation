@@ -2,16 +2,16 @@ target:    readme.txt
 gate:      composer test:db-floor-metadata
 kind:      introduce-defect
 expect:    past the 300-character guideline
-rationale: Appends one sentence to the 6.0.0 notice, taking it to 354 bytes; the three rollback-fact regexes still match, so only the length check can fire.
+rationale: Appends one sentence to the 6.0.0 notice, taking it to 438 bytes; the three rollback-fact regexes still match, so only the length check can fire.
 ---
 --- a/readme.txt
 +++ b/readme.txt
-@@ -112,7 +112,7 @@
+@@ -126,7 +126,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
  == Upgrade Notice ==
  
  = 6.0.0 =
--Back up first. Adds columns/indexes and removes no rows. Older versions keep working; added columns stay. Migration steps wait for your click. Some metrics change: see changelog. Pro adds detailed heatmaps and scheduled reports.
-+Back up first. Adds columns/indexes and removes no rows. Older versions keep working; added columns stay. Migration steps wait for your click. Some metrics change: see changelog. Pro adds detailed heatmaps and scheduled reports. Read the full release notes and review every migration step on wordpress.org before you begin this update. Keep a separate backup for recovery.
+-SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster reports. Back up first. The update adds columns and indexes and removes no rows; older versions keep working and the added columns stay. Database steps wait for your click. Some totals change on purpose: see changelog.
++SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster reports. Back up first. The update adds columns and indexes and removes no rows; older versions keep working and the added columns stay. Database steps wait for your click. Some totals change on purpose: see changelog. Read the full release notes and review every migration step on wordpress.org before you begin this update. Keep a separate backup for recovery.
  
  
  == Changelog ==
