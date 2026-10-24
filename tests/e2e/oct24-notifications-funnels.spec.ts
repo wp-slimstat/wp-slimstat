@@ -130,3 +130,48 @@ test('goals box keeps inner margins, a flat upsell and no footer gap on desktop,
     await restoreSlimstatOptions();
   }
 });
+
+test('locked funnels preview shows the funnel shape and one flat, unclipped pitch on desktop, mobile and RTL', async ({page}, info) => {
+  await snapshotSlimstatOptions();
+  const content=path.join(WP_ROOT,'wp-content');
+  try {
+    await setSlimstatOptions({async_load:'no'});
+    await forceLimits(1,0,content);
+    for(const width of [1440,390]) {
+      await page.setViewportSize({width,height:900});
+      await page.goto('/wp-admin/admin.php?page=slimview6');
+      const box=page.locator('#slim_p9_02');
+      await expect(box.locator('.slimstat-gf-funnels--locked')).toBeVisible();
+      await expect(box).not.toContainText('Example funnel');
+      for(const dir of ['ltr','rtl']) {
+        await page.evaluate(dir=>document.documentElement.dir=dir,dir);
+        const m=await box.evaluate(box=>{
+          const lock=box.querySelector('.slimstat-gf-funnel-lock');
+          const mock=box.querySelector('.slimstat-gf-funnel-mock');
+          const adds=box.querySelector('.slimstat-gf-funnel-lock__overlay .slimstat-pro-adds');
+          const pitch=adds.querySelector('p').getBoundingClientRect();
+          const last=[...lock.querySelectorAll('.slimstat-gf-funnel-lock__overlay *')].pop().getBoundingClientRect();
+          const s=getComputedStyle(adds);
+          return {
+            blur:parseFloat((getComputedStyle(mock).filter.match(/blur\(([\d.]+)px\)/)||[0,99])[1]),
+            paragraphs:box.querySelectorAll('.slimstat-gf-funnel-lock__overlay p').length,
+            nestedCard:s.borderTopWidth!=='0px'||s.backgroundColor!=='rgba(0, 0, 0, 0)',
+            pitchOnBars:pitch.top<mock.getBoundingClientRect().bottom-1,
+            clipped:last.bottom>lock.getBoundingClientRect().bottom+1||lock.scrollHeight>lock.clientHeight+1,
+            overflow:box.scrollWidth>box.clientWidth+1,
+          };
+        });
+        expect(m.blur).toBeLessThanOrEqual(1.5);
+        expect(m.paragraphs).toBe(1);
+        expect(m.nestedCard).toBe(false);
+        expect(m.pitchOnBars).toBe(false);
+        expect(m.clipped).toBe(false);
+        expect(m.overflow).toBe(false);
+        await box.screenshot({path:info.outputPath(`locked-funnels-${width}-${dir}.png`)});
+      }
+    }
+  } finally {
+    await restoreDefaultLimits(content);
+    await restoreSlimstatOptions();
+  }
+});

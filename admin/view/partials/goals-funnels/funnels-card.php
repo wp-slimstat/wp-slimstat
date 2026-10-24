@@ -46,10 +46,8 @@ if ($locked) :
             </div>
         </div>
         <div class="slimstat-gf-funnel-lock__overlay">
-            <p class="slimstat-gf-funnel-lock__caption"><?php esc_html_e('Example funnel', 'wp-slimstat'); ?></p>
-            <h3><?php esc_html_e('See where visitors drop off, step by step.', 'wp-slimstat'); ?></h3>
-            <p><?php esc_html_e('Build 2 to 5 step funnels and see exactly where visitors drop off at each stage. Available in SlimStat Pro.', 'wp-slimstat'); ?></p>
-            <?php wp_slimstat_admin::get_template('pro-adds', ['text' => __('Unlock funnel reports with Pro.', 'wp-slimstat'), 'campaign' => 'funnel', 'content' => 'card']); ?>
+            <h3><?php esc_html_e('Find the step where visitors leave', 'wp-slimstat'); ?></h3>
+            <?php wp_slimstat_admin::get_template('pro-adds', ['text' => __('Pick the steps that lead to a sale or sign-up, such as product, cart and checkout. Pro funnels read the visits SlimStat already records, so your first report covers past traffic with no extra tracking code.', 'wp-slimstat'), 'campaign' => 'funnel', 'content' => 'card']); ?>
         </div>
     </div>
 </section>

@@ -70,13 +70,17 @@ class GoalsFunnelsPolishTest extends TestCase
         $this->assertStringNotContainsString('8px 0 24px rgba(15, 23, 42, 0.08)', $css, 'RTL shadow literal must be tokenized (FN-18)');
     }
 
-    // ── FN-20: locked mock labelled as illustrative ──
+    // ── FN-20 (revised 2026-10-24): the unlabelled bars are decoration, so no
+    //    "Example funnel" caption; they stay hidden from assistive tech and the
+    //    section label names the preview instead. ──
 
-    public function test_locked_mock_has_example_caption(): void
+    public function test_locked_mock_is_decorative_without_caption(): void
     {
         $php = file_get_contents($this->partialPath('funnels-card.php'));
-        $this->assertStringContainsString('slimstat-gf-funnel-lock__caption', $php, 'Locked mock needs an "example" caption (FN-20)');
-        $this->assertStringContainsString('Example funnel', $php, 'Caption copy missing (FN-20)');
+        $this->assertStringNotContainsString('slimstat-gf-funnel-lock__caption', $php, 'Caption was removed on request; do not bring it back');
+        $this->assertStringNotContainsString('Example funnel', $php);
+        $this->assertStringContainsString('<div class="slimstat-gf-funnel-mock" aria-hidden="true">', $php, 'Preview bars must stay aria-hidden');
+        $this->assertStringContainsString("'Funnels: Pro feature preview'", $php, 'Section label must still name the preview');
     }
 
     // ── Copy (FN-14 remainder): sentence-case CTAs, no en dashes, value placeholder ──

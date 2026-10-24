@@ -602,18 +602,20 @@
 /* Locked state (Free) */
 
 .slimstat-gf-funnels--locked .slimstat-gf-funnel-lock {
-    position: relative;
-    min-height: 280px;
     overflow: hidden;
     border-radius: var(--ss-radius-md);
     background: var(--ss-surface-tint);
     padding: var(--ss-space-6);
 }
 
+/* The bars stay legible as a funnel and fade out above the pitch, so the copy
+   sits in normal flow on the plain tint: never clipped, never on a bar. */
 .slimstat-gf-funnel-mock {
-    filter: blur(4px);
-    opacity: 0.45;
+    filter: blur(1px);
+    opacity: 0.6;
     pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent);
+    mask-image: linear-gradient(to bottom, black 40%, transparent);
 }
 
 .slimstat-gf-funnel-bars {
@@ -629,37 +631,38 @@
 }
 
 .slimstat-gf-funnel-lock__overlay {
-    position: absolute;
-    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     text-align: center;
-    padding: var(--ss-space-6);
-    background: var(--ss-overlay);
 }
 
-.slimstat-gf-funnel-lock__overlay h3 {
+/* The ID outranks the legacy `.wrap-slimstat .meta-box-sortables .postbox h3` header rule. */
+#slim_p9_02 .slimstat-gf-funnel-lock__overlay h3 {
     margin: 0 0 var(--ss-space-2);
-    font-size: var(--ss-text-xl);
+    font-size: var(--ss-text-lg);
     color: var(--ss-text-primary);
 }
 
-.slimstat-gf-funnel-lock__overlay p {
-    margin: 0 0 var(--ss-space-4);
-    color: var(--ss-text-secondary);
-    max-width: 420px;
+/* One centred pitch, not a card inside the preview. */
+.slimstat-gf-funnel-lock__overlay .slimstat-pro-adds {
+    justify-content: center;
+    max-width: 56ch;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
 }
 
-/* Small label so the blurred bars read as illustrative, not real data (FN-20). */
-.slimstat-gf-funnel-lock__caption {
-    margin: 0 0 var(--ss-space-2);
-    font-size: var(--ss-text-xs);
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--ss-text-tertiary);
+/* Beats the legacy `[id^="slim_"] p` row rule (10px inset, divider). */
+.slimstat-gf-funnel-lock__overlay .slimstat-pro-adds p {
+    max-width: none;
+    min-height: 0;
+    margin: 0 0 var(--ss-space-1);
+    padding: 0;
+    border: 0;
+    font-size: var(--ss-text-base);
+    color: var(--ss-text-secondary);
 }
 
 /* "See templates" reveal — keeps the prefab gallery reachable once funnels exist

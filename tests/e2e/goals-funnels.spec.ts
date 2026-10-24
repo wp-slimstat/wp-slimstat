@@ -910,7 +910,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         // Funnels locked preview headline.
         await expect(page.locator('.slimstat-gf-funnel-lock__overlay h3'))
-            .toContainText('See where visitors drop off, step by step');
+            .toContainText('Find the step where visitors leave');
 
         // Funnels subtitle (now under postbox <h3>, not inside the card).
         await expect(page.locator('#slim_p9_02 .slimstat-gf-postbox-subtitle'))
