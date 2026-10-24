@@ -30,39 +30,11 @@ if (!defined('ABSPATH')) {
 $funnel_count = is_array($funnels) ? count($funnels) : 0;
 $locked       = $max_funnels <= 0; // Free tier — never rendered via this partial for Pro
 
-// Heading (title + subtitle) and actions (usage pill + Add CTA) now live in the
-// postbox header — see wp_slimstat_admin::register_goals_funnels_header_hooks().
-if ($locked) :
-?>
-<section class="slimstat-gf-card slimstat-gf-funnels slimstat-gf-funnels--locked" data-component="funnels" aria-label="<?php esc_attr_e('Funnels: Pro feature preview', 'wp-slimstat'); ?>">
-    <div class="slimstat-gf-funnel-lock">
-        <div class="slimstat-gf-funnel-mock" aria-hidden="true">
-            <div class="slimstat-gf-funnel-bars">
-                <div class="slimstat-gf-funnel-bar" style="width:100%;"></div>
-                <div class="slimstat-gf-funnel-bar" style="width:72%;"></div>
-                <div class="slimstat-gf-funnel-bar" style="width:48%;"></div>
-                <div class="slimstat-gf-funnel-bar" style="width:28%;"></div>
-                <div class="slimstat-gf-funnel-bar" style="width:12%;"></div>
-            </div>
-        </div>
-        <div class="slimstat-gf-funnel-lock__overlay">
-            <p class="slimstat-gf-funnel-lock__caption"><?php esc_html_e('Example funnel', 'wp-slimstat'); ?></p>
-            <h3><?php esc_html_e('See where visitors drop off, step by step.', 'wp-slimstat'); ?></h3>
-            <p><?php esc_html_e('Build 2 to 5 step funnels and see exactly where visitors drop off at each stage. Available in SlimStat Pro.', 'wp-slimstat'); ?></p>
-            <?php wp_slimstat_admin::get_template('pro-adds', ['text' => __('Unlock funnel reports with Pro.', 'wp-slimstat'), 'campaign' => 'funnel', 'content' => 'card']); ?>
-        </div>
-    </div>
-</section>
-<?php
-    return;
-endif;
-
-$at_max = $funnel_count >= $max_funnels;
-
-// Template cards — shared by the empty state and the "See templates" reveal that
-// keeps templates reachable after the first funnel exists (#7). Each `key` must
-// match a FUNNEL_TEMPLATES entry in admin/assets/js/goals-funnels.js. Strings
-// are wrapped in __() inline so the WP i18n extractor still finds them.
+// Template cards — shared by the empty state, the "See templates" reveal that
+// keeps templates reachable after the first funnel exists (#7), and the Free
+// preview, which lists their titles so the pitch names something concrete. Each
+// `key` must match a FUNNEL_TEMPLATES entry in admin/assets/js/goals-funnels.js.
+// Strings are wrapped in __() inline so the WP i18n extractor still finds them.
 $template_cards = [
     [
         'key'   => 'woocommerce_purchase',
@@ -100,6 +72,41 @@ $template_cards = [
         'modifier' => 'slimstat-gf-template-card--cta',
     ],
 ];
+
+// Heading (title + subtitle) and actions (usage pill + Add CTA) now live in the
+// postbox header — see wp_slimstat_admin::register_goals_funnels_header_hooks().
+if ($locked) :
+?>
+<section class="slimstat-gf-card slimstat-gf-funnels slimstat-gf-funnels--locked" data-component="funnels" aria-label="<?php esc_attr_e('Funnels: Pro feature preview', 'wp-slimstat'); ?>">
+    <div class="slimstat-gf-funnel-lock slimstat-gf-upsell">
+        <div class="slimstat-gf-funnel-mock" aria-hidden="true">
+            <div class="slimstat-gf-funnel-bars">
+                <div class="slimstat-gf-funnel-bar" style="width:100%;"></div>
+                <div class="slimstat-gf-funnel-bar" style="width:72%;"></div>
+                <div class="slimstat-gf-funnel-bar" style="width:48%;"></div>
+                <div class="slimstat-gf-funnel-bar" style="width:28%;"></div>
+                <div class="slimstat-gf-funnel-bar" style="width:12%;"></div>
+            </div>
+        </div>
+        <strong class="slimstat-gf-upsell__title"><?php esc_html_e('Find the step where visitors leave', 'wp-slimstat'); ?></strong>
+        <?php /* The same titles the Pro picker shows; the steps ride along as a tooltip.
+                 Plain list items, not buttons: on Free there is nothing to open. */ ?>
+        <ul class="slimstat-gf-upsell__templates" aria-label="<?php esc_attr_e('Funnel templates included with Pro', 'wp-slimstat'); ?>">
+            <?php foreach ($template_cards as $card) :
+                if ('blank' === $card['key']) {
+                    continue;
+                } ?>
+                <li title="<?php echo esc_attr($card['body']); ?>"><?php echo esc_html($card['title']); ?></li>
+            <?php endforeach; ?>
+        </ul>
+        <?php wp_slimstat_admin::get_template('pro-adds', ['text' => __('Start from one of these templates or build your own. Pro funnels read the visits SlimStat already records, so your first report covers past traffic with no extra tracking code.', 'wp-slimstat'), 'campaign' => 'funnel', 'content' => 'card']); ?>
+    </div>
+</section>
+<?php
+    return;
+endif;
+
+$at_max = $funnel_count >= $max_funnels;
 ?>
 <section class="slimstat-gf-card slimstat-gf-funnels" data-component="funnels"
          data-gf-range-start="<?php echo esc_attr((string) ($gf_range_start ?? 0)); ?>"

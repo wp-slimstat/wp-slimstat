@@ -48,6 +48,10 @@
     overflow: visible !important;
 }
 
+/* The legacy report body reserves a 45px footer gap; the modern cards have no footer. */
+.postbox:has(> .inside > .slimstat-gf-card) > .inside,
+.postbox:has(> .inside > * > .slimstat-gf-card) > .inside { margin-bottom: 0 !important; }
+
 /* Comfortable internal padding for the compact dashboard widgets — their content
    would otherwise sit flush against the postbox edges. The Funnels widget pads
    itself (.slimstat-funnel-widget below), so zero its postbox padding to avoid
@@ -99,8 +103,13 @@
    - wp_slimstat_admin::inject_goals_funnels_header_subtitle()
    - wp_slimstat_admin::inject_goals_funnels_header_actions() */
 
-.slimstat-gf-postbox-subtitle {
-    margin: var(--ss-space-1) 0 var(--ss-space-2);
+/* `.postbox` scoping outranks the legacy `[id^="slim_"] p` row rule (10px inset, divider,
+   min-height); the subtitle sits under the title text, on the h3's 15px inset. */
+.postbox .slimstat-gf-postbox-subtitle {
+    min-height: 0;
+    margin: calc(-1 * var(--ss-space-2)) 0 0;
+    padding: 0 15px;
+    border-bottom: 0;
     font-size: var(--ss-text-base);
     font-weight: normal;
     color: var(--ss-text-secondary);
@@ -357,19 +366,78 @@
 
 /* ------- Upsell + hint ------- */
 
+/* One Pro pitch for Goals and Funnels: tint panel, title, one line of value, then
+   the actions on their own row. Full 1px border, never a side-stripe (FN-5). */
 .slimstat-gf-upsell {
     margin: var(--ss-space-4) 0 0;
-    padding: var(--ss-space-3) var(--ss-space-4);
-    background: var(--ss-warning-bg);
-    /* Full 1px border + tint, not a colored side-stripe (impeccable ban, FN-5). */
-    border: 1px solid var(--ss-warning-fg);
-    border-radius: var(--ss-radius-sm);
+    padding: var(--ss-space-5);
+    background: var(--ss-surface-tint);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-md);
     font-size: var(--ss-text-base);
     color: var(--ss-text-body);
 }
 
 .slimstat-gf-upsell a {
     font-weight: 600;
+}
+
+/* A <strong>, not a heading: the postbox already has its h3, so the legacy
+   `.wrap-slimstat .meta-box-sortables .postbox h3` rule never reaches this title. */
+.slimstat-gf-upsell__title {
+    display: block;
+    margin: 0 0 var(--ss-space-1);
+    padding: 0;
+    font-size: var(--ss-text-lg);
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: normal;
+    color: var(--ss-text-primary);
+}
+
+/* Free funnels preview: the prefab template titles as quiet pills under the title,
+   echoing the Pro picker's cards (surface + 1px border) at pill scale. */
+.slimstat-gf-upsell__templates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ss-space-2);
+    margin: var(--ss-space-2) 0 var(--ss-space-3);
+    padding: 0;
+    list-style: none;
+}
+
+.slimstat-gf-upsell__templates li {
+    margin: 0;
+    padding: var(--ss-space-1) var(--ss-space-3);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-pill);
+    background: var(--ss-surface);
+    font-size: var(--ss-text-sm);
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--ss-text-body);
+}
+
+/* Not a card inside the panel. The cap keeps the pitch at a readable measure and
+   sends the button and link to their own row. */
+.slimstat-gf-upsell .slimstat-pro-adds {
+    max-width: 64ch;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+/* tokens.css already flattens `.slimstat-pro-adds p`; this resets the legacy row rule's
+   min-height and sets the tighter measure and quieter colour the panel wants. */
+.slimstat-gf-upsell .slimstat-pro-adds p {
+    max-width: none;
+    min-height: 0;
+    margin: 0 0 var(--ss-space-1);
+    padding: 0;
+    border: 0;
+    font-size: var(--ss-text-base);
+    color: var(--ss-text-secondary);
 }
 
 .slimstat-gf-hint {
@@ -601,19 +669,21 @@
 
 /* Locked state (Free) */
 
+/* The panel itself is the shared `.slimstat-gf-upsell`; here it is the first child. */
 .slimstat-gf-funnels--locked .slimstat-gf-funnel-lock {
-    position: relative;
-    min-height: 280px;
+    margin: 0;
     overflow: hidden;
-    border-radius: var(--ss-radius-md);
-    background: var(--ss-surface-tint);
-    padding: var(--ss-space-6);
 }
 
+/* The bars stay legible as a funnel and fade out above the title, so the copy
+   sits in normal flow on the plain tint: never clipped, never on a bar. */
 .slimstat-gf-funnel-mock {
-    filter: blur(4px);
-    opacity: 0.45;
+    margin-bottom: var(--ss-space-4);
+    filter: blur(1px);
+    opacity: 0.6;
     pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent);
+    mask-image: linear-gradient(to bottom, black 40%, transparent);
 }
 
 .slimstat-gf-funnel-bars {
@@ -626,40 +696,6 @@
     border-radius: var(--ss-radius-sm);
     /* Decorative preview bars share the single neutral funnel fill. */
     background: var(--ss-funnel-bar);
-}
-
-.slimstat-gf-funnel-lock__overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: var(--ss-space-6);
-    background: var(--ss-overlay);
-}
-
-.slimstat-gf-funnel-lock__overlay h3 {
-    margin: 0 0 var(--ss-space-2);
-    font-size: var(--ss-text-xl);
-    color: var(--ss-text-primary);
-}
-
-.slimstat-gf-funnel-lock__overlay p {
-    margin: 0 0 var(--ss-space-4);
-    color: var(--ss-text-secondary);
-    max-width: 420px;
-}
-
-/* Small label so the blurred bars read as illustrative, not real data (FN-20). */
-.slimstat-gf-funnel-lock__caption {
-    margin: 0 0 var(--ss-space-2);
-    font-size: var(--ss-text-xs);
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--ss-text-tertiary);
 }
 
 /* "See templates" reveal — keeps the prefab gallery reachable once funnels exist
@@ -1508,10 +1544,14 @@
 }
 
 /* Match the report header's inner margin without changing compact widgets. */
-#slim_p9_02 .slimstat-gf-funnels:not(.slimstat-gf-funnels--locked) {
+#slim_p9_01 .slimstat-gf-goals,
+#slim_p9_02 .slimstat-gf-funnels {
     padding: var(--ss-space-4);
     box-sizing: border-box;
 }
+/* The card padding now supplies part of the empty state's 32px/20px inset. */
+.slimstat-gf-card .slimstat-gf-empty { padding: var(--ss-space-4) var(--ss-space-1); }
+#slim_p9_01 .slimstat-gf-rule-chip { flex-wrap: wrap; }
 #slim_p9_02 .slimstat-gf-funnel-panel__name,
 #slim_p9_02 .slimstat-gf-step__name { min-width: 0; overflow-wrap: anywhere; }
 #slim_p9_02 .slimstat-gf-step__head { flex-wrap: wrap; gap: var(--ss-space-2); }

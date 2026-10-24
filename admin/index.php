@@ -581,6 +581,7 @@ class wp_slimstat_admin
         if ($screen && 'dashboard' === $screen->id) {
             $icon  = '#toplevel_page_' . sanitize_html_class(self::$main_menu_slug) . ' div.wp-menu-image';
             $rings = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 20 20\' fill=\'none\' stroke=\'%23000\' stroke-width=\'1.2\'%3E%3Ccircle cx=\'5\' cy=\'11\' r=\'1.5\'/%3E%3Ccircle cx=\'10.85\' cy=\'14\' r=\'1.5\'/%3E%3Ccircle cx=\'17\' cy=\'4\' r=\'1.5\'/%3E%3C/svg%3E") center/100% no-repeat';
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS, not HTML: $icon is a sanitize_html_class() selector and $rings a literal data URI.
             echo '<style>@keyframes slimstat-menu-plot{0%{clip-path:inset(0 100% 0 0);opacity:1;animation-timing-function:cubic-bezier(.25,1,.5,1)}33%,55%{clip-path:inset(0);opacity:1;animation-timing-function:ease-in-out}100%{clip-path:inset(0);opacity:0}}@media (prefers-reduced-motion:no-preference) and (min-width:783px){@supports (clip-path:inset(0)) and ((mask-size:100%) or (-webkit-mask-size:100%)){' . $icon . '{position:relative}' . $icon . '::after{content:"";position:absolute;top:7px;left:0;right:0;width:20px;height:20px;margin:0 auto;background:#e8294c;-webkit-mask:' . $rings . ';mask:' . $rings . ';opacity:0;pointer-events:none;animation:slimstat-menu-plot 1.8s .6s both}}}</style>';
         }
     }
@@ -2583,15 +2584,16 @@ class wp_slimstat_admin
             }
             $rows[] = ['welcome-view-site', __('Heatmaps', 'wp-slimstat'), __('Every page with clicks.', 'wp-slimstat'), 'slimheatmap', __('Open Heatmaps', 'wp-slimstat')];
             $rows[] = ['editor-code', __('Shortcode Playground', 'wp-slimstat'), __('Preview a report, then copy its shortcode.', 'wp-slimstat'), 'slimshortcodes', __('Open Shortcodes', 'wp-slimstat')];
-            echo '<div id="slimstat-notice-latest-news" class="notice notice-info slimstat-release-notice" role="region"' . $attributes
+            $html = '<div id="slimstat-notice-latest-news" class="notice notice-info slimstat-release-notice" role="region"' . $attributes
                 . '<p><strong class="slimstat-release-notice__title">' . esc_html__('SlimStat 6 is here.', 'wp-slimstat') . '</strong> '
                 . esc_html__('Reports are faster, and your settings and data carry over. Includes important security hardening.', 'wp-slimstat')
                 . ($is_pro ? ' ' . esc_html__('SlimStat Pro 3.0.0 adds heatmap page previews and Ecommerce email reports.', 'wp-slimstat') : '') . '</p><ul class="slimstat-whats-new">';
             foreach ($rows as [$icon, $name, $why, $page, $open]) {
-                echo '<li><span class="dashicons dashicons-' . esc_attr($icon) . '" aria-hidden="true"></span><strong>' . esc_html($name) . '</strong><span class="slimstat-whats-new__why">' . esc_html($why) . '</span>' . $link($page, $open) . '</li>';
+                $html .= '<li><span class="dashicons dashicons-' . esc_attr($icon) . '" aria-hidden="true"></span><strong>' . esc_html($name) . '</strong><span class="slimstat-whats-new__why">' . esc_html($why) . '</span>' . $link($page, $open) . '</li>';
             }
             /* translators: %s: "Review migration" link to the Migration screen. */
-            echo '</ul><p>' . sprintf(esc_html__('%s: optional database steps, nothing runs until you choose.', 'wp-slimstat'), $link('slimstat_migration', __('Review migration', 'wp-slimstat'))) . '</p>' . $dismiss . '</div>';
+            $html .= '</ul><p>' . sprintf(esc_html__('%s: optional database steps, nothing runs until you choose.', 'wp-slimstat'), $link('slimstat_migration', __('Review migration', 'wp-slimstat'))) . '</p>' . $dismiss . '</div>';
+            echo wp_kses_post($html);
             return;
         }
 
@@ -2603,15 +2605,15 @@ class wp_slimstat_admin
         if (current_user_can('manage_options')) {
             $links['slimshortcodes'] = __('Shortcodes', 'wp-slimstat');
         }
-        echo '<aside id="slimstat-notice-latest-news" class="slimstat-release-bar"' . $attributes . '<strong>' . esc_html__('New in SlimStat 6', 'wp-slimstat') . '</strong><nav aria-label="' . esc_attr__('Explore features', 'wp-slimstat') . '">';
+        $html = '<aside id="slimstat-notice-latest-news" class="slimstat-release-bar"' . $attributes . '<strong>' . esc_html__('New in SlimStat 6', 'wp-slimstat') . '</strong><nav aria-label="' . esc_attr__('Explore features', 'wp-slimstat') . '">';
         foreach ($links as $page => $label) {
-            echo '<a href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($label) . '</a>';
+            $html .= '<a href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($label) . '</a>';
         }
-        echo '</nav>';
+        $html .= '</nav>';
         if (!$is_pro && current_user_can('manage_options')) {
-            echo '<a class="slimstat-release-bar__pro" href="' . esc_url(\SlimStat\Utils\ProLinks::url('banner', 'header-strip', true)) . '">' . esc_html__('Explore Pro', 'wp-slimstat') . '</a>';
+            $html .= '<a class="slimstat-release-bar__pro" href="' . esc_url(\SlimStat\Utils\ProLinks::url('banner', 'header-strip', true)) . '">' . esc_html__('Explore Pro', 'wp-slimstat') . '</a>';
         }
-        echo $dismiss . '</aside>';
+        echo wp_kses_post($html . $dismiss . '</aside>');
     }
 
     /**
