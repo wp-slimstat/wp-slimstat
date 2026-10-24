@@ -94,7 +94,10 @@ class ViewerQueryTest extends WpSlimstatTestCase
 	public function test_legacy_points_skip_pageviews_the_new_layer_covers(): void
 	{
 		$this->ready(150);
-		Query::legacyPoints('/pricing', 'desktop', 't1.dt BETWEEN 10 AND 20');
+		$this->canned['SELECT te.notes'] = [['notes' => '', 'position' => '120,130', 'vw' => '1280', 'vh' => '720', 'n' => '2']];
+		$points = Query::legacyPoints('/pricing', 'desktop', 't1.dt BETWEEN 10 AND 20');
+		self::assertSame(720, $points[0]['vh']);
+		self::assertStringContainsString('GROUP BY te.notes, te.position, vw, vh', implode("\n", $this->queries));
 		self::assertStringContainsString('te.dt < 150 OR NOT EXISTS (SELECT 1 FROM wp_slim_heatmap h WHERE h.id = te.id)', implode("\n", $this->queries));
 
 		$this->queries = [];

@@ -120,21 +120,21 @@ final class Query
 	 * Legacy click points for one page and device.
 	 *
 	 * @param string $scope Prepared WHERE on slim_stats alias t1 (date range, filters), from the caller.
-	 * @return array<int,array{x:int,y:int,vw:int,n:int,id:string,text:string}>
+	 * @return array<int,array{x:int,y:int,vw:int,vh:int,n:int,id:string,text:string}>
 	 */
 	public static function legacyPoints(string $pageKey, string $device, string $scope = '1=1'): array
 	{
 		$scope = '(' . $scope . ') AND ' . self::authorScope('t1.id');
 		$prefix = $GLOBALS['wpdb']->prefix;
-		$rows   = self::rows("SELECT te.notes, te.position, CAST(SUBSTRING_INDEX(t1.resolution,'x',1) AS UNSIGNED) vw, COUNT(*) n
+		$rows   = self::rows("SELECT te.notes, te.position, CAST(SUBSTRING_INDEX(t1.resolution,'x',1) AS UNSIGNED) vw, CAST(SUBSTRING_INDEX(t1.resolution,'x',-1) AS UNSIGNED) vh, COUNT(*) n
 			FROM {$prefix}slim_events te INNER JOIN {$prefix}slim_stats t1 ON te.id = t1.id
 			WHERE " . self::pageWhere($pageKey) . ' AND ' . self::deviceWhere($device) . ' AND ' . self::VALID_POSITION_SQL . self::legacyProbe() . " AND ({$scope})
-			GROUP BY te.notes, te.position, vw ORDER BY n DESC LIMIT " . self::MAX_POINTS);
+			GROUP BY te.notes, te.position, vw, vh ORDER BY n DESC LIMIT " . self::MAX_POINTS);
 
 		$points = [];
 		foreach ($rows as $row) {
 			[$x, $y]  = array_map('intval', explode(',', (string) $row['position'], 2));
-			$points[] = ['x' => $x, 'y' => $y, 'vw' => (int) $row['vw'], 'n' => (int) $row['n']] + self::element((string) $row['notes']);
+			$points[] = ['x' => $x, 'y' => $y, 'vw' => (int) $row['vw'], 'vh' => (int) $row['vh'], 'n' => (int) $row['n']] + self::element((string) $row['notes']);
 		}
 		return $points;
 	}

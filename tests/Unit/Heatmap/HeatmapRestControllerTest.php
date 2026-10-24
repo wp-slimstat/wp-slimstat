@@ -139,13 +139,13 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 		$db->shouldReceive('get_results')->andReturnUsing(static function ($sql) use (&$queries) {
 			$queries[] = $sql;
 			return [
-				['notes' => '{"text":"Start free trial","type":"click"}', 'position' => '120,340', 'vw' => '1280', 'n' => '3'],
-				['notes' => '{"id":"menu-toggle"}', 'position' => '10,10', 'vw' => '390', 'n' => '6'],
-				['notes' => '{"text":"Start  free trial"}', 'position' => '640,90', 'vw' => '1280', 'n' => '2'],
-				['notes' => '{"text":"Pricing"}', 'position' => '900,20', 'vw' => '1280', 'n' => '4'],
-				['notes' => '{"type":"click"}', 'position' => '5,5', 'vw' => '1280', 'n' => '3'],
-				['notes' => '{"text":"Docs"}', 'position' => '800,20', 'vw' => '1280', 'n' => '2'],
-				['notes' => '{"text":"Blog"}', 'position' => '700,20', 'vw' => '1280', 'n' => '1'],
+				['notes' => '{"text":"Start free trial","type":"click"}', 'position' => '120,340', 'vw' => '1280', 'vh' => '720', 'n' => '3'],
+				['notes' => '{"id":"menu-toggle"}', 'position' => '10,10', 'vw' => '390', 'vh' => '844', 'n' => '6'],
+				['notes' => '{"text":"Start  free trial"}', 'position' => '640,90', 'vw' => '1280', 'vh' => '720', 'n' => '2'],
+				['notes' => '{"text":"Pricing"}', 'position' => '900,20', 'vw' => '1280', 'vh' => '720', 'n' => '4'],
+				['notes' => '{"type":"click"}', 'position' => '5,5', 'vw' => '1280', 'vh' => '720', 'n' => '3'],
+				['notes' => '{"text":"Docs"}', 'position' => '800,20', 'vw' => '1280', 'vh' => '720', 'n' => '2'],
+				['notes' => '{"text":"Blog"}', 'position' => '700,20', 'vw' => '1280', 'vh' => '720', 'n' => '1'],
 			];
 		});
 		$GLOBALS['wpdb']    = $db;
