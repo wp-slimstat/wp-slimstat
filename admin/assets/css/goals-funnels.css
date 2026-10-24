@@ -357,19 +357,54 @@
 
 /* ------- Upsell + hint ------- */
 
+/* One Pro pitch for Goals and Funnels: tint panel, title, one line of value, then
+   the actions on their own row. Full 1px border, never a side-stripe (FN-5). */
 .slimstat-gf-upsell {
     margin: var(--ss-space-4) 0 0;
-    padding: var(--ss-space-4);
-    background: var(--ss-warning-bg);
-    /* Full 1px border + tint, not a colored side-stripe (impeccable ban, FN-5). */
-    border: 1px solid var(--ss-warning-fg);
-    border-radius: var(--ss-radius-sm);
+    padding: var(--ss-space-5);
+    background: var(--ss-surface-tint);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-md);
     font-size: var(--ss-text-base);
     color: var(--ss-text-body);
 }
 
 .slimstat-gf-upsell a {
     font-weight: 600;
+}
+
+/* The IDs outrank the legacy `.wrap-slimstat .meta-box-sortables .postbox h3` header rule. */
+#slim_p9_01 .slimstat-gf-upsell__title,
+#slim_p9_02 .slimstat-gf-upsell__title {
+    display: block;
+    margin: 0 0 var(--ss-space-1);
+    padding: 0;
+    font-size: var(--ss-text-lg);
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: normal;
+    color: var(--ss-text-primary);
+}
+
+/* Not a card inside the panel. The cap keeps the pitch at a readable measure and
+   sends the button and link to their own row. */
+.slimstat-gf-upsell .slimstat-pro-adds {
+    max-width: 64ch;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+/* Beats the legacy `[id^="slim_"] p` row rule (10px inset, divider). */
+.slimstat-gf-upsell .slimstat-pro-adds p {
+    max-width: none;
+    min-height: 0;
+    margin: 0 0 var(--ss-space-1);
+    padding: 0;
+    border: 0;
+    font-size: var(--ss-text-base);
+    color: var(--ss-text-secondary);
 }
 
 .slimstat-gf-hint {
@@ -601,16 +636,16 @@
 
 /* Locked state (Free) */
 
+/* The panel itself is the shared `.slimstat-gf-upsell`; here it is the first child. */
 .slimstat-gf-funnels--locked .slimstat-gf-funnel-lock {
+    margin: 0;
     overflow: hidden;
-    border-radius: var(--ss-radius-md);
-    background: var(--ss-surface-tint);
-    padding: var(--ss-space-6);
 }
 
-/* The bars stay legible as a funnel and fade out above the pitch, so the copy
+/* The bars stay legible as a funnel and fade out above the title, so the copy
    sits in normal flow on the plain tint: never clipped, never on a bar. */
 .slimstat-gf-funnel-mock {
+    margin-bottom: var(--ss-space-4);
     filter: blur(1px);
     opacity: 0.6;
     pointer-events: none;
@@ -628,41 +663,6 @@
     border-radius: var(--ss-radius-sm);
     /* Decorative preview bars share the single neutral funnel fill. */
     background: var(--ss-funnel-bar);
-}
-
-.slimstat-gf-funnel-lock__overlay {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
-
-/* The ID outranks the legacy `.wrap-slimstat .meta-box-sortables .postbox h3` header rule. */
-#slim_p9_02 .slimstat-gf-funnel-lock__overlay h3 {
-    margin: 0 0 var(--ss-space-2);
-    font-size: var(--ss-text-lg);
-    color: var(--ss-text-primary);
-}
-
-/* One centred pitch, not a card inside the preview. */
-.slimstat-gf-funnel-lock__overlay .slimstat-pro-adds {
-    justify-content: center;
-    max-width: 56ch;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
-}
-
-/* Beats the legacy `[id^="slim_"] p` row rule (10px inset, divider). */
-.slimstat-gf-funnel-lock__overlay .slimstat-pro-adds p {
-    max-width: none;
-    min-height: 0;
-    margin: 0 0 var(--ss-space-1);
-    padding: 0;
-    border: 0;
-    font-size: var(--ss-text-base);
-    color: var(--ss-text-secondary);
 }
 
 /* "See templates" reveal — keeps the prefab gallery reachable once funnels exist
@@ -1512,7 +1512,7 @@
 
 /* Match the report header's inner margin without changing compact widgets. */
 #slim_p9_01 .slimstat-gf-goals,
-#slim_p9_02 .slimstat-gf-funnels:not(.slimstat-gf-funnels--locked) {
+#slim_p9_02 .slimstat-gf-funnels {
     padding: var(--ss-space-4);
     box-sizing: border-box;
 }
@@ -1530,14 +1530,6 @@
     padding: 0 15px;
     border-bottom: 0;
 }
-/* One callout, not a card inside a card: the yellow note holds the Pro pitch directly. */
-.slimstat-gf-upsell .slimstat-pro-adds {
-    margin: var(--ss-space-2) 0 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
-}
-.slimstat-gf-upsell .slimstat-pro-adds p { font-size: inherit; color: inherit; }
 #slim_p9_01 .slimstat-gf-rule-chip { flex-wrap: wrap; }
 #slim_p9_02 .slimstat-gf-funnel-panel__name,
 #slim_p9_02 .slimstat-gf-step__name { min-width: 0; overflow-wrap: anywhere; }

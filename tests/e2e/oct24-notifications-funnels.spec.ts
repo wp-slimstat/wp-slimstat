@@ -148,13 +148,13 @@ test('locked funnels preview shows the funnel shape and one flat, unclipped pitc
         const m=await box.evaluate(box=>{
           const lock=box.querySelector('.slimstat-gf-funnel-lock');
           const mock=box.querySelector('.slimstat-gf-funnel-mock');
-          const adds=box.querySelector('.slimstat-gf-funnel-lock__overlay .slimstat-pro-adds');
+          const adds=lock.querySelector('.slimstat-pro-adds');
           const pitch=adds.querySelector('p').getBoundingClientRect();
-          const last=[...lock.querySelectorAll('.slimstat-gf-funnel-lock__overlay *')].pop().getBoundingClientRect();
+          const last=[...adds.querySelectorAll('*')].pop().getBoundingClientRect();
           const s=getComputedStyle(adds);
           return {
             blur:parseFloat((getComputedStyle(mock).filter.match(/blur\(([\d.]+)px\)/)||[0,99])[1]),
-            paragraphs:box.querySelectorAll('.slimstat-gf-funnel-lock__overlay p').length,
+            paragraphs:lock.querySelectorAll('p').length,
             nestedCard:s.borderTopWidth!=='0px'||s.backgroundColor!=='rgba(0, 0, 0, 0)',
             pitchOnBars:pitch.top<mock.getBoundingClientRect().bottom-1,
             clipped:last.bottom>lock.getBoundingClientRect().bottom+1||lock.scrollHeight>lock.clientHeight+1,
@@ -172,6 +172,57 @@ test('locked funnels preview shows the funnel shape and one flat, unclipped pitc
     }
   } finally {
     await restoreDefaultLimits(content);
+    await restoreSlimstatOptions();
+  }
+});
+
+test('goals and funnels upsells share one form: same panel, inset, title, pitch and action row on desktop, mobile and RTL', async ({page}, info) => {
+  await snapshotSlimstatOptions();
+  await snapshotOption('slimstat_goals');
+  const content=path.join(WP_ROOT,'wp-content');
+  try {
+    await setSlimstatOptions({async_load:'no'});
+    await forceLimits(1,0,content);
+    await seedGoals([{name:'Pricing view',dimension:'resource',operator:'contains',value:'/pricing'}]);
+    for(const width of [1440,390]) {
+      await page.setViewportSize({width,height:900});
+      await page.goto('/wp-admin/admin.php?page=slimview6');
+      await expect(page.locator('#slim_p9_01 .slimstat-gf-upsell')).toBeVisible();
+      await expect(page.locator('#slim_p9_02 .slimstat-gf-upsell')).toBeVisible();
+      for(const dir of ['ltr','rtl']) {
+        await page.evaluate(dir=>document.documentElement.dir=dir,dir);
+        const [goals,funnels]=await page.evaluate(()=>['#slim_p9_01','#slim_p9_02'].map(id=>{
+          const box=document.querySelector(id)!, panel=box.querySelector('.slimstat-gf-upsell')!;
+          const b=box.getBoundingClientRect(), r=panel.getBoundingClientRect(), s=getComputedStyle(panel);
+          const rtl=document.documentElement.dir==='rtl';
+          const font=(el:Element)=>{const c=getComputedStyle(el);return [c.fontSize,c.fontWeight,c.color,c.textAlign];};
+          const start=(el:Element)=>{const e=el.getBoundingClientRect();return Math.round(rtl?r.right-e.right:e.left-r.left);};
+          const title=panel.querySelector('.slimstat-gf-upsell__title')!, p=panel.querySelector('.slimstat-pro-adds p')!, btn=panel.querySelector('.slimstat-upgrade-action')!;
+          return {
+            panel:[s.backgroundColor,s.borderTopWidth,s.borderTopColor,s.borderRadius,s.paddingTop,s.paddingLeft],
+            inset:[Math.round(r.left-b.left),Math.round(b.right-r.right)],
+            title:font(title),
+            text:font(p),
+            starts:[start(title),start(p),start(btn)],
+            actionsBelow:btn.getBoundingClientRect().top>=p.getBoundingClientRect().bottom-1,
+          };
+        }));
+        expect(funnels.panel).toEqual(goals.panel);
+        expect(funnels.inset).toEqual(goals.inset);
+        expect(funnels.title).toEqual(goals.title);
+        expect(funnels.text).toEqual(goals.text);
+        for(const u of [goals,funnels]) {
+          // Title, pitch and button line up on the panel's start edge; the actions get their own row.
+          expect(new Set(u.starts).size).toBe(1);
+          expect(u.actionsBelow).toBe(true);
+        }
+        await page.locator('#slim_p9_01').screenshot({path:info.outputPath(`upsell-goals-${width}-${dir}.png`)});
+        await page.locator('#slim_p9_02').screenshot({path:info.outputPath(`upsell-funnels-${width}-${dir}.png`)});
+      }
+    }
+  } finally {
+    await restoreDefaultLimits(content);
+    await restoreOption('slimstat_goals');
     await restoreSlimstatOptions();
   }
 });

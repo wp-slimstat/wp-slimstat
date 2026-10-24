@@ -164,7 +164,7 @@ $show_upsell = $at_max && !$is_pro;
          */
         ?>
         <div class="slimstat-gf-upsell" role="note">
-            <strong><?php esc_html_e('Free plans include one goal.', 'wp-slimstat'); ?></strong>
+            <strong class="slimstat-gf-upsell__title"><?php esc_html_e('Free plans include one goal.', 'wp-slimstat'); ?></strong>
             <?php wp_slimstat_admin::get_template('pro-adds', ['text' => __('Track up to 5 goals and unlock 3 drop-off funnels with Pro.', 'wp-slimstat'), 'campaign' => 'goals', 'content' => 'card']); ?>
         </div>
     <?php elseif ($at_max && $is_pro) : ?>

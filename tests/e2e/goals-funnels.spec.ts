@@ -113,7 +113,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
     // ─── State: Free × has-data ─────────────────────────────────
 
-    test('free-has-data: goal card + yellow upsell + paused pill + locked funnel preview', async ({ page }) => {
+    test('free-has-data: goal card + Pro upsell + paused pill + locked funnel preview', async ({ page }) => {
         await forceLimits(1, 0, WP_CONTENT);
         await seedGoals([{ name: 'Pricing View', dimension: 'resource', operator: 'contains', value: '/pricing', active: true }]);
         await gotoSlimview6(page);
@@ -127,8 +127,8 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         // Usage pill at cap.
         await expect(page.locator('#slim_p9_01 [data-role="usage"]')).toContainText('1 of 1');
 
-        // Yellow upsell strip visible.
-        await expect(page.locator('.slimstat-gf-upsell')).toBeVisible();
+        // Pro upsell panel visible.
+        await expect(page.locator('#slim_p9_01 .slimstat-gf-upsell')).toBeVisible();
 
         // Locked funnel preview still present.
         await expect(page.locator('.slimstat-gf-funnels--locked')).toBeVisible();
@@ -909,7 +909,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
             .toContainText('Add your first goal');
 
         // Funnels locked preview headline.
-        await expect(page.locator('.slimstat-gf-funnel-lock__overlay h3'))
+        await expect(page.locator('#slim_p9_02 .slimstat-gf-upsell__title'))
             .toContainText('Find the step where visitors leave');
 
         // Funnels subtitle (now under postbox <h3>, not inside the card).
