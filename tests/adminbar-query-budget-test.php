@@ -246,7 +246,7 @@ if (preg_match("/'(248|312|18|24)'/", $render)) {
     $failures[] = 'add_menu_to_adminbar() renders a hard-coded placeholder figure for Free (F3)';
 }
 // October 24 restores an explicitly illustrative, decorative preview on both admin and front end.
-if (strpos($render, 'Illustrative chart preview') === false || strpos($render, 'aria-hidden="true"') === false) {
+if (strpos($render, 'Sample chart') === false || strpos($render, 'aria-hidden="true"') === false) {
     $failures[] = 'Free chart preview must be labelled illustrative and hidden from assistive technology';
 }
 // Screenshot QA §5: the 30-minute sparkline had no labels; its two ends say what they are.

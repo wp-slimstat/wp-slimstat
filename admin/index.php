@@ -2294,9 +2294,10 @@ class wp_slimstat_admin
                 'parent' => 'slimstat-header',
                 'title' => '<div class="slimstat-adminbar__chart-container slimstat-adminbar__chart-preview">'
                     . '<div class="slimstat-adminbar__chart-bars" aria-hidden="true">' . $preview_bars . '</div>'
-                    . '<div class="slimstat-adminbar__preview-action"><span>' . esc_html__('Illustrative chart preview', 'wp-slimstat') . '</span>'
+                    . '<div class="slimstat-adminbar__preview-action"><strong>' . esc_html__('See traffic as it happens', 'wp-slimstat') . '</strong>'
                     . '<a href="' . esc_url($upgrade_url) . '" class="slimstat-adminbar__cta-link" target="_blank" rel="noopener noreferrer">'
-                    . esc_html__('Upgrade to Pro', 'wp-slimstat') . '</a></div></div>',
+                    . esc_html__('See Pro plans', 'wp-slimstat') . '</a>'
+                    . '<span>' . esc_html__('Sample chart', 'wp-slimstat') . '</span></div></div>',
                 'meta' => ['class' => 'slimstat-adminbar__chart-wrapper'],
             ]);
         }
