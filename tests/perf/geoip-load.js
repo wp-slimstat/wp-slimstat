@@ -16,6 +16,7 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Counter, Trend } from 'k6/metrics';
+import { BASE_URL, credentials } from './lib/env.js';
 
 // Custom metrics
 const ajaxErrors = new Counter('geoip_ajax_errors');
@@ -54,9 +55,7 @@ export const options = {
   },
 };
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:10003';
-const WP_USER = __ENV.WP_USER || 'parhumm';
-const WP_PASS = __ENV.WP_PASS || 'testpass123';
+const { user: WP_USER, pass: WP_PASS } = credentials();
 
 const ADMIN_PAGES = [
   '/wp-admin/',

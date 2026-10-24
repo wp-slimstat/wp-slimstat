@@ -1,0 +1,19 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:ci-comment-metrics
+kind:      guard-removal
+expect:    "N entries on `gate`"` claim matched
+rationale: Removes both per-gate claims without leaving a wrong number behind. The claim floor was a TOTAL over four unrelated classes until 2026-09-04 -- registry total, per-gate, assertions, Tests: -- so an entire class could vanish while the sum stayed above the floor and the gate reported green about a class it no longer checked. A floor over unrelated classes measures their sum, which is not a property anyone wants to hold.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -182,7 +182,5 @@
+         # Each entry runs its gate TWICE — once clean, once mutated — so the cost tracks gate
+-        # count, not just registry size. The two seal suites are the slow ones: 7 entries on
+-        # `composer test:seal-negative` (it boots the real entry point and is deliberately
+-        # non-filterable, since the suite refuses a partial run) and 4 on
+-        # `composer test:seal-entrypoint` (twenty sealed dry runs). Both counts are checked
+-        # against the .mutation files naming each gate.
++        # count, not just registry size. The two seal suites are the slow ones: the first boots
++        # the real entry point and is deliberately non-filterable, since the suite refuses a
++        # partial run, and the second does twenty sealed dry runs.
+         #

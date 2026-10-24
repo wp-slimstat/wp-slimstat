@@ -1,0 +1,105 @@
+{
+    "translation-revision-date": "2019-06-10 15:36-0400",
+    "generator": "WP-CLI\/2.12.0",
+    "source": "admin\/assets\/js\/heatmaps.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "ru",
+                "plural-forms": "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);"
+            },
+            "Retry": [
+                ""
+            ],
+            "Desktop": [
+                ""
+            ],
+            "Tablet": [
+                ""
+            ],
+            "Mobile": [
+                ""
+            ],
+            "Updated just now": [
+                ""
+            ],
+            "Unknown": [
+                ""
+            ],
+            "Heatmap data could not be loaded. Try a shorter date range, then retry.": [
+                ""
+            ],
+            "Updated %d min ago": [
+                ""
+            ],
+            "Homepage": [
+                ""
+            ],
+            "Most clicked links and buttons on %s": [
+                ""
+            ],
+            "These clicks did not record where on the page they landed.": [
+                ""
+            ],
+            "Link or button without text": [
+                ""
+            ],
+            "%s click": [
+                ""
+            ],
+            "Percentage of all recorded clicks in the selected date range and device filter. Unknown means no usable viewport width.": [
+                ""
+            ],
+            "View heatmap": [
+                ""
+            ],
+            "Available in SlimStat Pro": [
+                ""
+            ],
+            "(Pro)": [
+                ""
+            ],
+            "%1$s dead \u00b7 %2$s rage": [
+                ""
+            ],
+            "Fewer than 30 recorded clicks. Use this as an early indication, not statistical assurance.": [
+                ""
+            ],
+            "Low data": [
+                ""
+            ],
+            "All clicks + scroll": [
+                ""
+            ],
+            "Link and button clicks": [
+                ""
+            ],
+            "No clicks recorded on this site yet. SlimStat records link and button clicks on every tracked page. Open your homepage, click a link, then select Refresh.": [
+                ""
+            ],
+            "Open your homepage": [
+                ""
+            ],
+            "Show all devices": [
+                ""
+            ],
+            "Use last 90 days": [
+                ""
+            ],
+            "No clicks recorded on this device in this date range.": [
+                ""
+            ],
+            "No clicks recorded in this date range. SlimStat records link and button clicks on every tracked page; a page appears here after its first click.": [
+                ""
+            ],
+            "No pages match \"%s\". Search checks page addresses, like \/pricing.": [
+                ""
+            ],
+            "Page %1$d of %2$d": [
+                ""
+            ]
+        }
+    }
+}

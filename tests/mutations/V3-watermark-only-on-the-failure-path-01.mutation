@@ -1,0 +1,21 @@
+target:    src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php
+gate:      composer test:migration-deadline
+kind:      guard-narrowing
+expect:    never calls persistWatermark() at the statement level
+rationale: Removes the success-path watermark write and LEAVES the one in the failure branch, which is the subtle shape rather than the obvious one. The call is still inside the loop, so a gate asking only "does persistWatermark appear between the braces" stays GREEN -- that was the first draft of this check, and perturbation caught it. Progress recorded solely on the failure path means an interrupted pass records nothing and the next attempt rescans the same cursor.
+---
+--- a/src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php
++++ b/src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php
+@@ -141,12 +141,10 @@
+             // interrupted run recorded ZERO progress: the UPDATEs it had already applied
+             // survived, but the SCAN did not, so the next attempt re-read the same rows. Since
+             // most candidates are permanently unrecoverable (measured: 18,120 matched the
+             // predicate, 0 were recoverable), that is a walk which finds the same nothing every
+             // time and never converges.
+-            $this->persistWatermark($examined);
+-
+             // Stop on the deadline rather than on the batch. This is PROGRESS, not failure:
+             // shouldRun() probes for candidates above the watermark, so it still reports work,
+             // the screen re-offers the step, and the next pass resumes exactly here.
+             if (microtime(true) >= $deadline) {
+                 break;

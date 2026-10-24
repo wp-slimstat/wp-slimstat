@@ -1,0 +1,19 @@
+target:    wp-slimstat.php
+gate:      php tests/purge-archive-order-test.php
+kind:      name-only
+expect:    still assigns PurgeArchive::STATS_COLUMNS / EVENT_COLUMNS
+rationale: The intersection is still computed - copyableColumns() is called, the plan is built, the lost/usable checks below still run - and then the result is thrown away and the manifest constants are used to build the SQL anyway. That is the shipped defect with the fix sitting one line above it, and a gate that only asked whether copyableColumns appeared would pass. The archive tables are declared reconcile => false, so on an upgraded install the manifest names ua_id and the archive has never had it; the probe errors, probeForCollision() reads that as cannot-tell, and retention stops on every tick forever while blaming utf8mb4.
+---
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -1883,8 +1883,8 @@
+             $event_plan = \SlimStat\Utils\PurgeArchive::copyableColumns(self::$wpdb, $prefix, 'slim_events');
+             $stats_plan = \SlimStat\Utils\PurgeArchive::copyableColumns(self::$wpdb, $prefix, 'slim_stats');
+ 
+-            $event_columns = $event_plan['copy'];
+-            $stats_columns = $stats_plan['copy'];
++            $event_columns = \SlimStat\Utils\PurgeArchive::EVENT_COLUMNS;
++            $stats_columns = \SlimStat\Utils\PurgeArchive::STATS_COLUMNS;
+ 
+             // No key, no statement. Refusing here is the same refusal probeForCollision()
+             // makes: never DELETE through a question that could not be asked.

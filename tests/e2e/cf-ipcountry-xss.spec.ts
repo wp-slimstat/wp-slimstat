@@ -55,7 +55,7 @@ async function ensureLoggedIn(page: Page): Promise<void> {
     await page.fill('#user_login', ADMIN_USER);
     await page.fill('#user_pass', ADMIN_PASS);
     await page.click('#wp-submit');
-    await page.waitForURL('**/wp-admin/**', { timeout: 30_000 });
+    await page.waitForURL('**/wp-admin/**', { waitUntil: 'domcontentloaded', timeout: 30_000 });
   }
 }
 

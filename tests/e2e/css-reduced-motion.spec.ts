@@ -163,3 +163,31 @@ test.describe('AC-CSS-002: prefers-reduced-motion Scoping', () => {
     expect(html).not.toContain('Fatal error');
   });
 });
+
+// The Dashboard's one-off SlimStat menu-icon moment (admin/index.php styling_admin_menu()).
+test.describe('SlimStat menu icon: Dashboard-only, reduced-motion-aware animation', () => {
+  const menuIconAnimation = () => {
+    const img = document.querySelector('#adminmenu li[id^="toplevel_page_slimview"] div.wp-menu-image');
+    if (!img) return null;
+    const after = getComputedStyle(img, '::after');
+    return { name: after.animationName, iterations: after.animationIterationCount };
+  };
+
+  test('plays once on the Dashboard', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto(`${BASE_URL}/wp-admin/index.php`, { waitUntil: 'domcontentloaded' });
+    expect(await page.evaluate(menuIconAnimation)).toEqual({ name: 'slimstat-menu-plot', iterations: '1' });
+  });
+
+  test('never plays under prefers-reduced-motion: reduce', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(`${BASE_URL}/wp-admin/index.php`, { waitUntil: 'domcontentloaded' });
+    expect(await page.evaluate(menuIconAnimation)).toEqual({ name: 'none', iterations: '1' });
+  });
+
+  test('never plays on other admin screens', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto(`${BASE_URL}/wp-admin/edit.php`, { waitUntil: 'domcontentloaded' });
+    expect(await page.evaluate(menuIconAnimation)).toEqual({ name: 'none', iterations: '1' });
+  });
+});

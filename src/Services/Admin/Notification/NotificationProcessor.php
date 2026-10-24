@@ -3,14 +3,23 @@
 namespace SlimStat\Services\Admin\Notification;
 
 use SlimStat\Decorators\NotificationDecorator;
+use SlimStat\Utils\OptionClaim;
 use SlimStat\Services\Admin\ConditionTagEvaluator;
 
 class NotificationProcessor
 {
 	public static function filterNotificationsByTags($notifications)
 	{
+		$dismissed = \get_option('slimstat_notification_dismissed', []);
 		if (!empty($notifications) && is_array($notifications)) {
 			foreach ($notifications as $key => $notification) {
+				$active = !empty($notification['activated_at']) ? strtotime($notification['activated_at']) : 0;
+				$expiry = $notification['expires_at'] ?? $notification['expired_at'] ?? '';
+				if ($active > time() || ($expiry && strtotime($expiry) <= time())) {
+					unset($notifications[$key]);
+					continue;
+				}
+				if (!empty($dismissed[$notification['id'] ?? 0])) $notifications[$key]['dismiss'] = true;
 				if (!empty($notification['tags']) && is_array($notification['tags'])) {
 					// Enforce version gating for license-related tags
 					if (self::requiresVersionGate($notification['tags']) && !self::hasValidVersionGate($notification['tags'])) {
@@ -96,43 +105,40 @@ class NotificationProcessor
 
 	public static function dismissNotification($notificationId)
 	{
-		$notifications  = NotificationFactory::getRawNotificationsData();
 		$notificationId = intval($notificationId);
-
-		if (!empty($notifications['data']) && is_array($notifications['data'])) {
-			foreach ($notifications['data'] as &$notification) {
-				if ($notificationId === $notification['id']) {
-					$notification['dismiss'] = true;
-					break;
-				}
-			}
-
-			\update_option('wp_slimstat_notifications', $notifications);
-		}
-
-		return true;
+		// Do not overwrite a newer feed with a snapshot read before a concurrent fetch.
+		return $notificationId > 0 && self::rememberDismissed([$notificationId]);
 	}
 
 	public static function dismissAllNotifications()
 	{
 		$notifications = NotificationFactory::getRawNotificationsData();
+		return self::rememberDismissed(array_column($notifications['data'] ?? [], 'id'));
+	}
 
-		if (!empty($notifications['data']) && is_array($notifications['data'])) {
-			foreach ($notifications['data'] as &$notification) {
-				$notification['dismiss'] = true;
-			}
-
-			\update_option('wp_slimstat_notifications', $notifications);
+	/** Keep site-wide dismissals even when a feed temporarily omits an item. */
+	private static function rememberDismissed(array $ids): bool
+	{
+		if (!$ids) return true;
+		$key = 'slimstat_notification_dismissed';
+		for ($attempt = 0; $attempt < 3; $attempt++) {
+			$old = \get_option($key, false);
+			$new = (is_array($old) ? $old : []) + array_fill_keys($ids, true);
+			if ($old === $new) return true;
+			$won = false === $old ? OptionClaim::insert($key, serialize($new))
+				: OptionClaim::compareAndSwap($key, serialize($old), serialize($new));
+			if ($won) return true;
+			\wp_cache_delete($key, 'options');
+			\wp_cache_delete('notoptions', 'options');
 		}
-
-		return true;
+		return false;
 	}
 
 	public static function syncNotifications($newNotifications)
 	{
 		$oldNotifications = NotificationFactory::getRawNotificationsData();
 
-		$dismissedNotifications = [];
+		$dismissedNotifications = \get_option('slimstat_notification_dismissed', []);
 
 		if (!empty($oldNotifications['data']) && is_array($oldNotifications['data'])) {
 			foreach ($oldNotifications['data'] as $oldNotification) {
@@ -142,8 +148,12 @@ class NotificationProcessor
 			}
 		}
 
+		if (!self::rememberDismissed(array_keys($dismissedNotifications))) {
+			throw new \RuntimeException('Could not preserve notification dismissals');
+		}
 		if (!empty($newNotifications['data']) && is_array($newNotifications['data'])) {
 			foreach ($newNotifications['data'] as &$newNotification) {
+				unset($newNotification['dismiss']);
 				if (isset($dismissedNotifications[$newNotification['id']])) {
 					$newNotification['dismiss'] = true;
 				}
@@ -236,7 +246,7 @@ class NotificationProcessor
 	{
 		if (!empty($notifications['data']) && is_array($notifications['data'])) {
 			\usort($notifications['data'], function ($a, $b) {
-				return \strtotime($b['activated_at']) - \strtotime($a['activated_at']);
+				return \strtotime($b['activated_at'] ?? '') - \strtotime($a['activated_at'] ?? '');
 			});
 		}
 

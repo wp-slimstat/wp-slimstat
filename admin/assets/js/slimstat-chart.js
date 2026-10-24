@@ -252,14 +252,16 @@ document.addEventListener("DOMContentLoaded", function () {
             (function (iCopy, labelTextCopy, valuesCopy, keyCopy) {
                 var color = colors[iCopy % colors.length];
                 var dataset = {
-                    label: isPrevious ? "Previous " + labelTextCopy : labelTextCopy,
+                    label: isPrevious ? wp.i18n.sprintf(slimstat_chart_vars.previous_series, labelTextCopy) : labelTextCopy,
                     key: keyCopy,
+                    isPrevious: isPrevious,
                     data: valuesCopy,
                     borderColor: color,
                     backgroundColor: chartType === "bar" ? color + "40" : "transparent",
                     borderWidth: isPrevious ? 1 : 2,
                     fill: chartType === "bar" ? true : false,
                     tension: chartType === "line" ? 0.3 : 0,
+                    cubicInterpolationMode: "monotone", // Smooth without overshooting: no dip below 0, no peak above the data (QA R11).
                     pointBorderColor: "transparent",
                     pointBackgroundColor: color,
                     pointBorderWidth: 2,
@@ -320,7 +322,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             for (var j = 0; j < ds.data.length; j++) {
                 var v = ds.data[j];
-                if (typeof v === "number" && v > 0) {
+                if (v !== null && Number.isFinite(Number(v)) && Number(v) !== 0) {
                     return false;
                 }
             }
@@ -354,25 +356,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 ctx2.beginPath();
                 ctx2.moveTo(pt.x, top);
                 ctx2.lineTo(pt.x, bottom);
-                ctx2.stroke();
-                ctx2.restore();
-            },
-        };
-        var emptyLine = {
-            id: "emptyLine",
-            afterDraw: function (chart) {
-                var opts = chart.options && chart.options.plugins && chart.options.plugins.emptyLine;
-                if (!opts || !opts.enabled) return;
-                var area = chart.chartArea;
-                if (!area) return;
-                var ctx2 = chart.ctx;
-                var y = (area.top + area.bottom) / 2;
-                ctx2.save();
-                ctx2.strokeStyle = opts.color || "#e8294c";
-                ctx2.lineWidth = 2;
-                ctx2.beginPath();
-                ctx2.moveTo(area.left, y);
-                ctx2.lineTo(area.right, y);
                 ctx2.stroke();
                 ctx2.restore();
             },
@@ -492,7 +475,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 data: labels.map(function () {
                     return 0;
                 }),
-                borderColor: "#e8294c",
+                borderColor: "#c3c4c7",
                 backgroundColor: "transparent",
                 borderWidth: 2,
                 fill: false,
@@ -530,8 +513,10 @@ document.addEventListener("DOMContentLoaded", function () {
             },
         };
 
-        if (isEmptyCurrent) {
-            yScale.min = -1;
+        // An empty period sits on a 0–1 axis: a flat grey line at zero, never an axis that
+        // dips to -1 under a red line that reads as an error (audit E1).
+        if (isEmptyCurrent && isAllZeroDatasets(prevDatasets)) {
+            yScale.min = 0;
             yScale.max = 1;
             yScale.ticks.stepSize = 1;
         }
@@ -579,10 +564,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         titleColor: "#222",
                         bodyColor: "#222",
                     },
-                    emptyLine: {
-                        enabled: isEmptyCurrent,
-                        color: "#e8294c",
-                    },
                 },
                 scales: {
                     x: {
@@ -623,7 +604,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     mode: "index",
                 },
             },
-            plugins: [customCrosshair, emptyLine],
+            plugins: [customCrosshair],
         });
     }
 
@@ -636,8 +617,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (dataset.skipLegend) {
                     return;
                 }
-                var isPrevious = dataset.label.indexOf("Previous") !== -1;
-                if (isPrevious) {
+                if (dataset.isPrevious) {
                     return;
                 }
 
@@ -719,7 +699,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             for (var di2 = 0; di2 < chart.data.datasets.length; di2++) {
                 var dataset2 = chart.data.datasets[di2];
-                if (dataset2.label.indexOf("Previous") !== -1) {
+                if (dataset2.isPrevious) {
                     var correspondingCurrentMeta = chart.getDatasetMeta(di2 - currentDatasets.length);
                     chart.getDatasetMeta(di2).hidden = previousVisible ? correspondingCurrentMeta.hidden : true;
                 }
@@ -740,20 +720,22 @@ document.addEventListener("DOMContentLoaded", function () {
             respectEndOfPeriod = false;
         }
         var date = new Date(dateInput);
-        var day = date.getDay();
+        var day = date.getUTCDay(); // Labels are UTC dates, as formatDate() prints them.
         var diff = (7 - startOfWeek + day) % 7;
-        var nextWeek = new Date(date.getTime() + (7 - diff) * 24 * 60 * 60 * 1000);
+        // The week's last day, not the next week's first: "Sep 14 - Sep 20", then "Sep 21 - ..." (QA R11).
+        var weekEnd = new Date(date.getTime() + (6 - diff) * 24 * 60 * 60 * 1000);
         if (respectEndOfPeriod) {
             var today2 = new Date(respectEndOfPeriod);
 
-            if (nextWeek.getTime() > today2.getTime()) {
+            if (weekEnd.getTime() > today2.getTime()) {
                 return new Date(respectEndOfPeriod);
             }
         }
-        return nextWeek;
+        return weekEnd;
     }
 
-    function slimstatGetLabel(label, long, unitTime, translations, justTranslation) {
+    function slimstatGetLabel(label, long, unitTime, translations, justTranslation, periodEnd) {
+        if (!label) return "";
         if (typeof long === "undefined") {
             long = true;
         }
@@ -832,11 +814,15 @@ document.addEventListener("DOMContentLoaded", function () {
         } else if (unitTime === "weekly") {
             var rawDate = (justTranslation || label).replace(/\//g, "-");
             var d2 = new Date(rawDate + "T00:00:00Z");
-            var weekEnd = getEndOfWeek(rawDate + "T00:00:00Z", slimstat_chart_vars.start_of_week, slimstat_chart_vars.end_date_string.replace(/\//g, "-").replace(" ", "T") + "Z");
+            var weekEnd = getEndOfWeek(rawDate + "T00:00:00Z", slimstat_chart_vars.start_of_week, (periodEnd ? new Date(periodEnd * 1000).toISOString() : slimstat_chart_vars.end_date_string.replace(/\//g, "-").replace(" ", "T") + "Z"));
             var weekStart = formatDate(d2, { month: long ? "long" : "short", day: "numeric" });
             var weekEndFormatted = formatDate(weekEnd, { month: long ? "long" : "short", day: "numeric" });
 
-            return weekEndFormatted === weekStart ? weekStart : weekStart + " - " + weekEndFormatted;
+            var weekRange = weekEndFormatted === weekStart ? weekStart : weekStart + " - " + weekEndFormatted;
+            // The week in progress has fewer days in it than the rest; say so where its total is read.
+            var todayIso = new Date().toISOString().slice(0, 10);
+            var isThisWeek = long && rawDate <= todayIso && todayIso <= weekEnd.toISOString().slice(0, 10);
+            return isThisWeek ? weekRange + " (" + translations.now + ")" : weekRange;
         } else if (unitTime === "daily") {
             var rawDate2 = (justTranslation || label).replace(/\//g, "-");
             var d3 = new Date(rawDate2 + "T00:00:00Z");
@@ -891,10 +877,10 @@ document.addEventListener("DOMContentLoaded", function () {
             var unitTime = document.getElementById("slimstat_chart_data_" + chartId).dataset.granularity;
             var data = JSON.parse(document.getElementById("slimstat_chart_data_" + chartId).getAttribute("data-data"));
             prevLabels = data.prev_labels;
-            var tooltipEl = document.getElementById("chartjs-tooltip");
+            var tooltipEl = document.getElementById("slimstat-chartjs-tooltip");
             if (!tooltipEl) {
                 tooltipEl = document.createElement("div");
-                tooltipEl.id = "chartjs-tooltip";
+                tooltipEl.id = "slimstat-chartjs-tooltip";
                 tooltipEl.innerHTML = "<table></table>";
                 document.body.appendChild(tooltipEl);
             }
@@ -913,35 +899,43 @@ document.addEventListener("DOMContentLoaded", function () {
 
             var titleLines = tooltip.title || [];
 
+            var escapeText = function (value) {
+                var node = document.createElement('span'); node.textContent = String(value); return node.innerHTML;
+            };
             var grouped = [];
-            for (var i = 0; i < tooltip.dataPoints.length; i++) {
-                var label = tooltip.body[i].lines[0].split(": ")[0];
-                var value = tooltip.body[i].lines[0].split(": ")[1];
-                if (label.indexOf("Previous ") === 0) continue;
-                var prevValue = null,
-                    prevDate = null;
-                for (var j = 0; j < tooltip.dataPoints.length; j++) {
-                    var prevLabel = tooltip.body[j].lines[0].split(": ")[0];
-                    if (prevLabel === "Previous " + label) {
-                        prevValue = tooltip.body[j].lines[0].split(": ")[1];
-                        prevDate = prevLabels[tooltip.dataPoints[j].dataIndex];
-                        break;
-                    }
-                }
-                grouped.push({ label: label, value: value, prevValue: prevValue, prevDate: prevDate });
-            }
+            tooltip.dataPoints.forEach(function (point, index) {
+                if (point.dataset.skipLegend || point.dataset.isPrevious) return;
+                var previous = tooltip.dataPoints.find(function (candidate) {
+                    return candidate.dataset.isPrevious && candidate.dataset.key === point.dataset.key;
+                });
+                grouped.push({
+                    label: escapeText(point.dataset.label), value: escapeText(point.formattedValue),
+                    prevValue: previous ? escapeText(previous.formattedValue) : null,
+                    prevDate: previous ? prevLabels[previous.dataIndex] : null,
+                    color: point.dataset.borderColor || tooltip.labelColors[index].borderColor
+                });
+            });
+            // A hidden/missing current series must not hide a visible comparison.
+            tooltip.dataPoints.forEach(function (point) {
+                if (!point.dataset.isPrevious || tooltip.dataPoints.some(function (candidate) {
+                    return !candidate.dataset.isPrevious && candidate.dataset.key === point.dataset.key;
+                })) return;
+                grouped.push({label: escapeText(point.dataset.label), value: escapeText(point.formattedValue),
+                    prevValue: null, prevDate: null, date: prevLabels[point.dataIndex], color: point.dataset.borderColor});
+            });
 
             var innerHtml = "<thead>";
             for (var t = 0; t < titleLines.length; t++) {
                 var title = titleLines[t];
-                innerHtml += '<tr><th style="font-weight: bold; font-size: 14px; padding-bottom: 6px; text-align: left;">' + slimstatGetLabel(title.replace(/'/g, ""), true, unitTime, translations) + "</th></tr>";
+                innerHtml += '<tr><th style="font-weight: bold; font-size: 14px; padding-bottom: 6px; text-align: left;">' + slimstatGetLabel(title.replace(/'/g, ""), true, unitTime, translations, false, data.period_end) + "</th></tr>";
             }
             innerHtml += "</thead><tbody>";
 
             for (var g = 0; g < grouped.length; g++) {
                 var item = grouped[g];
-                var color = tooltip.labelColors[g];
-                innerHtml += '<tr data-index="' + g + '" class="slimstat-postbox-chart--item"><td><div class="slimstat-postbox-chart--item--color" style="background-color: ' + color.backgroundColor + '; margin-bottom: 3px; margin-right: 10px;"></div><span class="tooltip-item-title">' + item.label + '</span>: <span class="tooltip-item-content">' + item.value + "</span>";
+                var color = { backgroundColor: item.color };
+                innerHtml += '<tr data-index="' + g + '" class="slimstat-postbox-chart--item"><td><div class="slimstat-postbox-chart--item--color" style="background-color: ' + color.backgroundColor + '; margin-bottom: 3px; margin-right: 10px;"></div><span class="slimstat-tooltip-item-title">' + item.label + '</span>: <span class="slimstat-tooltip-item-content">' + item.value + "</span>";
+                if (item.date) innerHtml += ' <span class="slimstat-postbox-chart--item--prev">' + slimstatGetLabel(item.date, true, unitTime, translations, false, data.previous_end) + '</span>';
                 if (item.prevValue !== null && item.prevDate) {
                     var hex = color.backgroundColor.replace("#", "");
                     var rgb = hex
@@ -950,7 +944,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             return parseInt(x, 16);
                         })
                         .join(",");
-                    innerHtml += '<br><span class="slimstat-postbox-chart--item--color" style="display:inline-block;width:18px;height:2px;background-image:repeating-linear-gradient(to right, rgba(' + rgb + ",0.7), rgba(" + rgb + ',0.7) 4px, transparent 0px, transparent 6px);background-size:auto 6px;opacity:1;margin-bottom:0px;margin-left:0px;vertical-align:middle;"></span> <span class="tooltip-item-title" style="font-size:12px;opacity:.7;">' + slimstatGetLabel(item.prevDate, false, unitTime, translations) + ': </span><span class="tooltip-item-content" style="font-size:12px;opacity:.7;">' + item.prevValue + "</span>";
+                    innerHtml += '<br><span class="slimstat-postbox-chart--item--color" style="display:inline-block;width:18px;height:2px;background-image:repeating-linear-gradient(to right, rgba(' + rgb + ",0.7), rgba(" + rgb + ',0.7) 4px, transparent 0px, transparent 6px);background-size:auto 6px;opacity:1;margin-bottom:0px;margin-left:0px;vertical-align:middle;"></span> <span class="slimstat-tooltip-item-title" style="font-size:12px;opacity:.7;">' + slimstatGetLabel(item.prevDate, false, unitTime, translations, false, data.previous_end) + ': </span><span class="slimstat-tooltip-item-content" style="font-size:12px;opacity:.7;">' + item.prevValue + "</span>";
                 }
                 innerHtml += "</td></tr>";
             }

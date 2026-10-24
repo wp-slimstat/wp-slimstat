@@ -1,0 +1,22 @@
+target:    tests/docker/lib.sh
+gate:      php tests/rehearsal-column-control-test.php
+kind:      restore-defect
+expect:    a name that is a substring of another is still missing
+rationale: Without the delimiters the membership test is a substring test, and `id` is found inside `ua_id` and `vid_hash` -- the two columns the v6 migration adds, which is precisely the comparison every 7x cell runs. Every column whose name is contained in another's is then reported present when it is absent, and the sets are declared equal when they are not. The gate notices on the `id` / `ua_id,vid_hash` case, which is real column names, not a contrived pair.
+---
+--- a/tests/docker/lib.sh
++++ b/tests/docker/lib.sh
+@@ -148,11 +148,11 @@
+ # Which columns are in the first set and not in the second. Both take the comma-joined form
+ # above; the result is comma-joined too, and empty when the first set is contained in the second.
+ columns_missing_from() { # <set-a> <set-b>
+-  local haystack=",$2," c
++  local haystack="$2" c
+   # `printf '%s\n'`, not `printf '%s'`: BSD sed does not add the trailing newline the input
+   # lacks, and `read` returns false on a final unterminated line WITHOUT running the body, so the
+   # LAST column silently dropped out of every difference. Caught by the empty-second-set case in
+-  # tests/rehearsal-column-control-test.php, which is why that case is there. PITFALLS 131.
++  # tests/rehearsal-column-control-test.php, which is why that case is there.
+   printf '%s\n' "$1" | tr ',' '\n' | sed '/^$/d' | while IFS= read -r c; do
+     case "$haystack" in
+       *",$c,"*) : ;;

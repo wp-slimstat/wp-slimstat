@@ -1,0 +1,17 @@
+target:    src/Tracker/Session.php
+gate:      php tests/anonymous-identity-test.php
+kind:      restore-defect
+expect:    still filters on resource
+rationale: Restores the probe's resource filter — D68's primary mechanism. With it, a visitor who NAVIGATES can never match their own session (the row for /a does not satisfy resource = /b), so every page transition falls through to the mint; combined with any per-mint entropy that is a new visit id per navigation. Measured in Run 16's before arm: a 4-page visit held 2 identities purely from the 300-second bucket, and the resource filter is what made the reuse probe unable to prevent it.
+---
+diff --git a/src/Tracker/Session.php b/src/Tracker/Session.php
+--- a/src/Tracker/Session.php
++++ b/src/Tracker/Session.php
+@@ -256,6 +256,7 @@
+ 			// UNHEX in SQL rather than hex2bin in PHP so the comparison stays on the
+ 			// BINARY(16) column and the index — HEX(vid_hash) = %s would be a scan.
+ 			->whereRaw('vid_hash = UNHEX(%s)', [$vid_hash])
++			->where('resource', '=', (string) (\wp_slimstat::get_stat()['resource'] ?? ''))
+ 			->where('visit_id', '>', 0)
+ 			->where('dt', '>=', $current_timestamp - $session_duration)
+ 			->where('dt', '<=', $current_timestamp)

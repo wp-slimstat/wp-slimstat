@@ -202,6 +202,8 @@ test.describe('CustomDB prefix regression — chart and sidebar data consistency
     await clearStatsTable();
     await clearTransients();
     await deactivateCustomDb();
+    // These cases inspect server-rendered report data, before any async refresh.
+    await setSlimstatOption(page, 'async_load', 'off');
     await setSlimstatOption(page, 'is_tracking', 'on');
     await setSlimstatOption(page, 'gdpr_enabled', 'off');
     await setSlimstatOption(page, 'ignore_wp_users', 'off');

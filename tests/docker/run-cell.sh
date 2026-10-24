@@ -3,6 +3,9 @@
 # Runs ONE PHP×WP cell end-to-end and writes a PASS|FAIL|BLOCKED-BY-WP-CORE verdict.
 set -uo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
+# Qualification never substitutes a working tree or an implicit Pro build.
+: "${QUALIFICATION_FREE_ZIP:?exact Free ZIP required}" "${QUALIFICATION_FREE_SHA256:?Free ZIP digest required}"
+: "${QUALIFICATION_PRO_ZIP:?exact Pro ZIP required}" "${QUALIFICATION_PRO_SHA256:?Pro ZIP digest required}"
 # Remember any caller-provided toggles — these win over matrix.env's defaults.
 _env_run_e2e="${RUN_E2E:-}"; _env_strict="${STRICT_DEPRECATIONS:-}"
 # Pull config (CORE_SPECS + defaults) from matrix.env so it's the single edit point,
@@ -30,67 +33,96 @@ WP_DIR="$CELL_DIR/wp"
 ART="$CELL_DIR/artifacts"
 PROJECT="ssqa_${PHP//./}_${WP//./}"
 BASE_URL="http://127.0.0.1:${HTTP_PORT}"
-status="PASS"; reason=""
+status="PASS"; reason=""; runtime_checks_complete=false
 
 export COMPOSE_PROJECT_NAME="$PROJECT" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
+export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
-rm -rf "$WP_DIR"            # fresh WP install per run (host bind-mount persists otherwise)
+existing=$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker project inspection failed'
+volumes=$(docker volume ls -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker volume inspection failed'
+[ -z "$existing$volumes" ] || die 'matrix project already owned; refusing shared database'
+[ ! -e "$CELL_DIR" ] || die 'matrix evidence directory already exists'
 mkdir -p "$WP_DIR" "$ART"
 
-dc()  { docker compose -f "$HARNESS_DIR/docker-compose.yml" "$@"; }
-wpc() { dc exec -T -u www-data wp wp --path=/var/www/html "$@"; }
 fail(){ status="FAIL"; reason="${reason:-$1}"; err "$1"; }
 blocked(){ status="BLOCKED-BY-WP-CORE"; reason="$1"; warn "BLOCKED: $1"; }
+unavailable(){ status="UNAVAILABLE-PREREQUISITE"; reason="$1"; warn "UNAVAILABLE: $1"; }
+verified_core_fatal() {
+  grep -qiE 'Fatal error|Parse error|Uncaught' "$1" && grep -qE '/var/www/html/(wp-includes/|wp-admin/|wp-[a-z-]+\.php)' "$1" \
+    && ! grep -qE '/wp-content/(plugins|mu-plugins)/' "$1"
+}
+record_core_block() { # <phase> <log>
+  cp "$2" "$ART/core-incompatibility.log"
+  python3 - "$ART" "$1" <<'PYCORE'
+import hashlib,json,pathlib,sys
+p=pathlib.Path(sys.argv[1]); log=p/'core-incompatibility.log'
+json.dump(dict(kind='plugin-free-core-fatal',phase=sys.argv[2],log_sha256=hashlib.sha256(log.read_bytes()).hexdigest()),open(p/'core-incompatibility.json','w'))
+PYCORE
+}
 
 finish() {
-  write_verdict "$ART" "$CELL" "$PHP" "$WP" "$status" "$reason"
+  local rc=$?
+  if [ "$rc" -ne 0 ] && [ "$status" = PASS ]; then fail "cell exited $rc before completion"; fi
+  write_verdict "$ART" "$CELL" "$PHP" "$WP" "$status" "$reason" "\"runtime_checks_complete\":$runtime_checks_complete"
   dc down -v --remove-orphans >/dev/null 2>&1 || true
   log "$CELL → $status ${reason:+($reason)}"
 }
 trap finish EXIT
 
 log "[$CELL] build + up (PHP $PHP, WP $WP, http $HTTP_PORT, db $DB_PORT)"
-dc build --build-arg PHP_VERSION="$PHP" wp  > "$ART/build.log" 2>&1 || { fail "image build failed"; exit 1; }
-dc up -d                                    > "$ART/up.log"    2>&1 || { fail "compose up failed"; exit 1; }
-
-# Wait for DB + Apache.
-wait_for 40 3 dc exec -T db mysqladmin ping -h127.0.0.1 -uroot -proot --silent || { fail "db never ready"; exit 1; }
+boot_stack "$ART" "$PHP"
+case $? in
+  1) fail "image build failed"; exit 1 ;;
+  2) fail "compose up failed";  exit 1 ;;
+  3) fail "db never ready";     exit 1 ;;
+esac
 wait_for 30 2 bash -c "curl -fsS -o /dev/null '$BASE_URL/' || [ \"\$(curl -s -o /dev/null -w '%{http_code}' '$BASE_URL/')\" != 000 ]" || true
 
-# ── WP core download (BLOCKED detection #1) ─────────────────────────────────
+# Download availability is a prerequisite, never proof of a PHP/core incompatibility.
 log "[$CELL] download WordPress $WP"
-if ! wpc core download --version="$WP" --force > "$ART/wp-install.log" 2>&1; then
-  blocked "wp core download failed for WP $WP"; exit 0
+wpc core download --version="$WP" --force >"$ART/wp-download.log" 2>&1
+DOWNLOAD_RC=$?
+python3 - "$ART" "$WP" "$DOWNLOAD_RC" <<'PYAVAIL'
+import datetime,hashlib,json,pathlib,sys
+p=pathlib.Path(sys.argv[1]); log=p/'wp-download.log'
+json.dump(dict(requested_version=sys.argv[2],available=int(sys.argv[3])==0,exit_status=int(sys.argv[3]),checked_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),log_sha256=hashlib.sha256(log.read_bytes()).hexdigest()),open(p/'wp-availability.json','w'))
+PYAVAIL
+[ "$DOWNLOAD_RC" = 0 ] || { unavailable "WordPress $WP could not be fetched; see wp-download.log"; exit 1; }
+dc exec -T wp php -r 'include "/var/www/html/wp-includes/version.php"; echo json_encode(["kind"=>"declared-php-floor","wp_version"=>$wp_version,"required_php"=>$required_php_version,"actual_php"=>PHP_VERSION]); exit(version_compare(PHP_VERSION,$required_php_version,">=")?0:3);' >"$ART/core-requirements.json" 2>"$ART/core-requirements-error.log"
+CORE_REQUIREMENTS_RC=$?
+if [ "$CORE_REQUIREMENTS_RC" = 3 ]; then
+  cp "$ART/core-requirements.json" "$ART/core-incompatibility.json"
+  blocked "downloaded WordPress $WP declares a PHP floor above PHP $PHP"; exit 0
 fi
+[ "$CORE_REQUIREMENTS_RC" = 0 ] || { unavailable 'downloaded core requirements could not be inspected'; exit 1; }
 
 # ── config + install (BLOCKED detection #2: WP core fatal on this PHP) ───────
-wpc config create --dbname=wordpress --dbuser=root --dbpass=root --dbhost=db:3306 \
-     --force --skip-check >>"$ART/wp-install.log" 2>&1
-wpc config set WP_DEBUG         true  --raw --type=constant >>"$ART/wp-install.log" 2>&1
-wpc config set WP_DEBUG_LOG     true  --raw --type=constant >>"$ART/wp-install.log" 2>&1
-wpc config set WP_DEBUG_DISPLAY false --raw --type=constant >>"$ART/wp-install.log" 2>&1
+wp_config_debug "$ART/wp-install.log"
 
 if ! wpc core install --url="$BASE_URL" --title="SS QA $CELL" \
        --admin_user=admin --admin_password=admin --admin_email=qa@example.com \
        --skip-email >>"$ART/wp-install.log" 2>&1; then
-  if has_wp_core_fatal "$ART/wp-install.log"; then
+  if verified_core_fatal "$ART/wp-install.log"; then
+    record_core_block core-install "$ART/wp-install.log"
     blocked "$(grep -iE "$WP_CORE_FATAL_PATTERNS" "$ART/wp-install.log" | head -1 | cut -c1-160)"; exit 0
   fi
   fail "wp core install failed (non-core)"; exit 1
 fi
 # Boot probe: home 500 with a core fatal while no plugin is active = WP-core.
 home_code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/")
-if [ "$home_code" = "500" ] && has_wp_core_fatal "$WP_DIR/wp-content/debug.log"; then
+if [ "$home_code" = "500" ] && verified_core_fatal "$WP_DIR/wp-content/debug.log"; then
+  record_core_block core-http-boot "$WP_DIR/wp-content/debug.log"
   blocked "WP core WSOD on PHP $PHP (home HTTP 500)"; exit 0
 fi
 : > "$WP_DIR/wp-content/debug.log" 2>/dev/null || true   # reset log AFTER core boots clean
 
-# ── plugins: free (copied in) + Pro (built zip) ─────────────────────────────
+# ── plugins: exact paired qualification artifacts ─────────────────────────────
 log "[$CELL] install plugins"
-rm -rf "$WP_DIR/wp-content/plugins/wp-slimstat"
-rsync -a --delete --exclude '.git' --exclude 'node_modules' --exclude 'tests/e2e/node_modules' \
-      "$PLUGIN_SRC/" "$WP_DIR/wp-content/plugins/wp-slimstat/" >/dev/null 2>&1
-mkdir -p "$WP_DIR/wp-content/plugins/.pro"; cp "$PRO_ZIP" "$WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip"
+extract_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$CELL_DIR/free-artifact" >"$ART/free-artifact.log" || { fail 'Free artifact rejected'; exit 1; }
+extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$CELL_DIR/pro-artifact" >"$ART/pro-artifact.log" || { fail 'Pro artifact rejected'; exit 1; }
+sync_plugin_src "$WP_DIR" "$CELL_DIR/free-artifact/wp-slimstat"
+mkdir -p "$WP_DIR/wp-content/plugins/.pro"
+cp "$QUALIFICATION_PRO_ZIP" "$WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip" || { fail 'Pro artifact copy failed'; exit 1; }
 chmod -R a+rwX "$WP_DIR/wp-content" 2>/dev/null || true
 
 wpc plugin activate wp-slimstat                                            >"$ART/activate.log" 2>&1 || fail "free activate failed"
@@ -110,9 +142,13 @@ grep -qi 'slimstat-pro' "$ART/active-plugins.txt"        || fail "wp-slimstat-pr
 
 # ── (b) authed admin smoke pages ────────────────────────────────────────────
 CJ="$ART/cookies.txt"
+# Keep the login response and the first dashboard render: a plugin that fails its
+# prerequisites renders its notice on exactly these two pages and (when the request
+# is interactive) deactivates itself there. Discarding them hid A0 for a full cycle.
 curl -s -c "$CJ" -b "wordpress_test_cookie=WP+Cookie+check" \
      -d "log=admin&pwd=admin&wp-submit=Log+In&redirect_to=$BASE_URL/wp-admin/&testcookie=1" \
-     "$BASE_URL/wp-login.php" -o /dev/null
+     "$BASE_URL/wp-login.php" -o "$ART/login.html"
+curl -s -b "$CJ" -o "$ART/first-admin.html" -w '%{http_code}' "$BASE_URL/wp-admin/" > "$ART/first-admin-code.txt"
 for slug in slimview1 slimview3 slimview6 "slimconfig&tab=1"; do
   name="${slug%%&*}"
   code=$(curl -s -b "$CJ" -o "$ART/smoke-$name.html" -w '%{http_code}' "$BASE_URL/wp-admin/admin.php?page=$slug")
@@ -120,6 +156,30 @@ for slug in slimview1 slimview3 slimview6 "slimconfig&tab=1"; do
     fail "admin smoke $name (HTTP $code)"
   fi
 done
+
+# ── (b2) Pro must still be OPERATIONAL after those admin requests ───────────
+# (a) above runs before the first authenticated request and the artifact check at
+# the end of the cell only compares bytes on disk, so a Pro that switched itself
+# off during the dashboard render used to pass a cell unnoticed (A0, 2026-09-09).
+# Three assertions, in increasing strength: still active, no recorded degradation,
+# and a Pro-only report actually registered at runtime.
+wpc plugin list --status=active --field=name > "$ART/active-plugins-post-admin.txt" 2>/dev/null
+grep -qi 'slimstat-pro' "$ART/active-plugins-post-admin.txt" \
+  || fail "wp-slimstat-pro deactivated during authenticated admin requests"
+
+wpc option get slimstat_degradations --format=json > "$ART/degradations.json" 2>/dev/null \
+  || printf '{}' > "$ART/degradations.json"
+! grep -q '"pro_' "$ART/degradations.json" \
+  || fail "Pro recorded a degradation: $(tr -d '\n' < "$ART/degradations.json" | cut -c1-200)"
+
+# Positive proof the providers booted: the addon registers slim_p8_01 on
+# slimstat_reports_info from its constructor, which only runs once
+# _loadServiceProviders() is reached. init() swallows \Throwable, so "no error"
+# is not proof — this is.
+wpc eval '$r = apply_filters("slimstat_reports_info", array()); echo isset($r["slim_p8_01"]) ? "PROBOOT_OK" : "PROBOOT_MISSING";' \
+  > "$ART/pro-runtime-signal.txt" 2>&1
+grep -q 'PROBOOT_OK' "$ART/pro-runtime-signal.txt" \
+  || fail "Pro report slim_p8_01 not registered at runtime (service providers never booted)"
 
 # ── (c) tracking hit → a wp_slim_stats row ──────────────────────────────────
 before=$(wpc db query "SELECT COUNT(*) FROM wp_slim_stats;" --skip-column-names 2>/dev/null | tr -dc '0-9')
@@ -132,32 +192,95 @@ after=$(wpc db query "SELECT COUNT(*) FROM wp_slim_stats;" --skip-column-names 2
 [ "${after:-0}" -gt "${before:-0}" ] || fail "no wp_slim_stats row after tracking hit (before=$before after=$after)"
 
 # ── (d) standalone PHP suites on this PHP ───────────────────────────────────
-# Pure source-level SCAN tests — these are the version-compatibility tests, run
-# on this exact PHP. (Stub/full-WP functional tests are covered by the E2E step.)
-dc exec -T -u www-data wp bash -c '
-  set -e; cd /var/www/html/wp-content/plugins/wp-slimstat
-  for t in tests/php74-no-php80-functions-test.php tests/php-implicit-nullable-test.php \
-           tests/php80-syntax-scan-test.php tests/php82-84-forward-scan-test.php \
-           tests/wp70-wp-version-guard-test.php tests/wp70-tested-up-to-test.php \
-           tests/loose-comparison-scan-test.php tests/dtr-pton-init-test.php \
-           tests/wp-removed-core-fns-scan-test.php tests/dead-symfony-removed-test.php \
-           tests/jquery4-own-code-shorthand-scan-test.php tests/loginnote-bracket-parse-test.php \
-           tests/shortcode-w-whitelist-test.php tests/avg-duration-format-test.php \
-           tests/admin-ui-render-guards-test.php tests/goals-free-active-limit-test.php \
-           tests/goals-funnels-index-migration-test.php tests/ci-matrix-coverage-test.php; do
-    [ -f "$t" ] || continue; echo "== $t =="; php "$t" || exit 1
-  done' > "$ART/free-suite.log" 2>&1 || fail "free PHP suite failed"
+# Pure source-level SCAN tests — the version-compatibility tests, run on this exact
+# PHP. (Stub/full-WP functional tests are covered by the E2E step.)
+#
+# THE SHIPPED ZIP EXCLUDES tests/ (.distignore), and this step used to loop over
+# `tests/*.php` inside the INSTALLED plugin with `[ -f "$t" ] || continue`. Every
+# path was missing, every iteration was skipped, the loop exited 0, and the step
+# reported a green PHP suite having executed nothing at all — PITFALLS 191. The
+# files are copied in from the harness checkout the way run-escaping-hook-r2.sh
+# does, and the number of suites that ACTUALLY RAN is asserted, because "the tests
+# passed" and "there were no tests" produce the same exit code.
+FREE_SCANS=(php74-no-php80-functions-test.php php-implicit-nullable-test.php
+            php80-syntax-scan-test.php php82-84-forward-scan-test.php
+            wp70-wp-version-guard-test.php wp70-tested-up-to-test.php
+            loose-comparison-scan-test.php dtr-pton-init-test.php
+            wp-removed-core-fns-scan-test.php dead-symfony-removed-test.php
+            jquery4-own-code-shorthand-scan-test.php loginnote-bracket-parse-test.php
+            shortcode-w-whitelist-test.php avg-duration-format-test.php
+            admin-ui-render-guards-test.php goals-free-active-limit-test.php
+            goals-funnels-index-migration-test.php ci-matrix-coverage-test.php)
+PRO_SCANS=(pro-php80-syntax-scan-test.php pro-php82-84-forward-scan-test.php
+           pro-implicit-nullable-test.php php81-runtime-null-args-test.php
+           scoper-patcher-implicit-nullable-test.php scoper-patcher-e-strict-test.php
+           jquery4-own-code-shorthand-scan-test.php pro-wp-removed-core-fns-scan-test.php
+           pro-wp70-tested-up-to-test.php)
+PRO_SRC="${PRO_SRC:-$(cd "$PLUGIN_SRC/../wp-slimstat-pro" 2>/dev/null && pwd)}"
 
-dc exec -T -u www-data wp bash -c '
-  set -e; cd /var/www/html/wp-content/plugins/wp-slimstat-pro 2>/dev/null || exit 0
-  [ -d tests ] || exit 0
-  for t in tests/pro-php80-syntax-scan-test.php tests/pro-php82-84-forward-scan-test.php \
-           tests/pro-implicit-nullable-test.php tests/php81-runtime-null-args-test.php \
-           tests/scoper-patcher-implicit-nullable-test.php tests/scoper-patcher-e-strict-test.php \
-           tests/jquery4-own-code-shorthand-scan-test.php tests/pro-wp-removed-core-fns-scan-test.php \
-           tests/pro-wp70-tested-up-to-test.php; do
-    [ -f "$t" ] || continue; echo "== $t =="; php "$t" || exit 1
-  done' > "$ART/pro-suite.log" 2>&1 || fail "pro PHP suite failed"
+# <label> <host tests dir> <container plugin dir> <log> <files...>
+run_scan_suite() {
+  local label="$1" src="$2" dest="$3" logf="$4"; shift 4
+  local t copied=0 ran=0 rc=0
+
+  : > "$logf"
+  if [ -z "$src" ] || [ ! -d "$src" ]; then
+    echo "no harness tests/ directory for $label" >> "$logf"
+    fail "$label PHP suite has no source tests/ directory — nothing could have run"
+    return 1
+  fi
+  dc exec -T -u root wp bash -c "mkdir -p '$dest/tests' && chown -R www-data '$dest/tests'" >/dev/null 2>&1
+
+  for t in "$@"; do
+    if dc exec -T -u www-data wp test -f "$dest/tests/$t" >/dev/null 2>&1; then
+      echo "route: $t — already installed" >> "$logf"
+      copied=$((copied + 1)); continue
+    fi
+    if [ ! -f "$src/$t" ]; then
+      echo "route: $t — ABSENT from the harness checkout, skipped" >> "$logf"
+      continue
+    fi
+    if dc cp "$src/$t" "wp:$dest/tests/$t" >/dev/null 2>&1; then
+      echo "route: $t — copied from the harness checkout" >> "$logf"
+      copied=$((copied + 1))
+    else
+      echo "route: $t — COPY FAILED" >> "$logf"
+    fi
+  done
+  dc exec -T -u root wp bash -c "chown -R www-data '$dest/tests'" >/dev/null 2>&1
+
+  for t in "$@"; do
+    dc exec -T -u www-data wp test -f "$dest/tests/$t" >/dev/null 2>&1 || continue
+    echo "== tests/$t ==" >> "$logf"
+    dc exec -T -u www-data wp bash -c "cd '$dest' && php 'tests/$t'" >> "$logf" 2>&1 || rc=1
+    ran=$((ran + 1))
+  done
+
+  echo "EXECUTED $ran of ${#@} $label suite(s) (staged $copied)" >> "$logf"
+  dc exec -T -u root wp bash -c "rm -rf '$dest/tests'" >/dev/null 2>&1
+
+  if [ "$ran" -eq 0 ]; then
+    fail "$label PHP suite executed ZERO tests — a step that runs nothing is not a passing step"
+    return 1
+  fi
+  if [ ! -s "$logf" ]; then
+    fail "$label PHP suite produced an empty log — no evidence it ran"
+    return 1
+  fi
+  [ "$rc" -eq 0 ] || fail "$label PHP suite failed"
+  log "[$CELL] $label scans: $ran/${#@} executed"
+  return "$rc"
+}
+
+run_scan_suite free "$PLUGIN_SRC/tests" \
+  /var/www/html/wp-content/plugins/wp-slimstat "$ART/free-suite.log" "${FREE_SCANS[@]}"
+
+if dc exec -T -u www-data wp test -d /var/www/html/wp-content/plugins/wp-slimstat-pro >/dev/null 2>&1; then
+  run_scan_suite pro "${PRO_SRC:+$PRO_SRC/tests}" \
+    /var/www/html/wp-content/plugins/wp-slimstat-pro "$ART/pro-suite.log" "${PRO_SCANS[@]}"
+else
+  echo "Pro plugin is not installed in this cell" > "$ART/pro-suite.log"
+fi
 
 # ── (e) full Playwright E2E from the host ───────────────────────────────────
 if [ "$RUN_E2E" = "1" ]; then
@@ -167,13 +290,23 @@ if [ "$RUN_E2E" = "1" ]; then
   if [ "${E2E_CORE_ONLY:-0}" = "1" ]; then E2E_SPECS=("${CORE_SPECS[@]}"); e2e_mode="core-only"; fi
   log "[$CELL] Playwright E2E ($e2e_mode; verdict gated on core specs)"
   ( cd "$PLUGIN_SRC"
+    rm -f tests/e2e/.auth/admin.json tests/e2e/.auth/author.json
     TEST_BASE_URL="$BASE_URL" WP_ROOT="$WP_DIR" \
     MYSQL_SOCKET="" MYSQL_HOST=127.0.0.1 MYSQL_PORT="$DB_PORT" \
     MYSQL_USER=root MYSQL_PASSWORD=root MYSQL_DATABASE=wordpress \
     WP_ADMIN_USER=admin WP_ADMIN_PASS=admin WP_AUTHOR_USER=dordane WP_AUTHOR_PASS=testpass123 \
     WP_VERSION="$WP" WP_ENV_PHP_VERSION="$PHP" \
-    npx playwright test --config=tests/e2e/playwright.config.ts --project admin \
-      --timeout=20000 --reporter=list ${E2E_SPECS[@]+"${E2E_SPECS[@]}"} > "$ART/playwright.log" 2>&1 )
+    npx playwright test ${E2E_SPECS[@]+"${E2E_SPECS[@]}"} \
+      --list --config=tests/e2e/playwright.config.ts --project admin > "$ART/playwright-expected.txt" 2>&1
+    TEST_BASE_URL="$BASE_URL" WP_ROOT="$WP_DIR" \
+    MYSQL_SOCKET="" MYSQL_HOST=127.0.0.1 MYSQL_PORT="$DB_PORT" \
+    MYSQL_USER=root MYSQL_PASSWORD=root MYSQL_DATABASE=wordpress \
+    WP_ADMIN_USER=admin WP_ADMIN_PASS=admin WP_AUTHOR_USER=dordane WP_AUTHOR_PASS=testpass123 \
+    WP_VERSION="$WP" WP_ENV_PHP_VERSION="$PHP" PLAYWRIGHT_JSON_OUTPUT_NAME="$ART/playwright.json" \
+    npx playwright test ${E2E_SPECS[@]+"${E2E_SPECS[@]}"} \
+      --config=tests/e2e/playwright.config.ts --project admin \
+      --timeout=20000 --reporter=list,json > "$ART/playwright.log" 2>&1
+    printf '%s\n' "$?" > "$ART/playwright-exit.txt" )
   # Informational totals.
   grep -oE '[0-9]+ (passed|failed|skipped)' "$ART/playwright.log" | tail -3 | tr '\n' ' ' > "$ART/playwright-summary.txt"
   # Which spec FILES failed?
@@ -206,4 +339,11 @@ if [ -f "$LOG" ]; then
   fi
 fi
 
+if [ -n "${PRE_CLEANUP_HOOK:-}" ]; then
+  bash "$PRE_CLEANUP_HOOK" "$ART" || fail "pre-cleanup hook failed"
+fi
+
+verify_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$WP_DIR/wp-content/plugins" >"$ART/free-installed.json" || fail 'installed Free shipping bytes changed'
+verify_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$WP_DIR/wp-content/plugins" >"$ART/pro-installed.json" || fail 'installed Pro shipping bytes changed'
+runtime_checks_complete=true
 [ "$status" = "PASS" ] && exit 0 || exit 1

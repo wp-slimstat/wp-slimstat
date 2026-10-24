@@ -91,7 +91,7 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
   test.beforeEach(async ({ page }) => {
     await snapshotSlimstatOptions();
     await clearStatsTable();
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       ignore_wp_users: 'no',
       gdpr_enabled: 'off',
       _migration_5460: '5.4.6',
@@ -114,7 +114,7 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
     page,
     browser,
   }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       javascript_mode: 'off',
       tracking_request_method: 'ajax',
     });
@@ -122,7 +122,7 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
     const countBefore = await getStatCount();
 
     // Visit as anonymous user (fresh context = no cookies)
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     const marker = `bf1-server-ajax-${Date.now()}`;
@@ -161,7 +161,7 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
     page,
     browser,
   }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       javascript_mode: 'off',
       tracking_request_method: 'adblock_bypass',
     });
@@ -170,7 +170,7 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
     const idBefore = await getMaxId();
 
     // Visit as anonymous user
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     const marker = `bf2-server-adblock-${Date.now()}`;
@@ -214,14 +214,14 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
     page,
     browser,
   }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       javascript_mode: 'on',
       tracking_request_method: 'ajax',
     });
 
     const countBefore = await getStatCount();
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     const marker = `bf3-client-ajax-${Date.now()}`;
@@ -248,7 +248,7 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
     page,
     browser,
   }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       javascript_mode: 'on',
       tracking_request_method: 'adblock_bypass',
     });
@@ -256,7 +256,7 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
 
     const countBefore = await getStatCount();
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     // Track network requests to verify the bypass transport is used
@@ -304,13 +304,13 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
     browser,
   }) => {
     // Restore default: client mode + AJAX
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       javascript_mode: 'on',
       tracking_request_method: 'ajax',
     });
 
     // Visit 1: homepage
-    const ctx1 = await browser.newContext();
+    const ctx1 = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const page1 = await ctx1.newPage();
 
     const marker1 = `bf5-home-${Date.now()}`;
@@ -325,7 +325,7 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
     await ctx1.close();
 
     // Visit 2: a second page
-    const ctx2 = await browser.newContext();
+    const ctx2 = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const page2 = await ctx2.newPage();
 
     const marker2 = `bf5-second-${Date.now()}`;

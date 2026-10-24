@@ -1,0 +1,18 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    P44-a-matched-register-entry-prints-no-near-miss names the register near miss
+rationale: Emits the register near-miss on a verdict the register just EXPLAINED. R2 as amended in Run 50 declares two observables and an entry carries one, so R2-as-amended has a single legal encoding - two entries sharing r=R2 - and matching the second printed 'R2 declares rows-up, we measured rows-same-count-values-differ' beside a pass granted by R2. The field is FEEDBACK asking an operator to amend a register that was amended with user sign-off before this classifier existed, and it appeared or vanished depending on the ORDER of two JSON entries.
+---
+diff --git a/tests/oracle/classify.py b/tests/oracle/classify.py
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -617,7 +617,7 @@ def classify(triple, contract=None, register=None):
+             "pinned": facts.pinned,
+             "means": spec["means"],
+         }
+-        if near and hit is None:
++        if near:
+             # The near miss is FEEDBACK, and it is the reason this is not a surface-only match.
+             # An operator who sees "R2 covers this surface, but declares rows-up and we measured
+             # rows-same-count-values-differ" fixes the register; one who sees only UNREGISTERED

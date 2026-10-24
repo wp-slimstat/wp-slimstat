@@ -1,0 +1,17 @@
+target:    tests/docker/canary/compute-canary-verdict.py
+gate:      composer test:canary-verdict
+kind:      guard-removal
+expect:    the baseline says it too: expected MISSED, got CAUGHT
+rationale: Removes the baseline_clean control, so a canary finding counts even when the same agents said the same thing about a packet with NO canary in it. This is the control that carries the whole drill: without it, 'an agent flagged top_resource with a row-count relation' is not evidence of anything, because nothing has shown the agents do not say it about any packet. Filed as a removal rather than a weakening because there is no weaker form of it -- the control is a single boolean over the baseline legs, and the only way it erodes is by being deleted as redundant once the drill has passed once.
+---
+--- a/tests/docker/canary/compute-canary-verdict.py
++++ b/tests/docker/canary/compute-canary-verdict.py
+@@ -190,7 +190,7 @@
+ 
+     c(DETECTION, "canary_named", bool(legs_that_caught),
+       f"legs naming {subject}/{relation}: {legs_that_caught or 'NONE'}")
+-    c(DETECTION, "baseline_clean", not baseline_legs,
++    c(DETECTION, "baseline_clean", True,
+       f"legs saying the same about the UNPOISONED packet: {baseline_legs or 'none'}")
+ 
+     # A canary finding filed by the reader of the arm that is NOT short is a false positive: that

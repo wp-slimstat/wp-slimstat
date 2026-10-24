@@ -1,0 +1,13 @@
+target:    src/Migration/Admin/MigrationAdmin.php
+gate:      composer test:admin-header-assets
+kind:      guard-removal
+expect:    never enqueues admin/assets/css/header-modern.css
+rationale: Points the migration screen's header stylesheet at admin.css instead -- the state it actually shipped in, where the header markup renders with no stylesheet of its own. Nothing is broken or misspelled: it falls through to admin.css's older .slimstat-header rule, a dark background with no foreground colour, so the brand and its labels inherit WordPress's admin grey. Measured in a browser on 2026-09-04 at 1.41:1 against WCAG AA's 4.5:1, and 15.96:1 once the right stylesheet loads. This entry also caught the gate's OWN first version green: it scanned the raw file, and the explanatory comment above the enqueue names the stylesheet, so a comment satisfied it -- PITFALLS 112 inside the new guard.
+---
+--- a/src/Migration/Admin/MigrationAdmin.php
++++ b/src/Migration/Admin/MigrationAdmin.php
+@@ -88,3 +88,3 @@
+ 		// 4.5:1 — not a preference, unreadable. Pinned by tests/admin-header-assets-test.php.
+-		wp_register_style('slimstat-header-modern', plugins_url('/admin/assets/css/header-modern.css', SLIMSTAT_FILE), ['slimstat-admin-base'], SLIMSTAT_ANALYTICS_VERSION);
++		wp_register_style('slimstat-header-modern', plugins_url('/admin/assets/css/admin.css', SLIMSTAT_FILE), ['slimstat-admin-base'], SLIMSTAT_ANALYTICS_VERSION);
+ 		wp_enqueue_style('slimstat-header-modern');

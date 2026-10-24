@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
  *    contract holds in storage even after a Pro→Free downgrade left several
  *    active. The usage pill counts active goals only.
  *  - goals-card.php skips get_goal_results() for a paused goal and shows a
- *    "Paused — not being measured" placeholder instead of numbers.
+ *    "Paused: not being measured" placeholder instead of numbers.
  *
  * Source-shape guards (no DB). The auto-pause logic is exercised directly by
  * tests/goals-free-active-limit-test.php; rendered behavior by the e2e spec.
@@ -109,13 +109,13 @@ class GoalsFunnelsPausedGoalsTest extends TestCase
     {
         $php = $this->goalsCard();
         $this->assertMatchesRegularExpression(
-            '/if\s*\(\s*!\$goal_active\s*\)\s*:[\s\S]{0,400}Paused — not being measured/',
+            '/if\s*\(\s*!\$goal_active\s*\)\s*:[\s\S]{0,400}Paused: not being measured/',
             $php,
             'goals-card must render a paused placeholder before the metrics block'
         );
         // The paused branch must precede the existing "no matches yet" branch.
         $this->assertMatchesRegularExpression(
-            '/Paused — not being measured[\s\S]{0,400}No matches in this date range yet/',
+            '/Paused: not being measured[\s\S]{0,400}No matches in this date range yet/',
             $php,
             'paused placeholder must come before the active "no matches" branch'
         );

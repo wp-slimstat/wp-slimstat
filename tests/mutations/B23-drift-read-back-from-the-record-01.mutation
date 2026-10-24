@@ -1,0 +1,24 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      introduce-defect
+expect:    the drift leg re-observes the schema instead of reading back the record
+rationale: Reading the option back looks equivalent and is not. On an arm that never drifted there is no option at all and refresh_column_drift_notice() returns early without reading a single column, so this shape prints PASS on a cell where nothing was ever measured — the unfalsifiable green. columnDrift() always looks, and repairs nothing while it does.
+---
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -851,14 +851,7 @@
+ # without looking at a single column. Deciding from the option would print PASS on a cell where
+ # nothing had ever been measured. columnDrift() always looks, and repairs nothing while it does.
+ DRIFT_NOW=$(wpc eval '
+-  $d   = SlimStat\Schema\Schema::columnDrift(
+-      SlimStat\Migration\MigrationService::analyticsConnection(), $GLOBALS["wpdb"]->prefix);
+-  $d = SlimStat\Schema\Schema::requiredColumnDrift($d, SlimStat\Migration\MigrationManager::completedMigrationIds());
+-  $out = [];
+-  foreach ($d["missing"] as $c)        { $out[] = $c . " (absent)"; }
+-  foreach ($d["narrow"] as $c => $w)   { $out[] = $c . " (" . $w . ")"; }
+-  sort($out);
+-  echo implode(", ", $out);' 2>/dev/null | tr -d '\n')
++  echo implode(", ", (array) get_option(wp_slimstat_admin::COLUMN_DRIFT_OPTION, []));' 2>/dev/null | tr -d '\n')
+ [ -z "$DRIFT_NOW" ] && check "the upgrade left no column drift behind" 0 \
+   || check "the upgrade left no column drift behind" 1 "$DRIFT_NOW"
+ 

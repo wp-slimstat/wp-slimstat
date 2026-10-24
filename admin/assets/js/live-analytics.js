@@ -1230,10 +1230,10 @@
             var chart = context.chart;
             var tooltip = context.tooltip;
 
-            var tooltipEl = document.getElementById("chartjs-tooltip");
+            var tooltipEl = document.getElementById("slimstat-chartjs-tooltip");
             if (!tooltipEl) {
                 tooltipEl = document.createElement("div");
-                tooltipEl.id = "chartjs-tooltip";
+                tooltipEl.id = "slimstat-chartjs-tooltip";
                 tooltipEl.innerHTML = "<table></table>";
                 document.body.appendChild(tooltipEl);
             }

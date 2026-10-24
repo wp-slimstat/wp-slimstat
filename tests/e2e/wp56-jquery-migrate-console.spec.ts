@@ -5,7 +5,7 @@
  * force-loaded, exercising the SlimStat admin surfaces must emit NO JQMIGRATE
  * warning attributable to OWN-CODE JS (admin.js, slimstat-daterangepicker.js,
  * addon-email-reports.js). Warnings from the bundled, unmaintained vendored libs
- * (qTip2, jqVMap, bootstrap-switch) are allow-listed — they're shimmed by jQuery
+ * (qTip2, jqVMap) are allow-listed — they're shimmed by jQuery
  * Migrate and tracked for a future upgrade, not migrated here.
  *
  * Without the loader mu-plugin WP ships jquery-migrate.min.js (silent), so the
@@ -18,6 +18,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { BASE_URL, WP_ROOT } from './helpers/env';
+import { deployMuPlugin } from './helpers/setup';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MU_DIR = path.join(WP_ROOT, 'wp-content', 'mu-plugins');
@@ -36,7 +37,7 @@ const ADMIN_PAGES = [
 test.describe('JQMIGRATE watchdog — own-code is jQuery-4.0 clean @compat', () => {
   test.beforeAll(() => {
     fs.mkdirSync(MU_DIR, { recursive: true });
-    fs.copyFileSync(MU_SRC, MU_DEST);
+    deployMuPlugin(MU_SRC, MU_DEST);
   });
 
   test.afterAll(() => {
@@ -71,7 +72,7 @@ test.describe('JQMIGRATE watchdog — own-code is jQuery-4.0 clean @compat', () 
       );
       expect(
         ownCodeWarnings,
-        `own-code JQMIGRATE warnings (vendored qTip2/jqVMap/bootstrap-switch are allow-listed):\n${ownCodeWarnings
+        `own-code JQMIGRATE warnings (vendored qTip2/jqVMap are allow-listed):\n${ownCodeWarnings
           .map((w) => `  ${w.src}: ${w.text}`)
           .join('\n')}`,
       ).toHaveLength(0);

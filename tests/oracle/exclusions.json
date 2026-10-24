@@ -1,0 +1,12 @@
+{
+  "schema": "SLIMSTAT-REPORT-EVIDENCE-EXCLUSIONS-V1",
+  "approval_recipe": "approval_sha256 = sha256('<key>|<approved_by>|<rationale>')",
+  "approved": [
+    {
+      "key": "get_your_blog",
+      "approved_by": "release owner (plan O2, 2026-09-14)",
+      "rationale": "slim_p4_22 (Your Website): Seven of its eight rows count WordPress posts and comments through wp_posts/wp_comments; the corpus under test is slim_stats.",
+      "approval_sha256": "b46814a063ee4aa146da4e007913418528fbaa94d71f335096a41e29c81cd599"
+    }
+  ]
+}

@@ -27,8 +27,8 @@ class GoalsFunnelsPolishTest extends TestCase
         // (title + lead), not via a hardcoded screen-id branch.
         $php = file_get_contents($this->viewIndexPath());
         $this->assertStringContainsString("\$current_screen_info['lead']", $php, 'Page intro must render from the registry lead (FN-13)');
-        $this->assertStringContainsString('<h1 class="slimstat-gf-pageintro__title"', $php, 'Page intro must use an <h1> (FN-13)');
-        $this->assertStringContainsString("echo esc_html(\$current_screen_info['title'])", $php, 'H1 text must come from the registry title, not a duplicated literal (FN-13)');
+        $this->assertStringContainsString('<h1 class="slimstat-pageintro__title"', file_get_contents(dirname(__DIR__, 2) . '/admin/view/partials/header.php'), 'Page intro must use an <h1> (FN-13, A6)');
+        $this->assertStringContainsString("'title'  => \$current_screen_info['title']", $php, 'H1 text must come from the registry title, not a duplicated literal (FN-13)');
     }
 
     // ── FN-15: zero-data goal row shows a hint, not 0/0/0% ──
@@ -70,13 +70,37 @@ class GoalsFunnelsPolishTest extends TestCase
         $this->assertStringNotContainsString('8px 0 24px rgba(15, 23, 42, 0.08)', $css, 'RTL shadow literal must be tokenized (FN-18)');
     }
 
-    // ── FN-20: locked mock labelled as illustrative ──
+    // ── FN-20 (revised 2026-10-24): the unlabelled bars are decoration, so no
+    //    "Example funnel" caption; they stay hidden from assistive tech and the
+    //    section label names the preview instead. ──
 
-    public function test_locked_mock_has_example_caption(): void
+    public function test_locked_mock_is_decorative_without_caption(): void
     {
         $php = file_get_contents($this->partialPath('funnels-card.php'));
-        $this->assertStringContainsString('slimstat-gf-funnel-lock__caption', $php, 'Locked mock needs an "example" caption (FN-20)');
-        $this->assertStringContainsString('Example funnel', $php, 'Caption copy missing (FN-20)');
+        $this->assertStringNotContainsString('slimstat-gf-funnel-lock__caption', $php, 'Caption was removed on request; do not bring it back');
+        $this->assertStringNotContainsString('Example funnel', $php);
+        $this->assertStringContainsString('<div class="slimstat-gf-funnel-mock" aria-hidden="true">', $php, 'Preview bars must stay aria-hidden');
+        $this->assertStringContainsString("'Funnels: Pro feature preview'", $php, 'Section label must still name the preview');
+    }
+
+    // ── Free preview names the five prefab templates (2026-10-24): the pills read
+    //    the same $template_cards the Pro picker renders, so the two can't drift,
+    //    and the "+ Add funnel" entry (a CTA, not a template) stays out. ──
+
+    public function test_locked_preview_lists_template_titles_from_the_shared_cards(): void
+    {
+        $php    = file_get_contents($this->partialPath('funnels-card.php'));
+        $cards  = strpos($php, '$template_cards = [');
+        $locked = strpos($php, 'if ($locked) :');
+        $this->assertNotFalse($cards);
+        $this->assertNotFalse($locked);
+        $this->assertLessThan($locked, $cards, '$template_cards must be defined before the locked branch returns, or the Free preview has nothing to list');
+
+        $lockedBranch = substr($php, $locked, strpos($php, 'endif;', $locked) - $locked);
+        $this->assertStringContainsString('<ul class="slimstat-gf-upsell__templates"', $lockedBranch, 'Locked preview must list the templates');
+        $this->assertStringContainsString('foreach ($template_cards as $card)', $lockedBranch, 'Pills must iterate the shared $template_cards, not a second hand-typed list');
+        $this->assertStringContainsString("'blank' === \$card['key']", $lockedBranch, 'The "+ Add funnel" CTA entry must be skipped');
+        $this->assertStringContainsString('esc_html($card[\'title\'])', $lockedBranch);
     }
 
     // ── Copy (FN-14 remainder): sentence-case CTAs, no en dashes, value placeholder ──

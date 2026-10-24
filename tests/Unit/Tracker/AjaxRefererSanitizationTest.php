@@ -9,7 +9,7 @@ use WpSlimstat\Tests\Unit\WpSlimstatTestCase;
 /**
  * Tests for Ajax::sanitizeReferer() — the seam extracted from handle() for #306.
  *
- * The referer is sanitized with sanitize_url() using an extended protocols
+ * The referer is sanitized with esc_url_raw() using an extended protocols
  * allow-list (Processor::REFERER_ALLOWED_SCHEMES = http/https/android-app):
  *   - #306: `android-app://…` (Google Discover) survives — it is on the allow-list;
  *   - #306 follow-up: percent-encoded query octets (%XX) are preserved so
@@ -31,13 +31,13 @@ class AjaxRefererSanitizationTest extends WpSlimstatTestCase
     }
 
     /**
-     * Model WordPress sanitize_url(): drop any scheme not in $protocols, otherwise
+     * Model WordPress esc_url_raw(): drop any scheme not in $protocols, otherwise
      * return the URL unchanged (esc_url preserves %XX query octets). Tags are
      * already stripped upstream by Utils::base64UrlDecode().
      */
     private function stubSanitizeUrl(): void
     {
-        Functions\when('sanitize_url')->alias(static function ($url, $protocols = null) {
+        Functions\when('esc_url_raw')->alias(static function ($url, $protocols = null) {
             $allowed = $protocols ?: ['http', 'https'];
             $scheme  = strtolower((string) parse_url((string) $url, PHP_URL_SCHEME));
             if ($scheme !== '' && !in_array($scheme, $allowed, true)) {
@@ -129,7 +129,7 @@ class AjaxRefererSanitizationTest extends WpSlimstatTestCase
     public function test_rejects_invalid_host(): void
     {
         // Host-format failure returns false BEFORE the sanitizer runs.
-        Functions\expect('sanitize_url')->never();
+        Functions\expect('esc_url_raw')->never();
 
         // Underscores are not valid in the host-format regex.
         $this->assertFalse(\SlimStat\Tracker\Ajax::sanitizeReferer(self::encode('http://bad_host!!/path')));

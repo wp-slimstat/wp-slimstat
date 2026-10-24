@@ -23,6 +23,22 @@ class Chart
 
     private const CHART_TYPES = ['line', 'bar'];
 
+    /**
+     * How coarsely the end of a today-inclusive window is quantised, and how long the
+     * resulting cache entry lives.
+     *
+     * Deliberately one number for both jobs: the bucket makes the key stable long
+     * enough to be hit, the TTL bounds staleness at one bucket. Two constants could
+     * drift into a cache that is written and never read.
+     *
+     * 60s matches the once-a-minute cadence `adminbar-realtime.js` refreshes at, so a
+     * chart is never more out of date than the figures printed beside it.
+     *
+     * @see \wp_slimstat_db::CACHE_RANGE_BUCKET_SECONDS for the same technique applied
+     *      to the goal and funnel transients (D33).
+     */
+    private const CACHE_LIVE_BUCKET_SECONDS = 60;
+
     private array $args = [];
 
     private array $data = [];
@@ -36,7 +52,7 @@ class Chart
     public function showChart(array $args): void
     {
         $this->init($args);
-        $this->enqueueAssets();
+		self::enqueueAssets($this->args);
         $this->renderChart();
     }
 
@@ -44,29 +60,55 @@ class Chart
     {
         check_ajax_referer('slimstat_chart_nonce', 'nonce');
 
-        // Additional capability check - users must be able to view stats
-        $minimum_capability = 'read';
-        if (!current_user_can($minimum_capability)) {
+        if (!class_exists('\wp_slimstat_admin')) {
+            include_once SLIMSTAT_DIR . '/admin/index.php';
+        }
+        if (!\wp_slimstat_admin::can_view_stats()) {
             wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')]);
         }
 
-        $args        = isset($_POST['args']) ? json_decode(stripslashes($_POST['args']), true) : [];
-        $granularity = isset($_POST['granularity']) ? sanitize_text_field($_POST['granularity']) : 'daily';
-
-        if (!in_array($granularity, ['yearly', 'monthly', 'weekly', 'daily', 'hourly'], true)) {
+        $args = isset($_POST['args']) && is_string($_POST['args'])
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Decode JSON before validating chart arguments; granularity is checked against the fixed allowlist.
+            ? json_decode(wp_unslash($_POST['args']), true) : null;
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Decode JSON before validating chart arguments; granularity is checked against the fixed allowlist.
+        $granularity = $_POST['granularity'] ?? 'daily';
+        if (!is_string($granularity) || !in_array($granularity, self::GRANULARITIES, true)) {
             wp_send_json_error(['message' => __('Invalid granularity', 'wp-slimstat')]);
         }
-        
-        // Validate and sanitize start/end timestamps
-        if (isset($args['start'])) {
-            $args['start'] = absint($args['start']);
+        if (!is_array($args)) {
+            wp_send_json_error(['message' => __('Invalid chart arguments', 'wp-slimstat')]);
         }
-        if (isset($args['end'])) {
-            $args['end'] = absint($args['end']);
+        foreach (['start', 'end'] as $key) {
+            $timestamp = filter_var($args[$key] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+            if ((!is_int($args[$key] ?? null) && !is_string($args[$key] ?? null)) || false === $timestamp) {
+                wp_send_json_error(['message' => __('Invalid chart arguments', 'wp-slimstat')]);
+            }
+            $args[$key] = $timestamp;
+        }
+        if ($args['end'] < $args['start']) {
+            wp_send_json_error(['message' => __('Invalid chart arguments', 'wp-slimstat')]);
+        }
+        foreach (['chart_data', 'filters', 'chart_labels'] as $key) {
+            if (isset($args[$key]) && !is_array($args[$key])) {
+                wp_send_json_error(['message' => __('Invalid chart arguments', 'wp-slimstat')]);
+            }
+        }
+        foreach (['data1', 'data2', 'where'] as $key) {
+            if (isset($args['chart_data'][$key]) && !is_string($args['chart_data'][$key])) {
+                wp_send_json_error(['message' => __('Invalid chart arguments', 'wp-slimstat')]);
+            }
+        }
+        foreach ($args['filters'] ?? [] as $filter) {
+            if (!is_array($filter) || !isset($filter[0], $filter[1])
+                || !is_string($filter[0]) || !is_scalar($filter[1])) {
+                wp_send_json_error(['message' => __('Invalid chart arguments', 'wp-slimstat')]);
+            }
         }
 
         if (!class_exists('\wp_slimstat_db')) {
             include_once SLIMSTAT_DIR . '/admin/view/wp-slimstat-db.php';
+        }
+        if (empty(\wp_slimstat_db::$columns_names) || empty(\wp_slimstat_db::$filters_normalized)) {
             \wp_slimstat_db::init();
         }
 
@@ -78,6 +120,12 @@ class Chart
                     \wp_slimstat_db::$filters_normalized['columns'][$col] = $val;
                 }
             }
+        }
+
+        // Posted chart state must never replace the server-enforced author scope.
+        if ('on' === (\wp_slimstat::$settings['restrict_authors_view'] ?? 'off')
+            && !current_user_can('manage_options') && !empty($GLOBALS['current_user']->user_login)) {
+            \wp_slimstat_db::$filters_normalized['columns']['author'] = ['equals', $GLOBALS['current_user']->user_login];
         }
 
         \wp_slimstat_db::$filters_normalized['utime']['start'] = $args['start'];
@@ -169,8 +217,10 @@ class Chart
 
     private function detectGranularity(array $args): string
     {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
         if (!empty($_REQUEST['granularity']) && in_array($_REQUEST['granularity'], self::GRANULARITIES, true)) {
-            return sanitize_text_field($_REQUEST['granularity']);
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
+            return sanitize_text_field(wp_unslash($_REQUEST['granularity']));
         }
 
         $diff = $args['end'] - $args['start'];
@@ -196,26 +246,65 @@ class Chart
 
     private function fetchChartData(array $args): array
     {
+        // Quantise the live end BEFORE anything else reads $args, so the WHERE and the
+        // current-vs-previous CASE describe the same window. The end is otherwise `now`
+        // to the second and the cache key derives from the generated SQL, so the key
+        // moved every render and the cache could never be hit — the same defect as the
+        // goal transients (D33). Enabling caching without this achieves nothing. Cost:
+        // the last <60s of today is ignored, well inside the hourly granularity.
+        //
+        // Not routed through Query::processDateRange(), which already splits a
+        // today-inclusive range into a cached historical half and a live half. Four
+        // reasons, recorded because "just use the builder" is the obvious cleanup and
+        // it would silently break the coarse granularities:
+        //   1. getSplitDateRanges() matches ONE contiguous `dt BETWEEN`; this predicate
+        //      is current OR previous in a single clause.
+        //   2. $end is also inlined into the SELECT list's CASE label, so splitting the
+        //      WHERE alone still leaves a key that moves every second.
+        //   3. mergeGroupResults() sums 'counthits', not v1/v2, and for WEEK/MONTH/YEAR
+        //      the bucket containing today appears in BOTH halves — it would keep one
+        //      and discard the other's counts.
+        //   4. getAll() takes the split path whenever it matches, regardless of whether
+        //      caching is on, so this would apply even with the cache disabled.
+        $todayStart = intdiv((int) \wp_slimstat::now(), self::DAY) * self::DAY;
+        $isLive     = ($args['end'] >= $todayStart);
+
+        if ($isLive) {
+            $args['end'] = (int) (floor($args['end'] / self::CACHE_LIVE_BUCKET_SECONDS) * self::CACHE_LIVE_BUCKET_SECONDS);
+        }
+
         $prevArgs = $this->calculatePreviousArgs($args);
         $sqlInfo  = $this->buildSql($args, $prevArgs);
 
-        // Allow caching only if both current and previous ranges end before today
-        $todayStart     = strtotime(date('Y-m-d 00:00:00'));
-        $canCacheRanges = ($args['end'] < $todayStart && $prevArgs['end'] < $todayStart);
+        // Historical windows are immutable, so they keep the long TTL. Live ones expire
+        // with their bucket: a stale entry must never outlive the window it describes.
+        $expiration = $isLive ? self::CACHE_LIVE_BUCKET_SECONDS : DAY_IN_SECONDS;
 
-        $rowsQuery   = $sqlInfo['query'];
-        $totalsQuery = $sqlInfo['totalsQuery'];
+        $rowsQuery = $sqlInfo['query'];
 
         if ($rowsQuery instanceof Query) {
-            $rowsQuery->allowCaching($canCacheRanges, DAY_IN_SECONDS);
+            $rowsQuery->allowCaching(true, $expiration);
         }
 
-        if ($totalsQuery instanceof Query) {
-            $totalsQuery->allowCaching($canCacheRanges, DAY_IN_SECONDS);
-        }
+        $merged = $rowsQuery instanceof Query ? $rowsQuery->getAll() : [];
 
-        $results = $rowsQuery instanceof Query ? $rowsQuery->getAll() : [];
-        $totals  = $totalsQuery instanceof Query ? $totalsQuery->getAll() : [];
+        // Split the ROLLUP result: bucket rows, per-period super-rows (the totals the
+        // second query used to fetch), and the (NULL, NULL) grand total nothing renders.
+        // A bucket expression over a valid dt is never NULL, so dt IS NULL identifies a
+        // super-row on every supported MySQL (GROUPING() would need 8.0).
+        $results = [];
+        $totals  = [];
+        foreach ($merged as $row) {
+            $dt     = self::rowField($row, 'dt');
+            $period = self::rowField($row, 'period');
+            if (null === $dt) {
+                if (null !== $period) {
+                    $totals[] = $row;
+                }
+                continue;
+            }
+            $results[] = $row;
+        }
 
         return $this->processResults(
             $results,
@@ -230,19 +319,9 @@ class Chart
 
     private function calculatePreviousArgs(array $args): array
     {
-        $rangeSeconds = $args['end'] - $args['start'];
-
-        \wp_timezone();
-        $dtStart = (new \DateTime())->setTimestamp($args['start']);
-        $dtEnd   = (new \DateTime())->setTimestamp($args['end']);
-
-        $dtStart->modify(sprintf('-%s seconds', $rangeSeconds))->setTime(0, 0, 0);
-        $dtEnd->modify(sprintf('-%s seconds', $rangeSeconds));
-
-        return [
-            'start' => $dtStart->getTimestamp(),
-            'end'   => $dtEnd->getTimestamp(),
-        ];
+        // SQL ranges are inclusive: use the same number of seconds without sharing an endpoint.
+        $length = $args['end'] - $args['start'] + 1;
+        return ['start' => $args['start'] - $length, 'end' => $args['start'] - 1];
     }
 
     private function buildSql(array $args, array $prevArgs): array
@@ -273,7 +352,6 @@ class Chart
 
     private function sqlFor(string $gran, array $args, array $prevArgs): array
     {
-        $wpdb = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
         $data1 = $args['chart_data']['data1'] ?? '';
         $data2 = $args['chart_data']['data2'] ?? '';
         
@@ -304,12 +382,16 @@ class Chart
             // produce noisy logs or crash the AJAX handler instead of the
             // generic security rejection below.
             if (!is_string($args['chart_data']['where'])) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid chart filter expression.', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
             $normalized = self::normalizeSqlWhitespace($args['chart_data']['where']);
             $allowed    = self::getAllowedWhereClauses();
             if (!isset($allowed[$normalized])) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid chart filter expression.', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
             $canonical   = $allowed[$normalized]; // splice trusted text, never the user-derived $normalized
             // Wrap: allowlisted clauses may contain a top-level OR that would
@@ -318,12 +400,12 @@ class Chart
             $filterWhere = !empty($filterWhere) ? $filterWhere . ' AND ' . $wrapped : $wrapped;
         }
 
-        // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility.
-        // The sign appears inverted vs DataBuckets.php — this is INTENTIONAL:
-        // FROM_UNIXTIME(dt) returns server-local time, but CONVERT_TZ source '+00:00'
-        // declares it as UTC. The "inverted" sign cancels the implicit timezone shift,
-        // producing actual UTC. DataBuckets then applies the correct offset for display.
-        $totalOffsetSeconds = (int) $wpdb->get_var('SELECT UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(UTC_TIMESTAMP())');
+        // One probe per request, shared with DataBuckets, which asks the same question
+        // of the same connection. The sign below is INVERTED relative to it, and that
+        // is INTENTIONAL: FROM_UNIXTIME(dt) returns server-local time while CONVERT_TZ
+        // declares its source as UTC, so the inversion cancels the implicit shift and
+        // produces actual UTC. DataBuckets then applies the offset for display.
+        $totalOffsetSeconds = DataBuckets::serverTimezoneOffset();
         $sign               = ($totalOffsetSeconds < 0) ? '+' : '-';
         $abs                = abs($totalOffsetSeconds);
         $h                  = floor($abs / 3600);
@@ -374,37 +456,29 @@ class Chart
         // binding tighter to only the latter OR clause.
         $rowsQuery = Query::select($fields)
             ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
-            ->whereRaw('((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))', [$prevArgs['start'], $prevArgs['end'], $start, $end]);
+            ->whereRaw('((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))', [$prevStart, $prevEnd, $start, $end]);
 
         // Apply additional filters if any
         if (!empty($filterWhere)) {
             $rowsQuery->whereRaw($filterWhere);
         }
 
-        $rowsQuery->groupBy($dtExpr . ', period')
-            ->orderBy('sort_dt ASC, period ASC');
-
-        // Build totals query via Query builder
-        // No CONVERT_TZ needed for totals - dt is already stored as UTC timestamp and filters use UTC
-    $totalsFields = sprintf("%s AS v1, %s AS v2, CASE WHEN dt BETWEEN %s AND %s THEN 'current' ELSE 'previous' END AS period", $data1, $data2, $start, $end);
-    // Ensure totals WHERE uses grouped OR so filters are applied correctly.
-    $totalsWhere  = '((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))';
-        $totalsQuery  = Query::select($totalsFields)
-            ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
-            ->whereRaw($totalsWhere, [$prevArgs['start'], $prevArgs['end'], $start, $end]);
-
-        // Apply additional filters if any
-        if (!empty($filterWhere)) {
-            $totalsQuery->whereRaw($filterWhere);
-        }
-
-        $totalsQuery->groupBy('period')
-            ->orderBy('period ASC');
+        // ONE pass, not two (Run 25's licence): the per-period totals ride the SAME query
+        // as the buckets. GROUP BY period FIRST, then the bucket, WITH ROLLUP — each
+        // (period, NULL) super-row is that period's total computed over the underlying
+        // rows, which is correct even for COUNT(DISTINCT ...); summing the buckets is not
+        // (Run 8: 254 vs 21,410). Measured on the I8 corpus: Handler_read_rnd_next
+        // exactly halves, byte-stable A-B-B-A.
+        //
+        // No ORDER BY: MySQL below 8.0.12 rejects ORDER BY with ROLLUP outright, the
+        // supported floor is 5.6, and processResults() keys every row into DataBuckets
+        // by (dt, period) — the old ORDER BY was decoration. fetchChartData() splits the
+        // super-rows from the bucket rows and discards the (NULL, NULL) grand total.
+        $rowsQuery->groupBy('period, ' . $dtExpr . ' WITH ROLLUP');
 
         return [
-            'query'       => $rowsQuery,
-            'totalsQuery' => $totalsQuery,
-            'params'      => ['label' => $periods[$gran]['label'], 'gran' => $gran],
+            'query'  => $rowsQuery,
+            'params' => ['label' => $periods[$gran]['label'], 'gran' => $gran],
         ];
     }
 
@@ -497,11 +571,15 @@ class Chart
             $column = strtolower($matches[2]);
 
             if (!in_array($function, $allowedFunctions, true)) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid SQL function in chart data expression', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
 
             if (!in_array($column, $allowedColumns, true)) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid column name in chart data expression', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
 
             // Use esc_sql as additional protection (though column is whitelisted)
@@ -514,11 +592,15 @@ class Chart
             $column = strtolower($matches[2]);
 
             if (!in_array($function, $allowedFunctions, true)) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid SQL function in chart data expression', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
 
             if (!in_array($column, $allowedColumns, true)) {
+                // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
                 throw new \Exception(__('Invalid column name in chart data expression', 'wp-slimstat'));
+                // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
             }
 
             // Use esc_sql as additional protection (though column is whitelisted)
@@ -526,7 +608,9 @@ class Chart
         }
 
         // If none of the patterns match, reject the expression
+        // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; presentation layers escape or JSON-encode caught messages.
         throw new \Exception(__('Invalid SQL expression in chart data. Only whitelisted aggregate functions on valid columns are allowed.', 'wp-slimstat'));
+        // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
     }
 
     /**
@@ -587,27 +671,40 @@ class Chart
         return trim(preg_replace('/\s+/', ' ', $sql));
     }
 
+    /**
+     * One field from a result row that may be a stdClass or ARRAY_A. Six call sites had
+     * grown six inline copies of this duality, and the object branches lacked the
+     * missing-key guard their array twins had. Null when absent — load-bearing for the
+     * ROLLUP split, where `dt IS NULL` identifies a super-row.
+     */
+    private static function rowField($row, string $key)
+    {
+        return is_object($row) ? ($row->{$key} ?? null) : ($row[$key] ?? null);
+    }
+
     private function processResults(array $rows, array $totals, array $params, int $start, int $end, int $prevStart, int $prevEnd): array
     {
-        // Normalize totals to array of stdClass for backward compatibility
-        $totalsObjects = array_map(function ($t) {
-            if (is_object($t)) {
-                return $t;
-            }
-
-            $o         = new \stdClass();
-            $o->v1     = isset($t['v1']) ? (int) $t['v1'] : 0;
-            $o->v2     = isset($t['v2']) ? (int) $t['v2'] : 0;
-            $o->period = isset($t['period']) ? (string) $t['period'] : '';
-            return $o;
-        }, $totals);
+        // ROLLUP omits an empty period. Keep explicit slots for both consumers.
+        $totalsObjects = [
+            (object) ['v1' => 0, 'v2' => 0, 'period' => 'current'],
+            (object) ['v1' => 0, 'v2' => 0, 'period' => 'previous'],
+        ];
+        foreach ($totals as $total) {
+            $period = self::rowField($total, 'period');
+            if (!in_array($period, ['current', 'previous'], true)) { continue; }
+            $totalsObjects['current' === $period ? 0 : 1] = (object) [
+                'v1' => (int) self::rowField($total, 'v1'),
+                'v2' => (int) self::rowField($total, 'v2'),
+                'period' => $period,
+            ];
+        }
 
         $buckets = new DataBuckets($params['label'], $params['gran'], $start, $end, $prevStart, $prevEnd, $totalsObjects);
         foreach ($rows as $row) {
-            $dt     = (int) (is_object($row) ? $row->dt : ($row['dt'] ?? 0));
-            $v1     = (int) (is_object($row) ? $row->v1 : ($row['v1'] ?? 0));
-            $v2     = (int) (is_object($row) ? $row->v2 : ($row['v2'] ?? 0));
-            $period = (string) (is_object($row) ? $row->period : ($row['period'] ?? ''));
+            $dt     = (int) self::rowField($row, 'dt');
+            $v1     = (int) self::rowField($row, 'v1');
+            $v2     = (int) self::rowField($row, 'v2');
+            $period = (string) self::rowField($row, 'period');
             $buckets->addRow($dt, $v1, $v2, $period);
         }
 
@@ -623,32 +720,39 @@ class Chart
         return $prev;
     }
 
-    private function enqueueAssets(): void
-    {
-        wp_enqueue_script(
-            'slimstat_chartjs',
-            plugins_url('/admin/assets/js/chartjs/chart.min.js', SLIMSTAT_FILE),
-            [],
-            '4.2.1',
-            true
-        );
-        wp_enqueue_script(
-            'slimstat_chart',
-            plugins_url('/admin/assets/js/slimstat-chart.js', SLIMSTAT_FILE),
-            ['slimstat_chartjs'],
-            '1.3',
-            true
-        );
-        wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
-            // Use a relative admin-ajax path for the admin chart to avoid cross-origin issues in dev setups
-            'ajax_url'        => admin_url('admin-ajax.php', 'relative'),
-            'nonce'           => wp_create_nonce('slimstat_chart_nonce'),
-            'end_date'        => $this->args['end'] ?? null,
-            'end_date_string' => isset($this->args['end']) ? date('Y/m/d H:i:s', $this->args['end']) : null,
-            'timezone'        => get_option('timezone_string') ?: 'UTC',
-            'start_of_week'   => get_option('start_of_week', 1),
-        ]);
-    }
+	/**
+	 * Enqueue chart assets and localize their request context.
+	 *
+	 * @param array $args Optional chart arguments; omitted arguments leave the end date unset.
+	 */
+	public static function enqueueAssets(array $args = []): void
+	{
+		wp_enqueue_script(
+			'slimstat_chartjs',
+			plugins_url('/admin/assets/js/chartjs/chart.min.js', SLIMSTAT_FILE),
+			[],
+			'4.2.1',
+			true
+		);
+		wp_enqueue_script(
+			'slimstat_chart',
+			plugins_url('/admin/assets/js/slimstat-chart.js', SLIMSTAT_FILE),
+			['slimstat_chartjs', 'wp-i18n'],
+			SLIMSTAT_ANALYTICS_VERSION,
+			true
+		);
+		wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
+			// Use a relative admin-ajax path for the admin chart to avoid cross-origin issues in dev setups
+			'ajax_url'        => admin_url('admin-ajax.php', 'relative'),
+			'nonce'           => wp_create_nonce('slimstat_chart_nonce'),
+			'end_date'        => $args['end'] ?? null,
+			'end_date_string' => isset($args['end']) ? gmdate('Y/m/d H:i:s', $args['end']) : null,
+			'timezone'        => get_option('timezone_string') ?: 'UTC',
+			'start_of_week'   => get_option('start_of_week', 1),
+			/* translators: %s: metric name, such as Search Terms. */
+			'previous_series' => __('Previous %s', 'wp-slimstat'),
+		]);
+	}
 
     private function renderChart(): void
     {

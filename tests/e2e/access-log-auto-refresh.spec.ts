@@ -138,7 +138,7 @@ test.describe('Access Log auto-refresh — #258', () => {
     const box = await inside.boundingBox();
     expect(box, '.inside must have a bounding box').not.toBeNull();
     cap.reset();
-    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+    await inside.hover(); // Scroll into view; a tall report's geometric center can be off-screen.
     await page.waitForTimeout(12_000);
 
     // No auto-refresh should have fired during the hover.

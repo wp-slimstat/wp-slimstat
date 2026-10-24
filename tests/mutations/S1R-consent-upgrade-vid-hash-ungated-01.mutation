@@ -1,0 +1,19 @@
+target:    src/Tracker/Processor.php
+gate:      php tests/anonymous-identity-test.php
+kind:      restore-defect
+expect:    builds `vid_hash = UNHEX(...)` outside vidHashMatch()
+rationale: Restores the unconditional consent-upgrade disjunct (release review 2026-10-13, S1). Before AddVisitIdentity adds the column, MySQL rejects the whole OR'd lookup with 1054, the ip/visit_id match that claimed the anonymous row goes with it, and the consent upgrade inserts a duplicate visit.
+---
+diff --git a/src/Tracker/Processor.php b/src/Tracker/Processor.php
+--- a/src/Tracker/Processor.php
++++ b/src/Tracker/Processor.php
+@@ -595,7 +595,6 @@
+ 						}
+ 
+-						$vidHashMatch = self::vidHashMatch($table, $anonymousVidHash);
+-						if (null !== $vidHashMatch) {
+-							$whereClause[] = $vidHashMatch;
++						if ('' !== $anonymousVidHash) {
++							$whereClause[] = $GLOBALS['wpdb']->prepare('vid_hash = UNHEX(%s)', $anonymousVidHash);
+ 						}
+ 

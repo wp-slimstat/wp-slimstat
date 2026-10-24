@@ -12,6 +12,7 @@ class NotificationActions
 		Ajax::registerAdmin('dismiss_notification', [$this, 'dismissNotification']);
 		Ajax::registerAdmin('update_notifications_status', [$this, 'updateNotificationsStatus']);
 		Ajax::registerAdmin('refresh_notifications', [$this, 'refreshNotifications']);
+		Ajax::registerAdmin('notification_status', [$this, 'cachedNotifications']);
 	}
 
 	public function dismissNotification()
@@ -24,18 +25,18 @@ class NotificationActions
 			exit();
 		}
 
-		$notificationId = Request::get('notification_id');
+		$notificationId = Request::request('notification_id');
 
 		if ($notificationId === 'all') {
-			NotificationProcessor::dismissAllNotifications();
-			$message = \__('All notifications have been dismissed.', 'wp-slimstat');
+			$dismissed = NotificationProcessor::dismissAllNotifications();
 		} else {
-			NotificationProcessor::dismissNotification($notificationId);
-			$message = \__('Notification has been dismissed.', 'wp-slimstat');
+			$dismissed = NotificationProcessor::dismissNotification($notificationId);
+		}
+		if (!$dismissed) {
+			\wp_send_json_error(['message' => \__('Could not dismiss notifications. Please try again.', 'wp-slimstat')], 503);
 		}
 
-		\wp_send_json_success(['message' => $message]);
-		exit();
+		$this->cachedNotifications();
 	}
 
 	public function updateNotificationsStatus()
@@ -71,7 +72,19 @@ class NotificationActions
 		}
 
 		$fetcher = new NotificationFetcher();
-		$fetcher->fetchNotification();
+		$fetcher->fetchNotification(true);
+
+		$this->cachedNotifications();
+	}
+
+	/** Local cache only: the single visible-page refresh updates list and both badges. */
+	public function cachedNotifications()
+	{
+		\check_ajax_referer('wp_rest', 'slimstat_nonce');
+		if (!\current_user_can(\wp_slimstat::$settings['capability_can_admin'] ?? 'manage_options')) {
+			\wp_send_json_error(['message' => \__('Permission denied.', 'wp-slimstat')], 403);
+			return;
+		}
 
 		$notifications = NotificationFactory::getAllNotifications();
 

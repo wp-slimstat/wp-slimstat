@@ -1,0 +1,17 @@
+# A1 runs both database services on the same selected floor. The overlay also removes
+# MySQL 8's authentication flag, which MySQL 5.6 and MariaDB 10.0 do not understand.
+services:
+  db:
+    platform: ${A1_DB_PLATFORM}
+    command:
+      - --max_allowed_packet=64M
+  analytics-db:
+    platform: ${A1_DB_PLATFORM}
+    image: ${MYSQL_IMAGE}
+    command:
+      - --max_allowed_packet=64M
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: analytics
+    tmpfs:
+      - /var/lib/mysql

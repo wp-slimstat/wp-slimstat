@@ -83,7 +83,7 @@ function isSlimstatTrackingRequest(req: import('@playwright/test').Request): boo
 
 /** Batch-configure basic tracking settings. */
 async function configureBasicTracking(page: import('@playwright/test').Page): Promise<void> {
-  await setSlimstatOptions(page, {
+  await setSlimstatOptions({
     gdpr_enabled: 'off',
     javascript_mode: 'on',
     set_tracker_cookie: 'on',
@@ -302,7 +302,7 @@ test.describe('Returning Visitor Cookie Behavior', () => {
 
   test('GDPR on, no consent, anonymous_tracking on — no cookie but row recorded', async ({ page, browser }) => {
     await clearStatsTable();
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'on',
       consent_integration: 'slimstat_banner',
       use_slimstat_banner: 'on',
@@ -342,7 +342,7 @@ test.describe('Returning Visitor Cookie Behavior', () => {
 
   test('consent upgrade — cookie appears after accept, session continues', async ({ page, browser }) => {
     await clearStatsTable();
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'on',
       consent_integration: 'slimstat_banner',
       use_slimstat_banner: 'on',
@@ -540,7 +540,7 @@ test.describe('Returning Visitor Cookie Behavior', () => {
 
   test('JS mode + cookie on — returning visitor cookie set and access log groups by fingerprint', async ({ page, browser }) => {
     await clearStatsTable();
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       javascript_mode: 'on',
       set_tracker_cookie: 'on',
       gdpr_enabled: 'off',

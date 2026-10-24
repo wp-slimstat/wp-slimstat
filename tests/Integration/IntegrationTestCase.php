@@ -77,6 +77,10 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
     protected function stubWpFunctions(): void
     {
         Functions\stubs([
+            'sanitize_key' => static fn($v) => preg_replace('/[^a-z0-9_-]/', '', strtolower($v)),
+            'admin_url' => static fn($p = '') => 'https://example.test/wp-admin/' . $p,
+            'plugins_url' => static fn($p = '') => 'https://example.test/plugins/' . $p,
+            'add_query_arg' => static fn($args, $url) => $url . (strpos($url, '?') === false ? '?' : '&') . http_build_query($args),
             'sanitize_text_field' => static fn($v) => is_string($v) ? trim($v) : '',
             'wp_unslash'          => static fn($v) => is_array($v) ? array_map('stripslashes', $v) : (is_string($v) ? stripslashes($v) : $v),
             '__'                  => static fn($text, $domain = 'default') => $text,
@@ -86,6 +90,7 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
             'esc_html'            => static fn($v) => $v,
             'esc_attr'            => static fn($v) => $v,
             'esc_url'             => static fn($v) => $v,
+            'wp_kses_post'        => static fn($v) => $v,
             'number_format_i18n'  => static fn($n) => number_format((float) $n),
             'wp_has_consent'      => static fn() => true,
             // 'U' returns the current epoch (used by resolve_requested_date_range()'s
