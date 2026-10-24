@@ -151,7 +151,6 @@ test.describe('AC-221: Admin Bar Chart Consistency', () => {
 
     await expect(page.locator('.slimstat-adminbar__chart-bar')).toHaveCount(30);
     await expect(page.locator('.slimstat-adminbar__chart-preview [data-count]')).toHaveCount(0);
-    await expect(page.locator('.slimstat-adminbar__chart-preview')).toContainText('Sample chart');
     await expect(page.locator('.slimstat-adminbar__chart-preview .slimstat-adminbar__chart-bars')).toHaveAttribute('aria-hidden', 'true');
     await expect(page.locator('#wpadminbar .slimstat-adminbar__pro-badge')).toHaveCount(2);
     const stats = await page.locator('#wpadminbar .slimstat-adminbar__stats-grid').textContent();
@@ -161,8 +160,9 @@ test.describe('AC-221: Admin Bar Chart Consistency', () => {
     await page.context().route('https://wp-slimstat.com/**', route=>route.fulfill({body:'Upgrade destination'}));
     await page.locator('#wp-admin-bar-slimstat-header').hover();
     const cta=page.locator('.slimstat-adminbar__preview-action a');
-    await expect(cta).toHaveAccessibleName('See Pro plans');
     await expect(cta).toBeVisible();
+    await expect(page.locator('.slimstat-adminbar__chart-preview')).toHaveAccessibleName('Pro traffic chart preview');
+    await expect(cta).toHaveAccessibleName('See Pro plans');
     await cta.focus();
     await expect(cta).toBeFocused();
     const [popup]=await Promise.all([page.waitForEvent('popup'),page.keyboard.press('Enter')]);

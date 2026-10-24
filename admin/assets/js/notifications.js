@@ -29,17 +29,25 @@ jQuery(function ($) {
     sidebar.querySelector('.slimstat-notification-sidebar__close')?.addEventListener('click', close);
     document.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
 
-    function updateDismissAll() {
+    function updateSidebarState() {
         const inbox = sidebar.querySelector('[data-tab="tab-1"]').classList.contains('slimstat-notification-sidebar__tab--active');
         const count = sidebar.querySelectorAll('#tab-1 .slimstat-notification-sidebar__card:not(.slimstat-notification-sidebar__no-card)').length;
         if (dismissAll) dismissAll.style.display = inbox && count ? 'inline-flex' : 'none';
+        const pane = sidebar.querySelector('.slimstat-notification-sidebar__tab-pane--active .slimstat-notification-sidebar__cards');
+        if (pane && !pane.querySelector('.slimstat-notification-sidebar__card')) {
+            const card = $('<div class="slimstat-notification-sidebar__card slimstat-notification-sidebar__no-card">');
+            const body = $('<div class="slimstat-notification-sidebar__card-body">').appendTo(card);
+            $('<h2 class="slimstat-notification-sidebar__card-content">').text(slimstat_admin.empty_title).appendTo(body);
+            $('<p class="slimstat-notification-sidebar__card-content">').text(inbox ? slimstat_admin.empty_inbox : slimstat_admin.empty_dismissed).appendTo(body);
+            card.appendTo(pane);
+        }
     }
     tabs.forEach(tab => tab.addEventListener('click', () => {
         tabs.forEach(item => item.classList.toggle('slimstat-notification-sidebar__tab--active', item === tab));
         sidebar.querySelectorAll('.slimstat-notification-sidebar__tab-pane').forEach(pane => {
             pane.classList.toggle('slimstat-notification-sidebar__tab-pane--active', pane.id === tab.dataset.tab);
         });
-        updateDismissAll();
+        updateSidebarState();
     }));
 
     function apply(data) {
@@ -55,7 +63,7 @@ jQuery(function ($) {
             $('<span class="plugin-count">').text(label).appendTo(badge);
             $('#adminmenu .wp-menu-name > .slimstat-menu-title').parent().append(badge);
         }
-        updateDismissAll();
+        updateSidebarState();
     }
     function schedule() {
         clearTimeout(timer);
@@ -84,6 +92,6 @@ jQuery(function ($) {
         refresh('dismiss_notification', { notification_id: this.classList.contains('slimstat-notification-sidebar__dismiss-all') ? 'all' : this.dataset.notificationId });
     });
     document.addEventListener('visibilitychange', schedule);
-    updateDismissAll();
+    updateSidebarState();
     schedule();
 });

@@ -2284,7 +2284,7 @@ class wp_slimstat_admin
             ]);
         }
 
-        if (!$is_pro) {
+        if (!$is_pro && current_user_can('manage_options')) {
             $preview_bars = '';
             foreach ([22, 40, 32, 58, 44, 68, 36, 52, 78, 60, 46, 90, 64, 50, 72, 44, 62, 82, 56, 40, 66, 48, 76, 58, 34, 52, 70, 46, 60, 38] as $height) {
                 $preview_bars .= '<div class="slimstat-adminbar__chart-bar" style="height:' . $height . '%"></div>';
@@ -2292,12 +2292,11 @@ class wp_slimstat_admin
             $GLOBALS['wp_admin_bar']->add_node([
                 'id' => 'slimstat-adminbar-chart',
                 'parent' => 'slimstat-header',
-                'title' => '<div class="slimstat-adminbar__chart-container slimstat-adminbar__chart-preview">'
+                'title' => '<div class="slimstat-adminbar__chart-container slimstat-adminbar__chart-preview" role="group" aria-label="' . esc_attr__('Pro traffic chart preview', 'wp-slimstat') . '">'
                     . '<div class="slimstat-adminbar__chart-bars" aria-hidden="true">' . $preview_bars . '</div>'
                     . '<div class="slimstat-adminbar__preview-action"><strong>' . esc_html__('See traffic as it happens', 'wp-slimstat') . '</strong>'
                     . '<a href="' . esc_url($upgrade_url) . '" class="slimstat-adminbar__cta-link" target="_blank" rel="noopener noreferrer">'
-                    . esc_html__('See Pro plans', 'wp-slimstat') . '</a>'
-                    . '<span>' . esc_html__('Sample chart', 'wp-slimstat') . '</span></div></div>',
+                    . esc_html__('See Pro plans', 'wp-slimstat') . '</a></div></div>',
                 'meta' => ['class' => 'slimstat-adminbar__chart-wrapper'],
             ]);
         }

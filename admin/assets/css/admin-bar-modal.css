@@ -531,10 +531,9 @@
 
 /* Illustrative Free chart: no protected values or accessible faux measurements. */
 #wpadminbar .slimstat-adminbar__chart-preview { position: relative; min-height: 110px; }
-#wpadminbar .slimstat-adminbar__chart-preview .slimstat-adminbar__chart-bars { position: absolute; inset-inline: 14px; top: 6px; filter: blur(3px); opacity: .45; pointer-events: none; }
-#wpadminbar .slimstat-adminbar__preview-action { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; }
+#wpadminbar .slimstat-adminbar__chart-preview .slimstat-adminbar__chart-bars { position: absolute; inset-inline: 14px; top: 6px; filter: blur(2px); opacity: .7; pointer-events: none; }
+#wpadminbar .slimstat-adminbar__preview-action { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 90px; gap: 6px; text-align: center; }
 #wpadminbar .slimstat-adminbar__preview-action > strong { color: #f0f0f1; font-size: 14px; font-weight: 600; line-height: 1.4; }
-#wpadminbar .slimstat-adminbar__preview-action > span { color: #c3c4c7; font-size: 12px; line-height: 1.4; }
 #wpadminbar .slimstat-adminbar__preview-action .slimstat-adminbar__cta-link { display: inline-block !important; color: #1d2327 !important; background: #f6f7f7; padding: 6px 12px !important; border: 1px solid #c3c4c7; border-radius: 4px; height: auto; line-height: 1.5; text-decoration: none !important; }
 #wpadminbar .slimstat-adminbar__preview-action a:hover { background: #dcdcde; }
 #wpadminbar .slimstat-adminbar__preview-action a:focus-visible { outline: 2px solid #72aee6; outline-offset: 2px; }
