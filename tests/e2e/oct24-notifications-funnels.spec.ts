@@ -112,7 +112,9 @@ test('goals box keeps inner margins, a flat upsell and no footer gap on desktop,
           return {
             insets:blocks.map(inset),
             subtitleOffset:rtl?title.right-sub.right:sub.left-title.left,
-            footerGap:box.getBoundingClientRect().bottom-blocks[blocks.length-1].getBoundingClientRect().bottom,
+            // From the card's lowest child, not the upsell: with WP Consent API active
+            // (CI) a consent note follows the upsell; hidden children report bottom 0.
+            footerGap:box.getBoundingClientRect().bottom-Math.max(...[...box.querySelector('.slimstat-gf-goals').children].map(e=>e.getBoundingClientRect().bottom)),
             nestedCard:!!style&&(style.borderTopWidth!=='0px'||style.backgroundColor!=='rgba(0, 0, 0, 0)'),
             overflow:box.scrollWidth>box.clientWidth+1,
           };
