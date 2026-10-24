@@ -57,8 +57,8 @@ class ViewerQueryTest extends WpSlimstatTestCase
 	{
 		$this->ready();
 		$this->canned['kind = 0'] = [
-			['selector' => '#buy', 'label' => 'Buy now', 'bx' => '9', 'by' => '10', 'x' => '700', 'y' => '410', 'vw' => '1440', 'n' => '12', 'dead' => '0', 'rage' => '3', 'first' => '5'],
-			['selector' => null, 'label' => null, 'bx' => '0', 'by' => '0', 'x' => '20', 'y' => '30', 'vw' => '1400', 'n' => '2', 'dead' => '2', 'rage' => '0', 'first' => '0'],
+			['selector' => '#buy', 'label' => 'Buy now', 'rx' => '4642', 'ry' => '5167', 'x' => '700', 'y' => '410', 'vw' => '1440', 'vh' => '900', 'n' => '12', 'dead' => '0', 'rage' => '3', 'first' => '5'],
+			['selector' => null, 'label' => null, 'rx' => '100', 'ry' => '200', 'x' => '20', 'y' => '30', 'vw' => '1400', 'vh' => '800', 'n' => '2', 'dead' => '2', 'rage' => '0', 'first' => '0'],
 		];
 
 		$bins = Query::clickBins('/pricing', 'mobile', 10, 20);
@@ -68,7 +68,8 @@ class ViewerQueryTest extends WpSlimstatTestCase
 		self::assertStringContainsString('h.device = 3', $sql);
 		self::assertStringContainsString('h.dt BETWEEN 10 AND 20', $sql);
 		self::assertStringNotContainsString('slim_stats', $sql, 'no filters, no join');
-		self::assertSame(['s' => '#buy', 'l' => 'Buy now', 'rx' => 4750, 'ry' => 5250, 'x' => 700, 'y' => 410, 'vw' => 1440, 'n' => 12, 'd' => 0, 'r' => 3, 'f' => 5], $bins[0]);
+		self::assertSame(['s' => '#buy', 'l' => 'Buy now', 'rx' => 4642, 'ry' => 5167, 'x' => 700, 'y' => 410, 'vw' => 1440, 'vh' => 900, 'n' => 12, 'd' => 0, 'r' => 3, 'f' => 5], $bins[0]);
+		self::assertStringContainsString('GROUP BY h.sel, h.vw, h.vh, bx, `by`', $sql);
 		self::assertSame('', $bins[1]['s'], 'a click on an element with no usable selector keeps its position');
 	}
 

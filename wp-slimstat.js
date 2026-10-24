@@ -2092,7 +2092,7 @@ if (!window.requestIdleCallback) {
         var clamp = function (v) {
             return Math.max(0, Math.min(10000, v));
         };
-        batch.r.push([batch.seq++, flags, index, clamp(rx), clamp(ry), Math.max(0, Math.round(e.pageX)), Math.max(0, Math.round(e.pageY))]);
+        batch.r.push([batch.seq++, flags, index, clamp(rx), clamp(ry), Math.max(0, Math.round(e.pageX)), Math.max(0, Math.round(e.pageY)), window.innerWidth || 0, window.innerHeight || 0]);
         if (batch.r.length >= HM_FLUSH_AT) heatmapFlush(false);
     }
 

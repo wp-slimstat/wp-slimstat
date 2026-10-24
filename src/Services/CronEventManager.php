@@ -4,7 +4,6 @@ namespace SlimStat\Services;
 
 use SlimStat\Components\Event;
 use SlimStat\Services\Admin\Notification\NotificationFetcher;
-use SlimStat\Services\Admin\Notification\NotificationFactory;
 
 class CronEventManager
 {
@@ -20,7 +19,7 @@ class CronEventManager
 	}
 
 	/**
-	 * Schedule a one-time event to fetch notifications if none exist.
+	 * Bootstrap once, including a successful empty feed. The daily job refreshes thereafter.
 	 * Uses a transient lock to prevent repeated scheduling and avoid race conditions.
 	 * This defers the HTTP request to avoid blocking the current page load.
 	 */
@@ -30,15 +29,14 @@ class CronEventManager
 			return;
 		}
 
-		$existingNotifications = NotificationFactory::getRawNotificationsData();
-
-		if (empty($existingNotifications) || empty($existingNotifications['data'])) {
+		$state = \get_option(NotificationFetcher::STATE, []);
+		if (empty($state['last_success']) && ($state['failures'] ?? 0) < 3 && !\wp_next_scheduled('slimstat_initial_notification_fetch')) {
 			// Prevent repeated scheduling if already scheduled or recently attempted
 			if (\get_transient('slimstat_notification_fetch_lock')) {
 				return;
 			}
 			\set_transient('slimstat_notification_fetch_lock', true, 5 * MINUTE_IN_SECONDS);
-			\wp_schedule_single_event(time(), 'slimstat_initial_notification_fetch');
+			\wp_schedule_single_event(max(time(), (int) ($state['next_attempt'] ?? 0)), 'slimstat_initial_notification_fetch');
 		}
 	}
 

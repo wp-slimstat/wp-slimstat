@@ -35,7 +35,7 @@ async function capture(browser, hm, act = defaultClicks) {
     });
     await act(tab);
     await tab.waitForTimeout(100);
-    await tab.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    await tab.evaluate(() => { window.SlimStatParams.id = '5.0123456789abcdef'; window.dispatchEvent(new Event('pagehide')); });
     await tab.waitForTimeout(200);
     const sent = await tab.evaluate(() => window.__sent);
     await tab.close();
@@ -63,6 +63,14 @@ async function capture(browser, hm, act = defaultClicks) {
         assert.equal(hm.sc[1], 3000, 'document height');
         assert(hm.sc[0] >= 1900, `scroll depth reaches the bottom of the scrolled viewport (${hm.sc[0]})`);
         console.log('PASS: full level sends element-relative clicks, flags and scroll on the finalize request');
+
+        const resized = await capture(browser, { l: 'main', r: 10000 }, async (tab) => {
+            await tab.click('#buy', { position: { x: 50, y: 10 } });
+            await tab.setViewportSize({width: 390, height: 844});
+            await tab.click('#buy', { position: { x: 80, y: 20 } });
+        });
+        assert.deepEqual(resized.flatMap(b => b.hm.r.map(r => r.slice(7))), [[1280,720],[390,844]], 'a resize never relabels earlier clicks');
+        assert.deepEqual(resized.flatMap(b=>b.hm.r.map(r=>r[0])), [0,1], 'resize does not duplicate sequence numbers');
 
         const main = await capture(browser, { l: 'main', r: 10000 });
         assert.equal(main.length, 1);

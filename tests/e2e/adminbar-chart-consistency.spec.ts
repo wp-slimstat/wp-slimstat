@@ -7,7 +7,7 @@
  * Issue: https://github.com/wp-slimstat/wp-slimstat/issues/221
  *
  * Note: The chart data consistency comparison (test 1) only applies when
- * Pro is active/licensed. Free renders no chart and shows a "Pro" badge
+ * Pro is active/licensed. Free renders an illustrative chart and shows a "Pro" badge
  * in place of Views and Referrals (audit F3).
  */
 import { test, expect } from '@playwright/test';
@@ -99,13 +99,9 @@ test.describe('AC-221: Admin Bar Chart Consistency', () => {
     expect(html).not.toMatch(/PHP Warning:.*\.php/);
     expect(html).not.toMatch(/Class.*LiveAnalyticsReport.*not found/);
 
-    // Pro renders 30 bars; Free renders no chart at all (audit F3)
-    const isPro = await page.evaluate(() => {
-      const bar = (window as any).SlimStatAdminBar;
-      return bar?.is_pro === true || bar?.is_pro === '1';
-    });
+    // Both editions render 30 bars; only Pro bars contain measured values.
     const barCount = await page.locator('.slimstat-adminbar__chart-bar').count();
-    expect(barCount).toBe(isPro ? 30 : 0);
+    expect(barCount).toBe(30);
   });
 
   test('admin bar chart data values are non-negative integers', async ({ page }) => {
@@ -135,7 +131,7 @@ test.describe('AC-221: Admin Bar Chart Consistency', () => {
     expect(data[data.length - 1].minutesAgo).toBe(0);
   });
 
-  test('free users see real figures only: no chart, Pro badges, no invented numbers (audit F3)', async ({ page }) => {
+  test('free users see an honest decorative chart preview and Pro badges', async ({ page }) => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
       waitUntil: 'domcontentloaded',
     });
@@ -153,13 +149,26 @@ test.describe('AC-221: Admin Bar Chart Consistency', () => {
       return;
     }
 
-    await expect(page.locator('.slimstat-adminbar__chart-bar')).toHaveCount(0);
+    await expect(page.locator('.slimstat-adminbar__chart-bar')).toHaveCount(30);
+    await expect(page.locator('.slimstat-adminbar__chart-preview [data-count]')).toHaveCount(0);
+    await expect(page.locator('.slimstat-adminbar__chart-preview')).toContainText('Illustrative chart preview');
+    await expect(page.locator('.slimstat-adminbar__chart-preview .slimstat-adminbar__chart-bars')).toHaveAttribute('aria-hidden', 'true');
     await expect(page.locator('#wpadminbar .slimstat-adminbar__pro-badge')).toHaveCount(2);
     const stats = await page.locator('#wpadminbar .slimstat-adminbar__stats-grid').textContent();
     expect(stats).not.toMatch(/\b(248|312)\b/);
-    // The upsell line shows on SlimStat screens only (audit F7).
+    // Upgrade is a normal external link, even on screens that POST report-filter links.
     await expect(page.locator('#wpadminbar .slimstat-adminbar__cta-link')).toHaveCount(1);
+    await page.context().route('https://wp-slimstat.com/**', route=>route.fulfill({body:'Upgrade destination'}));
+    await page.locator('#wp-admin-bar-slimstat-header').hover();
+    const cta=page.locator('.slimstat-adminbar__preview-action a');
+    await expect(cta).toBeVisible();
+    await cta.focus();
+    await expect(cta).toBeFocused();
+    const [popup]=await Promise.all([page.waitForEvent('popup'),page.keyboard.press('Enter')]);
+    await popup.waitForLoadState();
+    expect(popup.url()).toBe(await cta.getAttribute('href'));
+    await popup.close();
     await page.goto(`${BASE_URL}/wp-admin/index.php`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('#wpadminbar .slimstat-adminbar__cta')).toHaveCount(0);
+    await expect(page.locator('.slimstat-adminbar__chart-preview')).toHaveCount(1);
   });
 });

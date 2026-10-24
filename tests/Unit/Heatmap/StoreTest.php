@@ -260,6 +260,18 @@ class StoreTest extends WpSlimstatTestCase
 		self::assertStringContainsString("'p', '')", $this->heatmapQueries()[1]);
 	}
 
+	public function test_each_click_keeps_its_viewport_after_a_resize(): void
+	{
+		$this->readyToIngest();
+		Store::ingest(42, $this->batch([
+			[0, 1, 0, 2500, 2500, 50, 10, 1280, 720],
+			[1, 1, 0, 4000, 5000, 80, 20, 390, 844],
+		], [['#buy', 'Buy']]));
+		$sql = $this->heatmapQueries()[0];
+		self::assertStringContainsString('1700000000, 1, 1280, 720, 0, 50, 10', $sql);
+		self::assertStringContainsString('1700000000, 3, 390, 844, 0, 80, 20', $sql);
+	}
+
 	/** Form posts arrive slashed by WordPress; the batch still decodes. A write failure throws. */
 	public function test_slashed_batch_decodes_and_write_failure_throws(): void
 	{
