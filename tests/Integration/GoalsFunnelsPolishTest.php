@@ -83,6 +83,26 @@ class GoalsFunnelsPolishTest extends TestCase
         $this->assertStringContainsString("'Funnels: Pro feature preview'", $php, 'Section label must still name the preview');
     }
 
+    // ── Free preview names the five prefab templates (2026-10-24): the pills read
+    //    the same $template_cards the Pro picker renders, so the two can't drift,
+    //    and the "+ Add funnel" entry (a CTA, not a template) stays out. ──
+
+    public function test_locked_preview_lists_template_titles_from_the_shared_cards(): void
+    {
+        $php    = file_get_contents($this->partialPath('funnels-card.php'));
+        $cards  = strpos($php, '$template_cards = [');
+        $locked = strpos($php, 'if ($locked) :');
+        $this->assertNotFalse($cards);
+        $this->assertNotFalse($locked);
+        $this->assertLessThan($locked, $cards, '$template_cards must be defined before the locked branch returns, or the Free preview has nothing to list');
+
+        $lockedBranch = substr($php, $locked, strpos($php, 'endif;', $locked) - $locked);
+        $this->assertStringContainsString('<ul class="slimstat-gf-upsell__templates"', $lockedBranch, 'Locked preview must list the templates');
+        $this->assertStringContainsString('foreach ($template_cards as $card)', $lockedBranch, 'Pills must iterate the shared $template_cards, not a second hand-typed list');
+        $this->assertStringContainsString("'blank' === \$card['key']", $lockedBranch, 'The "+ Add funnel" CTA entry must be skipped');
+        $this->assertStringContainsString('esc_html($card[\'title\'])', $lockedBranch);
+    }
+
     // ── Copy (FN-14 remainder): sentence-case CTAs, no en dashes, value placeholder ──
 
     public function test_header_ctas_are_sentence_case(): void

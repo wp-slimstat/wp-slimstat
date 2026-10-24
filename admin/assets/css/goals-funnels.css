@@ -395,6 +395,29 @@
     color: var(--ss-text-primary);
 }
 
+/* Free funnels preview: the prefab template titles as quiet pills under the title,
+   echoing the Pro picker's cards (surface + 1px border) at pill scale. */
+.slimstat-gf-upsell__templates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ss-space-2);
+    margin: var(--ss-space-2) 0 var(--ss-space-3);
+    padding: 0;
+    list-style: none;
+}
+
+.slimstat-gf-upsell__templates li {
+    margin: 0;
+    padding: var(--ss-space-1) var(--ss-space-3);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-pill);
+    background: var(--ss-surface);
+    font-size: var(--ss-text-sm);
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--ss-text-body);
+}
+
 /* Not a card inside the panel. The cap keeps the pitch at a readable measure and
    sends the button and link to their own row. */
 .slimstat-gf-upsell .slimstat-pro-adds {

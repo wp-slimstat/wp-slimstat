@@ -149,9 +149,12 @@ test('locked funnels preview shows the funnel shape and one flat, unclipped pitc
           const lock=box.querySelector('.slimstat-gf-funnel-lock');
           const mock=box.querySelector('.slimstat-gf-funnel-mock');
           const adds=lock.querySelector('.slimstat-pro-adds');
+          const title=lock.querySelector('.slimstat-gf-upsell__title').getBoundingClientRect();
           const pitch=adds.querySelector('p').getBoundingClientRect();
           const last=[...adds.querySelectorAll('*')].pop().getBoundingClientRect();
           const s=getComputedStyle(adds);
+          const pills=[...lock.querySelectorAll('.slimstat-gf-upsell__templates li')];
+          const pillRects=pills.map(li=>li.getBoundingClientRect());
           return {
             blur:parseFloat((getComputedStyle(mock).filter.match(/blur\(([\d.]+)px\)/)||[0,99])[1]),
             paragraphs:lock.querySelectorAll('p').length,
@@ -159,6 +162,10 @@ test('locked funnels preview shows the funnel shape and one flat, unclipped pitc
             pitchOnBars:pitch.top<mock.getBoundingClientRect().bottom-1,
             clipped:last.bottom>lock.getBoundingClientRect().bottom+1||lock.scrollHeight>lock.clientHeight+1,
             overflow:box.scrollWidth>box.clientWidth+1,
+            // The template pills sit between the title and the pitch, inside the panel.
+            pills:pills.map(li=>li.textContent.trim()),
+            pillsBetween:pillRects.every(r=>r.top>=title.bottom-1&&r.bottom<=pitch.top+1),
+            pillsInside:pillRects.every(r=>r.left>=lock.getBoundingClientRect().left-1&&r.right<=lock.getBoundingClientRect().right+1),
           };
         });
         expect(m.blur).toBeLessThanOrEqual(1.5);
@@ -167,6 +174,10 @@ test('locked funnels preview shows the funnel shape and one flat, unclipped pitc
         expect(m.pitchOnBars).toBe(false);
         expect(m.clipped).toBe(false);
         expect(m.overflow).toBe(false);
+        // Same five titles the Pro template picker shows; the "+ Add funnel" CTA is not one.
+        expect(m.pills).toEqual(['WooCommerce purchase','Checkout completion','Landing to contact','Homepage to pricing to checkout','Landing to thank-you (advanced)']);
+        expect(m.pillsBetween).toBe(true);
+        expect(m.pillsInside).toBe(true);
         await box.screenshot({path:info.outputPath(`locked-funnels-${width}-${dir}.png`)});
       }
     }
