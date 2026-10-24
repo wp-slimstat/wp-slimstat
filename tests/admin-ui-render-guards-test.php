@@ -143,8 +143,14 @@ check(false !== strpos(read_or_die('admin/view/partials/header.php'), "show_late
 check(false !== strpos(read_or_die('src/Migration/MigrationService.php'), 'public static function manager(): ?MigrationManager'), 'Release notice: MigrationService exposes the manager so the notice can wait for migrations');
 // Plugin Check (WordPress.Security.EscapeOutput) flags `echo $var` even when $var holds escaped
 // pieces, so each placement is assembled first and echoed once through wp_kses_post().
+// Checked per placement: the notice branch returns early, the bar branch is the remainder.
 $notice = slimstat_function_body($admin, 'show_latest_news');
-check(2 === preg_match_all('/\becho\b/', $notice) && 2 === substr_count($notice, 'echo wp_kses_post('), 'Release notice: both placements echo once, through wp_kses_post()');
+$split  = (int) strpos($notice, "if ('notice' === \$placement)");
+$end    = (int) strpos($notice, 'return;', $split) + strlen('return;');
+check($split > 0 && $end > $split, 'Release notice: the placement branches are where the guard expects them');
+foreach (['notice' => substr($notice, $split, $end - $split), 'bar' => substr($notice, $end)] as $placement => $branch) {
+    check(1 === preg_match_all('/\becho\b/', $branch) && 1 === substr_count($branch, 'echo wp_kses_post('), "Release {$placement}: echoes once, through wp_kses_post()");
+}
 
 // --- Pro links (tests/Integration/ProLinksTest.php covers Export and the Channels row) ---
 $upgrade = read_or_die('admin/view/upgrade-pro.php');
