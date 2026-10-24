@@ -90,6 +90,7 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
             'esc_html'            => static fn($v) => $v,
             'esc_attr'            => static fn($v) => $v,
             'esc_url'             => static fn($v) => $v,
+            'wp_kses_post'        => static fn($v) => $v,
             'number_format_i18n'  => static fn($n) => number_format((float) $n),
             'wp_has_consent'      => static fn() => true,
             // 'U' returns the current epoch (used by resolve_requested_date_range()'s

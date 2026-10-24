@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-24T10:51:02+00:00\n"
+"POT-Creation-Date: 2026-10-24T14:25:56+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -2941,7 +2941,7 @@ msgstr ""
 #: admin/view/layout.php:43
 #: admin/view/layout.php:55
 #: admin/view/partials/goals-funnels/confirm-sheet.php:37
-#: admin/view/partials/goals-funnels/funnels-card.php:181
+#: admin/view/partials/goals-funnels/funnels-card.php:177
 #: admin/view/partials/goals-funnels/goals-card.php:147
 #: admin/assets/js/goals-funnels.js:206
 msgid "Delete"
@@ -4001,93 +4001,84 @@ msgstr ""
 msgid "Funnels: Pro feature preview"
 msgstr ""
 
+#: admin/view/partials/goals-funnels/funnels-card.php:48
+msgid "Find the step where visitors leave"
+msgstr ""
+
 #: admin/view/partials/goals-funnels/funnels-card.php:49
-msgid "Example funnel"
+msgid "Pick the steps that lead to a sale or sign-up, such as product, cart and checkout. Pro funnels read the visits SlimStat already records, so your first report covers past traffic with no extra tracking code."
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:50
-msgid "See where visitors drop off, step by step."
-msgstr ""
-
-#: admin/view/partials/goals-funnels/funnels-card.php:51
-msgid "Build 2 to 5 step funnels and see exactly where visitors drop off at each stage. Available in SlimStat Pro."
-msgstr ""
-
-#: admin/view/partials/goals-funnels/funnels-card.php:52
-#: admin/view/wp-slimstat-reports.php:2338
-msgid "Unlock funnel reports with Pro."
-msgstr ""
-
-#: admin/view/partials/goals-funnels/funnels-card.php:69
+#: admin/view/partials/goals-funnels/funnels-card.php:65
 #: admin/assets/js/goals-funnels.js:74
 msgid "WooCommerce purchase"
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:70
+#: admin/view/partials/goals-funnels/funnels-card.php:66
 msgid "Product → Cart → Checkout → Order received"
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:74
+#: admin/view/partials/goals-funnels/funnels-card.php:70
 #: admin/assets/js/goals-funnels.js:91
 msgid "Checkout completion"
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:75
+#: admin/view/partials/goals-funnels/funnels-card.php:71
 msgid "Cart → Checkout → Order received"
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:79
+#: admin/view/partials/goals-funnels/funnels-card.php:75
 #: admin/assets/js/goals-funnels.js:105
 msgid "Landing to contact"
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:80
+#: admin/view/partials/goals-funnels/funnels-card.php:76
 msgid "Landing → Contact (most form plugins don't redirect to thank-you)"
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:84
+#: admin/view/partials/goals-funnels/funnels-card.php:80
 #: admin/assets/js/goals-funnels.js:112
 msgid "Homepage to pricing to checkout"
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:85
+#: admin/view/partials/goals-funnels/funnels-card.php:81
 msgid "Homepage → Pricing → Checkout"
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:89
+#: admin/view/partials/goals-funnels/funnels-card.php:85
 #: admin/assets/js/goals-funnels.js:123
 msgid "Landing to thank-you (advanced)"
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:90
+#: admin/view/partials/goals-funnels/funnels-card.php:86
 msgid "Landing → Form → Thank-you (only if you redirect after submit)"
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:98
+#: admin/view/partials/goals-funnels/funnels-card.php:94
 #: admin/view/wp-slimstat-reports.php:2096
 msgid "+ Add funnel"
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:109
+#: admin/view/partials/goals-funnels/funnels-card.php:105
 msgid "Start from a template, or build from scratch"
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:110
+#: admin/view/partials/goals-funnels/funnels-card.php:106
 msgid "Templates pre-fill the dimension and operator. You fill in the URLs or events that match your site."
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:128
+#: admin/view/partials/goals-funnels/funnels-card.php:124
 #: admin/view/wp-slimstat-reports.php:2363
 msgid "Configured funnels"
 msgstr ""
 
-#: admin/view/partials/goals-funnels/funnels-card.php:174
+#: admin/view/partials/goals-funnels/funnels-card.php:170
 #: admin/view/partials/goals-funnels/goals-card.php:140
 msgid "Edit"
 msgstr ""
 
 #. translators: 1: configured items, 2: item limit
-#: admin/view/partials/goals-funnels/funnels-card.php:203
+#: admin/view/partials/goals-funnels/funnels-card.php:199
 #: admin/view/partials/goals-funnels/goals-card.php:174
 #, php-format
 msgid "%1$d of %2$d used · at limit"
@@ -6065,6 +6056,10 @@ msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:2336
 msgid "Visualize every step of the journey"
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:2338
+msgid "Unlock funnel reports with Pro."
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:2344
