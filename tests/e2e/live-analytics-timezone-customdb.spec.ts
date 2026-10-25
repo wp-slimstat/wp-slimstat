@@ -25,6 +25,7 @@ import {
   uninstallOptionMutator,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
+import { getProState } from './helpers/pro-state';
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
@@ -401,9 +402,26 @@ test.describe('Live Analytics — Timezone & Custom DB Scenarios', () => {
     );
     expect(firstPaint, 'server-rendered Visitors online must not be 0').toBeGreaterThanOrEqual(1);
     expect(firstPaint).toBe(liveJson.data.users_live);
-    const inlineChart: number[] = JSON.parse((html.match(/chart_data:\s*(\[[^\]]*\])/) || [])[1] || '[]');
-    expect(inlineChart, 'server-rendered minute chart must carry 30 points').toHaveLength(30);
-    expect(inlineChart.reduce((a, b) => a + b, 0), 'minute chart must show the session').toBeGreaterThanOrEqual(1);
+    // The minute chart is Pro-only since #350: free paints the labelled locked preview
+    // and no LiveAnalytics config at all (views/reports/live-analytics.php), so the
+    // 30-point assertion applies only where Pro is active. The Free CI lanes carry no
+    // Pro (a declared omission in ci.yml), so that branch asserts the preview rather
+    // than skipping the whole test. The branch key is pro_activated, the same
+    // is_plugin_active() the view reads; an active Pro that never booted fails by name.
+    const pro = await getProState(page);
+    if (pro.pro_activated) {
+      expect(
+        pro.pro_booted,
+        `wp-slimstat-pro is active but never booted` +
+          (pro.pro_degradations.length ? `, degradations recorded: ${pro.pro_degradations.join(', ')}` : '')
+      ).toBe(true);
+      const inlineChart: number[] = JSON.parse((html.match(/chart_data:\s*(\[[^\]]*\])/) || [])[1] || '[]');
+      expect(inlineChart, 'server-rendered minute chart must carry 30 points').toHaveLength(30);
+      expect(inlineChart.reduce((a, b) => a + b, 0), 'minute chart must show the session').toBeGreaterThanOrEqual(1);
+    } else {
+      expect(html, 'free paints the locked chart preview in place of the chart').toContain('live-analytics-chart--locked');
+      expect(html, 'free must not ship a LiveAnalytics chart config').not.toMatch(/chart_data:\s*\[/);
+    }
 
     const adminNonce = await page.evaluate(
       () => (window as any).SlimStatAdminBar?.security || null
