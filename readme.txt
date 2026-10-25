@@ -230,6 +230,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 * Reports verified byte-identical on MySQL 5.6, 5.7 and 8.0. Supports PHP 7.4+ and WordPress 5.6+, tested up to WordPress 7.1, with fewer PHP notices on older setups.
 * Passes the WordPress.org Plugin Check, apart from the bundled third-party libraries and the long-standing note about the plugin's own slug.
 * Dependencies build reproducibly from the lockfile with WP Scoper. ([#339](https://github.com/wp-slimstat/wp-slimstat/issues/339))
+* Real-time shows the visitors, pages and countries online and the minute chart as soon as the page opens. In the 6.0.0 beta they read 0 until the first refresh a minute later.
 
 **Security and privacy**
 * Fixed a SQL injection that any logged-in user could reach on sites with the "Posts and Pages" report column turned on (off by default). Found in-house; no report of it in the wild.
