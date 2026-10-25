@@ -345,16 +345,14 @@ abstract class AbstractReport implements ReportInterface, RenderableInterface {
 			$renderer = $this->get_renderer();
 
 			if ( ! empty( $renderer ) && file_exists( SLIMSTAT_DIR . '/views/reports/' . $renderer . '.php' ) ) {
-				// `data` is deliberately NOT passed. Every renderer reads it from
-				// $args['data'] (views/reports/live-analytics.php:16 assigns
-				// `$data = $args['data'] ?? []` immediately), so injecting it
-				// separately computed get_data() a second time and discarded the
-				// result. Where get_callback_args() itself returns get_data() —
-				// as Live Analytics does — that made one render execute the whole
-				// data gather three times.
-				\SlimStat\Components\View::load( 'reports/' . $renderer, [
-					'args' => $this->get_callback_args(),
-				] );
+				// The callback args ARE the template's $args. View::load() extracts
+				// with EXTR_SKIP and its own parameter is named $args, so a template
+				// always sees the whole array handed to load(), never an inner
+				// 'args' key. Wrapping as ['args' => ...] made every renderer's
+				// $args['data'] resolve to nothing: Live Analytics painted 0 / 0 / 0
+				// and an empty chart until the first AJAX refresh (6fa072c8 removed
+				// the 'data' key that had masked this). tests/view-args-contract-test.php.
+				\SlimStat\Components\View::load( 'reports/' . $renderer, $this->get_callback_args() );
 				return;
 			}
 		}
