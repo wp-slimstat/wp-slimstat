@@ -19,6 +19,10 @@ SlimStat Analytics is the real-time WordPress analytics plugin that keeps every 
 
 Best of all, privacy isn't a setting you have to hunt for. Anonymized IPs, Do Not Track, a consent banner and scheduled data cleanup are GDPR-ready from the first activation. Thousands of WordPress sites already trust SlimStat to keep their analytics honest, fast and entirely their own.
 
+See SlimStat 6 in action:
+
+https://www.youtube.com/watch?v=cW3xr-0bMMc
+
 = Main Features =
 * **Real-time analytics** — Your site's pulse, live. Watch each visit land the instant it happens: the page, the spot on the map, the search or link that sent them, how quickly your server replied, human or bot. No sampling, no 24-hour delay.
 * **WooCommerce revenue dashboard** — Net sales, orders, period comparisons, top products and where your buyers came from, in one page next to your traffic. Switch it on when you're ready; order sync runs quietly in the background and supports HPOS. WooCommerce 8.3+ required.
@@ -88,13 +92,32 @@ In your own WordPress database, full stop. Core tracking makes no external calls
 Yes, if you care about ownership and timing. Your data never leaves your server, there is no sampling and no 24-hour delay, and you decide how long to keep it. You see visits the moment they happen, with the depth you'd expect from a hosted service.
 
 = Does SlimStat work with WooCommerce? =
-Yes. SlimStat 6 adds a WooCommerce revenue dashboard with net sales, orders, period comparisons, top products and where your buyers came from, all next to your traffic reports. Switch it on in the Ecommerce page; order sync runs in small background jobs and supports HPOS. WooCommerce 8.3 or newer is required. SlimStat Pro adds campaigns, landing pages, devices, coupons, refunds and CSV export.
+Yes. SlimStat 6 adds a WooCommerce revenue dashboard with net sales, orders, period comparisons, top products and where your buyers came from, all next to your traffic reports. Switch it on in the Ecommerce page; order sync runs in small background jobs and supports HPOS. WooCommerce 8.3 or newer is required.
+
+https://www.youtube.com/watch?v=cjEofK7uSW0
+
+SlimStat Pro adds campaigns, landing pages, devices, coupons, refunds and CSV export.
 
 = Can I see where visitors click? =
-Yes. The Heatmaps page lists every page with clicks, pageviews, clicks per pageview and device split, and shows the five most clicked links and buttons on each page. SlimStat Pro adds full click and scroll heatmaps on phone, tablet and desktop previews, with insights on dead clicks, rage clicks and scroll drop-off.
+Yes. The Heatmaps page lists every page with clicks, pageviews, clicks per pageview and device split, and shows the five most clicked links and buttons on each page.
+
+https://www.youtube.com/watch?v=q8Gyr_LXyuo
+
+SlimStat Pro adds full click and scroll heatmaps on phone, tablet and desktop previews, with insights on dead clicks, rage clicks and scroll drop-off.
 
 = Does SlimStat track UTM campaigns and traffic channels? =
-Yes. Traffic Sources opens with Channels and UTM Campaigns side by side, and tells search, social, email, paid, AI assistants and crawlers apart. A campaign link builder sits in the report header. Attribution starts with new pageviews after you update.
+Yes. Traffic Sources opens with Channels and UTM Campaigns side by side, and tells search, social, email, paid, AI assistants and crawlers apart. A campaign link builder sits in the report header.
+
+https://www.youtube.com/watch?v=5dfmRJq1aGc
+
+Attribution starts with new pageviews after you update.
+
+= Can SlimStat tell when ChatGPT or another AI assistant sends me visitors? =
+Yes. Visits referred from ChatGPT, Perplexity, Claude, Gemini, Copilot, Grok and other assistants get their own AI Assistants channel in Traffic Sources, so you can see how much traffic they send and what those visitors read. Automated requests from AI crawlers such as GPTBot and ClaudeBot are reported separately when your tracking settings collect them.
+
+https://www.youtube.com/watch?v=otZpOyqGkLs
+
+Google AI Overviews cannot be told apart from a normal Google search, so those visits stay in Organic Search.
 
 = Will SlimStat slow down my site? =
 It's built to stay light, and version 6 is lighter still: the tracker writes far fewer option updates per pageview and the admin charts read half as many database rows. Choose client-side tracking for cached sites or server-side to catch every request, and SlimStat plays nicely with W3 Total Cache, WP Super Cache, Cloudflare and the rest.
