@@ -135,16 +135,16 @@ Not to get real value. The free plugin covers real-time tracking, dozens of repo
 An extensive knowledge base is available on our [website](https://www.wp-slimstat.com/).
 
 == Screenshots ==
-1. **Real-Time** — Your visitors, live as they browse: where they are, what they're reading, and what brought them in.
-2. **World Map** — Your audience across the globe, identified by country, browser, and operating system.
-3. **Overview** — Your whole site at a glance. One clean dashboard for the numbers you check every morning.
-4. **Audience** — The full picture of who's visiting: location, language, browser, device, and screen size.
-5. **Site Analysis** — Top pages, categories, downloads, and outbound links, all in one simple view.
-6. **Traffic Sources** — Exactly where your visitors come from: search engines, social, and referring sites.
-7. **Customize widgets** — Arrange each dashboard page around the reports you actually use.
-8. **WordPress Dashboard** — Pin the reports you love, like Traffic Sources, right to your WordPress dashboard.
-9. **Settings** — Plenty of room to shape how SlimStat tracks, stores, and shows your data.
-10. **Goals & Funnels** — Define the conversions that drive revenue and watch each step of your WooCommerce checkout or signup funnel to see exactly where visitors drop off.
+1. **Overview** — Every visit, understood at a glance: pageviews, visitors, top content, sources and countries for any date range, inside your WordPress dashboard.
+2. **Ecommerce (Pro)** — Net sales, orders, average order value and purchase rate from WooCommerce, with the channels and products behind every order. Free shows net sales and the trend.
+3. **Heatmaps (Pro)** — Click, scroll, dead-click and rage-click maps on your live pages, with plain-language insights about what to fix. Free lists clicks per page.
+4. **Channels (Pro)** — Organic search, social, email, paid, referral, AI and more, grouped automatically with the sources behind each one. Free shows the top channels and campaigns.
+5. **AI traffic (Pro)** — Visits from ChatGPT, Perplexity, Gemini and Claude, plus GPTBot and ClaudeBot crawls, reported as their own channels.
+6. **UTM link builder** — Build campaign links in the dashboard, then see which newsletter, ad or post actually sent visitors.
+7. **Goals & Funnels (Pro)** — Set a goal in seconds, from a page URL to a custom event, then string goals into funnels to see where visitors drop off. Free includes one goal.
+8. **Real-time** — Visitors, pages and countries online, a live access log with server and page timings, and a world map of your audience. Pro adds the minute-by-minute chart.
+9. **Shortcodes** — Pick a report, set the period and limit, check the preview and copy the shortcode. Reports render in your theme's fonts and colours.
+10. **Privacy settings** — GDPR mode with a consent banner or your consent plugin, IP anonymisation and hashing, Do Not Track, and every record stored in your own database.
 
 == Upgrade Notice ==
 
