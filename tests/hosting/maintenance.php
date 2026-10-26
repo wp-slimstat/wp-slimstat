@@ -108,6 +108,25 @@ try {
     $checks = [];
     // Query this table specifically: an earlier case deliberately has an events FK.
     $checks['no_foreign_keys'] = 0 === (int) $db->get_var($db->prepare("SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'hc_heatmap_slim_heatmap' AND REFERENCED_TABLE_NAME IS NOT NULL", $database));
+    $otherOwner = (time() + 900) . ':other-worker';
+    update_option(\SlimStat\Heatmap\Store::PURGE_CLAIM, $otherOwner, false);
+    \SlimStat\Heatmap\Store::purge();
+    $checks['other_worker_preserved'] = $otherOwner === get_option(\SlimStat\Heatmap\Store::PURGE_CLAIM)
+        && 100002 === (int) $db->get_var('SELECT COUNT(*) FROM hc_heatmap_slim_heatmap');
+    delete_option(\SlimStat\Heatmap\Store::PURGE_CLAIM);
+    update_option(\SlimStat\Heatmap\Store::PURGE_PENDING, true, false);
+    $db->query('RENAME TABLE hc_heatmap_slim_heatmap TO hc_heatmap_saved');
+    $suppressed = $db->suppress_errors(true);
+    try {
+        \SlimStat\Heatmap\Store::purge();
+        $checks['query_error_visible'] = isset(wp_slimstat::get_degradations()['purge (heatmap rows)']);
+        $checks['query_error_keeps_backlog'] = (bool) get_option(\SlimStat\Heatmap\Store::PURGE_PENDING);
+        $checks['query_error_releases_claim'] = false === get_option(\SlimStat\Heatmap\Store::PURGE_CLAIM, false);
+    } finally {
+        $db->suppress_errors($suppressed);
+        $db->query('RENAME TABLE hc_heatmap_saved TO hc_heatmap_slim_heatmap');
+    }
+    update_option(\SlimStat\Heatmap\Store::PURGE_CLAIM, (time() - 1) . ':expired-worker', false);
     $counts = [];
     $pending = [];
     for ($job = 0; $job < 4; ++$job) {
