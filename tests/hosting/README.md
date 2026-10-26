@@ -108,3 +108,36 @@ migration duration separate. Preserve #207's four budgets and #213's 50 RPS /
 15 ms write P95 and 1M-row / 2 s admin P95. Local Docker timings are not host-led
 approval. Record CPU, memory, runtime versions, cache state, settings, dataset,
 errors, correctness, raw distributions, lock waits and the exact artifact hashes.
+
+`measure.py` records one load run, Docker CPU/memory/I/O samples, database lock
+counters and table/index sizes, raw k6 distributions, query counts and exact
+tracked-row/resource cardinality. Install `tests/bench/mu/slimstat-bench-qlog.php`
+on the disposable site and define `SLIMSTAT_BENCH=true` in its configuration.
+Restore the vintage snapshot before each arm; install/activate that arm's ZIPs,
+complete any normal migrations, and record their hashes separately. Use an idle
+machine: do not run browser tests, builds or scans during qualifying timings.
+
+```sh
+SLIMSTAT_HOSTING_DISPOSABLE=1 WP_USER=admin WP_PASS=admin \
+python3 tests/hosting/measure.py \
+  --wp slimstat_hosting_perf_20261026-wp-1 \
+  --db slimstat_hosting_perf_20261026-db-1 --database tests-v550 \
+  --url http://127.0.0.1:18827 --run free550-tracking-1 \
+  --mode tracking --output /tmp/hosting-evidence/free550-tracking-1
+```
+
+Repeat `tracking`, `concurrency`, and `admin` for each arm. Use a distinct run ID
+and output directory each time. The `control` mode refuses to run while either
+analytics plugin is active. Admin timings measure the authenticated HTML response,
+not subsequent report AJAX, browser rendering or full-page load; use report-query
+and browser evidence alongside them. Table row estimates are not correctness counts.
+
+Run tracking again with `--sql-timing` to measure INSERT/INSERT IGNORE durations.
+This explicitly enables WordPress SAVEQUERIES for that instrumented request;
+its overhead means HTTP results from that run must not replace ordinary latency
+results. The runner requires one insert sample and one unique stored resource per
+iteration and checks the 15 ms insert P95 independently. Query values are omitted
+from the duration ledger. Remove the MU plugin and arming constant after testing.
+The local database credential in this fixture is disposable `root`; no production
+target or database credential is accepted. Global lock counters include all work
+on that database server, which must be isolated for attribution.

@@ -32,6 +32,7 @@ const headers = {
   'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36',
   'X-Slimstat-Bench': __ENV.RUN_ID,
 };
+if (__ENV.SQL_TIMING === '1') headers['X-Slimstat-Bench-Timing'] = '1';
 let loggedIn = false;
 export default function () {
   let response;

@@ -60,7 +60,7 @@ test.describe('hosting report and attribution contracts', () => {
 
   for (const mode of ['on', 'off']) {
     test(`resource normalization preserves acquisition in javascript_mode=${mode}`, async ({ page, browser }) => {
-      await setSlimstatOptions(page, { javascript_mode: mode, gdpr_enabled: 'off', anonymous_tracking: 'off',
+      await setSlimstatOptions({ javascript_mode: mode, gdpr_enabled: 'off', anonymous_tracking: 'off',
         ignore_resource_parameters: 'fbclid,utm_source', ignore_users: '', ignore_ips: '', is_tracking: 'on' });
       const marker = `normalized-${mode}-${Date.now()}`;
       const context = await browser.newContext({ javaScriptEnabled: mode === 'on', storageState: { cookies: [], origins: [] } });
@@ -86,7 +86,7 @@ test.describe('hosting report and attribution contracts', () => {
   }
 
   test('granularity uses current form filters and comparison-off removes previous series', async ({ page }) => {
-    await setSlimstatOptions(page, { comparison_chart: 'no', async_load: 'no' });
+    await setSlimstatOptions({ comparison_chart: 'no', async_load: 'no' });
     const marker = `hosting-chart-${Date.now()}`;
     runWordPressFixture(`<?php
       foreach ([['Chrome', 1768046400], ['Chrome', 1768132800], ['Firefox', 1768046400], ['Chrome', 1767787200]] as $i => $row) {
@@ -97,7 +97,7 @@ test.describe('hosting report and attribution contracts', () => {
     page.on('pageerror', error => errors.push(error.message));
     try {
       await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&type=custom&from=2026-01-10&to=2026-01-12&fs[resource]=equals+%2F${marker}`);
-      const element = page.locator('[id^="slimstat_chart_data_"]').first();
+      const element = page.locator('#slimstat_chart_data_slim_p1_01');
       await expect(element).toBeAttached();
       expect(JSON.parse((await element.getAttribute('data-prev-data'))!).datasets).toEqual([]);
       await page.evaluate(() => {
@@ -105,8 +105,13 @@ test.describe('hosting report and attribution contracts', () => {
         input.type = 'hidden'; input.name = 'fs[browser]'; input.value = 'equals Chrome'; input.className = 'slimstat-post-filter';
         document.querySelector('#slimstat-filters-form')!.appendChild(input);
       });
-      const response = page.waitForResponse(r => r.url().includes('admin-ajax.php') && (r.request().postData() || '').includes('slimstat_fetch_chart_data'));
-      await page.locator('.slimstat-granularity-select').first().selectOption('hourly');
+      const response = page.waitForResponse(r => {
+        if (!r.url().includes('admin-ajax.php')) return false;
+        const params = new URLSearchParams(r.request().postData() || '');
+        return params.get('action') === 'slimstat_fetch_chart_data'
+          && JSON.parse(params.get('args') || '{}').id === 'slim_p1_01';
+      });
+      await page.locator('#slimstat_granularity_slim_p1_01').selectOption('hourly');
       const payload = await (await response).json();
       expect(payload.success).toBe(true);
       expect(payload.data.args.filters.browser).toEqual(['equals', 'Chrome']);
@@ -131,7 +136,7 @@ test.describe('server-only visit identity', () => {
   for (const cookies of ['on', 'off']) {
     test(`server pageviews allocate visits with cookies ${cookies}`, async ({ browser }) => {
       await setSlimstatOptions({ javascript_mode: 'off', gdpr_enabled: 'off', anonymous_tracking: 'off', set_tracker_cookie: cookies });
-      const context = await browser.newContext({ javaScriptEnabled: false });
+      const context = await browser.newContext({ javaScriptEnabled: false, storageState: { cookies: [], origins: [] } });
       const page = await context.newPage();
       const marker = `hosting-server-${cookies}-${Date.now()}`;
       try {
