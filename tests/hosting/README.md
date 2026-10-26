@@ -126,7 +126,9 @@ python3 tests/hosting/measure.py \
   --mode tracking --output /tmp/hosting-evidence/free550-tracking-1
 ```
 
-Repeat `tracking`, `concurrency`, and `admin` for each arm. Use a distinct run ID
+Repeat `tracking`, `concurrency`, and `admin` for each arm. For `admin`, supply
+`--from-date 2026-08-01 --to-date 2026-08-31` to cover the historical fixture;
+the current-day default would measure empty reports. Use a distinct run ID
 and output directory each time. The `control` mode refuses to run while either
 analytics plugin is active. Admin timings measure the authenticated HTML response,
 not subsequent report AJAX, browser rendering or full-page load; use report-query

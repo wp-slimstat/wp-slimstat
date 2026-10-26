@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Record one disposable k6 run. Restore the same corpus before each comparison arm."""
 import argparse
+from datetime import date
 import json
 import math
 import os
@@ -30,6 +31,8 @@ def main():
     parser.add_argument('--mode', choices=['tracking', 'concurrency', 'admin', 'control'], required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--sql-timing', action='store_true')
+    parser.add_argument('--from-date')
+    parser.add_argument('--to-date')
     args = parser.parse_args()
     if os.environ.get('SLIMSTAT_HOSTING_DISPOSABLE') != '1':
         parser.error('Explicit disposable-stack authorization is required')
@@ -39,6 +42,12 @@ def main():
         parser.error('Invalid identifier')
     if not args.wp.startswith('slimstat_hosting_') or not args.db.startswith('slimstat_hosting_') or not args.database.startswith('tests-'):
         parser.error('Requires a hosting test container and tests-* database')
+    if args.mode == 'admin':
+        try:
+            if date.fromisoformat(args.from_date) > date.fromisoformat(args.to_date):
+                raise ValueError('Reversed report window')
+        except (TypeError, ValueError):
+            parser.error('Admin measurements require an ordered --from-date/--to-date window')
     args.output.mkdir(parents=True, exist_ok=False)
     wp = ['docker', 'exec', args.wp, 'wp']
     actual = command(wp + ['config', 'get', 'DB_NAME', '--allow-root']).strip()
@@ -69,6 +78,8 @@ def main():
                 'timing_scope': 'Instrumented mysqli query time' if args.sql_timing else 'HTTP request duration; admin HTML shell excludes later AJAX/browser rendering'}
     (args.output / 'manifest.json').write_text(json.dumps(metadata, indent=2))
     env = os.environ | {'BASE_URL': args.url, 'RUN_ID': args.run, 'MODE': args.mode, 'SQL_TIMING': '1' if args.sql_timing else '0'}
+    if args.mode == 'admin':
+        env.update(REPORT_FROM=args.from_date, REPORT_TO=args.to_date)
     with (args.output / 'resources.jsonl').open('w') as resources, (args.output / 'k6.log').open('w') as log:
         stats = subprocess.Popen(['docker', 'stats', '--format', '{{json .}}', args.wp, args.db], stdout=resources)
         try:
@@ -112,6 +123,15 @@ if __name__ == '__main__':
             pass
         else:
             raise AssertionError('Empty samples must fail')
+        args = [sys.executable, __file__, '--wp', 'slimstat_hosting_guard', '--db', 'slimstat_hosting_guard',
+                '--database', 'tests-guard', '--url', 'http://127.0.0.1:1', '--run', 'guard',
+                '--mode', 'admin', '--output', '/tmp/slimstat-date-guard-must-not-exist']
+        for dates in [[], ['--from-date', '2026-08-31', '--to-date', '2026-08-01'],
+                      ['--from-date', '2026-02-30', '--to-date', '2026-08-01']]:
+            rejected = subprocess.run(args + dates, text=True, capture_output=True,
+                                      env=os.environ | {'SLIMSTAT_HOSTING_DISPOSABLE': '1'})
+            assert rejected.returncode == 2 and 'ordered' in rejected.stderr, rejected.stderr
         print('PASS: percentile and missing-sample contracts')
+        print('PASS: invalid report windows rejected before database access')
     else:
         sys.exit(main())

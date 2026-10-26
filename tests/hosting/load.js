@@ -12,6 +12,9 @@ const mode = __ENV.MODE;
 if (!['tracking', 'concurrency', 'admin', 'control'].includes(mode) || !/^[a-zA-Z0-9_-]+$/.test(__ENV.RUN_ID || '')) {
   throw new Error('Set MODE and an alphanumeric RUN_ID.');
 }
+if (mode === 'admin' && (!/^\d{4}-\d{2}-\d{2}$/.test(__ENV.REPORT_FROM || '') || !/^\d{4}-\d{2}-\d{2}$/.test(__ENV.REPORT_TO || ''))) {
+  throw new Error('Admin measurements require explicit historical report dates.');
+}
 const elapsed = new Trend('operation_ms', true);
 const rejected = new Rate('operation_failed');
 const unavailable = new Rate('http_503');
@@ -46,7 +49,7 @@ export default function () {
       loggedIn = true;
     }
     const reports = ['slimview1', 'slimview2', 'slimview3', 'slimview4', 'slimview5', 'slimview6'];
-    response = http.get(`${BASE_URL}/wp-admin/admin.php?page=${reports[__ITER % reports.length]}`, { headers });
+    response = http.get(`${BASE_URL}/wp-admin/admin.php?page=${reports[__ITER % reports.length]}&type=custom&from=${__ENV.REPORT_FROM}&to=${__ENV.REPORT_TO}`, { headers });
     valid = response.status === 200 && /id=["']slimstat-(?:filters-form|gf-)/.test(response.body)
       && !/Fatal error|critical error|id="loginform"/.test(response.body);
   } else if (mode === 'control') {
