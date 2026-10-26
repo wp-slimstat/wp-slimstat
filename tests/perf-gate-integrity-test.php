@@ -481,6 +481,47 @@ if (!is_file($lanes_script)) {
     }
 }
 
+// ── 5c. The readme/asset workflow cannot move the version wordpress.org serves ──
+//
+// wordpress-org-assets.yml (2026-10-26) pushes readme.txt and .wordpress-org/ to SVN on a push
+// to master, with no release and no tag. Two things make that safe, and each is one deleted
+// line from gone: the push step is gated on a check that asks WORDPRESS.ORG — the plugin API
+// for the served version, the SVN server for the tag folder — rather than GitHub, because a
+// GitHub release can exist while its deploy was refused (PITFALLS 249); and IGNORE_OTHER_FILES
+// keeps the action from rsyncing the whole checkout over the released code in trunk.
+//
+// Property-shaped, as §5 above: the quote style of the `if:`, the slug in the URLs and the
+// API minor version are formatting, and a check that pins formatting goes red on a harmless
+// reformat and gets loosened. Comment-stripped, as above: a commented-out gate still
+// contains every needle. §10 reuses $assets_code for the pin scan.
+$assets_path = $plugin_root . '/.github/workflows/wordpress-org-assets.yml';
+$assets_yaml = (string) @file_get_contents($assets_path);
+$assets_code = slimstat_yaml_strip_comments($assets_yaml);
+
+$assets_properties = [
+    '/^\s*if:\s*steps\.released\.outputs\.ok\s*==\s*[\'"]yes[\'"]/m' => 'the SVN push step is no '
+        . 'longer gated on the release check (`if: steps.released.outputs.ok == \'yes\'`); every '
+        . 'readme merge now goes to trunk unguarded',
+    '/^\s*IGNORE_OTHER_FILES:\s*[\'"]?true[\'"]?\s*$/m'              => 'IGNORE_OTHER_FILES is no '
+        . 'longer true; the action rsyncs the whole checkout over the released code in trunk',
+    '~https://api\.wordpress\.org/plugins/info/~'                    => 'the gate no longer reads '
+        . 'the served version from the wordpress.org plugin API — GitHub is not the source of '
+        . 'truth for what wordpress.org serves',
+    '~https://plugins\.svn\.wordpress\.org/[^/\s]+/tags/~'           => 'the gate no longer probes '
+        . 'the tag folder on the SVN server — a GitHub release can exist while its deploy was '
+        . 'refused',
+];
+if ('' === $assets_yaml) {
+    $failures[] = 'cannot read .github/workflows/wordpress-org-assets.yml — the readme/asset '
+        . 'workflow is unauditable';
+} else {
+    foreach ($assets_properties as $pattern => $property) {
+        if (!preg_match($pattern, $assets_code)) {
+            $failures[] = 'wordpress-org-assets.yml: ' . $property;
+        }
+    }
+}
+
 // ── 6. Every k6 script is wired somewhere; an unreferenced script measures nothing ──
 // Five of six scripts sat orphaned while "npm run test:perf" ran exactly one — coverage
 // that reads as "perf tested" while five scenarios never execute anywhere.
@@ -855,22 +896,34 @@ if (1 !== count($booted)) {
 // Evaluated against $main_code, which §5 already stripped of comments: the obvious spelling of
 // this check ("a 40-hex SHA appears somewhere") is satisfied by a SHA sitting in an
 // explanatory comment, which is exactly what main.yml carries beside each pin.
-preg_match_all('/^\s*-?\s*uses:\s*(\S+)/m', $main_code, $uses);
-$pinned = $uses[1] ?? [];
-
-if (count($pinned) < 2) {
-    $failures[] = sprintf('only %d `uses:` line(s) found in main.yml — the scan has stopped '
-        . 'reading the workflow, so the pin check below proves nothing', count($pinned));
+//
+// SINCE 2026-10-26 THERE ARE TWO SUCH WORKFLOWS. wordpress-org-assets.yml (read and gated in
+// §5c) holds the same SVN credentials and fires on every push to master that touches readme.txt
+// or .wordpress-org/ — a far more frequent event than a tag — so it is scanned under the same rule.
+$workflows = ['main.yml' => $main_code];
+if ('' !== $assets_yaml) {
+    $workflows['wordpress-org-assets.yml'] = $assets_code;
 }
 
-foreach ($pinned as $ref) {
-    if (!preg_match('/@[0-9a-f]{40}$/', $ref)) {
-        $failures[] = sprintf(
-            'main.yml runs `%s`, which is not pinned to a commit. This workflow holds the '
-                . 'wordpress.org SVN credentials and runs on any tag push; a moving ref decides '
-                . 'what gets them, and neither a branch nor a version tag is immutable',
-            $ref
-        );
+foreach ($workflows as $workflow => $code) {
+    preg_match_all('/^\s*-?\s*uses:\s*(\S+)/m', $code, $uses);
+    $pinned = $uses[1] ?? [];
+
+    if (count($pinned) < 2) {
+        $failures[] = sprintf('only %d `uses:` line(s) found in %s — the scan has stopped '
+            . 'reading the workflow, so the pin check below proves nothing', count($pinned), $workflow);
+    }
+
+    foreach ($pinned as $ref) {
+        if (!preg_match('/@[0-9a-f]{40}$/', $ref)) {
+            $failures[] = sprintf(
+                '%s runs `%s`, which is not pinned to a commit. This workflow holds the '
+                    . 'wordpress.org SVN credentials; a moving ref decides what gets them, and '
+                    . 'neither a branch nor a version tag is immutable',
+                $workflow,
+                $ref
+            );
+        }
     }
 }
 
