@@ -159,14 +159,14 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 = 6.0.0 - 2026-10-24 =
 
-**SlimStat 6: see where visitors click, which campaigns bring sales, and trust every number.** Your settings and data carry over, database steps wait for your click, and older versions keep working if you ever go back.
+**SlimStat 6: see where visitors click, which campaigns bring sales, and trust every number.** Your settings and data carry over, migration steps wait for your click, and older versions keep working if you ever go back.
 
 **New**
 * **Heatmaps:** a new Heatmaps page shows which pages, links and buttons visitors click, with device split and any date range. Clicks SlimStat already recorded appear right away. SlimStat Pro adds opt-in recording of any element, scroll depth, dead clicks and rage clicks; it follows consent and Do Not Track and never stores what visitors type.
 * **WooCommerce Analytics:** an opt-in revenue dashboard puts net sales, orders, top products and the purchase journey next to your traffic, on your own server. Works with HPOS and legacy order storage.
 * **Channels and UTM Campaigns:** see whether visits come from search, social, email, paid ads or AI assistants, and which campaign earned them. Build campaign links right from the report. Attribution starts with new pageviews.
 * **Shortcode Playground:** preview any report with your own data, tune its filters and copy the shortcode. New live visitor, page and country counters.
-* **Migration screen:** lists the database steps the update needs. Required steps only add columns and indexes, wait for your click, and tracking keeps working meanwhile.
+* **Migration screen:** lists the database steps the update needs. Required steps only add columns and indexes, wait for your click, and tracking keeps working meanwhile. As in every release, the first admin visit after updating creates any missing tables and small indexes.
 
 **Improved**
 * **Faster reports:** admin charts read half as many database rows, and tracking writes 62% fewer option updates per pageview.
