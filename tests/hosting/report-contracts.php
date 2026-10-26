@@ -4,12 +4,13 @@ use SlimStat\Utils\Query;
 use SlimStat\Modules\Chart;
 use SlimStat\Reports\Types\Analytics\LiveAnalyticsReport;
 
-if (!defined('WP_CLI') || !WP_CLI || getenv('SLIMSTAT_HOSTING_DISPOSABLE') !== '1' || DB_NAME !== 'wordpress' || DB_HOST !== 'db') {
+if (!defined('WP_CLI') || !WP_CLI || getenv('SLIMSTAT_HOSTING_DISPOSABLE') !== '1' || !preg_match('/^(wordpress|tests-[a-z0-9-]+)$/D', DB_NAME) || DB_HOST !== 'db') {
     throw new RuntimeException('Requires the explicitly armed disposable Docker stack.');
 }
 require_once WP_PLUGIN_DIR . '/wp-slimstat/admin/index.php';
 require_once WP_PLUGIN_DIR . '/wp-slimstat/admin/view/wp-slimstat-db.php';
 wp_set_current_user(1);
+$sourceDatabase = DB_NAME;
 $source = $GLOBALS['wpdb'];
 $settings = wp_slimstat::$settings;
 $database = 'test_slimstat_reports_' . bin2hex(random_bytes(4));
@@ -19,7 +20,7 @@ try {
     $db = new wpdb(DB_USER, DB_PASSWORD, $database, DB_HOST);
     $db->set_prefix('hc_');
     foreach (['options', 'slim_stats'] as $suffix) {
-        if (false === $db->query("CREATE TABLE hc_$suffix LIKE wordpress.{$source->prefix}$suffix")) { throw new RuntimeException($db->last_error); }
+        if (false === $db->query("CREATE TABLE hc_$suffix LIKE `{$sourceDatabase}`.{$source->prefix}$suffix")) { throw new RuntimeException($db->last_error); }
     }
     $GLOBALS['wpdb'] = wp_slimstat::$wpdb = $db;
     wp_cache_flush();

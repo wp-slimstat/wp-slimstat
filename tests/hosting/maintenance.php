@@ -1,8 +1,9 @@
 <?php
 /** wp eval-file tests/hosting/maintenance.php; isolated Docker database only. */
-if (!defined('WP_CLI') || !WP_CLI || getenv('SLIMSTAT_HOSTING_DISPOSABLE') !== '1' || DB_NAME !== 'wordpress' || DB_HOST !== 'db') {
+if (!defined('WP_CLI') || !WP_CLI || getenv('SLIMSTAT_HOSTING_DISPOSABLE') !== '1' || !preg_match('/^(wordpress|tests-[a-z0-9-]+)$/D', DB_NAME) || DB_HOST !== 'db') {
     throw new RuntimeException('Requires the explicitly armed disposable Docker stack.');
 }
+$sourceDatabase = DB_NAME;
 $sourceDb = $GLOBALS['wpdb'];
 $sourcePrefix = $sourceDb->prefix;
 $database = 'test_slimstat_maintenance_' . bin2hex(random_bytes(4));
@@ -18,7 +19,7 @@ try {
         $prefix = "hc{$index}_";
         $db->set_prefix($prefix);
         foreach (['options', 'slim_stats', 'slim_events', 'slim_stats_archive', 'slim_events_archive'] as $suffix) {
-            if (false === $db->query("CREATE TABLE {$prefix}{$suffix} LIKE wordpress.{$sourcePrefix}{$suffix}")) {
+            if (false === $db->query("CREATE TABLE {$prefix}{$suffix} LIKE `{$sourceDatabase}`.{$sourcePrefix}{$suffix}")) {
                 throw new RuntimeException($db->last_error);
             }
         }
@@ -86,8 +87,8 @@ try {
     }
     // A separate no-FK topology: more than two jobs of expired data with capture off.
     $db->set_prefix('hc_heatmap_');
-    $db->query("CREATE TABLE hc_heatmap_options LIKE wordpress.{$sourcePrefix}options");
-    $db->query("CREATE TABLE hc_heatmap_slim_stats LIKE wordpress.{$sourcePrefix}slim_stats");
+    $db->query("CREATE TABLE hc_heatmap_options LIKE `{$sourceDatabase}`.{$sourcePrefix}options");
+    $db->query("CREATE TABLE hc_heatmap_slim_stats LIKE `{$sourceDatabase}`.{$sourcePrefix}slim_stats");
     $db->query(\SlimStat\Schema\Schema::createTableSql('slim_heatmap', 'hc_heatmap_', 'utf8mb4_unicode_ci'));
     $db->query('ALTER TABLE hc_heatmap_slim_heatmap DROP FOREIGN KEY fk_hc_heatmap_slim_heatmap_id');
     wp_cache_flush();

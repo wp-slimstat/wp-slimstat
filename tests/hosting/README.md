@@ -141,3 +141,20 @@ from the duration ledger. Remove the MU plugin and arming constant after testing
 The local database credential in this fixture is disposable `root`; no production
 target or database credential is accepted. Global lock counters include all work
 on that database server, which must be isolated for attribution.
+
+## Current execution checkpoint
+
+The 26 October execution uses branch `fix/hosting-approval-p0-p1` in both
+repositories. The current product artifacts are Free `aaa0d53f` and Pro
+`ee5bf5bb`; full browser and performance qualification is still in progress.
+See the workspace evidence package at
+`jaan-to/outputs/research/slimstat-hosting-unblock-2026-10-26/EXECUTION-CHECKPOINT.md`
+for hashes, passed checks, failures and remaining gates. This is not PR approval.
+
+`maintenance.php` and `report-contracts.php` require WP-CLI,
+`SLIMSTAT_HOSTING_DISPOSABLE=1`, Docker hostname `db`, and a source database
+named `wordpress` or `tests-*`. They clone only table definitions into their own
+randomly named databases and drop those private fixtures in `finally`. They do
+not purge the source database. These real-DB correctness checks passed against
+the current installed artifacts; maintenance timings collected during other
+work are not load benchmarks.
