@@ -1,0 +1,67 @@
+name: Update readme and assets on WordPress.org
+
+# Pushes readme.txt and .wordpress-org/ (banners, icons, screenshots) to WordPress.org without a
+# release: IGNORE_OTHER_FILES leaves the plugin code in SVN trunk untouched. Runs only when the
+# readme's Stable tag is the version WordPress.org serves today, so it can never move the served
+# version — a release merge puts the next Stable tag on master before its tag is cut, and main.yml
+# ships that readme with the code. Pinned by tests/perf-gate-integrity-test.php §5c and §10.
+on:
+  push:
+    branches: [master]
+    paths:
+      - readme.txt
+      - .wordpress-org/**
+  workflow_dispatch:
+
+concurrency:
+  group: wordpress-org-assets
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  assets:
+    name: Update readme and assets
+    # workflow_dispatch can target any branch that carries this file; only master's readme is reviewed.
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+    # Pinned to commits, as in main.yml: this job holds the SVN credentials.
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+    # Three checks, all against WordPress.org rather than GitHub: the Stable tag equals the version
+    # the plugin API serves, that tag's folder exists in SVN, and the top changelog entry is that
+    # same version. Under all three, pushing the readme cannot move the served version either way.
+    # Fails closed: any network or JSON error is a red step, not a skip.
+    - name: The Stable tag is what WordPress.org serves today
+      id: released
+      run: |
+        set -euo pipefail
+        T=$(awk '/^Stable tag:/{print $3; exit}' readme.txt)
+        top=$(awk '/^== Changelog ==/{c=1; next} c && /^= [0-9]/{print $2; exit}' readme.txt)
+        [ -n "$T" ] || { echo "::error::readme.txt has no Stable tag"; exit 1; }
+        live=$(curl -sf https://api.wordpress.org/plugins/info/1.0/wp-slimstat.json | jq -r .version)
+        code=$(curl -s -o /dev/null -w '%{http_code}' "https://plugins.svn.wordpress.org/wp-slimstat/tags/${T}/")
+        case "$code" in 200|404) ;; *) echo "::error::plugins.svn.wordpress.org answered ${code} for tags/${T}/"; exit 1;; esac
+        echo "Stable tag ${T}; WordPress.org serves ${live}; tags/${T}/ answered ${code}; changelog starts at ${top}"
+        if [ "$T" = "$live" ] && [ "$code" = 200 ] && [ "$top" = "$T" ]; then
+          echo "ok=yes" >> "$GITHUB_OUTPUT"
+        else
+          echo "::notice::Held back: this readme belongs to a release that is not on WordPress.org yet. main.yml ships it with the code."
+          echo "ok=no" >> "$GITHUB_OUTPUT"
+        fi
+
+    # 2480306 is 10up/action-wordpress-plugin-asset-update 2.2.0. With IGNORE_OTHER_FILES it copies
+    # only readme.txt into trunk (and into tags/<Stable tag>/ when that tag exists), rsyncs
+    # .wordpress-org/ to assets/ with --delete, and exits 0 with "Nothing to deploy!" when SVN
+    # status is empty — so re-runs are safe and the plugin's PHP is never written.
+    - name: Push readme and assets
+      if: steps.released.outputs.ok == 'yes'
+      uses: 10up/action-wordpress-plugin-asset-update@2480306f6f693672726d08b5917ea114cb2825f7 # 2.2.0
+      env:
+        SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+        SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+        SLUG: wp-slimstat
+        IGNORE_OTHER_FILES: true
