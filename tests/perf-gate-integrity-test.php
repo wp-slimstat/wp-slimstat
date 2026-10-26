@@ -247,10 +247,9 @@ $main_yaml = (string) @file_get_contents($main_path);
 // exactly that — the deploy fully ungated again while this assertion stayed green.
 $main_code = (string) preg_replace('/^\s*#.*$/m', '', $main_yaml);
 
-// Development qualification cannot satisfy beta/human/release authorization by CI success alone.
-if (!preg_match('/^  tag:\s*\n\s*if:\s*\$\{\{\s*false\s*\}\}/m', $main_code)) {
-    $failures[] = 'Free production deploy development launch hold is missing';
-}
+// The development launch hold (`if: ${{ false }}` on the deploy job) was lifted on 2026-10-26 for
+// the 6.0.0 release, on explicit release authorization. The CI gate below is what stands between
+// a tag and wordpress.org now.
 if (strpos($main_code, 'python3 .github/qualify-deploy.py') === false) {
     $failures[] = 'Free deploy no longer validates fresh complete exact-SHA receipts';
 }
