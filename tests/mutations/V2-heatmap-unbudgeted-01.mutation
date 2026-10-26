@@ -1,0 +1,24 @@
+target:    src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php
+gate:      composer test:migration-deadline
+kind:      guard-removal
+expect:    declares no PASS_SECONDS deadline
+rationale: Strips the budget from the one REQUIRED migration that walks rows to exhaustion. Without it the `do { ... } while` runs until the request dies, and because most candidates are permanently unrecoverable (measured on the reference corpus: 18,120 matched the predicate, 0 were recoverable) a table too large to finish in one request never converges -- so "all migrations complete" is unreachable on exactly the installs that most need the screen to end.
+---
+--- a/src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php
++++ b/src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php
+@@ -37,7 +37,6 @@
+      * request simply died. Ten seconds is `AddUserAgentDimension::PASS_SECONDS`, which is the one
+      * value in this subsystem that has been run against a real corpus.
+      */
+-    private const PASS_SECONDS = 10;
+ 
+     private ?bool $shouldRunCache = null;
+ 
+@@ -73,7 +72,6 @@
+         $batch_size = 1000;
+         $cursor = $this->watermark();
+         $examined = $cursor;
+-        $deadline = microtime(true) + self::PASS_SECONDS;
+ 
+         do {
+             // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and generated placeholders only; all event IDs, positions and wildcard values are bound.

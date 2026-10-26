@@ -1,0 +1,102 @@
+{
+    "translation-revision-date": "",
+    "generator": "WP-CLI\/2.12.0",
+    "source": "admin\/assets\/js\/shortcodes.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "tr_TR",
+                "plural-forms": "nplurals=1; plural=0;"
+            },
+            "Upgrade to Pro": [
+                ""
+            ],
+            "Pro": [
+                ""
+            ],
+            "Go to Plugins": [
+                ""
+            ],
+            "Filter operator": [
+                ""
+            ],
+            "Filter value": [
+                ""
+            ],
+            "Compare Free and Pro": [
+                ""
+            ],
+            "Report": [
+                ""
+            ],
+            "Copy": [
+                ""
+            ],
+            "Update SlimStat Pro to use this shortcode.": [
+                ""
+            ],
+            "This report is unavailable. Activate WooCommerce and set up reporting for Ecommerce.": [
+                ""
+            ],
+            "Number": [
+                ""
+            ],
+            "Top list": [
+                ""
+            ],
+            "List": [
+                ""
+            ],
+            "Number, all time": [
+                ""
+            ],
+            "Top list, all time": [
+                ""
+            ],
+            "List, all time": [
+                ""
+            ],
+            "Live": [
+                ""
+            ],
+            "Staff only": [
+                ""
+            ],
+            "No shortcode matches \u201c%s\u201d.": [
+                ""
+            ],
+            "Dismiss Pro hint": [
+                ""
+            ],
+            "No pageviews matched. Try a longer period or remove a filter.": [
+                ""
+            ],
+            "No pageviews matched in %s. Try a longer period or remove a filter.": [
+                ""
+            ],
+            "All time": [
+                ""
+            ],
+            "Preview updated.": [
+                ""
+            ],
+            "The preview could not connect to WordPress. Check your connection and retry.": [
+                ""
+            ],
+            "Filter column": [
+                ""
+            ],
+            "Remove filter": [
+                ""
+            ],
+            "Copied": [
+                ""
+            ],
+            "Your browser could not copy automatically. The shortcode is selected; use your keyboard to copy it.": [
+                ""
+            ]
+        }
+    }
+}

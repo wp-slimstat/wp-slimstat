@@ -1,0 +1,17 @@
+target:    tests/docker/lib.sh
+gate:      php tests/rehearsal-arm-resolution-test.php
+kind:      restore-defect
+expect:    printing nothing on stdout
+rationale: PITFALLS 130, mechanised. This function's return value IS its stdout, and `err` in this harness writes to stdout like `log` does -- so a refusal without the explicit redirection is captured by `zip=$(resolve_arm_zip ...)` and becomes a path-shaped string naming no file. The caller today reads the exit code and is safe; the next caller might not be, and the failure would then read as a missing ZIP rather than a refused one. This mutation restores the state the test was RED against when it was first run.
+---
+--- a/tests/docker/lib.sh
++++ b/tests/docker/lib.sh
+@@ -106,7 +106,7 @@
+   if [ -n "$ver" ]; then
+     got=$(digest "$zip")
+     [ "$got" = "$want" ] || {
+-      err "arm ZIP for $ver is not the pinned bytes: expected $want, got $got" >&2
++      err "arm ZIP for $ver is not the pinned bytes: expected $want, got $got"
+       return 1
+     }
+   fi

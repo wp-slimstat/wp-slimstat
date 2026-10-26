@@ -1,0 +1,13 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:ci-comment-metrics
+kind:      introduce-defect
+expect:    a count spelled as a WORD beside `entries`
+rationale: States a registry count in words instead of digits. This is the exact form the block carried until 2026-09-04 -- `SEVEN entries gate on the two seal suites` -- reached through the paragraph beside it, which says historical figures are described rather than quoted so the gate will not read them. That exemption is for prose about the past; used for a current figure it is a hole, and four numbers went stale through it.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -193,3 +193,3 @@
+         # an instance of it. Per-suite seconds have not been measured since the counts were fixed,
+-        # so no figure is given. Run the step and read it.
++        # so no figure is given. Run the step and read it. Twelve entries are slow.
+         #

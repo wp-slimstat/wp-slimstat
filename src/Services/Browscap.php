@@ -113,6 +113,21 @@ class Browscap
         return $browser;
     }
 
+    /**
+     * Whether ext-fileinfo is available, asked from inside this namespace.
+     *
+     * The admin notice in admin/view/index.php used to call extension_loaded('fileinfo')
+     * itself. That file has no namespace, so the call resolved straight to the PHP
+     * built-in and nothing in userland could answer it differently: the E2E simulation
+     * of a fileinfo-less host could never make the notice render, and the companion
+     * "no notice when Browscap is off" assertion passed vacuously on every host that
+     * has the extension. Admin code asks Browscap, which owns the requirement.
+     */
+    public static function has_fileinfo(): bool
+    {
+        return extension_loaded('fileinfo');
+    }
+
     public static function get_browser_from_browscap($_browser = [], $_cache_path = '')
     {
         // Flysystem's LocalFilesystemAdapter eagerly constructs FinfoMimeTypeDetector,
@@ -176,7 +191,7 @@ class Browscap
         }
 
         $download_remote_file = $_force_download;
-        $current_timestamp    = intval(date('U'));
+        $current_timestamp    = time();
         $browscap_zip         = wp_slimstat::$upload_dir . '/browscap-db.zip';
 
         if (empty(wp_slimstat::$settings['browscap_last_modified'])) {
@@ -210,6 +225,7 @@ class Browscap
                 unset($_stored_for_browscap);
 
                 // Now check the version number on the server
+                // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- version metadata for a locally stored browser database, not executable content.
                 $response = wp_remote_get('https://raw.githubusercontent.com/slimstat/browscap-cache/master/version.txt');
                 if (!is_array($response) || is_wp_error($response) || 200 != wp_remote_retrieve_response_code($response)) {
                     return [5, __('There was an error checking the remote library version. Please try again later.', 'wp-slimstat')];
@@ -233,14 +249,15 @@ class Browscap
 
             if (is_wp_error($response) || 200 != wp_remote_retrieve_response_code($response)) {
                 $http_code = is_wp_error($response) ? $response->get_error_message() : wp_remote_retrieve_response_code($response);
-                @unlink($browscap_zip);
+                wp_delete_file($browscap_zip);
+                /* translators: %s: HTTP status code or download error message. */
                 return [7, sprintf(__('There was an error downloading the Browscap data file (%s). Please try again later.', 'wp-slimstat'), $http_code)];
             }
 
             // Validate the downloaded file is actually a ZIP archive
             $header = file_get_contents($browscap_zip, false, null, 0, 4);
             if (empty($header) || $header !== "PK\x03\x04") {
-                @unlink($browscap_zip);
+                wp_delete_file($browscap_zip);
                 return [8, __('The downloaded Browscap file is not a valid ZIP archive. Your host may be blocking the download.', 'wp-slimstat')];
             }
 
@@ -251,7 +268,7 @@ class Browscap
 
             // Initialize WP_Filesystem — required by unzip_file() (see file.php:1595)
             if (!WP_Filesystem(false, wp_slimstat::$upload_dir)) {
-                @unlink($browscap_zip);
+                wp_delete_file($browscap_zip);
                 return [10, __('Could not initialize the WordPress filesystem. Please check your server permissions or set <code>FS_METHOD</code> to "direct" in wp-config.php.', 'wp-slimstat')];
             }
 
@@ -262,10 +279,11 @@ class Browscap
             // We're ready to unzip the file
             $result = unzip_file($browscap_zip, wp_slimstat::$upload_dir);
             if (is_wp_error($result)) {
+                /* translators: %s: archive extraction error message. */
                 return [9, sprintf(__('There was an error uncompressing the Browscap data file: %s', 'wp-slimstat'), $result->get_error_message())];
             }
 
-            @unlink($browscap_zip);
+            wp_delete_file($browscap_zip);
         }
 
         return [0, __('The Browscap data file has been installed on your server.', 'wp-slimstat')];

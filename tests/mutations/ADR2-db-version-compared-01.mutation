@@ -1,0 +1,19 @@
+target:    src/Schema/Schema.php
+gate:      php tests/db-floor-metadata-test.php
+kind:      introduce-defect
+expect:    compares a database server version with version_compare()
+rationale: Enforce the floor the obvious way, which bricks every MariaDB install there is. MariaDB reports $wpdb->db_version() as 5.5.5-10.x - a string that begins 5.5.5 for legacy compatibility - so version_compare(db_version(), '5.6', '<') is TRUE on all of them, and all of them are inside the supported floor. ADR-2's C12 amendment calls this a blocker in so many words. It is pinned as a mutation rather than a sentence because correcting the floor line in the readme is exactly what prompts someone to go and enforce it.
+---
+--- a/src/Schema/Schema.php
++++ b/src/Schema/Schema.php
+@@ -702,6 +702,10 @@
+      */
+     public static function targetCollation(wpdb $core): string
+     {
++        if (version_compare($core->db_version(), '5.6', '<')) {
++            return 'utf8_general_ci';
++        }
++
+         $collation = $core->get_var($core->prepare(
+             "SELECT COLLATION_NAME FROM information_schema.COLUMNS
+               WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'user_login'",

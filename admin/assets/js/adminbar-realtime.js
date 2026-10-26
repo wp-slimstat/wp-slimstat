@@ -78,7 +78,12 @@
                     if (i >= chartData.length) return;
 
                     var count = chartData[i];
-                    var heightPct = count > 0 ? Math.max(Math.round((count / maxVal) * 100), 3) : 0;
+                    // Multiply first — the client twin of admin/index.php's $height_pct. The
+                    // SSR half was reordered by ADR-17 and this one was not, which is how the
+                    // same bar rendered one height from PHP and another after the first realtime
+                    // refresh. `(count / maxVal) * 100` divides into a double and then scales it,
+                    // landing one ULP below the exact half. ADR-17; PITFALLS 72.
+                    var heightPct = count > 0 ? Math.max(Math.round((100 * count) / maxVal), 3) : 0;
 
                     bar.style.height = heightPct + "%";
                     bar.setAttribute("data-count", count);
@@ -99,7 +104,7 @@
                             : minutesAgo + " " + (i18n.min_ago || "min ago");
                         tooltip.textContent = "";
                         var strong = document.createElement("strong");
-                        strong.textContent = i18n.online_users || "Online Users";
+                        strong.textContent = i18n.online_users || "Visitors online";
                         tooltip.appendChild(strong);
                         tooltip.appendChild(document.createTextNode(
                             (i18n.count_label || "Count") + ": " + parseInt(count, 10)

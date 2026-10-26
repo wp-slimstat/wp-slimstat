@@ -1,0 +1,17 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:perf-gate-integrity
+kind:      guard-removal
+expect:    the k6 step runs on
+rationale: Leaves the activation step in place, in the right position, and gates it off. k6 then measures a WordPress where SlimStat's tables do not exist -- wp-env auto-activates the plugin but never fires admin_init, which is what creates them. That is what the first ever Tier 3 dispatch measured: 81.79% request failures, 301 of 368, with `has online data` at 3%, reported as a performance verdict. REGISTERED BECAUSE THE ORDERING CHECK ALONE COULD NOT SEE IT: the first version of section 11 asserted only that an activation step precedes k6, and this mutation SURVIVED it -- the step is still there and still before. Conditions must MATCH, not merely exist, or 'the lane activates the plugin' is a claim about the file rather than about the run.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -768,7 +768,7 @@
+       # could not deliver the state its assertions require, and reported the
+       # shortfall as a product failure.
+       - name: Activate plugin and create database tables (k6 needs a real install)
+-        if: ${{ matrix.php == '8.2' }}
++        if: ${{ matrix.php == '8.9' }}
+         run: |
+           npx wp-env run tests-cli -- wp plugin deactivate wp-slimstat 2>/dev/null || true
+           npx wp-env run tests-cli -- wp plugin activate wp-slimstat

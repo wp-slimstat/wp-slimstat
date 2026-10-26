@@ -1,0 +1,18 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+kind:      restore-defect
+expect:    P42-canary-one-survives-a-vacuous-oracle-leg label
+rationale: Restores the three-legged vacuity predicate. A vacuous ORACLE-vs-OLD comparison then suppresses a REAL arms difference: canary class 1 (LIMIT 20 -> 19) over a flat tie band - the ordinary shape of top_resource on a sparse corpus - comes out d-vacuous/unresolved with a rationale reading 'the comparison could not have failed' while its own detail.arms records 20 rows against 19. Whether S7's stop/go drill sees the poison then depends on whether the corpus tail happened to be flat. The ARMS comparison is the one the campaign's verdict rests on; a vacuous comparison on a pair nobody asked about may not silence it.
+---
+diff --git a/tests/oracle/classify.py b/tests/oracle/classify.py
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -363,7 +363,7 @@ RULES = (
+         "while the same poison over a non-flat tail blocked — the drill passing or failing on "
+         "whether the corpus happened to be flat. A verdict whose own detail.arms records a row "
+         "count difference may not tell the reader nothing could have failed",
+-        lambda f: f.arms.verdict == algebra.INCOMPARABLE,
++        lambda f: algebra.INCOMPARABLE in (f.arms.verdict, f.oracle_new.verdict, f.oracle_old.verdict),
+     ),
+     Rule(
+         "clock-unpinned", "d-clock",

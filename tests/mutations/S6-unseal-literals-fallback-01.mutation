@@ -1,0 +1,21 @@
+target:    tests/docker/seal.sh
+gate:      composer test:seal-negative
+kind:      restore-defect
+expect:    T15 expected exit 4 and 'literals.json is absent'
+rationale: Restores the fallback the refusal replaced. This is a DIFFERENT defect from S6-unseal-audit-drops-literals-01, which removes the literals outright: here the rule is used whenever the file happens to exist, so every ordinary run looks identical and only a run MISSING its provenance quietly re-audits under the weaker rule and unseals clean. T14 proves the rule is applied; this proves it cannot be skipped. The two are separable because the fallback is exactly the shape the suite exists to refuse - a guard that degrades in silence rather than refusing - and it survived the first review of its own commit.
+---
+--- a/tests/docker/seal.sh
++++ b/tests/docker/seal.sh
+@@ -31,9 +31,9 @@
+   # without one is a run whose provenance is unknown — and the fallback made that state
+   # indistinguishable from a good one while quietly running the weaker rule. T14 catches a
+   # WEAKENED rule; nothing caught a MISSING file, which is the same shape one step further out.
+-  [ -f "$run/.sealed/literals.json" ] ||
+-    { seal_refuse 3 ".sealed/literals.json is absent, so the packet cannot be re-audited against this run's own era markers"; return 4; }
+-  "$HERE/scrub-audit.sh" "$run/packet" --literals "$run/.sealed/literals.json" >/dev/null 2>&1 ||
++  local sealed=()
++  [ -f "$run/.sealed/literals.json" ] && sealed=(--literals "$run/.sealed/literals.json")
++  "$HERE/scrub-audit.sh" "$run/packet" "${sealed[@]+"${sealed[@]}"}" >/dev/null 2>&1 ||
+     { seal_refuse 3 "scrub audit found hits in packet/ after the packet was built"; return 4; }
+   (cd "$run" && shasum -a 256 -c packet/MANIFEST.sha256 >/dev/null 2>&1) ||
+     { seal_refuse 3 "packet manifest does not verify"; return 4; }

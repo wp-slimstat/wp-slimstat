@@ -1,0 +1,18 @@
+target:    src/Schema/Schema.php
+gate:      php tests/upgrade-index-convergence-test.php
+kind:      restore-defect
+expect:    builds missing indexes without consulting isMigrationIndex()
+rationale: Restores the pre-B2 ensure() (release review 2026-10-13): every missing manifest index is built on admin_init, so the first admin page after updating sits through the idx_goal_queries / idx_funnel_queries / idx_events_notes_dt prefix-index builds over the whole fact table instead of leaving them to the Migration page.
+---
+diff --git a/src/Schema/Schema.php b/src/Schema/Schema.php
+--- a/src/Schema/Schema.php
++++ b/src/Schema/Schema.php
+@@ -1155,8 +1155,3 @@
+             foreach ($state['missing'] as $index) {
+-                if (self::isMigrationIndex($suffix, $index)) {
+-                    $report['indexes_deferred_to_migration'][] = self::resolve($index, $prefix);
+-                    continue;
+-                }
+-
+                 // An index can only be built from columns the table has. The manifest may
+                 // declare both together while a migration delivers the column later, so

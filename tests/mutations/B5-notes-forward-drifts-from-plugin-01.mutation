@@ -1,0 +1,17 @@
+target:    tests/docker/lib.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    the forward transform admin/index.php actually issues
+rationale: The whole H5 argument -- that fingerprint equality across the migration MEANS the notes conversion was applied correctly -- rests on lib.sh rendering the same expression admin/index.php issues. Drift them by one token and the cell projects one transform, the plugin applies another, and the comparison reports data loss the plugin did not cause; worse, on a corpus whose values happen to agree under both it reports nothing at all and the cell certifies a conversion it never checked. This is the one place in the harness where two writers own one statement, so the gate compares them byte for byte against the plugin source.
+---
+--- a/tests/docker/lib.sh
++++ b/tests/docker/lib.sh
+@@ -322,7 +322,7 @@
+ # `notes` in the cell and to the INVERSE EXPRESSION in the corpus builder's round-trip guard, and
+ # a substitution that matched the bare word `notes` inside `REPLACE( notes, ...)` would rewrite
+ # the wrong occurrence.
+-NOTES_FORWARD_TEMPLATE="CONCAT( '[', REPLACE( %s, ';', '][' ), ']' )"
++NOTES_FORWARD_TEMPLATE="CONCAT( '[', REPLACE( %s, ';', '][' ), ']')"
+ # The rows the conversion is OWED, as admin/index.php's own WHERE clause states them: not NULL
+ # (NULL NOT LIKE '[%' is NULL, so NULL was already excluded — stated rather than relied upon),
+ # not empty (the empty string satisfies NOT LIKE '[%' and would become the literal '[]'), and not

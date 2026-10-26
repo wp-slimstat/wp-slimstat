@@ -1,0 +1,17 @@
+target:    tests/e2e-quarantine-census-test.php
+gate:      php tests/e2e-quarantine-census-test.php
+kind:      restore-defect
+expect:    the suite has well over a hundred, so this census is counting a directory it is not actually reading
+rationale: The vacuity floor, which is the failure mode a census has that an ordinary gate does not: a scan that has stopped reading reports a clean suite in the same words it uses for a broken parse. Points the walk at tests/e2e/helpers -- a real directory, five real .ts files, zero skip sites -- so nothing errors and every count comes back 0. The floor must be what names it, not the equality check downstream, so this mutation is read on the first failure line.
+---
+--- a/tests/e2e-quarantine-census-test.php
++++ b/tests/e2e-quarantine-census-test.php
+@@ -70,7 +70,7 @@
+ require_once __DIR__ . '/lib/source-scan.php';
+ 
+ $plugin_root = dirname(__DIR__);
+-$e2e_dir     = $plugin_root . '/tests/e2e';
++$e2e_dir     = $plugin_root . '/tests/e2e/helpers';
+ $ceiling_rel = 'tests/E2E-QUARANTINE-CEILING';
+ $failures    = [];
+ 

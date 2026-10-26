@@ -221,9 +221,8 @@ test.describe('Download Link Tracking — DOM click path', () => {
     const widget = page.locator('#slim_p4_09');
     await expect(widget).toBeVisible({ timeout: 10_000 });
 
-    const widgetText = await widget.innerText();
-    expect(widgetText).toContain(`${marker}-file-a.pdf`);
-    expect(widgetText).toContain(`${marker}-file-b.doc`);
+    await expect(widget).toContainText(`${marker}-file-a.pdf`);
+    await expect(widget).toContainText(`${marker}-file-b.doc`);
   });
 
   // ─── C7: Recent Downloads in DB and Access Log ─────────────────────────

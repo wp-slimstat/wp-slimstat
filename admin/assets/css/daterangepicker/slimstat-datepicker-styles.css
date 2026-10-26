@@ -120,6 +120,7 @@
 .slimstat-daterangepicker .ranges ul li {
     padding: 6px 12px;
     margin: 0;
+    transition: background-color 0.15s, color 0.15s;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -128,10 +129,6 @@
 /* Position dropdown below the button */
 .slimstat-daterangepicker.daterangepicker.drops-down {
     margin-top: 0;
-}
-
-.slimstat-daterangepicker.daterangepicker.opens-right {
-    left: auto !important;
 }
 
 /* Ensure proper positioning relative to button */
@@ -239,11 +236,6 @@
         min-width: 160px;
     }
 }
-.slimstat-daterangepicker{
-    left: unset !important;
-    right: 20px !important;
-}
-
 .datepicker-badge-elements{
     display: flex;
     align-content: center;
@@ -253,4 +245,23 @@
 #slimstat-date-filters{
     display: flex;
     align-items: center;
+}
+/* Days from the neighbouring month repeat the range ends; keep the marker on the real day only. */
+.slimstat-daterangepicker td.off.active::after {
+    display: none;
+}
+
+.slimstat-daterangepicker td.off.active {
+    color: var(--color-drp-border);
+}
+
+.slimstat-daterangepicker .slimstat-clear-cache-wrap {
+    clear: both;
+    padding: 8px 12px;
+    border-top: 1px solid var(--slimstat-border);
+}
+/* A quiet text link: clearing a cache is not a date choice (QA D10). */
+.slimstat-daterangepicker #slimstat-clear-cache {
+    color: var(--color-drp-fg-default);
+    font-size: 12px;
 }

@@ -1,0 +1,51 @@
+{
+    "translation-revision-date": "2019-06-10 15:35-0400",
+    "generator": "WP-CLI\/2.12.0",
+    "source": "admin\/assets\/js\/a.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "de_DE",
+                "plural-forms": "nplurals=2; plural=(n != 1);"
+            },
+            "Cache cleared!": [
+                ""
+            ],
+            "Cache clear failed!": [
+                ""
+            ],
+            "Select value...": [
+                ""
+            ],
+            "Search...": [
+                ""
+            ],
+            "No results found": [
+                ""
+            ],
+            "No matches. Select Apply to filter by this value.": [
+                ""
+            ],
+            "Loading...": [
+                ""
+            ],
+            "Loading options...": [
+                ""
+            ],
+            "No matching options found": [
+                ""
+            ],
+            "No data in this time range": [
+                ""
+            ],
+            "Search options...": [
+                ""
+            ],
+            "Enter value...": [
+                ""
+            ]
+        }
+    }
+}

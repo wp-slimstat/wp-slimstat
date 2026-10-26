@@ -1,0 +1,17 @@
+target:    src/view/migration-page.php
+gate:      composer test:migration-notice-visibility
+kind:      introduce-defect
+expect:    so migration.css hides it
+rationale: Drops the exemption class from the migration page's own status note -- the state the page actually shipped in. migration.css hides every .notice on that screen so another plugin's banner cannot sit on top of a database migration, exempting one class, and the page's own note never carried it. Measured in a browser on 2026-09-04: computed display was none, so the screen showed 'We are migrating your database' beside an Idle badge with no explanation and no visible control. migration.js writes FAILURE text into the same element, so a failed migration reported into display:none -- the one message an admin most needs was the one guaranteed to be invisible.
+---
+--- a/src/view/migration-page.php
++++ b/src/view/migration-page.php
+@@ -78,7 +78,7 @@
+                     // element, so a failed step reported into something with display:none.
+                     // Pinned by tests/migration-notice-visibility-test.php.
+                     ?>
+-                    <div id="slimstat-status-note" class="status-note notice inline slimstat-migration-notice <?php echo $has_required_migrations ? 'notice-info' : 'notice-success'; ?>">
++                    <div id="slimstat-status-note" class="status-note notice inline <?php echo $has_required_migrations ? 'notice-info' : 'notice-success'; ?>">
+                         <?php if ($has_required_migrations): ?>
+                             <?php echo esc_html__('Click "Start Migration" to begin. Progress and details will appear here.', 'wp-slimstat'); ?>
+                         <?php else: ?>

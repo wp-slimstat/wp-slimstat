@@ -1,0 +1,119 @@
+[global-setup] wp-slimstat-pro is not installed — Pro specs will skip (declared Free-only lane).
+
+Running 10 tests using 1 worker
+
+(node:59160) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59160) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [admin] › tests/e2e/october-backlog.spec.ts:8:1 › Tasks 1–4, 25: report dialogs keep focus, scroll and reading order (1.9s)
+  ✓   2 [admin] › tests/e2e/october-backlog.spec.ts:27:1 › Tasks 12–16: Heatmaps boundaries, device denominator, polling, date alignment and settings (1.4s)
+  -   3 [admin] › tests/e2e/october-backlog.spec.ts:70:1 › Tasks 19, 23: email search retains hidden selections and header notifications stay closed
+(node:59218) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59249) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ℹ Starting 'wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745626454.php' on the tests-cli container.
+
+✔ Ran `wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745626454.php` in 'tests-cli'. (in 1s 661ms)
+(node:59308) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59338) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ℹ Starting 'wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745629065.php' on the tests-cli container.
+
+✔ Ran `wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745629065.php` in 'tests-cli'. (in 1s 431ms)
+  ✓   4 [admin] › tests/e2e/october-backlog.spec.ts:119:1 › Task 20: chart previews render and redraw from the generated shortcode (10.9s)
+  ✓   5 [admin] › tests/e2e/october-backlog.spec.ts:147:1 › Task 15: polling pauses when hidden, serializes requests and recovers from failures (868ms)
+  -   6 [admin] › tests/e2e/october-ecommerce.spec.ts:9:1 › Tasks 5–11, 26–27: currency, comparisons, full report, export and chart gaps @woocommerce
+(node:59391) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59421) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ℹ Starting 'wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745632042.php' on the tests-cli container.
+
+✔ Ran `wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745632042.php` in 'tests-cli'. (in 1s 464ms)
+(node:59455) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59485) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ℹ Starting 'wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745633848.php' on the tests-cli container.
+
+✔ Ran `wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745633848.php` in 'tests-cli'. (in 1s 346ms)
+(node:59522) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59553) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ℹ Starting 'wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745635997.php' on the tests-cli container.
+
+✔ Ran `wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745635997.php` in 'tests-cli'. (in 1s 422ms)
+(node:59606) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59641) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ℹ Starting 'wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745637860.php' on the tests-cli container.
+
+✔ Ran `wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745637860.php` in 'tests-cli'. (in 1s 591ms)
+(node:59682) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59712) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ℹ Starting 'wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745639907.php' on the tests-cli container.
+
+✔ Ran `wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745639907.php` in 'tests-cli'. (in 1s 384ms)
+(node:59746) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59776) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ℹ Starting 'wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745641932.php' on the tests-cli container.
+
+✔ Ran `wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745641932.php` in 'tests-cli'. (in 1s 452ms)
+(node:59811) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59841) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ℹ Starting 'wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745643772.php' on the tests-cli container.
+
+✔ Ran `wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745643772.php` in 'tests-cli'. (in 1s 451ms)
+  ✓   7 [admin] › tests/e2e/october-heatmap-delete.spec.ts:4:1 › Task 14: typed confirmation, cancellation and server rejection protect disposable full-capture data (13.7s)
+(node:59877) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59908) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ℹ Starting 'wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745645761.php' on the tests-cli container.
+
+✔ Ran `wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745645761.php` in 'tests-cli'. (in 1s 476ms)
+(node:59942) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59972) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ℹ Starting 'wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745647581.php' on the tests-cli container.
+
+✔ Ran `wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745647581.php` in 'tests-cli'. (in 1s 471ms)
+(node:60012) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:60042) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ℹ Starting 'wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745651360.php' on the tests-cli container.
+
+✔ Ran `wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745651360.php` in 'tests-cli'. (in 1s 405ms)
+(node:60088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:60121) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ℹ Starting 'wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745653500.php' on the tests-cli container.
+
+✔ Ran `wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745653500.php` in 'tests-cli'. (in 1s 408ms)
+(node:60156) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:60187) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ℹ Starting 'wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745655537.php' on the tests-cli container.
+
+✔ Ran `wp eval-file /var/www/html/wp-content/plugins/wp-slimstat/tests/e2e/.tmp/fixture-59160-1791745655537.php` in 'tests-cli'. (in 1s 408ms)
+  ✓   8 [admin] › tests/e2e/october-migration.spec.ts:5:1 › Task 22: pending banner, failed request, retry, completion and optional-only state (11.7s)
+  -   9 [admin] › tests/e2e/october-preview.spec.ts:6:1 › Task 18: missing-theme explanation, fallback context and retry into standard-theme click/scroll previews
+  -  10 [admin] › tests/e2e/october-upgrade.spec.ts:7:1 › Tasks 17/28: stored settings survive core upgrades, repeats and Pro reactivation
+
+  4 skipped
+  6 passed (44.6s)

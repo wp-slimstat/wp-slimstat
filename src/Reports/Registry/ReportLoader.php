@@ -239,6 +239,7 @@ class ReportLoader {
 			return true;
 		} catch ( \Exception $e ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Diagnostic logging is guarded by WP_DEBUG; normal production requests do not log here.
 				error_log( "Failed to load report class {$class}: " . $e->getMessage() );
 			}
 

@@ -14,7 +14,10 @@ import { BASE_URL } from './helpers/env';
 import {
   closeDb,
   clearStatsTable,
+  restoreSlimstatOptions,
   seedPageviews,
+  setSlimstatOption,
+  snapshotSlimstatOptions,
 } from './helpers/setup';
 import * as mysql from 'mysql2/promise';
 import { MYSQL_CONFIG } from './helpers/env';
@@ -78,7 +81,7 @@ async function seedOutboundLinks(count: number): Promise<void> {
   await pool.end();
 }
 
-/** Parse "Showing X - Y of Z" from pagination text */
+/** Parse "X–Y of Z" from pagination text */
 function parsePaginationTotal(text: string): string | null {
   const m = text.match(/of\s+([\d,+]+)/);
   return m ? m[1] : null;
@@ -98,6 +101,10 @@ async function getFirstRowText(page: any, panelId: string): Promise<string> {
 // ─── Setup / Teardown ────────────────────────────────────────────
 
 test.beforeAll(async () => {
+  await snapshotSlimstatOptions();
+  await setSlimstatOption(null!, 'limit_results', '200');
+  await setSlimstatOption(null!, 'rows_to_show', '20');
+  await setSlimstatOption(null!, 'async_load', 'no');
   await clearStatsTable();
   // Seed 60 generic pageviews (for top reports)
   await seedPageviews({ count: 60, resourcePrefix: '/e2e-pagination-' });
@@ -109,6 +116,7 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => {
   await clearStatsTable();
+  await restoreSlimstatOptions();
   await closeDb();
 });
 
@@ -138,15 +146,15 @@ test.describe('Report pagination — all types', () => {
     expect(page2Row).not.toBe(page1Row);
   });
 
-  test('pagination "Showing" range advances on page 2', async ({ page }) => {
-    // Verify that clicking next page changes the "Showing X-Y" range,
+  test('pagination "X–Y" range advances on page 2', async ({ page }) => {
+    // Verify that clicking next page changes the "X–Y of Z" range,
     // proving the pagination actually navigates to a different page.
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`);
     await page.locator('#slim_p1_08').waitFor({ state: 'visible', timeout: 15000 });
     await page.waitForTimeout(3000);
 
     const p1range = await page.evaluate(() => {
-      const m = jQuery('#slim_p1_08 .pagination').text().match(/Showing\s+([\d,]+)\s*-\s*([\d,]+)/);
+      const m = jQuery('#slim_p1_08 .pagination').text().match(/([\d,]+)–([\d,]+) of/);
       return m ? { start: m[1], end: m[2] } : null;
     });
     expect(p1range).not.toBeNull();
@@ -161,7 +169,7 @@ test.describe('Report pagination — all types', () => {
     await page.waitForTimeout(3000);
 
     const p2range = await page.evaluate(() => {
-      const m = jQuery('#slim_p1_08 .pagination').text().match(/Showing\s+([\d,]+)\s*-\s*([\d,]+)/);
+      const m = jQuery('#slim_p1_08 .pagination').text().match(/([\d,]+)–([\d,]+) of/);
       return m ? { start: m[1], end: m[2] } : null;
     });
     expect(p2range).not.toBeNull();
@@ -175,7 +183,7 @@ test.describe('Report pagination — all types', () => {
     await page.waitForTimeout(3000);
 
     const p1range = await page.evaluate(() => {
-      const m = jQuery('#slim_p2_20 .pagination').text().match(/Showing\s+([\d,]+)\s*-\s*([\d,]+)/);
+      const m = jQuery('#slim_p2_20 .pagination').text().match(/([\d,]+)–([\d,]+) of/);
       return m ? { start: m[1], end: m[2] } : null;
     });
 
@@ -190,7 +198,7 @@ test.describe('Report pagination — all types', () => {
     await page.waitForTimeout(3000);
 
     const p2range = await page.evaluate(() => {
-      const m = jQuery('#slim_p2_20 .pagination').text().match(/Showing\s+([\d,]+)\s*-\s*([\d,]+)/);
+      const m = jQuery('#slim_p2_20 .pagination').text().match(/([\d,]+)–([\d,]+) of/);
       return m ? { start: m[1], end: m[2] } : null;
     });
     const noData = await page.evaluate(() =>

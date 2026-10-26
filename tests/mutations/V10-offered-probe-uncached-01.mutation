@@ -1,0 +1,30 @@
+target:    src/Migration/MigrationManager.php
+gate:      composer test:migration-probe-query-budget
+kind:      guard-removal
+expect:    without consulting a transient first
+rationale: Removes the cross-request cache from getOfferedMigrations(), leaving the per-request memo. That is the shape the defect actually had, and the memo makes it LOOK handled: within one request the two call sites -- registerPage() on admin_menu and the notice renderer on admin_notices -- cost one probe, so a test that only counts calls in a single request stays green. The cost is paid on EVERY admin page load instead, permanently: six information_schema.COLUMNS aggregates from ConvertTablesToUtf8mb4 plus two SHOW COLUMNS from AddUserAgentDimension, on a healthy install, forever -- because the release notes tell owners not to run the optional migrations. The guard is `!needsMigration() && [] === getOfferedMigrations()`, whose LEFT operand is a negation -- true exactly when nothing is owed -- so the right side runs precisely in the healthy steady state. (`&&` short-circuits normally; what costs is which side the negation puts first.)
+---
+--- a/src/Migration/MigrationManager.php
++++ b/src/Migration/MigrationManager.php
+@@ -131,21 +131,10 @@
+         // NOT keyed on migrationSetFingerprint(), deliberately, and it inherits the limitation
+         // that buys: a migration ADDED by an update stays invisible until this expires, up to
+         // PROBE_TTL. needsMigration()'s transient has exactly the same property, and keying only
+         // one of the two would make them disagree about how fresh they are — a difference nothing
+         // explains and the next reader takes for a bug. If it is worth closing, both move together.
+-        $cached = get_transient(self::TRANSIENT_OFFERED);
+-
+-        if (is_array($cached)) {
+-            $ids = array_flip($cached);
+-
+-            return $this->offeredMemo = array_filter(
+-                $this->migrations,
+-                static fn($migration) => $migration->isOptional() && isset($ids[$migration->getId()])
+-            );
+-        }
+-
+         $offered     = [];
+         $unavailable = false;
+ 
+         foreach ($this->migrations as $key => $migration) {
+             if (!$migration->isOptional()) {

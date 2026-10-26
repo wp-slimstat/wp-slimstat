@@ -13,11 +13,17 @@ class AjaxPositionSanitizationTest extends WpSlimstatTestCase
         $cases = [
             // Valid coordinates — preserved
             'standard coordinates' => ['320,480', '320,480'],
-            'origin coordinates' => ['0,0', '0,0'],
+            'x on the left edge preserved' => ['0,480', '0,480'],
+            'y on the top edge preserved' => ['320,0', '320,0'],
             '4k coordinates' => ['3840,2160', '3840,2160'],
             'max boundary' => ['99999,99999', '99999,99999'],
             'leading zeros preserved' => ['007,042', '007,042'],
             'whitespace trimmed' => [' 320,480 ', '320,480'],
+
+            // 0,0 is the tracker's "no coordinates" default (keyboard, submit and
+            // synthetic clicks), not a click in the corner — stored empty (heatmap D3)
+            'origin default emptied' => ['0,0', ''],
+            'zero-padded origin emptied' => ['000,00', ''],
 
             // Invalid — rejected outright (no character stripping)
             'six digit x rejected' => ['100000,200', ''],

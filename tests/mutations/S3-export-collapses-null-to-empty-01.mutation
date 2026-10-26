@@ -1,0 +1,23 @@
+target:    tests/bench/lib/export-snapshot.php
+gate:      composer test:export-fidelity
+kind:      restore-defect
+expect:    SQL NULL is stored as NULL, not as an empty string
+rationale: NULL vs '' is the distinction ENCODING_V1 exists to keep, and until now it was pinned
+           only in the ENCODER (S2-null-reads-as-empty-01, which gates a file that never loads
+           export-snapshot.php). The EXPORT PATH — where a NULL actually has to survive a hop
+           through SQLite — had no mutation at all, so "the export preserves NULL" was an
+           assertion with nothing proving it could fail. This binds NULL as an empty BLOB, which
+           is the shape SQLite would accept most quietly, and the typeof() assertion catches it.
+---
+diff --git a/tests/bench/lib/export-snapshot.php b/tests/bench/lib/export-snapshot.php
+--- a/tests/bench/lib/export-snapshot.php
++++ b/tests/bench/lib/export-snapshot.php
+@@ -137,7 +137,7 @@ if (!function_exists('slimstat_fp2_export_snapshot')) {
+                 foreach ($types as $i => $type) {
+                     $value = $row[$i];
+                     if (null === $value) {
+-                        $insert->bindValue($i + 1, null, SQLITE3_NULL);
++                        $insert->bindValue($i + 1, '', SQLITE3_BLOB);
+                     } elseif ($as_integer[$i]) {
+                         $insert->bindValue($i + 1, (int) $value, SQLITE3_INTEGER);
+                     } else {

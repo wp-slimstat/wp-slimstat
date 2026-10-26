@@ -1,0 +1,519 @@
+{
+  "excluded": {
+    "slim_live_analytics": "Live Analytics \u2014 Answers a clock-bound live window; two arms read at different wall-clock instants cannot be compared byte for byte.",
+    "slim_p1_15": "Rankings \u2014 Reads external ranking services, not slim_stats; there is no corpus row an independent model could be built from.",
+    "slim_p4_22": "Your Website \u2014 Seven of its eight rows count WordPress posts and comments through wp_posts/wp_comments; the corpus under test is slim_stats.",
+    "slim_p6_01": "Audience Location \u2014 A JavaScript world map drawn over top_country, which is already modeled; the surface adds rendering, not an answer.",
+    "slim_p8_01": "Pro surface \u2014 Registered by Pro. Both C2 arms are Free (5.5.1 vs 6.0), so the report is absent from both and covered by Pro gates 7 and A4 instead.",
+    "slim_p8_02": "Pro surface \u2014 Registered by Pro. Both C2 arms are Free (5.5.1 vs 6.0), so the report is absent from both and covered by Pro gates 7 and A4 instead."
+  },
+  "excluded_approved_by": "release owner (plan O2, 2026-09-14)",
+  "extended_capture_by_report": {
+    "slim_p1_03": [
+      "get_overview_summary"
+    ],
+    "slim_p1_04": [
+      "top_current_ip_pinned"
+    ],
+    "slim_p1_06": [
+      "recent_searchterms_pinned"
+    ],
+    "slim_p1_11": [
+      "top_username_pinned"
+    ],
+    "slim_p1_12": [
+      "top_searchterms_pinned"
+    ],
+    "slim_p1_13": [
+      "uniques_country_pinned"
+    ],
+    "slim_p1_17": [
+      "top_language_family_pinned"
+    ],
+    "slim_p1_18": [
+      "top_current_username_pinned"
+    ],
+    "slim_p1_19_01": [
+      "chart_searchterms_pinned"
+    ],
+    "slim_p2_02": [
+      "bouncing_visits_pinned",
+      "get_visitors_summary",
+      "get_max_and_average_pages_per_visit"
+    ],
+    "slim_p2_03": [
+      "top_language_pinned"
+    ],
+    "slim_p2_04": [
+      "top_user_agent_pinned"
+    ],
+    "slim_p2_05": [
+      "top_ip_pinned"
+    ],
+    "slim_p2_07": [
+      "top_screen_resolution_pinned"
+    ],
+    "slim_p2_08": [
+      "top_viewport_pinned"
+    ],
+    "slim_p2_12": [
+      "get_visits_duration"
+    ],
+    "slim_p2_13": [
+      "recent_country_pinned"
+    ],
+    "slim_p2_14": [
+      "recent_viewport_pinned"
+    ],
+    "slim_p2_15": [
+      "recent_platform_pinned"
+    ],
+    "slim_p2_16": [
+      "recent_user_agent_pinned"
+    ],
+    "slim_p2_17": [
+      "recent_language_pinned"
+    ],
+    "slim_p2_18": [
+      "uniques_browser_pinned"
+    ],
+    "slim_p2_20": [
+      "recent_user_pinned"
+    ],
+    "slim_p2_21": [
+      "top_user_pinned"
+    ],
+    "slim_p2_22_01": [
+      "chart_users_pinned"
+    ],
+    "slim_p2_24": [
+      "slim_p2_24_top_bots"
+    ],
+    "slim_p2_25": [
+      "slim_p2_25_top_human_browsers"
+    ],
+    "slim_p3_01": [
+      "slim_p3_01_chart_daily",
+      "slim_p3_01_chart_weekly"
+    ],
+    "slim_p3_02": [
+      "get_traffic_sources_summary",
+      "count_bouncing_pages"
+    ],
+    "slim_p4_01": [
+      "slim_p4_01_recent_outbound"
+    ],
+    "slim_p4_02": [
+      "slim_p4_02_recent_posts"
+    ],
+    "slim_p4_04": [
+      "slim_p4_04_recent_feeds"
+    ],
+    "slim_p4_05": [
+      "slim_p4_05_recent_not_found"
+    ],
+    "slim_p4_06": [
+      "slim_p4_06_recent_internal_searches"
+    ],
+    "slim_p4_07": [
+      "slim_p4_07_top_categories"
+    ],
+    "slim_p4_09": [
+      "slim_p4_09_top_downloads"
+    ],
+    "slim_p4_10": [
+      "get_recent_events"
+    ],
+    "slim_p4_12": [
+      "get_top_events"
+    ],
+    "slim_p4_13": [
+      "slim_p4_13_top_internal_searches"
+    ],
+    "slim_p4_15": [
+      "slim_p4_15_recent_categories"
+    ],
+    "slim_p4_152": [
+      "slim_p4_152_recent_tags"
+    ],
+    "slim_p4_16": [
+      "slim_p4_16_top_not_found"
+    ],
+    "slim_p4_18": [
+      "slim_p4_18_top_authors"
+    ],
+    "slim_p4_19": [
+      "slim_p4_19_top_tags"
+    ],
+    "slim_p4_20": [
+      "slim_p4_20_recent_downloads"
+    ],
+    "slim_p4_21": [
+      "get_top_outbound"
+    ],
+    "slim_p4_22": [
+      "get_your_blog"
+    ],
+    "slim_p4_23": [
+      "bouncing_visits_pinned",
+      "count_bouncing_pages"
+    ],
+    "slim_p4_24": [
+      "slim_p4_24_exit_pages"
+    ],
+    "slim_p4_25": [
+      "slim_p4_25_entry_pages"
+    ],
+    "slim_p4_26_01": [
+      "slim_p4_26_01_chart_daily",
+      "slim_p4_26_01_chart_weekly"
+    ],
+    "slim_p4_27": [
+      "get_group_by"
+    ],
+    "slim_p7_02": [
+      "get_recent"
+    ],
+    "slim_p9_01": [
+      "get_goals_raw",
+      "get_goal_results"
+    ],
+    "slim_p9_02": [
+      "get_funnels_raw",
+      "get_funnel_results"
+    ]
+  },
+  "legacy_capture_by_report": {
+    "slim_p1_01": [
+      "chart_daily",
+      "chart_weekly",
+      "count_records_ip"
+    ],
+    "slim_p1_03": [
+      "count_records_id",
+      "count_records_ip",
+      "count_records_resource",
+      "rows_in_window"
+    ],
+    "slim_p1_08": [
+      "top_resource",
+      "top_resource_human",
+      "top_resource_in_window"
+    ],
+    "slim_p1_10": [
+      "top_referer",
+      "top_referer_domains"
+    ],
+    "slim_p1_13": [
+      "top_country",
+      "uniques_country"
+    ],
+    "slim_p2_01": [
+      "count_human_hits",
+      "count_records_visit_id"
+    ],
+    "slim_p2_02": [
+      "bouncing_visits",
+      "count_human_hits",
+      "count_records_visit_id"
+    ],
+    "slim_p2_06": [
+      "top_platform"
+    ],
+    "slim_p2_18": [
+      "top_browser",
+      "uniques_browser"
+    ],
+    "slim_p2_19": [
+      "top_platform_prefixed"
+    ],
+    "slim_p4_11": [
+      "top_resource_trimmed"
+    ],
+    "slim_p4_23": [
+      "bouncing_visits"
+    ]
+  },
+  "modeled": {
+    "slim_p1_01": [
+      "chart_daily",
+      "chart_weekly",
+      "count_records_ip"
+    ],
+    "slim_p1_03": [
+      "count_records_id",
+      "count_records_ip",
+      "count_records_resource",
+      "rows_in_window"
+    ],
+    "slim_p1_04": [
+      "top_current_ip_pinned"
+    ],
+    "slim_p1_06": [
+      "recent_searchterms_pinned"
+    ],
+    "slim_p1_08": [
+      "top_resource"
+    ],
+    "slim_p1_10": [
+      "top_referer",
+      "top_referer_domains"
+    ],
+    "slim_p1_11": [
+      "top_username_pinned"
+    ],
+    "slim_p1_12": [
+      "top_searchterms_pinned"
+    ],
+    "slim_p1_13": [
+      "top_country"
+    ],
+    "slim_p1_17": [
+      "top_language_family_pinned"
+    ],
+    "slim_p1_18": [
+      "top_current_username_pinned"
+    ],
+    "slim_p1_19_01": [
+      "chart_searchterms_pinned"
+    ],
+    "slim_p2_01": [
+      "count_human_hits",
+      "count_records_visit_id"
+    ],
+    "slim_p2_02": [
+      "bouncing_visits_pinned",
+      "get_visitors_summary",
+      "get_max_and_average_pages_per_visit"
+    ],
+    "slim_p2_03": [
+      "top_language_pinned"
+    ],
+    "slim_p2_04": [
+      "top_user_agent_pinned"
+    ],
+    "slim_p2_05": [
+      "top_ip_pinned"
+    ],
+    "slim_p2_06": [
+      "top_platform"
+    ],
+    "slim_p2_07": [
+      "top_screen_resolution_pinned"
+    ],
+    "slim_p2_08": [
+      "top_viewport_pinned"
+    ],
+    "slim_p2_12": [
+      "get_visits_duration"
+    ],
+    "slim_p2_13": [
+      "recent_country_pinned"
+    ],
+    "slim_p2_14": [
+      "recent_viewport_pinned"
+    ],
+    "slim_p2_15": [
+      "recent_platform_pinned"
+    ],
+    "slim_p2_16": [
+      "recent_user_agent_pinned"
+    ],
+    "slim_p2_17": [
+      "recent_language_pinned"
+    ],
+    "slim_p2_18": [
+      "top_browser"
+    ],
+    "slim_p2_19": [
+      "top_platform_prefixed"
+    ],
+    "slim_p2_20": [
+      "recent_user_pinned"
+    ],
+    "slim_p2_21": [
+      "top_user_pinned"
+    ],
+    "slim_p2_22_01": [
+      "chart_users_pinned"
+    ],
+    "slim_p2_24": [
+      "slim_p2_24_top_bots"
+    ],
+    "slim_p2_25": [
+      "slim_p2_25_top_human_browsers"
+    ],
+    "slim_p3_01": [
+      "slim_p3_01_chart_daily",
+      "slim_p3_01_chart_weekly"
+    ],
+    "slim_p3_02": [
+      "get_traffic_sources_summary",
+      "count_bouncing_pages"
+    ],
+    "slim_p4_01": [
+      "slim_p4_01_recent_outbound"
+    ],
+    "slim_p4_02": [
+      "slim_p4_02_recent_posts"
+    ],
+    "slim_p4_04": [
+      "slim_p4_04_recent_feeds"
+    ],
+    "slim_p4_05": [
+      "slim_p4_05_recent_not_found"
+    ],
+    "slim_p4_06": [
+      "slim_p4_06_recent_internal_searches"
+    ],
+    "slim_p4_07": [
+      "slim_p4_07_top_categories"
+    ],
+    "slim_p4_09": [
+      "slim_p4_09_top_downloads"
+    ],
+    "slim_p4_10": [
+      "get_recent_events"
+    ],
+    "slim_p4_11": [
+      "top_resource_trimmed"
+    ],
+    "slim_p4_12": [
+      "get_top_events"
+    ],
+    "slim_p4_13": [
+      "slim_p4_13_top_internal_searches"
+    ],
+    "slim_p4_15": [
+      "slim_p4_15_recent_categories"
+    ],
+    "slim_p4_152": [
+      "slim_p4_152_recent_tags"
+    ],
+    "slim_p4_16": [
+      "slim_p4_16_top_not_found"
+    ],
+    "slim_p4_18": [
+      "slim_p4_18_top_authors"
+    ],
+    "slim_p4_19": [
+      "slim_p4_19_top_tags"
+    ],
+    "slim_p4_20": [
+      "slim_p4_20_recent_downloads"
+    ],
+    "slim_p4_21": [
+      "get_top_outbound"
+    ],
+    "slim_p4_23": [
+      "bouncing_visits_pinned",
+      "count_bouncing_pages"
+    ],
+    "slim_p4_24": [
+      "slim_p4_24_exit_pages"
+    ],
+    "slim_p4_25": [
+      "slim_p4_25_entry_pages"
+    ],
+    "slim_p4_26_01": [
+      "slim_p4_26_01_chart_daily",
+      "slim_p4_26_01_chart_weekly"
+    ],
+    "slim_p4_27": [
+      "get_group_by"
+    ],
+    "slim_p7_02": [
+      "get_recent"
+    ],
+    "slim_p9_01": [
+      "get_goals_raw",
+      "get_goal_results"
+    ],
+    "slim_p9_02": [
+      "get_funnels_raw",
+      "get_funnel_results"
+    ]
+  },
+  "report_ids": [
+    "slim_p7_02",
+    "slim_p1_01",
+    "slim_p1_03",
+    "slim_p1_04",
+    "slim_p1_06",
+    "slim_p1_08",
+    "slim_p1_10",
+    "slim_p1_11",
+    "slim_p1_12",
+    "slim_p1_13",
+    "slim_p1_15",
+    "slim_p1_17",
+    "slim_p1_18",
+    "slim_p1_19_01",
+    "slim_p2_01",
+    "slim_p2_02",
+    "slim_p2_03",
+    "slim_p2_04",
+    "slim_p2_05",
+    "slim_p2_06",
+    "slim_p2_07",
+    "slim_p2_08",
+    "slim_p2_12",
+    "slim_p2_13",
+    "slim_p2_14",
+    "slim_p2_15",
+    "slim_p2_16",
+    "slim_p2_17",
+    "slim_p2_18",
+    "slim_p2_19",
+    "slim_p2_20",
+    "slim_p2_21",
+    "slim_p2_22_01",
+    "slim_p2_24",
+    "slim_p2_25",
+    "slim_p3_01",
+    "slim_p3_02",
+    "slim_p4_01",
+    "slim_p4_02",
+    "slim_p4_04",
+    "slim_p4_05",
+    "slim_p4_06",
+    "slim_p4_07",
+    "slim_p4_09",
+    "slim_p4_10",
+    "slim_p4_11",
+    "slim_p4_12",
+    "slim_p4_13",
+    "slim_p4_15",
+    "slim_p4_152",
+    "slim_p4_16",
+    "slim_p4_18",
+    "slim_p4_19",
+    "slim_p4_20",
+    "slim_p4_21",
+    "slim_p4_22",
+    "slim_p4_23",
+    "slim_p4_24",
+    "slim_p4_25",
+    "slim_p4_26_01",
+    "slim_p4_27",
+    "slim_p6_01",
+    "slim_p9_01",
+    "slim_p9_02",
+    "slim_p8_01",
+    "slim_p8_02",
+    "slim_live_analytics"
+  ],
+  "schema": "SLIMSTAT-REPORT-ADAPTER-INVENTORY-V1",
+  "source_registry_sha256": "c11661f896e3794a85b9e75b01684071d95ed5c4bac5cc2e9b288837e730209d",
+  "summary": {
+    "excluded": 6,
+    "modeled": 61,
+    "reports": 67,
+    "unmodeled": 0
+  },
+  "unmapped_nonreport_controls": [
+    "count_exit_pages",
+    "get_oldest_visit",
+    "live_window_end"
+  ]
+}

@@ -1,0 +1,18 @@
+target:    tests/bench/lib/fingerprint-v2.php
+gate:      php tests/fingerprint-v2-encoding-test.php
+kind:      restore-defect
+expect:    the 5.6 spelling of one schema hashes the same as the 8.0 spelling
+rationale: Restores hashing the RAW `SHOW COLUMNS` type string in the manifest, defeating the display-width canonicalisation (encoding-spec.md, "The column manifest hash"). Under the mutation every pinned integer column reports schema drift between servers holding a byte-identical schema - and run-rollup-floor.sh compares one corpus across 8.0, 5.7 and 5.6, so this fires at exactly the comparison the hash exists to make. THIS MUTATION IS REGISTERED BECAUSE IT ESCAPED: when first attempted it PASSED, because every manifest line in the fixture was already in 8.0's spelling, so removing the canonicalisation changed nothing observable. `lines_as_mysql_56_spells_them` was added for the sole purpose of making this killable, which is why that key must not be deleted as a redundant copy of `lines`.
+---
+diff --git a/tests/bench/lib/fingerprint-v2.php b/tests/bench/lib/fingerprint-v2.php
+--- a/tests/bench/lib/fingerprint-v2.php
++++ b/tests/bench/lib/fingerprint-v2.php
+@@ -149,7 +149,7 @@ if (!function_exists('slimstat_fp2_encode_field')) {
+         $lines = [];
+         foreach ($columns as $col) {
+             list($name, $type, $nullable) = $col;
+-            $lines[] = $name . '|' . slimstat_fp2_canonical_type($type) . '|' . ($nullable ? 'NULL' : 'NOT NULL');
++            $lines[] = $name . '|' . $type . '|' . ($nullable ? 'NULL' : 'NOT NULL');
+         }
+         return hash('sha256', implode("\n", $lines) . "\n" . 'ORDER BY ' . $order_by);
+     }

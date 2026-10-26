@@ -25,6 +25,7 @@ import {
   uninstallOptionMutator,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
+import { getProState } from './helpers/pro-state';
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
@@ -78,6 +79,18 @@ async function enableCustomDb(): Promise<void> {
 async function disableCustomDb(): Promise<void> {
   await getPool().execute(
     "DELETE FROM wp_options WHERE option_name = 'slimstat_test_use_custom_db'"
+  );
+}
+
+// Both minute-aligned caches the admin bar seeds on every logged-in pageview:
+// online_count() and LiveAnalyticsReport::get_users_chart_data() (the admin bar
+// reuses the chart query, admin/index.php:2171, and its same-minute transient).
+async function clearMinuteCaches(): Promise<void> {
+  await getPool().execute(
+    "DELETE FROM wp_options WHERE option_name LIKE '\\_transient\\_slimstat\\_adminbar\\_online\\_%' " +
+    "OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_adminbar\\_online\\_%' " +
+    "OR option_name LIKE '\\_transient\\_slimstat\\_chart\\_data\\_users\\_%' " +
+    "OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_chart\\_data\\_users\\_%'"
   );
 }
 
@@ -242,6 +255,10 @@ test.describe('Live Analytics — Timezone & Custom DB Scenarios', () => {
       // Wait for new tracking row(s) to appear in DB
       const rows = await waitForNewRows(beforeId, 1);
       expect(rows.length).toBeGreaterThanOrEqual(1);
+      // The frontend admin bar can cache zero before its asynchronous tracker stores
+      // this visit. This case validates the timezone query, so force its next read to
+      // observe the row whose arrival was just established above.
+      await clearMinuteCaches();
 
       // Navigate to slimview1 to get nonces
       await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
@@ -352,6 +369,16 @@ test.describe('Live Analytics — Timezone & Custom DB Scenarios', () => {
     const rows = await waitForNewRows(beforeId, 1);
     expect(rows.length).toBeGreaterThanOrEqual(1);
 
+    // Same reason as the timezone matrix above: the two goto()s just made two
+    // logged-in frontend pageviews, and add_menu_to_adminbar() (admin/index.php:2014)
+    // reads online_count() on every one of them. The first ran against the table
+    // beforeEach had truncated, so it cached a 0 with a TTL that lasts to the next
+    // minute boundary -- outliving the tracker rows waited for above. The same
+    // pageview cached a 30x0 users chart through get_users_chart_data() for the
+    // rest of that minute. This test compares two endpoints and the first paint;
+    // it is not a test of how stale either minute cache may be.
+    await clearMinuteCaches();
+
     // Fetch both endpoints
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'domcontentloaded',
@@ -360,6 +387,41 @@ test.describe('Live Analytics — Timezone & Custom DB Scenarios', () => {
     const liveNonce = await getLiveAnalyticsNonce(page);
     expect(liveNonce).not.toBeNull();
     const liveJson = await fetchLiveAnalytics(page, liveNonce!);
+
+    // First paint is server-rendered and the page JS does not fetch until the
+    // next minute boundary, so what PHP wrote into the HTML is what the user
+    // sees for up to a minute. Before eca8b072 AbstractReport handed the
+    // template wrapped args and this painted "0" with an empty chart while the
+    // admin bar (which bypasses AbstractReport) showed the visitor. Read the raw
+    // response, not the DOM, so a refresh racing a minute boundary cannot mask it.
+    const html = await (
+      await page.request.get(`${BASE_URL}/wp-admin/admin.php?page=slimview1`)
+    ).text();
+    const firstPaint = Number(
+      (html.match(/users-value">\s*([\d,]+)\s*</) || [])[1]?.replace(/,/g, '')
+    );
+    expect(firstPaint, 'server-rendered Visitors online must not be 0').toBeGreaterThanOrEqual(1);
+    expect(firstPaint).toBe(liveJson.data.users_live);
+    // The minute chart is Pro-only since #350: free paints the labelled locked preview
+    // and no LiveAnalytics config at all (views/reports/live-analytics.php), so the
+    // 30-point assertion applies only where Pro is active. The Free CI lanes carry no
+    // Pro (a declared omission in ci.yml), so that branch asserts the preview rather
+    // than skipping the whole test. The branch key is pro_activated, the same
+    // is_plugin_active() the view reads; an active Pro that never booted fails by name.
+    const pro = await getProState(page);
+    if (pro.pro_activated) {
+      expect(
+        pro.pro_booted,
+        `wp-slimstat-pro is active but never booted` +
+          (pro.pro_degradations.length ? `, degradations recorded: ${pro.pro_degradations.join(', ')}` : '')
+      ).toBe(true);
+      const inlineChart: number[] = JSON.parse((html.match(/chart_data:\s*(\[[^\]]*\])/) || [])[1] || '[]');
+      expect(inlineChart, 'server-rendered minute chart must carry 30 points').toHaveLength(30);
+      expect(inlineChart.reduce((a, b) => a + b, 0), 'minute chart must show the session').toBeGreaterThanOrEqual(1);
+    } else {
+      expect(html, 'free paints the locked chart preview in place of the chart').toContain('live-analytics-chart--locked');
+      expect(html, 'free must not ship a LiveAnalytics chart config').not.toMatch(/chart_data:\s*\[/);
+    }
 
     const adminNonce = await page.evaluate(
       () => (window as any).SlimStatAdminBar?.security || null
@@ -374,6 +436,7 @@ test.describe('Live Analytics — Timezone & Custom DB Scenarios', () => {
 
       // They should match (same user, same 30-min window)
       expect(adminJson.data.online.count).toBe(liveJson.data.users_live);
+      expect(adminJson.data.online.count).toBe(firstPaint);
     }
   });
 

@@ -1,22 +1,8 @@
 /**
- * E2E tests: Migration cookie restore bug — wp.org forum thread
- * https://wordpress.org/support/topic/no-cookies-fingerprints-starting-from-5-4-0/
- *
- * Bug: The v5.4.6 migration at wp-slimstat.php:281-284 only restores
- * set_tracker_cookie='on' when gdpr_enabled='off'. Users routed into the
- * gdpr_enabled='on' path (had legacy consent settings like display_opt_out)
- * keep set_tracker_cookie='off' from the broken v5.4.0 defaults — cookies
- * are never set even after CMP consent is granted.
- *
- * Secondary: JS/PHP consent decision mismatch when use_slimstat_banner='off'
- * but gdpr_enabled='on' — JS blocks tracking entirely while PHP allows it.
- *
- * These tests:
- *  1. Reproduce the bug by simulating pre-migration state with legacy consent
- *  2. Verify the cookie is NOT set (bug confirmed)
- *  3. Verify the fix restores cookies after migration
- *  4. Verify the JS/PHP mismatch scenario
- *  5. Verify the clean-install migration path is unaffected
+ * Cookie/consent regressions from the 5.4.x support cases.
+ * Task 28 supersedes the old automatic preference resets: migration preserves
+ * both inherited defaults and explicit saved choices. Runtime tests below still
+ * verify cookie/session behavior when the user has enabled cookies.
  */
 import { test, expect } from '@playwright/test';
 import * as mysql from 'mysql2/promise';
@@ -26,6 +12,7 @@ import {
   restoreSlimstatOptions,
   clearStatsTable,
   closeDb,
+  waitForTrackerId,
 } from './helpers/setup';
 import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
 
@@ -109,16 +96,9 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     await closeDb();
   });
 
-  // ═══════════════════════════════════════════════════════════════════
-  // Test 1: Reproduce the bug — legacy consent settings path
-  //
-  //   Simulate a v5.3.x install with display_opt_out='on' that upgraded
-  //   through v5.4.0 (which forced set_tracker_cookie='off'). Reset the
-  //   migration flag and trigger re-migration. Verify that the migration
-  //   does NOT restore set_tracker_cookie when gdpr_enabled='on'.
-  // ═══════════════════════════════════════════════════════════════════
+  // Task 28: existing saved preferences remain binding during migration.
 
-  test('BUG: migration keeps set_tracker_cookie=off when legacy consent settings exist', async ({
+  test('Task 28: migration preserves cookie-off with legacy consent settings', async ({
     page,
   }) => {
     // Simulate the pre-migration state:
@@ -126,7 +106,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     // - set_tracker_cookie='off' (broken v5.4.0 default)
     // - gdpr_enabled='on' (v5.4.0 forced this)
     // - _migration_5460='0' (force migration to re-run)
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'on',
       opt_out_cookie_names: '',
       opt_in_cookie_names: '',
@@ -152,15 +132,11 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     // Migration should have run
     expect(migrationFlag, 'Migration flag should be updated').not.toBe('0');
 
-    // Migration detects display_opt_out='on' → sets gdpr_enabled='on'
-    expect(gdprEnabled, 'gdpr_enabled should be on (legacy consent detected)').toBe('on');
+    // Modern saved consent remains enabled.
+    expect(gdprEnabled, 'gdpr_enabled should remain on').toBe('on');
 
-    // Fix 1a: migration now restores set_tracker_cookie='on' unconditionally,
-    // regardless of gdpr_enabled state. On development branch this returns 'off'.
-    expect(
-      setTrackerCookie,
-      'set_tracker_cookie must be restored to "on" after migration (Fix 1a)',
-    ).toBe('on');
+    // Task 28 preserves the saved cookie preference.
+    expect(setTrackerCookie, 'An upgrade must preserve cookie-off').toBe('off');
   });
 
   // ═══════════════════════════════════════════════════════════════════
@@ -179,7 +155,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     await clearStatsTable();
 
     // Set the bugged state directly (as migration would leave it)
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'off',
       set_tracker_cookie: 'off', // <-- the bug
       javascript_mode: 'on',
@@ -198,6 +174,8 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       // Visit page 1
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p1`);
       await anonPage.waitForLoadState('load');
+      // Page load can finish before tracking; navigating now can cancel its request.
+      expect((await waitForStatRows(`${marker}-p1`, 1, 20_000)).length).toBeGreaterThanOrEqual(1);
 
       // Check: slimstat_tracking_code cookie should be MISSING
       let cookies = await ctx.cookies();
@@ -210,6 +188,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       // Visit page 2
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p2`);
       await anonPage.waitForLoadState('load');
+      expect((await waitForStatRows(`${marker}-p2`, 1, 20_000)).length).toBeGreaterThanOrEqual(1);
 
       // Still no cookie
       cookies = await ctx.cookies();
@@ -247,23 +226,13 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     }
   });
 
-  // ═══════════════════════════════════════════════════════════════════
-  // Test 3: After fix — migration restores set_tracker_cookie for
-  //   GDPR-enabled path
-  //
-  //   Same pre-migration state as Test 1, but after the fix is applied.
-  //   Verify that set_tracker_cookie is restored to 'on' even when
-  //   gdpr_enabled='on'.
-  //
-  //   NOTE: This test will FAIL until the fix is applied to
-  //   wp-slimstat.php lines 281-284. After the fix, it should PASS.
-  // ═══════════════════════════════════════════════════════════════════
+  // Task 28: existing saved preferences remain binding during migration.
 
-  test('FIXED: migration restores set_tracker_cookie=on even when gdpr_enabled=on', async ({
+  test('Task 28: migration preserves cookie-off with GDPR enabled', async ({
     page,
   }) => {
     // Same pre-migration state as Test 1
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'on',
       opt_out_cookie_names: '',
       opt_in_cookie_names: '',
@@ -285,13 +254,8 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
 
     expect(gdprEnabled).toBe('on');
 
-    // AFTER FIX: set_tracker_cookie should be restored to 'on'
-    // This test documents the expected behavior after the fix.
-    // It will FAIL on the current (bugged) code and PASS after the fix.
-    expect(
-      setTrackerCookie,
-      'AFTER FIX: set_tracker_cookie must be "on" even when gdpr_enabled="on"',
-    ).toBe('on');
+    // Task 28 preserves the saved cookie preference.
+    expect(setTrackerCookie, 'An upgrade must preserve cookie-off').toBe('off');
   });
 
   // ═══════════════════════════════════════════════════════════════════
@@ -312,7 +276,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     await clearStatsTable();
 
     // Set the FIXED state: gdpr on + cookie on + slimstat banner
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'on',
       set_tracker_cookie: 'on', // <-- the fix
       use_slimstat_banner: 'on',
@@ -363,14 +327,13 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
           { timeout: 15_000 },
         );
 
-        // Click Accept
+        // Await the successful upgrade response, not the initial pageview request
+        // already in trackingRequests before the visitor accepted.
+        const upgradeResponse = anonPage.waitForResponse(response =>
+          isSlimstatTrackingRequest(response.request()) &&
+          (response.request().postData() || '').includes('consent_upgrade=1') && response.ok());
         await anonPage.locator('[data-consent="accepted"]').click();
-
-        // Wait for consent upgrade request
-        const deadline = Date.now() + 15_000;
-        while (trackingRequests.length === 0 && Date.now() < deadline) {
-          await new Promise((r) => setTimeout(r, 500));
-        }
+        await upgradeResponse;
 
         // After consent: tracking cookie SHOULD be set
         cookies = await ctx.cookies();
@@ -429,7 +392,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
   test('FIXED: cookie set immediately when gdpr_enabled=off', async ({ page, browser }) => {
     await clearStatsTable();
 
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'off',
       set_tracker_cookie: 'on',
       javascript_mode: 'on',
@@ -471,12 +434,18 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       ).toBeTruthy();
 
       // Visit page 2
+      // Wait for the server to hand back a pageview id before navigating on.
+      // goto()'s own 'load' can win the race against the tracker actually issuing
+      // its hit, and a navigation that lands first cancels a request that was never
+      // sent -- which is `waitForStatRows(marker, 3)` returning 2. (Once the hit IS
+      // in flight the row lands regardless; the delayed-response test below proves
+      // that.) Reuses the wait migration-cookie-restore already applies to page 1.
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p2`);
-      await anonPage.waitForLoadState('load');
+      await waitForTrackerId(anonPage);
 
       // Visit page 3
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p3`);
-      await anonPage.waitForLoadState('load');
+      await waitForTrackerId(anonPage);
 
       // All 3 pages should share the same visit_id
       const rows = await waitForStatRows(marker, 3, 20_000);
@@ -498,17 +467,11 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     }
   });
 
-  // ═══════════════════════════════════════════════════════════════════
-  // Test 6: Clean install migration path (no legacy consent settings)
-  //
-  //   Simulate a user who had NO consent settings in v5.3.x. The
-  //   migration should set gdpr_enabled='off' and restore cookies.
-  //   This path should already work (not affected by the bug).
-  // ═══════════════════════════════════════════════════════════════════
+  // Task 28: existing saved preferences remain binding during migration.
 
-  test('clean install: migration correctly sets gdpr=off and cookie=on', async ({ page }) => {
+  test('Task 28: existing modern choices survive absent legacy consent signals', async ({ page }) => {
     // Simulate v5.4.0 state with NO legacy consent settings
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'no',     // v5.3.x default — no banner
       opt_out_cookie_names: '',   // no legacy cookies
       opt_in_cookie_names: '',    // no legacy cookies
@@ -532,24 +495,18 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     const migrationFlag = await getSlimstatOption('_migration_5460');
 
     expect(migrationFlag, 'Migration should have run').not.toBe('0');
-    expect(gdprEnabled, 'No legacy consent → gdpr_enabled should be off').toBe('off');
-    expect(setTrackerCookie, 'set_tracker_cookie should be restored to on').toBe('on');
-    expect(useBanner, 'use_slimstat_banner should be off').toBe('off');
-    expect(integration, 'consent_integration should be empty').toBe('');
+    expect(gdprEnabled, 'Preserve modern GDPR choice').toBe('on');
+    expect(setTrackerCookie, 'An upgrade must preserve cookie-off').toBe('off');
+    expect(useBanner, 'Preserve modern banner choice').toBe('on');
+    expect(integration, 'Preserve selected consent integration').toBe('slimstat_banner');
   });
 
-  // ═══════════════════════════════════════════════════════════════════
-  // Test 7: Third-party CMP migration path
-  //
-  //   Simulate a user who configured consent_integration='wp_consent_api'
-  //   during 5.4.0-5.4.5. Migration should preserve GDPR=on but ALSO
-  //   restore set_tracker_cookie=on (after the fix).
-  // ═══════════════════════════════════════════════════════════════════
+  // Task 28: existing saved preferences remain binding during migration.
 
-  test('third-party CMP: migration preserves gdpr=on and restores cookie=on', async ({
+  test('Task 28: third-party CMP migration preserves GDPR and cookie-off', async ({
     page,
   }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'no',
       opt_out_cookie_names: '',
       opt_in_cookie_names: '',
@@ -573,30 +530,20 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     expect(gdprEnabled, 'Third-party CMP → gdpr_enabled preserved as on').toBe('on');
     expect(integration, 'consent_integration should be preserved').toBe('wp_consent_api');
 
-    // AFTER FIX: set_tracker_cookie should be 'on' regardless of gdpr_enabled
-    expect(
-      setTrackerCookie,
-      'AFTER FIX: set_tracker_cookie must be "on" even with third-party CMP',
-    ).toBe('on'); // <-- Will FAIL until fix is applied
+    // Task 28 preserves the saved cookie preference.
+    expect(setTrackerCookie, 'An upgrade must preserve cookie-off').toBe('off');
   });
 
-  // ═══════════════════════════════════════════════════════════════════
-  // Test 8: v5.4.7 — migration restores set_tracker_cookie via the
-  //   full migration path (not just setting the value directly)
-  //
-  //   DIFFERENTIATES: FAIL on development (GDPR gate blocks restore),
-  //                   PASS on fix branch (unconditional restore).
-  //   Cookie behavior for anonymous visitors is covered by Test 4.
-  // ═══════════════════════════════════════════════════════════════════
+  // Task 28: existing saved preferences remain binding during migration.
 
-  test('v547-fix: migration restores set_tracker_cookie via full migration path', async ({
+  test('Task 28: full migration path preserves cookie-off', async ({
     page,
   }) => {
     // Set the broken pre-migration state:
     // - display_opt_out='on' (legacy v5.3.x consent → triggers gdpr_enabled='on' path)
     // - set_tracker_cookie='off' (broken v5.4.0 default)
     // - _migration_5460='0' (force migration re-run)
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'on',
       set_tracker_cookie: 'off',
       javascript_mode: 'on',
@@ -621,12 +568,8 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       cookieSetting = await getSlimstatOption('set_tracker_cookie');
     }
 
-    // development: stays 'off' (GDPR gate blocks restore) → FAIL
-    // fix branch: restored to 'on' → PASS
-    expect(
-      cookieSetting,
-      'v547-fix: migration must restore set_tracker_cookie to "on" even when gdpr_enabled="on"',
-    ).toBe('on');
+    // Task 28 preserves the saved cookie preference.
+    expect(cookieSetting, 'An upgrade must preserve cookie-off').toBe('off');
   });
 
   // Test 9 (Fix 1b) — NOT E2E TESTABLE

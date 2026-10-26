@@ -1,0 +1,20 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+kind:      restore-defect
+expect:    P54-an-empty-oracle-cannot-say-both-arms-are-wrong label
+rationale: Removes the ADR-18 Q2 destination. An arms difference beside an oracle that returned no rows then falls to oracle-alone and claims both arms are wrong or the oracle is, even though no third answer exists. P54 requires d-unmodeled/unresolved and keeps the surface merge-blocking through the campaign's zero-unaccounted-(d) gate.
+---
+diff --git a/tests/oracle/classify.py b/tests/oracle/classify.py
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -365,10 +365,2 @@
+-    Rule(
+-        "oracle-hollow-beside-an-arms-difference", "d-unmodeled",
+-        "the arms differ but the oracle returned no rows. ADR-18 Q2: an empty third answer "
+-        "establishes no truth and therefore cannot say both arms are wrong. The difference remains "
+-        "unresolved and merge-blocking through the campaign's zero-unaccounted-(d) gate",
+-        lambda f: (f.oracle_class == "empty"
+-                   and f.arms.verdict in (algebra.DIFFER, algebra.ORDER_ONLY)),
+-    ),
+     Rule(
+         "hollow-arms", "hollow",

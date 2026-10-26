@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    a cut_side nobody implements is refused
+rationale: Deletes the guard on the cut_side VALUE. The contract checker refused an unknown KEY and had no assertion at all about an invalid value, so this was free: with the guard gone, `cut_side: 'minimum'` silently takes the max branch, and a normal DESC report whose top-ranked row genuinely changed returns EQUAL on tie-at-the-cut. A typo that reads to a human as the correct setting, and to the differ as its opposite.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -219,8 +219,6 @@ def contract_with_defaults(contract):
+                 "takes its parameters from DEFAULT_CONTRACT's keys only" % (unknown,)
+             )
+         merged.update(contract)
+-    if merged["cut_side"] not in ("min", "max"):
+-        raise ValueError("cut_side must be 'min' or 'max', not %r" % (merged["cut_side"],))
+     return merged
+ 
+ 

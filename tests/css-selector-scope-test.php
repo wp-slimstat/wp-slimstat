@@ -90,6 +90,91 @@ foreach ($scoped as $sel) {
 css_assert(strpos($css, '.ui-dialog.slimstat .ui-dialog-content') !== false, 'dialog content scoped to .ui-dialog.slimstat', $failures);
 css_assert(strpos($css, '}.ui-dialog .ui-dialog-content') === false, 'no unscoped .ui-dialog .ui-dialog-content rule', $failures);
 
+// Every shipped stylesheet: each rule that declares properties must carry a
+// SlimStat token in its own selector or an ancestor's (native nesting), and
+// every @keyframes name must too. slimstat.css loads on the front end;
+// tokens/acquisition/header-modern load on the WP Dashboard and edit.php.
+function css_split_selectors(string $sel): array
+{
+    $out = [];
+    $depth = 0;
+    $cur = '';
+    foreach (str_split($sel) as $ch) {
+        if ($ch === '(' || $ch === '[') {
+            $depth++;
+        } elseif ($ch === ')' || $ch === ']') {
+            $depth--;
+        }
+        if ($ch === ',' && $depth === 0) {
+            $out[] = trim($cur);
+            $cur = '';
+        } else {
+            $cur .= $ch;
+        }
+    }
+    $out[] = trim($cur);
+    return $out;
+}
+
+function css_unscoped_selectors(string $css): array
+{
+    $token = '/slimstat|slim-|slim_|(?<![\w-])ss-|^:root$/i';
+    $css = (string) preg_replace('~/\*.*?\*/~s', '', $css);
+    $bad = [];
+    $stack = [];
+    $buf = '';
+    for ($i = 0, $n = strlen($css); $i < $n; $i++) {
+        $c = $css[$i];
+        if ($c === '{') {
+            $head = trim($buf);
+            $buf = '';
+            $parentScoped = $stack ? end($stack)['scoped'] : false;
+            if ($head !== '' && $head[0] === '@') {
+                if (preg_match('/^@keyframes\s+([\w-]+)/', $head, $m)) {
+                    if (!preg_match($token, $m[1])) {
+                        $bad[] = "@keyframes {$m[1]}";
+                    }
+                    $stack[] = ['sel' => $head, 'scoped' => true, 'decl' => false, 'at' => true];
+                } else {
+                    $stack[] = ['sel' => $head, 'scoped' => $parentScoped, 'decl' => false, 'at' => true];
+                }
+            } else {
+                $unscopedParts = array_filter(css_split_selectors($head), fn ($p) => !preg_match($token, $p));
+                $stack[] = ['sel' => $head, 'scoped' => $parentScoped || !$unscopedParts, 'decl' => false, 'at' => false];
+            }
+        } elseif ($c === '}' || $c === ';') {
+            if ($stack && !end($stack)['at'] && strpos($buf, ':') !== false) {
+                $stack[count($stack) - 1]['decl'] = true;
+            }
+            $buf = '';
+            if ($c === '}' && ($frame = array_pop($stack)) && $frame['decl'] && !$frame['scoped']) {
+                foreach (css_split_selectors($frame['sel']) as $p) {
+                    if (!preg_match($token, $p)) {
+                        $bad[] = $p;
+                    }
+                }
+            }
+        } else {
+            $buf .= $c;
+        }
+    }
+    return array_values(array_unique($bad));
+}
+
+// ponytail: count cap for the two files with pre-existing legacy selectors;
+// a swap (one removed, one added) slips past — tighten to 0 once they are cleaned.
+$legacyCap = ['admin.css' => 90, 'live-analytics.css' => 95];
+foreach (glob(dirname(__DIR__) . '/admin/assets/css/*.css') as $file) {
+    $name = basename($file);
+    $bad = css_unscoped_selectors((string) file_get_contents($file));
+    $cap = $legacyCap[$name] ?? 0;
+    $label = "{$name}: unscoped selectors " . count($bad) . " <= {$cap}";
+    if ($cap === 0 && $bad) {
+        $label .= ' (' . implode(' | ', array_slice($bad, 0, 5)) . ')';
+    }
+    css_assert(count($bad) <= $cap, $label, $failures);
+}
+
 echo "\n";
 if ($failures) {
     echo count($failures) . " FAILURE(S)\n";

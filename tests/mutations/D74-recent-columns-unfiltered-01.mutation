@@ -1,0 +1,25 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      php tests/group-by-conformance-test.php
+kind:      restore-defect
+expect:    inside a block guarded by fact_column_present()
+rationale: Restores D74 exactly as it was measured: get_recent('*') expands to a literal list naming fingerprint and tz_offset, which v5's OWN updater only added at 4.8.4.1 - so under the deferred-DDL upgrade contract (S7/P1) an older table is a legitimate serving state, and naming an absent column is an Unknown-column rejection get_results() reports identically to "no visits". The Access Log renders empty with nothing on screen to say why. Proves the scan pins the INTERSECTION, not the presence of a function called recent_columns().
+---
+diff --git a/admin/view/wp-slimstat-db.php b/admin/view/wp-slimstat-db.php
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -1390,14 +1390,7 @@
+     {
+         $manifest = ['id', 'ip', 'dt', 'username', 'referer', 'resource', 'browser', 'platform', 'country', 'city', 'content_type', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser_version', 'browser_type', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out'];
+ 
+-        $present = [];
+-        foreach ($manifest as $column) {
+-            if (self::fact_column_present($column)) {
+-                $present[] = $column;
+-            }
+-        }
+-
+-        return $present;
++        return $manifest;
+     }
+ 
+     public static function get_recent($_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '', $_more_columns = '', $_order_by = 'dt DESC')
