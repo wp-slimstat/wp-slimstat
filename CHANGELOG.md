@@ -44,6 +44,7 @@
 * Clearer labels on At a Glance, Traffic Summary, Access Log, Customize and Migration. Customize cards move by drag or keyboard, and Reset layout asks first.
 
 **Faster**
+* Historical reports reuse cached wildcard-query results across requests instead of building a new cache key for each request.
 * Admin charts read half as many database rows (304,454 → 152,227 on the weekly chart over a 150,000-row test corpus).
 * Tracking writes 62% fewer option updates per pageview and 96% fewer per blocked bot.
 * Pages per visit reads 49.5% fewer rows, and the post-update table check runs 4 statements instead of 14.

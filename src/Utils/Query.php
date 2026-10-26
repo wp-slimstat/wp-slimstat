@@ -841,6 +841,13 @@ class Query
      */
     protected function getCacheKeyForQuery($query, $args = [])
     {
+        // wpdb removes its per-request escape marker before execution. Cache the same SQL identity.
+        if (method_exists($this->db, 'remove_placeholder_escape')) {
+            $query = $this->db->remove_placeholder_escape($query);
+            $args = array_map(function ($value) {
+                return is_string($value) ? $this->db->remove_placeholder_escape($value) : $value;
+            }, $args);
+        }
         $data = [
             // Identical table names and SQL can refer to different analytics databases.
             // wpdb exposes connection metadata without a query; credentials are excluded.

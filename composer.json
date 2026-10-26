@@ -235,7 +235,7 @@
     "test:funnel-step-identity": "php tests/funnel-step-identity-test.php",
     "test:migration-runner-reachable": "php tests/migration-runner-reachable-test.php",
     "test:live-window-clamp": "php tests/live-window-clamp-test.php",
-    "test:query-cache-symmetry": "php tests/query-cache-symmetry-test.php",
+    "test:query-cache-symmetry": ["php tests/query-cache-symmetry-test.php", "php tests/query-placeholder-cache-test.php"],
     "test:get-results-convert": "php tests/get-results-convert-contract-test.php",
     "test:goals-args-scope": "php tests/goals-args-scope-test.php",
     "test:explain-gate-strength": "php tests/explain-gate-strength-test.php",
