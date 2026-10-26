@@ -146,14 +146,12 @@ on that database server, which must be isolated for attribution.
 
 ## Current execution checkpoint
 
-The 26 October execution uses branch `fix/hosting-approval-p0-p1` in both
-repositories. The current product artifacts are Free `bfd60c32` and Pro
-`ee5bf5bb`; full browser and performance qualification is still in progress. The user-requested
-pause stopped the old-artifact browser census and MySQL5.7 hydration; subsequent
-user authorization resumes execution through verified, unmerged PR delivery.
-See the workspace evidence package at
-`jaan-to/outputs/research/slimstat-hosting-unblock-2026-10-26/EXECUTION-CHECKPOINT.md`
-for hashes, passed checks, failures and remaining gates. This is not PR approval.
+The26October execution uses `fix/hosting-approval-p0-p1` in both repositories.
+The workspace evidence package at
+`jaan-to/outputs/research/slimstat-hosting-unblock-2026-10-26/RESUME.md`
+records current commits, exact artifact hashes, passed checks and retained failures.
+`PERFORMANCE-RESULTS.md` records the required version comparisons and their limits.
+These are qualification records, not provider approval or a production release.
 
 `maintenance.php` and `report-contracts.php` require WP-CLI,
 `SLIMSTAT_HOSTING_DISPOSABLE=1`, Docker hostname `db`, and a source database
@@ -179,3 +177,15 @@ disable the plugin's limiter. Without it, Free5.5's10hits/5seconds per-IP limite
 rejects most50RPS traffic from a single generator. Retain that single-IP result
 as a separate saturation profile, not a valid accepted-hit throughput comparison.
 Remove both MU fixtures and arming constants after qualification.
+
+Admin VUs start on different reports, ensuring the first six VUs cover all six
+screens even if slow requests prevent later iterations. Retain per-screen sample
+counts when comparing versions. The initial synchronized workload reached only
+four screens on the baselines and remains separately labelled stress evidence.
+
+The original concurrency acceptance is zero503 responses; the200msHTTP P95 budget
+applies to the50RPS tracking scenario. Concurrency still requires valid responses
+and exact stored-row accounting. Tracking200ms, admin500ms, and instrumented
+INSERT15ms budgets are unchanged. A previous harness incorrectly applied tracking's
+latency threshold to the closed-loop concurrency scenario; retain those raw failures
+and distinguish them from the original scenario requirements.

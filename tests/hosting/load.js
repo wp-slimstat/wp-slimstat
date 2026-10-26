@@ -25,7 +25,7 @@ export const options = {
     ? { executor: 'constant-arrival-rate', rate: 50, timeUnit: '1s', duration: '60s', preAllocatedVUs: 100, maxVUs: 100 }
     : { executor: 'constant-vus', vus: mode === 'admin' ? 10 : 50, duration: mode === 'admin' ? '60s' : '30s' } },
   thresholds: {
-    operation_ms: [`p(95)<${mode === 'admin' ? 500 : 200}`],
+    ...(mode === 'concurrency' ? {} : { operation_ms: [`p(95)<${mode === 'admin' ? 500 : 200}`] }),
     operation_failed: ['rate<0.001'],
     http_503: ['rate==0'],
     ...(arrival ? { dropped_iterations: ['count==0'] } : {}),
@@ -60,7 +60,7 @@ export default function (data) {
       loggedIn = true;
     }
     const reports = ['slimview1', 'slimview2', 'slimview3', 'slimview4', 'slimview5', 'slimview6'];
-    response = http.get(`${BASE_URL}/wp-admin/admin.php?page=${reports[__ITER % reports.length]}&type=custom&from=${__ENV.REPORT_FROM}&to=${__ENV.REPORT_TO}`, { headers });
+    response = http.get(`${BASE_URL}/wp-admin/admin.php?page=${reports[(__ITER + __VU - 1) % reports.length]}&type=custom&from=${__ENV.REPORT_FROM}&to=${__ENV.REPORT_TO}`, { headers });
     valid = response.status === 200 && /id=["']slimstat-(?:filters-form|gf-)/.test(response.body)
       && !/Fatal error|critical error|id="loginform"/.test(response.body);
   } else if (mode === 'control') {

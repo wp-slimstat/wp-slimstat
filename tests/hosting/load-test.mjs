@@ -21,3 +21,19 @@ assert.equal(posts, 1);assert.equal(jarSets, 1);assert.equal(reports, 2);
 context.http.post = () => ({status:200,body:'<form id="loginform">'});
 assert.throws(() => context.setup(), /login failed/i);
 console.log('PASS: authenticate once outside measurements, import session, reject failed authentication');
+
+const visited = [];
+context.http.get = url => { visited.push(url); return response; };
+for (let vu = 1; vu <= 6; vu++) { context.__VU = vu; context.iterate(data); }
+assert.equal(new Set(visited.map(url => new URL(url).searchParams.get('page'))).size, 6,
+  'The first six VUs must cover every report even when later iterations are slow');
+for (const mode of ['tracking', 'admin', 'concurrency']) {
+  const isolated = vm.createContext({...context, __ENV: {...context.__ENV, MODE: mode}});
+  const config = vm.runInContext(source + '; options;', isolated);
+  assert.equal(config.thresholds.http_503[0], 'rate==0');
+  assert.equal(config.thresholds.operation_failed[0], 'rate<0.001');
+  if (mode === 'concurrency') assert.equal(config.thresholds.operation_ms, undefined,
+    'The documented concurrency budget is zero503; the200ms budget belongs to50RPS tracking');
+  else assert.equal(config.thresholds.operation_ms[0], mode === 'admin' ? 'p(95)<500' : 'p(95)<200');
+}
+console.log('PASS: complete initial report mix and original scenario-specific budgets');
