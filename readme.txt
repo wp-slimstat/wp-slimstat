@@ -1,6 +1,6 @@
-=== SlimStat Analytics ===
+=== SlimStat Analytics – Real-Time Stats, Heatmaps & Ecommerce ===
 Contributors: veronalabs, coolmann, toxicum, parhumm, mostafas1990
-Tags: analytics, statistics, woocommerce, tracking, privacy
+Tags: analytics, statistics, tracking, heatmap, woocommerce analytics
 Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
@@ -10,7 +10,7 @@ Stable tag: 6.0.0
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Real-time WordPress analytics on your own server: WooCommerce revenue, heatmaps, UTM campaigns and GDPR-ready privacy. Fast, private, yours.
+Self-hosted, GDPR-ready Google Analytics alternative: cookieless or server-side tracking, visitor statistics, UTM campaigns, goals and funnels.
 
 == Description ==
 SlimStat Analytics is the real-time WordPress analytics plugin that keeps every visitor on your own server. Most analytics tools quietly hand your audience to someone else's cloud. SlimStat doesn't. Every pageview, click and visitor lands in your WordPress database and stays there: yours to read the moment it happens, yours to purge whenever you like, never shipped off to Google or anyone else.
@@ -125,6 +125,9 @@ It's built to stay light, and version 6 is lighter still: the tracker writes far
 = Is it really GDPR-ready out of the box? =
 Yes. IP anonymization and hashing, Do Not Track, a translatable consent banner, WP Consent API integration and scheduled data purging are all built in, no extra plugins required.
 
+= Can SlimStat track without cookies? =
+Yes. Turn off **Set tracking cookie** and turn on **Hash IP addresses** under Settings → Tracker, and SlimStat counts unique visitors with a daily one-way hash instead of a cookie. Prefer server-side tracking? Set **Tracking mode** to Server under Settings → General to record every visit without JavaScript (best on sites without page caching).
+
 = Is it safe to update to SlimStat 6? =
 Yes, and we designed the update to be boring in the best way. Your settings and data carry over. The database steps only add columns and indexes, remove no rows, and run only when you click them on the new Migration screen. Older versions keep working on the updated tables if you ever go back. As with any major release, back up your database first.
 
@@ -136,7 +139,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Screenshots ==
 1. **Overview** — Every visit, understood at a glance: pageviews, visitors, top content, sources and countries for any date range, inside your WordPress dashboard.
-2. **Ecommerce (Pro)** — Net sales, orders, average order value and purchase rate from WooCommerce, with the channels and products behind every order. Free shows net sales and the trend.
+2. **WooCommerce revenue** — Net sales, orders, average order value and purchase rate from WooCommerce, with the channels and products behind every order. Pro adds campaigns, coupons, refunds and devices.
 3. **Heatmaps (Pro)** — Click, scroll, dead-click and rage-click maps on your live pages, with plain-language insights about what to fix. Free lists clicks per page.
 4. **Channels (Pro)** — Organic search, social, email, paid, referral, AI and more, grouped automatically with the sources behind each one. Free shows the top channels and campaigns.
 5. **AI traffic (Pro)** — Visits from ChatGPT, Perplexity, Gemini and Claude, plus GPTBot and ClaudeBot crawls, reported as their own channels.
