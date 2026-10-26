@@ -130,7 +130,9 @@ developers.
 - **Shape.** `= X.Y.Z - YYYY-MM-DD =`, an optional one-sentence bold
   lead (majors only), then the groups `**New**` → `**Improved**` →
   `**Fixed**` → `**Security**`, empty groups omitted, `*` bullets. Any
-  security fix gets a `**Security**` group.
+  security fix gets a `**Security**` group. Leave a blank line between
+  a group label and its first bullet: without it wp.org renders the
+  bullets as one paragraph with literal asterisks.
 - **Writing.** One or two plain sentences per bullet on what the site
   owner gains or stops suffering. No class, function, hook, option or
   file names; no tests, CI or refactors. Link the GitHub issue when

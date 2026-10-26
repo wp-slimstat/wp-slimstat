@@ -162,6 +162,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 **SlimStat 6: see where visitors click, which campaigns bring sales, and trust every number.** Your settings and data carry over, migration steps wait for your click, and older versions keep working if you ever go back.
 
 **New**
+
 * **Heatmaps:** a new Heatmaps page shows which pages, links and buttons visitors click, with device split and any date range. Clicks SlimStat already recorded appear right away. SlimStat Pro adds opt-in recording of any element, scroll depth, dead clicks and rage clicks; it follows consent and Do Not Track and never stores what visitors type.
 * **WooCommerce Analytics:** an opt-in revenue dashboard puts net sales, orders, top products and the purchase journey next to your traffic, on your own server. Works with HPOS and legacy order storage.
 * **Channels and UTM Campaigns:** see whether visits come from search, social, email, paid ads or AI assistants, and which campaign earned them. Build campaign links right from the report. Attribution starts with new pageviews.
@@ -169,6 +170,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 * **Migration screen:** lists the database steps the update needs. Required steps only add columns and indexes, wait for your click, and tracking keeps working meanwhile. As in every release, the first admin visit after updating creates any missing tables and small indexes.
 
 **Improved**
+
 * **Faster reports:** admin charts read half as many database rows, and tracking writes 62% fewer option updates per pageview.
 * A cleaner admin: consistent wording, accessible dialogs, empty reports that explain what to do next, a Get started panel for new sites and a rewritten Help panel.
 * Goals and Funnels share one tidy panel, and the Funnels preview names the five ready-made templates in Pro.
@@ -178,6 +180,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 * Supports PHP 7.4+ and WordPress 5.6+, tested up to WordPress 7.1.
 
 **Fixed**
+
 * More accurate numbers: consent given through the WP Consent API, anonymous page refreshes and overlapping funnel steps no longer count twice, so some totals go down to their true value.
 * Form-submit, tel: and mailto: conversion goals record one hit per press, and funnels no longer show silent zeros.
 * Overview "Today" and "Yesterday" no longer read 0, and cookieless visits no longer split every 5 minutes.
@@ -188,6 +191,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 * No more white-screen lockouts after an interrupted update. ([#325](https://github.com/wp-slimstat/wp-slimstat/issues/325))
 
 **Security**
+
 * Fixed a SQL injection that logged-in users could reach when the optional "Posts and Pages" report column was on (off by default). Found in-house; no report of it in the wild.
 * Shortcodes show personal data, access logs and user reports only to people allowed to view analytics.
 * WooCommerce order-access keys are removed from newly stored page URLs and referrers.
