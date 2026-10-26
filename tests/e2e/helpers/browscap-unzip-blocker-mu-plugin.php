@@ -3,12 +3,12 @@
  * E2E Test MU-Plugin: Simulate unzip_file() failure for Browscap tests.
  *
  * When the sentinel file wp-content/e2e-block-browscap-unzip.json exists,
- * this hooks into the 'unzip_file_pre' filter to force a WP_Error return
+ * this hooks into the 'pre_unzip_file' filter to force a WP_Error return
  * whenever the target path contains 'browscap-db.zip'.
  *
  * Sentinel JSON format: { "mode": "unzip_fail" | "corrupt_zip" | "fs_method_block" }
  *   - unzip_fail:      Forces unzip_file() to return WP_Error (simulates missing ZipArchive)
- *   - corrupt_zip:     Replaces the downloaded zip content with HTML before extraction
+ *   - corrupt_zip:     Returns an HTML download before WordPress opens the archive
  *   - fs_method_block: Returns '' from filesystem_method filter, causing WP_Filesystem() to
  *                      return false. Tests the error code 10 path added to fix #14843.
  */
@@ -42,10 +42,7 @@ add_filter( 'pre_unzip_file', function ( $result, $file, $to, $needed_dirs = [],
     $mode   = $config['mode'] ?? 'unzip_fail';
 
     if ( 'corrupt_zip' === $mode ) {
-        // Overwrite the zip with HTML to simulate a corrupt/non-zip download
-        file_put_contents( $file, '<html><body>GitHub rate limit exceeded</body></html>' );
-        // Return null to let WP try (and fail) to unzip the corrupt file
-        return null;
+        return $result; // Corruption is injected at the HTTP boundary below.
     }
 
     // Default: simulate missing ZipArchive / extraction failure
@@ -54,6 +51,22 @@ add_filter( 'pre_unzip_file', function ( $result, $file, $to, $needed_dirs = [],
         'Simulated unzip failure: ZipArchive extension not available (E2E test)'
     );
 }, 10, 5 );
+
+// pre_unzip_file runs after ZipArchive opens the file; corrupt the HTTP stream instead.
+add_filter( 'pre_http_request', function ( $result, $args, $url ) {
+    $sentinel = WP_CONTENT_DIR . '/e2e-block-browscap-unzip.json';
+    if ( 'https://github.com/slimstat/browscap-cache/archive/master.zip' !== $url || ! file_exists( $sentinel ) ) {
+        return $result;
+    }
+    $config = json_decode( file_get_contents( $sentinel ), true );
+    if ( 'corrupt_zip' !== ( $config['mode'] ?? '' ) || empty( $args['filename'] ) ) {
+        return $result;
+    }
+    if ( false === file_put_contents( $args['filename'], '<html><body>GitHub rate limit exceeded</body></html>' ) ) {
+        return new \WP_Error( 'e2e_corrupt_download_write_failed', 'Could not create corrupt download fixture.' );
+    }
+    return [ 'response' => [ 'code' => 200 ], 'headers' => [], 'body' => '', 'filename' => $args['filename'] ];
+}, 10, 3 );
 
 /**
  * fs_method_block mode: hook the 'filesystem_method' filter to return an empty

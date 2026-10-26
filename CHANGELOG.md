@@ -27,6 +27,7 @@
 * New live visitor, page and country counters and Ecommerce KPI tables. Shortcodes support multiple columns and UTM and channel counts.
 
 **A cleaner, friendlier admin**
+* Notification dismissals and manual refreshes wait for an active background check instead of being ignored.
 * Removed the unused legacy add-on catalog and manual-download callback for the retired update service. Stored add-on license settings are preserved.
 * One voice and native WordPress controls everywhere: consistent wording, accessible dialogs, the WordPress focus ring, higher-contrast fields and one pagination style.
 * Empty reports explain why and what to do next, and a Get started panel helps new sites record their first pageview.

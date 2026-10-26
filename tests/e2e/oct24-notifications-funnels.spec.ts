@@ -12,10 +12,20 @@ test('automatic delivery updates both badges once per minute, pauses hidden, and
   await snapshotSlimstatOptions();
   const keys=['wp_slimstat_notifications','slimstat_notification_fetch_state','slimstat_notification_dismissed'];
   for (const key of keys) await snapshotOption(key);
+  let releaseStatus: () => void = () => {};
   try {
     await setSlimstatOptions({display_notifications:'on'});
     runWordPressFixture(`<?php update_option('wp_slimstat_notifications',['data'=>[]]); update_option('slimstat_notification_fetch_state',['last_success'=>time(),'next_attempt'=>time()+DAY_IN_SECONDS]); delete_option('slimstat_notification_dismissed');`);
     await page.clock.install();
+    // Keep the resumed background poll pending while the user dismisses a card.
+    const statusReleased = new Promise<void>(resolve => { releaseStatus = resolve; });
+    let routedPolls = 0;
+    await page.route('**/admin-ajax.php', async route => {
+      if ((route.request().postData() || '').includes('action=slimstat_notification_status') && ++routedPolls === 2) {
+        await statusReleased;
+      }
+      await route.continue();
+    });
     let polls=0;
     page.on('request',r=>{if ((r.postData()||'').includes('action=slimstat_notification_status')) polls++;});
     await page.goto('/wp-admin/admin.php?page=slimview2');
@@ -37,11 +47,13 @@ test('automatic delivery updates both badges once per minute, pauses hidden, and
     await expect(page.getByText('Automatically delivered fixture')).toBeVisible();
     await page.locator('.slimstat-notification-sidebar__menu').screenshot({path:info.outputPath('automatic-notification.png'),animations:'disabled',timeout:5000});
     await page.locator('.slimstat-notification-sidebar__dismiss').first().click();
+    releaseStatus();
     await expect(page.locator('.slimstat-header__badge')).toHaveCount(0);
     await expect(page.locator('.slimstat-menu-notification-count')).toHaveCount(0);
     await page.reload();
     await expect(page.locator('.slimstat-header__badge')).toHaveCount(0);
   } finally {
+    releaseStatus();
     for (const key of keys) await restoreOption(key);
     await restoreSlimstatOptions();
   }
