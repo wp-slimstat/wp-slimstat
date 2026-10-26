@@ -72,6 +72,7 @@ def main():
     if args.mode == 'control' and any(p['status'] == 'active' and p['name'] in ['wp-slimstat', 'wp-slimstat-pro'] for p in plugins):
         raise ValueError('Control requires both analytics plugins to be inactive')
     metadata = {'arguments': vars(args) | {'output': str(args.output)}, 'plugins': plugins,
+                'client_profile': os.environ.get('BENCH_CLIENTS', 'single-address'),
                 'php': command(['docker', 'exec', args.wp, 'php', '-v']),
                 'wordpress': command(wp + ['core', 'version', '--allow-root']).strip(),
                 'database': sql('SELECT VERSION()').strip(), 'before': before,

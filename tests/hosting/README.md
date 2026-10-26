@@ -162,3 +162,20 @@ randomly named databases and drop those private fixtures in `finally`. They do
 not purge the source database. These real-DB correctness checks passed against
 the current installed artifacts; maintenance timings collected during other
 work are not load benchmarks.
+
+### Client identity and authentication
+
+The `admin` mode authenticates once before measurement and imports that verified
+session into each VU. Concurrent logins to a shared administrator account can race
+WordPress session-token writes and invalidate an otherwise correct load test.
+
+For distinct-visitor comparisons, install `client-fixture.php` as an MU plugin only
+in the disposable Docker stack, define `SLIMSTAT_HOSTING_DISPOSABLE=true`, and run
+with `BENCH_CLIENTS=distributed`. The fixture additionally requires `SLIMSTAT_BENCH`,
+DB_HOST `db`, a `tests-*` database, a run label, and a valid198.18/16 address. Each
+VU/iteration presents a distinct synthetic visitor (addresses recycle after250
+iterations per VU). Apply this identical fixture to every version; it does not
+disable the plugin's limiter. Without it, Free5.5's10hits/5seconds per-IP limiter
+rejects most50RPS traffic from a single generator. Retain that single-IP result
+as a separate saturation profile, not a valid accepted-hit throughput comparison.
+Remove both MU fixtures and arming constants after qualification.

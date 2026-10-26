@@ -37,15 +37,26 @@ const headers = {
 };
 if (__ENV.SQL_TIMING === '1') headers['X-Slimstat-Bench-Timing'] = '1';
 let loggedIn = false;
-export default function () {
+// One authenticated session avoids concurrent writes to one user's session_tokens.
+// Setup is outside the measured iterations; each VU imports the verified cookies.
+export function setup() {
+  if (mode !== 'admin') return {};
+  const { user, pass } = credentials();
+  http.get(`${BASE_URL}/wp-login.php`);
+  const login = http.post(`${BASE_URL}/wp-login.php`, { log: user, pwd: pass, testcookie: '1', redirect_to: `${BASE_URL}/wp-admin/` });
+  if (login.status !== 200 || login.body.includes('id="loginform"')) fail('Admin login failed');
+  const cookies = http.cookieJar().cookiesForURL(`${BASE_URL}/wp-admin/`);
+  if (!Object.keys(cookies).some(name => name.startsWith('wordpress_logged_in_'))) fail('Admin login failed: missing session');
+  return { cookies };
+}
+export default function (data) {
   let response;
   let valid;
   if (mode === 'admin') {
     if (!loggedIn) {
-      const { user, pass } = credentials();
-      http.get(`${BASE_URL}/wp-login.php`);
-      const login = http.post(`${BASE_URL}/wp-login.php`, { log: user, pwd: pass, testcookie: '1', redirect_to: `${BASE_URL}/wp-admin/` });
-      if (login.status !== 200 || login.body.includes('id="loginform"')) fail('Admin login failed');
+      for (const [name, values] of Object.entries(data.cookies)) {
+        http.cookieJar().set(BASE_URL, name, values[0]);
+      }
       loggedIn = true;
     }
     const reports = ['slimview1', 'slimview2', 'slimview3', 'slimview4', 'slimview5', 'slimview6'];
@@ -57,6 +68,8 @@ export default function () {
     valid = response.status === 200;
   } else {
     http.cookieJar().clear(BASE_URL);
+    // Optional disposable MU fixture presents distinct synthetic visitor addresses.
+    if (__ENV.BENCH_CLIENTS === 'distributed') headers['X-Slimstat-Bench-IP'] = `198.18.${__VU}.${(__ITER % 250) + 1}`;
     const resource = `${BASE_URL}/?hosting=${__ENV.RUN_ID}-${__VU}-${__ITER}`;
     response = http.post(`${BASE_URL}/wp-json/slimstat/v1/hit`, {
       action: 'slimtrack', res: encoding.b64encode(resource, 'rawurl'),
