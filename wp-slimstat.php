@@ -2206,29 +2206,6 @@ class wp_slimstat
         wp_add_privacy_policy_content('SlimStat Analytics', $content);
     }
 
-    public static function add_plugin_manual_download_link($_links = [], $_plugin_file = '')
-    {
-        $a_clean_slug = str_replace(['wp-slimstat-', '/index.php'], ['', ''], $_plugin_file);
-
-        if (false !== ($download_url = get_transient('wp-slimstat-download-link-' . $a_clean_slug))) {
-            $_links[] = '<a href="' . $download_url . '">Download ZIP</a>';
-        } else {
-            $url      = 'https://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode(self::$settings['addon_licenses']['wp-slimstat-' . $a_clean_slug]);
-            $response = wp_safe_remote_get($url, ['timeout' => 300, 'user-agent' => 'Slimstat Analytics/' . SLIMSTAT_ANALYTICS_VERSION . '; ' . home_url()]);
-
-            if (!is_wp_error($response) && 200 == wp_remote_retrieve_response_code($response)) {
-                $data = @json_decode($response['body']);
-
-                if (is_object($data)) {
-                    $_links[] = '<a href="' . $data->download_url . '">Download ZIP</a>';
-                    set_transient('wp-slimstat-download-link-' . $a_clean_slug, $data->download_url, 172800); // 48 hours
-                }
-            }
-        }
-
-        return $_links;
-    }
-
     /**
      * Resolves a given IP address, by keeping a local cache of hostnames to avoid multiple requests to the DNS server
      */

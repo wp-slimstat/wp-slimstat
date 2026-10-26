@@ -2392,8 +2392,6 @@ class wp_slimstat_admin
         include(__DIR__ . '/view/upgrade-pro.php');
     }
 
-    // END: wp_slimstat_include_addons
-
     /**
      * Includes the appropriate panel to configure Slimstat
      */

@@ -27,6 +27,7 @@
 * New live visitor, page and country counters and Ecommerce KPI tables. Shortcodes support multiple columns and UTM and channel counts.
 
 **A cleaner, friendlier admin**
+* Removed the unused legacy add-on catalog and manual-download callback for the retired update service. Stored add-on license settings are preserved.
 * One voice and native WordPress controls everywhere: consistent wording, accessible dialogs, the WordPress focus ring, higher-contrast fields and one pagination style.
 * Empty reports explain why and what to do next, and a Get started panel helps new sites record their first pageview.
 * Free screens show what Pro adds honestly, with no blurred mock reports. Email Report previews the weekly email built from your own last 7 days and sends you a sample. Export opens the Pro page instead of posting your filters to wp-slimstat.com.
