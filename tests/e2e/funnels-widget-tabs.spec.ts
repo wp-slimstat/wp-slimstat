@@ -17,11 +17,12 @@ import { BASE_URL, WP_ROOT } from './helpers/env';
 import * as path from 'path';
 import {
   closeDb,
+  getPool,
   restoreSlimstatOptions,
   setSlimstatOption,
   snapshotSlimstatOptions,
 } from './helpers/setup';
-import { seedFunnels, clearAll, forceLimits, restoreDefaultLimits, pinReportToDashboard } from './helpers/goals-funnels';
+import { seedFunnels, seedStats, clearAll, forceLimits, restoreDefaultLimits, pinReportToDashboard } from './helpers/goals-funnels';
 
 const WP_CONTENT = path.join(WP_ROOT, 'wp-content');
 const STEP = (name: string, value: string) => ({ name, dimension: 'resource', operator: 'contains', value });
@@ -87,23 +88,33 @@ test.describe('Dashboard Funnels widget — all funnels with tabs (Fix 2)', () =
       { name: 'B flow', steps: [STEP('Home', '/'), STEP('Trial', '/trial')] },
     ]);
 
-    await openDashboard(page);
-    const widget = page.locator('#slim_p9_02 .slimstat-funnel-widget');
-    await expect(widget).toBeVisible({ timeout: 30_000 });
+    // Empty funnels intentionally have no bars; own the data needed by this style assertion.
+    const fingerprint = `e2e-widget-sizes-${Date.now()}`;
+    const now = Math.floor(Date.now() / 1000);
+    try {
+      await seedStats([
+        { resource: '/', fingerprint, dt: now - 120 },
+        { resource: '/pricing', fingerprint, dt: now - 60 },
+      ]);
+      await openDashboard(page);
+      const widget = page.locator('#slim_p9_02 .slimstat-funnel-widget');
+      await expect(widget).toBeVisible({ timeout: 30_000 });
 
-    // Funnel bar track is the de-cramped 32px (was 28px) — matches the main page.
-    const trackH = await widget
-      .locator('.slimstat-funnel-chart[data-funnel-index="0"] .slimstat-funnel-bar-track')
-      .first()
-      .evaluate((el) => getComputedStyle(el).height);
-    expect(trackH).toBe('32px');
+      // Funnel bar track is the de-cramped 32px (was 28px) — matches the main page.
+      const tracks = widget.locator('.slimstat-funnel-chart[data-funnel-index="0"] .slimstat-funnel-bar-track');
+      await expect(tracks).toHaveCount(2);
+      const trackH = await tracks.first().evaluate((el) => getComputedStyle(el).height);
+      expect(trackH).toBe('32px');
 
-    // The tab strip is a pill (rounded), not a default browser button row.
-    const radius = await widget
-      .locator('.slimstat-funnel-wtab.is-active')
-      .first()
-      .evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
-    expect(parseFloat(radius)).toBeGreaterThan(8); // pill radius, not square
+      // The tab strip is a pill (rounded), not a default browser button row.
+      const radius = await widget
+        .locator('.slimstat-funnel-wtab.is-active')
+        .first()
+        .evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
+      expect(parseFloat(radius)).toBeGreaterThan(8); // pill radius, not square
+    } finally {
+      await getPool().execute('DELETE FROM wp_slim_stats WHERE fingerprint = ?', [fingerprint]);
+    }
   });
 
   test('single funnel renders no tab strip (just the one panel)', async ({ page }) => {
