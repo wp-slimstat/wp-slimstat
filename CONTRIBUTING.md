@@ -102,8 +102,8 @@ saves the round-trip.
 
 - Every user-visible change gets a `CHANGELOG.md` entry under the next
   patch version. Prepend at the top (most recent first).
-- `readme.txt` has a separate, terser changelog block — keep it
-  user-friendly.
+- `readme.txt` has a separate, condensed changelog block — see
+  [Writing the readme.txt changelog](#writing-the-readmetxt-changelog).
 - Version bump touches three places: `wp-slimstat.php` header,
   `wp-slimstat.php` `SLIMSTAT_ANALYTICS_VERSION` constant,
   `readme.txt` `Stable tag`. The
@@ -111,6 +111,41 @@ saves the round-trip.
   floor from the plugin header, so don't drift them.
 
 For the full release workflow, run `/release-wp-slimstat`.
+
+### Writing the readme.txt changelog
+
+The wp.org Changelog tab renders `readme.txt § == Changelog ==`. It is
+read by site owners deciding whether to install or update, not by
+developers.
+
+- **Two files, two jobs.** `CHANGELOG.md` is the complete record and is
+  written first. `readme.txt` is a condensed restatement of it: no
+  readme claim that `CHANGELOG.md` (or git history) doesn't support. A
+  fact change edits both, plus the Upgrade Notice if it is affected, in
+  one commit.
+- **Retention.** The readme keeps only the current major (6.x). When the
+  next major ships, delete the previous major's readme entries. The last
+  line always links to the full changelog:
+  `**[See the full changelog for every version on GitHub](https://github.com/wp-slimstat/wp-slimstat/blob/master/CHANGELOG.md)**`.
+- **Shape.** `= X.Y.Z - YYYY-MM-DD =`, an optional one-sentence bold
+  lead (majors only), then the groups `**New**` → `**Improved**` →
+  `**Fixed**` → `**Security**`, empty groups omitted, `*` bullets. Any
+  security fix gets a `**Security**` group.
+- **Writing.** One or two plain sentences per bullet on what the site
+  owner gains or stops suffering. No class, function, hook, option or
+  file names; no tests, CI or refactors. Link the GitHub issue when
+  users reported it.
+- **SEO without stuffing.** Where a change is about a feature, name it
+  the way users search for it (Real-time, WooCommerce Analytics,
+  Heatmaps, Goals, Funnels, UTM Campaigns, privacy), once per entry. No
+  superlatives. Numbers only when measured and stated in `CHANGELOG.md`.
+- **Length.** About 10 bullets at most for a patch, about 30 for a
+  major.
+- **Checks and publishing.** `composer test:source-level` covers the
+  Upgrade Notice and the mutation patches that use readme lines as
+  context. A changelog-only edit for the version already served goes
+  live through `.github/workflows/wordpress-org-assets.yml` when it is
+  merged to `master` — no release, tag or version change.
 
 ## Static analysis — the PHPStan baseline, disclosed
 

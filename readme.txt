@@ -159,322 +159,37 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 = 6.0.0 - 2026-10-24 =
 
-**SlimStat 6 is here: see where visitors click, which campaigns bring sales, and trust every number.** It is the biggest SlimStat release in years and the safest to install: your settings and data carry over, nothing in your database changes until you click, and older versions keep working if you ever go back.
+**SlimStat 6: see where visitors click, which campaigns bring sales, and trust every number.** Your settings and data carry over, database steps wait for your click, and older versions keep working if you ever go back.
 
-**New: Heatmaps**
-* A Heatmaps page lists every page visitors click on: clicks, pageviews, clicks per pageview, device split and the last click. Search, sort and pick any date range. Open it from the SlimStat menu or the Heatmap button in the admin bar.
-* The link and button clicks SlimStat already recorded show up right away. Without Pro, "View heatmap" reveals each page's five most clicked links and buttons.
-* With SlimStat Pro, opt-in recording captures clicks on any element, scroll depth, dead clicks and rage clicks on a sampled share of the pages you choose. It follows consent and Do Not Track and never stores what visitors type.
-* Every click keeps the screen size it was recorded at, so heatmap points land where people really clicked, on phones, tablets and desktops alike.
-* Heatmap data lives in its own tables, respects restricted-author permissions and follows your retention, privacy-erasure and uninstall settings. Deleting it asks you to type a confirmation.
-
-**New: Channels and UTM Campaigns**
-* Traffic Sources opens with Channels and UTM Campaigns side by side: pageviews, shares and source breakdowns, with exact totals even under result caps.
-* Channels tell AI assistants, AI crawlers and AI fetches apart from search, social, email and paid traffic. Direct visits are no longer mistaken for internal navigation, and campaign tags keep their case.
-* Build and copy campaign links from the report header. The builder checks required tags and keeps your URL's own parameters.
-* Without Pro, each report shows its top two groups and names up to five more.
-* Attribution starts with new pageviews; existing pageviews stay unattributed.
-
-**New: WooCommerce revenue dashboard**
-* Your store's numbers next to your traffic, on your own server: net sales, orders, period comparisons, top products, acquisition and a consented purchase journey, with interactive metric charts, tabbed revenue rankings and inline drill-downs.
-* Currency, refunds, purchase rate and unmatched orders have clear definitions, configured WooPayments currencies are included, and charts explain their gaps.
-* Setup is opt-in. Order sync runs in small background jobs, supports HPOS and legacy storage, and follows your dates, filters, saved segments, retention and privacy erasure.
-* If setup cannot finish, the Ecommerce page says why and offers a retry. A MyISAM analytics table is named as the cause, with the fix: convert it to InnoDB.
-
-**New: Shortcode Playground**
-* Under SlimStat → Shortcodes: browse reports, preview them with your data, tune filters, then copy or test the shortcode.
-* New live visitor, page and country counters and Ecommerce KPI tables. Shortcodes support multiple columns and UTM and channel counts.
-
-**A cleaner, friendlier admin**
-* One voice and native WordPress controls everywhere: consistent wording, accessible dialogs, the WordPress focus ring, higher-contrast fields and one pagination style.
-* Empty reports explain why and what to do next, and a Get started panel helps new sites record their first pageview.
-* Free screens show what Pro adds honestly, with no blurred mock reports. Email Report previews the weekly email built from your own last 7 days and sends you a sample. Export opens the Pro page instead of posting your filters to wp-slimstat.com.
-* Goals and Funnels share one tidy Pro panel in both boxes, with even spacing, and the locked Funnels preview names the five ready-made templates Pro ships instead of a vague sample.
-* The admin bar's Online preview is back, chart included, with "See traffic as it happens" and a keyboard-accessible "See Pro plans" action for administrators.
-* Notifications arrive on schedule again, not only when you press Refresh. Dismissals stick across the site, and drawing a report never makes a notification request.
-* Changing dates keeps your filters, and saved segments keep their dates.
-* "New" badges mark each new menu page for 15 days.
-* The SlimStat menu moves up the sidebar, above Appearance, instead of sitting below Settings.
-* After updating, a SlimStat 6 card on the Dashboard and Plugins screens and a compact bar on SlimStat's own pages say what is new, once any pending database migration is done. Dismissing either hides both for you; otherwise they hide after 14 days. New installs never see them.
-* The Help (?) panel is rewritten in plain language. It opens on the topic for the screen you are on, explains every filter under the name the filter list uses, and covers Channels and UTM, Goals and funnels, Ecommerce, Heatmaps, Shortcodes and what Pro adds.
-* Users without the Settings permission see what Pro adds without purchase links.
-* Clearer labels on At a Glance, Traffic Summary, Access Log, Customize and Migration. Customize cards move by drag or keyboard, and Reset layout asks first.
-
-**Faster**
-* Admin charts read half as many database rows (304,454 → 152,227 on the weekly chart over a 150,000-row test corpus).
-* Tracking writes 62% fewer option updates per pageview and 96% fewer per blocked bot.
-* Pages per visit reads 49.5% fewer rows, and the post-update table check runs 4 statements instead of 14.
-* The Heatmaps list answers search, sort and auto-refresh from one cached query.
-
-**Numbers you can trust** (some change on purpose, to their true value)
-* Sites that had "Enable CDN" on start recording again. The setting is gone: it loaded a tracker file that did not exist yet. The snippet for tracking external pages now points at your own site; replace any copy of the old one.
-* No more double counting: consent given through the WP Consent API updates the original pageview, also before you run Migration, anonymous same-page refreshes count once, and overlapping funnel steps stop inflating. Some totals go down.
-* Form-submit, tel: and mailto: goals work, one hit per press. Funnels no longer show silent zeros.
-* Overview "Today" and "Yesterday" no longer read 0, "Currently Online" follows the date filter, and unique browser and country counts are no longer capped at 28 days.
-* The weekly chart's previous-period total matches its bars.
-* Cookieless visits no longer split every 5 minutes, and anonymous IDs are full-length private hashes that cannot collide.
-* Multisite: subsites created on WordPress 5.1+ or activated with WP-CLI now track, and Network View totals are truly network-wide.
-* Per-author email reports show each author's own numbers.
-* Archived events appear, top lists keep a stable order, numbers and their bars round the same way, ranges across midnight keep browser versions apart, and missing names are left out instead of shown as Guest.
-* External-database installs read the right database and never create a second schema or show the hostname.
-
-**Upgrade with confidence**
-* Your settings carry over, including disabled tracking, consent, Heatmaps, user exclusions and network overrides. New installs turn on bot filtering and async loading.
-* A new Migration screen lists the database steps. Nothing runs until you click, and tracking keeps working. Required steps only add columns and indexes (about 8 seconds per 440,000 rows on MySQL 8) and change or remove no data. A notice on the Dashboard, Plugins and Updates screens says when a step is waiting, and the Migration screen warns if a MyISAM analytics table will pause tracking while a step runs.
-* Two optional table rebuilds, the browser backfill and the utf8mb4 conversion, run only when you pick them by name. To postpone everything, set `SLIMSTAT_DISABLE_MIGRATIONS` to true in `wp-config.php`.
-* On the first admin visit after updating, SlimStat creates any missing tables and small indexes, as in every release. Columns and the three new indexes over page addresses and event notes are added only when you run Migration.
-* Back up your database first, as with any major release.
-
-**Rock-solid reliability**
-* Deleting the plugin keeps your analytics. Data is removed only if you turned on "Delete Data on Uninstall" under Settings → Maintenance. ([#327](https://github.com/wp-slimstat/wp-slimstat/issues/327))
-* No more white-screen lockouts: if a plugin file is out of sync after an interrupted update, SlimStat loads it directly or switches off only that feature and tells administrators what stopped. If a blank screen persists, flush your host's PHP opcache. ([#325](https://github.com/wp-slimstat/wp-slimstat/issues/325))
-* Uninstall always removes the rebuildable browser-detection cache; the geolocation database goes only with full data deletion. Deactivating clears the daily salt task.
-* Migrations never run twice at once, resume from checkpoints and can be switched off. The heat-map position repair finishes instead of offering itself forever.
-* Reports verified byte-identical on MySQL 5.6, 5.7 and 8.0. Supports PHP 7.4+ and WordPress 5.6+, tested up to WordPress 7.1, with fewer PHP notices on older setups.
-* Passes the WordPress.org Plugin Check, apart from the bundled third-party libraries and the long-standing note about the plugin's own slug.
-* Dependencies build reproducibly from the lockfile with WP Scoper. ([#339](https://github.com/wp-slimstat/wp-slimstat/issues/339))
-* Real-time shows the visitors, pages and countries online and the minute chart as soon as the page opens. In the 6.0.0 beta they read 0 until the first refresh a minute later.
-
-**Security and privacy**
-* Fixed a SQL injection that any logged-in user could reach on sites with the "Posts and Pages" report column turned on (off by default). Found in-house; no report of it in the wild.
-* Shortcodes show personal data, access logs and user reports only to people allowed to view analytics; visitors see nothing.
-* WooCommerce order-access keys are removed from newly stored page URLs and referrers.
-* Shortcode text and campaign values stay escaped and inert across forms, AJAX, summaries and shortcodes.
-
-**Translators:** new and reworded strings need translation; a few labels show in English until then.
-
-= 5.5.0 - 2026-06-24 =
-* Feature: New Goals & Funnels page (slimview6) — define goals and funnels in a modern card layout with pill-segmented funnel tabs, a side drawer for goal create/edit, an overlay builder for funnels, and a destructive-action confirm sheet instead of native browser prompts.
-* Feature: Funnels now support 4 conversion templates (E-commerce checkout, SaaS signup, Content engagement, Start from scratch).
-* Feature: Goals gain a "Paused" state via the drawer toggle — paused goals are preserved but do not count against the plan limit.
-* Feature: New AJAX endpoint `slimstat_load_funnel_data` lazy-loads step data for inactive funnel tabs, reducing the initial SQL load on multi-funnel pages.
-* Fix: `ajax_save_goal` now counts only active goals against the `slimstat_max_goals` limit — pausing a goal now genuinely frees a slot.
-* Fix: Funnels with no matching visitors in the selected date range now render "No matching visitors in this date range" instead of a misleading 100% conversion rate.
-* Fix: Dashboard widget no longer leaks the inline "Add Goal" form — widget context now passes `is_widget=true` as designed.
-* Improvement: CSS custom properties split into `tokens.css` (`--ss-*` namespace). Legacy `--slimstat-*` and `--gdpr-*` aliases preserved at their existing values — datepicker and GDPR banner unaffected.
-* Improvement: Goals & Funnels CSS/JS now enqueue only on screens that actually render `slim_p9_01` / `slim_p9_02`, honoring the Customizer's drag-between-screens feature.
-* Improvement: Single canonical "Upgrade to Pro" label on this view (replacing previous mix of "Unlock SlimStat Pro" and "Upgrade to Premium").
-* Improvement: Brand red ramp replaces indigo for funnel bars; supports `prefers-reduced-motion` and full RTL mirroring.
-* Refactor: `show_goals()` / `show_funnels()` branch on `is_widget` and include new partials (`admin/view/partials/goals-funnels/*.php`) in admin mode; widget/shortcode/email/CSV paths preserved unchanged.
-* Tests: New PHPUnit Integration suite covers all AJAX handlers (save/delete goal+funnel, new `ajax_load_funnel_data`), cache-version invalidation, paused-limit behavior, and the legacy CSS alias preservation.
-* Security: Fixed a stored XSS affecting sites using the Cloudflare geolocation provider — a crafted `CF-IPCountry` request header could be saved as a visitor's country and execute script when an administrator opened the Audience or Access Log report. The country is now validated to a two-letter code before storage, and country/language values are escaped wherever they render into report flag images and links. Reported via WPScan.
-* Fix: WordPress admin no longer crashes on PHP 7.4 hosts (an admin page was calling a function that only exists in PHP 8.0+).
-* Fix: Visit tracking no longer returns a 500 error on hosts without the optional PHP `fileinfo` extension. The plugin falls back to its built-in browser detector and shows a dismissible admin notice.
-* Fix: An IP-filter bug on PHP 8.1 silently added 8 extra binary bits for invalid IPs, which could make rules like "ignore my IP" behave incorrectly. Filters now match correctly across all PHP versions.
-* PHP 8.1+ readiness: cleaned up six internal function signatures so they no longer trigger deprecation warnings in `debug.log`. These would have become fatal errors on PHP 9.0 — the plugin is now ready for that transition.
-* Fix: On PHP 8.0+, clearing the Posts-list pageviews-column interval no longer shows an empty day count — it falls back to 28 days as it did on PHP 7.
-* Tested up to WordPress 7.0; removed an obsolete WordPress-3.3 version check.
-* PHP 8.0/8.3/8.4 readiness: prepared the admin JavaScript for jQuery 4.0 (no behavior change today) and removed a stray, never-loaded bundled file.
-* Internal: Added a compatibility shim so modern PHP idioms work the same on older PHP 7.4 hosts. Expanded automated CI testing to cover PHP 7.4 through 8.5 (was 7.4–8.3) and to boot the full WordPress 5.6–7.0 matrix end-to-end; added PHPStan static analysis. The PHP 7.4 lane now runs real tests on every change instead of just lint checks. Added `CONTRIBUTING.md` and a few small style cleanups in the test suite.
-
-= 5.4.12 - 2026-05-13 =
-* Security: Authenticated SQL injection in the chart AJAX endpoint (slimstat_fetch_chart_data) is now blocked. The `chart_data.where` parameter is validated against the trusted report registry before reaching the query layer. Reported via Patchstack (CVSS 8.5, High).
-* Security: Patch unauthenticated stored XSS via the User-Agent header (CVE-2026-7634). Storage::updateRow() now mirrors insertRow()'s sanitization, the User-Agent is sanitized at capture in Browscap, and admin tooltips are escaped via wp_kses_post(). Reported by Supakiad S. (m3ez) — E-CQURITY (Thailand) via Wordfence.
-* Fix: Chrome-based mobile Googlebot and Bingbot now correctly blocked when Browscap classifies them as mobile devices (#14843)
-* Fix: Google-InspectionTool mobile is now detected as a crawler
-* Improvement: Bot detection regex extended with 15 new vendor tokens — Mediapartners-Google, Google-InspectionTool, Google-Site-Verification, Google Favicon, GoogleOther, GoogleAgent-Mariner, Google-Safety, DuplexWeb-Google, BingPreview, YandexDirect, YandexFavicons, WhatsApp preview, SkypeUriPreview, anthropic-ai, cohere-ai
-
-= 5.4.11 - 2026-04-17 =
-* Fix: Access Log pagination no longer drops the user's selected custom date range
-* Fix: Auto Refresh setting in Settings → Reports is now honored
-* Fix: Recent panels now show unique items instead of duplicating the same entry for every pageview
-* Fix: Access Log "last page" no longer shows "No data to display"
-* Fix: Report pagination totals are now stable across pages
-* Fix: Outbound link tracking — correct sort order, sanitized URLs, and bounded storage
-* Fix: Chrome-based crawlers (Googlebot, Bingbot) now correctly detected as bots
-* Fix: Heatmap click positions validated and corrupted historical data recovered
-* Improvement: Access Log auto-refresh pauses on hover, scroll, and hidden tab
-* Improvement: Scroll position preserved across Access Log refresh
-* Refactor: Replaced jQuery SlimScroll with native CSS scrolling
-
-= 5.4.9 - 2026-04-03 =
-* Fix: Scoped sortable handler to Slimstat Customize page only — prevents corrupting WordPress Dashboard widget layout
-* Fix: Use sanitized URI in dashboard widget enqueue condition for consistency
-
-= 5.4.8 - 2026-03-31 =
-
-This release fixes remaining tracking issues from the 5.4.x upgrade cycle. If you upgraded from 5.3.x through 5.4.0-5.4.6, this update restores session cookies and client-side tracking automatically.
-
-* Fix: Session cookies now restored for all upgrade paths, not just GDPR-disabled sites
-* Fix: Client-side (JavaScript) tracking restored unconditionally — fixes zero tracking on cached sites
-* Fix: Migration forced-resets gated to run once, preserving admin choices on future updates
-* Fix: FingerprintJS v4 now generates fingerprints correctly — `.get()` call was missing since v3→v4 migration
-* Fix: JS consent check now mirrors PHP logic when SlimStat banner is off
-* Fix: Charts and reports now query the correct database for External DB addon users
-* Fix: Real-time analytics queries use the correct database connection for External DB
-* Fix: Complex report queries (e.g. Recent Events) now work with External DB addon
-* Fix: Filter dropdown autocomplete now queries the correct database for External DB
-* Fix: Visit counter seeds correctly from external database for Pro addon users
-* Fix: Country percentages exceeding 100% in Audience Location map — query cache now stays fresh for live date ranges
-* Fix: Filter removal via red cross button not working
-* Fix: Outbound Link, Notes, and Category filter dropdowns now show individual values instead of raw concatenated strings
-* Fix: Filter 'equals' operator now works on Outbound Link, Notes, and Category columns
-* Fix: Chart granularity selection (Daily/Weekly/Monthly) persists across page reloads
-* Fix: Chart granularity now syncs across all charts on the same page
-* Fix: Chart timezone offset corrected for non-UTC servers
-* Fix: Browscap Library now initializes WordPress filesystem before extraction (resolves toggle revert)
-* Fix: Browscap errors now show specific failure details instead of generic messages
-* Fix: Downloaded Browscap files validated as ZIP before extraction
-* Fix: Browscap download compatible with hosts that block GitHub redirects
-* Improvement: Chart granularity persisted via localStorage for cross-session consistency
-* Improvement: sessionStorage access wrapped in try/catch for private browsing compatibility
-
-= 5.4.6 - 2026-03-23 =
-
-We heard you — upgrading to 5.4.x broke tracking for many of you. Visitor counts dropped to zero, IPs were masked without your permission, and a consent banner appeared on sites that never asked for one. This release fixes all of that. After updating, your site works the way it did before 5.4.0 — no manual steps required.
-
-If you want to enable GDPR features:
-
-* Consent banner: Settings → Tracker → Data Protection → GDPR Compliance Mode = On, then Settings → Tracker → Consent Management → choose SlimStat Banner, WP Consent API, or Real Cookie Banner
-* Anonymize IPs: Settings → Tracker → Data Protection → Anonymize IP Addresses = On
-* Hash IPs: Settings → Tracker → Data Protection → Hash IP Addresses = On
-
-**Fixed**
-
-* Visitor counts dropping to zero after upgrading: a consent banner was silently enabled on every site, blocking all anonymous visitors. The banner is now off by default. If you had configured opt-in or opt-out privacy features in an earlier version, we detect that and keep consent enabled for you automatically.
-* IPs being masked or hashed without your permission: v5.4.0 changed IP storage defaults, so full IP addresses were replaced with anonymized or hashed values. Your IPs are now stored in full again, matching pre-5.4 behavior.
-* Tracking broken on sites using WP Rocket, W3TC, or other caching plugins: fresh installs defaulted to server-side tracking, which doesn't work with page caching. We've restored browser-based (JavaScript) tracking as the default.
-* Ad-blocker bypass failing after plugin updates: the bypass URL included the plugin version, so cached pages had a stale URL after every update. The bypass URL is now stable across versions.
-* Internal tracking URLs and bypass file URLs appearing as pages in the Access Log. All SlimStat-internal URLs are now filtered from both reports and server-side tracking.
-* Access Log pagination showing the same rows when clicking the next-page arrow. The second page now correctly shows the next set of results.
-* Pageviews silently lost when a transport fails: the tracker now tries adblock-bypass, AJAX, and REST fallbacks before giving up.
-* Stale cached tracker data causing abandoned pageviews: the tracker recovers gracefully.
-* "Respect Do Not Track" setting only working when GDPR mode was on: DNT is now honored regardless of your GDPR setting. The DNT toggle is now always visible in settings.
-* Migration admin notice linking to a non-existent settings page. The link now correctly opens Settings → Tracker → Data Protection.
+**New**
+* **Heatmaps:** a new Heatmaps page shows which pages, links and buttons visitors click, with device split and any date range. Clicks SlimStat already recorded appear right away. SlimStat Pro adds opt-in recording of any element, scroll depth, dead clicks and rage clicks; it follows consent and Do Not Track and never stores what visitors type.
+* **WooCommerce Analytics:** an opt-in revenue dashboard puts net sales, orders, top products and the purchase journey next to your traffic, on your own server. Works with HPOS and legacy order storage.
+* **Channels and UTM Campaigns:** see whether visits come from search, social, email, paid ads or AI assistants, and which campaign earned them. Build campaign links right from the report. Attribution starts with new pageviews.
+* **Shortcode Playground:** preview any report with your own data, tune its filters and copy the shortcode. New live visitor, page and country counters.
+* **Migration screen:** lists the database steps the update needs. Required steps only add columns and indexes, wait for your click, and tracking keeps working meanwhile.
 
 **Improved**
+* **Faster reports:** admin charts read half as many database rows, and tracking writes 62% fewer option updates per pageview.
+* A cleaner admin: consistent wording, accessible dialogs, empty reports that explain what to do next, a Get started panel for new sites and a rewritten Help panel.
+* Goals and Funnels share one tidy panel, and the Funnels preview names the five ready-made templates in Pro.
+* The admin bar's real-time Online preview is back, chart included.
+* Changing dates keeps your filters, and saved segments keep their dates.
+* Email Report previews the weekly email built from your own last 7 days and can send you a sample.
+* Supports PHP 7.4+ and WordPress 5.6+, tested up to WordPress 7.1.
 
-* Tracker health diagnostics now distinguish between fatal errors and recoverable warnings.
-* Session cookies are restored by default — returning visitors are recognized across pages again, just like in v5.3.x.
-* Cookie info registered with WP Consent API now uses proper plural-aware translations.
+**Fixed**
+* More accurate numbers: consent given through the WP Consent API, anonymous page refreshes and overlapping funnel steps no longer count twice, so some totals go down to their true value.
+* Form-submit, tel: and mailto: conversion goals record one hit per press, and funnels no longer show silent zeros.
+* Overview "Today" and "Yesterday" no longer read 0, and cookieless visits no longer split every 5 minutes.
+* Sites that had "Enable CDN" on record visits again; the setting is removed. If you track external pages, replace your old tracking snippet.
+* Multisite subsites created on WordPress 5.1+ or activated with WP-CLI now track, and Network View totals are network-wide.
+* Per-author email reports show each author's own numbers.
+* Deleting the plugin keeps your analytics unless you turned on "Delete Data on Uninstall". ([#327](https://github.com/wp-slimstat/wp-slimstat/issues/327))
+* No more white-screen lockouts after an interrupted update. ([#325](https://github.com/wp-slimstat/wp-slimstat/issues/325))
 
-= 5.4.5 - 2026-03-20 =
-- **Fix**: Hardened user exclusion logic — fixed consent-upgrade path, capability key matching, and defensive `wp_get_current_user()` calls (#246)
-- **Fix**: GDPR consent cookie domain, cached page banner display, and anonymous nonce handling
-- **Fix**: Removed double-escaping in report filters and tightened XSS sanitization (#243, #244)
-- **Fix**: Strict fingerprint input sanitization (#244)
-- **Fix**: Output escaping in reports default case (#244)
-- **Fix**: Store attachment content_type as `cpt:attachment` (#236)
-- **Fix**: Narrowed dashboard nested widget CSS selectors to avoid style conflicts (#247)
-- **Fix**: Increased Access Log widget height on WP Dashboard
-- **Fix**: Synced stat before `ensureVisitId` to prevent ID loss on finalization
-- **Fix**: Skipped REST nonce for anonymous users on non-consent tracking endpoints, removed dead adblock fallback URL
-- **Security**: Restored nonce verification for all consent endpoints
-- **Improved**: Refactored `isUserExcluded()` into standalone method with full test coverage
-- **Improved**: Inlined `get_current_user_id()` in nonce guards for clarity
+**Security**
+* Fixed a SQL injection that logged-in users could reach when the optional "Posts and Pages" report column was on (off by default). Found in-house; no report of it in the wild.
+* Shortcodes show personal data, access logs and user reports only to people allowed to view analytics.
+* WooCommerce order-access keys are removed from newly stored page URLs and referrers.
 
-= 5.4.4 - 2026-03-17 =
-- **Fix**: Chart data not showing due to incorrect bounds check ([PR #232](https://github.com/wp-slimstat/wp-slimstat/pull/232))
-- **Fix**: Weekly chart not showing today's data and not respecting start_of_week setting ([PR #235](https://github.com/wp-slimstat/wp-slimstat/pull/235))
-- **Improved**: Added `cpt:` prefix guidance to content type exclusion setting
-
-= 5.4.3 - 2026-03-16 =
-- **Fix**: Fixed fatal error on servers without the PHP calendar extension ([PR #229](https://github.com/wp-slimstat/wp-slimstat/pull/229))
-- **Fix**: Added defensive fallback for corrupted `start_of_week` option in calendar-related reports
-- **Improved**: Moved day names array to a class constant in DataBuckets for better maintainability
-
-= 5.4.2 - 2026-03-15 =
-- **Fix**: Fixed tracking data not being recorded on some server configurations — REST API and admin-ajax endpoints now return responses correctly ([PR #218](https://github.com/wp-slimstat/wp-slimstat/pull/218))
-- **Fix**: Fixed visitor locations showing a proxy server IP instead of the real visitor IP on Cloudflare-powered sites ([#150](https://github.com/wp-slimstat/wp-slimstat/issues/150))
-- **Fix**: Fixed 503 errors that could occur on high-traffic sites due to inefficient visit ID generation ([#155](https://github.com/wp-slimstat/wp-slimstat/issues/155))
-- **Fix**: Fixed excessive server requests when WP-Cron is disabled, caused by repeated geolocation lookups ([#164](https://github.com/wp-slimstat/wp-slimstat/issues/164))
-- **Fix**: Fixed a CSS rule that could accidentally disable animations across your entire site, not just on SlimStat pages ([#167](https://github.com/wp-slimstat/wp-slimstat/issues/167))
-- **Fix**: Fixed outbound link clicks, file downloads, and page-exit events not being recorded — a silent regression in recent versions ([#174](https://github.com/wp-slimstat/wp-slimstat/issues/174))
-- **Fix**: Fixed consent rejections being ignored — visitors who declined tracking could still be tracked, and unconfigured consent types were incorrectly treated as granted ([PR #178](https://github.com/wp-slimstat/wp-slimstat/pull/178))
-- **Fix**: Fixed a crash when the WP Consent API plugin is not installed alongside SlimStat ([PR #172](https://github.com/wp-slimstat/wp-slimstat/pull/172))
-- **Fix**: Fixed a crash during background geolocation database updates ([#180](https://github.com/wp-slimstat/wp-slimstat/issues/180))
-- **Fix**: Fixed geolocation database updates not retrying after a failed download — previously blocked retries for up to a month ([PR #185](https://github.com/wp-slimstat/wp-slimstat/pull/185))
-- **Fix**: Fixed admin page styling conflicts with WordPress core styles ([PR #175](https://github.com/wp-slimstat/wp-slimstat/pull/175))
-- **Fix**: Fixed Email Reports page layout not matching other SlimStat admin pages ([PR #177](https://github.com/wp-slimstat/wp-slimstat/pull/177))
-- **Fix**: Fixed browser detection failing due to a library compatibility issue ([#187](https://github.com/wp-slimstat/wp-slimstat/issues/187))
-- **Fix**: Fixed the external page tracking snippet being completely broken — the snippet only set the legacy `ajaxurl` parameter while the tracker expects transport-specific endpoints ([#220](https://github.com/wp-slimstat/wp-slimstat/issues/220))
-- **Improved**: Every fix in this release is backed by ~329 automated tests across 46 test files — covering tracking, geolocation, consent, performance, and upgrade safety
-- **Improved**: Restored the server-side tracking API (`wp_slimstat::slimtrack()`) for themes and plugins that track visits programmatically ([#171](https://github.com/wp-slimstat/wp-slimstat/issues/171))
-- **Improved**: Unique visitor counts now work correctly even when IP addresses are anonymized or hashed ([PR #178](https://github.com/wp-slimstat/wp-slimstat/pull/178))
-- **Improved**: 261+ previously untranslated strings are now available for translation in all languages ([#173](https://github.com/wp-slimstat/wp-slimstat/issues/173))
-- **Improved**: Geolocation now works consistently across all request types, including background tasks
-- **Improved**: DB-IP restored as the default geolocation provider for new installations
-- **Improved**: Faster admin page loads by removing redundant database queries ([PR #189](https://github.com/wp-slimstat/wp-slimstat/pull/189))
-
-= 5.4.1 - 2026-03-09 =
-- **New**: The GDPR consent banner message, accept, and decline labels can now be translated with WPML and Polylang ([#145](https://github.com/wp-slimstat/wp-slimstat/issues/145))
-- **Fix**: Fixed the GDPR consent banner appearing even when GDPR Compliance Mode was turned off ([#140](https://github.com/wp-slimstat/wp-slimstat/issues/140))
-- **Fix**: Fixed duplicate Accept/Deny buttons showing in the consent banner when the custom message contained links ([#144](https://github.com/wp-slimstat/wp-slimstat/issues/144))
-- **Fix**: Fixed charts not loading in older browsers including Firefox before version 121 ([#139](https://github.com/wp-slimstat/wp-slimstat/issues/139))
-- **Fix**: Fixed a potential error when chart data was missing from the page
-- **Fix**: Fixed real URLs (e.g., privacy policy links) being incorrectly stripped from the consent banner message
-- **Fix**: Fixed refresh button not resetting countdown timer ([#153](https://github.com/wp-slimstat/wp-slimstat/issues/153))
-
-= 5.4.0 - 2026-03-08 =
-- **Breaking**: Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.
-- **New**: Integration with Consent Management Platforms (CMPs) for GDPR compliance: WP Consent API and Real Cookie Banner Pro.
-- **New**: GDPR Compliance Mode toggle - Enable/disable GDPR compliance requirements (default: enabled).
-- **New**: Consent change listener that automatically resumes tracking when user grants consent via CMP.
-- **New**: Do Not Track (DNT) header respect with configurable option in settings.
-- **New**: WordPress Privacy Policy content registration for GDPR Article 13/14 compliance.
-- **Enhancement**: Refactored GDPR architecture - consent management fully delegated to external CMPs.
-- **Enhancement**: Smart IP handling - automatically upgrades from anonymized/hashed IP to full IP when consent is granted.
-- **Enhancement**: Improved JavaScript consent handling with polling-based consent state monitoring.
-- **Enhancement**: Default data retention period set to 420 days (14 months) for GDPR compliance.
-- **Fix**: Legacy mode now conservatively denies PII collection when GDPR enabled and no CMP configured.
-- **Fix**: Consent revocation properly deletes tracking cookie when user opts out via banner.
-- **Fix**: Removed legacy cookie-based opt-in/opt-out handling for cleaner, CMP-based consent flow.
-[See full release notes](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-4-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-4-0)
-
-= 5.3.6 =
-* Security: Hardened output escaping in reports
-
-= 5.3.5 - 2025-12-31 =
-* Security: Hardened plugin security
-
-= 5.3.4 - 2024-12-28 =
-* Security: Hardened plugin security
-
-= 5.3.3 - 2025-12-17 =
-* Maintenance: Stability and compatibility improvements.
-
-= 5.3.2 - 2025-11-24 =
-- Fix: Minor improvements & Hardened plugin security.
-
-= 5.3.1 - 2025-09-09 =
-- **Fix**: Resolved "Invalid Date, NaN" error in monthly charts for 12-month ranges.
-- **Fix**: Real-time report date filters not properly cleared during auto-refresh.
-- **Fix**: Real-time report not updating at midnight with filters.
-- **Fix**: Undefined variable $unpacked in PHP tracking logic;
-- **Enhancement**: Enhanced responsive design for the "Access Log" report.
-- **Enhancement**: Improved tracking logic to prevent duplicate pageviews and events.
-- **Enhancement**: Enhanced interaction tracking and heartbeat finalization.
-
-= 5.3.0 - 2025-08-25 =
-- **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.
-- **New**: Support for WordPress date format setting in charts.
-- **New**: Hourly, daily, weekly, monthly, and yearly chart granularities for deeper insights.
-- **Enhancement**: Redesigned line charts for better readability.
-- **Enhancement**: Compatibility with WordPress’s Interactivity API for seamless integration.
-- **Enhancement**: Added new 3 date ranges formats (Last 2 weeks, Previous month, This month).
-[See full release notes](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-3-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-3-0)
-
-= 5.2.13 - 2025-04-29 =
-- **Fix**: Resolved issues with pagination in reports.
-
-= 5.2.12 - 2025-04-26 =
-- **Enhancement**: Removed red color from report export boxes to reduce eye strain and improve user experience.
-
-= 5.2.11 - 2025-04-25 =
-- Full release notes → [WordPress Real-time Analytics Plugin](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-2-11-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-2-11) – SlimStat 5.2.11 Release Notes
-- **Visual Enhancement**: Improved UI with eye-catching visual elements for better user experience.
-- **Enhancement**: Optimized SQL query to reduce the chances of errors and improve overall performance.
-- **Enhancement**: The "Export" button for non-Pro users now links to the Slimstat PRO version page, improving clarity around upgrade options.
-- **Enhancement**: Added support for the WordPress date format setting for the charts.
-- **Fix**: Fatal error in EmailReportsAddon.php for missing `get_plugins` method.
-- **Fix**: Prevented PHP warning by checking if 'referer' array key is set in searchterms reports view.
-- **Fix**: Fix a database error related to the notes column.
-- **Fix**: Prevented horizontal scrolling in the reports area and improved page loading animations by ensuring styles are applied correctly.
-- **Fix**: Addressed several user-reported issues to enhance overall stability and user experience.
-- **Fix**: Investigate and resolve the "Division by zero" fatal error in `wp-slimstat-db.php` caused by PHP version 8.2.22. Further investigation needed to determine the root cause and provide a fix.
-
-= 5.2.9 - 2024-11-12 =
-- **Enhancement**: Ensured compatibility with WordPress version 6.7.
-- **Fix**: Resolved the Top Referring Domain Issue.
-
-[See changelog for all versions](https://raw.githubusercontent.com/wp-slimstat/wp-slimstat/master/CHANGELOG.md).
+**[See the full changelog for every version on GitHub](https://github.com/wp-slimstat/wp-slimstat/blob/master/CHANGELOG.md)**
