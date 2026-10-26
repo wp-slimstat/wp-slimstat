@@ -83,3 +83,30 @@ for (const [waitForId, consentUpgrade, expected] of [[true, false, false], [fals
     assert.equal(vm.runInNewContext(beaconDeclaration[1], {waitForId, options: {consentUpgrade}}), expected);
 }
 console.log('PASS: consent upgrades await acknowledged response and retain transport fallback');
+
+const flushStart = source.indexOf('    function flushOfflineQueue(');
+const flushEnd = source.indexOf('\n    // -------------------------- Public API', flushStart);
+assert(flushStart >= 0 && flushEnd > flushStart);
+vm.runInContext(source.slice(flushStart, flushEnd), scope);
+let offline = [{p: 'action=slimtrack&res=page-a'}, {p: 'action=slimtrack&res=page-b'}, {p: 'action=slimtrack&id=pending&no=click'}];
+const delivered = [];
+scope.loadOfflineQueue = () => offline;
+scope.saveOfflineQueue = value => { offline = value; };
+scope.sendToServer = payload => { delivered.push(payload); return true; };
+scope.navigator.onLine = true;
+settings.anonymous_tracking = 'off';
+consent = false;
+scope.flushOfflineQueue();
+assert.equal(delivered.length, 0, 'withdrawn consent must stop offline replay');
+assert.equal(offline.length, 3, 'blocked replay must not discard queued data');
+consent = true;
+scope.flushOfflineQueue();
+assert.deepEqual(delivered, ['action=slimtrack&res=page-a', 'action=slimtrack&res=page-b']);
+assert.equal(offline.length, 1, 'only interactions need an assigned pageview ID');
+settings.id = '123.signed';
+scope.flushOfflineQueue();
+assert.equal(delivered[2], 'action=slimtrack&id=123.signed&no=click');
+assert.equal(offline.length, 0);
+scope.flushOfflineQueue();
+assert.equal(delivered.length, 3, 'an empty replay must not enqueue duplicates');
+console.log('PASS: offline pageviews replay without an ID; interactions wait; withdrawn consent blocks both');

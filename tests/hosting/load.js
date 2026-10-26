@@ -47,7 +47,8 @@ export default function () {
     }
     const reports = ['slimview1', 'slimview2', 'slimview3', 'slimview4', 'slimview5', 'slimview6'];
     response = http.get(`${BASE_URL}/wp-admin/admin.php?page=${reports[__ITER % reports.length]}`, { headers });
-    valid = response.status === 200 && !/Fatal error|critical error|id="loginform"/.test(response.body);
+    valid = response.status === 200 && /id=["']slimstat-(?:filters-form|gf-)/.test(response.body)
+      && !/Fatal error|critical error|id="loginform"/.test(response.body);
   } else if (mode === 'control') {
     response = http.get(`${BASE_URL}/`, { headers });
     valid = response.status === 200;

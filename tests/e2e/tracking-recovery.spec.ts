@@ -242,6 +242,37 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     await ctx.close();
   });
 
+  for (const blockAjax of [false, true]) {
+    test(`REST preference with both REST URLs blocked ${blockAjax ? 'fails safely when AJAX is blocked' : 'records exactly once through AJAX'}`, async ({ browser }) => {
+      await setSlimstatOptions({ tracking_request_method: 'rest', javascript_mode: 'on' });
+      const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+      try {
+        const visitor = await ctx.newPage();
+        const errors: string[] = [];
+        const blocked: string[] = [];
+        visitor.on('pageerror', error => errors.push(error.message));
+        visitor.on('console', message => {
+          if (message.type() === 'error' && !/^Failed to load resource: net::ERR_BLOCKED_BY_CLIENT(?:\.Inspector)?$/.test(message.text())) errors.push(message.text());
+        });
+        await visitor.route(url => url.pathname.includes('/wp-json/slimstat/') || (url.searchParams.get('rest_route') || '').startsWith('/slimstat/') || (blockAjax && url.pathname.endsWith('/admin-ajax.php')), async route => {
+          if (route.request().method() !== 'POST') return route.fallback();
+          blocked.push(route.request().url());
+          await route.abort('blockedbyclient');
+        });
+        const marker = `rest-chain-${blockAjax}-${Date.now()}`;
+        await visitor.goto(`${BASE_URL}/?e2e=${marker}`);
+        await expect.poll(() => visitor.evaluate(() => (window as any).__slimstatDebug?.lastPageview?.finalOutcome)).toBe(blockAjax ? 'failed' : 'success');
+        const state = await visitor.evaluate(() => ({ params: (window as any).SlimStatParams, debug: (window as any).__slimstatDebug.lastPageview }));
+        expect(state.params.transport).toBe('rest');
+        expect(state.params.ajaxurl_adblock).toBeUndefined();
+        expect(state.debug.attempts.map((attempt: any) => attempt.transport)).toEqual(['rest_pretty', 'rest_query', 'ajax']);
+        expect(blocked.length).toBe(blockAjax ? 3 : 2);
+        expect(await getStatCountForMarker(marker)).toBe(blockAjax ? 0 : 1);
+        expect(errors).toEqual([]);
+      } finally { await ctx.close(); }
+    });
+  }
+
   test('REST query fallback uses index.php routing on index-permalink installs', async ({ page, browser }) => {
     await setSlimstatOptions({
       tracking_request_method: 'rest',
@@ -490,6 +521,42 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     } finally {
       await ctx.close();
     }
+  });
+
+  test('two offline pageviews survive reload and drain once within ten seconds', async ({ browser }) => {
+    await setSlimstatOptions({ tracking_request_method: 'rest', javascript_mode: 'on', anonymous_tracking: 'off' });
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      // Cache the real page's signed parameters and shipped tracker before losing connectivity.
+      const html = await (await ctx.request.get(BASE_URL)).text();
+      const params = html.match(/var SlimStatParams = (\{[^\n]+\});/)?.[1];
+      expect(params).toBeTruthy();
+      const source = html.match(/<script[^>]*src=["']([^"']*wp-slimstat\.min\.js[^"']*)["']/)?.[1];
+      expect(source).toBeTruthy();
+      const bundle = await (await ctx.request.get(source!)).text();
+      const marker = `offline-navigation-${Date.now()}`;
+      await ctx.route(url => url.searchParams.get('e2e')?.startsWith(marker) === true, route => route.fulfill({
+        contentType: 'text/html', body: `<html><body><p>Cached page</p><script>var SlimStatParams = ${params};</script><script>${bundle}</script></body></html>`,
+      }));
+      const visitor = await ctx.newPage();
+      await ctx.setOffline(true);
+      await visitor.goto(`${BASE_URL}/?e2e=${marker}-a`);
+      const queue = () => visitor.evaluate(() => JSON.parse(localStorage.getItem('slimstat_offline_queue') || '[]'));
+      await expect.poll(queue).toHaveLength(1);
+      await visitor.evaluate(url => history.replaceState(null, '', url), `${BASE_URL}/?e2e=${marker}-b`);
+      await visitor.reload();
+      await expect.poll(queue).toHaveLength(2);
+      expect(await getStatCountForMarker(marker)).toBe(0);
+      await ctx.setOffline(false);
+      await expect.poll(() => getStatCountForMarker(marker), { timeout: 10_000 }).toBe(2);
+      await expect.poll(queue).toHaveLength(0);
+      expect(await getStatCountForMarker(`${marker}-a`)).toBe(1);
+      expect(await getStatCountForMarker(`${marker}-b`)).toBe(1);
+      await ctx.setOffline(true);
+      await ctx.setOffline(false);
+      expect(await queue()).toHaveLength(0);
+      expect(await getStatCountForMarker(marker)).toBe(2);
+    } finally { await ctx.close(); }
   });
 
   test('stale pageview id retries once without id and assigns a fresh pageview id', async ({ page }) => {

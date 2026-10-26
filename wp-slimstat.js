@@ -1755,7 +1755,7 @@ var SlimStat = (function () {
             if (!offline.length) return;
 
             var params = currentSlimStatParams();
-            if (!params.id || parseInt(params.id, 10) <= 0) return; // need valid ID to send
+            if (!slimstatConsentAllowed(params).allowed) return;
 
             // Send offline items in batches to avoid overwhelming the server
             var batchSize = 5;
@@ -1768,6 +1768,7 @@ var SlimStat = (function () {
                     // Update payload with current ID if it has a placeholder
                     var payload = item.p;
                     if (payload.indexOf("id=pending") !== -1) {
+                        if (!params.id || parseInt(params.id, 10) <= 0) continue;
                         payload = payload.replace("id=pending", "id=" + params.id);
                     }
 
