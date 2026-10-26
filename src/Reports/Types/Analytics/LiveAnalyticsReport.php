@@ -183,6 +183,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			->from( "{$GLOBALS['wpdb']->prefix}slim_stats" )
 			->where( 'dt', '>=', $threshold_30 )
 			->whereRaw( \wp_slimstat::report_scope()['where'] )
+			->whereRaw( '(browser_type IS NULL OR browser_type <> 1)' )
 			->getRow();
 
 		return [
@@ -223,7 +224,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 					END
 				) AS last_activity
 				FROM {$table}
-				WHERE ({$scope['where']}) AND visit_id > 0
+				WHERE ({$scope['where']}) AND visit_id > 0 AND (browser_type IS NULL OR browser_type <> 1)
 					AND (
 						dt >= %d
 						OR ( dt_out IS NOT NULL AND dt_out >= %d )
@@ -295,6 +296,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 				->where( 'dt', '>=', $start_minute )
 					->whereRaw( $condition )
 					->whereRaw( \wp_slimstat::report_scope()['where'] )
+			->whereRaw( '(browser_type IS NULL OR browser_type <> 1)' )
 					// Use the select alias in GROUP BY and ORDER BY for MySQL 5.7 compatibility
 					->groupBy( 'minute_timestamp' )
 					->orderBy( 'minute_timestamp ASC' )
@@ -332,8 +334,8 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			return $empty;
 		}
 
-		$generation = get_transient( 'slimstat_chart_data_users_' . get_current_blog_id() );
-		$cache_key = 'slimstat_chart_data_users_' . get_current_blog_id() . '_' . md5( $scope['cache'] . serialize( $generation ) );
+		$generation = get_transient( 'slimstat_chart_data_users_humans_' . get_current_blog_id() );
+		$cache_key = 'slimstat_chart_data_users_humans_' . get_current_blog_id() . '_' . md5( $scope['cache'] . serialize( $generation ) );
 		$cached    = get_transient( $cache_key );
 		if ( false !== $cached && is_array( $cached ) ) {
 			$cache_time = $cached['cache_time'] ?? 0;
@@ -386,7 +388,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 						END
 					) / 60 ) * 60 AS last_minute
 				FROM {$table}
-				WHERE ({$scope['where']}) AND visit_id > 0
+				WHERE ({$scope['where']}) AND visit_id > 0 AND (browser_type IS NULL OR browser_type <> 1)
 					AND dt <= %d
 					AND (
 						dt >= %d
@@ -763,7 +765,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 
 		// Clear manual transient cache (only used for users chart with complex JOIN)
 		// Rotate one shared generation so this public invalidator reaches every author/DB scope.
-		set_transient( 'slimstat_chart_data_users_' . $blog_id, wp_generate_uuid4(), MINUTE_IN_SECONDS );
+		set_transient( 'slimstat_chart_data_users_humans_' . $blog_id, wp_generate_uuid4(), MINUTE_IN_SECONDS );
 
 		// Note: Query class cache is cleared automatically based on query signature
 		// No need to manually clear cache for pages/countries metrics

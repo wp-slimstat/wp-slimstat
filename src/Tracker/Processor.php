@@ -226,6 +226,8 @@ class Processor
             Query::setProcessingTimestamp(null);
             return Utils::logError(305);
         }
+        // Acquisition was extracted above; exclusions still see the original resource.
+        $stat['resource'] = Utils::normalizeResourceParameters($stat['resource']);
 
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
         $http_referer = $_SERVER['HTTP_REFERER'] ?? '';
@@ -469,7 +471,7 @@ class Processor
         \wp_slimstat::set_stat($stat);
         // If this is a consent upgrade request, only force assignment if no cookie exists
         // If cookie exists, use it to maintain session continuity
-        $forceVisitIdAssign = false;
+        $forceVisitIdAssign = 'on' !== (\wp_slimstat::$settings['javascript_mode'] ?? 'on');
         if ($isConsentUpgrade && !isset($_COOKIE['slimstat_tracking_code'])) {
             // No cookie exists, force assignment to create new visit_id and set cookie
             $forceVisitIdAssign = true;

@@ -579,6 +579,11 @@ $settings = [
                 'type'        => 'textarea',
                 'description' => __('Enter a list of permalinks that should not be tracked. Do not include your website domain name: <code>/about, ?p=1</code>, etc. See note at the bottom of this page for more information on how to use wildcards. Strings are case-insensitive.', 'wp-slimstat'),
             ],
+            'ignore_resource_parameters' => [
+                'title' => __('Ignore resource query parameters', 'wp-slimstat'),
+                'type' => 'text',
+                'description' => __('Optional comma-separated query parameter names, such as fbclid or gclid, to omit from newly tracked page URLs. Names are case-sensitive. Leave empty to keep all parameters. Campaign attribution is extracted first; historical URLs are unchanged. Do not include parameters that identify different pages or products.', 'wp-slimstat'),
+            ],
             'do_not_track_outbound_classes_rel_href' => [
                 'title'       => __('Link attributes: class names, rel and href', 'wp-slimstat'),
                 'type'        => 'textarea',
@@ -692,6 +697,12 @@ $settings = [
                 'title'       => __('Archive mode', 'wp-slimstat'),
                 'type'        => 'toggle',
                 'description' => __('<strong>How to handle old data:</strong><br/><br/><strong>Enabled (Archive):</strong> Old records are moved to separate archive tables (<code>wp_slim_stats_archive</code>, <code>wp_slim_events_archive</code>) instead of being permanently deleted. This improves query performance by keeping the main tables smaller, while still allowing you to access historical data if needed. <strong>Note:</strong> Archived data still counts as data retention under GDPR requirements.<br/><br/><strong>Disabled (Delete):</strong> Old records are permanently deleted from the database. This is the most GDPR-compliant approach and frees up database space immediately. <strong>Warning:</strong> Deleted data cannot be recovered.<br/><br/><strong>Important:</strong> Archive tables are deleted on uninstall only when <strong>Delete data on uninstall</strong> is enabled. Back up your database before uninstalling.', 'wp-slimstat'),
+            ],
+
+            'auto_purge_optimize' => [
+                'title'       => __('Automatic table optimization', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Disabled by default. Deleted rows leave space that the database can reuse. Enable only with your hosting provider\'s agreement: rebuilding live tables may reclaim disk space but can delay tracking while locks are held. Runs at most once every 30 days after removing pageviews; archive tables are never optimized.', 'wp-slimstat'),
             ],
 
             // Maintenance - Troubleshooting

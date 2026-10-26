@@ -201,7 +201,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
         };
+        // The report form can change after this chart was rendered. Let the server's
+        // normal filter parser read its current values; widgets keep their own scope.
+        var activeFilters = null;
+        if (document.getElementById("slimstat-filters-form") && typeof window.SlimStatGetFiltersForAjax === "function") {
+            activeFilters = window.SlimStatGetFiltersForAjax();
+            delete args.filters;
+        }
         var params = "action=" + encodeURIComponent("slimstat_fetch_chart_data") + "&nonce=" + encodeURIComponent(slimstat_chart_vars.nonce) + "&args=" + encodeURIComponent(JSON.stringify(args)) + "&granularity=" + encodeURIComponent(granularity);
+        Object.keys(activeFilters || {}).forEach(function (name) {
+            params += "&" + encodeURIComponent(name) + "=" + encodeURIComponent(activeFilters[name]);
+        });
         xhr.send(params);
     }
 
@@ -640,17 +650,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 legendItem.addEventListener("click", function () {
                     var currentMeta = chart.getDatasetMeta(index);
-                    var previousMeta = chart.getDatasetMeta(index + currentDatasets.length);
+                    var previousMeta = previousDatasets[index] ? chart.getDatasetMeta(index + currentDatasets.length) : null;
                     var togglePrevBtn = document.querySelector(".slimstat-toggle-prev-datasets.slimstat-postbox-chart--item-" + chartId);
                     var showPrevious = !!(togglePrevBtn && togglePrevBtn.classList.contains("active"));
 
                     currentMeta.hidden = !currentMeta.hidden;
                     legendItem.classList.toggle("slimstat-postbox-chart--item-hidden");
 
-                    if (showPrevious) {
-                        previousMeta.hidden = currentMeta.hidden;
-                    } else {
-                        previousMeta.hidden = true;
+                    if (previousMeta) {
+                        previousMeta.hidden = showPrevious ? currentMeta.hidden : true;
                     }
 
                     chart.update();

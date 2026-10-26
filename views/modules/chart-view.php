@@ -51,6 +51,9 @@ $totals         = [
     ],
 ];
 $is_empty = (0 === ($totals['current']['v1'] ?? 0) && 0 === ($totals['current']['v2'] ?? 0));
+if (!isset($data['totals'][1])) {
+    unset($totals['previous']);
+}
 ?>
 <div
     class="slimstat-chart-wrap <?php echo esc_attr(isset($chart_args['chart_type']) && $chart_args['chart_type'] === 'bar' ? 'chart-bar' : 'chart-line'); ?>">

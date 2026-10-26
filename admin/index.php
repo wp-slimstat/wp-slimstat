@@ -3568,7 +3568,7 @@ class wp_slimstat_admin
     public static function online_count()
     {
         $scope = wp_slimstat::report_scope();
-        $transient_key = 'slimstat_adminbar_online_' . get_current_blog_id() . '_' . $scope['cache'];
+        $transient_key = 'slimstat_adminbar_online_humans_' . get_current_blog_id() . '_' . $scope['cache'];
         $cached        = get_transient($transient_key);
 
         // Strict check: a legitimate count of 0 must not read as a cache miss, or an
@@ -3613,7 +3613,7 @@ class wp_slimstat_admin
                     END
                 ) AS last_activity
                 FROM {$table}
-                WHERE ({$scope['where']}) AND visit_id > 0
+                WHERE ({$scope['where']}) AND visit_id > 0 AND (browser_type IS NULL OR browser_type <> 1)
                     AND (dt >= %d OR (dt_out IS NOT NULL AND dt_out >= %d))
                 GROUP BY visit_id
                 HAVING (FLOOR(last_activity / 60) * 60 + 59) >= %d
@@ -4811,6 +4811,8 @@ class wp_slimstat_admin
             'purge (heatmap rows)'        => __('Retention: deleting heatmap clicks', 'wp-slimstat'),
             'heatmap insert'              => __('Tracking: saving heatmap clicks', 'wp-slimstat'),
             'heatmap delete'              => __('Heatmaps: deleting heatmap data', 'wp-slimstat'),
+            'purge (checking retention)'  => __('Retention: checking expired data', 'wp-slimstat'),
+            'purge (heatmap scheduling)'  => __('Heatmaps: scheduling retention cleanup', 'wp-slimstat'),
             'purge (archiving pageviews)' => __('Retention: archiving pageviews', 'wp-slimstat'),
             'purge (deleting pageviews)'  => __('Retention: deleting pageviews', 'wp-slimstat'),
             'purge (archive schema)'      => __('Retention: archive table columns', 'wp-slimstat'),

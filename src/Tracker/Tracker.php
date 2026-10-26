@@ -385,6 +385,13 @@ class Tracker
         return Utils::getValueWithChecksum($_value);
     }
 
+    /** @deprecated Use SlimStat\Tracker\Utils::getValueWithoutChecksum(). */
+    public static function _get_value_without_checksum($_value = '')
+    {
+        _deprecated_function(__METHOD__, '6.0.0', 'SlimStat\\Tracker\\Utils::getValueWithoutChecksum()');
+        return Utils::getValueWithoutChecksum($_value);
+    }
+
 
     public static function _is_blacklisted($_needles = [], $_haystack_string = '')
     {

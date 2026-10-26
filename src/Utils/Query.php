@@ -299,10 +299,13 @@ class Query
         }
 
         if (is_array($value)) {
-            $value = array_filter(array_values($value));
+            $value = array_values(array_filter($value, static function ($item) {
+                return null !== $item && '' !== $item && false !== $item;
+            }));
         }
 
-        if (!is_numeric($value) && empty($value)) {
+        $nullComparison = null === $value && in_array($operator, ['IS', 'IS NOT'], true);
+        if (!$nullComparison && !is_numeric($value) && empty($value)) {
             return $this;
         }
 

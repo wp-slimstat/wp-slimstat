@@ -1292,6 +1292,7 @@ class wp_slimstat
             // General - Database
             'auto_purge'        => 420,
             'auto_purge_delete' => 'on',
+            'auto_purge_optimize' => 'no',
 
             // Heatmaps (6.1.0): off | main | full; rate in 1/10,000 of pageviews; pages is a
             // wildcard list like the permalink exclusions, empty for all pages.
@@ -1401,6 +1402,7 @@ class wp_slimstat
 
             // Exclusions - Page Properties
             'ignore_resources'     => '',
+            'ignore_resource_parameters' => '',
             'ignore_referers'      => '',
             'ignore_content_types' => '',
 
@@ -1793,11 +1795,20 @@ class wp_slimstat
         // Nothing to purge is the overwhelmingly common case: retention defaults to 420
         // days and this runs every 12 hours. Two indexed probes, then stop — the tick used
         // to continue into four full InnoDB table rebuilds regardless. (D1)
-        $has_work = self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table_stats} WHERE dt < %d LIMIT 1", $days_ago))
-            || self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table_events} WHERE dt < %d LIMIT 1", $days_ago));
+        $has_work = false;
+        foreach ([$table_stats, $table_events] as $table) {
+            $found = self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table} WHERE dt < %d LIMIT 1", $days_ago));
+            // Check immediately: the next successful query clears last_error.
+            if ('' !== (string) self::$wpdb->last_error) {
+                self::record_degradation('purge (checking retention)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);
+                return;
+            }
+            $has_work = $has_work || !empty($found);
+        }
         // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         if (!$has_work) {
+            self::update_option(self::LAST_PURGE_OK_OPTION, self::now(), false);
             return;
         }
 
@@ -2043,7 +2054,8 @@ class wp_slimstat
         // rebuild so a crash cannot retry it every 12 hours.
         $last_optimized = (int) get_option('slimstat_purge_optimized_at', 0);
 
-        if ($rows_removed > 0 && (self::now() - $last_optimized) > 30 * DAY_IN_SECONDS) {
+        if ('on' === (self::$settings['auto_purge_optimize'] ?? 'no')
+            && $rows_removed > 0 && (self::now() - $last_optimized) > 30 * DAY_IN_SECONDS) {
             self::update_option('slimstat_purge_optimized_at', self::now(), false);
             // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
             self::$wpdb->query('OPTIMIZE TABLE ' . $table_stats);

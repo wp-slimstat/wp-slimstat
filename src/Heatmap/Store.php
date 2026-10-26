@@ -24,6 +24,9 @@ final class Store
 	public const STATE = 'slimstat_heatmap_state';
 	public const GENERATION = 'slimstat_heatmap_generation';
 	public const CLAIM = 'slimstat_heatmap_setup';
+	public const PURGE_HOOK = 'slimstat_heatmap_purge_continue';
+	public const PURGE_CLAIM = 'slimstat_heatmap_purge_claim';
+	public const PURGE_PENDING = 'slimstat_heatmap_purge_pending';
 	public const LEVELS = ['off', 'main', 'full'];
 
 	/** Row flags, as the tracker sends them. */
@@ -47,6 +50,7 @@ final class Store
 		add_filter('wp_privacy_personal_data_erasers', [self::class, 'erasers'], 5);
 		add_filter('wp_privacy_personal_data_exporters', [self::class, 'exporters']);
 		add_action('wp_slimstat_purge', [self::class, 'purge'], 20);
+		add_action(self::PURGE_HOOK, [self::class, 'purge']);
 		if (is_admin()) {
 			add_action('admin_init', [self::class, 'maybeSetup']);
 			add_action('admin_post_slimstat_heatmap_retry', [self::class, 'handleRetry']);
@@ -295,15 +299,35 @@ final class Store
 		if ($days <= 0 || !self::ready()) {
 			return;
 		}
-		$db    = Query::db();
-		$table = self::table();
-		// ponytail: one bounded batch per purge tick; loop or reschedule if a no-FK site falls behind.
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery -- Table name from the manifest; cutoff is prepared.
-		$deleted = $db->query($db->prepare("DELETE FROM {$table} WHERE kind IN (0, 1) AND dt < %d LIMIT 50000", \wp_slimstat::now() - $days * DAY_IN_SECONDS));
-		if (false === $deleted) {
-			\wp_slimstat::record_degradation('purge (heatmap rows)', $db->last_error, \wp_slimstat::DEGRADATION_OPERATIONAL);
-		} elseif ($deleted) {
-			self::invalidate();
+		$token = (string) (time() + 900) . ':' . bin2hex(random_bytes(8));
+		$old = get_option(self::PURGE_CLAIM, null);
+		$won = null === $old ? OptionClaim::insert(self::PURGE_CLAIM, $token)
+			: ((int) $old < time() && OptionClaim::compareAndSwap(self::PURGE_CLAIM, (string) $old, $token));
+		if (!$won) {
+			return;
+		}
+		try {
+			$db = Query::db();
+			$table = self::table();
+			// One statement per job; replay and an expired lease cannot delete recent data.
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery -- Table name from the manifest; cutoff is prepared.
+			$deleted = $db->query($db->prepare("DELETE FROM {$table} WHERE kind IN (0, 1) AND dt < %d LIMIT 50000", \wp_slimstat::now() - $days * DAY_IN_SECONDS));
+			if (false === $deleted) {
+				\wp_slimstat::record_degradation('purge (heatmap rows)', $db->last_error, \wp_slimstat::DEGRADATION_OPERATIONAL);
+				return;
+			}
+			if ($deleted) {
+				self::invalidate();
+			}
+			update_option(self::PURGE_PENDING, 50000 === $deleted, false);
+			if (50000 === $deleted && !wp_next_scheduled(self::PURGE_HOOK)) {
+				$scheduled = wp_schedule_single_event(time() + 60, self::PURGE_HOOK, [], true);
+				if (is_wp_error($scheduled)) {
+					\wp_slimstat::record_degradation('purge (heatmap scheduling)', $scheduled->get_error_message(), \wp_slimstat::DEGRADATION_OPERATIONAL);
+				}
+			}
+		} finally {
+			OptionClaim::delete(self::PURGE_CLAIM, $token);
 		}
 	}
 

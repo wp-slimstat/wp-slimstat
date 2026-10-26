@@ -2208,8 +2208,8 @@ if (!window.requestIdleCallback) {
             if (serialized !== lastParams) lastParams = serialized; // reserved for future diff-based logic
         }
     });
-    observer.observe(document.head, { childList: true, subtree: true });
-    observer.observe(document.body, { childList: true, subtree: true });
+    // The root exists even when the tracker runs in head, before body is parsed.
+    observer.observe(document.documentElement, { childList: true, subtree: true });
 
     // Initial pageview
     SlimStat.add_event(window, "load", function () {

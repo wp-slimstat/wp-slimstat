@@ -8,15 +8,12 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
-import { fileURLToPath } from 'url';
-import { MYSQL_CONFIG } from './helpers/env';
+import { MYSQL_CONFIG, WP_ROOT, assertSafeTestDatabase } from './helpers/env';
 import * as mysql from 'mysql2/promise';
 import type { RowDataPacket } from 'mysql2';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const PLUGIN_LANGUAGES = path.join(__dirname, '..', '..', 'languages');
+// Mutate and inspect the installed artifact, including an isolated Docker ZIP install.
+const PLUGIN_LANGUAGES = path.join(WP_ROOT, 'wp-content', 'plugins', 'wp-slimstat', 'languages');
 const TABLE_PREFIX = process.env.WP_DB_PREFIX || 'wp_';
 const OPTIONS_TABLE = `${TABLE_PREFIX}options`;
 
@@ -44,6 +41,7 @@ async function getWplang(): Promise<string> {
 
 test.describe('Issue #173: i18n catalog sync', () => {
   test.beforeAll(async () => {
+    assertSafeTestDatabase();
     pool = mysql.createPool(MYSQL_CONFIG);
     originalLocale = await getWplang();
   });

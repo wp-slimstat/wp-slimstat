@@ -138,6 +138,49 @@ class StoreTest extends WpSlimstatTestCase
 		self::assertSame([], $this->heatmapQueries(), 'retention off purges nothing');
 	}
 
+	public function test_full_batch_continues_with_capture_off_and_stops_when_empty(): void
+	{
+		\wp_slimstat::$settings['auto_purge'] = 30;
+		\wp_slimstat::$settings['heatmap_capture'] = 'off';
+		$GLOBALS['slimstat_test_options'] = [Store::STATE => ['schema' => Store::SCHEMA]];
+		$this->result = 50000;
+		Functions\expect('wp_next_scheduled')->once()->with(Store::PURGE_HOOK)->andReturn(false);
+		Functions\expect('wp_schedule_single_event')->once()->with(\Mockery::type('int'), Store::PURGE_HOOK, [], true)->andReturn(true);
+		Functions\when('is_wp_error')->justReturn(false);
+		Store::purge();
+		self::assertTrue($GLOBALS['slimstat_test_options'][Store::PURGE_PENDING]);
+		self::assertCount(1, $this->heatmapQueries());
+		$this->result = 0;
+		Store::purge();
+		self::assertFalse($GLOBALS['slimstat_test_options'][Store::PURGE_PENDING]);
+		self::assertCount(2, $this->heatmapQueries());
+		self::assertStringStartsWith('DELETE FROM `wp_options`', end($this->queries));
+	}
+
+	public function test_another_workers_live_lease_prevents_duplicate_cleanup(): void
+	{
+		\wp_slimstat::$settings['auto_purge'] = 30;
+		$GLOBALS['slimstat_test_options'] = [
+			Store::STATE => ['schema' => Store::SCHEMA],
+			Store::PURGE_CLAIM => (time() + 900) . ':other-worker',
+		];
+		Functions\expect('wp_schedule_single_event')->never();
+		Store::purge();
+		self::assertSame([], $this->queries);
+	}
+
+	public function test_existing_continuation_is_not_scheduled_twice(): void
+	{
+		\wp_slimstat::$settings['auto_purge'] = 30;
+		$GLOBALS['slimstat_test_options'] = [Store::STATE => ['schema' => Store::SCHEMA]];
+		$this->result = 50000;
+		Functions\expect('wp_next_scheduled')->once()->with(Store::PURGE_HOOK)->andReturn(time() + 60);
+		Functions\expect('wp_schedule_single_event')->never();
+		Store::purge();
+		self::assertTrue($GLOBALS['slimstat_test_options'][Store::PURGE_PENDING]);
+		self::assertCount(1, $this->heatmapQueries());
+	}
+
 	/** Heatmap rows reach a person only through the pageview, so they are erased first. */
 	public function test_eraser_runs_before_pageviews_and_only_once_tables_exist(): void
 	{
