@@ -67,7 +67,8 @@ function userNote(prefix: string = ''): string {
 }
 
 async function loginAsGerlando(
-  browser: import('@playwright/test').Browser
+  browser: import('@playwright/test').Browser,
+  withoutTrackingCookie = false
 ): Promise<{
   context: import('@playwright/test').BrowserContext;
   page: import('@playwright/test').Page;
@@ -79,6 +80,10 @@ async function loginAsGerlando(
   });
   await page.fill('#user_login', TEST_USER);
   await page.fill('#user_pass', TEST_USER_PASS);
+  if (withoutTrackingCookie) {
+    await context.clearCookies({ name: 'slimstat_tracking_code' });
+    expect((await context.cookies()).some(cookie => cookie.name === 'slimstat_tracking_code')).toBe(false);
+  }
   await page.click('#wp-submit');
   await page.waitForURL('**/wp-admin/**', {
     timeout: 45_000,
@@ -160,8 +165,8 @@ test.describe('User Overview (slim_p8_01)', () => {
       const now = Math.floor(Date.now() / 1000);
       await seedPageviewWithNotes('gerlando', userNote(), now);
 
-      const { context, page } = await loginAsGerlando(browser);
-      await page.waitForTimeout(2000);
+      const { context } = await loginAsGerlando(browser, true);
+      await expect.poll(getLoginNotes).not.toHaveLength(0);
 
       const loginNotes = await getLoginNotes();
       expect(loginNotes.length).toBeGreaterThanOrEqual(1);
@@ -174,6 +179,21 @@ test.describe('User Overview (slim_p8_01)', () => {
       expect(note.notes).not.toContain(';loggedin:gerlando');
 
       await context.close();
+    });
+
+    test('login note survives the post-login redirect with a tracking cookie', async ({ browser }) => {
+      const { context } = await loginAsGerlando(browser);
+      try {
+        await expect.poll(async () => (await getLoginNotes()).filter(row => row.notes.includes('[loggedin:gerlando]')).length).toBe(1);
+        const [rows] = await getPool().execute(
+          "SELECT notes, content_type FROM wp_slim_stats WHERE notes LIKE '%[loggedin:gerlando]%'"
+        ) as any;
+        expect(rows).toHaveLength(1);
+        expect(rows[0].content_type).toBe('redirect:302');
+        expect(rows[0].notes.match(/\[loggedin:gerlando\]/g)).toHaveLength(1);
+      } finally {
+        await context.close();
+      }
     });
 
     test('login note is NOT written when no recent pageview exists', async ({

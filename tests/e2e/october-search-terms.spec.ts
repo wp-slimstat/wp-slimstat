@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { closeDb, getPool } from './helpers/setup';
+import { closeDb, getPool, snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions } from './helpers/setup';
 import { runWordPressFixture } from './helpers/chart';
 
 test('Search Terms keeps a previous-only 468 / 24 period visible and tooltips describe the correct series', async ({ page }) => {
@@ -12,7 +12,9 @@ test('Search Terms keeps a previous-only 468 / 24 period visible and tooltips de
   });
   const resource = '/october-search-reconciliation';
   const pool = getPool();
+  await snapshotSlimstatOptions();
   try {
+    await setSlimstatOptions({ comparison_chart: 'on' });
     await pool.execute('DELETE FROM wp_slim_stats WHERE resource=?', [resource]);
     for (let i=0;i<468;i++) await pool.execute(
       'INSERT INTO wp_slim_stats (dt,searchterms,resource,ip) VALUES (?,?,?,?)',
@@ -67,5 +69,5 @@ test('Search Terms keeps a previous-only 468 / 24 period visible and tooltips de
     })).toBe(true);
     const [reference] = await pool.execute('SELECT COUNT(*) AS total, COUNT(DISTINCT searchterms) AS distinct_terms FROM wp_slim_stats WHERE resource=?',[resource]) as any;
     expect(reference[0]).toEqual({total:468,distinct_terms:24});
-  } finally { await pool.execute('DELETE FROM wp_slim_stats WHERE resource=?',[resource]); await closeDb(); }
+  } finally { await pool.execute('DELETE FROM wp_slim_stats WHERE resource=?',[resource]); await restoreSlimstatOptions(); await closeDb(); }
 });

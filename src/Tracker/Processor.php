@@ -885,7 +885,8 @@ class Processor
             $stat = \wp_slimstat::get_stat();
             $stat['content_type'] = 'redirect:' . intval($status);
             \wp_slimstat::set_stat($stat);
-            Storage::updateRow($stat);
+            // Login hooks or concurrent requests may have enriched the stored row.
+            Storage::updateRow(['id' => $stat['id'] ?? 0, 'content_type' => $stat['content_type']]);
         }
 
         return $status;
