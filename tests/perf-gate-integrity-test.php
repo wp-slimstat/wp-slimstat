@@ -502,6 +502,9 @@ $assets_properties = [
     '/^\s*if:\s*steps\.released\.outputs\.ok\s*==\s*[\'"]yes[\'"]/m' => 'the SVN push step is no '
         . 'longer gated on the release check (`if: steps.released.outputs.ok == \'yes\'`); every '
         . 'readme merge now goes to trunk unguarded',
+    '/^\s*if:\s*github\.ref\s*==\s*[\'"]refs\/heads\/master[\'"]/m'  => 'the job no longer '
+        . 'requires the master ref; workflow_dispatch on any branch that carries this file '
+        . 'publishes that branch\'s unreviewed readme and assets',
     '/^\s*IGNORE_OTHER_FILES:\s*[\'"]?true[\'"]?\s*$/m'              => 'IGNORE_OTHER_FILES is no '
         . 'longer true; the action rsyncs the whole checkout over the released code in trunk',
     '~https://api\.wordpress\.org/plugins/info/~'                    => 'the gate no longer reads '

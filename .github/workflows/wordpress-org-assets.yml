@@ -4,7 +4,7 @@ name: Update readme and assets on WordPress.org
 # release: IGNORE_OTHER_FILES leaves the plugin code in SVN trunk untouched. Runs only when the
 # readme's Stable tag is the version WordPress.org serves today, so it can never move the served
 # version — a release merge puts the next Stable tag on master before its tag is cut, and main.yml
-# ships that readme with the code. Pinned by tests/perf-gate-integrity-test.php §10.
+# ships that readme with the code. Pinned by tests/perf-gate-integrity-test.php §5c and §10.
 on:
   push:
     branches: [master]
@@ -23,6 +23,8 @@ permissions:
 jobs:
   assets:
     name: Update readme and assets
+    # workflow_dispatch can target any branch that carries this file; only master's readme is reviewed.
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
