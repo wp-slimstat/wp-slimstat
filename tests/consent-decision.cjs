@@ -110,3 +110,28 @@ assert.equal(offline.length, 0);
 scope.flushOfflineQueue();
 assert.equal(delivered.length, 3, 'an empty replay must not enqueue duplicates');
 console.log('PASS: offline pageviews replay without an ID; interactions wait; withdrawn consent blocks both');
+
+const apiStart = source.indexOf('    function detectWPConsentAPI(');
+const apiEnd = source.indexOf('\n    function ', apiStart + 1);
+assert(apiStart >= 0 && apiEnd > apiStart);
+scope.isFunction = value => typeof value === 'function';
+scope.isObject = value => value !== null && typeof value === 'object';
+vm.runInContext(source.slice(apiStart, apiEnd), scope);
+// WP Consent API 2.x services are distinct from categories. A permissive service
+// result must never override the selected statistics category's denial.
+scope.window = {wp_has_service_consent: () => true, wp_has_consent: () => false};
+assert.equal(scope.detectWPConsentAPI('statistics'), false, 'service fallback cannot grant category consent');
+for (const type of [undefined, '', 'optin', 'optout']) {
+    for (const choice of ['', 'deny', 'allow']) {
+        scope.window = {wp_fallback_consent_type: '', wp_has_consent: category => {
+            assert.equal(category, 'statistics');
+            const effectiveType = scope.window.wp_consent_type ?? scope.window.wp_fallback_consent_type;
+            return !effectiveType || (effectiveType === 'optout' && choice === '') || choice === 'allow';
+        }};
+        if (type !== undefined) scope.window.wp_consent_type = type;
+        assert.equal(scope.detectWPConsentAPI('statistics'), choice === 'allow' || (type === 'optout' && choice === ''), `type=${type}, choice=${choice}`);
+        assert.equal(scope.window.wp_consent_type, type, 'temporary consent type must be restored');
+        assert.equal(Object.hasOwn(scope.window, 'wp_consent_type'), type !== undefined);
+    }
+}
+console.log('PASS: WP Consent API categories respect denial and unset types without changing CMP state');

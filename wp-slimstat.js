@@ -1121,26 +1121,17 @@ var SlimStat = (function () {
 
     function detectWPConsentAPI(category) {
         try {
-            if (isFunction(window.wp_has_service_consent)) {
-                try {
-                    var serviceConsent = window.wp_has_service_consent(category);
-                    if (serviceConsent) return true;
-                    if (isFunction(window.wp_is_service_denied) && window.wp_is_service_denied(category)) {
-                        return false;
-                    }
-                } catch (err) {}
-            }
-
+            // This setting is a category, not a service name. Service lookup can
+            // fall back to another category and override an explicit denial.
             if (isFunction(window.wp_has_consent)) {
                 try {
                     // Guard: if no consent_type is registered (CMP hasn't set it),
                     // wp_has_consent() returns true regardless of deny cookies.
-                    // Temporarily set fallback to 'optin' so the cookie is actually checked.
-                    var savedFallback = window.wp_fallback_consent_type;
-                    var consentTypeSet = (typeof window.wp_consent_type !== "undefined" && window.wp_consent_type) ||
-                                         (window.wp_fallback_consent_type && window.wp_fallback_consent_type !== "");
+                    // An explicitly empty type also overrides the API's fallback.
+                    var savedType = window.wp_consent_type;
+                    var consentTypeSet = typeof savedType !== "undefined" ? savedType : window.wp_fallback_consent_type;
                     if (!consentTypeSet) {
-                        window.wp_fallback_consent_type = "optin";
+                        window.wp_consent_type = "optin";
                     }
                     try {
                         var hasConsent = window.wp_has_consent(category);
@@ -1148,7 +1139,8 @@ var SlimStat = (function () {
                         return false;
                     } finally {
                         if (!consentTypeSet) {
-                            window.wp_fallback_consent_type = savedFallback;
+                            if (typeof savedType === "undefined") delete window.wp_consent_type;
+                            else window.wp_consent_type = savedType;
                         }
                     }
                 } catch (err2) {}
@@ -1590,16 +1582,9 @@ var SlimStat = (function () {
 
         // Check if this is a navigation event (not initial page load)
         var isNavigationEvent = options.isNavigation || false;
-        var isConsentRetry = options.isConsentRetry || false;
 
-        // For navigation events, always track regardless of javascript_mode
-        // For initial page load, skip if server-side tracking is active
-        if (!isNavigationEvent && !isConsentRetry && !isEmpty(params.id) && parseInt(params.id, 10) > 0) {
-            // Server-side tracking is active for initial page load, skip pageview but allow interactions
-            window.sendingSlimStatPageview = false;
-            delete window[requestKey];
-            return;
-        }
+        // A server-created ID still needs browser enrichment (fingerprint, size,
+        // timing). buildPageviewBase uses that signed ID to update the existing row.
 
         // For navigation events, we need to track the new page, not the current one
         if (isNavigationEvent) {

@@ -16,11 +16,18 @@
  * Source: wp.org support ticket "Wrong stats" by acekin26
  */
 import { test, expect } from '@playwright/test';
-import { getPool, snapshotOption, restoreOption } from './helpers/setup';
+import { getPool, snapshotOption, restoreOption, snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions } from './helpers/setup';
 import {
   fetchChartData, insertRows, clearTestData,
   sumV1, getV1, getLabels, getV1Prev, liveSafeTodayTs,
 } from './helpers/chart';
+
+// Previous-period assertions require comparison to be enabled, regardless of saved site defaults.
+test.beforeAll(async () => {
+  await snapshotSlimstatOptions();
+  await setSlimstatOptions({ comparison_chart: 'on' });
+});
+test.afterAll(async () => { await restoreSlimstatOptions(); });
 
 // ─── Test suite ───────────────────────────────────────────────────────────────
 
