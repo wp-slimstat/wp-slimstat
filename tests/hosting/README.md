@@ -145,8 +145,10 @@ on that database server, which must be isolated for attribution.
 ## Current execution checkpoint
 
 The 26 October execution uses branch `fix/hosting-approval-p0-p1` in both
-repositories. The current product artifacts are Free `aaa0d53f` and Pro
-`ee5bf5bb`; full browser and performance qualification is still in progress.
+repositories. The current product artifacts are Free `bfd60c32` and Pro
+`ee5bf5bb`; full browser and performance qualification is still in progress. The user-requested
+pause stopped the old-artifact browser census and MySQL5.7 hydration; subsequent
+user authorization resumes execution through verified, unmerged PR delivery.
 See the workspace evidence package at
 `jaan-to/outputs/research/slimstat-hosting-unblock-2026-10-26/EXECUTION-CHECKPOINT.md`
 for hashes, passed checks, failures and remaining gates. This is not PR approval.
