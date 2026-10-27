@@ -16,6 +16,7 @@
 import { test, expect, Page } from '@playwright/test';
 import { BASE_URL, ADMIN_USER, ADMIN_PASS } from './helpers/env';
 import {
+  fillAndConfirm,
   installOptionMutator,
   uninstallOptionMutator,
   setSlimstatOption,
@@ -52,8 +53,8 @@ async function ensureLoggedIn(page: Page): Promise<void> {
     await page.goto(`${BASE_URL}/wp-login.php`);
   }
   if (page.url().includes('wp-login.php')) {
-    await page.fill('#user_login', ADMIN_USER);
-    await page.fill('#user_pass', ADMIN_PASS);
+    await fillAndConfirm(page, '#user_login', ADMIN_USER);
+    await fillAndConfirm(page, '#user_pass', ADMIN_PASS);
     await page.click('#wp-submit');
     await page.waitForURL('**/wp-admin/**', { waitUntil: 'domcontentloaded', timeout: 30_000 });
   }
