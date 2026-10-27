@@ -3,7 +3,7 @@ import { BASE_URL } from './helpers/env';
 import { snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions, getPool, closeDb } from './helpers/setup';
 
 test.describe('server tracking waits for banner consent', () => {
-  test.beforeAll(async () => { await snapshotSlimstatOptions(); });
+  test.beforeEach(async () => { await snapshotSlimstatOptions(); });
   test.afterEach(async () => { await restoreSlimstatOptions(); });
   test.afterAll(async () => { await closeDb(); });
   for (const decision of ['accepted', 'denied']) {
