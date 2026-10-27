@@ -59,6 +59,7 @@ var SlimStat = (function () {
 
     // Offline persistence helpers will be defined in the outer scope and assigned here
     var OFFLINE_KEY = "slimstat_offline_queue";
+    var OFFLINE_REPLAY_KEY = "slimstat_offline_replay";
     var PENDING_SESSION_KEY = "slimstat_pending_session";
 
     function pendingSessionToken() {
@@ -278,8 +279,9 @@ var SlimStat = (function () {
     function saveSessionState(key, value) {
         try {
             sessionStorage.setItem(key, JSON.stringify(value));
+            return true;
         } catch (e) {
-            /* ignore */
+            return false;
         }
     }
 
@@ -1730,9 +1732,29 @@ var SlimStat = (function () {
         }
     }
 
+    function offlineReplays() {
+        var pending = loadSessionState(OFFLINE_REPLAY_KEY, []);
+        return Array.isArray(pending) ? pending : [];
+    }
+
+    function settleOfflineReplay(original, retry) {
+        if (retry) {
+            storeOffline(original);
+            if (!loadOfflineQueue().some(function (entry) { return entry && entry.p === original; })) return;
+        }
+        saveSessionState(OFFLINE_REPLAY_KEY, offlineReplays().filter(function (entry) { return entry && entry.p !== original; }));
+    }
+
+    function restoreOfflineReplays() {
+        offlineReplays().forEach(function (entry) {
+            if (entry && entry.p && !offlineInFlight[entry.p]) settleOfflineReplay(entry.p, true);
+        });
+    }
+
     function flushOfflineQueue() {
         if (navigator.onLine === false) return;
         try {
+            restoreOfflineReplays();
             var offline = loadOfflineQueue();
             if (!offline.length) return;
 
@@ -1753,20 +1775,28 @@ var SlimStat = (function () {
                         payload = payload.replace("id=pending", "id=" + params.id);
                     }
 
-                    // Keep the durable copy across reloads until the server answers.
+                    // A tab-owned durable copy survives reload without another tab replaying it.
+                    // shortcut: cross-tab crash recovery and exactly-once delivery need server idempotency.
                     (function (original, replay) {
+                        var pending = offlineReplays();
+                        pending.push({ p: original });
+                        if (!saveSessionState(OFFLINE_REPLAY_KEY, pending)) return;
+                        saveOfflineQueue(loadOfflineQueue().filter(function (entry) { return !entry || entry.p !== original; }));
+                        if (loadOfflineQueue().some(function (entry) { return entry && entry.p === original; })) {
+                            settleOfflineReplay(original, false);
+                            return;
+                        }
                         offlineInFlight[original] = true;
+                        var complete = function (success, rejected) {
+                            settleOfflineReplay(original, !success && !rejected);
+                            delete offlineInFlight[original];
+                        };
                         var queued = sendToServer(replay, false, {
                             priority: "normal",
                             offlineReplay: true,
-                            onComplete: function (success, rejected) {
-                                delete offlineInFlight[original];
-                                if (success || rejected) {
-                                    saveOfflineQueue(loadOfflineQueue().filter(function (entry) { return !entry || entry.p !== original; }));
-                                }
-                            },
+                            onComplete: complete,
                         });
-                        if (!queued) delete offlineInFlight[original];
+                        if (!queued) complete(false, false);
                     })(item.p, payload);
                     sent++;
                 }
@@ -1827,6 +1857,7 @@ var SlimStat = (function () {
             saveOfflineQueue = helpers.saveOfflineQueue;
             currentSlimStatParams = helpers.currentSlimStatParams;
             pageviewInProgress = helpers.pageviewInProgress;
+            restoreOfflineReplays();
         },
     };
 })();

@@ -541,7 +541,10 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
       const visitor = await ctx.newPage();
       await ctx.setOffline(true);
       await visitor.goto(`${BASE_URL}/?e2e=${marker}-a`);
-      const queue = () => visitor.evaluate(() => JSON.parse(localStorage.getItem('slimstat_offline_queue') || '[]'));
+      const queue = () => visitor.evaluate(() => [
+        ...JSON.parse(localStorage.getItem('slimstat_offline_queue') || '[]'),
+        ...JSON.parse(sessionStorage.getItem('slimstat_offline_replay') || '[]'),
+      ]);
       await expect.poll(queue).toHaveLength(1);
       // A reconnect signal can arrive before requests work. Reload must keep the unacknowledged payload.
       await visitor.evaluate(() => {
@@ -550,6 +553,23 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
         finally { delete (navigator as any).onLine; }
       });
       expect(await queue()).toHaveLength(1);
+      expect(await visitor.evaluate(() => JSON.parse(localStorage.getItem('slimstat_offline_queue') || '[]'))).toHaveLength(0);
+      const otherUrl = `${BASE_URL}/?e2e=${marker}-other-tab`;
+      await ctx.route(otherUrl, route => route.fulfill({
+        contentType: 'text/html', body: `<html><body><script>var SlimStatParams = ${params};</script><script>${bundle}</script><script>SlimStat._send_pageview = function() {};</script></body></html>`,
+      }));
+      const other = await ctx.newPage();
+      let otherPosts = 0;
+      other.on('request', request => { if (request.method() === 'POST') otherPosts++; });
+      await other.goto(otherUrl);
+      await other.evaluate(() => {
+        Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
+        try { (window as any).SlimStat.flush_offline_queue(); }
+        finally { delete (navigator as any).onLine; }
+      });
+      expect(otherPosts).toBe(0);
+      expect(await other.evaluate(() => JSON.parse(sessionStorage.getItem('slimstat_offline_replay') || '[]'))).toHaveLength(0);
+      await other.close();
       await visitor.evaluate(url => history.replaceState(null, '', url), `${BASE_URL}/?e2e=${marker}-b`);
       await visitor.reload();
       await expect.poll(queue).toHaveLength(2);
