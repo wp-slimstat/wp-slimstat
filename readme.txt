@@ -1,4 +1,4 @@
-=== SlimStat Analytics – Real-Time Stats, Heatmaps & Ecommerce ===
+=== SlimStat Analytics ===
 Contributors: veronalabs, coolmann, toxicum, parhumm, mostafas1990
 Tags: analytics, statistics, tracking, heatmap, woocommerce analytics
 Text Domain: wp-slimstat

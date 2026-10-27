@@ -35,6 +35,9 @@ export const PLUGIN_DIR = path.resolve(__dirname, '..', '..', '..');
  */
 export const WP_ROOT = process.env.WP_ROOT || path.resolve(PLUGIN_DIR, '..', '..', '..');
 
+/** Exact served plugin: wp-env mounts its checkout separately from WordPress. */
+export const FREE_PLUGIN_ROOT = process.env.FREE_PLUGIN_ROOT || path.join(WP_ROOT, 'wp-content', 'plugins', 'wp-slimstat');
+
 /** MySQL unix socket path. Set to empty string in CI to use TCP instead. */
 const _mysqlSocket = process.env.MYSQL_SOCKET ?? '/tmp/mysql.sock';
 

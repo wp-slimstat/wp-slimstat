@@ -47,6 +47,12 @@ namespace {
         return $value;
     }
 
+    function _deprecated_function($method, $version, $replacement): void
+    {
+        assert_same('6.0.0', $version, 'legacy proxy deprecation version');
+        assert_same(true, '' !== $replacement, 'legacy proxy names its replacement');
+    }
+
     // wp_slimstat stub with real resolver logic
     class wp_slimstat
     {
@@ -133,6 +139,11 @@ namespace {
     $svc = set_and_create([]);
     assert_same(false, $svc->isGeoIPEnabled(), 'fresh install: isGeoIPEnabled should be false');
     assert_same(false, $svc->isMaxMindEnabled(), 'fresh install: isMaxMindEnabled should be false');
+
+    foreach (['maxmind' => 'on', 'dbip' => 'no', 'cloudflare' => 'disable', 'disable' => 'disable'] as $provider => $legacy) {
+        $svc = set_and_create(['geolocation_provider' => $provider]);
+        assert_same($legacy, $svc->getEnableMaxmind(), 'legacy getter maps the current provider');
+    }
 
     echo "All {$assertions} assertions passed in geoservice-provider-resolution-test.php\n";
 }

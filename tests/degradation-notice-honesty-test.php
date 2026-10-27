@@ -446,6 +446,32 @@ if (isset($GLOBALS['drift_options']['slimstat_degradations'])) {
     $failures[] = 'last repaired drift must remove the empty degradation option';
 }
 
+// Execute refresh with an unavailable observation: a transient connection failure is not a repair.
+function get_transient($key) { return false; }
+function set_transient($key, $value, $ttl) {}
+$refreshBody = slimstat_find_function_body($adminRaw, 'refresh_column_drift_notice');
+$refreshBody = str_replace('wp_slimstat::DEGRADATION_REFRESH', '3600', $refreshBody);
+eval('class DriftRefreshProbe {
+ const COLUMN_DRIFT_OPTION = "slimstat_schema_column_drift";
+ const COLUMN_DRIFT_CHECK_TRANSIENT = "slimstat_column_drift_checked";
+ public static $observed = null;
+ public static $announced = [];
+ public static function observe_column_drift() { return self::$observed; }
+ public static function persist_column_drift($drift) { return DriftPersistenceProbe::run($drift); }
+ public static function announce_column_drift($drift) { self::$announced = $drift; }
+ public static function run() {' . $refreshBody . '}
+}');
+$GLOBALS['drift_options']['slimstat_schema_column_drift'] = ['known legacy drift'];
+DriftRefreshProbe::run();
+if (get_option('slimstat_schema_column_drift') !== ['known legacy drift'] || DriftRefreshProbe::$announced !== ['known legacy drift']) {
+    $failures[] = 'unavailable observations must preserve and announce the known drift';
+}
+DriftRefreshProbe::$observed = [];
+DriftRefreshProbe::run();
+if (get_option('slimstat_schema_column_drift', []) !== []) {
+    $failures[] = 'successful empty observations must clear repaired drift';
+}
+
 if ($failures) {
     fwrite(STDERR, 'FAIL: degradation notice honesty (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {

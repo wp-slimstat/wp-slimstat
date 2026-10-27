@@ -47,7 +47,7 @@ test('Free settings previews are non-editable and report previews fit narrow and
   const full = (await getProState(page)).pro_activated;
   if (full) {
     await page.goto('/wp-admin/admin.php?page=slimconfig&tab=8');
-    await expect(page.getByText('Enter your license key', { exact:true })).toBeVisible();
+    await expect(page.getByLabel('License key', { exact:true })).toBeVisible();
     await expect(page.getByText('Your current Free settings stay unchanged.')).toHaveCount(0);
     return;
   }

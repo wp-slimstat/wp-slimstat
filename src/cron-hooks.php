@@ -21,6 +21,7 @@
 return [
     // Recurring (wp_schedule_event).
     'wp_slimstat_purge',
+    'slimstat_heatmap_purge_continue',
     'wp_slimstat_update_geoip_database',
     // No longer scheduled (W6) — retained so deactivate/uninstall still sweep it off
     // installs that scheduled it before it was retired.
@@ -34,4 +35,5 @@ return [
     // One-shot (wp_schedule_single_event). Clearing these is idempotent and stops a
     // pending event firing against a plugin that is no longer there.
     'slimstat_initial_notification_fetch',
+    'wp_slimstat_update_browscap',
 ];

@@ -146,6 +146,9 @@ class Chart
                     'v2' => (int) ($chart->data['totals'][1]->v2 ?? 0),
                 ],
             ];
+            if (!isset($chart->data['totals'][1])) {
+                unset($totals['previous']);
+            }
             wp_send_json_success([
                 'args'         => $chart->args,
                 'data'         => $chart->data,
@@ -306,7 +309,7 @@ class Chart
             $results[] = $row;
         }
 
-        return $this->processResults(
+        $data = $this->processResults(
             $results,
             $totals,
             $sqlInfo['params'],
@@ -315,6 +318,12 @@ class Chart
             $prevArgs['start'],
             $prevArgs['end']
         );
+        if ('on' !== (\wp_slimstat::$settings['comparison_chart'] ?? 'on')) {
+            $data['datasets_prev'] = [];
+            $data['prev_labels'] = [];
+            $data['totals'] = array_slice($data['totals'], 0, 1);
+        }
+        return $data;
     }
 
     private function calculatePreviousArgs(array $args): array
@@ -455,8 +464,12 @@ class Chart
         // AND filters are applied to the whole time expression instead of
         // binding tighter to only the latter OR clause.
         $rowsQuery = Query::select($fields)
-            ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
-            ->whereRaw('((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))', [$prevStart, $prevEnd, $start, $end]);
+            ->from($GLOBALS['wpdb']->prefix . 'slim_stats');
+        if ('on' === (\wp_slimstat::$settings['comparison_chart'] ?? 'on')) {
+            $rowsQuery->whereRaw('((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))', [$prevStart, $prevEnd, $start, $end]);
+        } else {
+            $rowsQuery->whereRaw('(dt BETWEEN %d AND %d)', [$start, $end]);
+        }
 
         // Apply additional filters if any
         if (!empty($filterWhere)) {

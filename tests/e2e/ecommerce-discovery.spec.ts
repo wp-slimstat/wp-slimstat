@@ -94,8 +94,8 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await page.screenshot({ path: testInfo.outputPath('pro-first-insights-mobile.png'), fullPage: true });
     await dashboard.getByRole('link', { name: 'Check your update license' }).click();
     await expect(page).toHaveURL(/tab=8/);
-    await expect(page.getByText('Enter your license key', { exact: true })).toBeVisible();
-    await expect(page.getByText(/Save Changes to verify/)).toBeVisible();
+    await expect(page.getByLabel('License key', { exact: true })).toBeVisible();
+    await expect(page.locator('.slimstat-license-saved .slimstat-license-help')).toContainText('Save Changes to activate it');
     await page.goto('/wp-admin/admin.php?page=slimpro');
     await expect(page.getByRole('heading', { name: 'What Pro adds to your reports' })).toBeVisible();
     await expect(page.getByText('Pro is active on this site')).toBeVisible();

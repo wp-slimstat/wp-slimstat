@@ -802,15 +802,18 @@
     // server-rendered, so switching is pure show/hide — no AJAX. The class is
     // distinct from the main page's .slimstat-gf-tab so the two handlers never
     // collide on a screen (e.g. the dashboard) that loads this script.
-    $('.slimstat-funnel-widget').each(function () {
-        var $widget = $(this);
-        // Only collapse to a single visible panel when there's a tab strip;
-        // otherwise (no-JS / single funnel) leave the stacked panels as-is.
-        if (!$widget.find('.slimstat-funnel-wtab').length) return;
-        var $panels = $widget.find('.slimstat-funnel-chart');
-        $panels.attr('hidden', true);
-        $panels.filter('[data-funnel-index="0"]').removeAttr('hidden');
-    });
+    function initializeCompactFunnelWidgets($root) {
+        $root.find('.slimstat-funnel-widget').each(function () {
+            var $widget = $(this);
+            // Initialize each replacement once; later mutations must preserve tab selection.
+            if ($widget.data('tabs-initialized') || !$widget.find('.slimstat-funnel-wtab').length) return;
+            $widget.data('tabs-initialized', true);
+            var $panels = $widget.find('.slimstat-funnel-chart');
+            $panels.attr('hidden', true);
+            $panels.filter('[data-funnel-index="0"]').removeAttr('hidden');
+        });
+    }
+    initializeCompactFunnelWidgets($(document));
     $body.on('click', '.slimstat-funnel-wtab', function () {
         var $tab = $(this);
         var idx  = String($tab.data('funnel-index'));
@@ -837,6 +840,7 @@
         }
         var restoring = false;
         new MutationObserver(function () {
+            initializeCompactFunnelWidgets($(box));
             if (restoring || lastActiveFunnelIndex === null || lastActiveFunnelIndex === '0') {
                 return;
             }

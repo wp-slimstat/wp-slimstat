@@ -1261,7 +1261,7 @@ $grouped_page_shapes = [
     ],
     'slim_p4_13_top_internal_searches' => [
         'columns' => 'searchterms',
-        'where' => 'content_type LIKE "%search%" AND searchterms <> "" AND searchterms IS NOT NULL',
+        'where' => $GLOBALS['wpdb']->prepare('content_type LIKE %s AND searchterms <> "" AND searchterms IS NOT NULL', '%search%'),
     ],
     'slim_p4_15_recent_categories' => [
         'columns' => 'TRIM( TRAILING "/" FROM resource )', 'as_column' => 'resource',
@@ -1290,14 +1290,14 @@ foreach ($grouped_page_shapes as $id => $shape) {
 $capture_windowed('slim_p4_04_recent_feeds', static function () {
     return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_recent', [[
         'columns' => 'resource',
-        'where' => '(resource LIKE "%/feed%" OR resource LIKE "%?feed=>%" '
-            . 'OR resource LIKE "%&feed=>%" OR content_type LIKE "%feed%")',
+        'where' => $GLOBALS['wpdb']->prepare('(resource LIKE %s OR resource LIKE %s OR resource LIKE %s OR content_type LIKE %s)',
+            '%/feed%', '%?feed=>%', '%&feed=>%', '%feed%'),
     ]]));
 });
 $capture_windowed('slim_p4_06_recent_internal_searches', static function () {
     return slimstat_canon_rows(slimstat_invoke('wp_slimstat_db', 'get_recent', [[
         'columns' => 'searchterms',
-        'where' => 'content_type LIKE "%search%" AND searchterms <> "" AND searchterms IS NOT NULL',
+        'where' => $GLOBALS['wpdb']->prepare('content_type LIKE %s AND searchterms <> "" AND searchterms IS NOT NULL', '%search%'),
     ]]));
 });
 $capture_windowed('slim_p4_01_recent_outbound', static function () {

@@ -93,6 +93,10 @@ if ('' !== $error) {
             </div>
         <?php endif; ?>
 
+        <?php if ($is_admin && get_option(Store::PURGE_PENDING, false)) : ?>
+            <p role="status"><?php esc_html_e('Expired heatmap data is being removed in batches. Cleanup continues through scheduled tasks, even when recording is off.', 'wp-slimstat'); ?></p>
+        <?php endif; ?>
+
         <?php if ('' !== $page_key) : ?>
             <?php
             /**

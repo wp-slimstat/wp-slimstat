@@ -53,7 +53,11 @@ test('Free: View heatmap lists the page\'s most clicked links and buttons inline
     const refreshed = page.waitForResponse((r) => /heatmap(%2F|\/)pages/.test(r.url()) && r.url().includes('refresh=1'));
     await page.locator('.ss-hm-refresh').click();
     await refreshed;
+    const searched = page.waitForResponse(r => /heatmap(%2F|\/)pages/.test(r.url()) && new URL(r.url()).searchParams.get('q') === PAGE);
     await page.getByRole('searchbox', { name: 'Search pages' }).fill(PAGE);
+    await searched;
+    // Free search is debounced; opening the old row before its replacement loses the preview.
+    await expect(page.locator('.ss-hm-table')).toHaveAttribute('aria-busy', 'false');
     const row = page.locator('.ss-hm-table tbody tr').filter({ hasText: PAGE });
     const view = row.getByRole('button', { name: 'View heatmap' });
     await expect(view).toHaveAttribute('aria-expanded', 'false');

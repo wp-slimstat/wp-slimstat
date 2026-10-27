@@ -437,6 +437,9 @@ class wp_slimstat
 		$banner_enabled = ('on' === (self::$settings['gdpr_enabled'] ?? 'off'))
 			&& ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
 		if ($banner_enabled) {
+			if ('slimstat_banner' === (self::$settings['consent_integration'] ?? '')) {
+				add_action('wp_enqueue_scripts', [\SlimStat\Services\GDPRService::class, 'enqueueWooCommerceConsent'], 100);
+			}
 			add_action('wp_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
 			add_action('login_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
 			add_action('wp_footer', [self::class, 'render_gdpr_banner'], 5);
@@ -498,6 +501,8 @@ class wp_slimstat
 
         // Hook a GeoIP database update routine to the daily cronjob
         add_action('wp_slimstat_update_geoip_database', [self::class, 'wp_slimstat_update_geoip_database']);
+
+        add_action('wp_slimstat_update_browscap', [\SlimStat\Services\Browscap::class, 'update_browscap_database']);
 
         // Allow external domains on CORS requests
         add_filter('allowed_http_origins', [self::class, 'open_cors_admin_ajax']);
@@ -1292,6 +1297,7 @@ class wp_slimstat
             // General - Database
             'auto_purge'        => 420,
             'auto_purge_delete' => 'on',
+            'auto_purge_optimize' => 'no',
 
             // Heatmaps (6.1.0): off | main | full; rate in 1/10,000 of pageviews; pages is a
             // wildcard list like the permalink exclusions, empty for all pages.
@@ -1401,6 +1407,7 @@ class wp_slimstat
 
             // Exclusions - Page Properties
             'ignore_resources'     => '',
+            'ignore_resource_parameters' => '',
             'ignore_referers'      => '',
             'ignore_content_types' => '',
 
@@ -1791,13 +1798,22 @@ class wp_slimstat
 
         // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
         // Nothing to purge is the overwhelmingly common case: retention defaults to 420
-        // days and this runs every 12 hours. Two indexed probes, then stop — the tick used
-        // to continue into four full InnoDB table rebuilds regardless. (D1)
-        $has_work = self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table_stats} WHERE dt < %d LIMIT 1", $days_ago))
-            || self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table_events} WHERE dt < %d LIMIT 1", $days_ago));
+        // days and this runs every 12 hours. Probe both tables before writing so either
+        // read error stops the job; if both are empty, stop without any rebuild. (D1)
+        $has_work = false;
+        foreach ([$table_stats, $table_events] as $table) {
+            $found = self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table} WHERE dt < %d LIMIT 1", $days_ago));
+            // Check immediately: the next successful query clears last_error.
+            if ('' !== (string) self::$wpdb->last_error) {
+                self::record_degradation('purge (checking retention)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);
+                return;
+            }
+            $has_work = $has_work || !empty($found);
+        }
         // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         if (!$has_work) {
+            self::update_option(self::LAST_PURGE_OK_OPTION, self::now(), false);
             return;
         }
 
@@ -2043,7 +2059,8 @@ class wp_slimstat
         // rebuild so a crash cannot retry it every 12 hours.
         $last_optimized = (int) get_option('slimstat_purge_optimized_at', 0);
 
-        if ($rows_removed > 0 && (self::now() - $last_optimized) > 30 * DAY_IN_SECONDS) {
+        if ('on' === (self::$settings['auto_purge_optimize'] ?? 'no')
+            && $rows_removed > 0 && (self::now() - $last_optimized) > 30 * DAY_IN_SECONDS) {
             self::update_option('slimstat_purge_optimized_at', self::now(), false);
             // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
             self::$wpdb->query('OPTIMIZE TABLE ' . $table_stats);
@@ -2192,29 +2209,6 @@ class wp_slimstat
         }
 
         wp_add_privacy_policy_content('SlimStat Analytics', $content);
-    }
-
-    public static function add_plugin_manual_download_link($_links = [], $_plugin_file = '')
-    {
-        $a_clean_slug = str_replace(['wp-slimstat-', '/index.php'], ['', ''], $_plugin_file);
-
-        if (false !== ($download_url = get_transient('wp-slimstat-download-link-' . $a_clean_slug))) {
-            $_links[] = '<a href="' . $download_url . '">Download ZIP</a>';
-        } else {
-            $url      = 'https://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode(self::$settings['addon_licenses']['wp-slimstat-' . $a_clean_slug]);
-            $response = wp_safe_remote_get($url, ['timeout' => 300, 'user-agent' => 'Slimstat Analytics/' . SLIMSTAT_ANALYTICS_VERSION . '; ' . home_url()]);
-
-            if (!is_wp_error($response) && 200 == wp_remote_retrieve_response_code($response)) {
-                $data = @json_decode($response['body']);
-
-                if (is_object($data)) {
-                    $_links[] = '<a href="' . $data->download_url . '">Download ZIP</a>';
-                    set_transient('wp-slimstat-download-link-' . $a_clean_slug, $data->download_url, 172800); // 48 hours
-                }
-            }
-        }
-
-        return $_links;
     }
 
     /**
@@ -2684,7 +2678,7 @@ class wp_slimstat
             ? (string) ($GLOBALS['current_user']->user_login ?? '') : '';
         $where = '' !== $author ? self::$wpdb->prepare('author = %s', $author) : '1=1';
         $context = [$GLOBALS['wpdb']->prefix, self::$wpdb->dbhost ?? '', self::$wpdb->dbname ?? '', $author];
-        return ['where' => $where, 'cache' => md5(serialize($context))];
+        return ['where' => $where, 'humans' => '(' . $where . ') AND (browser_type IS NULL OR browser_type <> 1)', 'cache' => md5(serialize($context))];
     }
 
     /**

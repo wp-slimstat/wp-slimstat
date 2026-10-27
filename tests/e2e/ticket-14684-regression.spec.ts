@@ -603,13 +603,12 @@ test.describe('Upgrade preservation and explicitly enabled client-side tracking'
 		).toBe(true);
 	});
 
-	test('server-side mode records once and only permits a same-row consent update', async ({
+	test('server-side mode records once and browser updates target that same row', async ({
 		page,
 	}) => {
 		/**
 		 * Control test: verify that when javascript_mode='off',
-		 * the JS tracker correctly skips (because params.id is set by PHP).
-		 * This confirms the guard at wp-slimstat.js:1511 works as designed.
+		 * browser enrichment and consent updates target the signed PHP-created ID.
 		 */
 
 		await setSlimstatOption(page, 'javascript_mode', 'off');
@@ -634,7 +633,7 @@ test.describe('Upgrade preservation and explicitly enabled client-side tracking'
 		);
 		await page.waitForTimeout(3000);
 		const [rows] = (await getPool().execute(
-			'SELECT COUNT(*) AS cnt FROM wp_slim_stats WHERE resource LIKE ?',
+			'SELECT COUNT(*) AS cnt, MIN(id) AS id FROM wp_slim_stats WHERE resource LIKE ?',
 			[`%${marker}%`]
 		)) as any;
 		const recordedRows = parseInt(rows[0].cnt, 10);
@@ -643,12 +642,19 @@ test.describe('Upgrade preservation and explicitly enabled client-side tracking'
 			`Server-side mode — rows=${recordedRows}, requests=${JSON.stringify(jsTrackingRequests)}`
 		);
 
-		// PHP owns the initial pageview in server-side mode. A consent upgrade may
-		// update that same row; it is not a second pageview.
+		// PHP owns creation; browser details and consent can only update that row.
 		expect(recordedRows, 'Server-side mode must record exactly one pageview').toBe(1);
+		expect(jsTrackingRequests.length, 'The existing pageview receives browser details').toBeGreaterThan(0);
 		for (const request of jsTrackingRequests) {
-			expect(request.body, 'Any server-mode POST must be a consent update').toContain('consent_upgrade=1');
-			expect(request.body, 'Consent update must target the PHP-created pageview').toContain('pageview_id=');
+			const body = new URLSearchParams(request.body);
+			expect(Number(body.get('id')?.split('.')[0]), 'Update targets the PHP-created row').toBe(Number(rows[0].id));
+			expect(body.has('ci'), 'No client-side creation payload').toBe(false);
+			if (body.has('consent_upgrade')) {
+				expect(body.get('consent_upgrade')).toBe('1');
+				expect(body.get('pageview_id')).toBe(body.get('id'));
+			} else {
+				expect(body.has('sw') && body.has('sh'), 'Browser enrichment includes screen dimensions').toBe(true);
+			}
 		}
 	});
 

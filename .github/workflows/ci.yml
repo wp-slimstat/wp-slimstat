@@ -8,6 +8,9 @@
 
 name: CI
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -36,8 +39,8 @@ jobs:
     name: Catalog freshness and required-red control
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
           php-version: '8.2'
           tools: composer:v2, wp-cli:2.12.0
@@ -63,12 +66,12 @@ jobs:
         # the entry point dies with "unknown ref" - exit 1, but for the WRONG REASON, so the case
         # reports a mismatch rather than the refusal it exists to prove. A gate written against a
         # developer's full clone cannot pass on a shallow one. PITFALLS 96.
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 2
 
       - name: Set up PHP ${{ matrix.php }}
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
           php-version: ${{ matrix.php }}
           extensions: mbstring, xml, dom, curl, json
@@ -79,7 +82,7 @@ jobs:
       - name: Cache Composer dependencies
         # Only lanes that install development dependencies need this cache.
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: vendor
           key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
@@ -150,7 +153,7 @@ jobs:
         # test failure. Pinned here instead. Deliberately NOT guarded with `command -v python3
         # ||` — that converts a hard failure into a gate that silently does not run, which is
         # this programme's most repeated defect.
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
 
@@ -229,10 +232,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up PHP 8.2
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
           php-version: "8.2"
           extensions: mbstring, xml, dom, curl, json
@@ -321,18 +324,18 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Generate production autoloader before wp-env mounts the plugin
         run: composer run build:autoload
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "20"
 
       - name: Cache npm dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.npm
           key: npm-${{ hashFiles('package.json') }}
@@ -542,6 +545,9 @@ jobs:
         if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/acquisition-reports-db-test.php
 
+      - name: Legacy column repair preserves historical data
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/docker/probe-legacy-column-repair.php
+
       - name: Shortcode rendering and privacy
         if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/shortcode-render-wp-test.php
@@ -688,6 +694,7 @@ jobs:
           sudo chown "$(id -u):$(id -g)" "$WP_ROOT/wp-config.php"
 
           echo "WP_ROOT=$WP_ROOT" >> $GITHUB_ENV
+          echo "FREE_PLUGIN_ROOT=$GITHUB_WORKSPACE" >> $GITHUB_ENV
 
           # ── MySQL access via host-mapped port ────────────────────────────
           # wp-env maps container port 3306 to a dynamic host port.
@@ -725,7 +732,7 @@ jobs:
       - name: Cache the DB-IP City Lite database
         if: ${{ matrix.wp == '6.4' }}
         id: dbip-cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/dbip/dbip-city-lite.mmdb
           key: dbip-city-lite-${{ env.DBIP_MONTH }}
@@ -823,7 +830,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           # upload-artifact@v4 requires a unique name per run — all 7 matrix lanes
           # sharing "playwright-report" caused HTTP 409 conflicts. Scope by lane.
@@ -877,10 +884,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up PHP ${{ matrix.php }}
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
           php-version: ${{ matrix.php }}
           extensions: mbstring, xml, dom, curl, json
@@ -889,7 +896,7 @@ jobs:
       - name: Cache Composer dependencies
         # The 7.4/8.0 exclusion this step carried went with those lanes (see the matrix
         # above). The ignored vendor tree is rebuilt and checked before use.
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: vendor
           key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
@@ -930,13 +937,13 @@ jobs:
 
       - name: Set up Node.js (for wp-env + k6 tests)
         if: ${{ matrix.php == '8.2' }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "20"
 
       - name: Cache npm dependencies
         if: ${{ matrix.php == '8.2' }}
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.npm
           key: npm-${{ hashFiles('package.json') }}
@@ -1104,18 +1111,18 @@ jobs:
           --health-cmd="mysqladmin ping -h localhost -ppassword"
           --health-interval=5s --health-timeout=5s --health-retries=20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           path: wp-slimstat
       # Build dependencies on the toolchain's PHP, then execute on the declared minimum.
-      - uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
           php-version: "8.2"
           tools: composer, wp-cli
       - name: Install plugin dependencies
         run: |
           composer install --working-dir=wp-slimstat --no-dev --prefer-dist --no-interaction
-      - uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
           php-version: "7.4"
           extensions: mysqli, mbstring

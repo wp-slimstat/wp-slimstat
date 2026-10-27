@@ -70,10 +70,10 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 		Functions\when('wp_json_encode')->alias('json_encode');
 		Functions\when('get_transient')->alias(static function ($key) use (&$keys, &$rows, $updated) {
 			$keys[] = $key;
-			return ['signature' => ['', \wp_slimstat::$settings['auto_purge'] ?? 0, false], 'data' => ['rows' => $rows, 'updated' => $updated]];
+			return ['signature' => [2, '', \wp_slimstat::$settings['auto_purge'] ?? 0, false], 'data' => ['rows' => $rows, 'updated' => $updated]];
 		});
 		Functions\when('_prime_post_caches')->justReturn(null);
-		Functions\when('get_the_title')->justReturn('<em>About</em> us');
+		Functions\when('get_the_title')->justReturn('<em>Bloom</em> &#038; Fern&#8217;s &lt;script&gt;unsafe&lt;/script&gt;');
 		Functions\when('esc_url_raw')->returnArg();
 		Functions\when('add_query_arg')->alias(static fn($args, $url) => $url . '&' . http_build_query($args));
 		Functions\when('rest_ensure_response')->returnArg();
@@ -84,7 +84,7 @@ class HeatmapRestControllerTest extends WpSlimstatTestCase
 		$free = (new HeatmapRestController())->pages($request);
 		self::assertSame(['from' => '2026-09-27', 'to' => '2026-10-03', 'updated' => $updated], array_slice($free, 0, 3), 'seven days ending on to');
 		self::assertSame('', $free['rows'][0]['url'], 'Free: no viewer, the row opens the preview');
-		self::assertSame('About us', $free['rows'][0]['title']);
+		self::assertSame('Bloom & Fern’s unsafe', $free['rows'][0]['title']);
 		self::assertNull($free['rows'][0]['devices'], 'device data is absent from the Free response');
         foreach (['scroll', 'dead', 'rage'] as $metric) { self::assertNull($free['rows'][0][$metric], 'cached Pro metrics stay private'); }
 		self::assertTrue($free['ever'], 'rows in range: the site has clicks, no extra query (no wpdb here)');

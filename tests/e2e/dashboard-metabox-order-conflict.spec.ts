@@ -14,6 +14,7 @@
  *  5. No global sortable interference (PASS after fix)
  */
 import { test, expect, type Page, type Request } from '@playwright/test';
+import { ADMIN_USER } from './helpers/env';
 import {
   getPool,
   closeDb,
@@ -164,13 +165,29 @@ async function deleteUserMeta(userId: number, metaKey: string): Promise<void> {
 
 test.describe('Meta-box-order conflict (#15036)', () => {
   let seededIds: number[] = [];
+  let userId: number;
+  let savedLayouts: { meta_key: string; meta_value: string }[] = [];
 
   test.beforeAll(async () => {
     await snapshotSlimstatOptions();
+    const [users] = await getPool().execute('SELECT ID FROM wp_users WHERE user_login = ?', [ADMIN_USER]) as any;
+    userId = Number(users[0].ID);
+    const [layouts] = await getPool().execute(
+      'SELECT meta_key, meta_value FROM wp_usermeta WHERE user_id = ? AND meta_key LIKE ?',
+      [userId, 'meta-box-order_%'],
+    ) as any;
+    savedLayouts = layouts;
     seededIds = await seedStats(15);
   });
 
   test.afterAll(async () => {
+    // Dragging Access Log into another location must not hide it in later report tests.
+    if (userId) {
+      await getPool().execute('DELETE FROM wp_usermeta WHERE user_id = ? AND meta_key LIKE ?', [userId, 'meta-box-order_%']);
+      for (const layout of savedLayouts) {
+        await getPool().execute('INSERT INTO wp_usermeta (user_id, meta_key, meta_value) VALUES (?, ?, ?)', [userId, layout.meta_key, layout.meta_value]);
+      }
+    }
     await cleanupStats(seededIds);
     await restoreSlimstatOptions();
     await closeDb();
