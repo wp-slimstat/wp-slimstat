@@ -1573,7 +1573,9 @@ class wp_slimstat_admin
 
     public static function dashboard_pro_preview($post, $args): void
     {
+        echo '<div class="slimstat-dashboard-report">';
         wp_slimstat_reports::callback_wrapper($post, $args);
+        echo '</div>';
         // A hidden existing widget remains hidden, and an eligible release notice takes priority.
         if (self::release_notice_visible(false)) {
             echo '<p>' . esc_html__('Live charts are available with SlimStat Pro.', 'wp-slimstat') . '</p>';
@@ -1793,6 +1795,10 @@ class wp_slimstat_admin
     {
         self::enqueue_promotions();
         $current_screen = get_current_screen();
+        if ($current_screen && 'dashboard' === $current_screen->id) {
+            // Deferred chart rendering cannot enqueue assets into the original page.
+            \SlimStat\Modules\Chart::enqueueAssets();
+        }
         if ($current_screen && false !== strpos((string) ($current_screen->id ?? ''), 'slim')) {
             wp_enqueue_script('dashboard');
             wp_enqueue_script('jquery-ui-datepicker');
@@ -1860,7 +1866,7 @@ class wp_slimstat_admin
 
         // Pass some information to Javascript
         $params = [
-            'async_load'        => empty(wp_slimstat::$settings['async_load']) ? 'no' : wp_slimstat::$settings['async_load'],
+            'async_load'        => ($current_screen && 'dashboard' === $current_screen->id) ? 'on' : (empty(wp_slimstat::$settings['async_load']) ? 'no' : wp_slimstat::$settings['async_load']),
             'datepicker_image'  => plugins_url('/admin/assets/images/datepicker.png', __DIR__),
             'refresh_interval'  => intval(wp_slimstat::$settings['refresh_interval']),
             'page_location'     => self::$page_location,

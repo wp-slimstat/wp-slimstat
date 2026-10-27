@@ -462,7 +462,9 @@ jQuery(function () {
         jQuery("div[id^=slim_p]").each(function () {
             // Skip Charts
             if (jQuery(this).find(".chart-placeholder, .refresh-timer").length == 0) {
-                jQuery("#" + jQuery(this).attr("id") + " .inside").html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
+                var content = jQuery(this).find(".inside");
+                var reportBody = content.children(".slimstat-dashboard-report");
+                (reportBody.length ? reportBody : content).html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
                 base = base.then(SlimStatAdmin.refresh_report(jQuery(this).attr("id")));
             }
         });
@@ -1706,6 +1708,9 @@ var SlimStatAdmin = {
         }
         return function () {
             var inner_content = "#" + id + " .inside";
+            if (jQuery(inner_content).children(".slimstat-dashboard-report").length) {
+                inner_content += " > .slimstat-dashboard-report";
+            }
             var defer = jQuery.Deferred();
             var granularity = jQuery("#" + id + " .slimstat-granularity-select").val();
             // Fallback to localStorage when the select is missing or about to be destroyed
@@ -1721,7 +1726,7 @@ var SlimStatAdmin = {
             data = {
                 action: "slimstat_load_report",
                 security: jQuery("#meta-box-order-nonce").val(),
-                page: SlimStatAdmin.get_current_tab(),
+                page: SlimStatAdmin.get_current_tab() || (jQuery("body").hasClass("index-php") ? "dashboard" : ""),
                 report_id: id,
                 granularity: granularity,
             };
@@ -1777,7 +1782,7 @@ var SlimStatAdmin = {
                         jQuery("#" + id + " .pagination").html(paginationHtml);
                     }
 
-                    if (jQuery("#" + id).hasClass("chart")) {
+                    if (jQuery("#" + id).hasClass("chart") || filteredResponse.find('[id^="slimstat_chart_data_"]').length) {
                         jQuery(inner_content).html(filteredResponse.html());
                         // Re-initialize chart after DOM insertion — inline scripts
                         // from the AJAX response may have run in a detached context
@@ -1795,9 +1800,9 @@ var SlimStatAdmin = {
                         // of the new page without a visible mid-AJAX jump.
                         var savedScrollTop = opts.scrollToTop
                             ? 0
-                            : (jQuery(inner_content).scrollTop() || 0);
+                            : (jQuery("#" + id + " .inside").scrollTop() || 0);
                         jQuery(inner_content).html(filteredResponse.html());
-                        jQuery(inner_content).scrollTop(savedScrollTop);
+                        jQuery("#" + id + " .inside").scrollTop(savedScrollTop);
                         SlimStatAdmin._lastManualRefreshTime = Date.now();
                         // #258 — Rearm the auto-refresh scheduler so the next tick
                         // is `refresh_interval` seconds AFTER this refresh, not
