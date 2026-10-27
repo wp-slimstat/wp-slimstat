@@ -124,6 +124,7 @@ settings.id = '123.signed';
 scope.flushOfflineQueue();
 assert.equal(delivered[3], 'action=slimtrack&id=123.signed&no=click');
 assert.equal(sessionPending.length, 1, 'the original pending payload remains durable until acknowledged');
+assert.equal(sessionPending[0].p, 'action=slimtrack&id=123.signed&no=click', 'reload must retain the interaction\'s resolved pageview ID');
 acknowledgements[3](false, true);
 assert.equal(offline.length, 0);
 scope.flushOfflineQueue();

@@ -1774,22 +1774,23 @@ var SlimStat = (function () {
                         if (!params.id || parseInt(params.id, 10) <= 0) continue;
                         payload = payload.replace("id=pending", "id=" + params.id);
                     }
+                    if (offlineInFlight[payload]) continue;
 
                     // A tab-owned durable copy survives reload without another tab replaying it.
                     // shortcut: cross-tab crash recovery and exactly-once delivery need server idempotency.
                     (function (original, replay) {
                         var pending = offlineReplays();
-                        pending.push({ p: original });
+                        pending.push({ p: replay });
                         if (!saveSessionState(OFFLINE_REPLAY_KEY, pending)) return;
                         saveOfflineQueue(loadOfflineQueue().filter(function (entry) { return !entry || entry.p !== original; }));
                         if (loadOfflineQueue().some(function (entry) { return entry && entry.p === original; })) {
-                            settleOfflineReplay(original, false);
+                            settleOfflineReplay(replay, false);
                             return;
                         }
-                        offlineInFlight[original] = true;
+                        offlineInFlight[replay] = true;
                         var complete = function (success, rejected) {
-                            settleOfflineReplay(original, !success && !rejected);
-                            delete offlineInFlight[original];
+                            settleOfflineReplay(replay, !success && !rejected);
+                            delete offlineInFlight[replay];
                         };
                         var queued = sendToServer(replay, false, {
                             priority: "normal",
