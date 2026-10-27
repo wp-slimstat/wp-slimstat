@@ -105,7 +105,8 @@ for (const stored of ['no', 'on']) {
     }
     for (const id of ['slim_p9_01', 'slim_p9_02']) {
       expect(ids).toContain(id);
-      await expect(page.locator(`#${id} .inside .nodata, #${id} .inside table`)).not.toHaveCount(0);
+      await expect(page.locator(`#${id} .inside .nodata, #${id} .inside table, #${id} .inside .slimstat-funnel--locked`)).not.toHaveCount(0);
+      await expect(page.locator(`#${id} .slimstat-gf-card`)).toHaveCount(0);
     }
     console.log(JSON.stringify({ storedAsync: stored, dashboardReportQueries: 0, loadedWidgets: ids, initializedCharts: await page.locator('.postbox[id^="slim_p"] canvas').count() }));
     expect(errors).toEqual([]);
