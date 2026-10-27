@@ -1,5 +1,6 @@
 = 6.0.1 - 2026-10-27 =
 
+* Keep the consent banner usable in server tracking mode, and record the first pageview only after acceptance.
 * Keep first pageviews recording on older database schemas while the visit-identity migration is pending. Encode identity bytes in SQL so missing-column and missing-table recovery can run.
 * Preserve offline tracking data during a failed reconnect followed by reload, and keep active replay owned by its tab until the server acknowledges or explicitly rejects it.
 * Keep cached historical reports separate when switching analytics databases or hosts, and preserve another integration's WooCommerce tracking denial across SlimStat banner events.

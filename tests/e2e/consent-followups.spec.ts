@@ -45,8 +45,9 @@ test.describe('consent wire and unchanged settings (#366/#367)', () => {
     expect(String(rows[0].option_value)).toContain('s:19:"use_slimstat_banner";s:3:"off"');
   });
 
-  test('SlimStat banner gates WooCommerce attribution before initialization and after withdrawal @woocommerce', async ({ browser }) => {
-    await setSlimstatOptions({ gdpr_enabled: 'on', consent_integration: 'slimstat_banner', use_slimstat_banner: 'on', anonymous_tracking: 'off', ignore_bots: 'off' });
+  for (const mode of ['on', 'off']) {
+  test(`SlimStat banner gates WooCommerce attribution in javascript_mode=${mode} before initialization and after withdrawal @woocommerce`, async ({ browser }) => {
+    await setSlimstatOptions({ javascript_mode: mode, is_tracking: 'on', gdpr_enabled: 'on', consent_integration: 'slimstat_banner', use_slimstat_banner: 'on', anonymous_tracking: 'off', ignore_bots: 'off' });
     await snapshotOption('active_plugins');
     runWordPressFixture("<?php update_option('active_plugins', array_values(array_filter(get_option('active_plugins'), static fn($plugin) => !preg_match('~^(wp-consent-api|cookie-law-info)/~', $plugin))));");
     const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
@@ -88,8 +89,9 @@ test.describe('consent wire and unchanged settings (#366/#367)', () => {
       await expect.poll(async () => (await context.cookies()).filter(c => c.name.startsWith('sbjs_')).length).toBe(0);
       await page.reload();
       expect((await context.cookies()).filter(c => c.name.startsWith('sbjs_'))).toEqual([]);
-    } finally { await context.close(); await restoreOption('active_plugins'); }
+    } finally { try { await context.close(); } finally { await restoreOption('active_plugins'); } }
   });
+  }
 
   test('only post-consent heatmap clicks reach storage', async ({ page, browser }) => {
     await requireProBooted(page);

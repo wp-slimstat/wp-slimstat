@@ -1555,7 +1555,11 @@ class wp_slimstat
 
 		// Internal GDPR banner is optionally available alongside CMP integrations.
 
-        if ('on' != self::$settings['javascript_mode']) {
+        // A consent-blocked server visit has no row yet; load the client so consent can start it.
+        $consent_blocked = 'on' !== self::$settings['javascript_mode']
+            && 'on' === (self::$settings['gdpr_enabled'] ?? 'off')
+            && !\SlimStat\Utils\Consent::canTrack();
+        if ('on' != self::$settings['javascript_mode'] && !$consent_blocked) {
             if (empty(self::$stat['id']) || intval(self::$stat['id']) < 0) {
                 return false;
             }
