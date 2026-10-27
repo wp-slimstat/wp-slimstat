@@ -1,4 +1,4 @@
-= 6.0.0 - 2026-10-24 =
+= 6.0.1 - 2026-10-27 =
 
 * Preserve offline tracking data during a failed reconnect followed by reload, and keep active replay owned by its tab until the server acknowledges or explicitly rejects it.
 * Keep cached historical reports separate when switching analytics databases or hosts, and preserve another integration's WooCommerce tracking denial across SlimStat banner events.
@@ -6,15 +6,17 @@
 * WooCommerce attribution follows SlimStat banner consent before its first cookie write, including cached pages, acceptance and withdrawal. Other consent denials remain effective.
 * Corrected social and messaging order attribution when WooCommerce supplies synthetic referral tags; explicit campaign tags and revenue are unchanged.
 * Heatmaps display decoded page titles, distribute sampling across pageviews, discard pre-consent activity and avoid double-counting backdated full-capture clicks. Restored pageviews remain visible when stale heatmap rows reuse their IDs for another page or timestamp. Cached older trackers remain compatible.
-
 * Fixed report SQL diagnostics for query-builder, cached and network reads; SQL and database errors are escaped without changing results (#362).
 * Recover missing opted-in Browscap data through throttled background updates; preserve the installed cache and actionable extraction diagnostics on failure and allow manual retry (#363).
 * Classify self-identifying HeadlessChrome, PhantomJS and Lighthouse clients as bots so the existing Bots exclusion applies in both tracking modes (#364).
 * Start client pageviews at DOM readiness with a bounded idle delay, preserving consent and acknowledged pageview creation (#365).
-
 * Fixed slow WordPress Dashboard loading on upgraded sites (#361): widgets load through the existing authenticated AJAX path even when Async mode is off. Saved settings and SlimStat report screens retain their existing behavior; charts and Funnel tabs initialize after AJAX, and tracking and report calculations are unchanged.
-
 * Fixed legacy upgrade column drift (#360): the optional online repair covers email/fingerprint widths and missing legacy archive fields. Migration status shows unresolved or unreadable schema state, retains warnings on failed inspection, and cannot report completion merely because a notice was dismissed. Existing recorded values are preserved; no automatic table rebuild or blocking fallback is added.
+* Notification dismissals and manual refreshes wait for an active background check instead of being ignored.
+* Removed the unused legacy add-on catalog and manual-download callback for the retired update service. Stored add-on license settings are preserved.
+* Historical reports reuse cached wildcard-query results across requests instead of building a new cache key for each request.
+
+= 6.0.0 - 2026-10-24 =
 
 **SlimStat 6 is here: see where visitors click, which campaigns bring sales, and trust every number.** It is the biggest SlimStat release in years and the safest to install: your settings and data carry over, nothing in your database changes until you click, and older versions keep working if you ever go back.
 
@@ -43,8 +45,6 @@
 * New live visitor, page and country counters and Ecommerce KPI tables. Shortcodes support multiple columns and UTM and channel counts.
 
 **A cleaner, friendlier admin**
-* Notification dismissals and manual refreshes wait for an active background check instead of being ignored.
-* Removed the unused legacy add-on catalog and manual-download callback for the retired update service. Stored add-on license settings are preserved.
 * One voice and native WordPress controls everywhere: consistent wording, accessible dialogs, the WordPress focus ring, higher-contrast fields and one pagination style.
 * Empty reports explain why and what to do next, and a Get started panel helps new sites record their first pageview.
 * Free screens show what Pro adds honestly, with no blurred mock reports. Email Report previews the weekly email built from your own last 7 days and sends you a sample. Export opens the Pro page instead of posting your filters to wp-slimstat.com.
@@ -60,7 +60,6 @@
 * Clearer labels on At a Glance, Traffic Summary, Access Log, Customize and Migration. Customize cards move by drag or keyboard, and Reset layout asks first.
 
 **Faster**
-* Historical reports reuse cached wildcard-query results across requests instead of building a new cache key for each request.
 * Admin charts read half as many database rows (304,454 → 152,227 on the weekly chart over a 150,000-row test corpus).
 * Tracking writes 62% fewer option updates per pageview and 96% fewer per blocked bot.
 * Pages per visit reads 49.5% fewer rows, and the post-update table check runs 4 statements instead of 14.

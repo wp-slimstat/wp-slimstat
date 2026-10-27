@@ -6,7 +6,7 @@ Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
 Tested up to: 7.1
-Stable tag: 6.0.0
+Stable tag: 6.0.1
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -151,11 +151,35 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Upgrade Notice ==
 
+= 6.0.1 =
+Older versions keep working and added columns stay. This update removes no rows. Fixes offline tracking, consent, heatmap accuracy and slow Dashboard widgets. Improves browser-data recovery and legacy migration status. Back up before updating; database repairs still wait for your click.
+
 = 6.0.0 =
 SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster reports. Back up first. The update adds columns and indexes and removes no rows; older versions keep working and the added columns stay. Database steps wait for your click. Some totals change on purpose: see changelog.
 
 
 == Changelog ==
+
+= 6.0.1 - 2026-10-27 =
+
+**Improved**
+
+* Historical reports reuse cached results across requests while keeping separate analytics databases apart.
+* Pageview tracking starts when the page is ready, with a bounded delay. Notification dismissals and refreshes wait for background checks to finish.
+* Missing browser-detection data recovers in the background when enabled, with clearer failure details and a manual retry. ([#363](https://github.com/wp-slimstat/wp-slimstat/issues/363))
+
+**Fixed**
+
+* Offline tracking survives a failed reconnect and page reload, keeping pending visits until the server confirms them.
+* WordPress Dashboard widgets load without slowing the page, including when asynchronous reports are disabled. Charts and Funnel tabs work after refresh. ([#361](https://github.com/wp-slimstat/wp-slimstat/issues/361))
+* Optional migration repairs cover legacy column differences and preserve recorded values. Unfinished or unreadable repairs remain visible. ([#360](https://github.com/wp-slimstat/wp-slimstat/issues/360))
+* Heatmaps show readable titles, sample across pageviews and avoid duplicate clicks; restored pageviews remain visible. WooCommerce social and messaging attribution handles synthetic referral tags correctly.
+* Report SQL diagnostics show the correct query and safely display errors. Removed the retired add-on catalog while preserving stored license settings. ([#362](https://github.com/wp-slimstat/wp-slimstat/issues/362))
+* Self-identifying headless browsers and Lighthouse are recognized by the existing Bots exclusion. ([#364](https://github.com/wp-slimstat/wp-slimstat/issues/364))
+
+**Security**
+
+* Consent withdrawal works reliably, saving Tracker settings preserves unchosen consent options, and Heatmaps discard activity recorded before consent. WooCommerce attribution waits for consent and respects other integrations' tracking denials.
 
 = 6.0.0 - 2026-10-24 =
 

@@ -10,8 +10,8 @@ rationale: Suffixes the header only, leaving the define and Stable tag bare; bot
   * Plugin Name: SlimStat Analytics
   * Plugin URI: https://wp-slimstat.com/
   * Description: The leading web analytics plugin for WordPress
-- * Version: 6.0.0
-+ * Version: 6.0.0-beta1
+- * Version: 6.0.1
++ * Version: 6.0.1-beta1
   * Author: Jason Crouse, VeronaLabs
   * Text Domain: wp-slimstat
   * Domain Path: /languages
