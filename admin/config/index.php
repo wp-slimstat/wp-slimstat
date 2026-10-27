@@ -959,7 +959,7 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
 
         // Browscap Library
         if (!empty($posted_options['enable_browscap'])) {
-            if ('on' == $posted_options['enable_browscap'] && 'no' == wp_slimstat::$settings['enable_browscap']) {
+            if ('on' == $posted_options['enable_browscap'] && ('no' == wp_slimstat::$settings['enable_browscap'] || !is_readable(wp_slimstat::$upload_dir . '/browscap-cache-master/version.txt'))) {
                 $error = \SlimStat\Services\Browscap::update_browscap_database(true);
                 if (0 == $error[0]) {
                     wp_slimstat::$settings['enable_browscap'] = 'on';

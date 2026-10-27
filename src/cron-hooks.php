@@ -35,4 +35,5 @@ return [
     // One-shot (wp_schedule_single_event). Clearing these is idempotent and stops a
     // pending event firing against a plugin that is no longer there.
     'slimstat_initial_notification_fetch',
+    'wp_slimstat_update_browscap',
 ];

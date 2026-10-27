@@ -1,5 +1,10 @@
 = 6.0.0 - 2026-10-24 =
 
+* Fixed report SQL diagnostics for query-builder, cached and network reads; SQL and database errors are escaped without changing results (#362).
+* Recover missing opted-in Browscap data through throttled background updates; preserve the installed cache on failed extraction/replacement and allow manual retry (#363).
+* Classify self-identifying HeadlessChrome, PhantomJS and Lighthouse clients as bots so the existing Bots exclusion applies in both tracking modes (#364).
+* Start client pageviews at DOM readiness with a bounded idle delay, preserving consent and acknowledged pageview creation (#365).
+
 * Fixed slow WordPress Dashboard loading on upgraded sites (#361): widgets load through the existing authenticated AJAX path even when Async mode is off. Saved settings and SlimStat report screens retain their existing behavior; charts and Funnel tabs initialize after AJAX, and tracking and report calculations are unchanged.
 
 * Fixed legacy upgrade column drift (#360): the optional online repair covers email/fingerprint widths and missing legacy archive fields. Migration status shows unresolved or unreadable schema state, retains warnings on failed inspection, and cannot report completion merely because a notice was dismissed. Existing recorded values are preserved; no automatic table rebuild or blocking fallback is added.

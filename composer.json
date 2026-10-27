@@ -468,6 +468,8 @@
       "@test:reset-layout-scope",
       "@test:free-deploy-evidence",
       "@test:heatmap-copy",
+      "@test:report-sql-debug",
+      "@test:browscap-recovery",
       "@test:dashboard-deferred-reports"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit --log-junit build/junit-unit.xml",
@@ -483,6 +485,8 @@
     ],
     "i18n:check": "python3 tests/check-pot.py",
     "test:pot-freshness": "php tests/pot-freshness-test.php",
+    "test:report-sql-debug": "php tests/report-sql-debug-test.php",
+    "test:browscap-recovery": "php tests/browscap-recovery-test.php",
     "test:dashboard-deferred-reports": "php tests/dashboard-deferred-reports-test.php",
     "test:settings-request-render": "php tests/settings-request-render-test.php",
     "test:reset-layout-scope": "php tests/reset-layout-scope-test.php",

@@ -1456,11 +1456,13 @@ class Query
         if ($useCache) {
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
+                self::recordSqlDebug($query, '', true);
                 return $cachedResult;
             }
         }
 
         $result = $this->db->get_var($query);
+        self::recordSqlDebug($query, $this->db->last_error ?? '');
         if ($useCache) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
@@ -1552,11 +1554,13 @@ class Query
         if ($useCache) {
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
+                self::recordSqlDebug($query, '', true);
                 return $cachedResult;
             }
         }
 
         $result = $this->db->get_row($query);
+        self::recordSqlDebug($query, $this->db->last_error ?? '');
         if ($useCache) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
@@ -1586,11 +1590,13 @@ class Query
         if ($useCache) {
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
+                self::recordSqlDebug($query, '', true);
                 return $cachedResult;
             }
         }
 
         $result = $this->db->get_col($query);
+        self::recordSqlDebug($query, $this->db->last_error ?? '');
         if ($useCache) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
@@ -1710,6 +1716,21 @@ class Query
         return $result;
     }
 
+    /** Append report-only diagnostics without changing SQL, result caching or wpdb state. */
+    public static function recordSqlDebug($sql, $error = '', $cached = false)
+    {
+        if ('on' !== (\wp_slimstat::$settings['show_sql_debug'] ?? '') || !class_exists('wp_slimstat_db', false)) {
+            return;
+        }
+        $message = (string) $sql;
+        if ($cached) {
+            $message .= "\n" . __('Cached result', 'wp-slimstat');
+        } elseif ('' !== (string) $error) {
+            $message .= "\n" . $error;
+        }
+        \wp_slimstat_db::$debug_message .= "<p class='debug'>" . esc_html($message) . '</p>';
+    }
+
     public function getSqlQuery()
     {
         $query = $this->buildQuery();
@@ -1775,13 +1796,17 @@ class Query
                 $sql .= ' LIMIT ' . $outerLimit;
             }
 
-            return (array) $this->db->get_results($sql, ARRAY_A);
+            $result = (array) $this->db->get_results($sql, ARRAY_A);
+            self::recordSqlDebug($sql, $this->db->last_error ?? '');
+            return $result;
         }
 
         if (null !== $this->_isLiveQuery && $this->_isLiveQuery) {
             $query = $this->buildQuery();
             $query = $this->prepareQuery($query, $this->valuesToPrepare);
-            return $this->db->get_results($query, ARRAY_A);
+            $result = $this->db->get_results($query, ARRAY_A);
+            self::recordSqlDebug($query, $this->db->last_error ?? '');
+            return $result;
         }
 
         $ranges = $this->extractDateRangesFromWhere();
@@ -1917,12 +1942,14 @@ class Query
             }
 
             if (false !== $cachedResult) {
+                self::recordSqlDebug($query, '', true);
                 return $cachedResult;
             }
         }
 
         try {
             $result = $this->db->get_results($query, ARRAY_A);
+            self::recordSqlDebug($query, $this->db->last_error ?? '');
         } catch (Exception $exception) {
             $result = [];
         }

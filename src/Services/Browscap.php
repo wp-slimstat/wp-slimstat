@@ -10,7 +10,6 @@ use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Psr16\SimpleCache;
 use SlimStat\Dependencies\Psr\Log\NullLogger;
 use SlimStat\Utils\UADetector;
 use wp_slimstat;
-use wp_slimstat_admin;
 
 class Browscap
 {
@@ -29,8 +28,12 @@ class Browscap
             }
         }
 
-        self::update_browscap_database(false);
-        // require_once( plugin_dir_path( __FILE__ ) . 'browscap-php/composer/autoload_real.php' );
+        // Visitor requests only schedule work; downloads and extraction run in WP-Cron.
+        if ('on' === (wp_slimstat::$settings['enable_browscap'] ?? '')
+            && time() - (int) (wp_slimstat::$settings['browscap_last_modified'] ?? 0) > 604800
+            && !wp_next_scheduled('wp_slimstat_update_browscap')) {
+            wp_schedule_single_event(time() + 10, 'wp_slimstat_update_browscap');
+        }
 
         return null;
     }
@@ -61,7 +64,11 @@ class Browscap
         }
 
         if ('on' == wp_slimstat::$settings['enable_browscap'] && PHP_VERSION_ID >= 70400 && extension_loaded('fileinfo')) {
-            $browser = self::get_browser_from_browscap($browser, wp_slimstat::$upload_dir . '/browscap-cache-master/');
+            $cache_path = wp_slimstat::$upload_dir . '/browscap-cache-master/';
+            if (!is_readable($cache_path . 'version.txt')) {
+                $cache_path = wp_slimstat::$upload_dir . '/browscap-cache-backup/';
+            }
+            $browser = self::get_browser_from_browscap($browser, $cache_path);
         }
 
         if ('Default Browser' == $browser['browser']) {
@@ -132,7 +139,7 @@ class Browscap
     {
         // Flysystem's LocalFilesystemAdapter eagerly constructs FinfoMimeTypeDetector,
         // which calls `new finfo(...)` and fatals on hosts without ext-fileinfo (#303).
-        if (!extension_loaded('fileinfo')) {
+        if (!extension_loaded('fileinfo') || !is_readable(rtrim($_cache_path, '/') . '/version.txt')) {
             return $_browser;
         }
 
@@ -185,56 +192,77 @@ class Browscap
             return [3, __('Please set your <code>FS_METHOD</code> variable to "direct" in your wp-config.php file, or contact our support to obtain a copy of our Browscap Library.', 'wp-slimstat')];
         }
 
-        // Create the folder, if it doesn't exist
+        if (!$_force_download && 'on' !== (wp_slimstat::$settings['enable_browscap'] ?? '')) {
+            return [0, __('The Browscap Library is disabled.', 'wp-slimstat')];
+        }
+        $current_timestamp = time();
+        if (!$_force_download && $current_timestamp - (int) (wp_slimstat::$settings['browscap_last_modified'] ?? 0) <= 604800) {
+            return [0, __('Your version of the library does not need to be updated.', 'wp-slimstat')];
+        }
         if (!file_exists(wp_slimstat::$upload_dir)) {
             wp_slimstat::create_upload_directory();
         }
 
-        $download_remote_file = $_force_download;
-        $current_timestamp    = time();
-        $browscap_zip         = wp_slimstat::$upload_dir . '/browscap-db.zip';
+        // A nonblocking filesystem lock serializes cron/manual replacements and releases on process death.
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- WP_Filesystem exposes no file handle for a nonblocking flock; the OS releases this lock on process death.
+        $lock = @fopen(wp_slimstat::$upload_dir . '/browscap-update.lock', 'c');
+        if (false === $lock) {
+            return [6, __('The Browscap update could not lock its data folder. Please check your server permissions.', 'wp-slimstat')];
+        }
+        if (!flock($lock, LOCK_EX | LOCK_NB)) {
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Release the handle required by flock; WP_Filesystem has no equivalent.
+            fclose($lock);
+            return [11, __('A Browscap update is already running. Please try again later.', 'wp-slimstat')];
+        }
+        try {
+            return self::install_database($_force_download, $current_timestamp);
+        } finally {
+            flock($lock, LOCK_UN);
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Release the handle required by flock; WP_Filesystem has no equivalent.
+            fclose($lock);
+        }
+    }
 
-        if (empty(wp_slimstat::$settings['browscap_last_modified'])) {
-
-            if (file_exists(wp_slimstat::$upload_dir . '/browscap-cache-master/version.txt')) {
-                $file_stat = @stat(wp_slimstat::$upload_dir . '/browscap-cache-master/version.txt');
-                if (false !== $file_stat) {
-                    wp_slimstat::$settings['browscap_last_modified'] = intval($file_stat['mtime']);
-                }
-            }
-
-            // The variable could be still empty if the file does not exist or stat failed to open it
-            if (empty(wp_slimstat::$settings['browscap_last_modified'])) {
-                wp_slimstat::$settings['browscap_last_modified'] = $current_timestamp;
-            }
+    private static function install_database($force, $current_timestamp)
+    {
+        global $wp_filesystem;
+        $stored = get_option('slimstat_options', []);
+        if (!$force && ('on' !== ($stored['enable_browscap'] ?? '') || $current_timestamp - (int) ($stored['browscap_last_modified'] ?? 0) <= 604800)) {
+            return [0, __('Your version of the library does not need to be updated.', 'wp-slimstat')];
+        }
+        $active = wp_slimstat::$upload_dir . '/browscap-cache-master';
+        $backup = wp_slimstat::$upload_dir . '/browscap-cache-backup';
+        $staging = wp_slimstat::$upload_dir . '/browscap-staging';
+        $browscap_zip = wp_slimstat::$upload_dir . '/browscap-db.zip';
+        // Persist only the retry timestamp; consent/runtime settings must never be written here.
+        wp_slimstat::$settings['browscap_last_modified'] = $current_timestamp;
+        $_stored_for_browscap = get_option('slimstat_options', []);
+        $_stored_for_browscap['browscap_last_modified'] = $current_timestamp;
+        wp_slimstat::update_option('slimstat_options', $_stored_for_browscap);
+        unset($_stored_for_browscap);
+        // Ensure WP File API is loaded (not auto-loaded on frontend init hook)
+        if (!function_exists('unzip_file')) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
         }
 
-        // Check for updates once a week ( 604800 seconds ), if $_force_download is not true
-        if (file_exists(wp_slimstat::$upload_dir . '/browscap-cache-master/version.txt')) {
-            if ($current_timestamp - wp_slimstat::$settings['browscap_last_modified'] > 604800) {
+        // Initialize WP_Filesystem — required by unzip_file() (see file.php:1595)
+        if (!WP_Filesystem(false, wp_slimstat::$upload_dir)) {
+            wp_delete_file($browscap_zip);
+            return [10, __('Could not initialize the WordPress filesystem. Please check your server permissions or set <code>FS_METHOD</code> to "direct" in wp-config.php.', 'wp-slimstat')];
+        }
 
-                // No matter what the outcome is, we'll check again in one week.
-                // Update only the timestamp key in the DB — do NOT write the full settings array.
-                // Writing wp_slimstat::$settings here persists runtime-derived values (e.g.
-                // use_slimstat_banner computed from consent_integration) and clobbers settings
-                // intentionally saved by the migration with different values.
-                wp_slimstat::$settings['browscap_last_modified'] = $current_timestamp;
-                $_stored_for_browscap = get_option('slimstat_options', []);
-                $_stored_for_browscap['browscap_last_modified'] = $current_timestamp;
-                wp_slimstat::update_option('slimstat_options', $_stored_for_browscap);
-                unset($_stored_for_browscap);
-
-                // Now check the version number on the server
-                // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- version metadata for a locally stored browser database, not executable content.
-                $response = wp_remote_get('https://raw.githubusercontent.com/slimstat/browscap-cache/master/version.txt');
-                if (!is_array($response) || is_wp_error($response) || 200 != wp_remote_retrieve_response_code($response)) {
-                    return [5, __('There was an error checking the remote library version. Please try again later.', 'wp-slimstat')];
-                }
-
-                $download_remote_file = (self::$browscap_local_version != trim(wp_remote_retrieve_body($response)));
-            } else {
-                return [0, __('Your version of the library does not need to be updated.', 'wp-slimstat')];
+        // Recover an interrupted rename before attempting another replacement.
+        if (!is_dir($active) && is_dir($backup) && !$wp_filesystem->move($backup, $active)) {
+            return [9, __('The previous Browscap data could not be restored. Please check your server permissions.', 'wp-slimstat')];
+        }
+        $download_remote_file = $force || !is_readable($active . '/version.txt');
+        if (!$download_remote_file) {
+            // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- version metadata for an opted-in, locally stored browser database.
+            $response = wp_remote_get('https://raw.githubusercontent.com/slimstat/browscap-cache/master/version.txt');
+            if (is_wp_error($response) || 200 != wp_remote_retrieve_response_code($response)) {
+                return [5, __('There was an error checking the remote library version. Please try again later.', 'wp-slimstat')];
             }
+            $download_remote_file = trim((string) file_get_contents($active . '/version.txt')) !== trim(wp_remote_retrieve_body($response));
         }
 
         // Download the most recent version of our pre-processed Browscap database
@@ -261,27 +289,30 @@ class Browscap
                 return [8, __('The downloaded Browscap file is not a valid ZIP archive. Your host may be blocking the download.', 'wp-slimstat')];
             }
 
-            // Ensure WP File API is loaded (not auto-loaded on frontend init hook)
-            if (!function_exists('unzip_file')) {
-                require_once ABSPATH . 'wp-admin/includes/file.php';
+            // Extract completely before moving the working cache; never delete it on an unzip failure.
+            $wp_filesystem->delete($staging, true, 'd');
+            $result = unzip_file($browscap_zip, $staging);
+            wp_delete_file($browscap_zip);
+            $replacement = $staging . '/browscap-cache-master';
+            if (is_wp_error($result) || !is_readable($replacement . '/version.txt')
+                || !preg_match('/^\d+$/', trim((string) file_get_contents($replacement . '/version.txt')))) {
+                $wp_filesystem->delete($staging, true, 'd');
+                return [9, __('The Browscap data could not be extracted and verified. Your existing data has been preserved.', 'wp-slimstat')];
             }
-
-            // Initialize WP_Filesystem — required by unzip_file() (see file.php:1595)
-            if (!WP_Filesystem(false, wp_slimstat::$upload_dir)) {
-                wp_delete_file($browscap_zip);
-                return [10, __('Could not initialize the WordPress filesystem. Please check your server permissions or set <code>FS_METHOD</code> to "direct" in wp-config.php.', 'wp-slimstat')];
+            $wp_filesystem->delete($backup, true, 'd');
+            if (is_dir($active) && !$wp_filesystem->move($active, $backup)) {
+                $wp_filesystem->delete($staging, true, 'd');
+                return [9, __('The Browscap data folder could not be replaced. Your existing data has been preserved.', 'wp-slimstat')];
             }
-
-            // Delete the old cache only after WP_Filesystem succeeds — preserves
-            // working Browscap data if filesystem initialization fails.
-            wp_slimstat_admin::rmdir(wp_slimstat::$upload_dir . '/browscap-cache-master/');
-
-            // We're ready to unzip the file
-            $result = unzip_file($browscap_zip, wp_slimstat::$upload_dir);
-            if (is_wp_error($result)) {
-                /* translators: %s: archive extraction error message. */
-                return [9, sprintf(__('There was an error uncompressing the Browscap data file: %s', 'wp-slimstat'), $result->get_error_message())];
+            if (!$wp_filesystem->move($replacement, $active)) {
+                if (is_dir($backup)) {
+                    $wp_filesystem->move($backup, $active);
+                }
+                $wp_filesystem->delete($staging, true, 'd');
+                return [9, __('The Browscap data folder could not be replaced. Your existing data has been preserved.', 'wp-slimstat')];
             }
+            $wp_filesystem->delete($backup, true, 'd');
+            $wp_filesystem->delete($staging, true, 'd');
 
             wp_delete_file($browscap_zip);
         }

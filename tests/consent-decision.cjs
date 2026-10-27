@@ -135,3 +135,24 @@ for (const type of [undefined, '', 'optin', 'optout']) {
     }
 }
 console.log('PASS: WP Consent API categories respect denial and unset types without changing CMP state');
+
+// Run the actual bootstrap for both parser-time and late/deferred script execution.
+const initialStart = source.indexOf('    function startInitialPageview()');
+const initialEnd = source.indexOf('    // Listen for WP Consent API', initialStart);
+assert(initialStart >= 0 && initialEnd > initialStart);
+for (const readyState of ['loading', 'interactive', 'complete']) {
+    let sends = 0;
+    const handlers = {};
+    const env = { document: {readyState}, navigator: {onLine: true}, setTimeout() {},
+        SlimStat: { _extract_params() {}, _send_pageview() { sends++; }, add_event(target, event, fn) { handlers[event] = fn; } } };
+    vm.runInNewContext(source.slice(initialStart, initialEnd), env);
+    if (readyState === 'loading') { assert.equal(sends, 0); assert.equal(typeof handlers.DOMContentLoaded, 'function'); handlers.DOMContentLoaded(); }
+    assert.equal(sends, 1, `one initial dispatch for ${readyState}`);
+    assert.equal(handlers.load, undefined, 'load must not dispatch a second pageview');
+}
+const idle = source.match(/if \(window.requestIdleCallback\) window.requestIdleCallback\(run[^;]+;/);
+assert(idle);
+let deadline;
+vm.runInNewContext(idle[0], {window: {requestIdleCallback(fn, options) { deadline = options && options.timeout; }}, run() {}});
+assert(deadline > 0 && deadline <= 1000, 'initial pageview idle delay has a bounded deadline');
+console.log('PASS: parser-time and late bootstraps dispatch once; idle delay is bounded');

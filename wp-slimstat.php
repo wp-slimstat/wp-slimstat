@@ -499,6 +499,8 @@ class wp_slimstat
         // Hook a GeoIP database update routine to the daily cronjob
         add_action('wp_slimstat_update_geoip_database', [self::class, 'wp_slimstat_update_geoip_database']);
 
+        add_action('wp_slimstat_update_browscap', [\SlimStat\Services\Browscap::class, 'update_browscap_database']);
+
         // Allow external domains on CORS requests
         add_filter('allowed_http_origins', [self::class, 'open_cors_admin_ajax']);
 

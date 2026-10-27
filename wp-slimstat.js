@@ -1711,7 +1711,7 @@ var SlimStat = (function () {
                 sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete });
             }
         };
-        if (window.requestIdleCallback) window.requestIdleCallback(run);
+        if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 1000 });
         else setTimeout(run, 250);
     }
 
@@ -2197,8 +2197,8 @@ if (!window.requestIdleCallback) {
     // The root exists even when the tracker runs in head, before body is parsed.
     observer.observe(document.documentElement, { childList: true, subtree: true });
 
-    // Initial pageview
-    SlimStat.add_event(window, "load", function () {
+    // Subresources must not hold the initial pageview until the visitor has already left.
+    function startInitialPageview() {
         SlimStat._extract_params();
 
         // Proceed with normal tracking; consent is gated by CMP checks in sendPageview()
@@ -2210,7 +2210,12 @@ if (!window.requestIdleCallback) {
                 if (navigator.onLine !== false) SlimStat.flush_offline_queue();
             } catch (e) {}
         }, 500);
-    });
+    }
+    if (document.readyState === "loading") {
+        SlimStat.add_event(document, "DOMContentLoaded", startInitialPageview);
+    } else {
+        startInitialPageview();
+    }
 
     // Listen for WP Consent API consent changes and retry pageview if previously blocked
     document.addEventListener("wp_listen_for_consent_change", function (event) {

@@ -98,8 +98,13 @@ if (!empty($saved_filters)) {
         }
 
 if (PHP_VERSION_ID >= 70100 && !file_exists(wp_slimstat::$upload_dir . '/browscap-cache-master/version.txt') && 'on' == wp_slimstat::$settings['notice_browscap']) {
-    /* translators: %s: URL of the Browscap settings section. */
-    wp_slimstat_admin::show_message(sprintf(__("Install our <a href='%s' class='noslimstat'>Browscap Library</a> to identify your visitors' browser and operating system.", 'wp-slimstat'), self::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'browscap');
+    if ('on' === wp_slimstat::$settings['enable_browscap']) {
+        /* translators: %s: URL of the Browscap settings section. */
+        wp_slimstat_admin::show_message(sprintf(__("Browscap data is missing. SlimStat is using built-in browser detection. To retry the download now, save Browscap as On in <a href='%s' class='noslimstat'>Settings</a>.", 'wp-slimstat'), wp_slimstat_admin::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'browscap');
+    } else {
+        /* translators: %s: URL of the Browscap settings section. */
+        wp_slimstat_admin::show_message(sprintf(__("Install our <a href='%s' class='noslimstat'>Browscap Library</a> to identify your visitors' browser and operating system.", 'wp-slimstat'), self::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'browscap');
+    }
 }
 
 // Browscap relies on Flysystem's LocalFilesystemAdapter, which constructs

@@ -587,10 +587,6 @@ class wp_slimstat_db
     {
         $_sql = apply_filters('slimstat_get_results_sql', $_sql, $_select_no_aggregate_values, $_order_by, $_group_by, $_aggregate_values_add);
 
-        if ('on' == wp_slimstat::$settings['show_sql_debug']) {
-            self::$debug_message .= sprintf("<p class='debug'>%s</p>", $_sql);
-        }
-
         $table    = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $sql_trim = ltrim($_sql);
         $cache_key = '';
@@ -604,6 +600,7 @@ class wp_slimstat_db
             $cache_key      = 'slimstat_query_' . md5($cache_sql);
             $cached_results = get_transient($cache_key);
             if (false !== $cached_results) {
+                Query::recordSqlDebug($_sql, '', true);
                 return $cached_results;
             }
         }
@@ -623,6 +620,7 @@ class wp_slimstat_db
         //
         // Execute on wp_slimstat::$wpdb so the External DB addon queries the correct database.
         $results = wp_slimstat::$wpdb->get_results($_sql, ARRAY_A);
+        Query::recordSqlDebug($_sql, wp_slimstat::$wpdb->last_error ?? '');
         // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         // Write back what we read.
@@ -696,10 +694,6 @@ class wp_slimstat_db
     {
         $_sql = apply_filters('slimstat_get_var_sql', $_sql, $_aggregate_value);
 
-        if ('on' == wp_slimstat::$settings['show_sql_debug']) {
-            self::$debug_message .= sprintf("<p class='debug'>%s</p>", $_sql);
-        }
-
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $sql_trim = ltrim($_sql);
 
@@ -745,7 +739,9 @@ class wp_slimstat_db
             return $query->getVar();
         } else {
             // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
-            return wp_slimstat::$wpdb->get_var($_sql);
+            $result = wp_slimstat::$wpdb->get_var($_sql);
+            Query::recordSqlDebug($_sql, wp_slimstat::$wpdb->last_error ?? '');
+            return $result;
             // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         }
     }
