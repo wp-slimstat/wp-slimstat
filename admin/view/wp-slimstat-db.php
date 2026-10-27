@@ -597,7 +597,9 @@ class wp_slimstat_db
             // Normalize only the cache key; the caller's SQL still reaches wpdb unchanged.
             $cache_sql = method_exists(wp_slimstat::$wpdb, 'remove_placeholder_escape')
                 ? wp_slimstat::$wpdb->remove_placeholder_escape($_sql) : $_sql;
-            $cache_key      = 'slimstat_query_' . md5($cache_sql);
+            $cache_key = 'slimstat_query_' . md5(serialize([
+                (string) (wp_slimstat::$wpdb->dbhost ?? ''), (string) (wp_slimstat::$wpdb->dbname ?? ''), $cache_sql,
+            ]));
             $cached_results = get_transient($cache_key);
             if (false !== $cached_results) {
                 Query::recordSqlDebug($_sql, '', true);
@@ -643,9 +645,8 @@ class wp_slimstat_db
         // can ever read, which is precisely the accumulation that left thousands of orphaned
         // rows in wp_options.
         //
-        // The key is an md5 of the FULL SQL, so anything that scopes a query — a filter, a
-        // blog restriction, a user predicate — is already part of the key and cannot be
-        // served to a request that asked something different.
+        // The key includes the analytics connection and FULL SQL, so a database switch,
+        // filter, blog restriction or user predicate cannot reuse another scope's answer.
         //
         // Worth stating plainly: the defect is real but the win is small. Measured on
         // slimview3 with a historical range, steady state, 600 -> 598 queries per render.

@@ -18,6 +18,8 @@ for (const permitted of [false, true]) {
   scope.document.cookie = 'slimstat_gdpr_consent=accepted'; listener();
   assert.equal(actual, permitted, 'banner acceptance cannot override another server filter');
   wc.setOrderTracking(false); assert.equal(actual, false, 'another integration can deny');
+  listener(); assert.equal(actual, false, 'banner events preserve another integration\'s runtime denial');
+  wc.setOrderTracking(true); assert.equal(actual, permitted, 'the integration can explicitly allow again');
   consentAPI = false; listener(); assert.equal(actual, false, 'WP Consent API denial is preserved');
   consentAPI = true; scope.document.cookie = 'slimstat_gdpr_consent=denied'; listener();
   assert.equal(actual, false, 'withdrawal clears attribution');

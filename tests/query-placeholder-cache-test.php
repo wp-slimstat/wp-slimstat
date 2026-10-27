@@ -60,6 +60,16 @@ foreach (['{request-one}', '{request-two}'] as $marker) {
 placeholder_check('Raw historical SQL is executed only once across requests', count($db->queries) === 1);
 placeholder_check('The executed SQL is preserved byte-for-byte', $db->queries[0] === str_replace('%', '{request-one}', $canonical));
 placeholder_check('A raw cache hit preserves the exact answer', $answers[0] === $answers[1] && $answers[0] === [['id' => '7', 'resource' => '/100%']]);
+$db->dbname = 'tests-other';
+wp_slimstat_db::get_results($canonical);
+placeholder_check('Raw reports do not reuse another analytics database', count($db->queries) === 2);
+$db->dbhost = 'other-host';
+wp_slimstat_db::get_results($canonical);
+placeholder_check('Raw reports do not reuse another analytics host', count($db->queries) === 3);
+wp_slimstat_db::get_results($canonical);
+placeholder_check('Raw reports still reuse their own connection cache', count($db->queries) === 3);
+$db->dbhost = 'db';
+$db->dbname = 'tests-fixture';
 $db->queries = [];
 $GLOBALS['placeholder_cache'] = [];
 wp_slimstat_db::$filters_normalized['utime']['end'] = wp_slimstat::now();
@@ -69,4 +79,4 @@ foreach (['{request-one}', '{request-two}'] as $marker) {
 }
 placeholder_check('Live raw reads still bypass cache writes', count($db->queries) === 2 && $GLOBALS['placeholder_cache'] === []);
 if ($failures) { fwrite(STDERR, implode("\n", $failures) . "\n"); exit(1); }
-echo "PASS: eleven placeholder-cache identity, scope, SQL-preservation and live-read checks\n";
+echo "PASS: fourteen placeholder-cache identity, scope, SQL-preservation and live-read checks\n";

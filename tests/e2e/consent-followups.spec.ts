@@ -74,6 +74,14 @@ test.describe('consent wire and unchanged settings (#366/#367)', () => {
       await page.reload();
       await expect.poll(async () => (await context.cookies()).some(c => c.name === 'sbjs_current')).toBe(true);
       await page.evaluate(() => {
+        (window as any).wc_order_attribution.setOrderTracking(false);
+        document.dispatchEvent(new CustomEvent('slimstat_banner_consent', { detail: { consent: 'accepted' } }));
+      });
+      expect((await context.cookies()).filter(c => c.name.startsWith('sbjs_'))).toEqual([]);
+      expect(await page.evaluate(() => (window as any).wc_order_attribution.params.allowTracking)).toBe(false);
+      await page.evaluate(() => (window as any).wc_order_attribution.setOrderTracking(true));
+      await expect.poll(async () => (await context.cookies()).some(c => c.name === 'sbjs_current')).toBe(true);
+      await page.evaluate(() => {
         document.cookie = 'slimstat_gdpr_consent=denied; path=/';
         document.dispatchEvent(new CustomEvent('slimstat_banner_consent', { detail: { consent: 'denied' } }));
       });

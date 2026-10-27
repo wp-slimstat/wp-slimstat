@@ -57,10 +57,10 @@ JS
 (function(w,d){
  var wc=w.wc_order_attribution;
  if(!wc || typeof wc.setOrderTracking!=='function' || !wc.slimstatConsentAllowed) return;
- var consent=wc.slimstatConsentAllowed, permitted=wc.slimstatOriginalAllow, set=wc.setOrderTracking;
+ var consent=wc.slimstatConsentAllowed, permitted=wc.slimstatOriginalAllow, requested=permitted, set=wc.setOrderTracking;
  delete wc.slimstatConsentAllowed; delete wc.slimstatOriginalAllow;
- wc.setOrderTracking=function(allow){return set.call(wc, Boolean(allow && permitted && consent()));};
- d.addEventListener('slimstat_banner_consent',function(){wc.setOrderTracking(true);});
+ wc.setOrderTracking=function(allow){requested=Boolean(allow);return set.call(wc, Boolean(requested && permitted && consent()));};
+ d.addEventListener('slimstat_banner_consent',function(){wc.setOrderTracking(requested);});
 })(window,document);
 JS
 		, 'after');
