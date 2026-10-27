@@ -543,6 +543,13 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
       await visitor.goto(`${BASE_URL}/?e2e=${marker}-a`);
       const queue = () => visitor.evaluate(() => JSON.parse(localStorage.getItem('slimstat_offline_queue') || '[]'));
       await expect.poll(queue).toHaveLength(1);
+      // A reconnect signal can arrive before requests work. Reload must keep the unacknowledged payload.
+      await visitor.evaluate(() => {
+        Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
+        try { (window as any).SlimStat.flush_offline_queue(); }
+        finally { delete (navigator as any).onLine; }
+      });
+      expect(await queue()).toHaveLength(1);
       await visitor.evaluate(url => history.replaceState(null, '', url), `${BASE_URL}/?e2e=${marker}-b`);
       await visitor.reload();
       await expect.poll(queue).toHaveLength(2);

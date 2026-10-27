@@ -1,5 +1,6 @@
 = 6.0.0 - 2026-10-24 =
 
+* Preserve offline tracking data during a failed reconnect followed by reload; remove queued data only after the server acknowledges or explicitly rejects it.
 * Keep cached historical reports separate when switching analytics databases or hosts, and preserve another integration's WooCommerce tracking denial across SlimStat banner events.
 * Fixed consent-withdrawal requests and preserved unchosen consent settings when saving Tracker settings with GDPR disabled.
 * WooCommerce attribution follows SlimStat banner consent before its first cookie write, including cached pages, acceptance and withdrawal. Other consent denials remain effective.

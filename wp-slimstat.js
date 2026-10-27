@@ -15,6 +15,7 @@ var SlimStat = (function () {
     // Queue to enforce sequential sending order for tracking requests
     var requestQueue = [];
     var queueInFlight = false;
+    var offlineInFlight = {};
     var MAX_QUEUE_ATTEMPTS = 4;
     var QUEUE_HIGH_WATERMARK = 80; // drop low-priority if exceeded
     var lastInteractionPayload = "";
@@ -435,7 +436,7 @@ var SlimStat = (function () {
 
         // Beacon acceptance does not mean delivery while the browser is offline.
         if (navigator.onLine === false) {
-            storeOffline(payload);
+            if (!opts.offlineReplay) storeOffline(payload);
             if (typeof opts.onComplete === "function") opts.onComplete(false);
             return true;
         }
@@ -499,14 +500,14 @@ var SlimStat = (function () {
                         }, delay);
                     } else {
                         // Max attempts reached, move to offline storage
-                        SlimStat.store_offline(item.payload);
+                        if (!item.opts.offlineReplay) SlimStat.store_offline(item.payload);
                         if (item.opts && typeof item.opts.onComplete === "function") {
                             item.opts.onComplete(false);
                         }
                     }
                 } else {
                     if (item.opts && typeof item.opts.onComplete === "function") {
-                        item.opts.onComplete(!!success);
+                        item.opts.onComplete(!!success, rejected);
                     }
                 }
             } finally {
@@ -1741,11 +1742,10 @@ var SlimStat = (function () {
             // Send offline items in batches to avoid overwhelming the server
             var batchSize = 5;
             var sent = 0;
-            var toRemove = [];
 
             for (var i = 0; i < offline.length && sent < batchSize; i++) {
                 var item = offline[i];
-                if (item && item.p) {
+                if (item && item.p && !offlineInFlight[item.p]) {
                     // Update payload with current ID if it has a placeholder
                     var payload = item.p;
                     if (payload.indexOf("id=pending") !== -1) {
@@ -1753,19 +1753,23 @@ var SlimStat = (function () {
                         payload = payload.replace("id=pending", "id=" + params.id);
                     }
 
-                    if (sendToServer(payload, false, { priority: "normal" })) {
-                        toRemove.push(i);
-                        sent++;
-                    }
+                    // Keep the durable copy across reloads until the server answers.
+                    (function (original, replay) {
+                        offlineInFlight[original] = true;
+                        var queued = sendToServer(replay, false, {
+                            priority: "normal",
+                            offlineReplay: true,
+                            onComplete: function (success, rejected) {
+                                delete offlineInFlight[original];
+                                if (success || rejected) {
+                                    saveOfflineQueue(loadOfflineQueue().filter(function (entry) { return !entry || entry.p !== original; }));
+                                }
+                            },
+                        });
+                        if (!queued) delete offlineInFlight[original];
+                    })(item.p, payload);
+                    sent++;
                 }
-            }
-
-            // Remove sent items from offline queue
-            if (toRemove.length > 0) {
-                for (var j = toRemove.length - 1; j >= 0; j--) {
-                    offline.splice(toRemove[j], 1);
-                }
-                saveOfflineQueue(offline);
             }
         } catch (e) {
             // Silently fail if there are any issues
