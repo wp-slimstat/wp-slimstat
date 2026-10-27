@@ -394,7 +394,7 @@ final class Query
 		$scope = '(' . $scope . ') AND ' . self::authorScope('t1.id');
 		$db    = self::db();
 		$since = Store::ready() ? (int) (get_option(Store::STATE, [])['since'] ?? 0) : PHP_INT_MAX;
-		$uncovered = Store::ready() ? ' AND NOT EXISTS (SELECT 1 FROM ' . Store::table() . ' h WHERE h.id = t1.id)' : '';
+		$uncovered = self::legacyProbe('t1.id');
 		$row   = self::rows($db->prepare('SELECT COUNT(*) views, ' . self::deviceSplit() . ', SUM(t1.dt < %d' . $uncovered . ') older, MAX(t1.content_id) content_id
 			FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats t1
 			WHERE t1.dt BETWEEN %d AND %d AND ', $since, $start, $end) . self::pageWhere($pageKey) . " AND ({$scope})")[0] ?? [];
@@ -426,12 +426,14 @@ final class Query
 	/**
 	 * Each pageview is read by one layer, including imported or backdated full capture.
 	 */
-	private static function legacyProbe(): string
+	private static function legacyProbe(string $id = 'te.id'): string
 	{
 		if (!Store::ready()) {
 			return '';
 		}
-		return ' AND NOT EXISTS (SELECT 1 FROM ' . Store::table() . ' h WHERE h.id = te.id)';
+		// A restore can reuse IDs; a row for another page or timestamp does not cover this pageview.
+		return ' AND NOT EXISTS (SELECT 1 FROM ' . Store::table() . ' h WHERE h.id = ' . $id
+			. ' AND h.dt = t1.dt AND h.page = UNHEX(LEFT(MD5(' . self::pageKeySql('t1.resource') . '), 16)))';
 	}
 
 	/** SUM columns counting t1 pageviews per device bucket. */

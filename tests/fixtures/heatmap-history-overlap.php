@@ -27,7 +27,14 @@ try {
  $assert(3, (int)$rows[0]['clicks']);
  $assert(0, count(Query::legacyPoints($path, 'mobile')));
  $assert(0, Query::deviceViews($path, $now-30, $now+1, 't1.id = '.$ids[0])['older']);
- echo wp_json_encode(['result'=>'pass','clicks'=>3,'pageviews'=>3,'older'=>1,'covered_old_view_note'=>0]);
+ // Restores with foreign-key checks disabled can leave a heatmap row for a reused ID.
+ $db->update(Store::table(), ['page'=>hex2bin(\SlimStat\Schema\SurrogateKey::hex('/different-restored-page/'))], ['id'=>$ids[0]]);
+ $assert(3, array_sum(array_column(Query::legacyPoints($path, 'desktop'), 'n')));
+ $assert(2, Query::deviceViews($path, $now-30, $now+1)['older']);
+ $db->update(Store::table(), ['page'=>hex2bin(\SlimStat\Schema\SurrogateKey::hex($path)), 'dt'=>$now-40], ['id'=>$ids[0]]);
+ $assert(3, array_sum(array_column(Query::legacyPoints($path, 'desktop'), 'n')));
+ $assert(2, Query::deviceViews($path, $now-30, $now+1)['older']);
+ echo wp_json_encode(['restored_id_controls'=>'pass','result'=>'pass','clicks'=>3,'pageviews'=>3,'older'=>1,'covered_old_view_note'=>0]);
 } finally {
  foreach ($ids as $id) {
   $db->delete(Store::table(), ['id'=>$id]); $db->delete($prefix.'slim_events', ['id'=>$id]); $db->delete($prefix.'slim_stats', ['id'=>$id]);

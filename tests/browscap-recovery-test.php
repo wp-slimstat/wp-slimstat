@@ -62,6 +62,7 @@ try {
     file_put_contents($root . '/browscap-cache-master/cache.data', 'old-data');
     $result = Browscap::update_browscap_database(true);
     recovery_check($result[0] !== 0, 'forced update reports extraction failure');
+    recovery_check(strpos($result[1], 'test extraction failure') !== false, 'extraction failure retains the actionable WordPress diagnostic');
     recovery_check(file_get_contents($root . '/browscap-cache-master/cache.data') === 'old-data', 'failed extraction preserves active data');
     $fail_extract = false;
     $fail_publish = true;

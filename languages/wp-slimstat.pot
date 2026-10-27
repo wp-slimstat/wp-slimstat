@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-27T07:26:22+00:00\n"
+"POT-Creation-Date: 2026-10-27T08:35:25+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -8653,7 +8653,7 @@ msgstr ""
 msgid "Exception occurred: [Code %1$d] %2$s at %3$s:%4$d"
 msgstr ""
 
-#: src/Heatmap/Query.php:470
+#: src/Heatmap/Query.php:472
 #: admin/assets/js/heatmaps.js:99
 #: admin/assets/js/heatmaps.js:260
 msgid "Heatmap data could not be loaded. Try a shorter date range, then retry."
@@ -9316,28 +9316,34 @@ msgstr ""
 msgid "The downloaded Browscap file is not a valid ZIP archive. Your host may be blocking the download."
 msgstr ""
 
-#: src/Services/Browscap.php:300
+#. translators: %s: archive extraction error message.
+#: src/Services/Browscap.php:302
+#, php-format
+msgid "There was an error uncompressing the Browscap data file: %s"
+msgstr ""
+
+#: src/Services/Browscap.php:304
 msgid "The Browscap data could not be extracted and verified. Your existing data has been preserved."
 msgstr ""
 
-#: src/Services/Browscap.php:305
-#: src/Services/Browscap.php:312
+#: src/Services/Browscap.php:309
+#: src/Services/Browscap.php:316
 msgid "The Browscap data folder could not be replaced. Your existing data has been preserved."
 msgstr ""
 
-#: src/Services/Browscap.php:320
+#: src/Services/Browscap.php:324
 msgid "The Browscap data file has been installed on your server."
 msgstr ""
 
-#: src/Services/GDPRService.php:257
+#: src/Services/GDPRService.php:258
 msgid "This website uses cookies to analyze site traffic and improve your experience. By continuing to use this site, you consent to our use of cookies."
 msgstr ""
 
-#: src/Services/GDPRService.php:291
+#: src/Services/GDPRService.php:292
 msgid "Accept"
 msgstr ""
 
-#: src/Services/GDPRService.php:294
+#: src/Services/GDPRService.php:295
 msgid "Decline"
 msgstr ""
 

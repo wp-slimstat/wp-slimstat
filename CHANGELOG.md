@@ -3,10 +3,10 @@
 * Fixed consent-withdrawal requests and preserved unchosen consent settings when saving Tracker settings with GDPR disabled.
 * WooCommerce attribution follows SlimStat banner consent before its first cookie write, including cached pages, acceptance and withdrawal. Other consent denials remain effective.
 * Corrected social and messaging order attribution when WooCommerce supplies synthetic referral tags; explicit campaign tags and revenue are unchanged.
-* Heatmaps display decoded page titles, distribute sampling across pageviews, discard pre-consent activity and avoid double-counting backdated full-capture clicks. Cached older trackers remain compatible.
+* Heatmaps display decoded page titles, distribute sampling across pageviews, discard pre-consent activity and avoid double-counting backdated full-capture clicks. Restored pageviews remain visible when stale heatmap rows reuse their IDs for another page or timestamp. Cached older trackers remain compatible.
 
 * Fixed report SQL diagnostics for query-builder, cached and network reads; SQL and database errors are escaped without changing results (#362).
-* Recover missing opted-in Browscap data through throttled background updates; preserve the installed cache on failed extraction/replacement and allow manual retry (#363).
+* Recover missing opted-in Browscap data through throttled background updates; preserve the installed cache and actionable extraction diagnostics on failure and allow manual retry (#363).
 * Classify self-identifying HeadlessChrome, PhantomJS and Lighthouse clients as bots so the existing Bots exclusion applies in both tracking modes (#364).
 * Start client pageviews at DOM readiness with a bounded idle delay, preserving consent and acknowledged pageview creation (#365).
 

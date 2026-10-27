@@ -297,6 +297,10 @@ class Browscap
             if (is_wp_error($result) || !is_readable($replacement . '/version.txt')
                 || !preg_match('/^\d+$/', trim((string) file_get_contents($replacement . '/version.txt')))) {
                 $wp_filesystem->delete($staging, true, 'd');
+                if (is_wp_error($result)) {
+                    /* translators: %s: archive extraction error message. */
+                    return [9, sprintf(__('There was an error uncompressing the Browscap data file: %s', 'wp-slimstat'), $result->get_error_message())];
+                }
                 return [9, __('The Browscap data could not be extracted and verified. Your existing data has been preserved.', 'wp-slimstat')];
             }
             $wp_filesystem->delete($backup, true, 'd');

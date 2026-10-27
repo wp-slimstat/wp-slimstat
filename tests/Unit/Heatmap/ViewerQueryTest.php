@@ -98,7 +98,7 @@ class ViewerQueryTest extends WpSlimstatTestCase
 		$points = Query::legacyPoints('/pricing', 'desktop', 't1.dt BETWEEN 10 AND 20');
 		self::assertSame(720, $points[0]['vh']);
 		self::assertStringContainsString('GROUP BY te.notes, te.position, vw, vh', implode("\n", $this->queries));
-		self::assertStringContainsString('AND NOT EXISTS (SELECT 1 FROM wp_slim_heatmap h WHERE h.id = te.id)', implode("\n", $this->queries));
+		self::assertStringContainsString('AND NOT EXISTS (SELECT 1 FROM wp_slim_heatmap h WHERE h.id = te.id AND h.dt = t1.dt AND h.page = UNHEX(LEFT(MD5(', implode("\n", $this->queries));
 		self::assertStringNotContainsString('te.dt <', implode("\n", $this->queries));
 
 		$this->queries = [];
@@ -143,7 +143,7 @@ class ViewerQueryTest extends WpSlimstatTestCase
 		self::assertSame(['views' => 9, 'desktop' => 5, 'tablet' => 1, 'mobile' => 3, 'older' => 4, 'content_id' => 12], $views);
 		$sql = implode("\n", $this->queries);
 		self::assertStringContainsString("t1.resource = '/pricing'", $sql, 'exact page');
-		self::assertStringContainsString('SUM(t1.dt < 150 AND NOT EXISTS (SELECT 1 FROM wp_slim_heatmap h WHERE h.id = t1.id)) older', $sql);
+		self::assertStringContainsString('SUM(t1.dt < 150 AND NOT EXISTS (SELECT 1 FROM wp_slim_heatmap h WHERE h.id = t1.id AND h.dt = t1.dt AND h.page = UNHEX(LEFT(MD5(', $sql);
 	}
 
 	public function test_scroll_depth_by_device_feeds_the_device_gap(): void
