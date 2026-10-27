@@ -41,6 +41,8 @@ class Query
 
     private $insertValues = [];
 
+    private $insertHexColumns = [];
+
     private $ignore = false;
 
     private $allowCaching = false;
@@ -200,15 +202,17 @@ class Query
     }
 
     /**
-     * Sets the values for an insert operation.
+     * Sets insert values; named hex-encoded binary columns use bound UNHEX(%s).
      *
      * @return $this
      */
-    public function values(array $values)
+    public function values(array $values, array $hexColumns = [])
     {
         if ($values === []) {
             return $this;
         }
+
+        $this->insertHexColumns = $hexColumns;
 
         // Check if it's an array of arrays for bulk insert
         if (isset($values[0]) && is_array($values[0])) {
@@ -746,11 +750,12 @@ class Query
 
                 $valueSets = [];
                 foreach ($this->insertValues as $row) {
-                    $placeholders  = implode(', ', array_fill(0, count($row), '%s'));
-                    $valueSets[]   = '(' . $placeholders . ')';
-                    foreach ($row as $value) {
+                    $placeholders = [];
+                    foreach ($row as $column => $value) {
+                        $placeholders[] = in_array($column, $this->insertHexColumns, true) ? 'UNHEX(%s)' : '%s';
                         $this->valuesToPrepare[] = $value;
                     }
+                    $valueSets[] = '(' . implode(', ', $placeholders) . ')';
                 }
 
                 $query .= implode(', ', $valueSets);

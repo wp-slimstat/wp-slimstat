@@ -81,7 +81,6 @@ class WriteTerminalTest extends WpSlimstatTestCase
 
         Functions\when('esc_url_raw')->alias(static fn($v) => $v);
         Functions\when('esc_sql')->alias(static fn($v) => $v);
-        Functions\when('__')->alias(static fn($v) => $v);
 
         $wpdb             = \Mockery::mock(\wpdb::class);
         $wpdb->prefix     = 'wp_';
@@ -193,16 +192,15 @@ class WriteTerminalTest extends WpSlimstatTestCase
 
     // ── S6: the v6-code-on-v5-schema window ─────────────────────────────────
 
-    /** @dataProvider schemaWriteErrors */
-    public function test_an_unknown_column_retries_with_the_intersection_and_stores_the_row(string $error): void
+    public function test_an_unknown_column_retries_with_the_intersection_and_stores_the_row(): void
     {
         // The v6 tracker writes a column this v5 schema does not have yet.
         $this->presentColumns = ['id', 'ip', 'resource', 'dt'];
 
         // First attempt fails on the absent column; the retry succeeds.
-        $this->onQuery = static function ($sql, $wpdb, $nth) use ($error) {
+        $this->onQuery = static function ($sql, $wpdb, $nth) {
             if (1 === $nth) {
-                $wpdb->last_error = $error;
+                $wpdb->last_error = "Unknown column 'vid_hash' in 'field list'";
                 return false;
             }
             $wpdb->last_error = '';
@@ -212,7 +210,7 @@ class WriteTerminalTest extends WpSlimstatTestCase
 
         $result = Storage::insertRow(
             // 32 hex chars, as Session actually produces: insertRow() VALIDATES vid_hash
-            // before packing it to BINARY(16) and drops anything else — so the 8-char
+            // before binding it for BINARY(16) and drops anything else — so the 8-char
             // 'deadbeef' this test originally used was discarded before the first INSERT,
             // the intersection had nothing to narrow, and the retry never fired. The test
             // failing on that change was correct behaviour on both sides.
@@ -233,23 +231,24 @@ class WriteTerminalTest extends WpSlimstatTestCase
         $this->assertStringContainsString('ip', $retry, 'and the present ones must survive it');
     }
 
-    public static function schemaWriteErrors(): array
+    public function test_binary_identity_is_bound_as_ascii_hex_without_a_schema_probe(): void
     {
-        return [
-            'mysql' => ["Unknown column 'vid_hash' in 'field list'"],
-            'wpdb binary rejection' => ['WordPress database error: Could not perform query because it contains invalid data.'],
-        ];
+        $hash = 'ff005c2722deadbeef0123456789abcd';
+        $result = Storage::insertRow(['resource' => '/first-visit', 'vid_hash' => $hash], 'wp_slim_stats');
+        $this->assertTrue($result->isStored());
+        $this->assertCount(1, $this->queries());
+        $this->assertSame(0, $this->probes());
+        $this->assertStringContainsString("UNHEX('" . $hash . "')", $this->queries()[0]);
+        $this->assertDoesNotMatchRegularExpression('/[^\x20-\x7e]/', $this->queries()[0]);
     }
 
-    public function test_invalid_data_with_no_missing_columns_is_not_retried(): void
+    public function test_bulk_insert_hex_binding_preserves_other_columns_and_rows(): void
     {
-        $this->presentColumns = ['id', 'ip', 'vid_hash'];
-        $this->queryResult = false;
-        $GLOBALS['wpdb']->last_error = 'WordPress database error: Could not perform query because it contains invalid data.';
-        $result = Storage::insertRow(['ip' => '1.2.3.4', 'vid_hash' => str_repeat('ff', 16)], 'wp_slim_stats');
-        $this->assertTrue($result->isFailed());
-        $this->assertCount(1, $this->queries());
-        $this->assertSame([], \wp_slimstat::$degradations);
+        \SlimStat\Utils\Query::insert('wp_slim_stats')->values([
+            ['resource' => '/first', 'vid_hash' => 'ff00'],
+            ['resource' => '/second', 'vid_hash' => 'ab27'],
+        ], ['vid_hash'])->execute();
+        $this->assertSame("INSERT INTO wp_slim_stats (`resource`, `vid_hash`) VALUES ('/first', UNHEX('ff00')), ('/second', UNHEX('ab27'))", $this->queries()[0]);
     }
 
     public function test_the_degradation_is_recorded_once_not_per_hit(): void
@@ -284,7 +283,7 @@ class WriteTerminalTest extends WpSlimstatTestCase
         $this->queryResult = 1;
         $this->insertId    = 9;
 
-        Storage::insertRow(['ip' => '1.2.3.4', 'vid_hash' => str_repeat('ff', 16)], 'wp_slim_stats');
+        Storage::insertRow(['ip' => '1.2.3.4'], 'wp_slim_stats');
 
         $this->assertSame(
             0,
@@ -300,7 +299,7 @@ class WriteTerminalTest extends WpSlimstatTestCase
         $this->queryResult           = false;
         $GLOBALS['wpdb']->last_error = 'Deadlock found when trying to get lock; try restarting transaction';
 
-        $result = Storage::insertRow(['ip' => '1.2.3.4', 'vid_hash' => str_repeat('ff', 16)], 'wp_slim_stats');
+        $result = Storage::insertRow(['ip' => '1.2.3.4'], 'wp_slim_stats');
 
         $this->assertSame(WriteResult::FAILED, $result->state());
         $this->assertSame(0, $this->probes(), 'a deadlock is not a missing column');

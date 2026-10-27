@@ -41,19 +41,24 @@ try {
             'vid_hash' => str_repeat('ff', 16)], $table);
         remove_filter('query', $capture);
         remove_filter('gettext', $translate);
-        $counts[$shape] = ['inserts' => count(preg_grep('/^INSERT(?: IGNORE)? INTO ' . $table . '\b/', $queries)), 'column_probes' => count(preg_grep('/^SHOW COLUMNS/', $queries))];
+        $counts[$shape] = ['charset_probes' => count(preg_grep('/^SHOW FULL COLUMNS FROM `?' . $table . '`?$/', $queries)), 'inserts' => count(preg_grep('/^INSERT(?: IGNORE)? INTO ' . $table . '\b/', $queries)), 'column_probes' => count(preg_grep('/^SHOW COLUMNS/', $queries))];
+        $inserts = $counts[$shape]['inserts'];
+        $probes = $counts[$shape]['column_probes'];
+        $checks[$shape . '_no_binary_charset_probe'] = 0 === $counts[$shape]['charset_probes'];
         $checks[$shape . '_stored_once'] = $write->isStored()
             && 1 === (int) $db->get_var("SELECT COUNT(*) FROM `$table`");
         $checks[$shape . '_resource_preserved'] = '/upgrade-' . $shape === $db->get_var("SELECT resource FROM `$table`");
         if ('migrated' === $shape) {
             $checks['identity_bytes_preserved'] = str_repeat('FF', 16) === $db->get_var("SELECT HEX(vid_hash) FROM `$table`");
-            $checks['migrated_no_retry_or_column_probe'] = 1 === count(preg_grep('/^INSERT(?: IGNORE)? INTO ' . $table . '\b/', $queries))
-                && [] === preg_grep('/^SHOW COLUMNS/', $queries);
+            $checks['migrated_no_retry_or_storage_probe'] = 1 === $inserts && 0 === $probes;
         } else {
-            $checks[$shape . '_reactive_retry'] = 2 === count(preg_grep('/^INSERT(?: IGNORE)? INTO ' . $table . '\b/', $queries))
-                && 1 === count(preg_grep('/^SHOW COLUMNS/', $queries));
+            $checks[$shape . '_reactive_retry'] = 2 === $inserts && 1 === $probes;
         }
     }
+    $db->suppress_errors(true);
+    $missing = Storage::insertRow(['resource' => '/missing', 'dt' => 1, 'vid_hash' => str_repeat('ff', 16)], 'up_missing');
+    $checks['missing_table_error_reaches_recovery'] = $missing->isFailed()
+        && (bool) preg_match('/doesn.t exist|does not exist|1146/i', $missing->error());
     echo json_encode(['wordpress' => get_bloginfo('version'), 'php' => PHP_VERSION,
         'checks' => $checks, 'query_counts' => $counts], JSON_PRETTY_PRINT) . "\n";
 } finally {
