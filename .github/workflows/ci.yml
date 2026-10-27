@@ -694,6 +694,7 @@ jobs:
           sudo chown "$(id -u):$(id -g)" "$WP_ROOT/wp-config.php"
 
           echo "WP_ROOT=$WP_ROOT" >> $GITHUB_ENV
+          echo "FREE_PLUGIN_ROOT=$GITHUB_WORKSPACE" >> $GITHUB_ENV
 
           # ── MySQL access via host-mapped port ────────────────────────────
           # wp-env maps container port 3306 to a dynamic host port.

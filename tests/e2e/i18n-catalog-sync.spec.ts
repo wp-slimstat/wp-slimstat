@@ -8,12 +8,12 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
-import { MYSQL_CONFIG, WP_ROOT, assertSafeTestDatabase } from './helpers/env';
+import { MYSQL_CONFIG, FREE_PLUGIN_ROOT, assertSafeTestDatabase } from './helpers/env';
 import * as mysql from 'mysql2/promise';
 import type { RowDataPacket } from 'mysql2';
 
 // Mutate and inspect the installed artifact, including an isolated Docker ZIP install.
-const PLUGIN_LANGUAGES = path.join(WP_ROOT, 'wp-content', 'plugins', 'wp-slimstat', 'languages');
+const PLUGIN_LANGUAGES = path.join(FREE_PLUGIN_ROOT, 'languages');
 const TABLE_PREFIX = process.env.WP_DB_PREFIX || 'wp_';
 const OPTIONS_TABLE = `${TABLE_PREFIX}options`;
 

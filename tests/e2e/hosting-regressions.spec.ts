@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { WP_ROOT, BASE_URL } from './helpers/env';
+import { FREE_PLUGIN_ROOT, BASE_URL } from './helpers/env';
 import { snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions,
   getPool, closeDb, installOptionMutator, uninstallOptionMutator } from './helpers/setup';
 import { runWordPressFixture } from './helpers/chart';
@@ -11,7 +11,7 @@ test('head-loaded bundled tracker observes the root and starts one pageview', as
   const page = await context.newPage();
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  const bundle = fs.readFileSync(path.join(WP_ROOT, 'wp-content/plugins/wp-slimstat/wp-slimstat.min.js'), 'utf8');
+  const bundle = fs.readFileSync(path.join(FREE_PLUGIN_ROOT, 'wp-slimstat.min.js'), 'utf8');
   await page.route('**/*', route => route.request().isNavigationRequest()
     ? route.fulfill({ contentType: 'text/html', body: `<html><head><script>${bundle}</script><script>
       window.hostingPageviews=0;
@@ -28,7 +28,7 @@ test('head-loaded bundled tracker observes the root and starts one pageview', as
 });
 
 test('banner hidden states do not intercept form controls or keyboard focus', async ({ page }) => {
-  const css = fs.readFileSync(path.join(WP_ROOT, 'wp-content/plugins/wp-slimstat/assets/css/gdpr-banner.css'), 'utf8');
+  const css = fs.readFileSync(path.join(FREE_PLUGIN_ROOT, 'assets/css/gdpr-banner.css'), 'utf8');
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 800 });
     await page.setContent(`<style>${css}</style><label>Donation<select id="donation"><option>10</option><option>20</option></select></label>
