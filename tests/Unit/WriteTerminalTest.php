@@ -81,6 +81,7 @@ class WriteTerminalTest extends WpSlimstatTestCase
 
         Functions\when('esc_url_raw')->alias(static fn($v) => $v);
         Functions\when('esc_sql')->alias(static fn($v) => $v);
+        Functions\when('__')->alias(static fn($v) => $v);
 
         $wpdb             = \Mockery::mock(\wpdb::class);
         $wpdb->prefix     = 'wp_';
@@ -192,15 +193,16 @@ class WriteTerminalTest extends WpSlimstatTestCase
 
     // ── S6: the v6-code-on-v5-schema window ─────────────────────────────────
 
-    public function test_an_unknown_column_retries_with_the_intersection_and_stores_the_row(): void
+    /** @dataProvider schemaWriteErrors */
+    public function test_an_unknown_column_retries_with_the_intersection_and_stores_the_row(string $error): void
     {
         // The v6 tracker writes a column this v5 schema does not have yet.
         $this->presentColumns = ['id', 'ip', 'resource', 'dt'];
 
         // First attempt fails on the absent column; the retry succeeds.
-        $this->onQuery = static function ($sql, $wpdb, $nth) {
+        $this->onQuery = static function ($sql, $wpdb, $nth) use ($error) {
             if (1 === $nth) {
-                $wpdb->last_error = "Unknown column 'vid_hash' in 'field list'";
+                $wpdb->last_error = $error;
                 return false;
             }
             $wpdb->last_error = '';
@@ -229,6 +231,25 @@ class WriteTerminalTest extends WpSlimstatTestCase
         $retry = end($this->statements);
         $this->assertStringNotContainsString('vid_hash', $retry, 'the absent column must be dropped from the retry');
         $this->assertStringContainsString('ip', $retry, 'and the present ones must survive it');
+    }
+
+    public static function schemaWriteErrors(): array
+    {
+        return [
+            'mysql' => ["Unknown column 'vid_hash' in 'field list'"],
+            'wpdb binary rejection' => ['WordPress database error: Could not perform query because it contains invalid data.'],
+        ];
+    }
+
+    public function test_invalid_data_with_no_missing_columns_is_not_retried(): void
+    {
+        $this->presentColumns = ['id', 'ip', 'vid_hash'];
+        $this->queryResult = false;
+        $GLOBALS['wpdb']->last_error = 'WordPress database error: Could not perform query because it contains invalid data.';
+        $result = Storage::insertRow(['ip' => '1.2.3.4', 'vid_hash' => str_repeat('ff', 16)], 'wp_slim_stats');
+        $this->assertTrue($result->isFailed());
+        $this->assertCount(1, $this->queries());
+        $this->assertSame([], \wp_slimstat::$degradations);
     }
 
     public function test_the_degradation_is_recorded_once_not_per_hit(): void
@@ -263,7 +284,7 @@ class WriteTerminalTest extends WpSlimstatTestCase
         $this->queryResult = 1;
         $this->insertId    = 9;
 
-        Storage::insertRow(['ip' => '1.2.3.4'], 'wp_slim_stats');
+        Storage::insertRow(['ip' => '1.2.3.4', 'vid_hash' => str_repeat('ff', 16)], 'wp_slim_stats');
 
         $this->assertSame(
             0,
@@ -279,7 +300,7 @@ class WriteTerminalTest extends WpSlimstatTestCase
         $this->queryResult           = false;
         $GLOBALS['wpdb']->last_error = 'Deadlock found when trying to get lock; try restarting transaction';
 
-        $result = Storage::insertRow(['ip' => '1.2.3.4'], 'wp_slim_stats');
+        $result = Storage::insertRow(['ip' => '1.2.3.4', 'vid_hash' => str_repeat('ff', 16)], 'wp_slim_stats');
 
         $this->assertSame(WriteResult::FAILED, $result->state());
         $this->assertSame(0, $this->probes(), 'a deadlock is not a missing column');

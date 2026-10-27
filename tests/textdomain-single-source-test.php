@@ -82,6 +82,7 @@ $gettext = [
 ];
 
 $checked    = 0;
+$coreErrors = 0;
 $dynamic    = 0;
 $mismatched = [];
 
@@ -184,6 +185,15 @@ foreach ($sources as $file) {
             continue;
         }
 
+        // Storage compares wpdb's translated error, which belongs to WordPress core.
+        // Allow only that exact call; UI strings must still use the plugin domain.
+        $message = trim(implode('', array_map('slimstat_token_text', $args[0])));
+        if ('default' === $literal && '__' === $fn
+            && 'src/Tracker/Storage.php' === slimstat_rel_path($plugin_root, $file)
+            && "'WordPress database error: Could not perform query because it contains invalid data.'" === $message) {
+            $coreErrors++;
+            continue;
+        }
         $checked++;
 
         if (SLIMSTAT_FREE_TEXT_DOMAIN !== $literal) {
@@ -224,4 +234,5 @@ if ($failures) {
 }
 
 echo 'PASS: all ' . $checked . " gettext calls with a literal domain name '"
-    . SLIMSTAT_FREE_TEXT_DOMAIN . "' (" . $dynamic . " build the domain at run time)\n";
+    . SLIMSTAT_FREE_TEXT_DOMAIN . "' (" . $dynamic . " build the domain at run time; "
+    . $coreErrors . " exact core-error comparisons)\n";

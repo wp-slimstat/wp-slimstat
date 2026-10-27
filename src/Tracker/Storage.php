@@ -56,7 +56,11 @@ class Storage
 		//
 		// Reactive, never preemptive: the tracker budget is denominated in queries and
 		// wp_options writes, and neither may move on the path that always runs.
-		if ($result->isFailed() && self::isUnknownColumnError($result->error())) {
+		// Without a binary column, wpdb can reject packed vid_hash bytes before MySQL
+		// reports the missing column. The same reactive intersection handles that gap.
+		// phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- Compare wpdb's own translated error, not plugin copy.
+		if ($result->isFailed() && (self::isUnknownColumnError($result->error())
+			|| (isset($data['vid_hash']) && $result->error() === __('WordPress database error: Could not perform query because it contains invalid data.', 'default')))) {
 			$present  = self::presentColumns($table);
 			$writable = array_intersect_key($data, array_flip($present));
 

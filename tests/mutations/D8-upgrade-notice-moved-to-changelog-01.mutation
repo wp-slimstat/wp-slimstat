@@ -11,7 +11,7 @@ rationale: Deletes the current Upgrade Notice entry and leaves a dateless change
  == Upgrade Notice ==
  
 -= 6.0.1 =
--Older versions keep working and added columns stay. This update removes no rows. Fixes offline tracking, consent, heatmap accuracy and slow Dashboard widgets. Improves browser-data recovery and legacy migration status. Back up before updating; database repairs still wait for your click.
+-Older versions keep working and added columns stay. This update removes no rows. Fixes offline and pre-migration tracking, consent, heatmaps and slow Dashboard widgets. Improves browser-data recovery and migration status. Back up first; database repairs still wait for your click.
 -
  = 6.0.0 =
  SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster reports. Back up first. The update adds columns and indexes and removes no rows; older versions keep working and the added columns stay. Database steps wait for your click. Some totals change on purpose: see changelog.
