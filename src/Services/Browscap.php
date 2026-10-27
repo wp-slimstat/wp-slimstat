@@ -236,7 +236,7 @@ class Browscap
         $browscap_zip = wp_slimstat::$upload_dir . '/browscap-db.zip';
         // Persist only the retry timestamp; consent/runtime settings must never be written here.
         wp_slimstat::$settings['browscap_last_modified'] = $current_timestamp;
-        $_stored_for_browscap = get_option('slimstat_options', []);
+        $_stored_for_browscap = $stored;
         $_stored_for_browscap['browscap_last_modified'] = $current_timestamp;
         wp_slimstat::update_option('slimstat_options', $_stored_for_browscap);
         unset($_stored_for_browscap);

@@ -117,7 +117,7 @@ final class Integration
 		if (!self::available() || MigrationService::migrationsDisabled()) {
 			self::fail(__('Ecommerce setup is unavailable.', 'wp-slimstat'));
 		}
-		$token = self::claim('slimstat_ec_import', 300);
+		$token = OptionClaim::acquire('slimstat_ec_import', 300);
 		if (null === $token) { self::fail(__('Ecommerce setup or import is already running. Try again in a few minutes.', 'wp-slimstat')); }
 		try {
 			$db = self::db();
@@ -170,7 +170,7 @@ final class Integration
 		if (!self::ready() || !self::available()) {
 			return;
 		}
-		$token = self::claim('slimstat_ec_import', 300);
+		$token = OptionClaim::acquire('slimstat_ec_import', 300);
 		if (null === $token) {
 			as_schedule_single_action(time() + 30, 'slimstat_ecommerce_import', [], self::GROUP);
 			return;
@@ -299,7 +299,7 @@ final class Integration
 		$db = self::db();
 		$table = self::table();
 		$lock = 'slimstat_ec_order_' . $id;
-		$token = self::claim($lock, 180);
+		$token = OptionClaim::acquire($lock, 180);
 		if (null === $token) {
 			as_schedule_single_action(time() + 30, 'slimstat_ecommerce_sync', [$id], self::GROUP);
 			return;
@@ -553,15 +553,6 @@ final class Integration
 	public static function invalidate(): void
 	{
 		update_option('slimstat_ecommerce_generation', sprintf('%.6F', microtime(true)), false);
-	}
-
-	/** Reuse the plugin's atomic option claims; expired workers cannot release a new claim. */
-	private static function claim(string $name, int $seconds): ?string
-	{
-		$token = (string) (time() + $seconds);
-		$old = get_option($name, null);
-		$won = null === $old ? OptionClaim::insert($name, $token) : ((int) $old < time() && OptionClaim::compareAndSwap($name, (string) $old, $token));
-		return $won ? $token : null;
 	}
 
 	/** Setup passes its exception so the admin sees why it stopped instead of the same button again. */

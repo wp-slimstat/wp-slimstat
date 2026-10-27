@@ -182,8 +182,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		$row          = Query::select( "COUNT(DISTINCT NULLIF(resource,'')) AS pages_count, COUNT(DISTINCT NULLIF(country,'')) AS countries_count" )
 			->from( "{$GLOBALS['wpdb']->prefix}slim_stats" )
 			->where( 'dt', '>=', $threshold_30 )
-			->whereRaw( \wp_slimstat::report_scope()['where'] )
-			->whereRaw( '(browser_type IS NULL OR browser_type <> 1)' )
+			->whereRaw( \wp_slimstat::report_scope()['humans'] )
 			->getRow();
 
 		return [
@@ -224,7 +223,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 					END
 				) AS last_activity
 				FROM {$table}
-				WHERE ({$scope['where']}) AND visit_id > 0 AND (browser_type IS NULL OR browser_type <> 1)
+				WHERE ({$scope['humans']}) AND visit_id > 0
 					AND (
 						dt >= %d
 						OR ( dt_out IS NOT NULL AND dt_out >= %d )
@@ -295,8 +294,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 				->from( "{$GLOBALS['wpdb']->prefix}slim_stats" )
 				->where( 'dt', '>=', $start_minute )
 					->whereRaw( $condition )
-					->whereRaw( \wp_slimstat::report_scope()['where'] )
-			->whereRaw( '(browser_type IS NULL OR browser_type <> 1)' )
+					->whereRaw( \wp_slimstat::report_scope()['humans'] )
 					// Use the select alias in GROUP BY and ORDER BY for MySQL 5.7 compatibility
 					->groupBy( 'minute_timestamp' )
 					->orderBy( 'minute_timestamp ASC' )
@@ -388,7 +386,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 						END
 					) / 60 ) * 60 AS last_minute
 				FROM {$table}
-				WHERE ({$scope['where']}) AND visit_id > 0 AND (browser_type IS NULL OR browser_type <> 1)
+				WHERE ({$scope['humans']}) AND visit_id > 0
 					AND dt <= %d
 					AND (
 						dt >= %d

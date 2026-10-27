@@ -112,10 +112,8 @@ final class Store
 			self::failure('SLIMSTAT_DISABLE_MIGRATIONS is set, so heatmap tables were not created.');
 			throw new \RuntimeException('Heatmap setup is disabled.');
 		}
-		$token = (string) (time() + 300);
-		$old   = get_option(self::CLAIM, null);
-		$won   = null === $old ? OptionClaim::insert(self::CLAIM, $token) : ((int) $old < time() && OptionClaim::compareAndSwap(self::CLAIM, (string) $old, $token));
-		if (!$won) {
+		$token = OptionClaim::acquire(self::CLAIM, 300);
+		if (null === $token) {
 			throw new \RuntimeException('Heatmap setup is already running.');
 		}
 		try {
@@ -309,11 +307,8 @@ final class Store
 		if ($days <= 0 || !self::ready()) {
 			return;
 		}
-		$token = (string) (time() + 900) . ':' . bin2hex(random_bytes(8));
-		$old = get_option(self::PURGE_CLAIM, null);
-		$won = null === $old ? OptionClaim::insert(self::PURGE_CLAIM, $token)
-			: ((int) $old < time() && OptionClaim::compareAndSwap(self::PURGE_CLAIM, (string) $old, $token));
-		if (!$won) {
+		$token = OptionClaim::acquire(self::PURGE_CLAIM, 900, ':' . bin2hex(random_bytes(8)));
+		if (null === $token) {
 			return;
 		}
 		try {

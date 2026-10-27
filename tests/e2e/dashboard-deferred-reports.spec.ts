@@ -122,3 +122,26 @@ test('SlimStat screens preserve synchronous report rendering when Async is off',
   expect(JSON.parse(match![1]).queries).toBeGreaterThan(0);
   expect(await page.evaluate(() => (window as any).SlimStatAdminParams.async_load)).toBe('no');
 });
+
+test('Free Dashboard live preview preserves its wrapper and footer through refresh', async ({ page }) => {
+  const plugins = runWordPressFixture(`<?php
+echo wp_json_encode(get_option('active_plugins', []));
+deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php', true);
+`);
+  try {
+    await page.goto('/wp-admin/index.php');
+    const body = page.locator('#slim_p7_02 .inside > .slimstat-dashboard-report');
+    await expect(body).toHaveCount(1);
+    await expect(body.locator('.loading')).toHaveCount(0);
+    await expect(body).not.toBeEmpty();
+    const footer = await body.evaluate(el => el.nextElementSibling?.outerHTML);
+    expect(footer).toBeTruthy();
+    await page.evaluate(() => (window as any).SlimStatAdmin.refresh_report('slim_p7_02')());
+    await expect(body).toHaveCount(1);
+    await expect(body.locator('.loading')).toHaveCount(0);
+    await expect(body).not.toBeEmpty();
+    expect(await body.evaluate(el => el.nextElementSibling?.outerHTML)).toBe(footer);
+  } finally {
+    runWordPressFixture(`<?php update_option('active_plugins', json_decode(base64_decode('${Buffer.from(plugins).toString('base64')}'), true));`);
+  }
+});

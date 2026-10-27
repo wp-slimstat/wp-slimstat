@@ -595,11 +595,7 @@ class wp_slimstat_db
             // Cache SELECTs on the analytics table; key rationale and the write-back gate
             // are documented at the write below.
             // Normalize only the cache key; the caller's SQL still reaches wpdb unchanged.
-            $cache_sql = method_exists(wp_slimstat::$wpdb, 'remove_placeholder_escape')
-                ? wp_slimstat::$wpdb->remove_placeholder_escape($_sql) : $_sql;
-            $cache_key = 'slimstat_query_' . md5(serialize([
-                (string) (wp_slimstat::$wpdb->dbhost ?? ''), (string) (wp_slimstat::$wpdb->dbname ?? ''), $cache_sql,
-            ]));
+            $cache_key = 'slimstat_query_' . Query::cacheHash(wp_slimstat::$wpdb, $_sql);
             $cached_results = get_transient($cache_key);
             if (false !== $cached_results) {
                 Query::recordSqlDebug($_sql, '', true);

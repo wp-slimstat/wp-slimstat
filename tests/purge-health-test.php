@@ -47,20 +47,23 @@ function verify($condition, $message) {
     if (!$condition) { throw new RuntimeException($message); }
 }
 
-foreach (['empty', 'first-empty', 'disabled', 'first-probe-error', 'second-probe-error', 'work', 'write-error', 'opt-in', 'throttled'] as $case) {
+foreach (['empty', 'first-empty', 'disabled', 'first-probe-error', 'second-probe-error', 'work-probe-error', 'work', 'write-error', 'opt-in', 'throttled'] as $case) {
     $GLOBALS['options'] = $case === 'first-empty' ? [] : ['slimstat_last_purge_ok' => 1];
     wp_slimstat::$wpdb = $GLOBALS['wpdb'] = new PurgeHealthDb();
     wp_slimstat::$settings = ['auto_purge' => $case === 'disabled' ? 0 : 420, 'auto_purge_delete' => 'no'];
     wp_slimstat::$failures = [];
-    $work = in_array($case, ['work', 'write-error', 'opt-in', 'throttled'], true);
-    wp_slimstat::$wpdb->probes = [[$work ? 1 : null, $case === 'first-probe-error' ? 'probe failed' : ''], [null, $case === 'second-probe-error' ? 'probe failed' : '']];
+    $work = in_array($case, ['work', 'work-probe-error', 'write-error', 'opt-in', 'throttled'], true);
+    wp_slimstat::$wpdb->probes = [[$work ? 1 : null, $case === 'first-probe-error' ? 'probe failed' : ''], [null, in_array($case, ['second-probe-error', 'work-probe-error'], true) ? 'probe failed' : '']];
     wp_slimstat::$wpdb->failDelete = $case === 'write-error';
     if (in_array($case, ['opt-in', 'throttled'], true)) {
         wp_slimstat::$settings['auto_purge_optimize'] = 'on';
         $GLOBALS['options']['slimstat_purge_optimized_at'] = $case === 'throttled' ? wp_slimstat::now() : -30 * DAY_IN_SECONDS;
     }
     wp_slimstat::wp_slimstat_purge();
-    $success = !in_array($case, ['disabled', 'first-probe-error', 'second-probe-error', 'write-error'], true);
+    $success = !in_array($case, ['disabled', 'first-probe-error', 'second-probe-error', 'work-probe-error', 'write-error'], true);
+    if ('work-probe-error' === $case) {
+        verify(count(wp_slimstat::$wpdb->queries) === 2, 'second-table read error stops before any purge write, even with old pageviews');
+    }
     verify((get_option(wp_slimstat::LAST_PURGE_OK_OPTION) === wp_slimstat::now()) === $success, "$case: success marker");
     $optimizations = array_values(array_filter(wp_slimstat::$wpdb->queries, static function ($sql) { return strpos($sql, 'OPTIMIZE TABLE') === 0; }));
     verify(count($optimizations) === ($case === 'opt-in' ? 2 : 0), "$case: optimization opt-in/throttle");

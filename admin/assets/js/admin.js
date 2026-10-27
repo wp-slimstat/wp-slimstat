@@ -1,3 +1,9 @@
+function SlimStatReportBody(id) {
+    var inside = jQuery("#" + id + " .inside");
+    var body = inside.children(".slimstat-dashboard-report");
+    return body.length ? body : inside;
+}
+
 if (typeof SlimStatAdminParams == "undefined") {
     SlimStatAdminParams = {
         async_load: "no",
@@ -462,9 +468,7 @@ jQuery(function () {
         jQuery("div[id^=slim_p]").each(function () {
             // Skip Charts
             if (jQuery(this).find(".chart-placeholder, .refresh-timer").length == 0) {
-                var content = jQuery(this).find(".inside");
-                var reportBody = content.children(".slimstat-dashboard-report");
-                (reportBody.length ? reportBody : content).html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
+                SlimStatReportBody(jQuery(this).attr("id")).html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
                 base = base.then(SlimStatAdmin.refresh_report(jQuery(this).attr("id")));
             }
         });
@@ -1707,10 +1711,6 @@ var SlimStatAdmin = {
             return function () { return window.SlimStatEcommerce.refresh(opts); };
         }
         return function () {
-            var inner_content = "#" + id + " .inside";
-            if (jQuery(inner_content).children(".slimstat-dashboard-report").length) {
-                inner_content += " > .slimstat-dashboard-report";
-            }
             var defer = jQuery.Deferred();
             var granularity = jQuery("#" + id + " .slimstat-granularity-select").val();
             // Fallback to localStorage when the select is missing or about to be destroyed
@@ -1720,7 +1720,7 @@ var SlimStatAdmin = {
             // #258 B3 — Skip the spinner injection for the Access Log so the user's
             // scroll position is not destroyed before the AJAX even returns.
             if (id != SlimStatAdmin.ACCESS_LOG_REPORT_ID) {
-                jQuery("#" + id + " .inside").html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
+                SlimStatReportBody(id).html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
             }
 
             data = {
@@ -1783,7 +1783,7 @@ var SlimStatAdmin = {
                     }
 
                     if (jQuery("#" + id).hasClass("chart") || filteredResponse.find('[id^="slimstat_chart_data_"]').length) {
-                        jQuery(inner_content).html(filteredResponse.html());
+                        SlimStatReportBody(id).html(filteredResponse.html());
                         // Re-initialize chart after DOM insertion — inline scripts
                         // from the AJAX response may have run in a detached context
                         if (typeof window.reinitializeSlimStatCharts === "function") {
@@ -1801,7 +1801,7 @@ var SlimStatAdmin = {
                         var savedScrollTop = opts.scrollToTop
                             ? 0
                             : (jQuery("#" + id + " .inside").scrollTop() || 0);
-                        jQuery(inner_content).html(filteredResponse.html());
+                        SlimStatReportBody(id).html(filteredResponse.html());
                         jQuery("#" + id + " .inside").scrollTop(savedScrollTop);
                         SlimStatAdmin._lastManualRefreshTime = Date.now();
                         // #258 — Rearm the auto-refresh scheduler so the next tick
@@ -1812,7 +1812,7 @@ var SlimStatAdmin = {
                             SlimStatAdmin._resetAutoRefreshSchedule();
                         }
                     } else {
-                        jQuery(inner_content).fadeOut(500, function () {
+                        SlimStatReportBody(id).fadeOut(500, function () {
                             jQuery(this).html(filteredResponse.html()).fadeIn(500, function () {
                                 // #156 — for non-Access-Log reports, reset
                                 // scrollTop AFTER fadeIn completes so the

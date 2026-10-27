@@ -3028,7 +3028,7 @@ class wp_slimstat_reports
 
         // Preserve the compact Dashboard presentation when the widget loads through AJAX.
         if (wp_doing_ajax() && class_exists('wp_slimstat_admin') && 'dashboard' === wp_slimstat_admin::$current_screen
-            && in_array($report_id, ['slim_p9_01', 'slim_p9_02', 'slim_p3_03', 'slim_p3_04'], true)) {
+            && in_array($report_id, wp_slimstat_admin::COMPACT_DASHBOARD_REPORTS, true)) {
             $_args['callback_args']['is_widget'] = true;
         }
 

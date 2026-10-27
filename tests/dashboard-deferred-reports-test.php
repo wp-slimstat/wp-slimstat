@@ -13,14 +13,15 @@ function check_ajax_referer($action, $key) {
 function sanitize_key($value) { return $value; }
 function wp_unslash($value) { return $value; }
 class wp_slimstat { public static $settings = ['can_view' => '', 'capability_can_view' => 'read', 'rows_to_show' => 20, 'async_load' => 'no']; }
-class wp_slimstat_admin { public static $current_screen = 'slimview1'; }
+$admin = file_get_contents(__DIR__ . '/../admin/index.php');
+check(preg_match('/public const COMPACT_DASHBOARD_REPORTS = (.+);/', $admin, $compact) === 1, 'missing shared compact-widget policy');
+eval('class wp_slimstat_admin { public const COMPACT_DASHBOARD_REPORTS = ' . $compact[1] . '; public static $current_screen = "slimview1"; }');
 require __DIR__ . '/../admin/view/wp-slimstat-reports.php';
 $GLOBALS['current_user'] = (object) ['user_login' => 'admin'];
 $GLOBALS['allowed'] = true;
 $GLOBALS['ajax'] = false;
 $GLOBALS['queries'] = 0;
 wp_slimstat_reports::$reports['fixture'] = ['callback' => function ($args) { $GLOBALS['queries']++; echo 'accurate report'; }, 'callback_args' => []];
-$admin = file_get_contents(__DIR__ . '/../admin/index.php');
 check(preg_match("/'async_load'\\s*=>\\s*(.+),/", slimstat_function_body($admin, 'wp_slimstat_enqueue_scripts'), $match) === 1, 'missing client async policy');
 foreach (['no', 'on'] as $stored) {
     wp_slimstat::$settings['async_load'] = $stored;

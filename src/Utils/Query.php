@@ -841,22 +841,19 @@ class Query
      */
     protected function getCacheKeyForQuery($query, $args = [])
     {
-        // wpdb removes its per-request escape marker before execution. Cache the same SQL identity.
-        if (method_exists($this->db, 'remove_placeholder_escape')) {
-            $query = $this->db->remove_placeholder_escape($query);
-            $args = array_map(function ($value) {
-                return is_string($value) ? $this->db->remove_placeholder_escape($value) : $value;
+        return 'wp_slimstat_query_' . substr(self::cacheHash($this->db, $query, $args), 0, 16);
+    }
+
+    /** Cache SQL as wpdb executes it, scoped to its analytics connection. */
+    public static function cacheHash($db, string $sql, array $args = []): string
+    {
+        if (method_exists($db, 'remove_placeholder_escape')) {
+            $sql = $db->remove_placeholder_escape($sql);
+            $args = array_map(static function ($value) use ($db) {
+                return is_string($value) ? $db->remove_placeholder_escape($value) : $value;
             }, $args);
         }
-        $data = [
-            // Identical table names and SQL can refer to different analytics databases.
-            // wpdb exposes connection metadata without a query; credentials are excluded.
-            'connection' => [(string) ($this->db->dbhost ?? ''), (string) ($this->db->dbname ?? '')],
-            'query' => $query,
-            'args'  => $args,
-        ];
-        $hash = substr(md5(serialize($data)), 0, 16);
-        return 'wp_slimstat_query_' . $hash;
+        return md5(serialize([(string) ($db->dbhost ?? ''), (string) ($db->dbname ?? ''), $sql, $args]));
     }
 
     /**

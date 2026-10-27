@@ -6,6 +6,8 @@ use SlimStat\Services\Admin\Notification\NotificationFactory;
 use SlimStat\Schema\Schema;
 class wp_slimstat_admin
 {
+    public const COMPACT_DASHBOARD_REPORTS = ['slim_p9_01', 'slim_p9_02', 'slim_p3_03', 'slim_p3_04'];
+
     /**
      * Column drift observed by the last reconciliation (F4).
      *
@@ -1559,7 +1561,7 @@ class wp_slimstat_admin
                 // drawer/builder/confirm-sheet markup never mounts inside the widget.
                 // Mutation is kept local: we only re-bind the registry field when
                 // registering this specific widget, avoiding cross-request leaks.
-                if (in_array($a_report_id, ['slim_p9_01', 'slim_p9_02', 'slim_p3_03', 'slim_p3_04'], true)) {
+                if (in_array($a_report_id, self::COMPACT_DASHBOARD_REPORTS, true)) {
                     wp_slimstat_reports::$reports[$a_report_id]['callback_args']['is_widget'] = true;
                 }
                 if (!wp_slimstat::pro_is_installed() && 'slim_p7_02' === $a_report_id) {
@@ -3615,7 +3617,7 @@ class wp_slimstat_admin
                     END
                 ) AS last_activity
                 FROM {$table}
-                WHERE ({$scope['where']}) AND visit_id > 0 AND (browser_type IS NULL OR browser_type <> 1)
+                WHERE ({$scope['humans']}) AND visit_id > 0
                     AND (dt >= %d OR (dt_out IS NOT NULL AND dt_out >= %d))
                 GROUP BY visit_id
                 HAVING (FLOOR(last_activity / 60) * 60 + 59) >= %d

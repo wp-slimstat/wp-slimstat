@@ -1798,8 +1798,8 @@ class wp_slimstat
 
         // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
         // Nothing to purge is the overwhelmingly common case: retention defaults to 420
-        // days and this runs every 12 hours. Two indexed probes, then stop — the tick used
-        // to continue into four full InnoDB table rebuilds regardless. (D1)
+        // days and this runs every 12 hours. Probe both tables before writing so either
+        // read error stops the job; if both are empty, stop without any rebuild. (D1)
         $has_work = false;
         foreach ([$table_stats, $table_events] as $table) {
             $found = self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table} WHERE dt < %d LIMIT 1", $days_ago));
@@ -2678,7 +2678,7 @@ class wp_slimstat
             ? (string) ($GLOBALS['current_user']->user_login ?? '') : '';
         $where = '' !== $author ? self::$wpdb->prepare('author = %s', $author) : '1=1';
         $context = [$GLOBALS['wpdb']->prefix, self::$wpdb->dbhost ?? '', self::$wpdb->dbname ?? '', $author];
-        return ['where' => $where, 'cache' => md5(serialize($context))];
+        return ['where' => $where, 'humans' => '(' . $where . ') AND (browser_type IS NULL OR browser_type <> 1)', 'cache' => md5(serialize($context))];
     }
 
     /**

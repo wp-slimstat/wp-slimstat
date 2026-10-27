@@ -24,6 +24,11 @@ class RepairLegacyColumnWidths extends AbstractMigration
         return __('Widens legacy city, username, email and fingerprint columns from 255 to 256 characters and adds missing legacy archive columns. Existing historical values are preserved; newly added fields use their declared defaults and cannot recover previously unrecorded data. Runs only when you choose it here. Existing values, nullability and collation are preserved. Only online InnoDB changes are attempted; the repair stops if the server requires blocking writes or finds custom column attributes. A brief metadata lock may still be needed. Large tables can take longer than one request; retry resumes from the remaining table.', 'wp-slimstat');
     }
 
+    private function columnsFor(string $suffix): array
+    {
+        return 'slim_stats_archive' === $suffix ? array_merge(self::COLUMNS, self::ARCHIVE_COLUMNS) : self::COLUMNS;
+    }
+
     private function readColumns(string $suffix): ?array
     {
         $suppressed = $this->wpdb->suppress_errors(true);
@@ -48,7 +53,7 @@ class RepairLegacyColumnWidths extends AbstractMigration
             $columns = $this->readColumns($suffix);
             $state['columns'][$suffix] = $columns ?? [];
             if (null === $columns) { $state['blocked'] = true; continue; }
-            $names = 'slim_stats_archive' === $suffix ? array_merge(self::COLUMNS, self::ARCHIVE_COLUMNS) : self::COLUMNS;
+            $names = $this->columnsFor($suffix);
             foreach ($names as $name) {
                 $column = $columns[$name] ?? null;
                 if (null === $column && 'slim_stats_archive' === $suffix) {
@@ -167,7 +172,7 @@ class RepairLegacyColumnWidths extends AbstractMigration
         $state = $this->inspect();
         $rows = [];
         foreach (self::TABLES as $suffix) {
-            foreach ('slim_stats_archive' === $suffix ? array_merge(self::COLUMNS, self::ARCHIVE_COLUMNS) : self::COLUMNS as $name) {
+            foreach ($this->columnsFor($suffix) as $name) {
                 $rows[] = ['key' => $this->getId(), 'table' => $this->tablePrefix() . $suffix,
                     'columns' => $name, 'exists' => in_array($name, self::ARCHIVE_COLUMNS, true) ? isset($state['columns'][$suffix][$name]) : 'varchar(256)' === strtolower((string) ($state['columns'][$suffix][$name]['Type'] ?? ''))];
             }
