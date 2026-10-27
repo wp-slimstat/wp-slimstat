@@ -914,6 +914,7 @@ class wp_slimstat_admin
      */
     private static function record_column_drift($report)
     {
+        if (!empty($report['columns_unavailable'])) { return; }
         $required = Schema::requiredColumnDrift([
             'missing' => $report['columns_missing'] ?? [],
             'narrow' => $report['columns_narrow'] ?? [],
@@ -935,13 +936,8 @@ class wp_slimstat_admin
      * successfully added the column, and the notice re-stated drift that no longer existed until
      * the next plugin release. Re-observing here is what lets a completed migration clear it.
      *
-     * THROTTLED to DEGRADATION_REFRESH, and the population is why. The `email` column is one
-     * character narrow on every install upgraded from below 4.8.2 and F4 forbids repairing it, so
-     * the drift option is PERMANENT on a large, healthy-in-every-other-respect slice of the
-     * installed base — not on a broken few. Without the throttle each of those pays five
-     * `SHOW COLUMNS` on every wp-admin page load, forever, to re-derive a list record_degradation()
-     * will only re-stamp once an hour anyway. A healthy install still pays nothing at all: it has
-     * no option and returns above.
+     * Throttled while awaiting explicit repair: no DDL runs on ordinary admin requests.
+     * Failed observations retain the previous warning; only a successful inspection clears it.
      */
     public static function refresh_column_drift_notice()
     {
@@ -955,7 +951,8 @@ class wp_slimstat_admin
 
         if (false === get_transient(self::COLUMN_DRIFT_CHECK_TRANSIENT)) {
             set_transient(self::COLUMN_DRIFT_CHECK_TRANSIENT, 1, wp_slimstat::DEGRADATION_REFRESH);
-            $current = self::persist_column_drift(self::observe_column_drift());
+            $observed = self::observe_column_drift();
+            if (null !== $observed) { $current = self::persist_column_drift($observed); }
         }
 
         if ([] === $current) {
@@ -1001,15 +998,16 @@ class wp_slimstat_admin
      * repairs nothing — deliberately not `Schema::ensure()`, which also creates tables and builds
      * indexes. Re-observing drift on `admin_init` must not be able to change the schema (F4, S7).
      *
-     * @return string[]
+     * @return string[]|null Null means at least one table could not be inspected.
      */
-    private static function observe_column_drift()
+    public static function observe_column_drift()
     {
         $drift = Schema::columnDrift(
             \SlimStat\Migration\MigrationService::analyticsConnection(),
             $GLOBALS['wpdb']->prefix
         );
 
+        if (!empty($drift['unavailable'])) { return null; }
         $drift = Schema::requiredColumnDrift($drift, \SlimStat\Migration\MigrationManager::completedMigrationIds());
         return self::format_column_drift($drift['missing'], $drift['narrow']);
     }
@@ -4871,7 +4869,7 @@ class wp_slimstat_admin
         if ('' !== $operational_items) {
             self::show_message(
                 '<strong>' . esc_html__('SlimStat reported a problem while running.', 'wp-slimstat') . '</strong><br>' .
-                esc_html__('Tracking and reports kept working. These are maintenance tasks that did not complete, so some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check SlimStat > Migrations and Settings > Maintenance.', 'wp-slimstat') .
+                esc_html__('Tracking and reports kept working. These are maintenance tasks that did not complete, so some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check SlimStat > Migration and Settings > Maintenance.', 'wp-slimstat') .
                 '<ul class="ul-disc">' . $operational_items . '</ul>',
                 'warning'
             );

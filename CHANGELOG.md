@@ -1,5 +1,8 @@
 = 6.0.0 - 2026-10-24 =
 
+
+* Fixed legacy upgrade column drift (#360): the optional online repair covers email/fingerprint widths and missing legacy archive fields. Migration status shows unresolved or unreadable schema state, retains warnings on failed inspection, and cannot report completion merely because a notice was dismissed. Existing recorded values are preserved; no automatic table rebuild or blocking fallback is added.
+
 **SlimStat 6 is here: see where visitors click, which campaigns bring sales, and trust every number.** It is the biggest SlimStat release in years and the safest to install: your settings and data carry over, nothing in your database changes until you click, and older versions keep working if you ever go back.
 
 **New: Heatmaps**

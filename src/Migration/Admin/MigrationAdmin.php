@@ -60,6 +60,8 @@ class MigrationAdmin
 	public function enqueueAssets(): void
 	{
 		global $parent_file, $submenu_file;
+        // Refresh only on the explicit Migration screen; old cached offers can hide a new repair.
+        $this->manager->forgetProbe();
 		if (!empty(wp_slimstat_admin::$main_menu_slug)) {
 			$parent_file = wp_slimstat_admin::$main_menu_slug;
 			$submenu_file = 'slimstat_migration'; // highlight Migration submenu
@@ -126,7 +128,7 @@ class MigrationAdmin
 				'inProgress' => __('In progress…', 'wp-slimstat'),
 				'done' => __('Done', 'wp-slimstat'),
 				'failed' => __('Failed', 'wp-slimstat'),
-				'allFinished' => __('✓ Database is up to date', 'wp-slimstat'),
+				'allFinished' => __('Required migrations are complete. Reload this page to verify column repairs.', 'wp-slimstat'),
 				// S7 error paths. Hardcoding these in migration.js would have been an i18n
 				// regression in a file where every other string is translated.
 				'notComplete' => __('The migration did not complete. Nothing further has been run.', 'wp-slimstat'),
@@ -221,6 +223,7 @@ class MigrationAdmin
 		// how a wrong one survives review.
 		$offered_migrations = $this->manager->getOfferedMigrations();
 		$has_required_migrations = !empty($required_migrations);
+        $column_drift = wp_slimstat_admin::observe_column_drift();
 		// MyISAM has no online index build: each step locks the table for writes while it runs.
 		// Required steps write to both tables tracking writes to (idx_events_notes_dt is on slim_events).
 		$db = MigrationService::analyticsConnection();
@@ -389,7 +392,7 @@ class MigrationAdmin
 			}
 
 			// Check if all migrations are now complete
-			$all_complete = !$this->manager->needsMigration();
+			$all_complete = !in_array(false, $result, true) && [] === $this->manager->getRequiredMigrations();
 		} finally {
 			$analytics->suppress_errors($suppressed);
 		}
@@ -397,7 +400,7 @@ class MigrationAdmin
 		wp_send_json_success([
 			'results' => $result,
 			'all_complete' => $all_complete,
-			'message' => $all_complete ? __('✓ Database is up to date', 'wp-slimstat') : __('Migrations completed, but some may still be needed.', 'wp-slimstat')
+			'message' => $all_complete ? __('Required migrations are complete. Reload this page to verify column repairs.', 'wp-slimstat') : __('Migrations completed, but some may still be needed.', 'wp-slimstat')
 		]);
 	}
 

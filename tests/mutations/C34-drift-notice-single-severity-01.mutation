@@ -13,7 +13,7 @@ rationale: Collapse the two notices back into one, which is the shipped defect. 
 -        if ('' !== $operational_items) {
 -            self::show_message(
 -                '<strong>' . esc_html__('SlimStat reported a problem while running.', 'wp-slimstat') . '</strong><br>' .
--                esc_html__('Tracking and reports kept working. These are maintenance tasks that did not complete, so some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check SlimStat > Migrations and Settings > Maintenance.', 'wp-slimstat') .
+-                esc_html__('Tracking and reports kept working. These are maintenance tasks that did not complete, so some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check SlimStat > Migration and Settings > Maintenance.', 'wp-slimstat') .
 -                '<ul class="ul-disc">' . $operational_items . '</ul>',
 -                'warning'
 -            );

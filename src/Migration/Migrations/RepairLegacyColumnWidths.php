@@ -11,16 +11,17 @@ class RepairLegacyColumnWidths extends AbstractMigration
 {
     private const PASS_SECONDS = 10;
     private const TABLES = ['slim_stats', 'slim_stats_archive'];
-    private const COLUMNS = ['city', 'username'];
+    private const COLUMNS = ['city', 'username', 'email', 'fingerprint'];
+    private const ARCHIVE_COLUMNS = ['dt_out', 'tz_offset'];
     private $state;
 
     public function getId(): string { return 'repair-legacy-column-widths'; }
-    public function getName(): string { return __('Repair legacy city and username column widths', 'wp-slimstat'); }
+    public function getName(): string { return __('Repair legacy analytics and archive columns', 'wp-slimstat'); }
     public function isOptional(): bool { return true; }
 
     public function getDescription(): string
     {
-        return __('Widens legacy city and username columns from 255 to 256 characters in analytics and archived data. Runs only when you choose it here. Existing values, nullability and collation are preserved. Only online InnoDB changes are attempted; the repair stops if the server requires blocking writes or finds custom column attributes. A brief metadata lock may still be needed. Large tables can take longer than one request; retry resumes from the remaining table.', 'wp-slimstat');
+        return __('Widens legacy city, username, email and fingerprint columns from 255 to 256 characters and adds missing legacy archive columns. Existing historical values are preserved; newly added fields use their declared defaults and cannot recover previously unrecorded data. Runs only when you choose it here. Existing values, nullability and collation are preserved. Only online InnoDB changes are attempted; the repair stops if the server requires blocking writes or finds custom column attributes. A brief metadata lock may still be needed. Large tables can take longer than one request; retry resumes from the remaining table.', 'wp-slimstat');
     }
 
     private function readColumns(string $suffix): ?array
@@ -34,7 +35,7 @@ class RepairLegacyColumnWidths extends AbstractMigration
         if ($failed || !is_array($rows) || [] === $rows) { return null; }
         $columns = [];
         foreach ($rows as $row) {
-            if (is_array($row) && isset($row['Field'])) { $columns[$row['Field']] = $row; }
+            if (is_array($row) && isset($row['Field'])) { $columns[strtolower((string) $row['Field'])] = $row; }
         }
         return $columns;
     }
@@ -46,14 +47,21 @@ class RepairLegacyColumnWidths extends AbstractMigration
         foreach (self::TABLES as $suffix) {
             $columns = $this->readColumns($suffix);
             $state['columns'][$suffix] = $columns ?? [];
-            foreach (self::COLUMNS as $name) {
+            if (null === $columns) { $state['blocked'] = true; continue; }
+            $names = 'slim_stats_archive' === $suffix ? array_merge(self::COLUMNS, self::ARCHIVE_COLUMNS) : self::COLUMNS;
+            foreach ($names as $name) {
                 $column = $columns[$name] ?? null;
+                if (null === $column && 'slim_stats_archive' === $suffix) {
+                    $state['pending'][$suffix]['missing'][] = $name;
+                    continue;
+                }
+                if (in_array($name, self::ARCHIVE_COLUMNS, true)) { continue; }
                 if (is_array($column) && 'varchar(256)' === strtolower((string) ($column['Type'] ?? ''))) {
                     continue;
                 }
                 try {
                     Schema::widenLegacyColumnsSql($suffix, $this->tablePrefix(), [$column ?? []]);
-                    $state['pending'][$suffix][] = $column;
+                    $state['pending'][$suffix]['widen'][] = $column;
                 } catch (\InvalidArgumentException $e) {
                     $state['blocked'] = true;
                 }
@@ -110,14 +118,14 @@ class RepairLegacyColumnWidths extends AbstractMigration
                 }
                 $first = false;
                 // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Identifiers are fixed migration columns/core prefix; lookup values are prepared and session timeout is integer-cast.
-                if (false === $this->wpdb->query(Schema::widenLegacyColumnsSql($suffix, $this->tablePrefix(), $columns))) {
+                if (false === $this->wpdb->query(Schema::widenLegacyColumnsSql($suffix, $this->tablePrefix(), $columns['widen'] ?? [], $columns['missing'] ?? []))) {
                     $ok = $this->fail('The server refused the online legacy width repair. No blocking fallback was attempted; review the database error before retrying.');
                 // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                     break;
                 }
                 $after = $this->readColumns($suffix);
-                foreach ($columns as $before) {
-                    $actual = $after[$before['Field']] ?? [];
+                foreach ($columns['widen'] ?? [] as $before) {
+                    $actual = $after[strtolower((string) $before['Field'])] ?? [];
                     $expected = $before;
                     $expected['Type'] = 'varchar(256)';
                     foreach (['Field', 'Type', 'Collation', 'Null', 'Default', 'Extra', 'Comment'] as $field) {
@@ -125,6 +133,21 @@ class RepairLegacyColumnWidths extends AbstractMigration
                             $ok = $this->fail('Legacy width repair could not verify the resulting definition. Completion was not recorded; inspect the database before retrying.');
                             break 3;
                         }
+                    }
+                }
+                foreach ($columns['missing'] ?? [] as $name) {
+                    $actual = $after[$name] ?? [];
+                    $definition = Schema::columns($suffix)[$name];
+                    // Integer display widths disappear on MySQL 8; signedness and defaults do not.
+                    $type = strtolower(explode(' DEFAULT ', $definition)[0]);
+                    $normalize = static function (string $value): string { return preg_replace('/int\(\d+\)/', 'int', strtolower($value)); };
+                    $default = false !== strpos($definition, 'DEFAULT 0') ? '0' : null;
+                    if (!isset($actual['Type'], $actual['Null']) || 'YES' !== $actual['Null']
+                        || $normalize((string) $actual['Type']) !== $normalize($type)
+                        || !array_key_exists('Default', $actual)
+                        || ($default === null ? $actual['Default'] !== null : (string) $actual['Default'] !== $default)) {
+                        $ok = $this->fail('Legacy archive repair could not verify the added column. Completion was not recorded; inspect the database before retrying.');
+                        break 2;
                     }
                 }
             }
@@ -144,9 +167,9 @@ class RepairLegacyColumnWidths extends AbstractMigration
         $state = $this->inspect();
         $rows = [];
         foreach (self::TABLES as $suffix) {
-            foreach (self::COLUMNS as $name) {
+            foreach ('slim_stats_archive' === $suffix ? array_merge(self::COLUMNS, self::ARCHIVE_COLUMNS) : self::COLUMNS as $name) {
                 $rows[] = ['key' => $this->getId(), 'table' => $this->tablePrefix() . $suffix,
-                    'columns' => $name, 'exists' => 'varchar(256)' === strtolower((string) ($state['columns'][$suffix][$name]['Type'] ?? ''))];
+                    'columns' => $name, 'exists' => in_array($name, self::ARCHIVE_COLUMNS, true) ? isset($state['columns'][$suffix][$name]) : 'varchar(256)' === strtolower((string) ($state['columns'][$suffix][$name]['Type'] ?? ''))];
             }
         }
         return $rows;

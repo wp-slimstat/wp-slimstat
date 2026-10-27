@@ -243,7 +243,7 @@ class OptionalMigrationTest extends WpSlimstatTestCase
             $db->last_error = '';
             $db->shouldReceive('suppress_errors')->andReturn(false);
             $columns = [];
-            foreach (['city', 'username'] as $field) {
+            foreach (['city', 'username', 'email', 'fingerprint', 'dt_out', 'tz_offset'] as $field) {
                 $columns[] = ['Field' => $field, 'Type' => $shape, 'Collation' => 'utf8mb4_unicode_ci',
                     'Null' => 'YES', 'Default' => null, 'Extra' => '', 'Comment' => ''];
             }
