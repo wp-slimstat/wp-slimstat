@@ -80,6 +80,18 @@ test.describe('Dashboard Funnels widget — all funnels with tabs (Fix 2)', () =
     await expect(panel1).toBeVisible();
     await expect(panel0).toBeHidden();
     await expect(widget.locator('.slimstat-funnel-wtab[data-funnel-index="1"]')).toHaveClass(/is-active/);
+
+    // A refresh replaces the widget again; initialize the new panels without
+    // leaving every funnel visible or breaking the delegated tab handler.
+    await page.evaluate(() => (window as any).SlimStatAdmin.refresh_report('slim_p9_02')());
+    await expect(panel0).toBeVisible();
+    await expect(panel1).toBeHidden();
+    await widget.locator('.slimstat-funnel-wtab[data-funnel-index="1"]').click();
+    await expect(panel1).toBeVisible();
+    await expect(panel0).toBeHidden();
+    await panel1.evaluate(el => el.appendChild(document.createElement('span')));
+    await expect(panel1).toBeVisible();
+    await expect(panel0).toBeHidden();
   });
 
   test('de-cramped: bar track and tab strip render at the polished sizes', async ({ page }) => {
