@@ -1299,10 +1299,6 @@ var SlimStat = (function () {
                 source: source,
                 parsed: parsedConsent,
                 ts: Date.now(),
-                mode: {
-                    gdprEnabled: params.gdpr_enabled !== "off",
-                    anonymousTrackingEnabled: params.anonymous_tracking === "on",
-                },
                 nonce: nonce,
             };
 
@@ -1959,7 +1955,7 @@ if (!window.requestIdleCallback) {
     }
 
     function heatmapSampled(id, hm) {
-        return id % 10000 < parseInt(hm.r, 10);
+        return ((id % 10000) * 6181) % 10000 < parseInt(hm.r, 10);
     }
 
     // The batch for the current pageview. Navigation clears or replaces the id, so a batch
@@ -2027,9 +2023,17 @@ if (!window.requestIdleCallback) {
         return null;
     }
 
+    function heatmapConsentAllowed() {
+        var consent = SlimStat.consent.checkAllowed(currentSlimStatParams());
+        if (consent && consent.allowed && consent.mode === "full") return true;
+        heatmap = null;
+        recentClicks = [];
+        return false;
+    }
+
     function heatmapClick(e) {
         var hm = heatmapParams();
-        if (!hm || !e || e.isTrusted === false || e.detail === 0) return;
+        if (!hm || !e || e.isTrusted === false || e.detail === 0 || !heatmapConsentAllowed()) return;
         var id = heatmapId();
         if (id && !heatmapSampled(id, hm)) return;
         var target = e.target && e.target.nodeType === 1 ? e.target : e.target && e.target.parentNode;
@@ -2093,6 +2097,7 @@ if (!window.requestIdleCallback) {
                 ticking = true;
                 window.requestAnimationFrame(function () {
                     ticking = false;
+                    if (!heatmapConsentAllowed()) return;
                     var batch = heatmapBatch();
                     batch.maxY = Math.max(batch.maxY, Math.round((window.pageYOffset || 0) + window.innerHeight));
                 });
@@ -2109,9 +2114,8 @@ if (!window.requestIdleCallback) {
         if (!hm || !batch || !id || (batch.id && batch.id !== id) || !heatmapSampled(id, hm)) return "";
         var scroll = final && hm.l === "full";
         if (!batch.r.length && !scroll) return "";
-        var consent = SlimStat.consent.checkAllowed(currentSlimStatParams());
-        if (!consent || !consent.allowed || consent.mode !== "full") return "";
-        var data = { v: 1, vw: window.innerWidth || 0, vh: window.innerHeight || 0, s: batch.s, r: batch.r };
+        if (!heatmapConsentAllowed()) return "";
+        var data = { v: 2, vw: window.innerWidth || 0, vh: window.innerHeight || 0, s: batch.s, r: batch.r };
         if (scroll) data.sc = [batch.maxY, Math.round(document.documentElement.scrollHeight || 0)];
         // Selectors are per request; seq keeps counting so retries overwrite, never duplicate.
         batch.r = [];

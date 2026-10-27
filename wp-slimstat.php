@@ -437,6 +437,9 @@ class wp_slimstat
 		$banner_enabled = ('on' === (self::$settings['gdpr_enabled'] ?? 'off'))
 			&& ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
 		if ($banner_enabled) {
+			if ('slimstat_banner' === (self::$settings['consent_integration'] ?? '')) {
+				add_action('wp_enqueue_scripts', [\SlimStat\Services\GDPRService::class, 'enqueueWooCommerceConsent'], 100);
+			}
 			add_action('wp_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
 			add_action('login_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
 			add_action('wp_footer', [self::class, 'render_gdpr_banner'], 5);

@@ -180,6 +180,15 @@ final class Store
 		return ['l' => self::level(), 'r' => $rate];
 	}
 
+	/** Spread new batches across sequential pageviews; accept the old cached-client sampling rule. */
+	public static function sampled(int $id, int $rate, int $version = 2): bool
+	{
+		// Reduce first: the product fits PHP 32-bit and JavaScript's exact integer range.
+		$bucket = $id % 10000;
+		if (2 === $version) { $bucket = ($bucket * 6181) % 10000; }
+		return $id > 0 && $bucket < max(0, min(10000, $rate));
+	}
+
 	/**
 	 * Store one capture batch for a verified pageview id. Every gate is re-checked here,
 	 * because a cached page can carry a stale hm param. Page, device and date come from the
@@ -194,7 +203,7 @@ final class Store
 	{
 		$level = self::level();
 		$rate  = (int) (\wp_slimstat::$settings['heatmap_rate'] ?? 10000);
-		if ($id <= 0 || !self::capturing() || strlen($raw) > self::MAX_BYTES || $id % 10000 >= $rate || !self::ready()) {
+		if ($id <= 0 || !self::capturing() || strlen($raw) > self::MAX_BYTES || !self::ready()) {
 			return 0;
 		}
 		if (!Consent::canTrack() || !Consent::piiAllowed()) {
@@ -205,7 +214,8 @@ final class Store
 		if (!is_array($batch)) {
 			$batch = json_decode(wp_unslash($raw), true, 4);
 		}
-		if (!is_array($batch)) {
+		if (!is_array($batch) || !in_array($batch['v'] ?? 1, [1, 2], true)
+			|| !self::sampled($id, $rate, (int) ($batch['v'] ?? 1))) {
 			return 0;
 		}
 

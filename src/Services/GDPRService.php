@@ -33,6 +33,39 @@ class GDPRService
 		$this->settings = $settings;
 	}
 
+	/** Gate WooCommerce before its first cookie write; read consent in the browser for cached pages. */
+	public static function enqueueWooCommerceConsent(): void
+	{
+		if (!wp_script_is('wc-order-attribution', 'enqueued')) {
+			return;
+		}
+		wp_add_inline_script('wc-order-attribution', <<<'JS'
+(function(w,d){
+ var wc=w.wc_order_attribution;
+ if(!wc || !wc.params) return;
+ wc.slimstatConsentAllowed=function(){
+  var hasConsent=w.wp_has_consent;
+  return /(?:^|;\s*)slimstat_gdpr_consent=accepted(?:;|$)/.test(d.cookie)
+   && (typeof hasConsent!=='function' || hasConsent('statistics'));
+ };
+ wc.slimstatOriginalAllow=wc.params.allowTracking;
+ wc.params.allowTracking=wc.slimstatOriginalAllow && wc.slimstatConsentAllowed();
+})(window,document);
+JS
+		, 'before');
+		wp_add_inline_script('wc-order-attribution', <<<'JS'
+(function(w,d){
+ var wc=w.wc_order_attribution;
+ if(!wc || typeof wc.setOrderTracking!=='function' || !wc.slimstatConsentAllowed) return;
+ var consent=wc.slimstatConsentAllowed, permitted=wc.slimstatOriginalAllow, set=wc.setOrderTracking;
+ delete wc.slimstatConsentAllowed; delete wc.slimstatOriginalAllow;
+ wc.setOrderTracking=function(allow){return set.call(wc, Boolean(allow && permitted && consent()));};
+ d.addEventListener('slimstat_banner_consent',function(){wc.setOrderTracking(true);});
+})(window,document);
+JS
+		, 'after');
+	}
+
 	/**
 	 * Check if SlimStat banner is enabled
 	 *

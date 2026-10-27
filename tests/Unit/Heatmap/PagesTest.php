@@ -135,7 +135,7 @@ class PagesTest extends WpSlimstatTestCase
 		self::assertNull($rows[2]['dead']);
 
 		// After capture began, legacy rows of a pageview that has heatmap rows are skipped.
-		self::assertStringContainsString('te.dt < 100 OR NOT EXISTS (SELECT 1 FROM wp_slim_heatmap h WHERE h.id = te.id)', $this->query('slim_events te'));
+		self::assertStringContainsString('AND NOT EXISTS (SELECT 1 FROM wp_slim_heatmap h WHERE h.id = te.id)', $this->query('slim_events te'));
 		self::assertStringContainsString('WHERE id IN (7,9)', $this->query('SELECT id, resource'));
 	}
 

@@ -48,11 +48,26 @@ async function capture(browser, hm, act = defaultClicks) {
 (async () => {
     const browser = await chromium.launch();
     try {
+        const consented = await capture(browser, { l: 'main', r: 10000 }, async tab => {
+            await tab.evaluate(() => {
+                window.SlimStatParams.id = '';
+                window.SlimStat.consent.checkAllowed = () => ({allowed: false, mode: 'blocked'});
+            });
+            await tab.click('#buy', {position: {x: 50, y: 10}});
+            await tab.evaluate(() => {
+                window.SlimStatParams.id = '5.0123456789abcdef';
+                window.SlimStat.consent.checkAllowed = () => ({allowed: true, mode: 'full'});
+            });
+            await tab.click('#email', {position: {x: 10, y: 10}});
+        });
+        assert.deepEqual(consented.flatMap(b => b.hm.s.map(s => s[0])), ['#email'], 'pre-consent click must not be sent after grant');
+        console.log('PASS: pre-consent clicks are discarded, post-consent clicks retained');
+
         const full = await capture(browser, { l: 'full', r: 10000 });
         assert.equal(full.length, 1, 'one batch, riding on the finalize request');
         assert.match(full[0].payload, /^action=slimtrack&id=5\.0123456789abcdef&fv=pagehide&hm=/);
         const { hm } = full[0];
-        assert.deepEqual([hm.v, hm.vw, hm.vh], [1, 1280, 720]);
+        assert.deepEqual([hm.v, hm.vw, hm.vh], [2, 1280, 720]);
         assert.deepEqual(hm.s[0], ['#buy', 'Buy now'], 'stable id selector; interactive label, whitespace collapsed');
         assert.deepEqual(hm.s[1], ['#email', ''], 'never an input value');
         assert.deepEqual(hm.s[2], ['div.hero:nth-of-type(1) > p', ''], 'no label from plain text; position among sibling divs');

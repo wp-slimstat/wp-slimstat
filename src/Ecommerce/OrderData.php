@@ -36,7 +36,9 @@ final class OrderData
 			}
 			$referrer = (string) $order->get_meta('_wc_order_attribution_referrer');
 			if ('typein' === $type || isset($tags['utm_source']) || filter_var($referrer, FILTER_VALIDATE_URL)) {
-				$attribution = Acquisition::classify($tags, $referrer, '', 0, home_url());
+				// WooCommerce synthesizes referral UTMs; classify the actual referrer when available.
+				$classifierTags = 'referral' === $type && filter_var($referrer, FILTER_VALIDATE_URL) ? [] : $tags;
+				$attribution = Acquisition::classify($classifierTags, $referrer, '', 0, home_url());
 				$base['channel'] = 'typein' === $type ? 'direct' : $attribution['traffic_channel'];
 				$base['source'] = self::text($attribution['traffic_source'] ?? '', 191);
 				$base['campaign'] = self::text($tags['utm_campaign'] ?? '', 191);

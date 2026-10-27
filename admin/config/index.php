@@ -129,6 +129,7 @@ $settings = [
 				'type'          => 'select',
 				'description'   => __('<strong>GDPR Compliance:</strong> Integrate with a Consent Management Platform (CMP) to ensure tracking only occurs with user consent.<br/><br/><strong>SlimStat Consent Banner:</strong> (Recommended) Use SlimStat\'s built-in banner with customizable messaging and server-side consent tracking.<br/><strong>Via WP Consent API:</strong> Integrates with CMPs supporting WordPress Consent API (Complianz, CookieYes, etc.). Server-side consent checking available for both modes.', 'wp-slimstat'),
 				'select_values' => [
+					''                   => __('Select a consent integration', 'wp-slimstat'),
 					'slimstat_banner'    => __('SlimStat Consent Banner (Recommended)', 'wp-slimstat'),
 					'wp_consent_api'     => __('Via WP Consent API', 'wp-slimstat'),
 					// 'real_cookie_banner' => __('Real Cookie Banner', 'wp-slimstat'),

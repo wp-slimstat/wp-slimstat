@@ -216,6 +216,18 @@ class StoreTest extends WpSlimstatTestCase
 	}
 
 	/** Each gate the tracker applies is applied again here: a cached page can carry a stale hm. */
+	public function test_new_sampling_spreads_visits_and_keeps_cached_v1_trackers_compatible(): void
+	{
+		$this->readyToIngest();
+		\wp_slimstat::$settings['heatmap_rate'] = 2500;
+		$old = $this->batch([[0, 1, 0, 5000, 5000, 100, 200]], [['#buy', 'Buy']]);
+		$new = str_replace('"v":1', '"v":2', $old);
+		self::assertGreaterThan(0, Store::ingest(1, $old), 'cached old bundle keeps its original sample');
+		self::assertSame(0, Store::ingest(1, $new));
+		self::assertSame(0, Store::ingest(2503, $old));
+		self::assertGreaterThan(0, Store::ingest(2503, $new), 'new sample is spread across the block');
+	}
+
 	public function test_ingest_refuses_batches_the_site_would_not_record(): void
 	{
 		$good  = $this->batch([[0, 1, 0, 5000, 5000, 100, 200]], [['#buy', 'Buy']]);
