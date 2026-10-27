@@ -76,7 +76,7 @@ $column_drift = isset($column_drift) && is_array($column_drift) ? $column_drift 
                         <?php if ($has_required_migrations): ?>
                             <?php echo esc_html__('Click "Start Migration" to begin. Progress and details will appear here.', 'wp-slimstat'); ?>
                         <?php elseif (null === $column_drift): ?>
-                            <?php echo esc_html__('SlimStat could not verify the database columns. Check the database connection and permissions, then reload this page. Existing warnings are retained.', 'wp-slimstat'); ?>
+                            <?php echo esc_html__('SlimStat could not verify the database structure. Check the database connection and permissions, then reload this page. Existing warnings are retained.', 'wp-slimstat'); ?>
                         <?php elseif ([] !== $column_drift): ?>
                             <?php echo esc_html__('Database columns still differ from this version. Review the details and the optional repairs below. If no matching repair is offered, ask your database administrator or SlimStat support to review the definitions before changing them.', 'wp-slimstat'); ?>
                         <?php else: ?>

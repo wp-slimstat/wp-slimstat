@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-27T04:38:28+00:00\n"
+"POT-Creation-Date: 2026-10-27T04:40:36+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -1666,9 +1666,9 @@ msgstr ""
 
 #: admin/index.php:4254
 #: admin/index.php:4302
-#: src/Migration/Admin/MigrationAdmin.php:295
-#: src/Migration/Admin/MigrationAdmin.php:411
-#: src/Migration/Admin/MigrationAdmin.php:438
+#: src/Migration/Admin/MigrationAdmin.php:301
+#: src/Migration/Admin/MigrationAdmin.php:417
+#: src/Migration/Admin/MigrationAdmin.php:444
 #: wp-slimstat.php:2932
 msgid "Permission denied"
 msgstr ""
@@ -8731,7 +8731,7 @@ msgid "Failed"
 msgstr ""
 
 #: src/Migration/Admin/MigrationAdmin.php:131
-#: src/Migration/Admin/MigrationAdmin.php:403
+#: src/Migration/Admin/MigrationAdmin.php:409
 #: src/view/migration-page.php:47
 msgid "Required migrations are complete. Reload this page to verify column repairs."
 msgstr ""
@@ -8765,33 +8765,33 @@ msgstr ""
 msgid "A step failed. Please check the logs and retry."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:264
+#: src/Migration/Admin/MigrationAdmin.php:270
 msgid "SlimStat Database Migration"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:265
+#: src/Migration/Admin/MigrationAdmin.php:271
 msgid "SlimStat database migration required"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:266
+#: src/Migration/Admin/MigrationAdmin.php:272
 msgid "SlimStat requires a database update. Reports that depend on the pending schema remain unavailable until it completes. Back up your database first."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:270
+#: src/Migration/Admin/MigrationAdmin.php:276
 #: src/view/migration-page.php:92
 msgid "Technical details"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:286
+#: src/Migration/Admin/MigrationAdmin.php:292
 #: src/view/migration-page.php:101
 msgid "Start Migration"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:403
+#: src/Migration/Admin/MigrationAdmin.php:409
 msgid "Migrations completed, but some may still be needed."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:442
+#: src/Migration/Admin/MigrationAdmin.php:448
 msgid "Migration dismissal reset"
 msgstr ""
 
@@ -9812,7 +9812,7 @@ msgid "Click \"Start Migration\" to begin. Progress and details will appear here
 msgstr ""
 
 #: src/view/migration-page.php:79
-msgid "SlimStat could not verify the database columns. Check the database connection and permissions, then reload this page. Existing warnings are retained."
+msgid "SlimStat could not verify the database structure. Check the database connection and permissions, then reload this page. Existing warnings are retained."
 msgstr ""
 
 #: src/view/migration-page.php:81

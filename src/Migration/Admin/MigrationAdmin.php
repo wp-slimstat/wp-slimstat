@@ -224,6 +224,12 @@ class MigrationAdmin
 		$offered_migrations = $this->manager->getOfferedMigrations();
 		$has_required_migrations = !empty($required_migrations);
         $column_drift = wp_slimstat_admin::observe_column_drift();
+        foreach ($this->manager->getMigrations() as $migration) {
+            if (!$migration->isOptional() && method_exists($migration, 'probeUnavailable') && $migration->probeUnavailable()) {
+                $column_drift = null;
+                break;
+            }
+        }
 		// MyISAM has no online index build: each step locks the table for writes while it runs.
 		// Required steps write to both tables tracking writes to (idx_events_notes_dt is on slim_events).
 		$db = MigrationService::analyticsConnection();

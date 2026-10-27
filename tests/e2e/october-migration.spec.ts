@@ -80,8 +80,25 @@ test('issue 360: legacy drift offers an explicit repair and clears only after ve
   await expect(page.locator('#slimstat-status-note')).toContainText('Database is up to date');
   expect(fixture(`echo hash('sha256',serialize($wpdb->get_results('SELECT * FROM '.$wpdb->prefix.'slim_stats ORDER BY id',ARRAY_A)));`)).toBe(before);
   await page.screenshot({path:info.outputPath('issue360-after-repair.png'),fullPage:true});
+  const fault = Buffer.from(`<?php
+   add_filter('query', static function($sql) {
+    if (($_GET['page'] ?? '') === 'slimstat_migration' && stripos($sql, 'SHOW INDEX') === 0) {
+     return 'SHOW INDEX FROM nonexistent_issue360_probe';
+    }
+    return $sql;
+   });
+  `).toString('base64');
+  fixture(`
+   $file=WP_CONTENT_DIR.'/mu-plugins/slimstat-issue360-query-fixture.php';
+   if (file_exists($file)) throw new RuntimeException('Fault fixture already exists');
+   wp_mkdir_p(dirname($file)); file_put_contents($file,base64_decode('${fault}'));
+  `);
+  await page.reload();
+  await expect(page.locator('#slimstat-status-note')).toContainText('could not verify the database structure');
+  await expect(page.locator('#slimstat-status-note')).not.toContainText('Database is up to date');
  } finally {
   fixture(`
+   $file=WP_CONTENT_DIR.'/mu-plugins/slimstat-issue360-query-fixture.php'; if (file_exists($file)) unlink($file);
    $wpdb->query('ALTER TABLE '.$wpdb->prefix.'slim_stats MODIFY email VARCHAR(256) DEFAULT NULL');
    delete_transient('slimstat_migration_probe'); delete_transient('slimstat_migration_offered'); delete_transient('slimstat_column_drift_checked');
   `);
