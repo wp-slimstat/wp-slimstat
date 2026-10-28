@@ -53,7 +53,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
     const todayTs = liveSafeTodayTs(now);
     const lastWeekTs = now - 7 * day;
 
-    await insertRows(todayTs, 5, 'sow0-today');
+    await insertRows(todayTs, 5, 'sow0-today', 'chart-e2e', 0);
     await insertRows(lastWeekTs, 8, 'sow0-lastweek');
 
     const json = fetchChartData(rangeStart, rangeEnd, 'weekly');
@@ -78,7 +78,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
     const todayTs = liveSafeTodayTs(now);
     const lastWeekTs = now - 7 * day;
 
-    await insertRows(todayTs, 4, 'sow1-today');
+    await insertRows(todayTs, 4, 'sow1-today', 'chart-e2e', 0);
     await insertRows(lastWeekTs, 6, 'sow1-lastweek');
 
     const json = fetchChartData(rangeStart, rangeEnd, 'weekly');
@@ -103,7 +103,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
     const todayTs = liveSafeTodayTs(now);
     const twoWeeksAgoTs = now - 14 * day;
 
-    await insertRows(todayTs, 3, 'sow6-today');
+    await insertRows(todayTs, 3, 'sow6-today', 'chart-e2e', 0);
     await insertRows(twoWeeksAgoTs, 5, 'sow6-2wago');
 
     const json = fetchChartData(rangeStart, rangeEnd, 'weekly');
@@ -129,7 +129,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
     const lastWeekTs = now - 7 * day;
     const twoWeeksAgoTs = now - 14 * day;
 
-    await insertRows(todayTs, 3, 'xgran-today');
+    await insertRows(todayTs, 3, 'xgran-today', 'chart-e2e', 0);
     await insertRows(lastWeekTs, 5, 'xgran-lastweek');
     await insertRows(twoWeeksAgoTs, 4, 'xgran-2wago');
 

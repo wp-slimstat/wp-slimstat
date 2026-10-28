@@ -170,6 +170,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 **Fixed**
 
+* Keep the date picker’s highlighted preset consistent with the selected range when preset dates overlap.
 * Keep the consent banner usable in server tracking mode, and record the first pageview only after acceptance.
 * First visits keep recording on upgraded sites while the visitor-identity database step is still pending.
 * Offline tracking survives a failed reconnect and page reload, keeping pending visits until the server confirms them.
