@@ -59,10 +59,26 @@ test.describe('Chart "today shows zero" regression (Support ticket: acekin26)', 
     await clearTestData();
   });
 
+  test('today fixtures remain visible during the first five minutes after midnight', async () => {
+    const midnight = Math.floor(Date.now() / 86_400_000) * day;
+    for (const seconds of [0, 1, 59, 60, 299]) {
+      await clearTestData();
+      const end = midnight + seconds;
+      const seed = liveSafeTodayTs(end);
+      expect(seed).toBeGreaterThanOrEqual(midnight);
+      // One timestamp keeps every fixture row inside the first live minute bucket.
+      for (let row = 0; row < 5; row++) await insertRows(seed, 1, `midnight-${row}`);
+      const json = fetchChartData(end - 28 * day, end, 'daily');
+      expect(json?.success).toBe(true);
+      expect(sumV1(json)).toBe(5);
+      expect(getV1(json).at(-1)).toBe(5);
+    }
+  });
+
   // ─── Test 1: Daily — today's records visible ──────────────────────────────
 
   test('daily chart: records inserted for TODAY are visible (not zero)', async () => {
-    await insertRows(todayTs, 5, 'today');
+    await insertRows(todayTs, 5, 'today', 'chart-e2e', 0);
     await insertRows(yesterdayTs, 10, 'yesterday');
 
     const json = fetchChartData(rangeStart, rangeEnd, 'daily');
@@ -85,7 +101,7 @@ test.describe('Chart "today shows zero" regression (Support ticket: acekin26)', 
   // ─── Test 2: Weekly — current partial week visible ────────────────────────
 
   test('weekly chart: current partial week records visible (not zero)', async () => {
-    await insertRows(todayTs, 3, 'weekly-today');
+    await insertRows(todayTs, 3, 'weekly-today', 'chart-e2e', 0);
     await insertRows(lastWeekTs, 7, 'weekly-lastweek');
     await insertRows(twoWeeksAgoTs, 4, 'weekly-2wago');
 
@@ -112,7 +128,7 @@ test.describe('Chart "today shows zero" regression (Support ticket: acekin26)', 
     const intervals = [0, 3, 7, 10, 14, 18, 21, 25, 27];
     for (const daysAgo of intervals) {
       const ts = daysAgo === 0 ? todayTs : now - daysAgo * day;
-      await insertRows(ts, 2, `day-${daysAgo}`);
+      await insertRows(ts, 2, `day-${daysAgo}`, 'chart-e2e', daysAgo === 0 ? 0 : 1);
     }
 
     const json = fetchChartData(rangeStart, rangeEnd, 'daily');
@@ -132,7 +148,7 @@ test.describe('Chart "today shows zero" regression (Support ticket: acekin26)', 
   // ─── Test 4: Previous period comparison ───────────────────────────────────
 
   test('daily chart: previous period comparison (datasets_prev) is populated', async () => {
-    await insertRows(todayTs, 3, 'curr-today');
+    await insertRows(todayTs, 3, 'curr-today', 'chart-e2e', 0);
     await insertRows(lastWeekTs, 5, 'curr-lastweek');
     await insertRows(prevMidTs, 4, 'prev-mid');
 
@@ -156,7 +172,7 @@ test.describe('Chart "today shows zero" regression (Support ticket: acekin26)', 
   // ─── Test 5: Cross-granularity consistency ────────────────────────────────
 
   test('same data produces consistent totals across daily and weekly granularities', async () => {
-    await insertRows(todayTs, 3, 'multi-today');
+    await insertRows(todayTs, 3, 'multi-today', 'chart-e2e', 0);
     await insertRows(lastWeekTs, 5, 'multi-lastweek');
     await insertRows(twoWeeksAgoTs, 4, 'multi-2wago');
 

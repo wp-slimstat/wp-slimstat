@@ -152,7 +152,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Upgrade Notice ==
 
 = 6.0.1 =
-Older versions keep working and added columns stay. This update removes no rows. Fixes offline tracking, consent, heatmap accuracy and slow Dashboard widgets. Improves browser-data recovery and legacy migration status. Back up before updating; database repairs still wait for your click.
+Older versions keep working and added columns stay. This update removes no rows. Fixes offline and pre-migration tracking, consent, heatmaps and slow Dashboard widgets. Improves browser-data recovery and migration status. Back up first; database repairs still wait for your click.
 
 = 6.0.0 =
 SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster reports. Back up first. The update adds columns and indexes and removes no rows; older versions keep working and the added columns stay. Database steps wait for your click. Some totals change on purpose: see changelog.
@@ -170,6 +170,9 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 **Fixed**
 
+* Keep the date picker’s highlighted preset consistent with the selected range when preset dates overlap.
+* Keep the consent banner usable in server tracking mode, and record the first pageview only after acceptance.
+* First visits keep recording on upgraded sites while the visitor-identity database step is still pending.
 * Offline tracking survives a failed reconnect and page reload, keeping pending visits until the server confirms them.
 * WordPress Dashboard widgets load without slowing the page, including when asynchronous reports are disabled. Charts and Funnel tabs work after refresh. ([#361](https://github.com/wp-slimstat/wp-slimstat/issues/361))
 * Optional migration repairs cover legacy column differences and preserve recorded values. Unfinished or unreadable repairs remain visible. ([#360](https://github.com/wp-slimstat/wp-slimstat/issues/360))
