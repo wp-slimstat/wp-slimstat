@@ -545,6 +545,10 @@ jobs:
         if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/acquisition-reports-db-test.php
 
+      - name: Summary accuracy, query budgets and cache isolation
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/report-summary-counts-db-test.php
+
       - name: Legacy column repair preserves historical data
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/docker/probe-legacy-column-repair.php
 
