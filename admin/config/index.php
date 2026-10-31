@@ -978,7 +978,8 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
 
         // Refresh WP permalinks, in case the user has changed the tracking method
         if (isset($posted_options['tracking_request_method']) && wp_slimstat::$settings['tracking_request_method'] != $posted_options['tracking_request_method']) {
-            update_option('slimstat_permalink_structure_updated', true); // This will trigger a rewrite rules flush
+            // Rebuild on the next request, after init registers the newly saved method's rules.
+            delete_option('rewrite_rules');
         }
 
         // All other options

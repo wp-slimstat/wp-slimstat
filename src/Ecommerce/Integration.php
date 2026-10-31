@@ -18,16 +18,14 @@ final class Integration
 	public const GROUP = 'slimstat-ecommerce';
 	public const STATE = 'slimstat_ecommerce_state';
 
-	/** Register only when WooCommerce is loaded. No schema/query work on storefront boot. */
+	/** Register hooks without probing optional Ecommerce state on ordinary page loads. */
 	public static function boot(): void
 	{
 		// Privacy and retention still work after WooCommerce is deactivated.
-		if (self::ready()) {
-			add_filter('wp_privacy_personal_data_erasers', [self::class, 'erasers'], 5);
-			add_filter('wp_privacy_personal_data_exporters', [self::class, 'exporters']);
-			add_action('slimstat_ecommerce_maintenance', [self::class, 'maintenance']);
-			add_action('wp_slimstat_purge', [self::class, 'maintenance'], 20);
-		}
+		add_filter('wp_privacy_personal_data_erasers', [self::class, 'erasers'], 5);
+		add_filter('wp_privacy_personal_data_exporters', [self::class, 'exporters']);
+		add_action('slimstat_ecommerce_maintenance', [self::class, 'maintenance']);
+		add_action('wp_slimstat_purge', [self::class, 'maintenance'], 20);
 		if (!self::available()) {
 			return;
 		}
@@ -153,7 +151,7 @@ final class Integration
 				'cursor' => 0, 'ceiling' => max((int) ($last[0] ?? 0), (int) $db->get_var('SELECT MAX(order_id) FROM ' . self::table())), 'imported' => 0,
 				'complete' => false, 'error' => false, 'error_message' => '', 'failed_order' => 0, 'needs_rebuild' => false, 'timezone' => wp_timezone_string(), 'database' => Acquisition::readinessKey(),
 			]);
-			update_option(self::STATE, $state, false);
+			update_option(self::STATE, $state, true);
 			self::invalidate();
 			as_enqueue_async_action('slimstat_ecommerce_import', [], self::GROUP, true);
 			if (!wp_next_scheduled('slimstat_ecommerce_maintenance')) {
@@ -206,7 +204,7 @@ final class Integration
 			$state['imported'] += count($ids);
 			$state['complete'] = $state['cursor'] >= $state['ceiling'];
 			$state['error'] = !empty($state['failed_order']) || !empty(get_option(self::STATE, [])['error']);
-			update_option(self::STATE, $state, false);
+			update_option(self::STATE, $state, true);
 			if (!$state['complete']) {
 				// A delayed successor avoids an unbounded loop in one background request.
 				as_schedule_single_action(time() + 5, 'slimstat_ecommerce_import', [], self::GROUP);
@@ -499,6 +497,9 @@ final class Integration
 
 	public static function exporters(array $exporters): array
 	{
+		if (!self::ready()) {
+			return $exporters;
+		}
 		$exporters['slimstat-ecommerce'] = [
 			'exporter_friendly_name' => __('SlimStat Ecommerce associations', 'wp-slimstat'),
 			'callback' => [self::class, 'exportPersonalData'],
@@ -527,6 +528,9 @@ final class Integration
 	/** Remove associations before SlimStat erases their parent pageviews. */
 	public static function erasers(array $erasers): array
 	{
+		if (!self::ready()) {
+			return $erasers;
+		}
 		return ['slimstat-ecommerce' => [
 			'eraser_friendly_name' => __('SlimStat Ecommerce associations', 'wp-slimstat'),
 			'callback' => [self::class, 'erase'],
@@ -564,7 +568,7 @@ final class Integration
 			$message = $error instanceof \RuntimeException ? $error->getMessage() : __('Ecommerce setup stopped unexpectedly. Check the PHP error log, then try again.', 'wp-slimstat');
 			$state['error_message'] = mb_substr(sanitize_text_field($message), 0, 500);
 		}
-		update_option(self::STATE, $state, false);
+		update_option(self::STATE, $state, true);
 	}
 
 	private static function requireInnoDb(\wpdb $db, string $table): void

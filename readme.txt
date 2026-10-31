@@ -164,6 +164,9 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 **Improved**
 
+* Ordinary page loads avoid absent Ecommerce and permalink-update option queries; privacy exports and erasure still work after WooCommerce is deactivated.
+* Nearby asynchronous report widgets load in up to three concurrent requests; offscreen widgets load as you scroll.
+* Column-addition migrations try metadata-only INSTANT DDL before existing compatibility fallbacks. The package omits the tracker source map.
 * Historical reports reuse cached results across requests while keeping separate analytics databases apart.
 * Pageview tracking starts when the page is ready, with a bounded delay. Notification dismissals and refreshes wait for background checks to finish.
 * Missing browser-detection data recovers in the background when enabled, with clearer failure details and a manual retry. ([#363](https://github.com/wp-slimstat/wp-slimstat/issues/363))

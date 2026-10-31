@@ -1523,6 +1523,12 @@ class wp_slimstat_admin
             throw new \RuntimeException('Visit counter initialization did not complete.');
         }
 
+        if (version_compare((string) (wp_slimstat::$settings['version'] ?? '0'), '6.0.1', '<')
+            && get_option('slimstat_permalink_structure_updated', false)) {
+            delete_option('rewrite_rules');
+            delete_option('slimstat_permalink_structure_updated');
+        }
+
         // Now we can update the version stored in the database
         unset(wp_slimstat::$settings['_settings_recovery']);
         // The 6.0 release notice is for sites arriving from 5.x: a 6.0.x update must not bring

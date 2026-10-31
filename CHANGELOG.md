@@ -1,6 +1,9 @@
 = 6.0.1 - 2026-10-27 =
 
 **Faster**
+* Ordinary page loads no longer query absent Ecommerce and permalink-update options. Privacy exports and erasure still work after WooCommerce is deactivated.
+* Nearby asynchronous report widgets load in up to three concurrent requests, with offscreen widgets loaded as you scroll.
+* Column-addition migrations try metadata-only INSTANT DDL before the existing online and compatibility fallbacks. The distribution omits the tracker source map.
 * The WordPress Dashboard loads quickly again on upgraded sites. SlimStat widgets load through the existing authenticated AJAX path even when Async mode is off, and their charts and Funnel tabs start once loaded. Saved settings, SlimStat's own report screens, tracking and report numbers are unchanged. ([#361](https://github.com/wp-slimstat/wp-slimstat/issues/361))
 * Historical reports reuse cached wildcard-query results across requests instead of building a new cache key for every request.
 * Pageviews are sent as soon as the page is ready, with a bounded idle delay. Consent checks and confirmed pageview creation work as before. ([#365](https://github.com/wp-slimstat/wp-slimstat/issues/365))
