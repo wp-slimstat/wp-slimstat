@@ -121,3 +121,39 @@ namespace {
 '''
 subprocess.run(['php', '-r', bootstrap_probe, str(comparator.with_name('reports-bootstrap.php'))], check=True)
 print('PASS: report registry initialization failure cannot become a partial snapshot')
+
+# The registry also contains raw-only reports consumed through the production table renderer.
+# Exercise the snapshot's actual dispatch; an absent/broken callback must still be an error.
+dispatch_probe = r'''
+namespace SlimStat\Shortcodes {
+    class Shortcode {
+        static function table(array $rows): string {
+            if ($rows !== [['value' => 17]]) { throw new \RuntimeException('rows lost'); }
+            return '<table><td>17</td></table>';
+        }
+    }
+}
+namespace {
+    class wp_slimstat_reports { static function callback_wrapper($args) { echo 'ordinary report'; } }
+    $source = file_get_contents($argv[1]);
+    $start = strpos($source, "        \$html  = '';");
+    $end = strpos($source, '        $clean =', $start);
+    $fragment = substr($source, $start, $end - $start);
+    $run = static function ($report) use ($fragment) {
+        $report_id = 'fixture'; eval($fragment); return [$html, $error];
+    };
+    if ($run(['callback' => 'ordinary']) !== ['ordinary report', null]) { exit(1); }
+    $raw = static function ($args) {
+        if (($args['marker'] ?? '') !== 'preserved') { throw new \RuntimeException('args lost'); }
+        return [['value' => 17]];
+    };
+    if ($run(['callback' => '', 'callback_args' => ['raw' => $raw, 'marker' => 'preserved']]) !== ['<table><td>17</td></table>', null]) { exit(2); }
+    foreach ([[], ['callback' => '', 'callback_args' => ['raw' => 'missing_callback']]] as $report) {
+        if ($run($report)[1] === null) { exit(3); }
+    }
+    $throw = static function ($args) { throw new \RuntimeException('raw failed'); };
+    if ($run(['callback' => '', 'callback_args' => ['raw' => $throw]])[1] !== 'raw failed') { exit(4); }
+}
+'''
+subprocess.run(['php', '-r', dispatch_probe, str(comparator.with_name('parity-snapshot.php'))], check=True)
+print('PASS: snapshot renders raw-only reports through the production table helper and retains callback failures')
