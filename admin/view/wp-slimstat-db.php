@@ -1171,6 +1171,9 @@ class wp_slimstat_db
 
         if ($_use_date_filters) {
             self::maybe_enable_query_cache($query);
+        } elseif ('' === $_where) {
+            // Preserve the existing all-time cache used by total-count shortcodes and Pro Whois.
+            $query->allowCaching(true);
         }
 
         // NETWORK-SCOPED, and it may only be so because get_top() is scoped in the same change.

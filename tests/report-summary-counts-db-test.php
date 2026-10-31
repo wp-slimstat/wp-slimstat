@@ -176,6 +176,17 @@ try {
     $check((int) $after[7]['value'] === (int) $before[7]['value'] + 1, 'Current-search count never inherits historical caching');
     $after = wp_slimstat_db::get_visitors_summary();
 
+    // Preserve the existing all-time API used by total-count shortcodes and Pro Whois.
+    foreach (['id', 'ip'] as $column) {
+        $clear();
+        $selects = [];
+        $allTime = wp_slimstat_db::count_records($column, '', false);
+        $check(1 === count($selects), 'Cold all-time count reads the analytics table once');
+        $selects = [];
+        $check($allTime === wp_slimstat_db::count_records($column, '', false), 'Warm all-time count preserves its value');
+        $check([] === $selects, 'Warm all-time count retains its existing cache budget');
+    }
+
     // A damaged optional column must not hide unrelated valid metrics in a combined query.
     $clear();
     $check(false !== $db->query("ALTER TABLE `$table` DROP COLUMN username"), 'Emulate partially restored schema');
