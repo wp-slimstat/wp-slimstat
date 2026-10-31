@@ -90,6 +90,7 @@ for (const stored of ['no', 'on']) {
     const ids = await page.locator('.postbox[id^="slim_p"]').evaluateAll(nodes => nodes.map(node => node.id));
     expect(ids.length).toBeGreaterThan(4);
     for (const id of ids) {
+      await page.locator('#' + id).scrollIntoViewIfNeeded();
       await expect.poll(() => responses.get(id), { timeout: 60_000, message: `AJAX content for ${id}` }).toBeTruthy();
       expect(responses.get(id)).not.toMatch(/Fatal error|Warning:|nonce_failure/);
       await expect(page.locator(`#${id} .inside .loading`)).toHaveCount(0);
@@ -130,6 +131,7 @@ deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php', true);
 `);
   try {
     await page.goto('/wp-admin/index.php');
+    await page.locator('#slim_p7_02').scrollIntoViewIfNeeded();
     const body = page.locator('#slim_p7_02 .inside > .slimstat-dashboard-report');
     await expect(body).toHaveCount(1);
     await expect(body.locator('.loading')).toHaveCount(0);

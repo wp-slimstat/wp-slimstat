@@ -192,11 +192,8 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForSelector(GRANULARITY_SELECT, { timeout: 20_000 });
 
-    // Wait for async reports to finish loading (loading spinners disappear)
-    await page.waitForFunction(
-      () => document.querySelectorAll('.loading .slimstat-font-spin4').length === 0,
-      { timeout: 20_000 },
-    );
+    // Off-screen reports remain deferred; wait for the chart being checked.
+    await expect(page.locator(`.postbox:has(${GRANULARITY_SELECT}) .loading .slimstat-font-spin4`)).toHaveCount(0);
 
     // Allow chart re-initialization to complete
     await page.waitForTimeout(2_000);

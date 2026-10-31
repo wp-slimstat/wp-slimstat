@@ -29,6 +29,7 @@ const STEP = (name: string, value: string) => ({ name, dimension: 'resource', op
 
 async function openDashboard(page: Page): Promise<void> {
   await page.goto(`${BASE_URL}/wp-admin/index.php`, { waitUntil: 'domcontentloaded' });
+  await page.locator('#slim_p9_02').scrollIntoViewIfNeeded();
 }
 
 test.describe('Dashboard Funnels widget — all funnels with tabs (Fix 2)', () => {

@@ -406,6 +406,7 @@ test.describe('Meta-box-order conflict (#15036)', () => {
 
       if (widgetCount > 0) {
         const firstWidget = slimWidgets.first();
+        await firstWidget.scrollIntoViewIfNeeded();
         await expect(firstWidget).toBeVisible();
 
         // In async mode, wait for content to load (up to 20s for AJAX sequencing)
