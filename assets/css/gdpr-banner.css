@@ -99,7 +99,7 @@
     border-top-right-radius: 1rem;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    z-index: 99999;
+    z-index: 1000;
     font-family: var(--gdpr-font-family);
     font-size: 0.9rem;
     line-height: 1.6;
@@ -107,10 +107,11 @@
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
     transform: translateY(100%);
     opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
     transition: transform 0.3s ease-out, opacity 0.3s ease-out;
     max-width: 720px;
     width: calc(100% - 2rem);
-    max-width: calc(100% - 2rem);
     box-sizing: border-box;
 }
 
@@ -118,6 +119,8 @@
 #slimstat-gdpr-banner.show {
     transform: translateY(0);
     opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
     animation: slideUp 0.45s ease-out;
 }
 
@@ -125,6 +128,8 @@
 #slimstat-gdpr-banner.hiding {
     transform: translateY(100%);
     opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
     transition: transform 0.3s ease-out, opacity 0.3s ease-out;
 }
 

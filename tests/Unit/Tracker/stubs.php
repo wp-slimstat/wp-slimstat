@@ -106,7 +106,7 @@ if (!class_exists('wp_slimstat')) {
 
         public static function report_scope(): array
         {
-            return ['where' => '1=1', 'cache' => 'unit-default-report-scope'];
+            return ['where' => '1=1', 'humans' => '(1=1) AND (browser_type IS NULL OR browser_type <> 1)', 'cache' => 'unit-default-report-scope'];
         }
 
         public static function record_degradation($step, $e): void

@@ -15,6 +15,7 @@ var SlimStat = (function () {
     // Queue to enforce sequential sending order for tracking requests
     var requestQueue = [];
     var queueInFlight = false;
+    var offlineInFlight = {};
     var MAX_QUEUE_ATTEMPTS = 4;
     var QUEUE_HIGH_WATERMARK = 80; // drop low-priority if exceeded
     var lastInteractionPayload = "";
@@ -58,6 +59,7 @@ var SlimStat = (function () {
 
     // Offline persistence helpers will be defined in the outer scope and assigned here
     var OFFLINE_KEY = "slimstat_offline_queue";
+    var OFFLINE_REPLAY_KEY = "slimstat_offline_replay";
     var PENDING_SESSION_KEY = "slimstat_pending_session";
 
     function pendingSessionToken() {
@@ -277,8 +279,9 @@ var SlimStat = (function () {
     function saveSessionState(key, value) {
         try {
             sessionStorage.setItem(key, JSON.stringify(value));
+            return true;
         } catch (e) {
-            /* ignore */
+            return false;
         }
     }
 
@@ -435,7 +438,7 @@ var SlimStat = (function () {
 
         // Beacon acceptance does not mean delivery while the browser is offline.
         if (navigator.onLine === false) {
-            storeOffline(payload);
+            if (!opts.offlineReplay) storeOffline(payload);
             if (typeof opts.onComplete === "function") opts.onComplete(false);
             return true;
         }
@@ -499,14 +502,14 @@ var SlimStat = (function () {
                         }, delay);
                     } else {
                         // Max attempts reached, move to offline storage
-                        SlimStat.store_offline(item.payload);
+                        if (!item.opts.offlineReplay) SlimStat.store_offline(item.payload);
                         if (item.opts && typeof item.opts.onComplete === "function") {
                             item.opts.onComplete(false);
                         }
                     }
                 } else {
                     if (item.opts && typeof item.opts.onComplete === "function") {
-                        item.opts.onComplete(!!success);
+                        item.opts.onComplete(!!success, rejected);
                     }
                 }
             } finally {
@@ -1121,26 +1124,17 @@ var SlimStat = (function () {
 
     function detectWPConsentAPI(category) {
         try {
-            if (isFunction(window.wp_has_service_consent)) {
-                try {
-                    var serviceConsent = window.wp_has_service_consent(category);
-                    if (serviceConsent) return true;
-                    if (isFunction(window.wp_is_service_denied) && window.wp_is_service_denied(category)) {
-                        return false;
-                    }
-                } catch (err) {}
-            }
-
+            // This setting is a category, not a service name. Service lookup can
+            // fall back to another category and override an explicit denial.
             if (isFunction(window.wp_has_consent)) {
                 try {
                     // Guard: if no consent_type is registered (CMP hasn't set it),
                     // wp_has_consent() returns true regardless of deny cookies.
-                    // Temporarily set fallback to 'optin' so the cookie is actually checked.
-                    var savedFallback = window.wp_fallback_consent_type;
-                    var consentTypeSet = (typeof window.wp_consent_type !== "undefined" && window.wp_consent_type) ||
-                                         (window.wp_fallback_consent_type && window.wp_fallback_consent_type !== "");
+                    // An explicitly empty type also overrides the API's fallback.
+                    var savedType = window.wp_consent_type;
+                    var consentTypeSet = typeof savedType !== "undefined" ? savedType : window.wp_fallback_consent_type;
                     if (!consentTypeSet) {
-                        window.wp_fallback_consent_type = "optin";
+                        window.wp_consent_type = "optin";
                     }
                     try {
                         var hasConsent = window.wp_has_consent(category);
@@ -1148,7 +1142,8 @@ var SlimStat = (function () {
                         return false;
                     } finally {
                         if (!consentTypeSet) {
-                            window.wp_fallback_consent_type = savedFallback;
+                            if (typeof savedType === "undefined") delete window.wp_consent_type;
+                            else window.wp_consent_type = savedType;
                         }
                     }
                 } catch (err2) {}
@@ -1307,10 +1302,6 @@ var SlimStat = (function () {
                 source: source,
                 parsed: parsedConsent,
                 ts: Date.now(),
-                mode: {
-                    gdprEnabled: params.gdpr_enabled !== "off",
-                    anonymousTrackingEnabled: params.anonymous_tracking === "on",
-                },
                 nonce: nonce,
             };
 
@@ -1590,16 +1581,9 @@ var SlimStat = (function () {
 
         // Check if this is a navigation event (not initial page load)
         var isNavigationEvent = options.isNavigation || false;
-        var isConsentRetry = options.isConsentRetry || false;
 
-        // For navigation events, always track regardless of javascript_mode
-        // For initial page load, skip if server-side tracking is active
-        if (!isNavigationEvent && !isConsentRetry && !isEmpty(params.id) && parseInt(params.id, 10) > 0) {
-            // Server-side tracking is active for initial page load, skip pageview but allow interactions
-            window.sendingSlimStatPageview = false;
-            delete window[requestKey];
-            return;
-        }
+        // A server-created ID still needs browser enrichment (fingerprint, size,
+        // timing). buildPageviewBase uses that signed ID to update the existing row.
 
         // For navigation events, we need to track the new page, not the current one
         if (isNavigationEvent) {
@@ -1726,7 +1710,7 @@ var SlimStat = (function () {
                 sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete });
             }
         };
-        if (window.requestIdleCallback) window.requestIdleCallback(run);
+        if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 1000 });
         else setTimeout(run, 250);
     }
 
@@ -1748,42 +1732,75 @@ var SlimStat = (function () {
         }
     }
 
+    function offlineReplays() {
+        var pending = loadSessionState(OFFLINE_REPLAY_KEY, []);
+        return Array.isArray(pending) ? pending : [];
+    }
+
+    function settleOfflineReplay(original, retry) {
+        if (retry) {
+            storeOffline(original);
+            if (!loadOfflineQueue().some(function (entry) { return entry && entry.p === original; })) return;
+        }
+        saveSessionState(OFFLINE_REPLAY_KEY, offlineReplays().filter(function (entry) { return entry && entry.p !== original; }));
+    }
+
+    function restoreOfflineReplays() {
+        offlineReplays().forEach(function (entry) {
+            if (entry && entry.p && !offlineInFlight[entry.p]) settleOfflineReplay(entry.p, true);
+        });
+    }
+
     function flushOfflineQueue() {
         if (navigator.onLine === false) return;
         try {
+            restoreOfflineReplays();
             var offline = loadOfflineQueue();
             if (!offline.length) return;
 
             var params = currentSlimStatParams();
-            if (!params.id || parseInt(params.id, 10) <= 0) return; // need valid ID to send
+            if (!slimstatConsentAllowed(params).allowed) return;
 
             // Send offline items in batches to avoid overwhelming the server
             var batchSize = 5;
             var sent = 0;
-            var toRemove = [];
 
             for (var i = 0; i < offline.length && sent < batchSize; i++) {
                 var item = offline[i];
-                if (item && item.p) {
+                if (item && item.p && !offlineInFlight[item.p]) {
                     // Update payload with current ID if it has a placeholder
                     var payload = item.p;
                     if (payload.indexOf("id=pending") !== -1) {
+                        if (!params.id || parseInt(params.id, 10) <= 0) continue;
                         payload = payload.replace("id=pending", "id=" + params.id);
                     }
+                    if (offlineInFlight[payload]) continue;
 
-                    if (sendToServer(payload, false, { priority: "normal" })) {
-                        toRemove.push(i);
-                        sent++;
-                    }
+                    // A tab-owned durable copy survives reload without another tab replaying it.
+                    // shortcut: cross-tab crash recovery and exactly-once delivery need server idempotency.
+                    (function (original, replay) {
+                        var pending = offlineReplays();
+                        pending.push({ p: replay });
+                        if (!saveSessionState(OFFLINE_REPLAY_KEY, pending)) return;
+                        saveOfflineQueue(loadOfflineQueue().filter(function (entry) { return !entry || entry.p !== original; }));
+                        if (loadOfflineQueue().some(function (entry) { return entry && entry.p === original; })) {
+                            settleOfflineReplay(replay, false);
+                            return;
+                        }
+                        offlineInFlight[replay] = true;
+                        var complete = function (success, rejected) {
+                            settleOfflineReplay(replay, !success && !rejected);
+                            delete offlineInFlight[replay];
+                        };
+                        var queued = sendToServer(replay, false, {
+                            priority: "normal",
+                            offlineReplay: true,
+                            onComplete: complete,
+                        });
+                        if (!queued) complete(false, false);
+                    })(item.p, payload);
+                    sent++;
                 }
-            }
-
-            // Remove sent items from offline queue
-            if (toRemove.length > 0) {
-                for (var j = toRemove.length - 1; j >= 0; j--) {
-                    offline.splice(toRemove[j], 1);
-                }
-                saveOfflineQueue(offline);
             }
         } catch (e) {
             // Silently fail if there are any issues
@@ -1841,6 +1858,7 @@ var SlimStat = (function () {
             saveOfflineQueue = helpers.saveOfflineQueue;
             currentSlimStatParams = helpers.currentSlimStatParams;
             pageviewInProgress = helpers.pageviewInProgress;
+            restoreOfflineReplays();
         },
     };
 })();
@@ -1973,7 +1991,7 @@ if (!window.requestIdleCallback) {
     }
 
     function heatmapSampled(id, hm) {
-        return id % 10000 < parseInt(hm.r, 10);
+        return ((id % 10000) * 6181) % 10000 < parseInt(hm.r, 10);
     }
 
     // The batch for the current pageview. Navigation clears or replaces the id, so a batch
@@ -2041,9 +2059,17 @@ if (!window.requestIdleCallback) {
         return null;
     }
 
+    function heatmapConsentAllowed() {
+        var consent = SlimStat.consent.checkAllowed(currentSlimStatParams());
+        if (consent && consent.allowed && consent.mode === "full") return true;
+        heatmap = null;
+        recentClicks = [];
+        return false;
+    }
+
     function heatmapClick(e) {
         var hm = heatmapParams();
-        if (!hm || !e || e.isTrusted === false || e.detail === 0) return;
+        if (!hm || !e || e.isTrusted === false || e.detail === 0 || !heatmapConsentAllowed()) return;
         var id = heatmapId();
         if (id && !heatmapSampled(id, hm)) return;
         var target = e.target && e.target.nodeType === 1 ? e.target : e.target && e.target.parentNode;
@@ -2107,6 +2133,7 @@ if (!window.requestIdleCallback) {
                 ticking = true;
                 window.requestAnimationFrame(function () {
                     ticking = false;
+                    if (!heatmapConsentAllowed()) return;
                     var batch = heatmapBatch();
                     batch.maxY = Math.max(batch.maxY, Math.round((window.pageYOffset || 0) + window.innerHeight));
                 });
@@ -2123,9 +2150,8 @@ if (!window.requestIdleCallback) {
         if (!hm || !batch || !id || (batch.id && batch.id !== id) || !heatmapSampled(id, hm)) return "";
         var scroll = final && hm.l === "full";
         if (!batch.r.length && !scroll) return "";
-        var consent = SlimStat.consent.checkAllowed(currentSlimStatParams());
-        if (!consent || !consent.allowed || consent.mode !== "full") return "";
-        var data = { v: 1, vw: window.innerWidth || 0, vh: window.innerHeight || 0, s: batch.s, r: batch.r };
+        if (!heatmapConsentAllowed()) return "";
+        var data = { v: 2, vw: window.innerWidth || 0, vh: window.innerHeight || 0, s: batch.s, r: batch.r };
         if (scroll) data.sc = [batch.maxY, Math.round(document.documentElement.scrollHeight || 0)];
         // Selectors are per request; seq keeps counting so retries overwrite, never duplicate.
         batch.r = [];
@@ -2208,11 +2234,11 @@ if (!window.requestIdleCallback) {
             if (serialized !== lastParams) lastParams = serialized; // reserved for future diff-based logic
         }
     });
-    observer.observe(document.head, { childList: true, subtree: true });
-    observer.observe(document.body, { childList: true, subtree: true });
+    // The root exists even when the tracker runs in head, before body is parsed.
+    observer.observe(document.documentElement, { childList: true, subtree: true });
 
-    // Initial pageview
-    SlimStat.add_event(window, "load", function () {
+    // Subresources must not hold the initial pageview until the visitor has already left.
+    function startInitialPageview() {
         SlimStat._extract_params();
 
         // Proceed with normal tracking; consent is gated by CMP checks in sendPageview()
@@ -2224,7 +2250,12 @@ if (!window.requestIdleCallback) {
                 if (navigator.onLine !== false) SlimStat.flush_offline_queue();
             } catch (e) {}
         }, 500);
-    });
+    }
+    if (document.readyState === "loading") {
+        SlimStat.add_event(document, "DOMContentLoaded", startInitialPageview);
+    } else {
+        startInitialPageview();
+    }
 
     // Listen for WP Consent API consent changes and retry pageview if previously blocked
     document.addEventListener("wp_listen_for_consent_change", function (event) {

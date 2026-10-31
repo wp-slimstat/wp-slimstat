@@ -17,6 +17,8 @@ class GeoService
     private $pack = '';
 
     private $maxmindLicense = '';
+    private $legacyMaxmind;
+    private $legacyMaxmindSet = false;
 
     public function __construct()
     {
@@ -52,6 +54,27 @@ class GeoService
     public function getMaxMindLicenseKey()
     {
         return $this->maxmindLicense;
+    }
+
+    /** @deprecated Use the geolocation_provider setting for provider selection. */
+    public function setEnableMaxmind($enableMaxmind = false)
+    {
+        _deprecated_function(__METHOD__, '6.0.0', 'the geolocation_provider setting');
+        // The legacy setter was instance-local; never change a site's saved provider here.
+        $this->legacyMaxmind = $enableMaxmind;
+        $this->legacyMaxmindSet = true;
+        return $this;
+    }
+
+    /** @deprecated Use wp_slimstat::resolve_geolocation_provider(). */
+    public function getEnableMaxmind()
+    {
+        _deprecated_function(__METHOD__, '6.0.0', 'wp_slimstat::resolve_geolocation_provider()');
+        if ($this->legacyMaxmindSet) {
+            return $this->legacyMaxmind;
+        }
+        $provider = \wp_slimstat::resolve_geolocation_provider();
+        return 'maxmind' === $provider ? 'on' : ('dbip' === $provider ? 'no' : 'disable');
     }
 
     public function isGeoIPEnabled()

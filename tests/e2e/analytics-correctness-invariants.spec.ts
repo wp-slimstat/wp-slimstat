@@ -13,6 +13,7 @@ import {
   installOptionMutator,
   uninstallOptionMutator,
   setSlimstatOption,
+  setSlimstatOptions,
   snapshotSlimstatOptions,
   restoreSlimstatOptions,
   clearStatsTable,
@@ -33,6 +34,7 @@ interface SlimStatRow {
   visit_id: number | null;
   content_type: string | null;
   notes: string | null;
+  dt: number;
 }
 
 /**
@@ -47,7 +49,7 @@ async function waitForStatRow(
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const [rows] = (await getPool().execute(
-      'SELECT id, resource, visit_id, content_type, notes FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1',
+      'SELECT id, resource, visit_id, content_type, notes, dt FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1',
       [`%${marker}%`],
     )) as [SlimStatRow[], unknown];
     if (rows.length > 0) return rows[0];
@@ -98,12 +100,15 @@ test.describe('Analytics Correctness Invariants', () => {
 
   test('INV-1: tracked pageview creates exactly one row in wp_slim_stats', async ({ page }) => {
     const marker = `${RUN_ID}-inv1-${Date.now()}`;
+    const started = Math.floor(Date.now() / 1000);
 
     await page.goto(`${BASE_URL}/?e2e=${marker}`);
     await page.waitForLoadState('networkidle');
 
     const row = await waitForStatRow(marker);
     expect(row, 'Expected a stats row to be created for the tracked pageview').toBeTruthy();
+    expect(Number(row!.dt)).toBeGreaterThanOrEqual(started - 5);
+    expect(Number(row!.dt)).toBeLessThanOrEqual(Math.ceil(Date.now() / 1000) + 5);
   });
 
   // ─── Invariant 2: visit_id chain intact ────────────────────────────────
@@ -126,6 +131,7 @@ test.describe('Analytics Correctness Invariants', () => {
       Number(row!.visit_id),
       'visit_id must be a positive integer (> 0)',
     ).toBeGreaterThan(0);
+    expect(Number.isInteger(Number(row!.visit_id))).toBe(true);
   });
 
   // ─── Invariant 3: resource field matches tracked URL ───────────────────
@@ -186,5 +192,50 @@ test.describe('Analytics Correctness Invariants', () => {
     expect(row1!.id).not.toBe(row2!.id);
     expect(row1!.resource).toContain(marker1);
     expect(row2!.resource).toContain(marker2);
+  });
+
+  test('INV-6: repeated text/plain client metrics update the server row without duplicates', async ({ browser }) => {
+    await setSlimstatOptions({ javascript_mode: 'off', anonymous_tracking: 'off', set_tracker_cookie: 'on', ignore_wp_users: 'no' });
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const marker = `${RUN_ID}-merge-${Date.now()}`;
+    try {
+      const response = await context.request.get(`${BASE_URL}/?e2e=${marker}`);
+      const id = (await response.text()).match(/"id":"(\d+\.[a-f0-9]+)"/)?.[1];
+      expect(id).toBeTruthy();
+      expect(await countStatRows(marker)).toBe(1);
+      const original = await waitForStatRow(marker);
+      const body = new URLSearchParams({ action: 'slimtrack', id: id!, sw: '1440', sh: '900', bw: '1200', bh: '800', pp: '237' }).toString();
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const update = await context.request.post(`${BASE_URL}/?rest_route=/slimstat/v1/hit`, {
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, data: body,
+        });
+        expect(update.status()).toBe(200);
+        expect((await update.text()).trim()).toMatch(/^[1-9]\d*\.[a-f0-9]+$/);
+      }
+      const [rows]: any = await getPool().execute('SELECT id, visit_id, resource, screen_width, screen_height, page_performance FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]);
+      expect(rows).toHaveLength(1);
+      expect(rows[0].id).toBe(original!.id);
+      expect(rows[0].visit_id).toBe(original!.visit_id);
+      expect(Number(rows[0].screen_width)).toBe(1440);
+      expect(Number(rows[0].screen_height)).toBe(900);
+      expect(Number(rows[0].page_performance)).toBe(237);
+      expect(rows[0].resource).toContain(marker);
+    } finally { await context.close(); }
+  });
+
+  test('INV-7: denied consent rejects a direct tracking attempt without storing PII or a cookie', async ({ browser }) => {
+    await setSlimstatOptions({ javascript_mode: 'on', gdpr_enabled: 'on', anonymous_tracking: 'off', consent_integration: 'slimstat_banner' });
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const marker = `${RUN_ID}-denied-${Date.now()}`;
+    try {
+      await context.addCookies([{ name: 'slimstat_gdpr_consent', value: 'denied', url: BASE_URL }]);
+      const response = await context.request.post(`${BASE_URL}/?rest_route=/slimstat/v1/hit`, {
+        form: { action: 'slimtrack', res: Buffer.from(`${BASE_URL}/?e2e=${marker}`).toString('base64url') },
+      });
+      expect(response.status()).toBe(200);
+      expect((await response.text()).trim()).toBe('-301');
+      expect(await countStatRows(marker)).toBe(0);
+      expect((await context.cookies()).filter(cookie => cookie.name === 'slimstat_tracking_code')).toHaveLength(0);
+    } finally { await context.close(); }
   });
 });

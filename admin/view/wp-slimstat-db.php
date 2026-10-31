@@ -587,10 +587,6 @@ class wp_slimstat_db
     {
         $_sql = apply_filters('slimstat_get_results_sql', $_sql, $_select_no_aggregate_values, $_order_by, $_group_by, $_aggregate_values_add);
 
-        if ('on' == wp_slimstat::$settings['show_sql_debug']) {
-            self::$debug_message .= sprintf("<p class='debug'>%s</p>", $_sql);
-        }
-
         $table    = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $sql_trim = ltrim($_sql);
         $cache_key = '';
@@ -598,9 +594,11 @@ class wp_slimstat_db
         if (0 === stripos($sql_trim, 'select') && false !== stripos($sql_trim, $table)) {
             // Cache SELECTs on the analytics table; key rationale and the write-back gate
             // are documented at the write below.
-            $cache_key      = 'slimstat_query_' . md5($_sql);
+            // Normalize only the cache key; the caller's SQL still reaches wpdb unchanged.
+            $cache_key = 'slimstat_query_' . Query::cacheHash(wp_slimstat::$wpdb, $_sql);
             $cached_results = get_transient($cache_key);
             if (false !== $cached_results) {
+                Query::recordSqlDebug($_sql, '', true);
                 return $cached_results;
             }
         }
@@ -620,6 +618,7 @@ class wp_slimstat_db
         //
         // Execute on wp_slimstat::$wpdb so the External DB addon queries the correct database.
         $results = wp_slimstat::$wpdb->get_results($_sql, ARRAY_A);
+        Query::recordSqlDebug($_sql, wp_slimstat::$wpdb->last_error ?? '');
         // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         // Write back what we read.
@@ -642,9 +641,8 @@ class wp_slimstat_db
         // can ever read, which is precisely the accumulation that left thousands of orphaned
         // rows in wp_options.
         //
-        // The key is an md5 of the FULL SQL, so anything that scopes a query — a filter, a
-        // blog restriction, a user predicate — is already part of the key and cannot be
-        // served to a request that asked something different.
+        // The key includes the analytics connection and FULL SQL, so a database switch,
+        // filter, blog restriction or user predicate cannot reuse another scope's answer.
         //
         // Worth stating plainly: the defect is real but the win is small. Measured on
         // slimview3 with a historical range, steady state, 600 -> 598 queries per render.
@@ -693,10 +691,6 @@ class wp_slimstat_db
     {
         $_sql = apply_filters('slimstat_get_var_sql', $_sql, $_aggregate_value);
 
-        if ('on' == wp_slimstat::$settings['show_sql_debug']) {
-            self::$debug_message .= sprintf("<p class='debug'>%s</p>", $_sql);
-        }
-
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $sql_trim = ltrim($_sql);
 
@@ -742,7 +736,9 @@ class wp_slimstat_db
             return $query->getVar();
         } else {
             // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Shared query layer: validated aliases/temporary identifiers and SQL compiled by the filter/query builders; values are prepared upstream.
-            return wp_slimstat::$wpdb->get_var($_sql);
+            $result = wp_slimstat::$wpdb->get_var($_sql);
+            Query::recordSqlDebug($_sql, wp_slimstat::$wpdb->last_error ?? '');
+            return $result;
             // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         }
     }

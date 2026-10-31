@@ -129,6 +129,7 @@ $settings = [
 				'type'          => 'select',
 				'description'   => __('<strong>GDPR Compliance:</strong> Integrate with a Consent Management Platform (CMP) to ensure tracking only occurs with user consent.<br/><br/><strong>SlimStat Consent Banner:</strong> (Recommended) Use SlimStat\'s built-in banner with customizable messaging and server-side consent tracking.<br/><strong>Via WP Consent API:</strong> Integrates with CMPs supporting WordPress Consent API (Complianz, CookieYes, etc.). Server-side consent checking available for both modes.', 'wp-slimstat'),
 				'select_values' => [
+					''                   => __('Select a consent integration', 'wp-slimstat'),
 					'slimstat_banner'    => __('SlimStat Consent Banner (Recommended)', 'wp-slimstat'),
 					'wp_consent_api'     => __('Via WP Consent API', 'wp-slimstat'),
 					// 'real_cookie_banner' => __('Real Cookie Banner', 'wp-slimstat'),
@@ -579,6 +580,11 @@ $settings = [
                 'type'        => 'textarea',
                 'description' => __('Enter a list of permalinks that should not be tracked. Do not include your website domain name: <code>/about, ?p=1</code>, etc. See note at the bottom of this page for more information on how to use wildcards. Strings are case-insensitive.', 'wp-slimstat'),
             ],
+            'ignore_resource_parameters' => [
+                'title' => __('Ignore resource query parameters', 'wp-slimstat'),
+                'type' => 'text',
+                'description' => __('Optional comma-separated query parameter names, such as fbclid or gclid, to omit from newly tracked page URLs. Names are case-sensitive. Leave empty to keep all parameters. Campaign attribution is extracted first; historical URLs are unchanged. Do not include parameters that identify different pages or products.', 'wp-slimstat'),
+            ],
             'do_not_track_outbound_classes_rel_href' => [
                 'title'       => __('Link attributes: class names, rel and href', 'wp-slimstat'),
                 'type'        => 'textarea',
@@ -692,6 +698,12 @@ $settings = [
                 'title'       => __('Archive mode', 'wp-slimstat'),
                 'type'        => 'toggle',
                 'description' => __('<strong>How to handle old data:</strong><br/><br/><strong>Enabled (Archive):</strong> Old records are moved to separate archive tables (<code>wp_slim_stats_archive</code>, <code>wp_slim_events_archive</code>) instead of being permanently deleted. This improves query performance by keeping the main tables smaller, while still allowing you to access historical data if needed. <strong>Note:</strong> Archived data still counts as data retention under GDPR requirements.<br/><br/><strong>Disabled (Delete):</strong> Old records are permanently deleted from the database. This is the most GDPR-compliant approach and frees up database space immediately. <strong>Warning:</strong> Deleted data cannot be recovered.<br/><br/><strong>Important:</strong> Archive tables are deleted on uninstall only when <strong>Delete data on uninstall</strong> is enabled. Back up your database before uninstalling.', 'wp-slimstat'),
+            ],
+
+            'auto_purge_optimize' => [
+                'title'       => __('Automatic table optimization', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Disabled by default. Deleted rows leave space that the database can reuse. Enable only with your hosting provider\'s agreement: rebuilding live tables may reclaim disk space but can delay tracking while locks are held. Runs at most once every 30 days after removing pageviews; archive tables are never optimized.', 'wp-slimstat'),
             ],
 
             // Maintenance - Troubleshooting
@@ -948,7 +960,7 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
 
         // Browscap Library
         if (!empty($posted_options['enable_browscap'])) {
-            if ('on' == $posted_options['enable_browscap'] && 'no' == wp_slimstat::$settings['enable_browscap']) {
+            if ('on' == $posted_options['enable_browscap'] && ('no' == wp_slimstat::$settings['enable_browscap'] || !is_readable(wp_slimstat::$upload_dir . '/browscap-cache-master/version.txt'))) {
                 $error = \SlimStat\Services\Browscap::update_browscap_database(true);
                 if (0 == $error[0]) {
                     wp_slimstat::$settings['enable_browscap'] = 'on';
@@ -964,10 +976,8 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
             }
         }
 
-        // Refresh WP permalinks, in case the user has changed the tracking method
-        if (isset($posted_options['tracking_request_method']) && wp_slimstat::$settings['tracking_request_method'] != $posted_options['tracking_request_method']) {
-            update_option('slimstat_permalink_structure_updated', true); // This will trigger a rewrite rules flush
-        }
+        $tracking_method_changed = isset($posted_options['tracking_request_method'])
+            && wp_slimstat::$settings['tracking_request_method'] != $posted_options['tracking_request_method'];
 
         // All other options
         foreach ($posted_options as $a_post_slug => $a_post_value) {
@@ -1013,6 +1023,11 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
 
         // Save the new values in the database
         wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
+
+        if ($tracking_method_changed) {
+            // Persist the method before another request can rebuild its rules.
+            delete_option('rewrite_rules');
+        }
 
         // Register GDPR banner strings for WPML/Polylang translation
         $gdpr_translatable = [

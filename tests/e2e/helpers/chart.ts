@@ -202,32 +202,34 @@ function extractJson(raw: string): any {
  * past that floored end whenever the run happened to start in the last three
  * seconds of a minute -- a ~5%-per-run flake that reads as "today shows zero is
  * back" and is nothing of the kind. 300s clears the bucket, the row spread and
- * any clock skew between the runner and the database, and still lands in today's
- * bucket at every granularity.
+ * any clock skew between the runner and the database. Clamp to UTC midnight so
+ * the first five minutes do not seed yesterday. Use zero row spacing for these
+ * seeds: before 00:01 the quantised live end is midnight itself.
  *
  * Seed "today" with this, never with a raw offset, in any spec that asserts an
  * exact chart total.
  */
 export function liveSafeTodayTs(now: number = Math.floor(Date.now() / 1000)): number {
-  return now - 300;
+  return Math.max(Math.floor(now / 86400) * 86400, now - 300);
 }
 
 /**
  * Insert `count` rows at a specific UTC timestamp, each with a distinct resource.
- * Rows are spaced 1 second apart by default to avoid exact duplicates.
+ * Rows are spaced 1 second apart by default; zero keeps a seed inside a live cutoff.
  */
 export async function insertRows(
   timestamp: number,
   count: number,
   label: string,
-  userAgent = 'chart-e2e'
+  userAgent = 'chart-e2e',
+  spacingSeconds = 1
 ): Promise<void> {
   const pool = getPool();
   for (let i = 0; i < count; i++) {
     await pool.execute(
       `INSERT INTO wp_slim_stats (dt, ip, resource, browser, browser_version, platform, language, visit_id, user_agent)
        VALUES (?, '127.0.0.1', ?, 'test', '0', 'test', 'en', 1, ?)`,
-      [timestamp + i, `/chart-${label}-${i}`, userAgent]
+      [timestamp + i * spacingSeconds, `/chart-${label}-${i}`, userAgent]
     );
   }
 }

@@ -274,6 +274,9 @@ function slimstat_uninstall_artifacts($delete_data = false)
     }
 
     $wp_filesystem->delete($upload_dir . '/browscap-cache-master', true, 'd');
+    $wp_filesystem->delete($upload_dir . '/browscap-cache-backup', true, 'd');
+    $wp_filesystem->delete($upload_dir . '/browscap-staging', true, 'd');
+    $wp_filesystem->delete($upload_dir . '/browscap-update.lock');
 }
 
 /**

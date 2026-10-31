@@ -962,7 +962,7 @@ final class Schema
     }
 
     /**
-     * Run an ALTER TABLE online first; the bare retry runs only when the server refuses the hint
+     * Try metadata-only column additions first, then online DDL; the bare retry runs when the server refuses the hints
      * (MyISAM, or a change INPLACE cannot do). The one owner of that policy: migrations and
      * Ecommerce setup both build through it.
      *
@@ -971,6 +971,13 @@ final class Schema
     public static function alterOnline(wpdb $db, string $sql)
     {
         // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Schema builds DDL from its allowlisted manifest and the core table prefix; no request values are interpolated.
+        if (false !== stripos($sql, 'ADD COLUMN')
+            && !preg_match('/\b(?:ADD\s+(?:INDEX|KEY|UNIQUE|PRIMARY|FOREIGN|CONSTRAINT)|DROP|MODIFY|CHANGE|RENAME)\b/i', $sql)) {
+            $result = $db->query($sql . ', ALGORITHM=INSTANT');
+            if (false !== $result) {
+                return $result;
+            }
+        }
         $result = $db->query($sql . ', ALGORITHM=INPLACE, LOCK=NONE');
         if (false === $result) {
             $result = $db->query($sql);
@@ -1166,14 +1173,11 @@ final class Schema
                 // the entire point here, unlike the bulk probe above.
                 if (!self::tableExists($db, $table)) {
                     $report['failed'][] = $table;
+                    $report['columns_unavailable'][] = $suffix;
                     continue;
                 }
 
                 $report['tables'][] = $table;
-            }
-
-            if (!self::reconciles($suffix)) {
-                continue;
             }
 
             // COLUMN DRIFT IS REPORTED, NEVER REPAIRED (F4). An `ALTER` here runs on
@@ -1182,10 +1186,19 @@ final class Schema
             // no read model at all, so `email VARCHAR(255)` on every install upgraded from below
             // 4.8.2 was invisible to everything, permanently.
             $columns = self::columnState($db, $suffix, $prefix);
+            if (!empty($columns['unavailable'])) {
+                $report['columns_unavailable'][] = $suffix;
+                $report['failed'][] = $table;
+                continue;
+            }
             $drift   = self::qualifyDrift($columns, $suffix);
 
             $report['columns_missing'] = array_merge($report['columns_missing'], $drift['missing']);
             $report['columns_narrow']  = $report['columns_narrow'] + $drift['narrow'];
+
+            if (!self::reconciles($suffix)) {
+                continue;
+            }
 
             $state             = self::indexState($db, $suffix, $prefix, $disabledGroups);
             $report['present'] = array_merge($report['present'], $state['present']);
@@ -1327,7 +1340,12 @@ final class Schema
             // report, which is precisely the table that freezes: it is created once with
             // `CREATE TABLE ... LIKE` and never gains a column again. `slim_events_archive`
             // reconciles and so was already covered; the asymmetry was invisible and arbitrary.
-            $qualified        = self::qualifyDrift(self::columnState($db, $suffix, $prefix), $suffix);
+            $columns = self::columnState($db, $suffix, $prefix);
+            if (!empty($columns['unavailable'])) {
+                $drift['unavailable'][] = $suffix;
+                continue;
+            }
+            $qualified        = self::qualifyDrift($columns, $suffix);
             $drift['missing'] = array_merge($drift['missing'], $qualified['missing']);
             $drift['narrow']  = $drift['narrow'] + $qualified['narrow'];
         }
@@ -1394,6 +1412,7 @@ final class Schema
         $db->suppress_errors($suppressed);
 
         if ('' !== $error || !is_array($found) || [] === $found) {
+            $state['unavailable'] = true;
             return $state;
         }
 
@@ -1586,26 +1605,34 @@ final class Schema
         return self::TABLES[$suffix];
     }
     /**
-     * Online-only repair for the shipped city/username VARCHAR(255) legacy shape.
+     * Online-only repair for known legacy widths and missing nullable archive fields.
      * Preserve physical nullability and collation. Custom defaults/comments/extra clauses
      * are refused because FULL COLUMNS cannot round-trip them consistently across engines.
      *
      * @param array<int,array<string,mixed>> $columns SHOW FULL COLUMNS rows to widen
      */
-    public static function widenLegacyColumnsSql(string $suffix, string $prefix, array $columns): string
+    public static function widenLegacyColumnsSql(string $suffix, string $prefix, array $columns, array $missingArchiveColumns = []): string
     {
-        if (!in_array($suffix, ['slim_stats', 'slim_stats_archive'], true) || [] === $columns) {
+        if (!in_array($suffix, ['slim_stats', 'slim_stats_archive'], true) || ([] === $columns && [] === $missingArchiveColumns)) {
             throw new \InvalidArgumentException('Unsupported legacy width repair table or empty selection');
         }
         $clauses = [];
+        foreach ($missingArchiveColumns as $name) {
+            if ('slim_stats_archive' !== $suffix
+                || !in_array($name, ['city', 'username', 'email', 'fingerprint', 'dt_out', 'tz_offset'], true)
+                || isset($clauses[$name])) {
+                throw new \InvalidArgumentException('Unsupported missing archive column');
+            }
+            $clauses[$name] = 'ADD COLUMN ' . self::columnSql($name, self::columns($suffix)[$name]);
+        }
         foreach ($columns as $column) {
             foreach (['Field', 'Type', 'Collation', 'Null', 'Default', 'Extra', 'Comment'] as $field) {
                 if (!array_key_exists($field, $column)) {
                     throw new \InvalidArgumentException('Incomplete column metadata');
                 }
             }
-            $name = $column['Field'];
-            if (!in_array($name, ['city', 'username'], true)
+            $name = strtolower((string) $column['Field']);
+            if (!in_array($name, ['city', 'username', 'email', 'fingerprint'], true)
                 || 'varchar(255)' !== strtolower((string) $column['Type'])
                 || !in_array($column['Null'], ['YES', 'NO'], true)
                 || null !== $column['Default'] || '' !== $column['Extra'] || '' !== $column['Comment']
@@ -1617,7 +1644,7 @@ final class Schema
                 throw new \InvalidArgumentException('Unsupported legacy column attributes; no automatic ALTER is safe');
             }
             $clauses[$name] = sprintf('MODIFY COLUMN `%s` VARCHAR(%d) CHARACTER SET `%s` COLLATE `%s` %s',
-                $name, (int) $target[1], $collation[1], $column['Collation'],
+                $column['Field'], (int) $target[1], $collation[1], $column['Collation'],
                 'YES' === $column['Null'] ? 'NULL DEFAULT NULL' : 'NOT NULL');
         }
         return sprintf('ALTER TABLE `%s` %s, ALGORITHM=INPLACE, LOCK=NONE',

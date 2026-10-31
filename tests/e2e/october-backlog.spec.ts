@@ -113,6 +113,8 @@ test('Tasks 19, 23: email search retains hidden selections and header notificati
   await requireProBooted(page);
   test.setTimeout(120000);
   await snapshotSlimstatOptions(); await snapshotOption('wp_slimstat_notifications');
+  await snapshotOption('slimstat_notification_dismissed');
+  runWordPressFixture("<?php $dismissed = get_option('slimstat_notification_dismissed', []); unset($dismissed[98765]); update_option('slimstat_notification_dismissed', $dismissed);");
   await setSlimstatOptions({ display_notifications: 'on' });
   try {
   await page.goto('/wp-admin/admin.php?page=slimemail');
@@ -146,7 +148,8 @@ test('Tasks 19, 23: email search retains hidden selections and header notificati
   await page.locator('#ss-email-search').fill('');
   for (const group of await page.locator('[data-email-group]').all()) {
     const names = (await group.locator('label').allTextContents()).map(s => s.trim());
-    expect(names).toEqual([...names].sort(new Intl.Collator('en-US').compare));
+    await expect.poll(async () => (await group.locator('label').allTextContents()).map(s => s.trim()))
+      .toEqual([...names].sort(new Intl.Collator('en-US').compare));
   }
   await page.screenshot({ path: info.outputPath('email-reports.png'), fullPage: true });
   for (const populated of [false, true]) {
@@ -173,7 +176,7 @@ test('Tasks 19, 23: email search retains hidden selections and header notificati
   await page.locator('.slimstat-notification-sidebar__dismiss').first().click();
   await page.locator('[data-tab=tab-2]').click();
   await expect(page.locator('#tab-2')).toContainText('Backlog test notice');
-  } finally { await restoreOption('wp_slimstat_notifications'); await restoreSlimstatOptions(); }
+  } finally { await restoreOption('slimstat_notification_dismissed'); await restoreOption('wp_slimstat_notifications'); await restoreSlimstatOptions(); }
 });
 
 test('Task 20: chart previews render and redraw from the generated shortcode', async ({ page }, info) => {

@@ -23,6 +23,7 @@ if (!defined('ABSPATH')) {
 $has_required_migrations = isset($has_required_migrations) ? $has_required_migrations : false;
 $offered_migrations      = (isset($offered_migrations) && is_array($offered_migrations)) ? $offered_migrations : [];
 $analytics_myisam        = !empty($analytics_myisam);
+$column_drift = isset($column_drift) && is_array($column_drift) ? $column_drift : null;
 
 ?>
 
@@ -36,14 +37,6 @@ $analytics_myisam        = !empty($analytics_myisam);
                     <h3><?php echo esc_html__('Migration Status', 'wp-slimstat'); ?></h3>
                     <div class="inside">
                     <?php
-                    // Nothing is owed, but steps are offered: the two states the page used to
-                    // render identically. Everything below reads this rather than re-testing.
-                    //
-                    // Not `&& !empty($offered_migrations)`. renderPage() redirects and exits when
-                    // nothing is required AND nothing is offered, so reaching this include with
-                    // no required migrations already guarantees the offered set is non-empty. The
-                    // extra conjunct read as a second condition while being dead, which is two
-                    // names for one boolean and the slower way to a third, unhandled state.
                     $offered_only = !$has_required_migrations;
                     // Offered-only: the status note below is the one sentence. The status line,
                     // intro, counters and progress bar describe a run that cannot start here
@@ -51,7 +44,7 @@ $analytics_myisam        = !empty($analytics_myisam);
                     if (!$offered_only) :
                     ?>
                     <div class="slimstat-status-header" aria-live="polite">
-                        <span class="slimstat-status-text" data-label-idle="<?php echo esc_attr__('Ready to start', 'wp-slimstat'); ?>" data-label-running="<?php echo esc_attr__('Migrating database…', 'wp-slimstat'); ?>" data-label-done="<?php echo esc_attr__('✓ Database is up to date', 'wp-slimstat'); ?>" data-label-failed="<?php echo esc_attr__('Migration failed', 'wp-slimstat'); ?>"><?php echo esc_html__('Ready to start', 'wp-slimstat'); ?></span>
+                        <span class="slimstat-status-text" data-label-idle="<?php echo esc_attr__('Ready to start', 'wp-slimstat'); ?>" data-label-running="<?php echo esc_attr__('Migrating database…', 'wp-slimstat'); ?>" data-label-done="<?php echo esc_attr__('Required migrations are complete. Reload this page to verify column repairs.', 'wp-slimstat'); ?>" data-label-failed="<?php echo esc_attr__('Migration failed', 'wp-slimstat'); ?>"><?php echo esc_html__('Ready to start', 'wp-slimstat'); ?></span>
                         <span class="slimstat-status-badge slimstat-badge-idle"><?php echo esc_html__('Idle', 'wp-slimstat'); ?></span>
                     </div>
 
@@ -79,23 +72,28 @@ $analytics_myisam        = !empty($analytics_myisam);
                     // element, so a failed step reported into something with display:none.
                     // Pinned by tests/migration-notice-visibility-test.php.
                     ?>
-                    <div id="slimstat-status-note" class="status-note notice inline slimstat-migration-notice <?php echo $has_required_migrations ? 'notice-info' : 'notice-success'; ?>">
+                    <div id="slimstat-status-note" class="status-note notice inline slimstat-migration-notice <?php echo $has_required_migrations ? 'notice-info' : ([] === $column_drift ? 'notice-success' : 'notice-warning'); ?>">
                         <?php if ($has_required_migrations): ?>
                             <?php echo esc_html__('Click "Start Migration" to begin. Progress and details will appear here.', 'wp-slimstat'); ?>
+                        <?php elseif (null === $column_drift): ?>
+                            <?php echo esc_html__('SlimStat could not verify the database structure. Check the database connection and permissions, then reload this page. Existing warnings are retained.', 'wp-slimstat'); ?>
+                        <?php elseif ([] !== $column_drift): ?>
+                            <?php echo esc_html__('Database columns still differ from this version. Review the details and the optional repairs below. If no matching repair is offered, ask your database administrator or SlimStat support to review the definitions before changing them.', 'wp-slimstat'); ?>
                         <?php else: ?>
-                            <?php
-                            echo esc_html__('✓ Database is up to date', 'wp-slimstat');
-                            ?>
+                            <?php echo esc_html__('✓ Database is up to date', 'wp-slimstat'); ?>
                         <?php endif; ?>
                     </div>
 
+                    <?php if (is_array($column_drift) && [] !== $column_drift): ?>
+                        <ul class="slimstat-column-drift"><?php foreach ($column_drift as $column): ?><li><?php echo esc_html($column); ?></li><?php endforeach; ?></ul>
+                    <?php endif; ?>
                     <?php // Open when the steps inside it are the only way to act on this page. ?>
                     <details class="slimstat-details" style="margin:10px 0;">
                         <summary style="cursor:pointer;"><?php echo esc_html__('Technical details', 'wp-slimstat'); ?></summary>
                         <ul id="slimstat-migration-list"></ul>
                     </details>
 
-                    <?php if ($offered_migrations) : ?><details class="slimstat-details"><summary><?php esc_html_e('Advanced (optional)', 'wp-slimstat'); ?></summary><p><?php esc_html_e('These steps are optional and do not block the required update. Review each benefit and any tracking interruption before running it.', 'wp-slimstat'); ?></p><ul id="slimstat-optional-migration-list"></ul></details><?php endif; ?>
+                    <?php if ($offered_migrations) : ?><details class="slimstat-details"<?php if (!empty($column_drift)) { echo ' open'; } ?>><summary><?php esc_html_e('Advanced (optional)', 'wp-slimstat'); ?></summary><p><?php esc_html_e('These steps are optional and do not block the required update. Review each benefit and any tracking interruption before running it.', 'wp-slimstat'); ?></p><ul id="slimstat-optional-migration-list"></ul></details><?php endif; ?>
 
                     <div class="slimstat-actions" style="margin-top:12px;">
                         <?php if ($has_required_migrations): ?>

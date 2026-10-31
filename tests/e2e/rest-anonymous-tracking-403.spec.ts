@@ -10,6 +10,7 @@
 import { test, expect, Page } from '@playwright/test';
 import {
   clearStatsTable,
+  getPool,
   waitForPageviewRow,
   closeDb,
   setSlimstatSetting,
@@ -52,12 +53,12 @@ test.describe('REST Anonymous Tracking — Issue #238', () => {
     await closeDb();
   });
 
-  test('anonymous REST tracking should succeed with exactly one request (no nonce retry)', async ({ browser }) => {
+  test('anonymous REST tracking creates one pageview without a nonce retry', async ({ browser }) => {
     // Use a fresh browser context with no cookies (anonymous visitor)
     const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
-    const restRequests: Array<{ url: string; headers: Record<string, string> }> = [];
+    const restRequests: Array<{ url: string; headers: Record<string, string>; body: string }> = [];
     const restResponses: Array<{ status: number; url: string }> = [];
 
     anonPage.on('request', (req) => {
@@ -65,7 +66,7 @@ test.describe('REST Anonymous Tracking — Issue #238', () => {
         req.url().includes('/wp-json/slimstat/v1/hit') ||
         req.url().includes('rest_route=/slimstat/v1/hit')
       ) {
-        restRequests.push({ url: req.url(), headers: req.headers() });
+        restRequests.push({ url: req.url(), headers: req.headers(), body: req.postData() || '' });
       }
     });
 
@@ -97,11 +98,20 @@ test.describe('REST Anonymous Tracking — Issue #238', () => {
       `Expected no requests with X-WP-Nonce header for anonymous users. Found ${requestsWithNonce.length} requests with nonce.`,
     ).toBe(0);
 
-    // Exactly one REST hit request (no retry needed)
-    const hitRequests = restRequests.filter(
-      (r) => r.url.includes('/slimstat/v1/hit'),
-    );
-    expect(hitRequests.length, 'Should make exactly one hit request (no retry)').toBe(1);
+    // A CMP can upgrade the existing row after the initial request; it must not create another.
+    const bodies = restRequests.map(r => new URLSearchParams(r.body));
+    expect(bodies.filter(body => !body.has('id')), 'Exactly one creation request, no retry').toHaveLength(1);
+    const stat = await waitForPageviewRow(marker, 15_000);
+    expect(stat).toBeTruthy();
+    for (const body of bodies.filter(body => body.has('id'))) {
+      expect(body.get('consent_upgrade')).toBe('1');
+      expect(body.get('pageview_id')).toBe(body.get('id'));
+      expect(Number(body.get('id')!.split('.')[0])).toBe(Number(stat!.id));
+    }
+    expect(restResponses).toHaveLength(restRequests.length);
+    expect(restResponses.every(response => response.status === 200)).toBe(true);
+    const [rows]: any = await getPool().query('SELECT COUNT(*) n FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]);
+    expect(Number(rows[0].n), 'Consent changes must preserve the single pageview').toBe(1);
 
     await ctx.close();
   });

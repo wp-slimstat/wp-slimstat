@@ -1,3 +1,39 @@
+= 6.0.1 - 2026-10-27 =
+
+**Faster**
+* Ordinary page loads no longer query absent Ecommerce and permalink-update options. Privacy exports and erasure still work after WooCommerce is deactivated.
+* Nearby asynchronous report widgets load in up to three concurrent requests, with offscreen widgets loaded as you scroll.
+* Column-addition migrations try metadata-only INSTANT DDL before the existing online and compatibility fallbacks.
+* The WordPress Dashboard loads quickly again on upgraded sites. SlimStat widgets load through the existing authenticated AJAX path even when Async mode is off, and their charts and Funnel tabs start once loaded. Saved settings, SlimStat's own report screens, tracking and report numbers are unchanged. ([#361](https://github.com/wp-slimstat/wp-slimstat/issues/361))
+* Historical reports reuse cached wildcard-query results across requests instead of building a new cache key for every request.
+* Pageviews are sent as soon as the page is ready, with a bounded idle delay. Consent checks and confirmed pageview creation work as before. ([#365](https://github.com/wp-slimstat/wp-slimstat/issues/365))
+
+**Numbers you can trust**
+* HeadlessChrome, PhantomJS and Lighthouse clients that identify themselves now count as bots, so the existing Bots exclusion filters them in both tracking modes. ([#364](https://github.com/wp-slimstat/wp-slimstat/issues/364))
+* WooCommerce orders from social and messaging apps are attributed correctly when WooCommerce supplies synthetic referral tags. Explicit campaign tags and revenue are unchanged.
+* Cached historical reports stay separate when you switch analytics databases or hosts.
+
+**Heatmaps**
+* Page titles show decoded, sampling spreads across pageviews, activity from before consent is discarded, and backdated full-capture clicks count once.
+* Restored pageviews stay visible when stale heatmap rows reuse their IDs for another page or time. Pages still serving an older cached tracker keep working.
+
+**Upgrade with confidence**
+* First pageviews keep recording on older database schemas while the visitor-identity migration step is still waiting. Identity bytes are encoded in SQL, so recovery from a missing column or table can run.
+* The optional online repair for legacy column drift now covers email and fingerprint column widths and missing legacy archive fields. Migration shows schema state it cannot resolve or read, keeps its warnings when inspection fails, and no longer reports completion just because a notice was dismissed. Recorded values are preserved; there is no automatic table rebuild or blocking fallback. ([#360](https://github.com/wp-slimstat/wp-slimstat/issues/360))
+
+**Rock-solid reliability**
+* Offline tracking data survives a failed reconnect followed by a page reload. The tab replaying stored visits keeps them until the server confirms or explicitly rejects them.
+* Missing browser-detection (Browscap) data you opted into is recovered through throttled background updates. If an update fails, the installed data stays, the error says what to fix, and you can retry by hand. ([#363](https://github.com/wp-slimstat/wp-slimstat/issues/363))
+* Report SQL diagnostics work for query-builder, cached and network reads. SQL and database errors are shown escaped, and results do not change. ([#362](https://github.com/wp-slimstat/wp-slimstat/issues/362))
+* Notification dismissals and manual refreshes wait for a running background check instead of being ignored.
+* The date picker's highlighted preset matches the selected range when preset dates overlap.
+* Removed the unused legacy add-on catalog and manual-download callback for the retired update service. Stored add-on license settings are kept.
+
+**Security and privacy**
+* The consent banner works in server tracking mode, and the first pageview is recorded only after the visitor accepts.
+* Consent-withdrawal requests work again, and saving Tracker settings with GDPR off keeps the consent settings you did not change.
+* WooCommerce attribution follows SlimStat banner consent before writing its first cookie, on cached pages too, and on acceptance and withdrawal. A WooCommerce tracking denial from another consent integration still applies across SlimStat banner events.
+
 = 6.0.0 - 2026-10-24 =
 
 **SlimStat 6 is here: see where visitors click, which campaigns bring sales, and trust every number.** It is the biggest SlimStat release in years and the safest to install: your settings and data carry over, nothing in your database changes until you click, and older versions keep working if you ever go back.

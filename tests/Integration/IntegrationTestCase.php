@@ -19,6 +19,12 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
         parent::setUp();
         $this->bootstrapAdminClassOnce();
         $this->stubWpFunctions();
+        \wp_slimstat::$settings = [
+            'capability_can_admin' => 'manage_options',
+            'capability_can_view' => 'read',
+            'can_view' => '',
+        ];
+        $GLOBALS['wpdb'] = null;
     }
 
     protected function tearDown(): void
@@ -93,6 +99,7 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
             'wp_kses_post'        => static fn($v) => $v,
             'number_format_i18n'  => static fn($n) => number_format((float) $n),
             'wp_has_consent'      => static fn() => true,
+            'wp_using_ext_object_cache' => static fn() => false,
             // 'U' returns the current epoch (used by resolve_requested_date_range()'s
             // end clamp); other formats fall through to PHP date().
             'date_i18n'           => static fn($format, $timestamp = null) => 'U' === $format ? (string) time() : date($format, $timestamp ?? time()),

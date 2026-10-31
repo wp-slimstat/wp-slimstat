@@ -1250,6 +1250,12 @@ class wp_slimstat_reports
             return;
         }
 
+        // Dashboard widgets must not delay the page, including upgraded sites with Async mode off.
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        if (!wp_doing_ajax() && $screen && 'dashboard' === $screen->id) {
+            return;
+        }
+
         $_args = self::_check_args(func_get_args());
         if (!empty($_args) && !empty($_args['callback'])) {
             call_user_func($_args['callback'], $_args['callback_args']);
@@ -3018,6 +3024,12 @@ class wp_slimstat_reports
                 'locations'     => [],
                 'tooltip'       => '',
             ], self::$reports[$report_id]);
+        }
+
+        // Preserve the compact Dashboard presentation when the widget loads through AJAX.
+        if (wp_doing_ajax() && class_exists('wp_slimstat_admin') && 'dashboard' === wp_slimstat_admin::$current_screen
+            && in_array($report_id, wp_slimstat_admin::COMPACT_DASHBOARD_REPORTS, true)) {
+            $_args['callback_args']['is_widget'] = true;
         }
 
         // Default callback args

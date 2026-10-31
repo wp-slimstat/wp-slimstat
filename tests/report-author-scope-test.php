@@ -44,7 +44,10 @@ foreach (['alice', 'bob'] as $author) {
     ScopedAdmin::adminbar_today_stats(); ScopedAdmin::online_count(); (new ScopedLive())->count(1800); (new ScopedLive())->chart();
     if (count($GLOBALS['wpdb']->sql) !== 5) { throw new RuntimeException('Cross-author cache reused or expected SQL missing'); }
     foreach ($GLOBALS['wpdb']->sql as $sql) {
-        if (strpos($sql, "WHERE (author = '$author')") === false) { throw new RuntimeException('Report SQL omitted enforced author: ' . $sql); }
+        if (!preg_match("/WHERE \\(+author = '$author'\\)/", $sql)) { throw new RuntimeException('Report SQL omitted enforced author: ' . $sql); }
+        if (strpos(substr($sql, strpos($sql, 'WHERE')), 'AND visit_id > 0') !== false && strpos($sql, '(browser_type IS NULL OR browser_type <> 1)') === false) {
+            throw new RuntimeException('Live session SQL omitted the human filter: ' . $sql);
+        }
     }
     $keys[] = ScopedAdmin::build_filter_options_cache_key('country', 100, 200, '', 20);
 }

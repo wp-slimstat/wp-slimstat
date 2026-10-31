@@ -41,6 +41,8 @@ class Query
 
     private $insertValues = [];
 
+    private $insertHexColumns = [];
+
     private $ignore = false;
 
     private $allowCaching = false;
@@ -200,15 +202,17 @@ class Query
     }
 
     /**
-     * Sets the values for an insert operation.
+     * Sets insert values; named hex-encoded binary columns use bound UNHEX(%s).
      *
      * @return $this
      */
-    public function values(array $values)
+    public function values(array $values, array $hexColumns = [])
     {
         if ($values === []) {
             return $this;
         }
+
+        $this->insertHexColumns = $hexColumns;
 
         // Check if it's an array of arrays for bulk insert
         if (isset($values[0]) && is_array($values[0])) {
@@ -299,10 +303,13 @@ class Query
         }
 
         if (is_array($value)) {
-            $value = array_filter(array_values($value));
+            $value = array_values(array_filter($value, static function ($item) {
+                return null !== $item && '' !== $item && false !== $item;
+            }));
         }
 
-        if (!is_numeric($value) && empty($value)) {
+        $nullComparison = null === $value && in_array($operator, ['IS', 'IS NOT'], true);
+        if (!$nullComparison && !is_numeric($value) && empty($value)) {
             return $this;
         }
 
@@ -743,11 +750,12 @@ class Query
 
                 $valueSets = [];
                 foreach ($this->insertValues as $row) {
-                    $placeholders  = implode(', ', array_fill(0, count($row), '%s'));
-                    $valueSets[]   = '(' . $placeholders . ')';
-                    foreach ($row as $value) {
+                    $placeholders = [];
+                    foreach ($row as $column => $value) {
+                        $placeholders[] = in_array($column, $this->insertHexColumns, true) ? 'UNHEX(%s)' : '%s';
                         $this->valuesToPrepare[] = $value;
                     }
+                    $valueSets[] = '(' . implode(', ', $placeholders) . ')';
                 }
 
                 $query .= implode(', ', $valueSets);
@@ -838,15 +846,19 @@ class Query
      */
     protected function getCacheKeyForQuery($query, $args = [])
     {
-        $data = [
-            // Identical table names and SQL can refer to different analytics databases.
-            // wpdb exposes connection metadata without a query; credentials are excluded.
-            'connection' => [(string) ($this->db->dbhost ?? ''), (string) ($this->db->dbname ?? '')],
-            'query' => $query,
-            'args'  => $args,
-        ];
-        $hash = substr(md5(serialize($data)), 0, 16);
-        return 'wp_slimstat_query_' . $hash;
+        return 'wp_slimstat_query_' . substr(self::cacheHash($this->db, $query, $args), 0, 16);
+    }
+
+    /** Cache SQL as wpdb executes it, scoped to its analytics connection. */
+    public static function cacheHash($db, string $sql, array $args = []): string
+    {
+        if (method_exists($db, 'remove_placeholder_escape')) {
+            $sql = $db->remove_placeholder_escape($sql);
+            $args = array_map(static function ($value) use ($db) {
+                return is_string($value) ? $db->remove_placeholder_escape($value) : $value;
+            }, $args);
+        }
+        return md5(serialize([(string) ($db->dbhost ?? ''), (string) ($db->dbname ?? ''), $sql, $args]));
     }
 
     /**
@@ -1446,11 +1458,13 @@ class Query
         if ($useCache) {
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
+                self::recordSqlDebug($query, '', true);
                 return $cachedResult;
             }
         }
 
         $result = $this->db->get_var($query);
+        self::recordSqlDebug($query, $this->db->last_error ?? '');
         if ($useCache) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
@@ -1542,11 +1556,13 @@ class Query
         if ($useCache) {
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
+                self::recordSqlDebug($query, '', true);
                 return $cachedResult;
             }
         }
 
         $result = $this->db->get_row($query);
+        self::recordSqlDebug($query, $this->db->last_error ?? '');
         if ($useCache) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
@@ -1576,11 +1592,13 @@ class Query
         if ($useCache) {
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
+                self::recordSqlDebug($query, '', true);
                 return $cachedResult;
             }
         }
 
         $result = $this->db->get_col($query);
+        self::recordSqlDebug($query, $this->db->last_error ?? '');
         if ($useCache) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
@@ -1700,6 +1718,21 @@ class Query
         return $result;
     }
 
+    /** Append report-only diagnostics without changing SQL, result caching or wpdb state. */
+    public static function recordSqlDebug($sql, $error = '', $cached = false)
+    {
+        if ('on' !== (\wp_slimstat::$settings['show_sql_debug'] ?? '') || !class_exists('wp_slimstat_db', false)) {
+            return;
+        }
+        $message = (string) $sql;
+        if ($cached) {
+            $message .= "\n" . __('Cached result', 'wp-slimstat');
+        } elseif ('' !== (string) $error) {
+            $message .= "\n" . $error;
+        }
+        \wp_slimstat_db::$debug_message .= "<p class='debug'>" . esc_html($message) . '</p>';
+    }
+
     public function getSqlQuery()
     {
         $query = $this->buildQuery();
@@ -1765,13 +1798,17 @@ class Query
                 $sql .= ' LIMIT ' . $outerLimit;
             }
 
-            return (array) $this->db->get_results($sql, ARRAY_A);
+            $result = (array) $this->db->get_results($sql, ARRAY_A);
+            self::recordSqlDebug($sql, $this->db->last_error ?? '');
+            return $result;
         }
 
         if (null !== $this->_isLiveQuery && $this->_isLiveQuery) {
             $query = $this->buildQuery();
             $query = $this->prepareQuery($query, $this->valuesToPrepare);
-            return $this->db->get_results($query, ARRAY_A);
+            $result = $this->db->get_results($query, ARRAY_A);
+            self::recordSqlDebug($query, $this->db->last_error ?? '');
+            return $result;
         }
 
         $ranges = $this->extractDateRangesFromWhere();
@@ -1907,12 +1944,14 @@ class Query
             }
 
             if (false !== $cachedResult) {
+                self::recordSqlDebug($query, '', true);
                 return $cachedResult;
             }
         }
 
         try {
             $result = $this->db->get_results($query, ARRAY_A);
+            self::recordSqlDebug($query, $this->db->last_error ?? '');
         } catch (Exception $exception) {
             $result = [];
         }

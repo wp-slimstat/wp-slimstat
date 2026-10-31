@@ -145,6 +145,7 @@ test('Tasks 5–11, 26–27: currency, comparisons, full report, export and char
         expect(points[dataset][0].skipped).toBe(true);
       }
       // Hovering an expired interval explains it, without a visible marker, instead of jumping to the neighbouring point.
+      await dash.locator('canvas').scrollIntoViewIfNeeded();
       const marker = await dash.locator('canvas').evaluate(canvas => {
         const chart = (window as any).Chart.getChart(canvas);
         const point = chart.getDatasetMeta(chart.data.datasets.findIndex((d: any) => d.gap)).data[0];
@@ -153,11 +154,10 @@ test('Tasks 5–11, 26–27: currency, comparisons, full report, export and char
       });
       expect(marker.radius).toBe(0);
       await page.mouse.move(marker.x, marker.y);
-      const tooltip = await dash.locator('canvas').evaluate(canvas => {
+      await expect.poll(() => dash.locator('canvas').evaluate(canvas => {
         const { tooltip } = (window as any).Chart.getChart(canvas);
-        return [...tooltip.title, ...tooltip.body.flatMap((b: any) => b.lines), ...tooltip.afterBody];
-      });
-      expect(tooltip).toEqual(expect.arrayContaining(['Interval 0', 'Selected period: No data', 'Previous period: No data']));
+        return [...(tooltip.title || []), ...(tooltip.body || []).flatMap((b: any) => b.lines), ...(tooltip.afterBody || [])];
+      })).toEqual(expect.arrayContaining(['Interval 0', 'Selected period: No data', 'Previous period: No data']));
       await page.mouse.move(0, 0);
     }
     // Expired history is unavailable, not evidence that there were no orders or visits.

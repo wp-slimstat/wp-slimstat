@@ -88,13 +88,16 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     await expect(dashboard.locator('[data-series]')).toHaveAttribute('data-series', /"interval":"monthly"/);
     await expect(dashboard.locator('[data-chart-title]')).toHaveText(full ? 'Orders' : 'Net sales');
     await dashboard.locator('[data-chart-metric=net]').click();
+    const previousDashboard = await dashboard.elementHandle();
     await dashboard.getByRole('link', { name: 'Refresh Ecommerce reports' }).click();
+    await expect.poll(() => previousDashboard!.evaluate(el => !el.isConnected)).toBe(true);
+    await previousDashboard!.dispose();
     await expect.poll(() => page.evaluate(() => !(window as any).jQuery('#slim_p10_01 .inside').is(':animated'))).toBe(true);
     await expect(dashboard.locator('[data-metric=net]')).toContainText('115.00');
     await page.screenshot({ path: testInfo.outputPath('ecommerce-desktop.png'), fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(dashboard.locator('[data-metric=net]')).toBeVisible();
-    expect(await dashboard.locator('.ss-ec-chart-description').evaluate(el => getComputedStyle(el).wordBreak)).toBe('normal');
+    await expect(dashboard.locator('.ss-ec-chart-description')).toHaveCSS('word-break', 'normal');
     expect(await dashboard.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath('ecommerce-mobile.png'), fullPage: true });
     params.set('fs[utm_source]', 'equals google');
