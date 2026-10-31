@@ -135,3 +135,22 @@ with tempfile.TemporaryDirectory() as temp:
         assert result.returncode != 0 and b'evidence directory already exists' in result.stdout, result.stderr
         assert marker.read_text() == 'preserve'
 print('PASS: standalone matrix/topology cells preserve previous evidence')
+
+# Release ZIPs exclude tests: topology instruments must be installed separately.
+source = (helper.parent / 'run-topology.sh').read_text()
+setup = source.split('sync_plugin_src "$WP_DIR" "$CELL_DIR/free-artifact/wp-slimstat"', 1)[1].split('mkdir -p "$WP_DIR/wp-content/plugins/.pro"', 1)[0]
+with tempfile.TemporaryDirectory() as temp:
+    root = pathlib.Path(temp)
+    plugin = root / 'wp-content/plugins/wp-slimstat'
+    plugin.mkdir(parents=True)
+    header = plugin / 'wp-slimstat.php'
+    header.write_text('immutable shipping file')
+    env = dict(os.environ, WP_DIR=str(root), HARNESS_DIR=str(helper.parent.resolve()))
+    result = subprocess.run(['bash', '-eu', '-c', setup], env=env, capture_output=True)
+    assert result.returncode == 0, result.stderr
+    for relative in ['fixtures/golden/load.php', 'fixtures/golden/spec.php', 'fixtures/golden/expand.php', 'docker/probe-network-view.php', 'docker/probe-uo-network.php']:
+        instrument = plugin / 'tests' / relative
+        assert instrument.is_file(), 'topology artifact install lacks ' + relative
+        assert instrument.read_bytes() == (helper.parent.parent / relative).read_bytes()
+    assert header.read_text() == 'immutable shipping file'
+print('PASS: topology instruments installed beside untouched release bytes')

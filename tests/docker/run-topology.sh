@@ -152,6 +152,10 @@ fi
 extract_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$CELL_DIR/free-artifact" >"$ART/free-artifact.log" || { fail 'Free artifact rejected'; exit 1; }
 extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$CELL_DIR/pro-artifact" >"$ART/pro-artifact.log" || { fail 'Pro artifact rejected'; exit 1; }
 sync_plugin_src "$WP_DIR" "$CELL_DIR/free-artifact/wp-slimstat"
+# Release artifacts exclude tests; install only the instruments this runner invokes.
+mkdir -p "$WP_DIR/wp-content/plugins/wp-slimstat/tests/fixtures" "$WP_DIR/wp-content/plugins/wp-slimstat/tests/docker"
+cp -R "$HARNESS_DIR/../fixtures/golden" "$WP_DIR/wp-content/plugins/wp-slimstat/tests/fixtures/" || { fail 'golden fixture copy failed'; exit 1; }
+cp "$HARNESS_DIR/probe-network-view.php" "$HARNESS_DIR/probe-uo-network.php" "$WP_DIR/wp-content/plugins/wp-slimstat/tests/docker/" || { fail 'topology probe copy failed'; exit 1; }
 mkdir -p "$WP_DIR/wp-content/plugins/.pro"
 cp "$QUALIFICATION_PRO_ZIP" "$WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip" || { fail 'Pro artifact copy failed'; exit 1; }
 chmod -R a+rwX "$WP_DIR/wp-content" 2>/dev/null || true

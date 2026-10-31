@@ -68,7 +68,13 @@ $GLOBALS['wpdb'] = new class { public function esc_like($value) { return addcsla
 function get_option($name, $default = false) { return 'k' === $name && !empty($GLOBALS['slimstat_attribution_ready']) ? '1' : $default; }
 eval('namespace SlimStat\\Tracker; class Acquisition { public static function readinessKey(): string { return "k"; } }');
 $summary_body = slimstat_function_body(file_get_contents(dirname(__DIR__) . '/admin/view/wp-slimstat-db.php'), 'get_traffic_sources_summary');
-eval('class TrafficSummary extends wp_slimstat_db { public static function summary() {' . $summary_body . '} }');
+eval('class TrafficSummary extends wp_slimstat_db {
+    protected static function summary_counts($counts) {
+        $out = [];
+        foreach ($counts as $key => $spec) { $out[$key] = self::count_records($spec[0], $spec[1] ?? "", true, $spec[2] ?? []); }
+        return $out;
+    }
+    public static function summary() {' . $summary_body . '} }');
 unset($_SERVER['SERVER_NAME']);
 TrafficSummary::summary();
 $referrer_query = array_values(array_filter(wp_slimstat_db::$queries, static function ($args) { return ($args[0] ?? null) === 'referer'; }));

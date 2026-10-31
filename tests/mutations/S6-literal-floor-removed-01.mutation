@@ -6,12 +6,15 @@ rationale: Deletes the count floor on the sealed literals. Every packet still bu
 ---
 --- a/tests/docker/build-packet.py
 +++ b/tests/docker/build-packet.py
-@@ -73,8 +73,7 @@
+@@ -105,11 +105,7 @@
  # two, one ref rather than two -- and `len({ref_a,ref_b})` computes the second instead of
  # hardcoding it, so a run mislabelled null with two distinct refs gets the right expectation and
  # therefore the right diagnosis rather than this floor's.
 -eras=1 if null_control else len(captured)
 -expected_literals=len(identity_keys)*eras+len({ref_a,ref_b})
+-# A version labels a release, not a commit. Only this marker may overlap in a real comparison.
+-if not null_control and "_arm_version" in identity_keys and captured["arm-1"]["_arm_version"] == captured["arm-2"]["_arm_version"]:
+-    expected_literals-=1
 +expected_literals=len(literals)
  if len(literals)!=expected_literals:
      detail=("a null control's arms must share every identity field" if null_control
