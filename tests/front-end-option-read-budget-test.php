@@ -44,6 +44,9 @@ budget_check(count($writes[1]) >= 3 && [] === array_diff($writes[1], ['true']), 
 $source = slimstat_blank_comments(file_get_contents(dirname(__DIR__) . '/admin/config/index.php'));
 budget_check(false === strpos($source, "update_option('slimstat_permalink_structure_updated'"), 'settings no longer writes a per-request rewrite flag');
 budget_check(false !== strpos($source, "delete_option('rewrite_rules')"), 'tracking-method changes invalidate rewrite rules for the next init');
+$save_position = strpos($source, "wp_slimstat::update_option('slimstat_options', wp_slimstat::\$settings)");
+$invalidate_position = strpos($source, "delete_option('rewrite_rules')");
+budget_check(false !== $save_position && false !== $invalidate_position && $save_position < $invalidate_position, 'settings are persisted before rewrite rules are invalidated');
 $bootstrap = slimstat_blank_comments(file_get_contents(dirname(__DIR__) . '/wp-slimstat.php'));
 budget_check(false === strpos($bootstrap, 'Integration::ready()'), 'plugin entry point defers Ecommerce readiness to callbacks');
 exit($failures ? 1 : 0);
