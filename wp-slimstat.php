@@ -518,9 +518,7 @@ class wp_slimstat
         // Init the plugin functionality
         add_action('init', [self::class, 'init_plugin']);
 
-        if (class_exists('WooCommerce') || \SlimStat\Ecommerce\Integration::ready()) {
-            \SlimStat\Ecommerce\Integration::boot();
-        }
+        \SlimStat\Ecommerce\Integration::boot();
 
         \SlimStat\Heatmap\Store::boot();
 

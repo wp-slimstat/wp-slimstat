@@ -63,6 +63,8 @@
   },
   "scripts": {
     "test:pcp-regressions": "php tests/pcp-core-assets-test.php && php tests/dbip-stream-failure-test.php",
+    "test:front-end-option-budget": "php tests/front-end-option-read-budget-test.php",
+    "test:dashboard-widget-queue": "node tests/dashboard-widget-queue.cjs",
     "test:admin-i18n-labels": "php tests/admin-i18n-labels-test.php",
     "post-install-cmd": "@scoper:ext-constants",
     "post-update-cmd": "@scoper:ext-constants",
@@ -273,6 +275,8 @@
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
+      "@test:front-end-option-budget",
+      "@test:dashboard-widget-queue",
       "@test:pcp-regressions",
       "@test:admin-i18n-labels",
       "php tests/settings-maintenance-result-test.php",

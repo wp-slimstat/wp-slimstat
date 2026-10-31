@@ -976,10 +976,8 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
             }
         }
 
-        // Refresh WP permalinks, in case the user has changed the tracking method
-        if (isset($posted_options['tracking_request_method']) && wp_slimstat::$settings['tracking_request_method'] != $posted_options['tracking_request_method']) {
-            update_option('slimstat_permalink_structure_updated', true); // This will trigger a rewrite rules flush
-        }
+        $tracking_method_changed = isset($posted_options['tracking_request_method'])
+            && wp_slimstat::$settings['tracking_request_method'] != $posted_options['tracking_request_method'];
 
         // All other options
         foreach ($posted_options as $a_post_slug => $a_post_value) {
@@ -1025,6 +1023,11 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
 
         // Save the new values in the database
         wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
+
+        if ($tracking_method_changed) {
+            // Persist the method before another request can rebuild its rules.
+            delete_option('rewrite_rules');
+        }
 
         // Register GDPR banner strings for WPML/Polylang translation
         $gdpr_translatable = [

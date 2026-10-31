@@ -962,7 +962,7 @@ final class Schema
     }
 
     /**
-     * Run an ALTER TABLE online first; the bare retry runs only when the server refuses the hint
+     * Try metadata-only column additions first, then online DDL; the bare retry runs when the server refuses the hints
      * (MyISAM, or a change INPLACE cannot do). The one owner of that policy: migrations and
      * Ecommerce setup both build through it.
      *
@@ -971,6 +971,13 @@ final class Schema
     public static function alterOnline(wpdb $db, string $sql)
     {
         // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Schema builds DDL from its allowlisted manifest and the core table prefix; no request values are interpolated.
+        if (false !== stripos($sql, 'ADD COLUMN')
+            && !preg_match('/\b(?:ADD\s+(?:INDEX|KEY|UNIQUE|PRIMARY|FOREIGN|CONSTRAINT)|DROP|MODIFY|CHANGE|RENAME)\b/i', $sql)) {
+            $result = $db->query($sql . ', ALGORITHM=INSTANT');
+            if (false !== $result) {
+                return $result;
+            }
+        }
         $result = $db->query($sql . ', ALGORITHM=INPLACE, LOCK=NONE');
         if (false === $result) {
             $result = $db->query($sql);

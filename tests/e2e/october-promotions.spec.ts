@@ -128,6 +128,7 @@ test('the Free Dashboard preview preserves saved Access Log data and the widget 
     await setSlimstatOptions({add_dashboard_widgets:'on',notice_latest_news:'no'});
     await pool.execute('INSERT INTO wp_slim_stats (dt,resource,ip,browser,platform) VALUES (?,?,?, ?,?)',[Math.floor(Date.now()/1000)-60,resource,'127.0.0.1','Firefox','linux']);
     await page.goto('/wp-admin/index.php');
+    await page.locator('#slim_p7_02').scrollIntoViewIfNeeded();
     await expect(page.locator('#slim_p7_02 a[href*="october-dashboard-access-log"]').first()).toBeAttached();
     await expect(page.locator('#slim_p7_02 .slimstat-preview')).toBeAttached();
     await setSlimstatOptions({add_dashboard_widgets:'no'}); await page.reload();

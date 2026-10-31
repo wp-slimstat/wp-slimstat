@@ -128,6 +128,7 @@ test.describe('CF-IPCountry stored XSS (#5)', () => {
     });
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, { waitUntil: 'domcontentloaded' });
 
+    await page.locator('#slim_p6_01').scrollIntoViewIfNeeded();
     // World-map flags carry class country-flag; wait for the map to populate.
     await page.locator('img.country-flag').first().waitFor({ state: 'attached', timeout: 30_000 });
 

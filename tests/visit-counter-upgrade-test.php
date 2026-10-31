@@ -15,7 +15,7 @@ namespace {
     function apply_filters($hook, $value) { return $value; }
     function update_option(...$args) { return true; }
     // An upgrade: the settings row exists, so activation's fresh-install seeding stays out of the way.
-    function get_option($name) { return ['version' => '5.5.0']; }
+    function get_option($name, $default = false) { return $name === 'slimstat_options' ? ['version' => '5.5.0'] : $default; }
     function delete_option($name) { $GLOBALS['released'][] = $name; }
     function flush_rewrite_rules() { $GLOBALS['flushed']++; }
     $GLOBALS['wpdb'] = new class { public $options = 'wp_options'; public function query($sql) { return 0; } };

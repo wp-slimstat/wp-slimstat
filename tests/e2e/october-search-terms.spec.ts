@@ -22,13 +22,14 @@ test('Search Terms keeps a previous-only 468 / 24 period visible and tooltips de
     );
     runWordPressFixture("<?php global $wpdb; $wpdb->query(\"DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_wp_slimstat_%'\");");
     await page.goto('/wp-admin/admin.php?page=slimview2&type=custom&from=2026-06-30&to=2026-09-27&fs[resource]=equals%20'+encodeURIComponent(resource));
+    await page.locator('#slim_p1_19_01').scrollIntoViewIfNeeded();
     const canvas = page.locator('#slimstat_chart_slim_p1_19_01');
     const select = page.locator('#slimstat_granularity_slim_p1_19_01');
     await expect(canvas).toBeVisible();
     for (const granularity of ['daily','weekly']) {
       await select.selectOption(granularity);
       await expect.poll(() => page.locator('#slimstat_chart_data_slim_p1_19_01').getAttribute('data-granularity')).toBe(granularity);
-      await expect(page.locator('.postbox .loading')).toHaveCount(0);
+      await expect(page.locator('#slim_p1_19_01 .loading')).toHaveCount(0);
       await canvas.scrollIntoViewIfNeeded();
       const evidence = await canvas.evaluate((element: HTMLCanvasElement) => {
         const chart = (window as any).Chart.getChart(element);

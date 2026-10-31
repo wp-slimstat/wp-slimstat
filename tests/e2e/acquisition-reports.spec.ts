@@ -340,8 +340,10 @@ test.describe('UTM and channel reports', () => {
       });
       expect((await savedResponse).ok()).toBeTruthy();
       await page.goto('/wp-admin/admin.php?page=slimview1&type=today');
+      await page.locator('#slim_p3_03').scrollIntoViewIfNeeded();
       await expect(page.locator('#slim_p3_03 .slimstat-acquisition__intro strong')).toHaveText('6 channels - 8 pageviews');
       await page.goto('/wp-admin/index.php');
+      await page.locator('#slim_p3_04').scrollIntoViewIfNeeded();
       await expect(page.locator('#slim_p3_04 .slimstat-acquisition__group')).toHaveCount((await getProState(page)).pro_activated ? 3 : 2);
       await expect(page.locator('#wp-slimstat-acquisition-css')).toBeAttached();
       await page.locator('#slim_p3_04').evaluate(element => { element.style.width = '300px'; });

@@ -464,14 +464,38 @@ jQuery(function () {
 
     // Asynchronous reports are loaded dynamically after the page loads
     if (SlimStatAdminParams.async_load == "on") {
-        var base = jQuery.when({});
+        var pendingReports = [];
+        var activeReports = 0;
+        function loadReports() {
+            while (activeReports < 3 && pendingReports.length) {
+                activeReports++;
+                jQuery.when(SlimStatAdmin.refresh_report(pendingReports.shift())()).always(function () {
+                    activeReports--;
+                    loadReports();
+                });
+            }
+        }
+        var reportObserver = window.IntersectionObserver ? new window.IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    reportObserver.unobserve(entry.target);
+                    pendingReports.push(entry.target.id);
+                }
+            });
+            loadReports();
+        }, { rootMargin: '200px' }) : null;
         jQuery("div[id^=slim_p]").each(function () {
             // Skip Charts
             if (jQuery(this).find(".chart-placeholder, .refresh-timer").length == 0) {
                 SlimStatReportBody(jQuery(this).attr("id")).html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
-                base = base.then(SlimStatAdmin.refresh_report(jQuery(this).attr("id")));
+                if (reportObserver) {
+                    reportObserver.observe(this);
+                } else {
+                    pendingReports.push(this.id);
+                }
             }
         });
+        loadReports();
     }
 
     //
