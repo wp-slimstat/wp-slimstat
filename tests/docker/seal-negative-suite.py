@@ -279,6 +279,22 @@ with tempfile.TemporaryDirectory(prefix="slimstat-seal-negative-") as temp:
     check("T18",command([str(HERE/"build-packet.sh"),str(run),str(art),REF_A,REF_A]),3,
           "a null control's arms must share every identity field")
 
+    # Different commits can legitimately publish the same plugin version.
+    for case,code,needle in [("valid",0,"blind packet built"),
+                             ("leak",5,"seal-literal"),
+                             ("missing",3,"carries no _arm_fingerprint"),
+                             ("same-fingerprint",3,"the two arms share an identity field")]:
+        run,art=fixture(root/("same-version-"+case),reports=False,build=False)
+        values=json.load((art/"after.json").open())
+        values["_arm_version"]="5.5.1"
+        if case=="leak": values["top_resource"][0]["resource"]="/5.5.1/"
+        if case=="missing": values.pop("_arm_fingerprint")
+        if case=="same-fingerprint": values["_arm_fingerprint"]="fingerprint-a"
+        (art/"after.json").write_text(json.dumps(values)+"\n")
+        result=command([str(HERE/"build-packet.sh"),str(run),str(art),REF_A,REF_B])
+        assert result.returncode==code and needle in result.stdout+result.stderr, (case,result.returncode,result.stdout,result.stderr)
+    print("PASS: same-version distinct commits; missing/swapped identity and shared-version leak refused")
+
     # ── T19: a run below the sampling floor it prints a separation verdict at ────────────────
     # Run 58's null control ran at 1 rep x 1 block against a comparison at 5 x 4. At one sample
     # `min..max` is a point, so "the two ranges are disjoint" holds for any two unequal numbers --
