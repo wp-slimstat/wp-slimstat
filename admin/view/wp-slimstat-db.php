@@ -1169,7 +1169,9 @@ class wp_slimstat_db
             }
         }
 
-        $query->allowCaching(true);
+        if ($_use_date_filters) {
+            self::maybe_enable_query_cache($query);
+        }
 
         // NETWORK-SCOPED, and it may only be so because get_top() is scoped in the same change.
         //
@@ -1257,7 +1259,7 @@ class wp_slimstat_db
                 HAVING {$_having}
             ) AS ts1");
 
-        $query->allowCaching(true);
+        self::maybe_enable_query_cache($query);
 
         // M2 — SCOPED WITH THE SAME GATE, and this function is the reason the rule is worded as
         // "or neither moves" rather than "remember to do both".

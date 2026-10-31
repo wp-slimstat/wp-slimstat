@@ -145,15 +145,36 @@ try {
     remove_filter('slimstat_network_merge_active', '__return_true');
     remove_filter('slimstat_get_var_sql', $network, 10);
 
-    // Live ranges must see a new row immediately; historic caches must not leak across filters.
-    $clear();
-    wp_slimstat_db::$filters_normalized['utime'] = ['start' => $now, 'end' => $now + 60];
-    wp_slimstat_db::$filters_normalized['columns'] = [];
-    $before = wp_slimstat_db::get_visitors_summary();
-    $check(false !== $db->insert($table, ['dt' => $now, 'visit_id' => 999, 'ip' => '192.0.2.99', 'browser_type' => 0]), 'Insert live visitor');
+    // A new request can reuse the same end second while tracking inserts arrive.
+    $summaries = static function () {
+        wp_slimstat_db::$pageviews = wp_slimstat_db::count_records();
+        return [wp_slimstat_db::get_visitors_summary(), wp_slimstat_db::get_traffic_sources_summary(), wp_slimstat_db::get_overview_summary()];
+    };
+    foreach ([$now, $start] as $i => $from) {
+        $clear();
+        wp_slimstat_db::$filters_normalized['utime'] = ['start' => $from, 'end' => $now];
+        wp_slimstat_db::$filters_normalized['columns'] = [];
+        $before = $summaries();
+        $row = ['dt' => $now, 'visit_id' => 999 + $i, 'ip' => '192.0.2.' . (98 + $i), 'browser_type' => 0,
+            'referer' => 'https://search.example/', 'searchterms' => 'fresh', 'resource' => '/fresh', 'traffic_channel' => 'organic_search'];
+        $check(false !== $db->insert($table, $row), 'Insert live visitor');
+        $after = $summaries();
+        $check((int) $after[0][0]['value'] === (int) $before[0][0]['value'] + 1, 'Live visitor total stays fresh');
+        $check((int) $after[0][1]['value'] === (int) $before[0][1]['value'] + 1, 'Live distinct IP total stays fresh');
+        $clear();
+        $check($after === $summaries(), 'Live/mixed summaries including ratios and pageviews agree with fresh SQL');
+        $check(false !== $db->insert($table, $row), 'Insert second pageview in the same visit');
+        $after = $summaries();
+        $clear();
+        $check($after === $summaries(), 'Live/mixed bounce numerators update when a visit stops bouncing');
+    }
+    // The current-search metric remains live even when the report range is historical.
+    wp_slimstat_db::$filters_normalized['utime'] = ['start' => $start, 'end' => $start + 6];
+    $before = wp_slimstat_db::get_traffic_sources_summary();
+    $check(false !== $db->insert($table, $row), 'Insert current search in a historical report');
+    $after = wp_slimstat_db::get_traffic_sources_summary();
+    $check((int) $after[7]['value'] === (int) $before[7]['value'] + 1, 'Current-search count never inherits historical caching');
     $after = wp_slimstat_db::get_visitors_summary();
-    $check((int) $after[0]['value'] === (int) $before[0]['value'] + 1, 'Live visitor total stays fresh');
-    $check((int) $after[1]['value'] === (int) $before[1]['value'] + 1, 'Live distinct IP total stays fresh');
 
     // A damaged optional column must not hide unrelated valid metrics in a combined query.
     $clear();
