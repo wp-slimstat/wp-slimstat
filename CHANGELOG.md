@@ -23,6 +23,7 @@
 
 **Rock-solid reliability**
 * Asynchronous report refreshes ignore responses for charts that have been replaced, avoiding redraw errors.
+* Report pagination no longer jumps back to page 1 when a delayed initial load finishes.
 * Offline tracking data survives a failed reconnect followed by a page reload. The tab replaying stored visits keeps them until the server confirms or explicitly rejects them.
 * Missing browser-detection (Browscap) data you opted into is recovered through throttled background updates. If an update fails, the installed data stays, the error says what to fix, and you can retry by hand. ([#363](https://github.com/wp-slimstat/wp-slimstat/issues/363))
 * Report SQL diagnostics work for query-builder, cached and network reads. SQL and database errors are shown escaped, and results do not change. ([#362](https://github.com/wp-slimstat/wp-slimstat/issues/362))

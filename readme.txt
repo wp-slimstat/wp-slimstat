@@ -177,6 +177,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 * Keep the consent banner usable in server tracking mode, and record the first pageview only after acceptance.
 * First visits keep recording on upgraded sites while the visitor-identity database step is still pending.
 * Asynchronous report refreshes ignore responses for charts that have been replaced, avoiding redraw errors.
+* Report pagination no longer jumps back to page 1 when a delayed initial load finishes.
 * Offline tracking survives a failed reconnect and page reload, keeping pending visits until the server confirms them.
 * WordPress Dashboard widgets load without slowing the page, including when asynchronous reports are disabled. Charts and Funnel tabs work after refresh. ([#361](https://github.com/wp-slimstat/wp-slimstat/issues/361))
 * Optional migration repairs cover legacy column differences and preserve recorded values. Unfinished or unreadable repairs remain visible. ([#360](https://github.com/wp-slimstat/wp-slimstat/issues/360))
