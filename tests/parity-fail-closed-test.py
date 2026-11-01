@@ -139,20 +139,25 @@ namespace {
     $start = strpos($source, "        \$html  = '';");
     $end = strpos($source, '        $clean =', $start);
     $fragment = substr($source, $start, $end - $start);
-    $run = static function ($report) use ($fragment) {
-        $report_id = 'fixture'; eval($fragment); return [$html, $error];
+    $run = static function ($report, $report_id = 'fixture') use ($fragment) {
+        eval($fragment); return [$html, $error];
     };
     if ($run(['callback' => 'ordinary']) !== ['ordinary report', null]) { exit(1); }
     $raw = static function ($args) {
-        if (($args['marker'] ?? '') !== 'preserved') { throw new \RuntimeException('args lost'); }
+        if (($args['marker'] ?? '') !== 'preserved' || ($args['is_widget'] ?? false) !== true) { throw new \RuntimeException('args lost'); }
         return [['value' => 17]];
     };
-    if ($run(['callback' => '', 'callback_args' => ['raw' => $raw, 'marker' => 'preserved']]) !== ['<table><td>17</td></table>', null]) { exit(2); }
+    foreach (['slim_heatmap_01', 'slim_p10_01'] as $id) {
+        if ($run(['callback' => '', 'callback_args' => ['raw' => $raw, 'marker' => 'preserved']], $id) !== ['<table><td>17</td></table>', null]) { exit(2); }
+    }
+    $called = false;
+    $unsupported = static function ($args) use (&$called) { $called = true; return [['value' => 17]]; };
+    if ($run(['callback' => '', 'callback_args' => ['raw' => $unsupported]])[1] === null || $called) { exit(5); }
     foreach ([[], ['callback' => '', 'callback_args' => ['raw' => 'missing_callback']]] as $report) {
         if ($run($report)[1] === null) { exit(3); }
     }
     $throw = static function ($args) { throw new \RuntimeException('raw failed'); };
-    if ($run(['callback' => '', 'callback_args' => ['raw' => $throw]])[1] !== 'raw failed') { exit(4); }
+    if ($run(['callback' => '', 'callback_args' => ['raw' => $throw]], 'slim_heatmap_01')[1] !== 'raw failed') { exit(4); }
 }
 '''
 subprocess.run(['php', '-r', dispatch_probe, str(comparator.with_name('parity-snapshot.php'))], check=True)

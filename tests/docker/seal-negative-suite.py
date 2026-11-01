@@ -292,7 +292,8 @@ with tempfile.TemporaryDirectory(prefix="slimstat-seal-negative-") as temp:
         if case=="same-fingerprint": values["_arm_fingerprint"]="fingerprint-a"
         (art/"after.json").write_text(json.dumps(values)+"\n")
         result=command([str(HERE/"build-packet.sh"),str(run),str(art),REF_A,REF_B])
-        assert result.returncode==code and needle in result.stdout+result.stderr, (case,result.returncode,result.stdout,result.stderr)
+        if result.returncode!=code or needle not in result.stdout+result.stderr:
+            raise RuntimeError((case,result.returncode,result.stdout,result.stderr))
     print("PASS: same-version distinct commits; missing/swapped identity and shared-version leak refused")
 
     # ── T19: a run below the sampling floor it prints a separation verdict at ────────────────

@@ -271,9 +271,12 @@ foreach ($wanted as $cell => $filters) {
                 ob_start();
                 wp_slimstat_reports::callback_wrapper(['id' => $report_id]);
                 $html = (string) ob_get_clean();
-            } elseif (is_callable($report['callback_args']['raw'] ?? null)) {
-                // Raw-only reports use the same table renderer as their frontend shortcode.
-                $html = \SlimStat\Shortcodes\Shortcode::table(call_user_func($report['callback_args']['raw'], $report['callback_args']));
+            } elseif (in_array($report_id, ['slim_heatmap_01', 'slim_p10_01'], true)
+                && is_callable($report['callback_args']['raw'] ?? null)) {
+                // Only these raw reports have a frontend table-rendering contract.
+                $callback_args = $report['callback_args'];
+                $callback_args['is_widget'] = true;
+                $html = \SlimStat\Shortcodes\Shortcode::table(call_user_func($callback_args['raw'], $callback_args));
             } else {
                 throw new \RuntimeException('Registered report has no callable callback');
             }
