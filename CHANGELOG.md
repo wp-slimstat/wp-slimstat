@@ -36,6 +36,7 @@
 
 **Security and privacy**
 * Hidden consent banners no longer intercept form controls or keyboard focus, and visible banners use a lower stacking level. ([#181](https://github.com/wp-slimstat/wp-slimstat/issues/181))
+* Saved filters validate registered columns and supported operators. Unknown or malformed saved entries remain stored and deletable, but cannot apply a partial or unfiltered report. Valid acquisition and extension filters retain their values. ([#351](https://github.com/wp-slimstat/wp-slimstat/pull/351))
 * The consent banner works in server tracking mode, and the first pageview is recorded only after the visitor accepts.
 * Consent-withdrawal requests work again, and saving Tracker settings with GDPR off keeps the consent settings you did not change. ([#366](https://github.com/wp-slimstat/wp-slimstat/issues/366), [#367](https://github.com/wp-slimstat/wp-slimstat/issues/367))
 * WooCommerce attribution follows SlimStat banner consent before writing its first cookie, on cached pages too, and on acceptance and withdrawal. A WooCommerce tracking denial from another consent integration still applies across SlimStat banner events. ([#375](https://github.com/wp-slimstat/wp-slimstat/issues/375))

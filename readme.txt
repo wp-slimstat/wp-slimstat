@@ -195,6 +195,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 **Security**
 
+* Unknown or malformed saved filters cannot apply partial or unfiltered reports. Stored entries remain available for deletion, and valid saved filters keep their values. ([#351](https://github.com/wp-slimstat/wp-slimstat/pull/351))
 * Consent withdrawal works reliably, saving Tracker settings preserves unchosen consent options, and Heatmaps discard activity recorded before consent. WooCommerce attribution waits for consent and respects other integrations' tracking denials.
 
 = 6.0.0 - 2026-10-24 =
