@@ -12,7 +12,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
-import { closeDb, clearStatsTable } from './helpers/setup';
+import { closeDb, clearStatsTable, snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOption } from './helpers/setup';
 import * as mysql from 'mysql2/promise';
 
 // ─── Seed helpers ───────────────────────────────────────────────
@@ -148,12 +148,17 @@ async function testReportPagination(
 // ─── Setup / Teardown ───────────────────────────────────────────
 
 test.beforeAll(async () => {
+  await snapshotSlimstatOptions();
+  await setSlimstatOption(null!, 'async_load', 'on');
+  await setSlimstatOption(null!, 'rows_to_show', '20');
+  await setSlimstatOption(null!, 'limit_results', '200');
   await clearStatsTable();
   await seedAll();
 });
 
 test.afterAll(async () => {
   await clearStatsTable();
+  await restoreSlimstatOptions();
   await closeDb();
 });
 
@@ -183,6 +188,40 @@ test.describe('Pagination sweep — all slimview pages', () => {
       }
     });
   }
+
+  test('pagination survives an older initial report response arriving last', async ({ page }) => {
+    let initialReady = false;
+    let releaseInitial!: () => void;
+    const released = new Promise<void>(resolve => { releaseInitial = resolve; });
+    await page.route('**/wp-admin/admin-ajax.php', async route => {
+      const params = new URLSearchParams(route.request().postData() || '');
+      if (params.get('report_id') === 'slim_p4_27' && !params.has('fs[start_from]')) {
+        const response = await route.fetch();
+        initialReady = true;
+        await released;
+        await route.fulfill({ response });
+      } else {
+        await route.continue();
+      }
+    });
+    try {
+      await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview4${DATE_SUFFIX}`);
+      const report = page.locator('#slim_p4_27');
+      await report.scrollIntoViewIfNeeded();
+      await expect.poll(() => initialReady).toBe(true);
+      await report.locator('.pagination a.slimstat-font-angle-right').click();
+      await expect(report.locator('.pagination')).toContainText('21–40');
+      await expect(report.locator('.inside .loading')).toHaveCount(0);
+      const firstRow = report.locator('.inside .slimstat-filter-link').first();
+      const page2FirstRow = await firstRow.innerText();
+      releaseInitial();
+      await page.waitForFunction(() => (window as any).jQuery.active === 0);
+      await expect(report.locator('.pagination')).toContainText('21–40');
+      await expect(firstRow).toHaveText(page2FirstRow);
+    } finally {
+      releaseInitial();
+    }
+  });
 
   test('Access Log last-page arrow works', async ({ page }) => {
     const url = `${BASE_URL}/wp-admin/admin.php?page=slimview1${DATE_SUFFIX}`;

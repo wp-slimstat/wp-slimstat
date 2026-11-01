@@ -25,6 +25,7 @@
 
 **Rock-solid reliability**
 * Asynchronous report refreshes ignore responses for charts that have been replaced, avoiding redraw errors.
+* Report pagination no longer jumps back to page 1 when a delayed initial load finishes.
 * Trackers loaded in the page head initialize safely and capture clicks, form submissions and heatmap clicks after DOM readiness. Interactions before that point remain outside capture. ([#120](https://github.com/wp-slimstat/wp-slimstat/issues/120))
 * Restored the tracker's deprecated checksum helper and the geolocation service's deprecated MaxMind getter and setter. ([#227](https://github.com/wp-slimstat/wp-slimstat/issues/227))
 * Offline tracking data survives a failed reconnect followed by a page reload. The tab replaying stored visits keeps them until the server confirms or explicitly rejects them.
