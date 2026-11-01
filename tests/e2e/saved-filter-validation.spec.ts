@@ -12,7 +12,7 @@ test('saved filters validate the whole entry and preserve valid save/list/apply 
   fs.writeFileSync(extension, `<?php
     if (!defined('SLIMSTAT_E2E_TESTING') || !SLIMSTAT_E2E_TESTING) return;
     add_filter('slimstat_column_names', function($columns) {
-      $columns['registered_test_column'] = ['Registered column', 'varchar'];
+      $columns['id'] = ['Registered row ID', 'int'];
       return $columns;
     });`);
   const stored = () => JSON.parse(runWordPressFixture(`<?php echo wp_json_encode(get_option('slimstat_filters', []));`));
@@ -46,7 +46,7 @@ test('saved filters validate the whole entry and preserve valid save/list/apply 
       utm_campaign: ['equals', literal], traffic_source: ['contains', literal],
       content_id: ['equals', 0], resource: ['is_not_empty', ''],
       interval: ['equals', -7], addon_ecommerce_currency: ['equals', 'USD'],
-      registered_test_column: ['contains', 'registered'],
+      id: ['is_greater_than', 0],
     };
     const saved = await manage({ type: 'save', filter_array: JSON.stringify(valid) });
     expect(saved.ok()).toBe(true);
