@@ -19,7 +19,7 @@ for (const placement of ['head', 'footer', 'late']) {
       window.hostingPageviews=0; window.hostingInteractions=[];
       SlimStat._send_pageview=function(){ window.hostingPageviews++; };
       SlimStat.ss_track=function(event){ window.hostingInteractions.push({type:event.type,target:event.target.id}); };`;
-    const controls = `<a id="link" href="#target">Link</a>
+    const controls = `<a id="link" href="#target" onclick="event.preventDefault()">Link</a>
       <form id="form" onsubmit="event.preventDefault()"><input id="field" required value="valid"><button id="submit">Submit</button></form>`;
     await page.route('**/*', route => route.request().isNavigationRequest()
       ? route.fulfill({ contentType: 'text/html', body: `<html><head>${placement === 'head' ? `<script>${tracker}</script>` : ''}</head>
