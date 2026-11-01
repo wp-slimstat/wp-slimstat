@@ -256,7 +256,8 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
         });
         await visitor.route(url => url.pathname.includes('/wp-json/slimstat/') || (url.searchParams.get('rest_route') || '').startsWith('/slimstat/') || (blockAjax && url.pathname.endsWith('/admin-ajax.php')), async route => {
           if (route.request().method() !== 'POST') return route.fallback();
-          blocked.push(route.request().url());
+          // Consent enrichment can repeat the transport chain for an existing pageview.
+          if (!new URLSearchParams(route.request().postData() || '').get('id')) blocked.push(route.request().url());
           await route.abort('blockedbyclient');
         });
         const marker = `rest-chain-${blockAjax}-${Date.now()}`;
