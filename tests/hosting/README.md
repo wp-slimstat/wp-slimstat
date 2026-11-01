@@ -55,17 +55,28 @@ remain an external acceptance requirement.
 
 ## Early caches
 
-Exclude POST requests to `/wp-json/slimstat/v1/hit` and
-`/wp-admin/admin-ajax.php` from page/CDN caching. Verify the actual REST URL and
-namespace in the rendered tracker parameters. If bypass is enabled separately,
-exclude requests containing its configured tracking query parameter **at the
-cache/CDN itself**, before WordPress starts. Do not cache rejected requests either.
+Exclude the actual site-prefixed `/request/{hash}/` bypass path (registered only
+when the Ad-blocker bypass tracking method is selected), `/wp-json/slimstat/`
+tracking routes, plain-permalink `?rest_route=/slimstat/...` requests and
+`/wp-admin/admin-ajax.php` **at each applicable page/server/CDN cache**, before
+WordPress starts. Read the rendered tracker parameters for the site's real URLs.
+Do not cache tracking POSTs or rejected requests. Apply exclusions before purging
+stale cached tracking responses.
 The handler's no-store headers cannot undo a response already served by a cache.
 
 Warm the frontend cache, submit a valid signed request, verify a tracking response
 instead of HTML and exactly one new analytics row, then repeat with invalid input.
 Record the cache product, version, rule and hit/miss headers. No untested CDN is
 qualified by a plugin-level header test.
+
+Also test two fresh visitors and direct bypass with AJAX and both REST variants
+blocked. Count again after interactions and finalization settle: the first matching
+row alone cannot rule out a later duplicate. These controlled checks do not promise
+exactly-once delivery when a response is lost after a server write.
+
+Server-only tracking cannot record pages served entirely from cached HTML. Cached
+HTML and tracker assets can retain old URLs after an update; purge them as needed.
+A cache-busting query value is ineffective when that cache ignores query strings.
 
 ## Reproducible local tools
 

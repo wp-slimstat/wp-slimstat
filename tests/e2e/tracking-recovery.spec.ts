@@ -160,6 +160,21 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     expect(debugData?.attempts?.some((attempt: any) => attempt.transport === 'adblock_bypass' && attempt.bodyKind === 'html')).toBe(true);
     expect(debugData?.attempts?.some((attempt: any) => attempt.transport === 'ajax' && attempt.bodyKind === 'numeric')).toBe(true);
 
+    const confirmedId = await waitForTrackerId(anonPage);
+    expect(Number.parseInt(confirmedId, 10)).toBe(Number(stat!.id));
+    expect(await getStatCountForMarker(marker)).toBe(1);
+    await anonPage.evaluate(() => {
+      const button = document.createElement('button');
+      button.id = 'recovery-interaction';
+      button.textContent = 'Interaction';
+      document.body.appendChild(button);
+    });
+    await anonPage.locator('#recovery-interaction').click();
+    await anonPage.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    // Observe after the interaction/finalize queue settles, not only the first matching row.
+    await anonPage.waitForTimeout(2000);
+    expect(await getStatCountForMarker(marker)).toBe(1);
+    expect(Number((await getLatestStatRow(marker))!.id)).toBe(Number(stat!.id));
     await ctx.close();
   });
 

@@ -5,17 +5,17 @@ const fs = require('node:fs');
 const { chromium } = require('@playwright/test');
 
 const bundle = fs.readFileSync(`${__dirname}/../wp-slimstat.min.js`, 'utf8');
-const page = (hm) => `<!doctype html><html><head><meta name="viewport" content="width=device-width">
+const page = (hm, head) => `<!doctype html><html><head><meta name="viewport" content="width=device-width">
 <script>var SlimStatParams = ${JSON.stringify({
     id: '5.0123456789abcdef', ajaxurl: 'http://capture.test/hit', transport: 'ajax', gdpr_enabled: 'off',
     ...(hm ? { hm } : {}),
-})};</script></head>
+})};</script>${head ? `<script>window.headBodyMissing = document.body === null;${bundle}</script>` : ''}</head>
 <body style="margin:0;height:3000px">
 <nav><a id="buy" class="btn is-active" href="#x" style="display:inline-block;width:200px;height:40px">Buy   now</a></nav>
 <div class="hero"><p style="width:400px;height:100px">Plain text the visitor reads</p></div>
 <input id="email" value="secret@example.com" style="width:200px;height:30px">
 <div class="noslimstat"><button style="width:100px;height:30px">Private</button></div>
-<script>${bundle}</script></body></html>`;
+${head ? '' : `<script>${bundle}</script>`}</body></html>`;
 
 async function defaultClicks(tab) {
     await tab.click('#buy', { position: { x: 50, y: 10 } });
@@ -25,10 +25,11 @@ async function defaultClicks(tab) {
     await tab.mouse.wheel(0, 1200);
 }
 
-async function capture(browser, hm, act = defaultClicks) {
+async function capture(browser, hm, act = defaultClicks, head = false) {
     const tab = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     await tab.route('**/*', (route) => route.abort());
-    await tab.setContent(page(hm));
+    await tab.setContent(page(hm, head));
+    if (head) assert.equal(await tab.evaluate(() => window.headBodyMissing), true, 'head fixture reaches the missing-body path');
     await tab.evaluate(() => {
         window.__sent = [];
         window.SlimStat.send_to_server = (payload) => window.__sent.push(payload);
@@ -48,20 +49,22 @@ async function capture(browser, hm, act = defaultClicks) {
 (async () => {
     const browser = await chromium.launch();
     try {
-        const consented = await capture(browser, { l: 'main', r: 10000 }, async tab => {
-            await tab.evaluate(() => {
-                window.SlimStatParams.id = '';
-                window.SlimStat.consent.checkAllowed = () => ({allowed: false, mode: 'blocked'});
-            });
-            await tab.click('#buy', {position: {x: 50, y: 10}});
-            await tab.evaluate(() => {
-                window.SlimStatParams.id = '5.0123456789abcdef';
-                window.SlimStat.consent.checkAllowed = () => ({allowed: true, mode: 'full'});
-            });
-            await tab.click('#email', {position: {x: 10, y: 10}});
-        });
-        assert.deepEqual(consented.flatMap(b => b.hm.s.map(s => s[0])), ['#email'], 'pre-consent click must not be sent after grant');
-        console.log('PASS: pre-consent clicks are discarded, post-consent clicks retained');
+        for (const head of [false, true]) {
+            const consented = await capture(browser, { l: 'main', r: 10000 }, async tab => {
+                await tab.evaluate(() => {
+                    window.SlimStatParams.id = '';
+                    window.SlimStat.consent.checkAllowed = () => ({allowed: false, mode: 'blocked'});
+                });
+                await tab.click('#buy', {position: {x: 50, y: 10}});
+                await tab.evaluate(() => {
+                    window.SlimStatParams.id = '5.0123456789abcdef';
+                    window.SlimStat.consent.checkAllowed = () => ({allowed: true, mode: 'full'});
+                });
+                await tab.click('#email', {position: {x: 10, y: 10}});
+            }, head);
+            assert.deepEqual(consented.flatMap(b => b.hm.s.map(s => s[0])), ['#email'], 'pre-consent click must not be sent after grant');
+            console.log(`PASS: ${head ? 'head' : 'footer'} pre-consent clicks are discarded, post-consent clicks retained`);
+        }
 
         const full = await capture(browser, { l: 'full', r: 10000 });
         assert.equal(full.length, 1, 'one batch, riding on the finalize request');

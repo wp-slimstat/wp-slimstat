@@ -2613,7 +2613,7 @@ if (!window.requestIdleCallback) {
 
         // No GDPR consent buttons; managed by CMPs
 
-        // Track form submissions (covers Enter key, programmatic form.submit())
+        // Track form submissions, including Enter key and requestSubmit().
         SlimStat.add_event(document.body, "submit", function (e) {
             var form = e.target;
             if (!form || !form.nodeName || form.nodeName.toLowerCase() !== "form") return;
@@ -2723,7 +2723,9 @@ if (!window.requestIdleCallback) {
     }
 
     // Setup interaction tracking
-    setupClickDelegation();
+    // shortcut: head-loaded clicks before DOMContentLoaded are missed; revisit if pre-ready capture is required.
+    if (document.body) setupClickDelegation();
+    else SlimStat.add_event(document, "DOMContentLoaded", setupClickDelegation);
     heatmapScroll();
     setupNavigationHooks();
 

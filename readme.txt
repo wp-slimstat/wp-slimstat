@@ -120,7 +120,13 @@ https://www.youtube.com/watch?v=otZpOyqGkLs
 Google AI Overviews cannot be told apart from a normal Google search, so those visits stay in Organic Search.
 
 = Will SlimStat slow down my site? =
-It's built to stay light, and version 6 is lighter still: the tracker writes far fewer option updates per pageview and the admin charts read half as many database rows. Choose client-side tracking for cached sites or server-side to catch every request, and SlimStat plays nicely with W3 Total Cache, WP Super Cache, Cloudflare and the rest.
+It's built to stay light, and version 6 is lighter still: the tracker writes far fewer option updates per pageview and the admin charts read half as many database rows. Choose client-side tracking for cached sites. Server-side tracking records requests that reach WordPress; pages served entirely by a cache do not run the PHP tracker.
+
+= Which tracking URLs should I exclude from page caches and CDNs? =
+
+Use the URLs in your site's rendered tracker settings, including any site subdirectory. Exclude the bypass path `/request/{hash}/`, the `/wp-json/slimstat/` tracking routes, plain-permalink requests containing `?rest_route=/slimstat/`, and `/wp-admin/admin-ajax.php` at each applicable page, server and CDN cache. The bypass path exists only when the Ad-blocker bypass tracking method is selected. Do not cache tracking POST requests or rejection responses.
+
+Apply exclusions before purging cached tracking responses. Then check that an ordinary frontend page still gets a cache HIT and that tracking returns a pageview ID instead of HTML, including when bypass is the only available transport. Plugin no-store headers cannot fix a response already served by an earlier cache. Purge outdated tracker assets when updating; a query parameter alone may not bypass caches configured to ignore it. Compatibility depends on the cache version and configuration.
 
 = Is it really GDPR-ready out of the box? =
 Yes. IP anonymization and hashing, Do Not Track, a translatable consent banner, WP Consent API integration and scheduled data purging are all built in, no extra plugins required.
@@ -173,6 +179,9 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 **Fixed**
 
+* Head-loaded trackers initialize safely and capture clicks, form submissions and heatmap clicks after DOM readiness. Hidden consent banners no longer block form controls or keyboard focus. ([#120](https://github.com/wp-slimstat/wp-slimstat/issues/120), [#181](https://github.com/wp-slimstat/wp-slimstat/issues/181))
+* Server-only visits receive session IDs, Online Users excludes bots, and opt-in URL normalization removes configured parameters after campaign attribution. Chart refreshes keep active filters and the comparison setting. ([#257](https://github.com/wp-slimstat/wp-slimstat/issues/257), [#272](https://github.com/wp-slimstat/wp-slimstat/issues/272), [#276](https://github.com/wp-slimstat/wp-slimstat/issues/276), [#158](https://github.com/wp-slimstat/wp-slimstat/issues/158))
+* Restored two tested compatibility proxies: the tracker's deprecated checksum helper and the geolocation service's deprecated MaxMind toggle. ([#227](https://github.com/wp-slimstat/wp-slimstat/issues/227))
 * Keep the date picker’s highlighted preset consistent with the selected range when preset dates overlap.
 * Keep the consent banner usable in server tracking mode, and record the first pageview only after acceptance.
 * First visits keep recording on upgraded sites while the visitor-identity database step is still pending.

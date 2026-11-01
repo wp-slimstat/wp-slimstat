@@ -9,12 +9,14 @@
 * Pageviews are sent as soon as the page is ready, with a bounded idle delay. Consent checks and confirmed pageview creation work as before. ([#365](https://github.com/wp-slimstat/wp-slimstat/issues/365))
 
 **Numbers you can trust**
+* Server-only tracking assigns visit IDs, and Online Users excludes bots while retaining human and legacy unclassified visits. ([#257](https://github.com/wp-slimstat/wp-slimstat/issues/257), [#272](https://github.com/wp-slimstat/wp-slimstat/issues/272))
+* Opt-in URL normalization removes configured parameters after campaign attribution is extracted, so page totals combine without losing acquisition data. Chart refreshes retain submitted filters and the comparison setting. ([#276](https://github.com/wp-slimstat/wp-slimstat/issues/276), [#158](https://github.com/wp-slimstat/wp-slimstat/issues/158))
 * HeadlessChrome, PhantomJS and Lighthouse clients that identify themselves now count as bots, so the existing Bots exclusion filters them in both tracking modes. ([#364](https://github.com/wp-slimstat/wp-slimstat/issues/364))
-* WooCommerce orders from social and messaging apps are attributed correctly when WooCommerce supplies synthetic referral tags. Explicit campaign tags and revenue are unchanged.
+* WooCommerce orders from social and messaging apps are attributed correctly when WooCommerce supplies synthetic referral tags. Explicit campaign tags and revenue are unchanged. ([#368](https://github.com/wp-slimstat/wp-slimstat/issues/368))
 * Cached historical reports stay separate when you switch analytics databases or hosts.
 
 **Heatmaps**
-* Page titles show decoded, sampling spreads across pageviews, activity from before consent is discarded, and backdated full-capture clicks count once.
+* Page titles show decoded, sampling spreads across pageviews, activity from before consent is discarded, and backdated full-capture clicks count once. ([#369](https://github.com/wp-slimstat/wp-slimstat/issues/369), [#372](https://github.com/wp-slimstat/wp-slimstat/issues/372), [#373](https://github.com/wp-slimstat/wp-slimstat/issues/373), [#374](https://github.com/wp-slimstat/wp-slimstat/issues/374))
 * Restored pageviews stay visible when stale heatmap rows reuse their IDs for another page or time. Pages still serving an older cached tracker keep working.
 
 **Upgrade with confidence**
@@ -23,6 +25,8 @@
 
 **Rock-solid reliability**
 * Asynchronous report refreshes ignore responses for charts that have been replaced, avoiding redraw errors.
+* Trackers loaded in the page head initialize safely and capture clicks, form submissions and heatmap clicks after DOM readiness. Interactions before that point remain outside capture. ([#120](https://github.com/wp-slimstat/wp-slimstat/issues/120))
+* Restored two compatibility proxies covered by the legacy API regression test: the tracker's deprecated checksum helper and the geolocation service's deprecated MaxMind toggle. ([#227](https://github.com/wp-slimstat/wp-slimstat/issues/227))
 * Offline tracking data survives a failed reconnect followed by a page reload. The tab replaying stored visits keeps them until the server confirms or explicitly rejects them.
 * Missing browser-detection (Browscap) data you opted into is recovered through throttled background updates. If an update fails, the installed data stays, the error says what to fix, and you can retry by hand. ([#363](https://github.com/wp-slimstat/wp-slimstat/issues/363))
 * Report SQL diagnostics work for query-builder, cached and network reads. SQL and database errors are shown escaped, and results do not change. ([#362](https://github.com/wp-slimstat/wp-slimstat/issues/362))
@@ -31,9 +35,10 @@
 * Removed the unused legacy add-on catalog and manual-download callback for the retired update service. Stored add-on license settings are kept.
 
 **Security and privacy**
+* Hidden consent banners no longer intercept form controls or keyboard focus, and visible banners use a lower stacking level. ([#181](https://github.com/wp-slimstat/wp-slimstat/issues/181))
 * The consent banner works in server tracking mode, and the first pageview is recorded only after the visitor accepts.
-* Consent-withdrawal requests work again, and saving Tracker settings with GDPR off keeps the consent settings you did not change.
-* WooCommerce attribution follows SlimStat banner consent before writing its first cookie, on cached pages too, and on acceptance and withdrawal. A WooCommerce tracking denial from another consent integration still applies across SlimStat banner events.
+* Consent-withdrawal requests work again, and saving Tracker settings with GDPR off keeps the consent settings you did not change. ([#366](https://github.com/wp-slimstat/wp-slimstat/issues/366), [#367](https://github.com/wp-slimstat/wp-slimstat/issues/367))
+* WooCommerce attribution follows SlimStat banner consent before writing its first cookie, on cached pages too, and on acceptance and withdrawal. A WooCommerce tracking denial from another consent integration still applies across SlimStat banner events. ([#375](https://github.com/wp-slimstat/wp-slimstat/issues/375))
 
 = 6.0.0 - 2026-10-24 =
 
