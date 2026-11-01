@@ -155,14 +155,15 @@ $start = strpos($handler, '$new_filter =');
 $end = strpos($handler, '// Check if this filter is already saved', $start);
 check($start !== false && $end !== false, 'saved filter validation missing');
 $validation = str_replace('self::', 'SlimstatAdminRenderProbe::', substr($handler, $start, $end - $start));
-wp_slimstat_db::$all_columns_names = ['resource' => ['Permalink', 'varchar'], 'content_id' => ['Content ID', 'int'], 'no_filter_selected_2' => ['', 'none'], 'interval' => ['Interval', 'int'], 'strtotime' => ['Date', 'varchar'], 'utm_campaign' => ['Campaign', 'varchar']];
+wp_slimstat_db::$all_columns_names = ['resource' => ['Permalink', 'varchar'], 'content_id' => ['Content ID', 'int'], 'no_filter_selected_2' => ['', 'none'], 'interval' => ['Interval', 'int'], 'strtotime' => [0, 'int'], 'utm_campaign' => ['Campaign', 'varchar']];
 wp_slimstat_db::$operator_names = ['equals' => 'equals', 'contains' => 'contains', 'is_empty' => 'is empty'];
+check('strtotime equals 2026-01-15' === SlimstatAdminRenderProbe::saved_filter_display_html('strtotime', 'equals', '2026-01-15'), 'saved date filter lost its column name');
 // The label and operator are listed back in Saved Filters, so only known ones are kept.
 $unknown_label = json_encode(['<img src=x>' => ['equals', 'a']]);
 $unsafe_addon_label = json_encode(['addon_<img src=x>' => ['equals', 'a']]);
 $placeholder_label = json_encode(['no_filter_selected_2' => ['equals', 'a']]);
 $unknown_operator = json_encode(['resource' => ['<b>attack</b>', 'a']]);
-foreach (['null', 'false', '"scalar"', '{broken', '[]', '{"resource":["equals",[]]}', $unknown_label, $unsafe_addon_label, $placeholder_label, $unknown_operator, '{"resource":["equals",""]}', '{"interval":["is_empty",""]}', '{"resource":["equals","%20"]}', '{"resource":["equals","+"]}', '{"resource":["equals","&&&"]}', json_encode(['resource' => ['equals', "\nX"]]), json_encode(['utm_campaign' => ['equals', "\nX"]]), '{"resource":["equals","%0AX"]}', '{"strtotime":["equals","not-a-date"]}'] as $bad) {
+foreach (['null', 'false', '"scalar"', '{broken', '[]', '{"resource":["equals",[]]}', $unknown_label, $unsafe_addon_label, $placeholder_label, $unknown_operator, '{"resource":["equals",""]}', '{"interval":["is_empty",""]}', '{"resource":["equals","%20"]}', '{"resource":["equals","+"]}', '{"resource":["equals","&&&"]}', json_encode(['resource' => ['equals', "\nX"]]), json_encode(['utm_campaign' => ['equals', "\nX"]]), '{"resource":["equals","%0AX"]}', '{"strtotime":["equals","not-a-date"]}', '{"utm_campaign":["equals","<b>"]}', '{"utm_campaign":["equals","<script>x</script>"]}'] as $bad) {
     $_POST = ['filter_array' => addslashes($bad)]; // WordPress supplies slashed request values, including JSON escapes.
     try { eval($validation); throw new RuntimeException('malformed filter accepted: ' . $bad); }
     catch (LogicException $error) { check($error->getMessage() === 'Invalid filter data.', 'wrong filter rejection'); }
@@ -188,7 +189,7 @@ $list_start = strpos($handler, 'echo \'<div id="slim_filters_overlay">\'');
 $list_end = strrpos($handler, 'break;');
 check($list_start !== false && $list_end > $list_start, 'saved-filter list boundary missing');
 $listing = str_replace('self::', 'SlimstatAdminRenderProbe::', substr($handler, $list_start, $list_end - $list_start));
-foreach ([['unknown' => ['equals', 'x']], ['resource' => ['equals', '/allowed'], 'unknown' => ['equals', 'x']], [], 'malformed', ['resource' => ['equals', '']], ['interval' => ['is_empty', '']], ['resource' => ['equals', '%20']], ['resource' => ['equals', '+']], ['resource' => ['equals', '&&&']], ['resource' => ['equals', "\nX"]], ['utm_campaign' => ['equals', "\nX"]], ['strtotime' => ['equals', 'not-a-date']]] as $legacy) {
+foreach ([['unknown' => ['equals', 'x']], ['resource' => ['equals', '/allowed'], 'unknown' => ['equals', 'x']], [], 'malformed', ['resource' => ['equals', '']], ['interval' => ['is_empty', '']], ['resource' => ['equals', '%20']], ['resource' => ['equals', '+']], ['resource' => ['equals', '&&&']], ['resource' => ['equals', "\nX"]], ['utm_campaign' => ['equals', "\nX"]], ['strtotime' => ['equals', 'not-a-date']], ['utm_campaign' => ['equals', '<b>']], ['resource' => ['equals', '/restricted'], 'utm_campaign' => ['equals', '<script>x</script>']]] as $legacy) {
     $saved_filters = [17 => $legacy];
     ob_start(); eval($listing); $listed = ob_get_clean();
     check(strpos($listed, 'slimstat-filter-link') === false, 'invalid saved entry became a partial or empty apply link');

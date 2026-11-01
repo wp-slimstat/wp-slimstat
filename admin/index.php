@@ -3481,6 +3481,8 @@ class wp_slimstat_admin
         if (!$is_literal) {
             // The apply link decodes once; submitting it sanitizes and decodes again.
             $value = urldecode(sanitize_text_field($value));
+        } else {
+            $value = wp_strip_all_tags($value);
         }
         if ('strtotime' === $label && false === strtotime($value)) {
             return false;
@@ -3503,7 +3505,7 @@ class wp_slimstat_admin
      */
     private static function saved_filter_display_html($label, $operator, $encoded_value)
     {
-        $column_name   = strtolower(wp_slimstat_db::$all_columns_names[$label][0] ?? $label);
+        $column_name   = strtolower((string) (wp_slimstat_db::$all_columns_names[$label][0] ?? '') ?: $label);
         $operator_name = wp_slimstat_db::$operator_names[$operator];
 
         return esc_html($column_name) . ' ' . esc_html($operator_name) . ' ' . esc_html($encoded_value);
