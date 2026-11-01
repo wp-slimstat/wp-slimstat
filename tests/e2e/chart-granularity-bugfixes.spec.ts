@@ -377,23 +377,29 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
     expect(errors, 'No chart-related console errors or warnings').toEqual([]);
   });
 
-  test('chart and date changes remain free of browser errors after reload', async ({ page }) => {
-    const errors: string[] = [];
-    // Attach before the first navigation so initialization failures are covered.
-    page.on('pageerror', error => errors.push(error.message));
-    page.on('console', message => {
-      if (message.type() === 'error') errors.push(message.text());
+  for (const asyncLoad of ['off', 'on']) {
+    test(`chart and date changes remain free of browser errors after reload (Async ${asyncLoad})`, async ({ page }) => {
+      await setSlimstatOption(page, 'async_load', asyncLoad);
+      const errors: string[] = [];
+      // Attach before the first navigation so initialization failures are covered.
+      page.on('pageerror', error => errors.push(error.message));
+      page.on('console', message => {
+        if (message.type() === 'error') errors.push(message.text());
+      });
+      await goToOverview(page);
+      await waitForChartInitialized(page);
+      await setGranularity(page, 'daily');
+      await page.locator('.slimstat-date-range-btn').click();
+      await page.locator('.daterangepicker:visible .ranges li').filter({ hasText: /^Last 28 days$/ }).click();
+      await expect(page).toHaveURL(/type=last_28_days/);
+      await waitForChartInitialized(page);
+      // Let WordPress finish its navigation animation before this test reloads again.
+      await page.waitForFunction(() => !(document as Document & { activeViewTransition?: unknown }).activeViewTransition);
+      await page.reload({ waitUntil: 'networkidle' });
+      await waitForChartInitialized(page);
+      await expect(page.locator('[id^="slimstat_chart_data_"]').first()).toHaveAttribute('data-granularity', 'daily');
+      expect(errors, 'Initial chart, granularity, date selection and reload must not log browser errors').toEqual([]);
     });
-    await goToOverview(page);
-    await waitForChartInitialized(page);
-    await setGranularity(page, 'daily');
-    await page.locator('.slimstat-date-range-btn').click();
-    await page.locator('.daterangepicker:visible .ranges li').filter({ hasText: /^Last 28 days$/ }).click();
-    await expect(page).toHaveURL(/type=last_28_days/);
-    await waitForChartInitialized(page);
-    await page.reload({ waitUntil: 'networkidle' });
-    await waitForChartInitialized(page);
-    expect(errors, 'Initial chart, granularity, date selection and reload must not log browser errors').toEqual([]);
-  });
+  }
 
 });
