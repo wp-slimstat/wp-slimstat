@@ -3472,14 +3472,18 @@ class wp_slimstat_admin
             return false;
         }
 
-        $value = (string) $details[1];
-        if (0 !== strpos($label, 'utm_') && 'traffic_source' !== $label) {
+        $is_literal = 0 === strpos($label, 'utm_') || 'traffic_source' === $label;
+        $value = $is_literal ? (string) $details[1] : urldecode(str_replace('\\', '', (string) $details[1]));
+        // The filter grammar cannot preserve line breaks or non-literal separators.
+        if (false !== strpbrk($value, "\r\n") || (!$is_literal && false !== strpos($value, '&&&'))) {
+            return false;
+        }
+        if (!$is_literal) {
             // The apply link decodes once; submitting it sanitizes and decodes again.
-            $value = urldecode(str_replace('\\', '', $value));
-            if (false !== strpos($value, '&&&')) {
-                return false;
-            }
             $value = urldecode(sanitize_text_field($value));
+        }
+        if ('strtotime' === $label && false === strtotime($value)) {
+            return false;
         }
 
         // Empty value-bearing clauses become filter-removal URLs, not saved restrictions.
