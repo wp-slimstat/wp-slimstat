@@ -152,7 +152,8 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
   // ─── Test 5: Sunday record buckets correctly for sow=0 vs sow=1 ──────────
 
   test('Sunday records land in correct week bucket for sow=0 vs sow=1', async () => {
-    const sundayTs = mostRecentDayOfWeek(0, now);
+    // Use a completed day: today's noon would be outside a Sunday-morning range.
+    const sundayTs = mostRecentDayOfWeek(0, now - day);
     const saturdayTs = sundayTs - day;
 
     await insertRows(saturdayTs, 4, 'boundary-sat');
@@ -165,6 +166,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
     const v1Sow0 = getV1(jsonSow0);
     const sumSow0 = sumV1(jsonSow0);
     expect(sumSow0).toBe(7);
+    expect(v1Sow0.filter(value => value > 0).sort((a, b) => a - b)).toEqual([3, 4]);
 
     // With sow=1 (Monday): Sunday is the LAST day of the week
     setStartOfWeek(1);
@@ -173,6 +175,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
     const v1Sow1 = getV1(jsonSow1);
     const sumSow1 = sumV1(jsonSow1);
     expect(sumSow1).toBe(7);
+    expect(v1Sow1.filter(value => value > 0)).toEqual([7]);
 
     expect(sumSow0).toBe(sumSow1);
 

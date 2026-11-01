@@ -267,12 +267,19 @@ foreach ($wanted as $cell => $filters) {
         $html  = '';
         $error = null;
         try {
-            if (empty($report['callback'])) {
+            if (!empty($report['callback'])) {
+                ob_start();
+                wp_slimstat_reports::callback_wrapper(['id' => $report_id]);
+                $html = (string) ob_get_clean();
+            } elseif (in_array($report_id, ['slim_heatmap_01', 'slim_p10_01'], true)
+                && is_callable($report['callback_args']['raw'] ?? null)) {
+                // Only these raw reports have a frontend table-rendering contract.
+                $callback_args = $report['callback_args'];
+                $callback_args['is_widget'] = true;
+                $html = \SlimStat\Shortcodes\Shortcode::table(call_user_func($callback_args['raw'], $callback_args));
+            } else {
                 throw new \RuntimeException('Registered report has no callable callback');
             }
-            ob_start();
-            wp_slimstat_reports::callback_wrapper(['id' => $report_id]);
-            $html = (string) ob_get_clean();
         } catch (\Throwable $e) {
             while (ob_get_level() > 0) {
                 ob_end_clean();

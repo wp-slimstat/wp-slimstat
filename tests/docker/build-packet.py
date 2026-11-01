@@ -107,6 +107,9 @@ literals=sorted(literals)
 # therefore the right diagnosis rather than this floor's.
 eras=1 if null_control else len(captured)
 expected_literals=len(identity_keys)*eras+len({ref_a,ref_b})
+# A version labels a release, not a commit. Only this marker may overlap in a real comparison.
+if not null_control and "_arm_version" in identity_keys and captured["arm-1"]["_arm_version"] == captured["arm-2"]["_arm_version"]:
+    expected_literals-=1
 if len(literals)!=expected_literals:
     detail=("a null control's arms must share every identity field" if null_control
             else "the two arms share an identity field")
