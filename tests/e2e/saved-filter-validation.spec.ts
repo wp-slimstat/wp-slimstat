@@ -29,6 +29,7 @@ test('saved filters validate the whole entry and preserve valid save/list/apply 
       { resource: ['equals', []] }, { resource: ['equals', ''] }, { interval: ['is_empty', ''] },
       ...['%20', '+', '\\', '&&&', '%2520', '\nX', '%0AX'].map(value => ({ resource: ['equals', value] })),
       { utm_campaign: ['equals', '\nX'] }, { strtotime: ['equals', 'not-a-date'] },
+      ...['utm_campaign', 'traffic_source'].flatMap(key => ['<b>', '<script>x</script>', '<b> </b>'].map(value => ({ [key]: ['equals', value] }))),
     ]) {
       const response = await manage({ type: 'save', filter_array: JSON.stringify(invalid) });
       expect(response.status()).toBe(400);
@@ -37,7 +38,9 @@ test('saved filters validate the whole entry and preserve valid save/list/apply 
 
     const dateFilter = { strtotime: ['equals', '2026-01-15'] };
     expect((await manage({ type: 'save', filter_array: JSON.stringify(dateFilter) })).ok()).toBe(true);
-    expect(await (await manage({ type: 'list' })).text()).toContain('fs%5Bday%5D=equals+15');
+    const dateList = await (await manage({ type: 'list' })).text();
+    expect(dateList).toContain('fs%5Bday%5D=equals+15');
+    expect(dateList).toContain('strtotime equals 2026-01-15');
     expect((await manage({ type: 'delete', filter_id: '0' })).ok()).toBe(true);
     expect(stored()).toEqual([]);
 
@@ -76,13 +79,15 @@ test('saved filters validate the whole entry and preserve valid save/list/apply 
       53: { resource: ['equals', '\nX'] },
       59: { utm_campaign: ['equals', '\nX'] },
       61: { strtotime: ['equals', 'not-a-date'] },
+      67: { utm_campaign: ['equals', '<b>'] },
+      71: { resource: ['equals', '/restricted'], traffic_source: ['equals', '<script>x</script>'] },
     };
     const legacy = { 17: { resource: ['equals', '/restricted'], unknown: ['equals', 'x'] }, ...remaining };
     const encoded = Buffer.from(JSON.stringify(legacy)).toString('base64');
     runWordPressFixture(`<?php update_option('slimstat_filters', json_decode(base64_decode('${encoded}'), true));`);
     await page.locator('#slimstat-load-saved-filters').click();
     const deleteButton = (id: number) => overlay.locator(`.slimstat-delete-filter[data-filter-id="${id}"]`);
-    for (const id of [17, 23, 29, 31, 41, 43, 47, 53, 59, 61]) {
+    for (const id of [17, 23, 29, 31, 41, 43, 47, 53, 59, 61, 67, 71]) {
       const row = deleteButton(id).locator('..');
       await expect(row).toContainText('Invalid filter data.');
       await expect(row.locator('.slimstat-filter-link')).toHaveCount(0);
