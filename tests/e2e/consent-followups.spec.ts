@@ -6,7 +6,8 @@ import { snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions, ge
   snapshotOption, restoreOption, installOptionMutator, uninstallOptionMutator } from './helpers/setup';
 
 test.describe('consent wire and unchanged settings (#366/#367)', () => {
-  test.beforeAll(async () => { await snapshotSlimstatOptions(); await installOptionMutator(); });
+  test.beforeAll(async () => { await installOptionMutator(); });
+  test.beforeEach(async () => { await snapshotSlimstatOptions(); });
   test.afterEach(async () => { await restoreSlimstatOptions(); });
   test.afterAll(async () => { await uninstallOptionMutator(); await closeDb(); });
   for (const source of ['wp_consent_api', 'real_cookie_banner']) {

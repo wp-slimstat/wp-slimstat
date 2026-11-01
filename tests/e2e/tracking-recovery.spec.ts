@@ -499,10 +499,11 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
         link.textContent = 'Offline interaction';
         document.body.appendChild(link);
       });
-      visitor.on('popup', popup => { void popup.close(); });
       const eventsBefore = await getTotalEventCount();
       await ctx.setOffline(true);
+      const popupPromise = visitor.waitForEvent('popup');
       await visitor.click('#offline-link');
+      await (await popupPromise).close(); // Finish closing before setOffline updates every page.
       const offlineQueue = () => visitor.evaluate(() =>
         JSON.parse(localStorage.getItem('slimstat_offline_queue') || '[]'));
       await expect.poll(offlineQueue).toHaveLength(1);
