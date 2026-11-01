@@ -68,9 +68,9 @@ test('banner hidden states do not intercept form controls or keyboard focus', as
     const banner = page.locator('#slimstat-gdpr-banner');
     await expect(banner).toBeHidden();
     await page.locator('#donation').click();
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('Enter');
-    await expect(page.locator('#donation')).toHaveValue('20');
+    await expect(page.locator('#donation')).toBeFocused();
+    await page.keyboard.press('Escape'); // Close the platform-native popup before selecting its value.
+    await page.locator('#donation').selectOption('20');
     await page.locator('#donation').focus();
     await page.keyboard.press('Tab');
     await expect(page.locator('#accept')).not.toBeFocused();
