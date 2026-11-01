@@ -18,6 +18,7 @@
 import { test, expect, Page } from '@playwright/test';
 import { ADMIN_PASS, ADMIN_USER, BASE_URL } from './helpers/env';
 import { getPool, closeDb, clearStatsTable } from './helpers/setup';
+import { liveSafeTodayTs } from './helpers/chart';
 
 /** Login if the page was redirected to wp-login.php */
 async function ensureLoggedIn(page: Page): Promise<void> {
@@ -39,7 +40,7 @@ async function seedOutboundPageview(
   resource: string,
   outboundResource: string,
 ): Promise<number> {
-  const now = Math.floor(Date.now() / 1000);
+  const now = liveSafeTodayTs();
   const [result] = (await getPool().execute(
     `INSERT INTO wp_slim_stats
        (resource, outbound_resource, dt, dt_out, ip, visit_id, browser, platform, content_type)
@@ -128,6 +129,10 @@ test.describe('Outbound Link Report Display', () => {
 
     await expect(widget.locator('canvas')).toBeVisible();
     await expect(widget.locator('.nodata'), 'Chart should not show no data').toHaveCount(0);
+    await expect.poll(async () => {
+      const totals = await widget.locator('[id^="slimstat_chart_data_"]').getAttribute('data-totals');
+      return JSON.parse(totals ?? '{}').current?.v1 ?? 0;
+    }, { message: 'The outbound chart must contain both seeded links' }).toBe(2);
   });
 
   // ─── Test 4: slim_p7_02 — Access Log shows outbound_resource ─────

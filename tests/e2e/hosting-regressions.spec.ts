@@ -54,7 +54,8 @@ test('banner hidden states do not intercept form controls or keyboard focus', as
 });
 
 test.describe('hosting report and attribution contracts', () => {
-  test.beforeAll(async () => { await snapshotSlimstatOptions(); await installOptionMutator(); });
+  test.beforeAll(async () => { await installOptionMutator(); });
+  test.beforeEach(async () => { await snapshotSlimstatOptions(); });
   test.afterEach(async () => { await restoreSlimstatOptions(); });
   test.afterAll(async () => { await uninstallOptionMutator(); await closeDb(); });
 
