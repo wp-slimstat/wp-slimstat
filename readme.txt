@@ -181,7 +181,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 * Head-loaded trackers initialize safely and capture clicks, form submissions and heatmap clicks after DOM readiness. Hidden consent banners no longer block form controls or keyboard focus. ([#120](https://github.com/wp-slimstat/wp-slimstat/issues/120), [#181](https://github.com/wp-slimstat/wp-slimstat/issues/181))
 * Server-only visits receive session IDs, Online Users excludes bots, and opt-in URL normalization removes configured parameters after campaign attribution. Chart refreshes keep active filters and the comparison setting. ([#257](https://github.com/wp-slimstat/wp-slimstat/issues/257), [#272](https://github.com/wp-slimstat/wp-slimstat/issues/272), [#276](https://github.com/wp-slimstat/wp-slimstat/issues/276), [#158](https://github.com/wp-slimstat/wp-slimstat/issues/158))
-* Restored two tested compatibility proxies: the tracker's deprecated checksum helper and the geolocation service's deprecated MaxMind toggle. ([#227](https://github.com/wp-slimstat/wp-slimstat/issues/227))
+* Restored the tracker's deprecated checksum helper and the geolocation service's deprecated MaxMind getter and setter. ([#227](https://github.com/wp-slimstat/wp-slimstat/issues/227))
 * Keep the date picker’s highlighted preset consistent with the selected range when preset dates overlap.
 * Keep the consent banner usable in server tracking mode, and record the first pageview only after acceptance.
 * First visits keep recording on upgraded sites while the visitor-identity database step is still pending.
