@@ -6,26 +6,58 @@ import { snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions,
   getPool, closeDb, installOptionMutator, uninstallOptionMutator } from './helpers/setup';
 import { runWordPressFixture } from './helpers/chart';
 
-test('head-loaded bundled tracker observes the root and starts one pageview', async ({ browser }) => {
-  const context = await browser.newContext();
-  const page = await context.newPage();
-  const errors: string[] = [];
-  page.on('pageerror', error => errors.push(error.message));
-  const bundle = fs.readFileSync(path.join(FREE_PLUGIN_ROOT, 'wp-slimstat.min.js'), 'utf8');
-  await page.route('**/*', route => route.request().isNavigationRequest()
-    ? route.fulfill({ contentType: 'text/html', body: `<html><head><script>${bundle}</script><script>
-      window.hostingPageviews=0;
+for (const placement of ['head', 'footer', 'late']) {
+  test(`${placement}-loaded bundled tracker delegates clicks and submits once`, async ({ browser }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    const bundle = fs.readFileSync(path.join(FREE_PLUGIN_ROOT, 'wp-slimstat.min.js'), 'utf8');
+    const tracker = `window.hostingBodyMissing = document.body === null;
+      window.hostingReadyState = document.readyState;
+      ${bundle}
+      window.hostingPageviews=0; window.hostingInteractions=[];
       SlimStat._send_pageview=function(){ window.hostingPageviews++; };
-      </script></head><body><p>Head fixture</p></body></html>` }) : route.abort());
-  try {
-    await page.goto(`${BASE_URL}/hosting-head-fixture`);
-    expect(errors).toEqual([]);
-    await expect.poll(() => page.evaluate(() => (window as any).hostingPageviews)).toBe(1);
-    await page.evaluate(() => { document.head.appendChild(document.createElement('meta')); document.body.appendChild(document.createElement('div')); });
-    expect(errors).toEqual([]);
-    expect(await page.evaluate(() => (window as any).hostingPageviews)).toBe(1);
-  } finally { await context.close(); }
-});
+      SlimStat.ss_track=function(event){ window.hostingInteractions.push({type:event.type,target:event.target.id}); };`;
+    const controls = `<a id="link" href="#target" onclick="event.preventDefault()">Link</a>
+      <form id="form" onsubmit="event.preventDefault()"><input id="field" required value="valid"><button id="submit">Submit</button></form>`;
+    await page.route('**/*', route => route.request().isNavigationRequest()
+      ? route.fulfill({ contentType: 'text/html', body: `<html><head>${placement === 'head' ? `<script>${tracker}</script>` : ''}</head>
+        <body>${controls}${placement === 'footer' ? `<script>${tracker}
+        document.querySelector('#link').click(); window.hostingImmediate = hostingInteractions.slice(); hostingInteractions=[];
+        </script>` : ''}</body></html>` }) : route.abort());
+    try {
+      await page.goto(`${BASE_URL}/hosting-head-fixture`);
+      if (placement === 'late') await page.addScriptTag({ content: tracker });
+      expect(await page.evaluate(() => (window as any).hostingBodyMissing)).toBe(placement === 'head');
+      expect(await page.evaluate(() => (window as any).hostingReadyState)).toBe(placement === 'late' ? 'complete' : 'loading');
+      if (placement === 'footer') {
+        expect(await page.evaluate(() => (window as any).hostingImmediate)).toEqual([{ type: 'click', target: 'link' }]);
+      }
+      expect(errors).toEqual([]);
+      // Late initialization sends synchronously, before this listener spy can be installed.
+      if (placement !== 'late') await expect.poll(() => page.evaluate(() => (window as any).hostingPageviews)).toBe(1);
+      // Each step must add exactly one event; the full ordered list is asserted every time.
+      const expected: { type: string; target: string }[] = [];
+      const expectInteraction = async (type: string, target: string) => {
+        expected.push({ type, target });
+        expect(await page.evaluate(() => (window as any).hostingInteractions)).toEqual(expected);
+      };
+      await page.locator('#link').click();
+      await expectInteraction('click', 'link');
+      await page.locator('#submit').click();
+      await expectInteraction('submit', 'submit');
+      await page.locator('#field').focus();
+      await page.keyboard.press('Enter');
+      await expectInteraction('submit', 'submit');
+      await page.evaluate(() => { document.head.appendChild(document.createElement('meta')); document.body.appendChild(document.createElement('div')); });
+      await page.locator('#submit').click();
+      await expectInteraction('submit', 'submit');
+      expect(errors).toEqual([]);
+      expect(await page.evaluate(() => (window as any).hostingPageviews)).toBe(placement === 'late' ? 0 : 1);
+    } finally { await context.close(); }
+  });
+}
 
 test('banner hidden states do not intercept form controls or keyboard focus', async ({ page }) => {
   const css = fs.readFileSync(path.join(FREE_PLUGIN_ROOT, 'assets/css/gdpr-banner.css'), 'utf8');
@@ -35,6 +67,9 @@ test('banner hidden states do not intercept form controls or keyboard focus', as
       <div id="slimstat-gdpr-banner"><button id="accept">Accept</button><button id="decline">Decline</button></div>`);
     const banner = page.locator('#slimstat-gdpr-banner');
     await expect(banner).toBeHidden();
+    await page.locator('#donation').click();
+    await expect(page.locator('#donation')).toBeFocused();
+    await page.keyboard.press('Escape'); // Close the platform-native popup before selecting its value.
     await page.locator('#donation').selectOption('20');
     await page.locator('#donation').focus();
     await page.keyboard.press('Tab');
