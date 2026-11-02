@@ -40,20 +40,8 @@ $disableMonthly = $availableRange < (30 * 86400); // Less than 1 month of data
 $disableWeekly  = $availableRange < (7 * 86400); // Less than 1 week of data
 $disableDaily   = ($availableRange < (2 * 86400)); // Disable daily if less than 2 days
 $disableHourly  = $availableRange > (7 * 86400); // More than 7 days of data
-$totals         = [
-    'current' => [
-        'v1' => (int) ($data['totals'][0]->v1 ?? 0),
-        'v2' => (int) ($data['totals'][0]->v2 ?? 0),
-    ],
-    'previous' => [
-        'v1' => (int) ($data['totals'][1]->v1 ?? 0),
-        'v2' => (int) ($data['totals'][1]->v2 ?? 0),
-    ],
-];
-$is_empty = (0 === ($totals['current']['v1'] ?? 0) && 0 === ($totals['current']['v2'] ?? 0));
-if (!isset($data['totals'][1])) {
-    unset($totals['previous']);
-}
+$totals         = \SlimStat\Modules\Chart::summarizeTotals($data['totals'] ?? []);
+$is_empty       = (0 === $totals['current']['v1'] && 0 === $totals['current']['v2']);
 ?>
 <div
     class="slimstat-chart-wrap <?php echo esc_attr(isset($chart_args['chart_type']) && $chart_args['chart_type'] === 'bar' ? 'chart-bar' : 'chart-line'); ?>">

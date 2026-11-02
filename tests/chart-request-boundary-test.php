@@ -23,6 +23,7 @@ eval('class ChartBoundary {
     private $args = [], $data = [], $prevData = [], $chartLabels = [], $translations = [];
     private function init($args) { $this->args = $args; }
     public static function run() {' . slimstat_function_body($source, 'ajaxFetchChartData') . '}
+    public static function summarizeTotals(array $rows): array {' . slimstat_function_body($source, 'summarizeTotals') . '}
 }');
 set_error_handler(static function ($severity, $message) { throw new RuntimeException($message); });
 $GLOBALS['current_user'] = (object) ['user_login' => 'alice'];

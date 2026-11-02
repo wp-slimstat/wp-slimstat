@@ -136,23 +136,10 @@ class Chart
             $chart               = new self();
             $args['granularity'] = $granularity;
             $chart->init($args);
-            $totals = [
-                'current' => [
-                    'v1' => (int) ($chart->data['totals'][0]->v1 ?? 0),
-                    'v2' => (int) ($chart->data['totals'][0]->v2 ?? 0),
-                ],
-                'previous' => [
-                    'v1' => (int) ($chart->data['totals'][1]->v1 ?? 0),
-                    'v2' => (int) ($chart->data['totals'][1]->v2 ?? 0),
-                ],
-            ];
-            if (!isset($chart->data['totals'][1])) {
-                unset($totals['previous']);
-            }
             wp_send_json_success([
                 'args'         => $chart->args,
                 'data'         => $chart->data,
-                'totals'       => $totals,
+                'totals'       => self::summarizeTotals($chart->data['totals'] ?? []),
                 'prev_data'    => $chart->prevData,
                 'chart_labels' => $chart->chartLabels,
                 'translations' => $chart->translations,
@@ -318,7 +305,7 @@ class Chart
             $prevArgs['start'],
             $prevArgs['end']
         );
-        if ('on' !== (\wp_slimstat::$settings['comparison_chart'] ?? 'on')) {
+        if (!self::comparisonEnabled()) {
             $data['datasets_prev'] = [];
             $data['prev_labels'] = [];
             $data['totals'] = array_slice($data['totals'], 0, 1);
@@ -465,7 +452,7 @@ class Chart
         // binding tighter to only the latter OR clause.
         $rowsQuery = Query::select($fields)
             ->from($GLOBALS['wpdb']->prefix . 'slim_stats');
-        if ('on' === (\wp_slimstat::$settings['comparison_chart'] ?? 'on')) {
+        if (self::comparisonEnabled()) {
             $rowsQuery->whereRaw('((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))', [$prevStart, $prevEnd, $start, $end]);
         } else {
             $rowsQuery->whereRaw('(dt BETWEEN %d AND %d)', [$start, $end]);
@@ -693,6 +680,21 @@ class Chart
     private static function rowField($row, string $key)
     {
         return is_object($row) ? ($row->{$key} ?? null) : ($row[$key] ?? null);
+    }
+
+    /** Current/previous totals shared by the initial render and the AJAX refresh; previous only when its row exists. */
+    public static function summarizeTotals(array $rows): array
+    {
+        $totals = ['current' => ['v1' => (int) ($rows[0]->v1 ?? 0), 'v2' => (int) ($rows[0]->v2 ?? 0)]];
+        if (isset($rows[1])) {
+            $totals['previous'] = ['v1' => (int) ($rows[1]->v1 ?? 0), 'v2' => (int) ($rows[1]->v2 ?? 0)];
+        }
+        return $totals;
+    }
+
+    private static function comparisonEnabled(): bool
+    {
+        return 'on' === (\wp_slimstat::$settings['comparison_chart'] ?? 'on');
     }
 
     private function processResults(array $rows, array $totals, array $params, int $start, int $end, int $prevStart, int $prevEnd): array
