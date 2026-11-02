@@ -468,8 +468,11 @@ jQuery(function () {
         var activeReports = 0;
         function loadReports() {
             while (activeReports < 3 && pendingReports.length) {
+                var reportId = pendingReports.shift();
+                // Pagination or a manual refresh may have loaded this queued report already.
+                if (jQuery("#" + reportId).data("slimstat-refresh")) continue;
                 activeReports++;
-                jQuery.when(SlimStatAdmin.refresh_report(pendingReports.shift())()).always(function () {
+                jQuery.when(SlimStatAdmin.refresh_report(reportId)()).always(function () {
                     activeReports--;
                     loadReports();
                 });
@@ -1736,6 +1739,8 @@ var SlimStatAdmin = {
         }
         return function () {
             var defer = jQuery.Deferred();
+            var report = jQuery("#" + id);
+            report.data("slimstat-refresh", defer);
             var granularity = jQuery("#" + id + " .slimstat-granularity-select").val();
             // Fallback to localStorage when the select is missing or about to be destroyed
             if (!granularity && jQuery("#" + id).hasClass("chart")) {
@@ -1798,6 +1803,7 @@ var SlimStatAdmin = {
             jQuery
                 .ajax({ method: "POST", url: ajaxurl, data: data })
                 .done(function (response) {
+                    if (report.data("slimstat-refresh") !== defer) return;
                     var filteredResponse = jQuery("<div>").html(response);
 
                     if (id !== "slim_p8_02" && id !== "slim_p8_01") {
@@ -1837,7 +1843,9 @@ var SlimStatAdmin = {
                         }
                     } else {
                         SlimStatReportBody(id).fadeOut(500, function () {
+                            if (report.data("slimstat-refresh") !== defer) return;
                             jQuery(this).html(filteredResponse.html()).fadeIn(500, function () {
+                                if (report.data("slimstat-refresh") !== defer) return;
                                 // #156 — for non-Access-Log reports, reset
                                 // scrollTop AFTER fadeIn completes so the
                                 // pagination "next page" lands at the top
@@ -1851,7 +1859,7 @@ var SlimStatAdmin = {
                 })
                 .always(function () {
                     // Clear in-flight guard for Access Log requests
-                    if (id == SlimStatAdmin.ACCESS_LOG_REPORT_ID) {
+                    if (id == SlimStatAdmin.ACCESS_LOG_REPORT_ID && report.data("slimstat-refresh") === defer) {
                         SlimStatAdmin._isAccessLogInFlight = false;
                     }
                     defer.resolve();

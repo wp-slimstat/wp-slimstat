@@ -151,6 +151,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4) {
+                // A report refresh replaces these nodes while this response is in flight.
+                if (document.getElementById("slimstat_chart_data_" + chartId) !== element || document.getElementById("slimstat_chart_" + chartId) !== chartCanvas) return;
                 if (xhr.status === 200) {
                     var result = JSON.parse(xhr.responseText);
                     if (!result.success) {
@@ -178,7 +180,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     var prevDatasets = prepareDatasets(prev_data2.datasets, chart_labels2, prev_data2.labels, null, true, chartType2);
 
                     // Destroy previous chart and create a new one to ensure correct tick callback
-                    var chartCanvas = document.getElementById("slimstat_chart_" + chartId);
                     var prevChart = charts[chartId];
                     if (prevChart) prevChart.destroy();
                     var ctx = chartCanvas.getContext("2d");
@@ -194,7 +195,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     element.dataset.chartLabels = JSON.stringify(chart_labels2);
                     element.dataset.translations = JSON.stringify(translations2);
 
-                    inside.removeChild(loadingIndicator);
+                    loadingIndicator.remove();
                     chartWrap.style.display = "block";
                 } else {
                     console.error("XHR error:", xhr.statusText);
