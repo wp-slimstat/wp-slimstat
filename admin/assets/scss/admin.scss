@@ -3266,6 +3266,28 @@ body.slimstat-admin-page {
           }
         }
 
+        .slimstat-ai-prompt {
+          padding: 5px;
+          border: 0;
+          background: none;
+          font-family: inherit;
+          font-weight: 700;
+          font-size: 12px;
+          line-height: 100%;
+          color: rgb(103, 110, 116);
+          text-decoration: none;
+          transition: 0.3s all ease-out;
+          cursor: pointer;
+
+          &:hover:not(:disabled) {
+            color: #202224;
+          }
+
+          &:disabled {
+            cursor: default;
+          }
+        }
+
         [dir="rtl"] & {
           float: left;
 

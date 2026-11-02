@@ -1,5 +1,8 @@
 = 6.0.1 - 2026-11-02 =
 
+**New: Copy AI Prompt**
+* Each report has a ✨ Copy AI Prompt button beside Export. It copies a ready-to-paste prompt with the report's rows, period and filters plus your site's title, tagline and address, for any AI assistant to turn into plain-language findings and next steps. Nothing is sent anywhere; the prompt only goes to your clipboard. Reports that list individual visitors, and views filtered to one visitor, have no button. Pro reports need Pro.
+
 **Faster**
 * Ordinary page loads no longer query absent Ecommerce and permalink-update options. Privacy exports and erasure still work after WooCommerce is deactivated.
 * Nearby asynchronous report widgets load in up to three concurrent requests, with offscreen widgets loaded as you scroll.
