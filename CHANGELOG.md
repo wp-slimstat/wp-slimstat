@@ -1,4 +1,4 @@
-= 6.0.1 - 2026-10-27 =
+= 6.0.1 - 2026-11-02 =
 
 **Faster**
 * Ordinary page loads no longer query absent Ecommerce and permalink-update options. Privacy exports and erasure still work after WooCommerce is deactivated.
