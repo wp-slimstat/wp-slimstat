@@ -5,7 +5,8 @@ import { snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions, ge
 
 const human = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36';
 test.describe('early pageviews and explicit automation (#364/#365)', () => {
-  test.beforeAll(async () => { await snapshotSlimstatOptions(); await installOptionMutator(); });
+  test.beforeAll(async () => { await installOptionMutator(); });
+  test.beforeEach(async () => { await snapshotSlimstatOptions(); });
   test.afterEach(async () => { await restoreSlimstatOptions(); });
   test.afterAll(async () => { await uninstallOptionMutator(); await closeDb(); });
   test('SQL debug is visible only when enabled and preserves report rows', async ({ page }) => {
