@@ -3368,7 +3368,7 @@ class wp_slimstat_admin
                     wp_die(esc_html__('Invalid filter data.', 'wp-slimstat'), '', ['response' => 400]);
                 }
                 foreach ($new_filter as $label => $details) {
-                    if (!is_string($label) || !is_array($details) || !isset($details[0], $details[1]) || !is_string($details[0]) || !is_scalar($details[1])) {
+                    if (!self::is_valid_saved_filter($label, $details)) {
                         wp_die(esc_html__('Invalid filter data.', 'wp-slimstat'), '', ['response' => 400]);
                     }
                 }
@@ -3413,26 +3413,32 @@ class wp_slimstat_admin
             default:
                 echo '<div id="slim_filters_overlay">';
                 foreach ($saved_filters as $a_filter_id => $a_filter_data) {
-                    if (!is_array($a_filter_data)) {
-                        continue;
-                    }
-
+                    $filter_valid   = is_array($a_filter_data) && !empty($a_filter_data);
                     $filter_html    = [];
                     $filter_strings = [];
-                    foreach ($a_filter_data as $a_filter_label => $a_filter_details) {
-                        if (!is_array($a_filter_details) || !isset($a_filter_details[0], $a_filter_details[1]) || !is_string($a_filter_details[0]) || !is_scalar($a_filter_details[1])) {
-                            continue;
+                    if ($filter_valid) {
+                        foreach ($a_filter_data as $a_filter_label => $a_filter_details) {
+                            // Applying only the valid clauses would silently broaden the report.
+                            if (!self::is_valid_saved_filter($a_filter_label, $a_filter_details)) {
+                                $filter_valid = false;
+                                break;
+                            }
+                            // UTM and channel-source values keep their literal text and are percent-encoded for the URL.
+                            $is_literal    = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label;
+                            $raw_value     = (string) $a_filter_details[1];
+                            $encoded_value = htmlentities($is_literal ? $raw_value : str_replace('\\', '', $raw_value), ENT_QUOTES, 'UTF-8');
+                            $filter_html[]    = self::saved_filter_display_html($a_filter_label, $a_filter_details[0], $encoded_value);
+                            $filter_strings[] = sprintf('%s %s %s', $a_filter_label, $a_filter_details[0], $is_literal ? rawurlencode($raw_value) : $encoded_value);
                         }
-                        $filter_value = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label
-                            ? $a_filter_details[1] : str_replace('\\', '', $a_filter_details[1]);
-                        $filter_value_no_slashes = htmlentities($filter_value, ENT_QUOTES, 'UTF-8');
-                        $filter_html[]           = strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0] ?? $a_filter_label) . ' ' . (wp_slimstat_db::$operator_names[$a_filter_details[0]] ?? str_replace('_', ' ', $a_filter_details[0])) . ' ' . $filter_value_no_slashes;
-                        $filter_url_value = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label
-                            ? rawurlencode((string) $a_filter_details[1]) : $filter_value_no_slashes;
-                        $filter_strings[]        = sprintf('%s %s %s', $a_filter_label, $a_filter_details[0], $filter_url_value);
                     }
 
-                    echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="' . esc_attr($a_filter_id) . '" title="' . esc_attr__('Delete this filter', 'wp-slimstat') . '" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . esc_url(wp_slimstat_reports::fs_url(implode('&&&', $filter_strings))) . '">' . wp_kses_post(implode(', ', $filter_html)) . '</a></p>';
+                    echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="' . esc_attr($a_filter_id) . '" title="' . esc_attr__('Delete this filter', 'wp-slimstat') . '" href="#"></a> ';
+                    if ($filter_valid) {
+                        echo '<a class="slimstat-filter-link" data-reset-filters="true" href="' . esc_url(wp_slimstat_reports::fs_url(implode('&&&', $filter_strings))) . '">' . wp_kses_post(implode(', ', $filter_html)) . '</a>';
+                    } else {
+                        echo '<span>' . esc_html__('Invalid filter data.', 'wp-slimstat') . '</span>';
+                    }
+                    echo '</p>';
                 }
 
                 echo '</div>';
@@ -3443,6 +3449,67 @@ class wp_slimstat_admin
     }
 
     // END: manage_filters
+
+    /**
+     * A saved filter entry is a known column, a known operator and a scalar value.
+     * Add-ons use their namespaced machine keys without registering a display label,
+     * so preserve that contract while refusing markup and other arbitrary labels.
+     *
+     * @param mixed $label
+     * @param mixed $details
+     * @return bool
+     */
+    private static function is_valid_saved_filter($label, $details)
+    {
+        if (!is_string($label)
+            || !is_array($details)
+            || !isset($details[0], $details[1])
+            || !is_string($details[0])
+            || !is_scalar($details[1])
+            || false !== strpos($label, 'no_filter')
+            || (!isset(wp_slimstat_db::$all_columns_names[$label]) && 1 !== preg_match('/\Aaddon_[a-z0-9_-]+\z/', $label))
+            || !isset(wp_slimstat_db::$operator_names[$details[0]])) {
+            return false;
+        }
+
+        $is_literal = 0 === strpos($label, 'utm_') || 'traffic_source' === $label;
+        $value = $is_literal ? (string) $details[1] : urldecode(str_replace('\\', '', (string) $details[1]));
+        // The filter grammar cannot preserve line breaks or non-literal separators.
+        if (false !== strpbrk($value, "\r\n") || (!$is_literal && false !== strpos($value, '&&&'))) {
+            return false;
+        }
+        if (!$is_literal) {
+            // The apply link decodes once; submitting it sanitizes and decodes again.
+            $value = urldecode(sanitize_text_field($value));
+        } else {
+            $value = wp_strip_all_tags($value);
+        }
+        if ('strtotime' === $label && false === strtotime($value)) {
+            return false;
+        }
+
+        // Empty value-bearing clauses become filter-removal URLs, not saved restrictions.
+        return '' !== trim($value)
+            || (in_array($details[0], wp_slimstat_db::$valueless_operators, true)
+                && !in_array($label, wp_slimstat_db::NON_COLUMN_FILTER_KEYS, true));
+    }
+
+    /**
+     * Build inert saved-filter text. The value arrives already htmlentities()-encoded,
+     * which is what keeps a stored literal "&amp;" visible instead of decoded to "&".
+     *
+     * @param string $label
+     * @param string $operator
+     * @param string $encoded_value
+     * @return string
+     */
+    private static function saved_filter_display_html($label, $operator, $encoded_value)
+    {
+        $column_name   = strtolower((string) (wp_slimstat_db::$all_columns_names[$label][0] ?? '') ?: $label);
+        $operator_name = wp_slimstat_db::$operator_names[$operator];
+
+        return esc_html($column_name) . ' ' . esc_html($operator_name) . ' ' . esc_html($encoded_value);
+    }
 
     /**
      * Check AJAX capability for view access.
