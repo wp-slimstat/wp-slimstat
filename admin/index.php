@@ -522,7 +522,7 @@ class wp_slimstat_admin
         add_filter('slimstat_report_header_buttons', fn ($_header_buttons, $_report_id) => self::add_lock_export_button($_header_buttons, $_report_id), 10, 2);
 
         // ✨ Copy AI Prompt, left of Export (which prepends at 10)
-        add_filter('slimstat_report_header_buttons', fn ($_header_buttons, $_report_id) => \SlimStat\Reports\AiPromptButton::html((string) $_report_id, \wp_slimstat_reports::$reports[$_report_id] ?? [], wp_slimstat_db::$filters_normalized, wp_slimstat::pro_is_installed()) . ' ' . $_header_buttons, 15, 2);
+        add_filter('slimstat_report_header_buttons', fn ($_header_buttons, $_report_id) => \SlimStat\Reports\AiPromptButton::html((string) $_report_id, \wp_slimstat_reports::$reports[$_report_id] ?? [], wp_slimstat_db::$filters_normalized['columns'] ?? [], wp_slimstat::pro_is_installed()) . ' ' . $_header_buttons, 15, 2);
 
         self::register_goals_funnels_header_hooks();
 

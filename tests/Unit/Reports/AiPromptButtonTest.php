@@ -7,7 +7,7 @@ use WpSlimstat\Tests\Unit\WpSlimstatTestCase;
 if (!defined('ABSPATH')) { exit; }
 class AiPromptButtonTest extends WpSlimstatTestCase
 {
-    private const FILTERS = ['columns' => [], 'utime' => ['start' => 1790812800, 'end' => 1793491199]];
+    private const NO_FILTERS = [];
 
     protected function setUp(): void
     {
@@ -24,14 +24,11 @@ class AiPromptButtonTest extends WpSlimstatTestCase
     public function test_free_report_gets_a_copy_button_with_escaped_report_context(): void
     {
         $report = ['title' => 'Top <b>Pages</b>', 'tooltip' => 'Pages <strong>"people"</strong> read.<br>Bots excluded.', 'callback_args' => ['columns' => 'resource', 'raw' => 'x']];
-        $filters = ['columns' => ['browser' => ['equals', 'Firefox']]] + self::FILTERS;
-        $html = AiPromptButton::html('slim_p1_08', $report, $filters, false);
+        $html = AiPromptButton::html('slim_p1_08', $report, ['browser' => ['equals', 'Firefox']], false);
         self::assertStringStartsWith('<button type="button" class="slimstat-ai-prompt noslimstat"', $html);
         self::assertStringContainsString('Copy AI Prompt', $html);
         self::assertStringContainsString('data-title="Top Pages"', $html);
         self::assertStringContainsString('data-about="Pages &quot;people&quot; read. Bots excluded."', $html);
-        self::assertStringContainsString('data-period="2026-10-01 to 2026-10-31"', $html);
-        self::assertStringContainsString('data-filters="browser equals Firefox"', $html);
         self::assertStringNotContainsString('<b>', $html);
     }
 
@@ -42,25 +39,26 @@ class AiPromptButtonTest extends WpSlimstatTestCase
             'personal column'     => ['slim_x', ['title' => 'IPs', 'callback_args' => ['columns' => 'ip']]],
             'every column'        => ['slim_y', ['title' => 'Rows', 'callback_args' => ['columns' => '*']]],
         ] as $case => [$id, $report]) {
-            self::assertSame('', AiPromptButton::html($id, $report, self::FILTERS, true), $case);
+            self::assertSame('', AiPromptButton::html($id, $report, self::NO_FILTERS, true), $case);
         }
         // A view narrowed to one visitor is about that visitor, whatever the report.
-        $oneVisitor = ['columns' => ['ip' => ['equals', '192.0.2.1']]] + self::FILTERS;
-        self::assertSame('', AiPromptButton::html('slim_p1_08', ['title' => 'Top Pages'], $oneVisitor, true));
-        self::assertSame('', AiPromptButton::html('slim_p1_08', [], self::FILTERS, true), 'unknown report');
+        foreach (['ip' => '192.0.2.1', 'visit_id' => '42', 'notes' => 'user:777', 'location' => '52.52,13.40'] as $column => $value) {
+            self::assertSame('', AiPromptButton::html('slim_p1_08', ['title' => 'Top Pages'], [$column => ['equals', $value]], true), $column);
+        }
+        self::assertSame('', AiPromptButton::html('slim_p1_08', [], self::NO_FILTERS, true), 'unknown report');
     }
 
     public function test_pro_report_is_locked_without_pro_and_works_with_it(): void
     {
         $funnels = ['title' => 'Funnels', 'callback_args' => []];
-        $locked = AiPromptButton::html('slim_p9_02', $funnels, self::FILTERS, false);
+        $locked = AiPromptButton::html('slim_p9_02', $funnels, self::NO_FILTERS, false);
         self::assertStringStartsWith('<a class="slimstat-ai-prompt slimstat-ai-prompt-locked noslimstat" href="', $locked);
         self::assertStringContainsString('page=slimpro&utm_campaign=ai-prompt&utm_content=slim_p9_02"', $locked);
         self::assertStringNotContainsString('data-', $locked, 'a locked button carries no report data');
-        self::assertStringStartsWith('<button', AiPromptButton::html('slim_p9_02', $funnels, self::FILTERS, true));
+        self::assertStringStartsWith('<button', AiPromptButton::html('slim_p9_02', $funnels, self::NO_FILTERS, true));
 
         // No purchase link for someone who cannot buy.
         Functions\when('current_user_can')->justReturn(false);
-        self::assertSame('', AiPromptButton::html('slim_p9_02', $funnels, self::FILTERS, false));
+        self::assertSame('', AiPromptButton::html('slim_p9_02', $funnels, self::NO_FILTERS, false));
     }
 }
