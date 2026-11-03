@@ -1,9 +1,19 @@
 # Country → City drilldown: browser evidence
 
-Captured on disposable WordPress 7.1.4 (PHP 8.3, MariaDB 10.11) with seeded fixture rows, not a live site. Pro screenshots used a booted copy of wp-slimstat-pro 3.0.1. "Geolocation is off" in the map capture is the existing notice for a missing DB-IP file on the fixture site; the fixture rows carry their countries and cities directly.
+Captured on disposable WordPress 7.1.4 (PHP 8.3, MariaDB 10.11) with 92 seeded fixture pageviews, not a live site. Pro captures used a booted copy of wp-slimstat-pro 3.0.1. "Geolocation is off" in the map capture is the existing notice for a missing DB-IP file on the fixture site; the fixture rows carry their countries and cities directly. The Dashboard widget's "62 (0.00%)" is the same on `development` and unrelated to this feature.
 
-- [free-top-city](free-top-city.png): Free, City precision on. The real top city, blurred placeholder rows and the upsell. No other city is in the response.
-- [pro-all-cities](pro-all-cities.png): Pro. Every city, shares of the country's 62 pageviews, and the no-city note.
-- [city-tracking-disabled](city-tracking-disabled.png): City precision set to Country. The same state for Free and Pro.
-- [free-390](free-390.png): Free at 390 px.
-- [map-list-keyboard-focus](map-list-keyboard-focus.png): Audience Location's country list. Each row is a keyboard button.
+Entry points
+- [01-map-and-country-list](01-map-and-country-list.png): Audience Location. Map regions and country rows open the drilldown; the hovered row is underlined.
+- [02-opened-from-map](02-opened-from-map.png): Germany, opened by clicking its map region (Free).
+- [03-top-countries-report](03-top-countries-report.png): the standalone Top Countries report. Every part of a row opens it.
+
+Free and Pro
+- [04-free-dialog](04-free-dialog.png): Free. The real top city, blurred placeholder rows, the upsell and the no-city note.
+- [05-pro-dialog](05-pro-dialog.png): Pro. Every city, with shares of the country's 62 pageviews.
+- [06-pro-show-more](06-pro-show-more.png): Pro with "Rows to show" set to 3, paging with Show more cities.
+
+Other states
+- [07-city-precision-off](07-city-precision-off.png): Geolocation precision set to Country. The same state for Free and Pro.
+- [08-no-city-data](08-no-city-data.png): a country whose pageviews carry no city.
+- [09-free-390px](09-free-390px.png): Free at 390 px.
+- [10-wp-dashboard-widget](10-wp-dashboard-widget.png): opened from the Top Countries widget on the WordPress Dashboard.
