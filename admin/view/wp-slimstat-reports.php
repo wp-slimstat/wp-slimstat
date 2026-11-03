@@ -1341,43 +1341,9 @@ class wp_slimstat_reports
         }
 
         wp_slimstat_db::$debug_message = '';
-        $all_results = self::raw_data($_args);
+        $all_results = \SlimStat\Reports\ReportData::rawData($_args);
 
         return self::render_raw_data($_args, $all_results);
-    }
-
-    /** Share registered report preparation between HTML and authorized native analysis. */
-    public static function raw_data(array &$_args): array
-    {
-        $where_params                  = $_args['where_params'] ?? null;
-        if (!empty($_args['raw']) && is_array($_args['raw']) && isset($_args['raw'][0]) && method_exists($_args['raw'][0], 'get_combined_where')) {
-            // Honour what the report declared. This was a hardcoded `true`, so a report
-            // asking for no date filter got one welded into its WHERE string here —
-            // before get_top(), which does honour the flag, ever saw it. The two
-            // "Currently Online" widgets declare it for a reason: "who is here right
-            // now" is not a question about the range being browsed, and with the filter
-            // applied the users one reported nobody online while somebody was. (D62)
-            $use_date_filters = $_args['use_date_filters'] ?? true;
-
-            $_args['where'] = call_user_func(
-                [$_args['raw'][0], 'get_combined_where'],
-                $_args['where'] ?? '',
-                '',
-                $use_date_filters,
-                '',
-                $where_params
-            );
-        }
-
-        $rows = call_user_func($_args['raw'], $_args);
-        return is_array($rows) ? $rows : [];
-    }
-
-    /** Shared summary display units for HTML reports and authorized AI exports. */
-    public static function summary_value(array $row): string
-    {
-        $percent_metrics = [__('Bounce rate', 'wp-slimstat'), __('New Visitors Rate', 'wp-slimstat')];
-        return (string) $row['value'] . (in_array($row['metric'], $percent_metrics, true) ? '%' : '');
     }
 
     /** Render the same rows without issuing a second report query. */
@@ -1399,7 +1365,7 @@ class wp_slimstat_reports
             foreach ($all_results as $a_result) {
                 echo '<p>';
 
-                echo sprintf('%s <span>%s</span>', wp_kses_post($a_result['metric']), wp_kses_post(self::summary_value($a_result)));
+                echo sprintf('%s <span>%s</span>', wp_kses_post($a_result['metric']), wp_kses_post(\SlimStat\Reports\ReportData::summaryValue($a_result)));
 
                 if (!empty($a_result['tooltip'])) {
                     self::inline_help($a_result['tooltip']);

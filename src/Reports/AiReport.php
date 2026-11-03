@@ -268,7 +268,7 @@ final class AiReport {
 					if ( ! \wp_slimstat_db::$pageviews ) {
 						return self::emptyReport(); }
 				}
-				$rows = \wp_slimstat_reports::raw_data( $args );
+				$rows = ReportData::rawData( $args );
 				if ( 'slim_p10_01' === $context['id'] && count( $rows ) < 2 ) {
 					return self::emptyReport(); }
 			}
@@ -276,7 +276,7 @@ final class AiReport {
 			if ( $summary && ! isset( $args['chart_data'] ) && 'slimheatmap' !== $context['id'] ) {
 				foreach ( $rows as &$row ) {
 					if ( isset( $row['metric'], $row['value'] ) ) {
-						$row['value'] = \wp_slimstat_reports::summary_value( $row );
+						$row['value'] = ReportData::summaryValue( $row );
 					}
 				}
 				unset( $row );

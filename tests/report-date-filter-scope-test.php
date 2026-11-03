@@ -55,23 +55,24 @@ if ($reports === false || $db === false) {
 // rather than failing. Neither is redundant: the first catches "reads the flag but
 // passes a literal anyway", the second catches "never reads the flag at all".
 $renderer = slimstat_function_body($reports, 'raw_results_to_html');
-if (strpos($renderer, 'self::raw_data($_args)') === false) {
+if (strpos($renderer, '\\SlimStat\\Reports\\ReportData::rawData($_args)') === false) {
     $failures[] = 'HTML rendering bypasses the shared raw report preparation';
 }
 $native = file_get_contents($plugin_root . '/src/Reports/AiReport.php');
-if (strpos((string) $native, '\\wp_slimstat_reports::raw_data( $args )') === false) {
+if (strpos((string) $native, 'ReportData::rawData( $args )') === false) {
     $failures[] = 'Native analysis bypasses the shared raw report preparation';
 }
-$raw = slimstat_function_body($reports, 'raw_data');
+$data = file_get_contents($plugin_root . '/src/Reports/ReportData.php');
+$raw = slimstat_function_body((string) $data, 'rawData');
 if ($raw === '') {
-    $failures[] = 'raw_data() not found in wp-slimstat-reports.php';
+    $failures[] = 'rawData() not found in ReportData.php';
 } else {
     if (strpos($raw, 'use_date_filters') === false) {
-        $failures[] = 'raw_data() never reads $_args[\'use_date_filters\'] — the '
+        $failures[] = 'rawData() never reads $_args[\'use_date_filters\'] — the '
             . 'reports that declare it are ignored';
     }
     if (preg_match('/get_combined_where[^;]*?,\s*(?:true|false|1|0)\s*,/s', $raw)) {
-        $failures[] = 'raw_data() passes a boolean literal into '
+        $failures[] = 'rawData() passes a boolean literal into '
             . 'get_combined_where() — a report declaring \'use_date_filters\' => false still '
             . 'gets a date range welded into its WHERE before get_top(), which does honour '
             . 'the flag, ever sees it. Read the report\'s own value.';
