@@ -2537,7 +2537,7 @@ class wp_slimstat_admin
     }
 
     /** One release window per user, shared by every placement and patch version. */
-    public static function release_notice_visible(bool $start_window = true): bool
+    public static function release_notice_visible(): bool
     {
         $user = get_current_user_id();
         if (!$user || 'on' !== (wp_slimstat::$settings['notice_latest_news'] ?? 'no')
@@ -2545,7 +2545,7 @@ class wp_slimstat_admin
             return false;
         }
         $since = (int) get_user_meta($user, 'slimstat_release_60_since', true);
-        if (!$since && $start_window) {
+        if (!$since) {
             add_user_meta($user, 'slimstat_release_60_since', time(), true);
             $since = (int) get_user_meta($user, 'slimstat_release_60_since', true);
         }

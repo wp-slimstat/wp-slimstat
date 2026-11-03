@@ -138,6 +138,7 @@ deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php', true);
     await expect(body.locator('.slimstat-pro-adds, .slimstat-preview')).toHaveCount(0);
     await expect(body).not.toContainText('Live charts are available with SlimStat Pro.');
     const refreshed = page.waitForResponse(response => {
+      if (!response.url().includes('admin-ajax.php')) return false;
       const params = new URLSearchParams(response.request().postData() || '');
       return params.get('action') === 'slimstat_load_report' && params.get('report_id') === 'slim_p7_02';
     });
