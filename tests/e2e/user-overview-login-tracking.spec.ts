@@ -93,6 +93,7 @@ async function loginAsGerlando(
 }
 
 async function getUserOverviewData(page: import('@playwright/test').Page) {
+  await page.locator('#slim_p8_01').scrollIntoViewIfNeeded();
   await expect(page.locator('#slim_p8_01 table')).toBeVisible();
   return page.evaluate(() => {
     const panel = document.getElementById('slim_p8_01');
@@ -264,6 +265,7 @@ test.describe('User Overview (slim_p8_01)', () => {
         waitUntil: 'domcontentloaded',
       });
 
+      await page.locator('#slim_p8_01').scrollIntoViewIfNeeded();
       await expect(page.locator('#slim_p8_01 table')).toBeVisible();
       const columns = await page.evaluate(() => {
         const panel = document.getElementById('slim_p8_01');
