@@ -56,6 +56,13 @@ class Chart
         $this->renderChart();
     }
 
+    /** Read the same chart dataset without enqueuing assets or rendering HTML. */
+    public function reportData(array $args): array
+    {
+        $this->init($args);
+        return ['data' => $this->data, 'labels' => $this->chartLabels];
+    }
+
     public static function ajaxFetchChartData()
     {
         check_ajax_referer('slimstat_chart_nonce', 'nonce');
@@ -207,6 +214,9 @@ class Chart
 
     private function detectGranularity(array $args): string
     {
+        if (isset($args['granularity']) && in_array($args['granularity'], self::GRANULARITIES, true)) {
+            return $args['granularity'];
+        }
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
         if (!empty($_REQUEST['granularity']) && in_array($_REQUEST['granularity'], self::GRANULARITIES, true)) {
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.

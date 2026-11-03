@@ -1868,6 +1868,11 @@ class wp_slimstat_admin
         // this, the strings are extracted into the .pot but never translated.
         wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog', 'slimstat-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
         self::set_slimstat_script_translations('slimstat_admin');
+        if ('slimconfig' !== self::$current_screen) {
+            wp_enqueue_script('slimstat-ai-analysis', plugins_url('/admin/assets/js/ai-analysis.js', __DIR__), ['slimstat_admin', 'slimstat-report-dialogs', 'wp-api-fetch'], SLIMSTAT_ANALYTICS_VERSION, true);
+            self::set_slimstat_script_translations('slimstat-ai-analysis');
+            wp_enqueue_style('slimstat-ai-analysis', plugins_url('/admin/assets/css/ai-analysis.css', __DIR__), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
+        }
         if ('slimview5' === self::$current_screen) {
             wp_enqueue_script('slimstat-utm-builder', plugins_url('/admin/assets/js/utm-builder.js', __DIR__), ['slimstat-i18n', 'slimstat-report-dialogs'], SLIMSTAT_ANALYTICS_VERSION, true);
             self::set_slimstat_script_translations('slimstat-utm-builder');
@@ -1890,6 +1895,12 @@ class wp_slimstat_admin
             'site_name'         => get_bloginfo('name'),
             'site_description'  => get_bloginfo('description'),
             'site_url'          => home_url('/'),
+            'ai_instructions'   => \SlimStat\Reports\AiPrompt::instructions(),
+            'ai'                => apply_filters('slimstat_native_ai_config', [
+                'native' => false,
+                'can_manage' => current_user_can('manage_options'),
+                'upgrade' => \SlimStat\Utils\ProLinks::url('ai-analysis', 'reports', true),
+            ]),
             // Shared with the filter form-builder so value-less operators (is_empty/
             // is_not_empty) are never treated as a "remove filter" signal. See #305.
             // Guarded: this method also runs on the Dashboard-widget path, where

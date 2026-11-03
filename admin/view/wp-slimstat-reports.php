@@ -20,7 +20,7 @@ class wp_slimstat_reports
     /**
      * Initalize class properties
      */
-    public static function init(bool $_use_request = true)
+    public static function init(bool $_use_request = true, bool $_load_data = true)
     {
         // Has the class already been initialized?
         if (!empty(self::$reports)) {
@@ -29,7 +29,7 @@ class wp_slimstat_reports
 
         // Include and initialize the API to interact with the database
         include_once(__DIR__ . '/wp-slimstat-db.php');
-        wp_slimstat_db::init('', $_use_request);
+        wp_slimstat_db::init('', $_use_request, $_load_data);
 
         // Include the localization library
         include_once(plugin_dir_path(dirname(__FILE__, 2)) . 'languages/index.php');
@@ -1341,6 +1341,14 @@ class wp_slimstat_reports
         }
 
         wp_slimstat_db::$debug_message = '';
+        $all_results = self::raw_data($_args);
+
+        return self::render_raw_data($_args, $all_results);
+    }
+
+    /** Share registered report preparation between HTML and authorized native analysis. */
+    public static function raw_data(array &$_args): array
+    {
         $where_params                  = $_args['where_params'] ?? null;
         if (!empty($_args['raw']) && is_array($_args['raw']) && isset($_args['raw'][0]) && method_exists($_args['raw'][0], 'get_combined_where')) {
             // Honour what the report declared. This was a hardcoded `true`, so a report
@@ -1361,10 +1369,22 @@ class wp_slimstat_reports
             );
         }
 
-        $all_results = call_user_func($_args['raw'], $_args);
+        $rows = call_user_func($_args['raw'], $_args);
+        return is_array($rows) ? $rows : [];
+    }
 
+    /** Shared summary display units for HTML reports and authorized AI exports. */
+    public static function summary_value(array $row): string
+    {
+        $percent_metrics = [__('Bounce rate', 'wp-slimstat'), __('New Visitors Rate', 'wp-slimstat')];
+        return (string) $row['value'] . (in_array($row['metric'], $percent_metrics, true) ? '%' : '');
+    }
+
+    /** Render the same rows without issuing a second report query. */
+    private static function render_raw_data(array $_args, array $all_results)
+    {
         // Fix for Recent Outbound Links: wrap strings as arrays with the correct key
-        if (!empty($_args['columns']) && 'outbound_resource' === $_args['columns'] && !empty($all_results) && is_array($all_results)) {
+        if (!empty($_args['columns']) && 'outbound_resource' === $_args['columns'] && !empty($all_results)) {
             foreach ($all_results as $k => $v) {
                 if (!is_array($v)) {
                     $all_results[$k] = ['outbound_resource' => $v];
@@ -1372,21 +1392,14 @@ class wp_slimstat_reports
             }
         }
 
-        // Backward compatibility
-        if (!is_array($all_results)) {
-            $all_results = [];
-        }
-
         echo wp_kses_post(wp_slimstat_db::$debug_message);
 
         // Some reports don't need any kind of pre/post-processing, we just display the data contained in the array
         if (empty($_args['columns'])) {
-            // Rates carry their % here, not in the row: the row value is a report answer (audit C2).
-            $percent_metrics = [__('Bounce rate', 'wp-slimstat'), __('New Visitors Rate', 'wp-slimstat')];
             foreach ($all_results as $a_result) {
                 echo '<p>';
 
-                echo sprintf('%s <span>%s</span>', wp_kses_post($a_result['metric']), wp_kses_post($a_result['value']) . (in_array($a_result['metric'], $percent_metrics, true) ? '%' : ''));
+                echo sprintf('%s <span>%s</span>', wp_kses_post($a_result['metric']), wp_kses_post(self::summary_value($a_result)));
 
                 if (!empty($a_result['tooltip'])) {
                     self::inline_help($a_result['tooltip']);

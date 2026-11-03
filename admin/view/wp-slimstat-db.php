@@ -53,7 +53,7 @@ class wp_slimstat_db
     /*
      * Sets the filters and other structures needed to store the data retrieved from the DB
      */
-    public static function init($_filters = '', bool $_use_request = true)
+    public static function init($_filters = '', bool $_use_request = true, bool $_load_data = true)
     {
         // List of supported filters and their user-friendly names
         self::$columns_names = [
@@ -291,7 +291,7 @@ class wp_slimstat_db
 
         // Retrieve data that will be used by multiple reports
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Read-only page/date/presentation selection; no privileged mutation is performed by this input. Read-only filter parser validates dimensions/operators and binds values; UTM values preserve percent encoding, input dates are cast to integers.
-        if (empty($_REQUEST['page']) || (is_string($_REQUEST['page']) && false !== strpos($_REQUEST['page'], 'slimview'))) {
+        if ($_load_data && (empty($_REQUEST['page']) || (is_string($_REQUEST['page']) && false !== strpos($_REQUEST['page'], 'slimview')))) {
             self::$pageviews = wp_slimstat_db::count_records();
         }
     }
