@@ -12,7 +12,9 @@ use SlimStat\Services\Admin\VideoTutorials;
 
 // Every state is rendered here, translated, and hidden until admin/assets/js/videos.js shows it.
 // The script fills #ss-videos-rows with DOM nodes built from the validated catalog, never HTML.
-$hub = VideoTutorials::WATCH_BASE;
+$browse = static function (): void {
+    ?><a target="_blank" rel="noopener noreferrer" href="<?php echo esc_url(VideoTutorials::WATCH_BASE); ?>"><?php esc_html_e('Browse the videos on wp-slimstat.com', 'wp-slimstat'); ?><span class="screen-reader-text"> <?php esc_html_e('(opens in a new tab)', 'wp-slimstat'); ?></span></a><?php
+};
 ?>
 <div class="backdrop-container"><div class="wrap-slimstat slimstat-videos">
     <?php wp_slimstat_admin::get_template('header', [
@@ -20,9 +22,9 @@ $hub = VideoTutorials::WATCH_BASE;
         'title'  => __('Video tutorials', 'wp-slimstat'),
         'lead'   => __('Short videos that show how to get more from SlimStat. Each one plays on wp-slimstat.com, in a new tab.', 'wp-slimstat'),
     ]); ?>
-    <div id="slimstat-videos" class="ss-videos" data-state="consent">
+    <div id="slimstat-videos" class="ss-videos">
         <noscript>
-            <p class="ss-videos-panel"><?php esc_html_e('The video list needs JavaScript.', 'wp-slimstat'); ?> <a target="_blank" rel="noopener noreferrer" href="<?php echo esc_url($hub); ?>"><?php esc_html_e('Browse the videos on wp-slimstat.com', 'wp-slimstat'); ?></a></p>
+            <p class="ss-videos-panel"><?php esc_html_e('The video list needs JavaScript.', 'wp-slimstat'); ?> <?php $browse(); ?></p>
         </noscript>
 
         <section class="ss-videos-panel" data-show="consent" aria-labelledby="ss-videos-consent-title" hidden>
@@ -30,7 +32,7 @@ $hub = VideoTutorials::WATCH_BASE;
             <p><?php esc_html_e('The tutorials are published on wp-slimstat.com. To list them here, your browser downloads the list and its thumbnails from wp-slimstat.com. SlimStat sends no analytics, site details, cookies or account information with these requests.', 'wp-slimstat'); ?></p>
             <p class="ss-videos-actions">
                 <button type="button" class="button button-primary" id="ss-videos-show"><?php esc_html_e('Show videos', 'wp-slimstat'); ?></button>
-                <a target="_blank" rel="noopener noreferrer" href="<?php echo esc_url($hub); ?>"><?php esc_html_e('Browse the videos on wp-slimstat.com', 'wp-slimstat'); ?><span class="screen-reader-text"> <?php esc_html_e('(opens in a new tab)', 'wp-slimstat'); ?></span></a>
+                <?php $browse(); ?>
             </p>
         </section>
 
@@ -42,7 +44,7 @@ $hub = VideoTutorials::WATCH_BASE;
             <p><strong id="ss-videos-error-title"><?php esc_html_e('The video list could not be loaded.', 'wp-slimstat'); ?></strong> <?php esc_html_e('Check your connection. A firewall or security policy may also be blocking requests to wp-slimstat.com.', 'wp-slimstat'); ?></p>
             <p class="ss-videos-actions">
                 <button type="button" class="button" id="ss-videos-retry"><?php esc_html_e('Try again', 'wp-slimstat'); ?></button>
-                <a target="_blank" rel="noopener noreferrer" href="<?php echo esc_url($hub); ?>"><?php esc_html_e('Browse the videos on wp-slimstat.com', 'wp-slimstat'); ?><span class="screen-reader-text"> <?php esc_html_e('(opens in a new tab)', 'wp-slimstat'); ?></span></a>
+                <?php $browse(); ?>
             </p>
         </div>
 

@@ -26,8 +26,8 @@ final class VideoTutorials
     public const WATCH_BASE = self::ORIGIN . '/videos/';
 
     /**
-     * The catalog client and the new-video menu marker: about 3 KB, footer, no dependencies.
-     * It does nothing until this user has opted in to automatic checks.
+     * The catalog client and the new-video menu marker: about 5 KB gzipped, footer, no
+     * dependencies, cached by the browser. It does nothing until this user has opted in.
      */
     public static function enqueue_client(): void
     {
@@ -56,18 +56,12 @@ final class VideoTutorials
         wp_enqueue_style('wp-slimstat-videos', plugins_url('/admin/assets/css/videos.css', SLIMSTAT_FILE), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
         wp_enqueue_script('slimstat-videos', plugins_url('/admin/assets/js/videos.js', SLIMSTAT_FILE), ['slimstat-video-catalog'], SLIMSTAT_ANALYTICS_VERSION, true);
 
-        $categories = [];
-        foreach (self::categories() as $id => $label) {
-            $categories[] = ['id' => $id, 'label' => $label];
-        }
         wp_localize_script('slimstat-videos', 'SlimStatVideosPage', [
-            'categories' => $categories,
+            'categories' => self::categories(),
             'more'       => __('More videos', 'wp-slimstat'),
-            'newPill'    => __('New', 'wp-slimstat'),
             'newTab'     => __('(opens in a new tab)', 'wp-slimstat'),
             'loading'    => __('Loading videos…', 'wp-slimstat'),
             'loaded'     => __('Videos loaded.', 'wp-slimstat'),
-            'failed'     => __('The video list could not be loaded.', 'wp-slimstat'),
             'offline'    => __('You appear to be offline.', 'wp-slimstat'),
         ]);
     }
@@ -77,19 +71,19 @@ final class VideoTutorials
      * ones without a release; these labels win over the catalog's titles because they are the
      * ones that get translated.
      *
-     * @return array<string, string>
+     * @return list<array{id: string, label: string}>
      */
     public static function categories(): array
     {
         return [
-            'getting-started'   => __('Getting started', 'wp-slimstat'),
-            'dashboard-reports' => __('Dashboard and reports', 'wp-slimstat'),
-            'real-time'         => __('Real-time', 'wp-slimstat'),
-            'woocommerce'       => __('WooCommerce', 'wp-slimstat'),
-            'heatmaps'          => __('Heatmaps', 'wp-slimstat'),
-            'goals-funnels'     => __('Goals and funnels', 'wp-slimstat'),
-            'advanced'          => __('Advanced features', 'wp-slimstat'),
-            'pro'               => __('SlimStat Pro', 'wp-slimstat'),
+            ['id' => 'getting-started', 'label' => __('Getting started', 'wp-slimstat')],
+            ['id' => 'dashboard-reports', 'label' => __('Dashboard and reports', 'wp-slimstat')],
+            ['id' => 'real-time', 'label' => __('Real-time', 'wp-slimstat')],
+            ['id' => 'woocommerce', 'label' => __('WooCommerce', 'wp-slimstat')],
+            ['id' => 'heatmaps', 'label' => __('Heatmaps', 'wp-slimstat')],
+            ['id' => 'goals-funnels', 'label' => __('Goals and funnels', 'wp-slimstat')],
+            ['id' => 'advanced', 'label' => __('Advanced features', 'wp-slimstat')],
+            ['id' => 'pro', 'label' => __('SlimStat Pro', 'wp-slimstat')],
         ];
     }
 }

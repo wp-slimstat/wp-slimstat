@@ -59,12 +59,12 @@
         if (typeof value !== 'string') return '';
         // eslint-disable-next-line no-control-regex
         const clean = value.replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim();
-        return clean.length > max ? clean.slice(0, max - 1).trim() + '…' : clean;
+        return clean.length > max ? clean.slice(0, max - 1).trim() + '\u2026' : clean;
     }
 
     /** An ISO 8601 date or date-time, as its UTC day ('YYYY-MM-DD'), or '' if it is not a real date. */
     function day(value) {
-        const m = is(DATE, value) && DATE.exec(value);
+        const m = typeof value === 'string' && DATE.exec(value);
         if (!m) return '';
         const calendar = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
         if (calendar.getUTCMonth() !== +m[2] - 1 || calendar.getUTCDate() !== +m[3]) return '';
@@ -211,7 +211,6 @@
         if ('load' in choice) state.load = !!choice.load;
         if ('auto' in choice) state.auto = !!choice.auto;
         write(STATE_KEY, state);
-        return state;
     }
 
     function forget() {
@@ -223,7 +222,8 @@
     function newVideos(catalog, state) {
         const s = state || getState();
         if (!catalog || !s.since) return [];
-        return catalog.videos.filter((v) => !s.seen.includes(v.id) && v.published >= s.since).map((v) => v.id);
+        const seen = new Set(s.seen);
+        return catalog.videos.filter((v) => !seen.has(v.id) && v.published >= s.since).map((v) => v.id);
     }
 
     /** Everything in this catalog has now been shown; the first call also sets the baseline. */
@@ -236,10 +236,11 @@
     }
 
     // ── The menu marker. ──────────────────────────────────────────────────────────────────
+    /** A text-only element: the one way this feature puts catalog text on the page. */
     function el(tag, className, content) {
         const node = document.createElement(tag);
-        node.className = className;
-        node.textContent = content;
+        if (className) node.className = className;
+        if (content) node.textContent = content;
         return node;
     }
 
@@ -249,28 +250,26 @@
         if (!menu) return;
         Array.prototype.forEach.call(menu.querySelectorAll('.slimstat-menu-video'), (node) => node.parentNode.removeChild(node));
         if (!count) return;
-        // The first title is the menu link; WordPress repeats it as the aria-hidden heading of the
-        // folded menu's flyout. Both get the icon, only the link gets the text.
-        Array.prototype.forEach.call(menu.querySelectorAll('.slimstat-menu-title'), (title, i) => {
+        // WordPress prints the title twice: in the menu link, and as the aria-hidden heading of the
+        // folded menu's flyout. Both get the icon; only the link gets the text.
+        const link = menu.querySelector('.wp-menu-name > .slimstat-menu-title');
+        Array.prototype.forEach.call(menu.querySelectorAll('.slimstat-menu-title'), (title) => {
             // U+FE0E keeps the triangle a text glyph rather than an emoji.
-            const badge = el('span', 'slimstat-menu-video slimstat-menu-video-badge', '▶︎');
+            const badge = el('span', 'slimstat-menu-video slimstat-menu-video-badge', '\u25B6\uFE0E');
             badge.setAttribute('aria-hidden', 'true');
             badge.setAttribute('title', config.newVideos);
             title.parentNode.insertBefore(badge, title);
-            if (!i) title.parentNode.insertBefore(el('span', 'slimstat-menu-video screen-reader-text', ' ' + config.newVideos), title.nextSibling);
         });
+        if (link) link.parentNode.insertBefore(el('span', 'slimstat-menu-video screen-reader-text', ' ' + config.newVideos), link.nextSibling);
         const item = menu.querySelector('a[href$="page=' + config.screen + '"] .slimstat-menu-label');
         if (item) item.appendChild(el('span', 'slimstat-menu-video slimstat-menu-new-badge', config.newPill));
     }
 
-    function mark(catalog) {
-        const state = getState();
+    function mark(catalog, state) {
         if (!catalog || !state.auto) return updateMenu(0);
         if (!state.since) return markSeen(catalog);
         updateMenu(newVideos(catalog, state).length);
     }
-
-    window.SlimStatVideos = { validate, parse, load, getState, setConsent, forget, newVideos, markSeen, updateMenu, groups, watchUrl };
 
     // ── Rendering helpers shared with the Videos page. ────────────────────────────────────
     function watchUrl(slug) {
@@ -300,17 +299,29 @@
             .map((row) => Object.assign(row, { videos: row.videos.sort(byVideo) }));
     }
 
+    window.SlimStatVideos = { validate, parse, load, getState, setConsent, forget, newVideos, markSeen, updateMenu, groups, watchUrl, el };
+
     // ── Background check on ordinary admin pages. ─────────────────────────────────────────
-    // The Videos page runs its own load; a page without the menu has nothing to mark.
+    // The Videos page runs its own load; a page without the menu has nothing to mark; a user who
+    // has not opted in costs one small localStorage read. Everything else waits for idle time.
     if (document.getElementById('slimstat-videos') || !document.getElementById('adminmenu') || !getState().auto) return;
-    const first = saved();
-    if (first.catalog) mark(first.catalog);
-    if (!recent(first.fetchedAt, Date.now()) && !recent(first.checkedAt, Date.now())) {
-        const later = window.requestIdleCallback || ((fn) => setTimeout(fn, 0));
-        later(() => load({ auto: true }).then((result) => mark(result.catalog)), { timeout: 5000 });
-    }
+    let catalog = null;
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 0));
+    idle(() => {
+        const first = saved();
+        catalog = first.catalog;
+        mark(catalog, getState());
+        // Every write stamps checkedAt, so a check in the last day means nothing is due.
+        if (!recent(first.checkedAt, Date.now())) {
+            load({ auto: true }).then((result) => {
+                catalog = result.catalog;
+                mark(catalog, getState());
+            });
+        }
+    }, { timeout: 2000 });
     // The Videos page in another tab marks videos seen; follow it here.
     window.addEventListener('storage', (event) => {
-        if (event.key === STATE_KEY || event.key === CATALOG_KEY) mark(saved().catalog);
+        if (event.key === CATALOG_KEY) catalog = saved().catalog;
+        if (event.key === STATE_KEY || event.key === CATALOG_KEY) mark(catalog, getState());
     });
 })();

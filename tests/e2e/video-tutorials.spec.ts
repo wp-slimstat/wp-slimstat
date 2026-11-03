@@ -235,8 +235,8 @@ test.describe('Video tutorials', () => {
     expect(catalogRequests(r), 'and the day-long cache means no new request').toHaveLength(2);
 
     await page.goto(VIDEOS_PAGE);
-    await expect(page.locator('.ss-videos-card').filter({ hasText: 'A brand new tutorial' }).locator('.ss-videos-new')).toHaveText('New');
-    await expect(page.locator('.ss-videos-card').filter({ hasText: 'Second new tutorial' }).locator('.ss-videos-new')).toHaveText('New');
+    await expect(page.locator('.ss-videos-card').filter({ hasText: 'A brand new tutorial' }).locator('.slimstat-menu-new-badge')).toHaveText('New');
+    await expect(page.locator('.ss-videos-card').filter({ hasText: 'Second new tutorial' }).locator('.slimstat-menu-new-badge')).toHaveText('New');
     await expect(anyMarker(page), 'cleared once the page has shown them').toHaveCount(0);
     await page.goto('/wp-admin/index.php');
     await expect(menuTitle(page)).toBeVisible();

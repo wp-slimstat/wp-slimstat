@@ -16,13 +16,14 @@
 .wrap-slimstat .ss-videos-row { margin-block-end: var(--ss-space-8); }
 .wrap-slimstat .ss-videos-row__title { margin: 0 0 var(--ss-space-3); font-size: 18px; font-weight: 600; line-height: 1.3; }
 .wrap-slimstat .ss-videos-row__title:focus { outline: none; }
-.wrap-slimstat .ss-videos-list { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 260px); gap: var(--ss-space-4); margin: 0; padding: 4px 4px var(--ss-space-3); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding-inline: 4px; list-style: none; }
+.wrap-slimstat .ss-videos-list, .wrap-slimstat .ss-videos-skeleton { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 260px); gap: var(--ss-space-4); }
+.wrap-slimstat .ss-videos-list { margin: 0; padding: 4px 4px var(--ss-space-3); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding-inline: 4px; list-style: none; }
 .wrap-slimstat .ss-videos-item { margin: 0; scroll-snap-align: start; }
 
 .wrap-slimstat .ss-videos-card { display: flex; flex-direction: column; height: 100%; overflow: hidden; color: inherit; text-decoration: none; background: var(--ss-surface); border: 1px solid var(--ss-border); border-radius: var(--ss-radius-sm); box-shadow: var(--ss-shadow-card); transition: box-shadow var(--ss-duration-fast) ease, transform var(--ss-duration-fast) ease; }
 .wrap-slimstat .ss-videos-card:hover { box-shadow: var(--ss-shadow-raised); transform: translateY(-2px); }
 .wrap-slimstat .ss-videos-card:hover .ss-videos-title { color: var(--ss-brand-900); }
-.wrap-slimstat .ss-videos-card:focus-visible { outline: 2px solid var(--ss-focus); outline-offset: 2px; box-shadow: var(--ss-shadow-raised); }
+.wrap-slimstat .ss-videos-card:focus-visible { box-shadow: var(--ss-shadow-raised); }
 
 .wrap-slimstat .ss-videos-thumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; background: var(--ss-surface-tint); }
 .wrap-slimstat .ss-videos-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -34,13 +35,14 @@
 .wrap-slimstat .ss-videos-duration { position: absolute; right: 6px; bottom: 6px; padding: 1px 5px; border-radius: var(--ss-radius-2xs); background: rgba(15, 23, 42, 0.8); color: #fff; font-size: 11px; font-variant-numeric: tabular-nums; line-height: 16px; }
 
 .wrap-slimstat .ss-videos-body { display: flex; flex-direction: column; gap: var(--ss-space-1); padding: var(--ss-space-3); }
-.wrap-slimstat .ss-videos-title { display: -webkit-box; overflow: hidden; font-size: 14px; font-weight: 600; line-height: 1.4; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.wrap-slimstat .ss-videos-description { display: -webkit-box; overflow: hidden; color: var(--ss-text-muted); font-size: 12px; line-height: 1.5; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-/* Same pill as the sidebar's "New". */
-.wrap-slimstat .ss-videos-new { align-self: flex-start; padding: 0 6px; border-radius: 9px; background: var(--wp-admin-theme-color, #2271b1); color: #fff; font-size: 9px; font-weight: 600; line-height: 16px; letter-spacing: .03em; text-transform: uppercase; }
+.wrap-slimstat .ss-videos-title, .wrap-slimstat .ss-videos-description { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.wrap-slimstat .ss-videos-title { font-size: 14px; font-weight: 600; line-height: 1.4; }
+.wrap-slimstat .ss-videos-description { color: var(--ss-text-muted); font-size: 12px; line-height: 1.5; }
+/* The sidebar's "New" pill (styled with the admin menu, on every admin page), kept to its own width. */
+.wrap-slimstat .ss-videos-body .slimstat-menu-new-badge { align-self: flex-start; }
 
 /* Loading: placeholder cards in the shape of a row. */
-.wrap-slimstat .ss-videos-skeleton { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 260px); gap: var(--ss-space-4); margin-block: 40px var(--ss-space-8); overflow: hidden; }
+.wrap-slimstat .ss-videos-skeleton { margin-block: 40px var(--ss-space-8); overflow: hidden; }
 .wrap-slimstat .ss-videos-skeleton span { display: block; aspect-ratio: 4 / 3; border-radius: var(--ss-radius-sm); background: linear-gradient(90deg, var(--ss-surface-tint) 25%, var(--ss-hover) 50%, var(--ss-surface-tint) 75%) 0 0 / 200% 100%; animation: ss-videos-shimmer 1.4s linear infinite; }
 @keyframes ss-videos-shimmer { to { background-position: -200% 0; } }
 

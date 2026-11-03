@@ -12,26 +12,21 @@
     const copy = window.SlimStatVideosPage;
     const root = document.getElementById('slimstat-videos');
     if (!api || !copy || !root) return;
+    const el = api.el;
+    const newPill = window.SlimStatVideoConfig.newPill;
 
     const rows = document.getElementById('ss-videos-rows');
     const status = document.getElementById('ss-videos-status');
     const stale = document.getElementById('ss-videos-stale');
     const errorTitle = document.getElementById('ss-videos-error-title');
+    const failed = errorTitle.textContent;
     const auto = document.getElementById('ss-videos-auto');
     let attempt = 0;
 
     function show(state) {
-        root.dataset.state = state;
         root.querySelectorAll('[data-show]').forEach((node) => {
             node.hidden = !node.dataset.show.split(' ').includes(state);
         });
-    }
-
-    function el(tag, className, content) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (content) node.textContent = content;
-        return node;
     }
 
     function card(video, isNew) {
@@ -65,7 +60,7 @@
 
         const body = el('span', 'ss-videos-body');
         const title = el('span', 'ss-videos-title', video.title);
-        if (isNew) body.appendChild(el('span', 'ss-videos-new', copy.newPill));
+        if (isNew) body.appendChild(el('span', 'slimstat-menu-new-badge', newPill));
         body.appendChild(title);
         if (video.description) body.appendChild(el('span', 'ss-videos-description', video.description));
         body.appendChild(el('span', 'screen-reader-text', ' ' + copy.newTab));
@@ -86,7 +81,7 @@
             section.setAttribute('aria-labelledby', heading.id);
             const list = el('ul', 'ss-videos-list');
             list.setAttribute('role', 'list');
-            group.videos.forEach((video) => list.appendChild(card(video, fresh.includes(video.id))));
+            group.videos.forEach((video) => list.appendChild(card(video, fresh.has(video.id))));
             section.append(heading, list);
             rows.appendChild(section);
         });
@@ -100,14 +95,14 @@
         api.load({ force }).then((result) => {
             if (mine !== attempt) return;
             if (!result.catalog) {
-                errorTitle.textContent = result.offline ? copy.offline : copy.failed;
+                errorTitle.textContent = result.offline ? copy.offline : failed;
                 status.textContent = errorTitle.textContent;
                 show('error');
                 if (focus) document.getElementById('ss-videos-retry').focus();
                 return;
             }
             // Captured before markSeen() records this list as seen.
-            render(result.catalog, api.newVideos(result.catalog));
+            render(result.catalog, new Set(api.newVideos(result.catalog)));
             api.markSeen(result.catalog);
             show(result.catalog.videos.length ? 'ready' : 'empty');
             stale.hidden = !result.stale;

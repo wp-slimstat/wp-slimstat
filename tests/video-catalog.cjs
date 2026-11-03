@@ -55,6 +55,7 @@ class Node {
     }
     querySelector(selector) {
         if (selector === 'a[href$="page=slimvideos"] .slimstat-menu-label') return this.all().find(n => n.videosLabel) || null;
+        if (selector === '.wp-menu-name > .slimstat-menu-title') return this.all().find(n => n.classList.contains('slimstat-menu-title') && n.parentNode.classList.contains('wp-menu-name')) || null;
         return this.querySelectorAll(selector)[0] || null;
     }
 }
