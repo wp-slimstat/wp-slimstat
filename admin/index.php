@@ -354,16 +354,9 @@ class wp_slimstat_admin
         }
 
         // Load the library of functions to generate the reports
-        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Compared against fixed action names; each handler verifies its nonce.
-        $is_city_drilldown = !empty($_POST['action']) && 'slimstat_country_cities' === $_POST['action'];
-        if ($is_slimstat_page || (!empty($_POST['action']) && 'slimstat_load_report' == $_POST['action']) || $is_city_drilldown) {
+        if ($is_slimstat_page || (!empty($_POST['action']) && 'slimstat_load_report' == $_POST['action'])) {
             include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-reports.php');
             wp_slimstat_reports::init();
-
-            // The drilldown reads the report filters and date range wp_slimstat_reports::init() just parsed.
-            if ($is_city_drilldown) {
-                add_action('wp_ajax_slimstat_country_cities', [\SlimStat\Reports\CountryCities::class, 'ajax']);
-            }
 
             if (!empty($_POST['report_id']) && is_string($_POST['report_id'])) {
                 $report_id = sanitize_title(wp_unslash($_POST['report_id']), 'slim_p0_00');
@@ -414,6 +407,7 @@ class wp_slimstat_admin
             foreach ($ajax_actions as $action => $handler) {
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
             }
+            add_action('wp_ajax_slimstat_country_cities', [\SlimStat\Reports\CountryCities::class, 'ajax']);
 
             // Live Analytics AJAX handler is registered via init_hooks() in Bootstrap
             // No need to call it separately here - it's already registered

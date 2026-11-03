@@ -1660,12 +1660,9 @@ class wp_slimstat_db
     {
         $_order_by    = 'counthits DESC';
         $_more_select = '';
-        // Callers that need fewer rows than the report limit (the Free city preview) say so here.
-        $_limit = 0;
 
         // This function can be passed individual arguments, or an array of arguments
         if (is_array($_column)) {
-            $_limit = (int) ($_column['limit_results'] ?? 0);
             $where_params = !empty($_column['where_params']) ? $_column['where_params'] : [];
             $_where       = !empty($_column['where']) ? $_column['where'] : '';
 
@@ -1771,9 +1768,6 @@ class wp_slimstat_db
         // handles page slicing via array_slice in the rendering callbacks.
         // ($merging was resolved above, where the P3 group key needed it.)
         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
-        if ($_limit > 0) {
-            $limit = min($limit, $_limit);
-        }
 
         // NOT APPLIED TO THE INNER QUERY WHEN MERGING, and this is a correctness fix rather than
         // a tuning choice. `buildQuery()` puts the LIMIT inside every union arm, and Pro's

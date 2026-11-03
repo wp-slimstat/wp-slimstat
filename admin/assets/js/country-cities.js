@@ -2,6 +2,7 @@
 (() => {
     'use strict';
     const { __, sprintf } = window.wpSlimstatI18n;
+    const settings = window.SlimStatAdminParams || {};
     const CODE = /^[a-z0-9]{2}$/;
     let dialog = null;
     let request = null;
@@ -21,14 +22,7 @@
             if (more) load(parseInt(more.dataset.ssCcMore, 10) || 0, more);
             if (event.target.closest('[data-ss-cc-retry]')) load(0);
         });
-        // The shared dialog styles are scoped to .wrap-slimstat, which the WordPress Dashboard lacks.
-        let host = document.querySelector('.wrap-slimstat');
-        if (!host) {
-            host = document.createElement('div');
-            host.className = 'wrap-slimstat ss-cc-host';
-            document.body.appendChild(host);
-        }
-        host.appendChild(dialog);
+        (document.querySelector('.wrap-slimstat') || document.body).appendChild(dialog);
     }
 
     function setTitle(text, flag) {
@@ -59,7 +53,6 @@
 
     // The same request a report refresh sends: page, filters, date range and network scope.
     function params(start) {
-        const params = window.SlimStatAdminParams || {};
         const admin = window.SlimStatAdmin;
         const data = new URLSearchParams({
             action: 'slimstat_country_cities',
@@ -68,9 +61,9 @@
             country,
             start: String(start),
         });
-        if (params.network_scope_nonce) {
+        if (settings.network_scope_nonce) {
             data.set('slimstat_network_scope', '1');
-            data.set('slimstat_network_nonce', params.network_scope_nonce);
+            data.set('slimstat_network_nonce', settings.network_scope_nonce);
         }
         document.querySelectorAll('#slimstat-filters-form .slimstat-post-filter').forEach(input => {
             if (input.name) data.set(input.name, input.value);
@@ -88,8 +81,7 @@
         } else {
             status(body, __('Loading city statistics…', 'wp-slimstat'));
         }
-        const url = (window.SlimStatAdminParams && window.SlimStatAdminParams.ajax_url) || window.ajaxurl;
-        fetch(url, { method: 'POST', body: params(start), credentials: 'same-origin', signal: controller.signal })
+        fetch(settings.ajax_url || window.ajaxurl, { method: 'POST', body: params(start), credentials: 'same-origin', signal: controller.signal })
             .then(response => response.json())
             .then(json => {
                 if (!json || !json.success) {
@@ -115,9 +107,6 @@
                 } else {
                     status(body, message, true);
                 }
-            })
-            .finally(() => {
-                if (request === controller) request = null;
             });
     }
 
@@ -137,33 +126,32 @@
         }
     }
 
-    function open(code, name, opener) {
+    function open(code, name, opener, flag) {
         code = String(code || '').toLowerCase();
-        if (!CODE.test(code) || !window.SlimStatReportDialogs) return;
+        if (!CODE.test(code)) return;
         if (!dialog) build();
         country = code;
-        const row = opener && opener.closest('[data-slimstat-country]');
-        const flag = row && row.querySelector('img');
         /* translators: %s: country name. */
-        setTitle(name ? sprintf(__('Top Cities in %s', 'wp-slimstat'), name) : __('Top Cities', 'wp-slimstat'), flag ? flag.src : '');
+        setTitle(name ? sprintf(__('Top Cities in %s', 'wp-slimstat'), name) : __('Top Cities', 'wp-slimstat'), flag || '');
         window.SlimStatReportDialogs.open(dialog, opener || document.activeElement);
         load(0);
     }
 
     function fromRow(row) {
         const label = row.querySelector('strong, .slimstat-filter-link');
+        const flag = row.querySelector('img');
         const opener = row.matches('[role="button"]') ? row : row.querySelector('a') || row;
-        open(row.dataset.slimstatCountry, label ? label.textContent.trim() : '', opener);
+        open(row.dataset.slimstatCountry, label ? label.textContent.trim() : '', opener, flag && flag.src);
     }
 
-    // Capture phase, so admin.js's filter-link handler never sees the click. A modified or
-    // middle click keeps the link's own behaviour: filter all reports by this country.
+    // Capture phase, so the click is claimed before admin.js's filter-link handler, which
+    // skips prevented clicks. A modified or middle click keeps the link's own behaviour:
+    // filter all reports by this country.
     document.addEventListener('click', event => {
         if (0 !== event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         const row = event.target.closest('[data-slimstat-country]');
         if (!row || !CODE.test(row.dataset.slimstatCountry || '')) return;
         event.preventDefault();
-        event.stopPropagation();
         fromRow(row);
     }, true);
     document.addEventListener('keydown', event => {

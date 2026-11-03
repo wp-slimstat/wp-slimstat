@@ -722,24 +722,6 @@ class QueryBuilderTest extends WpSlimstatTestCase
         $this->assertStringContainsString(esc_html($sql[0]), \wp_slimstat_db::$debug_message);
     }
 
-    /**
-     * The Free city preview asks for two rows, not the report's twenty: a caller's
-     * limit_results narrows the query and can never widen it past the report limit.
-     */
-    public function test_get_top_limit_results_narrows_the_report_limit(): void
-    {
-        $sql = $this->captureGetTopSql(['columns' => 'city', 'limit_results' => 2]);
-        $this->assertNotEmpty($sql);
-        $this->assertMatchesRegularExpression('/LIMIT\s+2\s*$/i', trim($sql[0]));
-    }
-
-    public function test_get_top_limit_results_never_widens_the_report_limit(): void
-    {
-        $sql = $this->captureGetTopSql(['columns' => 'city', 'limit_results' => 5000]);
-        $this->assertNotEmpty($sql);
-        $this->assertMatchesRegularExpression('/LIMIT\s+20\s*$/i', trim($sql[0]));
-    }
-
     private function getTopOrderClause(array $args): string
     {
         $captured = $this->captureGetTopSql($args);
