@@ -69,6 +69,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await campaignGroup.locator(':scope > summary').click();
     await campaignGroup.getByRole('link', { name: 'View sales in Ecommerce' }).click();
     expect(new URL(page.url()).searchParams.get('fs[utm_campaign]')).toBe(`equals ${campaign}`);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('65.00');
     await expect(page.locator('#slimstat-current-filters')).toContainText(campaign);
     await expect(dashboard).toContainText('Traffic filters are active');
@@ -79,6 +80,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await channels.scrollIntoViewIfNeeded();
     await channels.locator('.slimstat-acquisition__group > summary').filter({ hasText: 'Paid Search' }).click();
     await channels.locator('.slimstat-acquisition__group').filter({ hasText: 'Paid Search' }).getByRole('link', { name: 'View sales in Ecommerce' }).click();
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('65.00');
     expect(new URL(page.url()).searchParams.get('fs[traffic_channel]')).toBe('equals paid_search');
 
@@ -86,6 +88,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     scope.set('page', 'slimview7'); scope.delete('fs[utm_source]');
     scope.set('fs[utm_campaign]', `equals ${campaign}`);
     await page.goto(`/wp-admin/admin.php?${scope}#ss-ec-panel-campaign`);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.getByRole('tabpanel', { name: 'Campaigns', exact: true })).toBeVisible();
     await expect(dashboard.getByRole('heading', { name: 'Your Pro reports are ready' })).toBeVisible();
     await expect(dashboard.getByRole('link', { name: 'See what Pro adds to Ecommerce' })).toHaveCount(0);
@@ -108,6 +111,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await expect(page.getByRole('link', { name: 'Upload Pro in WordPress' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Set up email reports' })).toBeVisible();
     await page.getByRole('link', { name: 'Compare campaign revenue' }).click();
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.getByRole('tabpanel', { name: 'Campaigns', exact: true })).toBeVisible();
   } finally {
     fixture('cleanup');

@@ -19,6 +19,7 @@ import {
   ensureWpUser,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
+import { runWordPressFixture } from './helpers/chart';
 import { requireProBooted } from './helpers/pro-state';
 
 // ─── DB helpers ──────────────────────────────────────────────────
@@ -183,8 +184,13 @@ test.describe('User Overview (slim_p8_01)', () => {
     });
 
     test('login note survives the post-login redirect with a tracking cookie', async ({ browser }) => {
-      const { context } = await loginAsGerlando(browser);
+      // The redirect updates a server-tracked pageview; the default client mode has no such row.
+      const mode = JSON.parse(runWordPressFixture('<?php echo wp_json_encode(wp_slimstat::$settings["javascript_mode"]);'));
+      await setSlimstatSetting('javascript_mode', 'no');
+      let context: import('@playwright/test').BrowserContext | undefined;
       try {
+        ({ context } = await loginAsGerlando(browser));
+        expect((await context.cookies()).some(cookie => cookie.name === 'slimstat_tracking_code')).toBe(true);
         await expect.poll(async () => (await getLoginNotes()).filter(row => row.notes.includes('[loggedin:gerlando]')).length).toBe(1);
         const [rows] = await getPool().execute(
           "SELECT notes, content_type FROM wp_slim_stats WHERE notes LIKE '%[loggedin:gerlando]%'"
@@ -193,7 +199,8 @@ test.describe('User Overview (slim_p8_01)', () => {
         expect(rows[0].content_type).toBe('redirect:302');
         expect(rows[0].notes.match(/\[loggedin:gerlando\]/g)).toHaveLength(1);
       } finally {
-        await context.close();
+        await context?.close();
+        await setSlimstatSetting('javascript_mode', mode);
       }
     });
 
