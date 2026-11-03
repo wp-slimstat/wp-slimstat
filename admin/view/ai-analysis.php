@@ -38,23 +38,10 @@ if ( ! isset( $ai_tabs[ $ai_tab ] ) ) {
 	<nav aria-label="<?php esc_attr_e( 'AI Analysis sections', 'wp-slimstat' ); ?>">
 		<ul class="nav-tabs">
 			<?php foreach ( $ai_tabs as $key => $label ) : ?>
-				<li class="nav-tab nav-tab-<?php echo $ai_tab === $key ? 'active' : 'inactive'; ?>"><a href="
-				<?php
-				echo esc_url(
-					add_query_arg(
-						array(
-							'page' => 'slimai',
-							'tab'  => $key,
-						),
-						admin_url( 'admin.php' )
-					)
-				);
-				?>
-											" 
-				<?php
-				if ( $ai_tab === $key ) :
-					?>
-	aria-current="page"<?php endif; ?>><?php echo esc_html( $label ); ?></a></li>
+				<?php $ai_tab_url = add_query_arg( array( 'page' => 'slimai', 'tab' => $key ), admin_url( 'admin.php' ) ); ?>
+				<li class="nav-tab nav-tab-<?php echo $ai_tab === $key ? 'active' : 'inactive'; ?>">
+					<a href="<?php echo esc_url( $ai_tab_url ); ?>" <?php if ( $ai_tab === $key ) : ?>aria-current="page"<?php endif; ?>><?php echo esc_html( $label ); ?></a>
+				</li>
 			<?php endforeach; ?>
 		</ul>
 	</nav>
