@@ -127,6 +127,8 @@ context_probe = r'''
 function wp_create_nonce($action) { if ($action !== 'meta-box-order') { throw new RuntimeException('wrong nonce action'); } return 'authorized-fixture'; }
 class wp_slimstat_db {
     static $filters_normalized = [];
+    static $pageviews = 999;
+    static function count_records() { return self::$filters_normalized['utime']['end']; }
     static function init($filters) {
         self::$filters_normalized = ['utime'=>['start'=>100, 'end'=>999, 'range'=>899], 'columns'=>['fixture'=>$filters]];
     }
@@ -136,6 +138,7 @@ slimstat_bench_prepare_report('slim_p8_01', 'browser_type equals 0', 500);
 if ($_POST['report_id'] !== 'slim_p8_01'
     || ($_REQUEST['security'] ?? '') !== 'authorized-fixture' || ($_POST['security'] ?? '') !== 'authorized-fixture'
     || wp_slimstat_db::$filters_normalized['utime'] !== ['start'=>100, 'end'=>500, 'range'=>400]
+    || wp_slimstat_db::$pageviews !== 500
     || wp_slimstat_db::$filters_normalized['columns']['fixture'] !== 'browser_type equals 0') { exit(1); }
 slimstat_bench_prepare_report('slim_p9_01', '', 0);
 if ($_POST['report_id'] !== 'slim_p9_01' || wp_slimstat_db::$filters_normalized['utime']['end'] !== 999) { exit(2); }

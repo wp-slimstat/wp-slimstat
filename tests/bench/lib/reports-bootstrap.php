@@ -31,6 +31,7 @@ function slimstat_bench_prepare_report(string $report_id, string $filters, int $
         }
         wp_slimstat_db::$filters_normalized['utime']['end'] = $end;
         wp_slimstat_db::$filters_normalized['utime']['range'] = $end - $start;
+        wp_slimstat_db::$pageviews = wp_slimstat_db::count_records();
     }
 }
 
