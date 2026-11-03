@@ -22,6 +22,7 @@
 function slimstat_bench_prepare_report(string $report_id, string $filters, int $end = 0): void
 {
     $_POST['report_id'] = $report_id;
+    $_POST['security'] = $_REQUEST['security'] = wp_create_nonce('meta-box-order');
     wp_slimstat_db::init($filters);
     if ($end > 0) {
         $start = (int) wp_slimstat_db::$filters_normalized['utime']['start'];

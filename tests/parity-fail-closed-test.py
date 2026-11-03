@@ -124,6 +124,7 @@ print('PASS: report registry initialization failure cannot become a partial snap
 
 # Exercise the real request/window preparation, including consecutive widgets.
 context_probe = r'''
+function wp_create_nonce($action) { if ($action !== 'meta-box-order') { throw new RuntimeException('wrong nonce action'); } return 'authorized-fixture'; }
 class wp_slimstat_db {
     static $filters_normalized = [];
     static function init($filters) {
@@ -133,6 +134,7 @@ class wp_slimstat_db {
 require $argv[1];
 slimstat_bench_prepare_report('slim_p8_01', 'browser_type equals 0', 500);
 if ($_POST['report_id'] !== 'slim_p8_01'
+    || ($_REQUEST['security'] ?? '') !== 'authorized-fixture' || ($_POST['security'] ?? '') !== 'authorized-fixture'
     || wp_slimstat_db::$filters_normalized['utime'] !== ['start'=>100, 'end'=>500, 'range'=>400]
     || wp_slimstat_db::$filters_normalized['columns']['fixture'] !== 'browser_type equals 0') { exit(1); }
 slimstat_bench_prepare_report('slim_p9_01', '', 0);
