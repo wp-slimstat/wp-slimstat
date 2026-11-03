@@ -66,8 +66,8 @@ $today = intdiv($now, 86400) * 86400;
 $past  = [$today - 3 * 86400, $today - 86400];      // entirely historical: cacheable, no split
 $span  = [$today - 3 * 86400, $now];                // crosses midnight: split into cached + live
 function report($from, $to) {
-    return Query::select('resource, COUNT(*) AS counthits')->from('wp_slim_stats')
-        ->where('dt', 'BETWEEN', [$from, $to])->groupBy('resource')->orderBy('counthits DESC')->limit(5)
+    return Query::select('resource, 1 AS counthits')->from('wp_slim_stats')
+        ->where('dt', 'BETWEEN', [$from, $to])->orderBy('counthits DESC')
         ->allowCaching(true);
 }
 function reset_world($failWhen = '') {

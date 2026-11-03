@@ -1862,7 +1862,10 @@ class Query
         //
         // A refused split is a full range that reaches today, so it is not cached — the same
         // rule as the live half.
-        $splitRefused = $split && (!empty($this->havingClauses) || preg_match('/\bDISTINCT\b|\bAVG\s*\(/i', (string) $this->fields));
+        // A grouped split cannot preserve SQL collation, and a top-K threshold read in
+        // separate statements can miss a winner inserted between those reads. Keep native
+        // grouping, ranking and pagination in one full-range statement (C-4).
+        $splitRefused = $split && (!empty($this->groupByClause) || !empty($this->havingClauses) || preg_match('/\bDISTINCT\b|\bAVG\s*\(/i', (string) $this->fields));
         if ($splitRefused) {
             $split = false;
         }

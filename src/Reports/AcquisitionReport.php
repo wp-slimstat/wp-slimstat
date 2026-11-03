@@ -86,12 +86,10 @@ class AcquisitionReport
         $order = 'counthits DESC, ' . $group;
         $range = \wp_slimstat_db::$filters_normalized['utime'];
         $limit = max(1, (int) \wp_slimstat::$settings['limit_results']);
-        // Never split a limited GROUP BY at midnight: partition top-Ns lose contributions.
-        // Historical-only ranges use the existing SQL cache; ranges reaching today stay live.
-        $today = (int) (floor(\wp_slimstat::now() / DAY_IN_SECONDS) * DAY_IN_SECONDS);
+        // Query keeps grouped live ranges exact; network merging owns its full-range path.
         $query = Query::select($columns . ', COUNT(*) AS counthits')
             ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
-            ->whereDate('dt', ['from' => (int) $range['start'], 'to' => (int) $range['end']], $range['end'] >= $today)
+            ->whereDate('dt', ['from' => (int) $range['start'], 'to' => (int) $range['end']], NetworkMerge::isMerging())
             ->whereRaw(\wp_slimstat_db::get_combined_where(self::where($mode), '', false))
             ->groupBy($group)->orderBy($order);
         if (!empty($args['where'])) {

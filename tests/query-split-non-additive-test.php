@@ -56,9 +56,6 @@ function run_report($fields, $having = false) {
     $GLOBALS['split_cache'] = [];
     $db->queries            = [];
     $q = Query::select($fields)->from('wp_slim_stats')->where('dt', 'BETWEEN', [$from, $now]);
-    if (false !== strpos($fields, 'counthits') || false !== strpos($fields, 'avg_')) {
-        $q->groupBy('resource');
-    }
     if ($having) {
         $q->havingRaw('COUNT(visit_id) = 1');
     }
@@ -67,8 +64,8 @@ function run_report($fields, $having = false) {
 $fullRange = "BETWEEN '{$from}' AND '{$now}'";
 
 foreach ([
-    'COUNT(DISTINCT)' => 'resource, COUNT(DISTINCT ip) AS counthits',
-    'AVG'             => 'resource, AVG(server_latency) AS avg_latency',
+    'COUNT(DISTINCT)' => 'COUNT(DISTINCT ip) AS counthits',
+    'AVG'             => 'AVG(server_latency) AS avg_latency',
     'SELECT DISTINCT' => 'DISTINCT resource',
 ] as $label => $fields) {
     run_report($fields);
@@ -78,19 +75,19 @@ foreach ([
 }
 
 // HAVING was already refused; its full-range answer must not be cached either (D5's stated intent).
-run_report('resource, COUNT(*) AS counthits', true);
+run_report('COUNT(*) AS counthits', true);
 split_check('HAVING must not split', 1 === count($db->queries));
 split_check('HAVING: a refused split reaches today and must not be cached', [] === $GLOBALS['split_cache']);
 
 // Control: an additive aggregate still splits, and its historical half is still cached.
-run_report('resource, COUNT(*) AS counthits');
+run_report('COUNT(*) AS counthits');
 split_check('COUNT(*) must still split into two statements', 2 === count($db->queries));
 split_check('COUNT(*) must still cache its historical half', 1 === count($GLOBALS['split_cache']));
 
 // Control: a range entirely in the past is not a split at all, and is cached as before.
 $GLOBALS['split_cache'] = [];
 $db->queries            = [];
-Query::select('resource, COUNT(DISTINCT ip) AS counthits')->from('wp_slim_stats')
+Query::select('COUNT(DISTINCT ip) AS counthits')->from('wp_slim_stats')
     ->where('dt', 'BETWEEN', [$from, $today - 1])->groupBy('resource')->allowCaching(true)->getAll();
 split_check('a historical COUNT(DISTINCT) range is still cached', 1 === count($GLOBALS['split_cache']));
 
