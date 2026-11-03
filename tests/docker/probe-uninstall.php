@@ -46,8 +46,10 @@ if ('seed' === $mode) {
             $execute($db, 'SET FOREIGN_KEY_CHECKS=0');
             foreach ($allTables($wpdb->prefix) as $table) { $execute($db, "DROP TABLE IF EXISTS `$table`"); }
             $execute($db, 'SET FOREIGN_KEY_CHECKS=1');
-            $result = Schema::ensure($db, $wpdb->prefix, static fn () => 'utf8mb4_unicode_ci');
-            $must([] === $result['failed'], 'Manifest fixture creation failed');
+            // Uninstall must also cover optional tables that activation does not create.
+            foreach (Schema::creationOrder() as $suffix) {
+                $execute($db, Schema::createTableSql($suffix, $wpdb->prefix, 'utf8mb4_unicode_ci'));
+            }
             $tables = Schema::tables();
             usort($tables, static fn ($a, $b) => ('slim_stats' === $a ? -1 : ('slim_stats' === $b ? 1 : strcmp($a, $b))));
             foreach ($tables as $suffix) {
