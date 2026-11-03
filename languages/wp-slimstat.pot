@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-03T06:20:54+00:00\n"
+"POT-Creation-Date: 2026-11-03T06:37:49+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -4893,7 +4893,7 @@ msgid "Load the video list from wp-slimstat.com?"
 msgstr ""
 
 #: admin/view/videos.php:32
-msgid "The tutorials are published on wp-slimstat.com. To list them here, your browser downloads the list and its thumbnails from wp-slimstat.com. SlimStat sends no analytics, site details, cookies or account information with these requests."
+msgid "The tutorials are published on wp-slimstat.com. To list them here, your browser downloads the list and its thumbnails from wp-slimstat.com. Like any web request, this shows wp-slimstat.com your IP address, your browser and the address of this site. SlimStat adds no analytics, cookies or account information."
 msgstr ""
 
 #: admin/view/videos.php:34

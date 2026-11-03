@@ -7,7 +7,7 @@ plugin release.
 ```
 wp-slimstat.com/videos/videos.json        static file, CORS-readable
         │  fetched by the admin user's browser, after they opt in, at most once a day,
-        │  credentials: 'omit', referrerPolicy: 'no-referrer', no headers, no parameters
+        │  credentials: 'omit', referrerPolicy: 'no-referrer', no custom headers or parameters
         ▼
 localStorage (per browser)                saved catalog + per-site, per-user state
         │
@@ -141,7 +141,10 @@ Offline, nothing is requested.
 
 - Nothing is requested until the user chooses **Show videos**, or turns on the marker.
 - Requests go from the user's browser straight to wp-slimstat.com, with no cookies, no
-  referrer, no custom headers and no query string. No site, analytics or account data is sent.
+  referrer, no custom headers and no query string. No analytics or account data is sent.
+- What any web request reveals still applies: wp-slimstat.com sees the user's IP address and
+  browser, and the catalog request, being cross-origin, carries the browser's `Origin` header
+  with the site's address. No request option removes it; the consent text and the readme say so.
 - The choices and the list of seen videos are stored in that browser's `localStorage`, keyed
   by a hash of the site address and user ID. "Stop loading videos in this browser" deletes them.
 - The readme's "Please note" section discloses the service and links the privacy policy.

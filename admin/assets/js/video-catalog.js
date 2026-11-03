@@ -4,7 +4,9 @@
  * Loaded on every admin page of a user who can see the SlimStat menu, so it is small and idle by
  * default: nothing is requested until this user opts in on SlimStat > Videos. After that the
  * catalog (a static JSON file on wp-slimstat.com) is requested at most once a day, from this
- * browser only, with no cookies, referrer, headers or parameters, and saved in localStorage.
+ * browser only, with no cookies, referrer, custom headers or parameters, and saved in localStorage.
+ * As a cross-origin request it still carries the browser's own Origin header (this site's
+ * address), which no request option removes; the consent copy and the readme say so.
  *
  * localStorage is shared with every script on this origin, front end included, so whatever is
  * read back is validated exactly like a network response. Validated text is only ever rendered

@@ -87,6 +87,7 @@ test.describe('Video tutorials', () => {
     await page.goto(VIDEOS_PAGE);
     await expect(page.getByRole('heading', { level: 1, name: 'Video tutorials' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Load the video list from wp-slimstat.com?' })).toBeVisible();
+    await expect(page.getByText('your browser and the address of this site', { exact: false })).toBeVisible(); // disclosed before consent
     await expect(page.locator('.ss-videos-row')).toHaveCount(0);
     const browse = page.getByRole('link', { name: /Browse the videos on wp-slimstat\.com/ });
     await expect(browse).toHaveAttribute('href', `${ORIGIN}/videos/`);
@@ -124,7 +125,9 @@ test.describe('Video tutorials', () => {
     expect(sent).toHaveLength(1);
     const headers = await sent[0].allHeaders();
     expect(headers.cookie, 'credentials are omitted').toBeUndefined();
-    expect(headers.referer, 'no referrer reveals the site').toBeUndefined();
+    expect(headers.referer, 'no referrer reveals the page').toBeUndefined();
+    // The one site detail a cross-origin request cannot drop; the consent copy discloses it.
+    expect(headers.origin).toBe(new URL(page.url()).origin);
     expect(sent[0].url()).toBe(CATALOG);
     for (const q of r.requests.filter((q) => q.url().includes('/images/'))) {
       expect((await q.allHeaders()).referer, 'thumbnails send no referrer').toBeUndefined();
