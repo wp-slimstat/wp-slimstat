@@ -113,7 +113,7 @@ with tempfile.TemporaryDirectory() as temp:
                         {'family': 'summary', 'table': 'slim_stats'}, contracts,
                         {'start': 10, 'end': 20})
     assert next(row for row in result['value'] if row['metric'] == '31 - 60 seconds') == {
-        'counthits': 1, 'details': 'Hits: 1', 'metric': '31 - 60 seconds', 'value': '100.00%'}, result
+        'counthits': 1, 'details': 'Visits: 1', 'metric': '31 - 60 seconds', 'value': '100.00%'}, result
     assert result['value'][-1]['value'] == '01:00', result
 
     for key, kind, expected in (
