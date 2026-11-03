@@ -1570,27 +1570,9 @@ class wp_slimstat_admin
                 if (in_array($a_report_id, self::COMPACT_DASHBOARD_REPORTS, true)) {
                     wp_slimstat_reports::$reports[$a_report_id]['callback_args']['is_widget'] = true;
                 }
-                if (!wp_slimstat::pro_is_installed() && 'slim_p7_02' === $a_report_id) {
-                    wp_add_dashboard_widget($a_report_id, wp_slimstat_reports::$reports[$a_report_id]['title'], [self::class, 'dashboard_pro_preview']);
-                } else {
                 wp_add_dashboard_widget($a_report_id, wp_slimstat_reports::$reports[$a_report_id]['title'], ['wp_slimstat_reports', 'callback_wrapper']);
-                }
             }
         }
-    }
-
-    public static function dashboard_pro_preview($post, $args): void
-    {
-        echo '<div class="slimstat-dashboard-report">';
-        wp_slimstat_reports::callback_wrapper($post, $args);
-        echo '</div>';
-        // A hidden existing widget remains hidden, and an eligible release notice takes priority.
-        if (self::release_notice_visible(false)) {
-            echo '<p>' . esc_html__('Live charts are available with SlimStat Pro.', 'wp-slimstat') . '</p>';
-            return;
-        }
-        self::enqueue_promotions();
-        self::get_template('locked-preview', ['text' => __('Follow live visitors, pages and countries with Pro.', 'wp-slimstat'), 'campaign' => 'dashboard', 'content' => 'live-widget']);
     }
 
     // END: add_dashboard_widgets

@@ -1301,14 +1301,6 @@ msgstr ""
 msgid "Settings could not be saved."
 msgstr ""
 
-#: admin/index.php:1589
-msgid "Live charts are available with SlimStat Pro."
-msgstr ""
-
-#: admin/index.php:1593
-msgid "Follow live visitors, pages and countries with Pro."
-msgstr ""
-
 #: admin/index.php:1983
 #: admin/index.php:2000
 msgid "SlimStat"

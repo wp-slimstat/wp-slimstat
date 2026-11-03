@@ -124,7 +124,7 @@ test('SlimStat screens preserve synchronous report rendering when Async is off',
   expect(await page.evaluate(() => (window as any).SlimStatAdminParams.async_load)).toBe('no');
 });
 
-test('Free Dashboard live preview preserves its wrapper and footer through refresh', async ({ page }) => {
+test('Free Dashboard Access Log loads and refreshes without a promotional footer', async ({ page }) => {
   const plugins = runWordPressFixture(`<?php
 echo wp_json_encode(get_option('active_plugins', []));
 deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php', true);
@@ -132,17 +132,23 @@ deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php', true);
   try {
     await page.goto('/wp-admin/index.php');
     await page.locator('#slim_p7_02').scrollIntoViewIfNeeded();
-    const body = page.locator('#slim_p7_02 .inside > .slimstat-dashboard-report');
-    await expect(body).toHaveCount(1);
+    const body = page.locator('#slim_p7_02 .inside');
     await expect(body.locator('.loading')).toHaveCount(0);
-    await expect(body).not.toBeEmpty();
-    const footer = await body.evaluate(el => el.nextElementSibling?.outerHTML);
-    expect(footer).toBeTruthy();
+    await expect(body.locator('.nodata, p.header').first()).toBeVisible();
+    await expect(body.locator('.slimstat-pro-adds, .slimstat-preview')).toHaveCount(0);
+    await expect(body).not.toContainText('Live charts are available with SlimStat Pro.');
+    const refreshed = page.waitForResponse(response => {
+      const params = new URLSearchParams(response.request().postData() || '');
+      return params.get('action') === 'slimstat_load_report' && params.get('report_id') === 'slim_p7_02';
+    });
     await page.evaluate(() => (window as any).SlimStatAdmin.refresh_report('slim_p7_02')());
-    await expect(body).toHaveCount(1);
+    const response = await refreshed;
+    expect(response.ok()).toBe(true);
+    expect(await response.text()).not.toMatch(/Fatal error|Warning:|nonce_failure/);
     await expect(body.locator('.loading')).toHaveCount(0);
-    await expect(body).not.toBeEmpty();
-    expect(await body.evaluate(el => el.nextElementSibling?.outerHTML)).toBe(footer);
+    await expect(body.locator('.nodata, p.header').first()).toBeVisible();
+    await expect(body.locator('.slimstat-pro-adds, .slimstat-preview')).toHaveCount(0);
+    await expect(body).not.toContainText('Live charts are available with SlimStat Pro.');
   } finally {
     runWordPressFixture(`<?php update_option('active_plugins', json_decode(base64_decode('${Buffer.from(plugins).toString('base64')}'), true));`);
   }
