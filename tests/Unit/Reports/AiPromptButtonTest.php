@@ -34,6 +34,7 @@ class AiPromptButtonTest extends WpSlimstatTestCase
         self::assertStringNotContainsString('<b>', $html);
     }
 
+    /** Aggregate surfaces must still reject personal filters and personal report columns. */
     public function test_ecommerce_and_heatmap_summaries_keep_the_personal_filter_guard(): void
     {
         foreach (['slim_p10_01', 'slimheatmap'] as $id) {

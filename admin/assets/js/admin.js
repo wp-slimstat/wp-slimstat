@@ -40,6 +40,11 @@ jQuery(document).on("click", "#slimstat-clear-cache", function (e) {
         });
 });
 
+/**
+ * Check the viewer's saved segment against the server-provided personal-field list.
+ * @param {Element} body Heatmaps report container.
+ * @returns {boolean} Whether this selection must stay out of copied AI prompts.
+ */
 function SlimStatHeatmapPersonalFilter(body) {
     const who = body.querySelector('.ss-hmv [name="who"]');
     const button = body.querySelector('.slimstat-ai-prompt');
@@ -60,7 +65,12 @@ jQuery(function () {
     update();
 });
 
-// A report's rows as "cell | cell" lines: the chart's visible series, list rows as shown.
+/**
+ * Extract displayed aggregate data, including active chart series and report filters.
+ * Locked previews, loading states and personal heatmap segments produce no rows.
+ * @param {Element|null} body Report body, Ecommerce dashboard or Heatmaps container.
+ * @returns {string[]} Clipboard rows formatted as "cell | cell" lines.
+ */
 function SlimStatReportRows(body) {
     const { __, sprintf } = window.wpSlimstatI18n;
     if (!body || body.querySelector(".slimstat-empty")) return [];
