@@ -1,7 +1,7 @@
 target: src/Services/Privacy/DataExporter.php
 gate: composer test:privacy-export-archive
 kind: guard-removal
-expect: live 500 exportPageviews
+expect: live 501 exportPageviews
 rationale: Pagination finishes only when both sources are exhausted.
 ---
 --- a/src/Services/Privacy/DataExporter.php
