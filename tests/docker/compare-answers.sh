@@ -304,20 +304,29 @@ answers_for() {
     local side="$(basename "${out%.json}")" rep=0
     mkdir -p "$ART/rendered/$side" || return 1
     while [ "$rep" -lt "${SLIMSTAT_TIMING_REPS:-5}" ]; do
+      local parts="$ART/rendered/$side/inputs/block-$b-rep-$rep" cell
+      mkdir -p "$parts" || return 1
+      # Each report window is a real request: Pro's per-request login memo must
+      # not leak from the first date/filter cell into the remaining three.
+      for cell in historical-unfiltered historical-filtered straddling-unfiltered straddling-filtered; do
       local snapshot_rc=0
       dc exec -T wp rm -f /tmp/slimstat-parity.json /tmp/slimstat-parity-diagnostic.json || return 1
       dc exec -T -u www-data -e SLIMSTAT_PARITY_DIAGNOSTIC=/tmp/slimstat-parity-diagnostic.json \
         -e SLIMSTAT_PARITY_END="$PARITY_END" \
         wp wp --path=/var/www/html eval-file \
-        wp-content/plugins/wp-slimstat/tests/bench/lib/parity-snapshot.php /tmp/slimstat-parity.json \
-        >"$ART/rendered/$side/block-$b-rep-$rep.log" 2>&1 || snapshot_rc=$?
+        wp-content/plugins/wp-slimstat/tests/bench/lib/parity-snapshot.php /tmp/slimstat-parity.json "$cell" \
+        >"$parts/$cell.log" 2>&1 || snapshot_rc=$?
       if [ "$snapshot_rc" -ne 0 ]; then
         dc exec -T wp cat /tmp/slimstat-parity-diagnostic.json \
           >"$ART/rendered/$side/block-$b-rep-$rep.diagnostic.invalid.json" 2>/dev/null || true
         return "$snapshot_rc"
       fi
       dc exec -T wp cat /tmp/slimstat-parity.json \
-        >"$ART/rendered/$side/block-$b-rep-$rep.json" || return 1
+        >"$parts/$cell.json" || return 1
+      done
+      python3 "$PLUGIN_SRC/tests/bench/lib/merge-snapshots.py" "$ART/rendered/$side/block-$b-rep-$rep.json" \
+        "$parts/historical-unfiltered.json" "$parts/historical-filtered.json" \
+        "$parts/straddling-unfiltered.json" "$parts/straddling-filtered.json" || return 1
       rep=$((rep + 1))
     done
     local arm=before

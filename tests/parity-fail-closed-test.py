@@ -216,3 +216,28 @@ for db, expected in [('wordpress', True), ('customer', False)]:
     r = subprocess.run(['php', '-r', fixture_probe, str(comparator.with_name('prepare-report-fixture.php')), db], capture_output=True, text=True)
     assert (r.returncode == 0) == expected, r.stdout + r.stderr
 print('PASS: bounded disposable report fixture persists definitions and refuses overwrite or a customer database')
+
+# Separate PHP requests prevent Pro's request-local login totals leaking between windows.
+import runpy
+merger = runpy.run_path(str(comparator.with_name('merge-snapshots.py')))
+parts = []
+for i, cell in enumerate(merger['CELLS']):
+    parts.append(dict(fingerprint_hash='same-server', stats_rows=10, anchor_date='2026-01-01',
+        report_ids=['report'], requested_live_window_end=500, live_window_end=500,
+        cells={cell: {'report': dict(report, numbers=[str(i)])}}, cell_contexts={cell: {'marker':i}},
+        captured_at=10+i, captured_day='2026-01-03',
+        coverage=dict(total=1, errored=0, empty=0, render_only=0, value_compared=1)))
+joined = merger['merge'](parts)
+assert joined['coverage']['total'] == 4 and len(joined['capture_times']) == 4
+assert [joined['cells'][cell]['report']['numbers'] for cell in merger['CELLS']] == [[str(i)] for i in range(4)]
+for bad in [parts[:3], [parts[0]] * 4,
+            [dict(parts[0], stats_rows=11), *parts[1:]],
+            [dict(parts[0], cells={'historical-unfiltered': {}}), *parts[1:]],
+            [*parts[:2], dict(parts[2], live_window_end=501), parts[3]]]:
+    try:
+        merger['merge'](bad)
+    except ValueError:
+        continue
+    raise AssertionError('Invalid cell merge accepted')
+assert '/tmp/slimstat-parity.json "$cell"' in (comparator.parents[2] / 'docker/compare-answers.sh').read_text()
+print('PASS: fresh-process capture merge preserves every value and refuses missing, duplicated or mismatched cells')
