@@ -10,6 +10,7 @@ class Query
 
     /** Set by probeVar(): true when that probe could not run, as opposed to finding nothing. */
     private $lastProbeFailed = false;
+    private $lastQueryFailed = false;
 
     private $operation;
 
@@ -1465,7 +1466,7 @@ class Query
 
         $result = $this->db->get_var($query);
         self::recordSqlDebug($query, $this->db->last_error ?? '');
-        if ($useCache) {
+        if ($useCache && !$this->queryFailed()) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
 
@@ -1535,6 +1536,18 @@ class Query
     }
 
     /**
+     * Whether the statement this builder just ran failed.
+     *
+     * wpdb reports a failure as last_error plus an EMPTY result — null from get_var(), [] from
+     * get_results() — which is exactly what "no rows" looks like. The cache writers ask this
+     * and not the result, or one lost connection becomes "0 visits" for the next hour. (C-1)
+     */
+    private function queryFailed(): bool
+    {
+        return '' !== (string) ($this->db->last_error ?? '');
+    }
+
+    /**
      * Execute the query and return a single row
      *
      * This is a shortcut for `getAll()[0]`
@@ -1563,7 +1576,7 @@ class Query
 
         $result = $this->db->get_row($query);
         self::recordSqlDebug($query, $this->db->last_error ?? '');
-        if ($useCache) {
+        if ($useCache && !$this->queryFailed()) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
 
@@ -1599,7 +1612,7 @@ class Query
 
         $result = $this->db->get_col($query);
         self::recordSqlDebug($query, $this->db->last_error ?? '');
-        if ($useCache) {
+        if ($useCache && !$this->queryFailed()) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
 
@@ -1808,6 +1821,7 @@ class Query
             $query = $this->prepareQuery($query, $this->valuesToPrepare);
             $result = $this->db->get_results($query, ARRAY_A);
             self::recordSqlDebug($query, $this->db->last_error ?? '');
+            $this->lastQueryFailed = $this->queryFailed();
             return $result;
         }
 
@@ -1882,8 +1896,10 @@ class Query
             if ($subLimit > 0) {
                 $histQuery->limit($subLimit);
             }
+            $histFailed = true;
             try {
                 $historical = $histQuery->getAll();
+                $histFailed = $histQuery->lastQueryFailed;
             } catch (Exception $e) {
                 $historical = [];
             }
@@ -1897,10 +1913,22 @@ class Query
             if ($subLimit > 0) {
                 $liveQuery->limit($subLimit);
             }
+            $liveFailed = true;
             try {
-                $live = $liveQuery->getAll();
+                $live       = $liveQuery->getAll();
+                $liveFailed = $liveQuery->lastQueryFailed;
             } catch (Exception $e) {
                 $live = [];
+            }
+
+            // A failed half is an empty array, and merging it would hand the caller the other
+            // half as the whole answer (a today-only "top pages" after a lost connection). Ask
+            // once over the full range instead — uncached, as any range reaching today is. (C-1)
+            if ($histFailed || $liveFailed) {
+                $full               = clone $this;
+                $full->_isLiveQuery = true;
+
+                return $full->getAll();
             }
 
             if (is_array($live)) {
@@ -1934,8 +1962,9 @@ class Query
             return $merged;
         }
 
-        $query = $this->buildQuery();
-        $query = $this->prepareQuery($query, $this->valuesToPrepare);
+        $this->lastQueryFailed = false;
+        $query                 = $this->buildQuery();
+        $query                 = $this->prepareQuery($query, $this->valuesToPrepare);
         if ($this->allowCaching) {
             try {
                 $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
@@ -1950,13 +1979,15 @@ class Query
         }
 
         try {
-            $result = $this->db->get_results($query, ARRAY_A);
+            $result                = $this->db->get_results($query, ARRAY_A);
             self::recordSqlDebug($query, $this->db->last_error ?? '');
+            $this->lastQueryFailed = $this->queryFailed();
         } catch (Exception $exception) {
-            $result = [];
+            $result                = [];
+            $this->lastQueryFailed = true;
         }
 
-        if ($this->allowCaching) {
+        if ($this->allowCaching && !$this->lastQueryFailed) {
             try {
                 $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
             } catch (Exception $exception) {

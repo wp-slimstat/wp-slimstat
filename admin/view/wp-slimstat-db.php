@@ -648,7 +648,10 @@ class wp_slimstat_db
         // slimview3 with a historical range, steady state, 600 -> 598 queries per render.
         // Three get_results() calls out of ~600 queries is all this path is; the claim that
         // it puts "the whole plugin outside the cache" does not survive measurement. (D72)
-        if ('' !== $cache_key && self::window_is_cacheable()) {
+        //
+        // A failed statement returns [] here too, and caching it would serve "no rows" for ten
+        // minutes after the database recovered. (C-1)
+        if ('' !== $cache_key && self::window_is_cacheable() && '' === (string) (wp_slimstat::$wpdb->last_error ?? '')) {
             set_transient($cache_key, $results, 10 * MINUTE_IN_SECONDS);
         }
 
