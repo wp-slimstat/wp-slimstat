@@ -1784,6 +1784,14 @@ class wp_slimstat
      * Removes old entries from the main table and performs other daily tasks
      */
     // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Retention uses core-prefix tables, manifest-intersected columns and bound cutoffs; archive/delete operations require fresh state.
+    public static function bump_data_version(): void
+    {
+        $version = sprintf('%.6F', microtime(true));
+        update_option('slimstat_data_ver', $version, true);
+        // Goal and unique-visitor caches also contain answers derived from erased rows.
+        update_option('slimstat_goals_cache_ver', $version, false);
+    }
+
     public static function wp_slimstat_purge()
     {
         $autopurge_interval = intval(self::$settings['auto_purge']);
@@ -1971,11 +1979,15 @@ class wp_slimstat
         // Delete the events explicitly rather than leaning on the cascade, so the set
         // removed is exactly the set archived, and so the behaviour is the same on an
         // install whose tables are MyISAM and silently ignore the foreign key.
-        if (false === self::$wpdb->query(self::$wpdb->prepare(
+        $events_removed = self::$wpdb->query(self::$wpdb->prepare(
             "DELETE e FROM {$table_events} e LEFT JOIN {$table_stats} s ON s.id = e.id WHERE {$event_where}",
             $days_ago,
             $days_ago
-        ))) {
+        ));
+        if ($events_removed > 0) {
+            self::bump_data_version();
+        }
+        if (false === $events_removed) {
             self::record_degradation('purge (deleting events)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);
         // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             return;
@@ -2039,6 +2051,10 @@ class wp_slimstat
         }
 
         $rows_removed = \SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)->execute();
+
+        if ($rows_removed > 0) {
+            self::bump_data_version();
+        }
 
         if (false === $rows_removed) {
             self::record_degradation('purge (deleting pageviews)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);

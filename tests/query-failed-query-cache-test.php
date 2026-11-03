@@ -1,4 +1,5 @@
 <?php
+function get_option($key, $default = false) { return $default; }
 /**
  * A failed statement is never a cached answer, and a split never returns half an answer.
  *

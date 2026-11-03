@@ -1,4 +1,5 @@
 <?php
+function get_option($key, $default = false) { return $default; }
 /**
  * The midnight split runs only when the two halves can be added back together.
  *

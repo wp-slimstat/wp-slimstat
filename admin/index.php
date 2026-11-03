@@ -1619,7 +1619,9 @@ class wp_slimstat_admin
             $where .= ' OR username = %s';
             $params[] = $user->user_login;
         }
-        $my_wpdb->query($my_wpdb->prepare('DELETE FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE ' . $where, $params));
+        if ($my_wpdb->query($my_wpdb->prepare('DELETE FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE ' . $where, $params)) > 0) {
+            wp_slimstat::bump_data_version();
+        }
     }
 
     // END: remove_spam
@@ -3296,7 +3298,9 @@ class wp_slimstat_admin
         if (!$current_user_can_delete || $pageview_id <= 0 || !isset($_POST['security']) || !is_string($_POST['security']) || !wp_verify_nonce(wp_unslash($_POST['security']), 'meta-box-order')) {
             return;
         }
-        $my_wpdb->query($my_wpdb->prepare('DELETE FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE id = %d', $pageview_id));
+        if ($my_wpdb->query($my_wpdb->prepare('DELETE FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE id = %d', $pageview_id)) > 0) {
+            wp_slimstat::bump_data_version();
+        }
         exit();
     }
 

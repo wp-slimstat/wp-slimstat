@@ -88,6 +88,10 @@ class DataEraser
 			}
 		}
 
+		if ($items_removed) {
+			\wp_slimstat::bump_data_version();
+		}
+
 		// Check if there are more pages to process
 		$remaining = Query::select('COUNT(*)')
 			->from($table)
@@ -191,6 +195,10 @@ class DataEraser
 					);
 				}
 			}
+		}
+
+		if ($items_removed) {
+			\wp_slimstat::bump_data_version();
 		}
 
 		// Check if there are more pages.
@@ -301,6 +309,10 @@ class DataEraser
 				$updated,
 				$ip_address
 			);
+		}
+
+		if ($items_removed) {
+			\wp_slimstat::bump_data_version();
 		}
 
 		// Check if there are more pages

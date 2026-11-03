@@ -4,6 +4,7 @@ require_once __DIR__ . '/lib/source-scan.php';
 require_once dirname(__DIR__) . '/src/Utils/Query.php';
 define('DAY_IN_SECONDS', 86400);
 function get_option($key, $default = false) { return $GLOBALS['options'][$key] ?? $default; }
+function update_option($key, $value, $autoload = null) { $GLOBALS['options'][$key] = $value; }
 function apply_filters($hook, $value) { return $value; }
 
 class PurgeHealthDb
@@ -28,7 +29,7 @@ class PurgeHealthDb
 
 $source = file_get_contents(dirname(__DIR__) . '/wp-slimstat.php');
 $methods = '';
-foreach (['wp_slimstat_purge', 'purge_is_stale'] as $method) {
+foreach (['wp_slimstat_purge', 'purge_is_stale', 'bump_data_version'] as $method) {
     $methods .= 'public static function ' . $method . '(){' . slimstat_function_body($source, $method) . '}';
 }
 eval('class wp_slimstat {

@@ -859,7 +859,7 @@ class Query
                 return is_string($value) ? $db->remove_placeholder_escape($value) : $value;
             }, $args);
         }
-        return md5(serialize([(string) ($db->dbhost ?? ''), (string) ($db->dbname ?? ''), $sql, $args]));
+        return md5(serialize([(string) ($db->dbhost ?? ''), (string) ($db->dbname ?? ''), $sql, $args, get_option('slimstat_data_ver', '0')]));
     }
 
     /**

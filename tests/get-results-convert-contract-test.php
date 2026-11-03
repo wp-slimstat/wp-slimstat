@@ -37,6 +37,8 @@
  */
 
 declare(strict_types=1);
+function get_option($key, $default = false) { return $default; }
+
 
 error_reporting(E_ALL);
 

@@ -151,6 +151,7 @@ class AddVisitIdentity extends AbstractMigration
             // now. Same option clear_goals_cache() rotates, microtime for its same
             // two-writes-in-one-second reason; blind review measured the window.
             update_option('slimstat_goals_cache_ver', (string) microtime(true), false);
+            \wp_slimstat::bump_data_version();
         }
 
         return $ok;
