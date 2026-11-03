@@ -263,10 +263,14 @@ class PurgeArchive
             foreach (['events', 'stats'] as $kind) {
                 if ('events' === $kind) {
                     $table = $events; $alias = 'e'; $key = 'event_id'; $columns = $eventColumns;
+                    // Bound both indexed age scans separately; OR across the join scanned
+                    // retained history on every batch. UNION removes overlapping event keys.
                     $ids = $db->get_col($db->prepare(
-                        "SELECT e.event_id FROM {$events} e LEFT JOIN {$stats} s ON s.id = e.id
-                         WHERE (e.dt >= %d AND e.dt < %d) OR (s.dt >= %d AND s.dt < %d)
-                         ORDER BY e.event_id LIMIT 500", $from, $to, $from, $to
+                        "(SELECT e.event_id FROM {$events} e WHERE e.dt >= %d AND e.dt < %d LIMIT 500)
+                         UNION
+                         (SELECT e.event_id FROM {$stats} s STRAIGHT_JOIN {$events} e ON e.id = s.id
+                          WHERE s.dt >= %d AND s.dt < %d LIMIT 500)
+                         LIMIT 500", $from, $to, $from, $to
                     ));
                     $children = " LEFT JOIN {$stats} p ON p.id = e.id";
                     $childGuard = '';
@@ -277,7 +281,7 @@ class PurgeArchive
                     $ids = $db->get_col($db->prepare(
                         "SELECT s.id FROM {$stats} s LEFT JOIN {$events} e ON e.id = s.id
                          WHERE s.dt >= %d AND s.dt < %d AND e.event_id IS NULL
-                         ORDER BY s.id LIMIT 500", $from, $to
+                         LIMIT 500", $from, $to
                     ));
                     $children = " LEFT JOIN {$events} e ON e.id = s.id";
                     $childGuard = ' AND e.event_id IS NULL';

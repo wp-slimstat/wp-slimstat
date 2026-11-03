@@ -102,10 +102,11 @@ $check(strpos($writes[1], 'CAST(a.notes AS BINARY) <=> CAST(e.notes AS BINARY)')
     'DELETE must recheck every archived value as bytes, not collated text');
 $check(strpos($writes[3], 'LEFT JOIN test_slim_events e ON e.id = s.id') !== false
     && strpos($writes[3], 'e.event_id IS NULL') !== false, 'parent DELETE must refuse a concurrent child');
-$check(strpos($db->queries[0], 'OR (s.dt >=') !== false, 'future events on expired parents must be selected');
+$check(strpos($db->queries[0], 's.dt >=') !== false, 'future events on expired parents must be selected');
 $check(strpos($writes[1], 'p.dt >= 100') !== false && strpos($writes[3], 's.dt >= 100') !== false,
     'DELETE must recheck retention dates after concurrent edits');
-$check(substr_count(implode(' ', $db->queries), 'LIMIT 500') === 2, 'both selections must be bounded');
+$check(substr_count(implode(' ', $db->queries), 'LIMIT 500') === 4, 'both union arms and both selections must be bounded');
+$check(strpos($db->queries[0], 'STRAIGHT_JOIN test_slim_events') !== false && strpos($db->queries[0], 'UNION') !== false, 'event selection must use separate date ranges instead of scanning retained events');
 $check(substr_count(implode(' ', $db->queries), 'IS NULL OR NOT') === 2, 'both copies must be verified before deletion');
 foreach ([1, 2, 3, 4] as $probe) {
     foreach (['refuseProbe', 'errorProbe'] as $mode) {

@@ -501,7 +501,7 @@
     "test:settings-request-render": "php tests/settings-request-render-test.php",
     "test:reset-layout-scope": "php tests/reset-layout-scope-test.php",
     "test:free-deploy-evidence": "python3 tests/free-deploy-evidence-test.py",
-    "test:purge-mysql": "wp eval-file tests/Integration/purge-mysql.php",
+    "test:purge-mysql": ["wp eval-file tests/Integration/purge-mysql.php", "wp eval-file tests/Integration/purge-selection-mysql.php"],
     "test:schema-online-mysql": "wp eval-file tests/Integration/schema-online-mysql.php",
     "test:query-topn-mysql": "wp eval-file tests/Integration/query-topn-mysql.php",
     "test:privacy-erasure-mysql": "wp eval-file tests/Integration/data-eraser-mysql.php",
