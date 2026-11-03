@@ -1,6 +1,5 @@
 /* Native report dialog and existing SlimStat tokens; no UI dependency. */
 .slimstat-ai-analyze { border: 0; background: transparent; color: var(--ss-info-fg); cursor: pointer; font: inherit; padding: 4px 8px; }
-.slimstat-header-buttons:has(.slimstat-ai-analyze) { flex-wrap: wrap; row-gap: 6px; max-width: 100%; box-sizing: border-box; }
 .slimstat-ai-prompt, .slimstat-ai-analyze { white-space: nowrap; }
 .slimstat-header-buttons .slimstat-ai-analyze { font-size: 12px; font-weight: 600; }
 .slimstat-ai-analyze:hover { text-decoration: underline; }

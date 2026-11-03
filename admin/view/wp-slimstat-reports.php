@@ -1136,7 +1136,7 @@ class wp_slimstat_reports
 
         // Header hooks intentionally accept developer HTML/SVG; built-in attributes and tooltip data are escaped above.
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Preserve slimstat_report_header_buttons/after_title HTML contracts.
-        echo "<div class='postbox " . esc_attr($header_classes) . "' style='" . esc_attr($style_attrs) . "' id='" . esc_attr($_report_id) . sprintf("'>%s %s <div class='inside'>", $header_buttons, $widget_title);
+        echo "<div class='postbox " . esc_attr($header_classes) . "' style='" . esc_attr($style_attrs) . "' id='" . esc_attr($_report_id) . sprintf("'>%s %s <div class='inside'>", $widget_title, $header_buttons);
         return null;
     }
 

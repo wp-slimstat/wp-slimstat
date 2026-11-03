@@ -3298,6 +3298,20 @@ body.slimstat-admin-page {
         }
       }
 
+      // The report title keeps the first row; actions wrap below without displacing it.
+      h3 ~ .slimstat-header-buttons {
+        float: none;
+        flex-wrap: wrap;
+        gap: 6px 0;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0 10px 12px;
+
+        [dir="rtl"] & {
+          float: none;
+        }
+      }
+
       h3 {
         background-color: #ffffff;
         color: #202224;
