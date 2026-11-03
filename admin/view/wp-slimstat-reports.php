@@ -2781,7 +2781,7 @@ class wp_slimstat_reports
                     }
                     if ($uses_db && $db_missing) {
                         /* translators: %s: URL of the geolocation settings section. */
-                        echo wp_kses_post(sprintf(__("Geolocation is off, so reports show no countries or cities. <a href='%s' class='noslimstat'>Turn it on in Settings</a>.", 'wp-slimstat'), esc_url($settings_url . '2#wp-slimstat-third-party-libraries')));
+                        echo wp_kses_post(sprintf(__("Geolocation is unavailable for new visits. Previously collected locations remain in reports. <a href='%s' class='noslimstat'>Check Settings</a>.", 'wp-slimstat'), esc_url($settings_url . '2#wp-slimstat-third-party-libraries')));
                         echo '<br>';
                     }
                     ?>
@@ -2820,10 +2820,11 @@ class wp_slimstat_reports
                     onLabelShow: function (event, label, code) {
                         const data = <?php echo wp_json_encode($country_stats); ?>;
                         const country = data.find(c => c.code === code);
+                        const pageviewsLabel = <?php echo wp_json_encode(__('Pageviews', 'wp-slimstat')); ?>;
                         if (country) {
-                            label.html( '<canvas></canvas><h3>'  + country.name  + '</h3><p>' + country.visits.toLocaleString() + ' Visitors</p>');
+                            label.html( '<canvas></canvas><h3>'  + country.name  + '</h3><p>' + country.visits.toLocaleString() + ' ' + pageviewsLabel + '</p>');
                         } else {
-                            label.html( '<canvas></canvas><h3>'  + label.text()  + '</h3><p>0 Visitors</p>');
+                            label.html( '<canvas></canvas><h3>'  + label.text()  + '</h3><p>0 ' + pageviewsLabel + '</p>');
                         }
                     },
                     scaleColors: ['#fcd7dc', '#E7294B'],

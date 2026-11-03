@@ -120,6 +120,10 @@ test.describe('CF-IPCountry stored XSS (#5)', () => {
       'INSERT INTO wp_slim_stats (resource, country, ip, dt) VALUES (?, ?, ?, UNIX_TIMESTAMP())',
       ['/xss-poison', POISON, '8.8.8.8'],
     );
+    // Two pageviews in one visit distinguish the map's unit from a visitor count.
+    await getPool().execute(
+      "INSERT INTO wp_slim_stats (resource, country, ip, visit_id, dt) VALUES ('/map-unit', 'us', '192.0.2.1', 77, UNIX_TIMESTAMP()), ('/map-unit', 'us', '192.0.2.1', 77, UNIX_TIMESTAMP())",
+    );
 
     await ensureLoggedIn(page);
     // Sentinel: any injected onload/onerror that runs would flip this to true.
@@ -138,6 +142,14 @@ test.describe('CF-IPCountry stored XSS (#5)', () => {
       .locator('img.country-flag')
       .evaluateAll((els) => els.map((e) => e.getAttribute('alt')));
     expect(altValues).toContain(POISON);
+
+    const tooltip = await page.evaluate(() => {
+      const $ = (window as any).jQuery;
+      const label = $('<div>');
+      $('#map_slim_p6_01').trigger('labelShow.jqvmap', [label, 'us', 'United States']);
+      return label.text();
+    });
+    expect(tooltip).toContain('2 Pageviews');
 
     // And nothing executed.
     expect(await page.evaluate(() => window.__xss_fired === true)).toBe(false);
