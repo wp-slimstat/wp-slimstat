@@ -40,19 +40,22 @@ jQuery(document).on("click", "#slimstat-clear-cache", function (e) {
         });
 });
 
-// A report's rows as "cell | cell" lines: chart series from the chart's data, list rows as shown.
+// A report's rows as "cell | cell" lines: the chart's visible series, list rows as shown.
 function SlimStatReportRows(body) {
     const __ = window.wpSlimstatI18n.__;
     if (!body || body.querySelector(".slimstat-empty")) return [];
     const chart = body.querySelector("[data-data]");
     if (chart) {
-        const data = JSON.parse(chart.dataset.data || "{}");
-        const keys = Object.keys(data.datasets || {});
-        const total = (data.totals || []).find((row) => row.period === "current");
+        // Series hidden from the legend stay out; the previous period comes in while it is shown.
+        const live = window.Chart && window.Chart.getChart(body.querySelector("canvas"));
+        const shown = live ? live.data.datasets.filter((ds, i) => !ds.skipLegend && live.isDatasetVisible(i)) : [];
+        if (!shown.length) return [];
+        const totals = JSON.parse(chart.dataset.data || "{}").totals || [];
+        const total = (ds) => (totals.find((row) => row.period === (ds.isPrevious ? "previous" : "current")) || {})[ds.key];
         return [
-            [__("Date", "wp-slimstat"), ...JSON.parse(chart.dataset.chartLabels || "[]")],
-            ...(data.labels || []).map((label, i) => [String(label).replace(/'/g, ""), ...keys.map((key) => data.datasets[key][i])]),
-            ...(total ? [[__("Total", "wp-slimstat"), ...keys.map((key) => total[key])]] : []),
+            [__("Date", "wp-slimstat"), ...shown.map((ds) => ds.label)],
+            ...live.data.labels.map((label, i) => [String(label).replace(/'/g, ""), ...shown.map((ds) => ds.data[i])]),
+            [__("Total", "wp-slimstat"), ...shown.map(total)],
         ].map((cells) => cells.join(" | "));
     }
     const rows = Array.from(body.querySelectorAll("p"), (p) => p.innerText.trim().split(/\s*\n\s*/).join(" | ")).filter(Boolean);
@@ -77,8 +80,10 @@ jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
     };
     if (!rows.length) return show(__("No data to copy", "wp-slimstat"));
 
+    // Visitor text cannot open or close a section of the prompt.
+    const inert = (text) => text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const range = document.querySelector(".slimstat-date-range-input");
-    const filters = Array.from(document.querySelectorAll(".slimstat-filter-list li"), (li) => li.innerText.trim()).filter(Boolean);
+    const filters = Array.from(document.querySelectorAll(".slimstat-filter-list li"), (li) => inert(li.innerText.trim())).filter(Boolean);
     const pagination = box.querySelector(".pagination");
     const prompt = [
         __("You are a web analytics advisor for the owner of a WordPress website. The owner is not an analyst. Explain this SlimStat report in plain words and turn it into decisions that grow traffic, leads and revenue.", "wp-slimstat"),
@@ -105,7 +110,7 @@ jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
         "</report>",
         "",
         "<data>",
-        ...rows,
+        ...rows.map(inert),
         "</data>",
         "",
         "<task>",
