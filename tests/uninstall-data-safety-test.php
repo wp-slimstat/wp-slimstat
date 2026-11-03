@@ -855,6 +855,7 @@ foreach ([
     'slimstat_goals_funnels_since',
     'slimstat_ecommerce_since',
     'slimstat_heatmaps_since',
+    'slimstat_ai_since',
     'slimstat_shortcodes_since',
     'slimstat_release_notice_since',
 ] as $literal_option) {

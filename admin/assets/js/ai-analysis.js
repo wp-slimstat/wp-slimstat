@@ -125,7 +125,7 @@
         section.append(el('h3', saved.context.title), el('p',
             /* translators: 1: generation date, 2: provider, 3: model. */
             sprintf(__('Generated %1$s · %2$s / %3$s', 'wp-slimstat'), new Date(saved.generated * 1000).toLocaleString(), saved.provider, saved.model), { class: 'ss-ai-meta' }),
-        el('p', saved.context.from + ' – ' + saved.context.to + ' · ' + saved.context.timezone, { class: 'ss-ai-meta' }));
+        el('p', saved.context.from + ' – ' + saved.context.to + ' · ' + saved.context.timezone, { class: 'ss-ai-meta', dir: 'ltr' }));
         if (saved.context.filters?.length) section.append(el('p', saved.context.filters.join(' · '), { class: 'ss-ai-meta' }));
         if (cached) section.append(el('p', matches
             ? __('Saved result. Analytics may have changed since it was generated.', 'wp-slimstat')
@@ -137,6 +137,48 @@
             } catch (_) { error(body, new Error(__('Copy failed. Select the result text and copy it manually.', 'wp-slimstat'))); }
         }));
         body.prepend(section);
+    }
+    const library = document.querySelector('.ss-ai-library');
+    if (library) {
+        const entries = [...library.querySelectorAll('.ss-ai-entry')];
+        const search = library.querySelector('#ss-ai-search');
+        search?.addEventListener('input', () => {
+            const query = search.value.trim().toLocaleLowerCase();
+            let count = 0;
+            entries.forEach(entry => {
+                entry.hidden = !entry.querySelector('.ss-ai-entry-title').textContent.toLocaleLowerCase().includes(query);
+                if (!entry.hidden) count++;
+            });
+            library.querySelector('#ss-ai-search-empty').hidden = count !== 0;
+            library.querySelector('#ss-ai-search-status').textContent = sprintf(
+                /* translators: %d: number of matching saved reports. */
+                __('Matching saved reports: %d', 'wp-slimstat'), count);
+        });
+        entries.forEach(entry => {
+            let loading = false;
+            let loaded = false;
+            entry.addEventListener('toggle', async () => {
+                if (!entry.open || loaded || loading) return;
+                loading = true;
+                const body = entry.querySelector('.ss-ai-entry-body');
+                body.setAttribute('aria-busy', 'true');
+                body.replaceChildren(el('p', __('Loading saved analysis…', 'wp-slimstat'), { role: 'status' }));
+                try {
+                    const status = await api('/status', { report: entry.dataset.report, from: entry.dataset.from, to: entry.dataset.to, filters: {} });
+                    body.replaceChildren();
+                    if (!status.saved) throw new Error(__('This saved analysis is no longer available. Open the report to create a new one.', 'wp-slimstat'));
+                    result(body, status.saved, true, true);
+                    loaded = true;
+                } catch (exception) {
+                    body.replaceChildren();
+                    error(body, exception);
+                    body.append(el('p', __('Close and reopen this entry to try again.', 'wp-slimstat')));
+                } finally {
+                    loading = false;
+                    body.removeAttribute('aria-busy');
+                }
+            });
+        });
     }
     async function native(body, trigger, id) {
         let selection;

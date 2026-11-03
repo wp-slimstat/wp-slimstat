@@ -11,6 +11,7 @@ test('native AI settings use WordPress forms without storing provider keys @comp
   await snapshotOption('slimstat_ai_settings');
   try {
     await page.goto('/wp-admin/options-general.php?page=slimstat-ai');
+    await expect(page).toHaveURL(/admin\.php\?page=slimai&tab=settings$/);
     await expect(page.getByRole('heading', { name: 'AI Analysis', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Manage AI Connections' })).toHaveAttribute('href', /options-connectors\.php$/);
     await expect(page.locator('input[type="password"]')).toHaveCount(0);

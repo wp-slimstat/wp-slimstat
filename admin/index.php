@@ -173,6 +173,14 @@ class wp_slimstat_admin
                 'callback'        => [self::class, 'wp_slimstat_include_heatmaps'],
                 'new_badge'       => 'slimstat_heatmaps_since',
             ],
+            'slimai' => [
+                'is_report_group' => false,
+                'show_in_sidebar' => true,
+                'title'           => __('AI Analysis', 'wp-slimstat'),
+                'capability'      => 'can_view',
+                'callback'        => [self::class, 'wp_slimstat_include_ai'],
+                'new_badge'       => 'slimstat_ai_since',
+            ],
             'slimemail' => [
                 'is_report_group' => false,
                 'show_in_sidebar' => true,
@@ -2394,6 +2402,12 @@ class wp_slimstat_admin
     public static function wp_slimstat_include_shortcodes()
     {
         include(__DIR__ . '/view/shortcodes.php');
+    }
+
+    /** Introduce report analysis and host Pro's private saved-result library. */
+    public static function wp_slimstat_include_ai()
+    {
+        include(__DIR__ . '/view/ai-analysis.php');
     }
 
     /**

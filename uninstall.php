@@ -527,6 +527,7 @@ function slimstat_uninstall($_wpdb = '')
     delete_option('slimstat_goals_funnels_since');
     delete_option('slimstat_ecommerce_since');
     delete_option('slimstat_heatmaps_since');
+    delete_option('slimstat_ai_since');
     delete_option('slimstat_shortcodes_since');
     delete_option('slimstat_release_notice_since');
     delete_option('slimstat_dt_out_indexed');

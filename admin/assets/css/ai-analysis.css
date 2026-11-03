@@ -15,14 +15,14 @@
 .ss-ai-result ul { padding-inline-start: 24px; list-style: disc; }
 .ss-ai-result li { margin-block: 8px; }
 .ss-ai-meta { color: var(--ss-text-muted); font-size: 12px !important; margin: 6px 0; }
-.ss-ai-cache { border-inline-start: 3px solid var(--ss-info-fg); padding: 8px 12px; background: var(--ss-surface-tint); }
+.ss-ai-cache { border: 1px solid var(--ss-border); border-radius: 4px; padding: 8px 12px; background: var(--ss-surface-tint); }
 .ss-ai-controls { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--ss-border); }
 .ss-ai-consent { display: flex; gap: 10px; align-items: start; margin: 16px 0; }
 .ss-ai-consent input { flex: 0 0 auto; margin-top: 5px; }
-.ss-ai-error { border-inline-start: 3px solid var(--ss-danger-fg); padding: 12px; color: var(--ss-danger-fg); background: var(--ss-danger-bg-soft); }
+.ss-ai-error { border: 1px solid var(--ss-danger-fg); border-radius: 4px; padding: 12px; color: var(--ss-danger-fg); background: var(--ss-danger-bg-soft); }
 .ss-ai-loading { padding-block: 20px; }
 .ss-ai-skeleton { height: 72px; border-radius: 4px; background: var(--ss-surface-tint); animation: ss-ai-pulse 1.5s ease-in-out infinite alternate; }
-.ss-ai-toast { position: fixed; z-index: 100100; inset-inline-end: 24px; bottom: 24px; width: min(380px, calc(100vw - 48px)); box-sizing: border-box; padding: 20px; border: 1px solid var(--ss-border); border-inline-start: 4px solid var(--ss-success-fg); border-radius: 8px; background: var(--ss-surface); color: var(--ss-text-body); box-shadow: 0 8px 24px var(--ss-overlay-scrim); animation: ss-ai-enter 160ms ease-out; }
+.ss-ai-toast { position: fixed; z-index: 100100; inset-inline-end: 24px; bottom: 24px; width: min(380px, calc(100vw - 48px)); box-sizing: border-box; padding: 20px; border: 1px solid var(--ss-border); border-radius: 8px; background: var(--ss-surface); color: var(--ss-text-body); box-shadow: 0 8px 24px var(--ss-overlay-scrim); animation: ss-ai-enter 160ms ease-out; }
 .ss-ai-toast strong { display: block; font-size: 14px; line-height: 1.5; }
 .ss-ai-toast p { font-size: 13px; line-height: 1.6; margin: 8px 0 12px; }
 .ss-ai-toast-offer { border-top: 1px solid var(--ss-border); padding-top: 12px; margin-top: 12px; }
@@ -31,3 +31,50 @@
 @keyframes ss-ai-enter { from { opacity: 0; transform: translateY(8px); } }
 @media (prefers-reduced-motion: reduce) { .ss-ai-toast, .ss-ai-skeleton { animation: none; } }
 @media (max-width: 480px) { .ss-ai-dialog header, .ss-ai-body { padding-inline: 16px; } .ss-ai-toast { bottom: 16px; inset-inline-end: 16px; width: calc(100vw - 32px); } }
+
+/* The library shares SlimStat's settings shell; report content loads only on demand. */
+.ss-ai-page-content { margin-top: 24px; color: var(--ss-text-body); }
+.ss-ai-page .slimstat-header--modern { margin-inline: 0; }
+.ss-ai-page-content h2 { color: var(--ss-text-primary); font-size: 1.25rem; line-height: 1.4; margin: 0 0 12px; }
+.ss-ai-page-content h3 { color: var(--ss-text-primary); font-size: 1rem; line-height: 1.5; }
+.ss-ai-page-content p, .ss-ai-page-content li { font-size: .875rem; line-height: 1.65; }
+.ss-ai-page-content p { max-width: 72ch; }
+.ss-ai-page .nav-tabs { flex-wrap: wrap; }
+.ss-ai-page a:focus-visible, .ss-ai-page summary:focus-visible { outline: 2px solid var(--ss-info-fg); outline-offset: 2px; box-shadow: none; }
+.ss-ai-intro { display: grid; gap: 32px; padding: 24px; background: var(--ss-surface); border: 1px solid var(--ss-border); border-radius: 8px; }
+.ss-ai-eyebrow { color: var(--ss-text-muted); font-weight: 600; margin: 0 0 12px; }
+.ss-ai-steps { margin: 24px 0; padding-inline-start: 24px; }
+.ss-ai-steps li { padding-inline-start: 4px; margin-block: 12px; }
+.ss-ai-pro-intro { border-top: 1px solid var(--ss-border); padding-top: 24px; }
+.ss-ai-explainer { margin: 24px 0; color: var(--ss-text-muted); }
+.ss-ai-section-heading { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.ss-ai-section-heading p { margin-bottom: 0; }
+.ss-ai-empty { padding: 32px 24px; background: var(--ss-surface); border: 1px solid var(--ss-border); border-radius: 8px; }
+.ss-ai-empty > .dashicons { color: var(--ss-text-muted); font-size: 28px; width: 28px; height: 28px; }
+.ss-ai-search { display: grid; gap: 8px; max-width: 360px; margin-bottom: 20px; }
+.ss-ai-search label { font-weight: 600; }
+.ss-ai-search input { width: 100%; min-height: 40px; }
+.ss-ai-entry { background: var(--ss-surface); border: 1px solid var(--ss-border); border-radius: 6px; margin-block: 12px; overflow-wrap: anywhere; }
+.ss-ai-entry summary { cursor: pointer; padding: 20px; line-height: 1.5; }
+.ss-ai-entry summary::marker { color: var(--ss-text-muted); }
+.ss-ai-entry-title { font-size: 1rem; font-weight: 600; color: var(--ss-text-primary); }
+.ss-ai-entry-range, .ss-ai-entry-date { display: block; font-size: .8125rem; color: var(--ss-text-muted); margin-top: 8px; }
+.ss-ai-entry-body { border-top: 1px solid var(--ss-border); padding: 0 20px 24px; }
+.ss-ai-entry-body .ss-ai-result { max-width: 72ch; }
+.ss-ai-settings .form-table { margin-top: 24px; }
+.ss-ai-settings .form-table select { max-width: 100%; min-width: min(280px, 100%); }
+.ss-ai-settings .form-table .description { max-width: 72ch; }
+.ss-ai-clear { border-top: 1px solid var(--ss-border); margin-top: 24px; padding-top: 12px; }
+.ss-ai-settings .slimstat-switch__state { margin-inline-end: 12px; }
+@media (max-width: 782px) {
+    .ss-ai-page .ss-ai-settings .form-table th { padding: 20px 20px 8px; font-size: 1rem; font-weight: 600; }
+    .ss-ai-page .ss-ai-settings .form-table td { padding: 8px 20px 20px; }
+}
+@media (min-width: 960px) {
+    .ss-ai-intro { grid-template-columns: 1.3fr 1fr; gap: 48px; padding: 32px; }
+    .ss-ai-pro-intro { border-top: 0; border-inline-start: 1px solid var(--ss-border); padding-top: 0; padding-inline-start: 32px; }
+    .ss-ai-entry summary { position: relative; display: grid; grid-template-columns: minmax(160px, 1fr) minmax(200px, 1fr) auto; align-items: center; gap: 16px; padding-inline-start: 36px; }
+    .ss-ai-entry summary::before { content: '+'; position: absolute; inset-inline-start: 16px; color: var(--ss-text-muted); }
+    .ss-ai-entry[open] summary::before { content: '−'; }
+    .ss-ai-entry-range, .ss-ai-entry-date { margin-top: 0; }
+}
