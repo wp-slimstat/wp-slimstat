@@ -195,7 +195,8 @@ test.describe('Pagination sweep — all slimview pages', () => {
     const released = new Promise<void>(resolve => { releaseInitial = resolve; });
     await page.route('**/wp-admin/admin-ajax.php', async route => {
       const params = new URLSearchParams(route.request().postData() || '');
-      if (params.get('report_id') === 'slim_p4_27' && !params.has('fs[start_from]')) {
+      const containsReport = params.get('report_id') === 'slim_p4_27' || params.getAll('report_ids[]').includes('slim_p4_27');
+      if (containsReport && !params.has('fs[start_from]')) {
         const response = await route.fetch();
         initialReady = true;
         await released;

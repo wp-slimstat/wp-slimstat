@@ -74,13 +74,14 @@ ART="$CELL_DIR/artifacts"
 # for both is what stops that from becoming a silent `patch -p1 -d` into the wrong tree.
 WORKTREES="$(dirname "$(arm_worktree_dir _ "$CELL")")"
 
-export COMPOSE_PROJECT_NAME="ssanswers" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
+export COMPOSE_PROJECT_NAME="${SLIMSTAT_COMPARISON_PROJECT:-ssanswers}" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
+[[ "$COMPOSE_PROJECT_NAME" =~ ^[a-z0-9][a-z0-9_-]*$ ]] || { err 'invalid comparison project name'; exit 1; }
 export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
 
-# Fixed-name project: refuse a concurrent run before installing an EXIT cleanup.
-existing=$(docker ps -aq --filter label=com.docker.compose.project=ssanswers) || exit 1
-[ -z "$existing" ] || { err 'ssanswers is already owned by another run'; exit 1; }
+# Refuse an occupied project before installing an EXIT cleanup.
+existing=$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || exit 1
+[ -z "$existing" ] || { err "$COMPOSE_PROJECT_NAME is already owned by another run"; exit 1; }
 ARTIFACT_INPUT="${SLIMSTAT_COMPARISON_ARTIFACTS:-}"
 ARTIFACT_ARMS="$CELL_DIR/artifact-arms"
 if [ -n "$ARTIFACT_INPUT" ]; then
@@ -88,7 +89,13 @@ if [ -n "$ARTIFACT_INPUT" ]; then
   BEFORE=$(git -C "$PLUGIN_SRC" rev-parse "$BEFORE^{commit}") || exit 1
   AFTER=$(git -C "$PLUGIN_SRC" rev-parse "$AFTER^{commit}") || exit 1
 fi
-cleanup() { dc down -v --remove-orphans >/dev/null 2>&1 || true; }
+cleanup() {
+  if [ -d "$ART" ]; then
+    dc logs --no-color db >"$ART/database-container.log" 2>&1 || true
+    dc ps -a --format json >"$ART/container-state.json" 2>&1 || true
+  fi
+  dc down -v --remove-orphans >/dev/null 2>&1 || true
+}
 trap cleanup EXIT
 
 # $ART is CLEARED, not merely created. It used to be only mkdir -p'd, so every artifact from
