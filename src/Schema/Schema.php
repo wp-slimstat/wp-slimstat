@@ -962,25 +962,55 @@ final class Schema
     }
 
     /**
-     * Try metadata-only column additions first, then online DDL; the bare retry runs when the server refuses the hints
-     * (MyISAM, or a change INPLACE cannot do). The one owner of that policy: migrations and
-     * Ecommerce setup both build through it.
+     * Metadata-only additions first, then online DDL. Migrations disallow the
+     * compatibility copy used by setup callers. The timeout bounds each metadata
+     * lock acquisition, not the runtime of an online rebuild.
      *
-     * @return int|bool wpdb::query() result.
+     * @return int|bool wpdb::query() result; false also when session restoration fails.
      */
-    public static function alterOnline(wpdb $db, string $sql)
+    public static function alterOnline(wpdb $db, string $sql, bool $allowCopy = true)
     {
-        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Schema builds DDL from its allowlisted manifest and the core table prefix; no request values are interpolated.
-        if (false !== stripos($sql, 'ADD COLUMN')
-            && !preg_match('/\b(?:ADD\s+(?:INDEX|KEY|UNIQUE|PRIMARY|FOREIGN|CONSTRAINT)|DROP|MODIFY|CHANGE|RENAME)\b/i', $sql)) {
-            $result = $db->query($sql . ', ALGORITHM=INSTANT');
-            if (false !== $result) {
-                return $result;
-            }
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Manifest-built DDL; the saved session timeout is validated and integer-cast.
+        $oldTimeout = $db->get_var('SELECT @@SESSION.lock_wait_timeout');
+        if (!ctype_digit((string) $oldTimeout) || '' !== (string) $db->last_error) {
+            $db->last_error = 'Could not read the metadata-lock timeout; no schema change was attempted. ' . $db->last_error;
+            return false;
         }
-        $result = $db->query($sql . ', ALGORITHM=INPLACE, LOCK=NONE');
-        if (false === $result) {
-            $result = $db->query($sql);
+        $timeout = min(5, (int) $oldTimeout);
+        if (false === $db->query('SET SESSION lock_wait_timeout = ' . $timeout)) {
+            return false;
+        }
+        $result = false;
+        $started = microtime(true);
+        try {
+            $attempts = [];
+            if (false !== stripos($sql, 'ADD COLUMN')
+                && !preg_match('/\b(?:ADD\s+(?:INDEX|KEY|UNIQUE|PRIMARY|FOREIGN|CONSTRAINT)|DROP|MODIFY|CHANGE|RENAME)\b/i', $sql)) {
+                $attempts[] = ', ALGORITHM=INSTANT';
+            }
+            $attempts[] = ', ALGORITHM=INPLACE, LOCK=NONE';
+            if ($allowCopy) { $attempts[] = ''; }
+            foreach ($attempts as $hint) {
+                $result = $db->query($sql . $hint);
+                if (false !== $result) { break; }
+                // A timeout must not begin another five-second wait. Driver codes cover
+                // translated server messages; the text fallback supports wpdb drop-ins.
+                $dbh = $db->dbh ?? null;
+                $errno = $dbh instanceof \mysqli ? mysqli_errno($dbh) : 0;
+                if (in_array($errno, [1205, 1213], true)
+                    || preg_match('/lock wait timeout|deadlock/i', (string) $db->last_error)
+                    || microtime(true) - $started >= 5) {
+                    break;
+                }
+            }
+        } finally {
+            $error = (string) $db->last_error;
+            if (false === $db->query('SET SESSION lock_wait_timeout = ' . (int) $oldTimeout)) {
+                $result = false;
+                $error .= ' Could not restore the metadata-lock timeout: ' . $db->last_error;
+            }
+            // A successful SET clears last_error; callers still need the DDL failure.
+            $db->last_error = $error;
         }
         // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         return $result;

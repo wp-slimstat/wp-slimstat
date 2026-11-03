@@ -5,6 +5,9 @@
 * Unfiltered pageview totals reuse cached history while reading today's count live, after a 30-minute midnight safety window. Filtered totals, sums and distinct counts retain fresh full-range queries.
 * Acquisition widgets share their schema check within a request and recheck after a migration or database change.
 
+**Upgrade with confidence**
+* Column and index migrations limit metadata-lock waits to five seconds and leave unsupported online changes pending instead of copying tables. Connection settings are restored after success or failure.
+
 **Numbers you can trust**
 * Database query failures no longer become cached empty reports. Removing analytics rows invalidates cached historical reports.
 * Reports that span midnight keep grouped counts, averages, distinct counts and top-list rankings exact. Some top lists now show corrected counts and ordering.

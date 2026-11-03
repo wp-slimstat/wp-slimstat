@@ -1,0 +1,17 @@
+target: src/Schema/Schema.php
+gate: php tests/schema-online-safety-test.php
+kind: guard-removal
+expect: unsafe timeout must refuse DDL
+rationale: Do not run DDL without a readable restorable session timeout.
+---
+--- a/src/Schema/Schema.php
++++ b/src/Schema/Schema.php
+@@ -972,7 +972,7 @@
+     {
+         // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Manifest-built DDL; the saved session timeout is validated and integer-cast.
+         $oldTimeout = $db->get_var('SELECT @@SESSION.lock_wait_timeout');
+-        if (!ctype_digit((string) $oldTimeout) || '' !== (string) $db->last_error) {
++        if (false) {
+             $db->last_error = 'Could not read the metadata-lock timeout; no schema change was attempted. ' . $db->last_error;
+             return false;
+         }
