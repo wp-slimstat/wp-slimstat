@@ -265,6 +265,13 @@ wpc --skip-plugins --skip-themes eval '
   wp_clear_scheduled_hook("wp_slimstat_purge");' >>"$ART/install.log" 2>&1 \
   || { err 'could not freeze analytics writers'; exit 1; }
 
+if [ "${SLIMSTAT_REPORT_FIXTURE:-0}" = 1 ]; then
+  dc exec -T -u www-data -e SLIMSTAT_REPORT_FIXTURE=1 wp wp --path=/var/www/html \
+    eval-file wp-content/plugins/wp-slimstat/tests/bench/lib/prepare-report-fixture.php \
+    > "$ART/report-fixture.json" 2> "$ART/report-fixture.log" \
+    || { err 'report fixture preparation failed'; exit 1; }
+fi
+
 # Absolute window bounds, computed ONCE and passed to both arms. "Last 30 days" evaluated
 # independently per arm would select different rows on either side of a minute boundary and diff
 # for a reason that is not the code.
@@ -276,6 +283,7 @@ else
   WIN_END=$(wpc eval 'echo time();' 2>/dev/null | tr -dc '0-9')
 fi
 WIN_START=$((WIN_END - 30 * 86400))
+PARITY_END="${SLIMSTAT_PARITY_END:-$(date +%s)}"
 python3 - "$ART/run.json" "$WIN_START" "$WIN_END" <<'PY' || exit 1
 import json, pathlib, sys
 p = pathlib.Path(sys.argv[1]); data = json.loads(p.read_text())
@@ -299,6 +307,7 @@ answers_for() {
       local snapshot_rc=0
       dc exec -T wp rm -f /tmp/slimstat-parity.json /tmp/slimstat-parity-diagnostic.json || return 1
       dc exec -T -u www-data -e SLIMSTAT_PARITY_DIAGNOSTIC=/tmp/slimstat-parity-diagnostic.json \
+        -e SLIMSTAT_PARITY_END="$PARITY_END" \
         wp wp --path=/var/www/html eval-file \
         wp-content/plugins/wp-slimstat/tests/bench/lib/parity-snapshot.php /tmp/slimstat-parity.json \
         >"$ART/rendered/$side/block-$b-rep-$rep.log" 2>&1 || snapshot_rc=$?
