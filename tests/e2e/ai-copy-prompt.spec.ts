@@ -3,15 +3,28 @@
  * the site's name, tagline and address, and sends nothing anywhere. Reports about
  * individual visitors get no button; a Pro report without Pro gets a link to the Pro page.
  *
- * Read-only on the stats tables. Pro is switched off for the last test and active_plugins
- * restored after.
+ * Earlier specs truncate the stats table, so this one seeds its own rows (now and in October
+ * 2026) and deletes only those after. Pro is switched off for the last test and
+ * active_plugins restored after.
  */
 import { test, expect, type Page } from '@playwright/test';
 import { BASE_URL } from './helpers/env';
-import { snapshotOption, restoreOption, closeDb } from './helpers/setup';
+import { snapshotOption, restoreOption, closeDb, getPool, seedPageviews, clearStatsCaches } from './helpers/setup';
 import { runWordPressFixture } from './helpers/chart';
 
-test.afterAll(async () => { await closeDb(); });
+const SEEDED = '/e2e-ai-prompt-';
+
+test.beforeAll(async () => {
+  await seedPageviews({ count: 3, resourcePrefix: `${SEEDED}now-` });
+  await seedPageviews({ count: 3, resourcePrefix: `${SEEDED}oct-`, baseDt: Date.UTC(2026, 9, 15, 12) / 1000 });
+  await clearStatsCaches();
+});
+
+test.afterAll(async () => {
+  await getPool().execute('DELETE FROM wp_slim_stats WHERE resource LIKE ?', [`${SEEDED}%`]);
+  await clearStatsCaches();
+  await closeDb();
+});
 
 // Plain HTTP has no navigator.clipboard; record what the button would copy.
 test.beforeEach(async ({ page }) => {
@@ -68,12 +81,16 @@ test('a chart copies one row per date and the period total', async ({ page }) =>
 });
 
 test('the prompt carries the period and filters the report on screen uses', async ({ page }) => {
-  await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&fs[browser]=equals+Chrome&fs[day]=equals+1&fs[month]=equals+10&fs[year]=equals+2026&fs[interval]=equals+31`);
-  await expect(page.locator('.slimstat-filter-list li')).toHaveText(['browser equals Chrome']);
+  // Only the seeded October rows match, so this runs the same on a live or an empty database.
+  await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&fs[browser]=equals+Chrome&fs[resource]=contains+${SEEDED}oct-&fs[day]=equals+1&fs[month]=equals+10&fs[year]=equals+2026&fs[interval]=equals+31`);
+  const filters = await page.locator('.slimstat-filter-list li').allInnerTexts();
+  expect(filters).toHaveLength(2);
   const prompt = await copyFrom(page, 'slim_p1_08');
   expect(prompt).toContain('Period: 2026-10-01 – 2026-10-31');
-  expect(prompt).toContain('Filters: browser equals Chrome');
-  expect(prompt).toMatch(/^Rows shown: \d+–\d+ of \d+\+?$/m);
+  expect(prompt).toContain(`Filters: ${filters.map((f) => f.trim()).join('; ')}`);
+  expect(prompt).toContain('browser equals Chrome');
+  expect(prompt).toContain('Rows shown: 1–3 of 3');
+  expect(prompt).toContain(`${SEEDED}oct-2`);
 });
 
 test('a view narrowed to one visitor has no button', async ({ page }) => {
