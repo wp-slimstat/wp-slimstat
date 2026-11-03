@@ -20,7 +20,13 @@ FROM php:${PHP_VERSION}-apache
 # sqlite3 module lives in libpython3.x-stdlib, which only the full package pulls in. Listing both
 # also resolved to the identical 8 packages, since python3 Depends on python3-minimal, so the
 # second name was a no-op sitting under a comment recommending it.
+# PHP 7.4/8.0 use Bullseye, whose packages moved to Debian's signed archive.
 RUN set -eux; \
+    . /etc/os-release; \
+    if [ "$VERSION_CODENAME" = bullseye ]; then \
+        sed -i 's|deb.debian.org/debian|archive.debian.org/debian|g' /etc/apt/sources.list; \
+        echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99qa-archive; \
+    fi; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
         libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
