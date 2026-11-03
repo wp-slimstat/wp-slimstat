@@ -243,7 +243,7 @@
     "test:explain-gate-strength": "php tests/explain-gate-strength-test.php",
     "test:utf8mb4-conversion": "php tests/utf8mb4-conversion-test.php",
     "test:default-change-safety": "php tests/default-change-safety-test.php",
-    "test:split-merge-group-key": "php tests/split-merge-group-key-test.php",
+    "test:split-merge-group-key": ["php tests/split-merge-group-key-test.php", "php tests/query-split-non-additive-test.php"],
     "test:known-identity-reports": "php tests/known-identity-reports-test.php",
     "test:class-name-as-variable": "php tests/class-name-as-variable-scan-test.php",
     "test:consent-migration-gate": "php tests/consent-migration-gate-test.php",

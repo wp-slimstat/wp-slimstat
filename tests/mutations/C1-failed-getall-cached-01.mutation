@@ -7,12 +7,12 @@ rationale: The non-split getAll() writer is the one every historical report goes
 diff --git a/src/Utils/Query.php b/src/Utils/Query.php
 --- a/src/Utils/Query.php
 +++ b/src/Utils/Query.php
-@@ -1987,7 +1987,7 @@
+@@ -1996,7 +1996,7 @@
              $this->lastQueryFailed = true;
          }
  
--        if ($this->allowCaching && !$this->lastQueryFailed) {
-+        if ($this->allowCaching) {
+-        if ($useCache && !$this->lastQueryFailed) {
++        if ($useCache) {
              try {
                  $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
              } catch (Exception $exception) {

@@ -1,0 +1,18 @@
+target:    src/Utils/Query.php
+gate:      php tests/query-split-non-additive-test.php
+kind:      guard-removal
+expect:    COUNT(DISTINCT) must not split
+rationale: COUNT(DISTINCT) and AVG are not additive across the midnight halves, and the merge keeps the first half's value for both. Without the fields check the split runs again and a range ending today reports one half as the whole. The gate counts statements: a split issues two, the refused query one over the full range.
+---
+diff --git a/src/Utils/Query.php b/src/Utils/Query.php
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -1862,7 +1862,7 @@
+         //
+         // A refused split is a full range that reaches today, so it is not cached — the same
+         // rule as the live half.
+-        $splitRefused = $split && (!empty($this->havingClauses) || preg_match('/\bDISTINCT\b|\bAVG\s*\(/i', (string) $this->fields));
++        $splitRefused = $split && (!empty($this->havingClauses));
+         if ($splitRefused) {
+             $split = false;
+         }

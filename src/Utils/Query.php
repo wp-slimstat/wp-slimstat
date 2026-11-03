@@ -1855,7 +1855,15 @@ class Query
         // exact opposite of what the report is for. No merge can undo that, because the rows
         // that should have been excluded were already selected. Run one query instead and
         // give up only the historical half's cache entry. (D5)
-        if ($split && !empty($this->havingClauses)) {
+        //
+        // DISTINCT and AVG cannot survive it either: a visitor seen before and after midnight
+        // is one visitor but one per half, and the mean of two means is not the mean. The
+        // merge has no rule that undoes either, so it kept the first half's value. (C-2)
+        //
+        // A refused split is a full range that reaches today, so it is not cached — the same
+        // rule as the live half.
+        $splitRefused = $split && (!empty($this->havingClauses) || preg_match('/\bDISTINCT\b|\bAVG\s*\(/i', (string) $this->fields));
+        if ($splitRefused) {
             $split = false;
         }
 
@@ -1963,9 +1971,10 @@ class Query
         }
 
         $this->lastQueryFailed = false;
+        $useCache              = $this->allowCaching && !$splitRefused;
         $query                 = $this->buildQuery();
         $query                 = $this->prepareQuery($query, $this->valuesToPrepare);
-        if ($this->allowCaching) {
+        if ($useCache) {
             try {
                 $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             } catch (Exception $e) {
@@ -1987,7 +1996,7 @@ class Query
             $this->lastQueryFailed = true;
         }
 
-        if ($this->allowCaching && !$this->lastQueryFailed) {
+        if ($useCache && !$this->lastQueryFailed) {
             try {
                 $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
             } catch (Exception $exception) {
