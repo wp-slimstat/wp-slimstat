@@ -6,7 +6,7 @@ rationale: Deletes the current Upgrade Notice entry and leaves a dateless change
 ---
 --- a/readme.txt
 +++ b/readme.txt
-@@ -151,16 +151,13 @@
+@@ -157,9 +157,6 @@
  
  == Upgrade Notice ==
  
@@ -16,8 +16,9 @@ rationale: Deletes the current Upgrade Notice entry and leaves a dateless change
  = 6.0.0 =
  SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster reports. Back up first. The update adds columns and indexes and removes no rows; older versions keep working and the added columns stay. Database steps wait for your click. Some totals change on purpose: see changelog.
  
+@@ -172,7 +169,7 @@
  
- == Changelog ==
+ * Personal-data downloads include live and archived visits and events, including large histories and older database layouts. A database error stops the export so an incomplete download is not reported as complete.
  
 -= 6.0.1 - 2026-11-02 =
 += 6.0.1 =

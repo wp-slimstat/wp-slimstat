@@ -478,7 +478,8 @@
       "@test:consent-decision",
       "@test:report-sql-debug",
       "@test:browscap-recovery",
-      "@test:dashboard-deferred-reports"
+      "@test:dashboard-deferred-reports",
+      "@test:privacy-export-archive"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit --log-junit build/junit-unit.xml",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php --log-junit build/junit-integration.xml",
@@ -507,6 +508,7 @@
     "test:schema-online-mysql": "wp eval-file tests/Integration/schema-online-mysql.php",
     "test:query-topn-mysql": "wp eval-file tests/Integration/query-topn-mysql.php",
     "test:privacy-export-mysql": "wp eval-file tests/Integration/privacy-export-mysql.php",
+    "test:privacy-export-archive": "php tests/privacy-export-archive-test.php",
     "test:data-version-mysql": "wp eval-file tests/Integration/data-version-mysql.php",
     "test:ecommerce-full-refund-mysql": "wp eval-file tests/Integration/ecommerce-full-refund-mysql.php",
     "test:privacy-erasure-mysql": ["wp eval-file tests/Integration/data-eraser-mysql.php", "wp eval-file tests/Integration/privacy-external-mysql.php"],

@@ -19,7 +19,7 @@
 * Reports that span midnight keep grouped counts, averages, distinct counts and top-list rankings exact. Some top lists now show corrected counts and ordering.
 
 **Security and privacy**
-* WordPress personal-data downloads no longer fail in the pageview exporter. Exports read fresh analytics data, preserve separate event IDs and stop on database errors.
+* WordPress personal-data downloads no longer fail in the pageview exporter. Exports read fresh live and archived analytics data, preserve separate event and archive IDs, support legacy tables without email columns and stop on database errors.
 * Privacy erasure uses the external analytics database when configured. IP anonymization includes archives, supports older integer IP columns and stops on database errors.
 * Report-access allowlists match complete usernames. Partial usernames no longer grant access, including names containing spaces.
 * Retention cleanup verifies archived values before deleting bounded batches and resumes large backlogs. Truncated or incomplete archives, reused keys and concurrent updates retain their source rows. Missing archive fields or custom live columns pause cleanup with a diagnostic instead of silently losing those fields.
