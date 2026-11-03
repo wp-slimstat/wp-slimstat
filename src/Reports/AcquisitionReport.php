@@ -205,7 +205,7 @@ class AcquisitionReport
         if (!empty($args['is_widget'])) {
             echo '</div>';
         }
-        if (wp_doing_ajax()) {
+        if (wp_doing_ajax() && (!class_exists('wp_slimstat_reports', false) || !\wp_slimstat_reports::is_batch_rendering())) {
             wp_die();
         }
     }

@@ -345,6 +345,7 @@ class wp_slimstat_admin
         $is_slimstat_page = (!empty($_GET['page']) && is_string($_GET['page']) && 0 === strpos($_GET['page'], 'slim'));
         $is_slimstat_ajax = (!empty($_POST['action']) && (
             'slimstat_load_report' === $_POST['action'] ||
+            'slimstat_load_reports' === $_POST['action'] ||
             'slimstat_get_live_analytics_data' === $_POST['action']
         ));
 
@@ -354,9 +355,10 @@ class wp_slimstat_admin
         }
 
         // Load the library of functions to generate the reports
-        if ($is_slimstat_page || (!empty($_POST['action']) && 'slimstat_load_report' == $_POST['action'])) {
+        if ($is_slimstat_page || (!empty($_POST['action']) && in_array($_POST['action'], ['slimstat_load_report', 'slimstat_load_reports'], true))) {
             include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-reports.php');
             wp_slimstat_reports::init();
+            add_action('wp_ajax_slimstat_load_reports', ['wp_slimstat_reports', 'load_reports']);
 
             if (!empty($_POST['report_id']) && is_string($_POST['report_id'])) {
                 $report_id = sanitize_title(wp_unslash($_POST['report_id']), 'slim_p0_00');
@@ -1876,6 +1878,7 @@ class wp_slimstat_admin
 
         // Pass some information to Javascript
         $params = [
+            'batch_report_ids' => class_exists('wp_slimstat_reports') ? wp_slimstat_reports::batch_report_ids() : [],
             'async_load'        => ($current_screen && 'dashboard' === $current_screen->id) ? 'on' : (empty(wp_slimstat::$settings['async_load']) ? 'no' : wp_slimstat::$settings['async_load']),
             'datepicker_image'  => plugins_url('/admin/assets/images/datepicker.png', __DIR__),
             'refresh_interval'  => intval(wp_slimstat::$settings['refresh_interval']),

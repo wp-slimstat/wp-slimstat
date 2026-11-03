@@ -14,6 +14,7 @@ function run(observerSupported, enabled = true, manuallyRefreshed = false) {
     let visibility, maximum = 0, active = 0;
     if (manuallyRefreshed) widgets[0]['slimstat-refresh'] = {};
     function jQuery(target) {
+        if (target === 'body') return { hasClass: name => name === 'index-php' };
         if (typeof target === 'string') {
             if (target.startsWith('#')) target = widgets.find(w => w.id === target.slice(1));
             else return { each: fn => widgets.forEach(w => fn.call(w)) };

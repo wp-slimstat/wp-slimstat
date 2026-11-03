@@ -1,0 +1,17 @@
+target: admin/view/wp-slimstat-reports.php
+gate: php tests/batch-reports-test.php
+kind: guard-removal
+expect: cap at 25
+rationale: Bound the reports rendered by one request.
+---
+--- a/admin/view/wp-slimstat-reports.php
++++ b/admin/view/wp-slimstat-reports.php
+@@ -1300,7 +1300,7 @@
+             if (!is_string($value)) { continue; }
+             $id = sanitize_key(wp_unslash($value));
+             if (isset($allowed[$id])) { $requested[$id] = true; }
+-            if (count($requested) === 25) { break; }
++            if (count($requested) === 50) { break; }
+         }
+         $responses = [];
+         $granularities = isset($_POST['granularities']) && is_array($_POST['granularities']) ? $_POST['granularities'] : [];

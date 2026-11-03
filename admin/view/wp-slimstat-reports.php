@@ -3,6 +3,8 @@
 class wp_slimstat_reports
 {
     public static $reports      = []; // Structures to store all the information about what screens and reports are available
+    private static $free_reports = [];
+    private static $batch_rendering = false;
     public static $user_reports = [
         'slimview1' => [],
         'slimview2' => [],
@@ -1001,6 +1003,7 @@ class wp_slimstat_reports
         }
 
         // Allow third party tools to manipulate this list here above: please use unique report IDs that don't interfere with built-in ones, if you add your own custom report
+        self::$free_reports = self::$reports;
         self::$reports = apply_filters('slimstat_reports_info', self::$reports);
         $merge_reports = array_keys(self::$reports);
 
@@ -1240,6 +1243,11 @@ class wp_slimstat_reports
 
     public static function callback_wrapper()
     {
+        self::render_report(func_get_args());
+    }
+
+    private static function render_report(array $arguments): bool
+    {
         // If this user is whitelisted, we use the minimum capability
         $minimum_capability = 'read';
         if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
@@ -1247,19 +1255,95 @@ class wp_slimstat_reports
         }
 
         if (!current_user_can($minimum_capability)) {
-            return;
+            return false;
         }
 
         // Dashboard widgets must not delay the page, including upgraded sites with Async mode off.
         $screen = function_exists('get_current_screen') ? get_current_screen() : null;
         if (!wp_doing_ajax() && $screen && 'dashboard' === $screen->id) {
-            return;
+            return false;
         }
 
-        $_args = self::_check_args(func_get_args());
+        $_args = self::_check_args($arguments);
         if (!empty($_args) && !empty($_args['callback'])) {
             call_user_func($_args['callback'], $_args['callback_args']);
+            return true;
         }
+        return false;
+    }
+
+    public static function batch_report_ids(): array
+    {
+        return array_keys(array_filter(self::$free_reports, static function ($report, $id) {
+            // An extension may replace a built-in ID as well as register its own.
+            return 'slim_p10_01' !== $id && isset(self::$reports[$id]) && self::$reports[$id] === $report;
+        }, ARRAY_FILTER_USE_BOTH));
+    }
+
+    public static function is_batch_rendering(): bool
+    {
+        return self::$batch_rendering;
+    }
+
+    private static function finish_ajax(): void
+    {
+        if (!self::$batch_rendering) { die(); }
+    }
+
+    public static function load_reports(): void
+    {
+        check_ajax_referer('meta-box-order', 'security');
+        $requested = [];
+        $allowed = array_flip(self::batch_report_ids());
+        $input = isset($_POST['report_ids']) && is_array($_POST['report_ids']) ? $_POST['report_ids'] : [];
+        foreach ($input as $value) {
+            if (!is_string($value)) { continue; }
+            $id = sanitize_key(wp_unslash($value));
+            if (isset($allowed[$id])) { $requested[$id] = true; }
+            if (count($requested) === 25) { break; }
+        }
+        $responses = [];
+        $granularities = isset($_POST['granularities']) && is_array($_POST['granularities']) ? $_POST['granularities'] : [];
+        foreach (array_keys($requested) as $id) {
+            $filters = wp_slimstat_db::$filters_normalized;
+            $where = wp_slimstat_db::$sql_where;
+            $pageviews = wp_slimstat_db::$pageviews;
+            $debug = wp_slimstat_db::$debug_message;
+            $settings = wp_slimstat::$settings;
+            $post = $_POST;
+            $request = $_REQUEST;
+            $previousBatch = self::$batch_rendering;
+            $db = wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+            $lastError = $db->last_error;
+            $level = ob_get_level();
+            ob_start();
+            try {
+                self::$batch_rendering = true;
+                $db->last_error = '';
+                unset($_POST['report_id'], $_REQUEST['report_id'], $_POST['granularity'], $_REQUEST['granularity']);
+                $granularity = $granularities[$id] ?? null;
+                if (is_string($granularity)) {
+                    $_POST['granularity'] = $_REQUEST['granularity'] = sanitize_key(wp_unslash($granularity));
+                }
+                if (self::render_report([['id' => $id]])) {
+                    $responses[$id] = ob_get_contents();
+                }
+            } catch (\Throwable $error) {
+                // Omit only this item so the client can retry it through the single route.
+            } finally {
+                while (ob_get_level() > $level) { ob_end_clean(); }
+                self::$batch_rendering = $previousBatch;
+                wp_slimstat_db::$filters_normalized = $filters;
+                wp_slimstat_db::$sql_where = $where;
+                wp_slimstat_db::$pageviews = $pageviews;
+                wp_slimstat_db::$debug_message = $debug;
+                wp_slimstat::$settings = $settings;
+                $db->last_error = $lastError;
+                $_POST = $post;
+                $_REQUEST = $request;
+            }
+        }
+        wp_send_json_success($responses);
     }
 
     /**
@@ -1418,7 +1502,8 @@ class wp_slimstat_reports
                 self::empty_state($_args['empty_hint'] ?? '', $_args['empty_title'] ?? '');
 
                 if (defined('DOING_AJAX') && DOING_AJAX) {
-                    die();
+                    self::finish_ajax();
+                    return;
                 } else {
                     return [];
                 }
@@ -1778,7 +1863,8 @@ class wp_slimstat_reports
         }
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
+            self::finish_ajax();
+            return;
         }
         return null;
     }
@@ -1789,7 +1875,8 @@ class wp_slimstat_reports
         include(__DIR__ . '/right-now.php');
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
+            self::finish_ajax();
+            return;
         }
     }
 
@@ -1798,7 +1885,8 @@ class wp_slimstat_reports
         $chart = new \SlimStat\Modules\Chart();
         $chart->showChart($args);
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
+            self::finish_ajax();
+            return;
         }
     }
 
@@ -1822,7 +1910,8 @@ class wp_slimstat_reports
             self::empty_state($_args['empty_hint'] ?? '', $_args['empty_title'] ?? '');
 
             if (defined('DOING_AJAX') && DOING_AJAX) {
-                die();
+                self::finish_ajax();
+                return;
             } else {
                 return [];
             }
@@ -1887,7 +1976,8 @@ class wp_slimstat_reports
             echo '<div>';
         }
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
+            self::finish_ajax();
+            return;
         }
         return null;
     }
@@ -2121,7 +2211,8 @@ class wp_slimstat_reports
             $goals = get_option('slimstat_goals', []);
             self::show_goals_compact($goals);
             if (wp_doing_ajax()) {
-                die();
+                self::finish_ajax();
+                return;
             }
             return;
         }
@@ -2143,7 +2234,8 @@ class wp_slimstat_reports
         include __DIR__ . '/partials/goals-funnels/goals-card.php';
 
         if (wp_doing_ajax()) {
-            die();
+            self::finish_ajax();
+            return;
         }
     }
 
@@ -2262,7 +2354,8 @@ class wp_slimstat_reports
             $funnels     = $max_funnels > 0 ? get_option('slimstat_funnels', []) : [];
             self::show_funnels_compact($max_funnels, $funnels);
             if (wp_doing_ajax()) {
-                die();
+                self::finish_ajax();
+                return;
             }
             return;
         }
@@ -2309,7 +2402,8 @@ class wp_slimstat_reports
         include __DIR__ . '/partials/goals-funnels/funnels-card.php';
 
         if (wp_doing_ajax()) {
-            die();
+            self::finish_ajax();
+            return;
         }
     }
 
@@ -2488,7 +2582,8 @@ class wp_slimstat_reports
             self::empty_state($_args['empty_hint'] ?? '', $_args['empty_title'] ?? '');
 
             if (defined('DOING_AJAX') && DOING_AJAX) {
-                die();
+                self::finish_ajax();
+                return;
             } else {
                 return 0;
             }
@@ -2540,7 +2635,8 @@ class wp_slimstat_reports
         }
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
+            self::finish_ajax();
+            return;
         }
         return null;
     }
@@ -2607,7 +2703,8 @@ class wp_slimstat_reports
         }
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
+            self::finish_ajax();
+            return;
         }
     }
 
@@ -2742,7 +2839,8 @@ class wp_slimstat_reports
 
         <?php
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
+            self::finish_ajax();
+            return;
         }
     }
 
