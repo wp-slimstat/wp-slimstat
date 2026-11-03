@@ -15,6 +15,7 @@
 * Reports that span midnight keep grouped counts, averages, distinct counts and top-list rankings exact. Some top lists now show corrected counts and ordering.
 
 **Security and privacy**
+* Privacy erasure uses the external analytics database when configured. IP anonymization includes archives, supports older integer IP columns and stops on database errors.
 * Report-access allowlists match complete usernames. Partial usernames no longer grant access.
 * Retention cleanup verifies archived values before deleting bounded batches and resumes large backlogs. Truncated or incomplete archives, reused keys and concurrent updates retain their source rows. Archives missing fields pause cleanup with a diagnostic instead of silently losing those fields.
 * Personal-data erasure drains every live and archive batch, including visitors with more than 500 events, without touching another visitor whose archive ID was reused. A database error stops erasure for a safe retry.
@@ -59,6 +60,7 @@
 * Removed the unused legacy add-on catalog and manual-download callback for the retired update service. Stored add-on license settings are kept.
 
 **Security and privacy**
+* Privacy erasure uses the external analytics database when configured. IP anonymization includes archives, supports older integer IP columns and stops on database errors.
 * Report-access allowlists match complete usernames. Partial usernames no longer grant access.
 * Hidden consent banners no longer intercept form controls or keyboard focus, and visible banners use a lower stacking level. ([#181](https://github.com/wp-slimstat/wp-slimstat/issues/181))
 * Saved filters validate registered columns and supported operators. Unknown or malformed saved entries remain stored and deletable, but cannot apply a partial or unfiltered report. Valid acquisition and extension filters retain their values. ([#351](https://github.com/wp-slimstat/wp-slimstat/pull/351))
@@ -146,6 +148,7 @@
 * Real-time shows the visitors, pages and countries online and the minute chart as soon as the page opens. In the 6.0.0 beta they read 0 until the first refresh a minute later.
 
 **Security and privacy**
+* Privacy erasure uses the external analytics database when configured. IP anonymization includes archives, supports older integer IP columns and stops on database errors.
 * Report-access allowlists match complete usernames. Partial usernames no longer grant access.
 * Fixed a SQL injection that any logged-in user could reach on sites with the "Posts and Pages" report column turned on (off by default). Found in-house; no report of it in the wild.
 * Shortcodes show personal data, access logs and user reports only to people allowed to view analytics; visitors see nothing.

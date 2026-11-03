@@ -6,8 +6,8 @@ rationale: Erasure must drain shrinking live and archive batches and stop the pa
 ---
 --- a/src/Services/Privacy/DataEraser.php
 +++ b/src/Services/Privacy/DataEraser.php
-@@ -99,7 +99,7 @@
- 			$events_table = $db->prefix . 'slim_events' . $suffix;
+@@ -101,7 +101,7 @@
+ 			$events_table = $prefix . 'slim_events' . $suffix;
  			$ids = $db->get_col($db->prepare(
  				"SELECT e.event_id FROM {$events_table} e INNER JOIN {$stats_table} s ON e.id = s.id
 -				 WHERE s.email = %s ORDER BY e.event_id LIMIT 500",

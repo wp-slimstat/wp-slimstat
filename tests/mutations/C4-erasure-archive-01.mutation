@@ -6,9 +6,9 @@ rationale: Erasure must drain shrinking live and archive batches and stop the pa
 ---
 --- a/src/Services/Privacy/DataEraser.php
 +++ b/src/Services/Privacy/DataEraser.php
-@@ -39,7 +39,7 @@
- 		$exists = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare('SHOW TABLES LIKE %s', $archive));
- 		$failed = '' !== (string) $GLOBALS['wpdb']->last_error;
+@@ -40,7 +40,7 @@
+ 		$exists = $db->get_var($db->prepare('SHOW TABLES LIKE %s', $db->esc_like($archive)));
+ 		$failed = '' !== (string) $db->last_error;
  		if ($exists) {
 -			$tables[] = $archive;
 +			// Archived-only records are skipped.
