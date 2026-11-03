@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-03T16:23:08+00:00\n"
+"POT-Creation-Date: 2026-11-03T16:35:17+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -1248,7 +1248,7 @@ msgstr ""
 
 #: admin/index.php:179
 #: admin/view/ai-analysis.php:32
-#: admin/assets/js/ai-analysis.js:87
+#: admin/assets/js/ai-analysis.js:134
 msgid "AI Analysis"
 msgstr ""
 
@@ -2633,7 +2633,7 @@ msgid "View saved analyses"
 msgstr ""
 
 #: admin/view/ai-analysis.php:69
-#: admin/assets/js/ai-analysis.js:25
+#: admin/assets/js/ai-analysis.js:46
 msgid "Explore Pro AI →"
 msgstr ""
 
@@ -3611,7 +3611,7 @@ msgstr ""
 
 #: admin/view/partials/ecommerce.php:171
 #: views/components/notification/card.php:39
-#: admin/assets/js/ai-analysis.js:41
+#: admin/assets/js/ai-analysis.js:69
 msgid "Dismiss"
 msgstr ""
 
@@ -4361,7 +4361,7 @@ msgstr ""
 
 #: admin/view/partials/utm-builder.php:20
 #: src/Reports/AcquisitionReport.php:380
-#: admin/assets/js/ai-analysis.js:88
+#: admin/assets/js/ai-analysis.js:135
 msgid "Close"
 msgstr ""
 
@@ -9344,7 +9344,7 @@ msgid "Click to copy this report as an AI prompt, then paste it into ChatGPT, Cl
 msgstr ""
 
 #: src/Reports/AiPromptButton.php:55
-#: admin/assets/js/ai-analysis.js:200
+#: admin/assets/js/ai-analysis.js:280
 msgid "Analyze with AI"
 msgstr ""
 
@@ -10485,209 +10485,209 @@ msgstr ""
 msgid "Copy failed"
 msgstr ""
 
-#: admin/assets/js/admin.js:731
-#: admin/assets/js/admin.js:1467
+#: admin/assets/js/admin.js:736
+#: admin/assets/js/admin.js:1472
 msgid "Select value..."
 msgstr ""
 
-#: admin/assets/js/admin.js:732
+#: admin/assets/js/admin.js:737
 msgid "Search..."
 msgstr ""
 
-#: admin/assets/js/admin.js:733
+#: admin/assets/js/admin.js:738
 msgid "No results found"
 msgstr ""
 
-#: admin/assets/js/admin.js:734
-#: admin/assets/js/admin.js:1470
+#: admin/assets/js/admin.js:739
+#: admin/assets/js/admin.js:1475
 msgid "No matches. Select Apply to filter by this value."
 msgstr ""
 
-#: admin/assets/js/admin.js:735
+#: admin/assets/js/admin.js:740
 msgid "Loading..."
 msgstr ""
 
-#: admin/assets/js/admin.js:1429
-#: admin/assets/js/admin.js:1471
+#: admin/assets/js/admin.js:1434
+#: admin/assets/js/admin.js:1476
 msgid "Loading options..."
 msgstr ""
 
-#: admin/assets/js/admin.js:1458
+#: admin/assets/js/admin.js:1463
 msgid "No matching options found"
 msgstr ""
 
-#: admin/assets/js/admin.js:1462
+#: admin/assets/js/admin.js:1467
 msgid "No data in this time range"
 msgstr ""
 
-#: admin/assets/js/admin.js:1468
+#: admin/assets/js/admin.js:1473
 msgid "Search options..."
 msgstr ""
 
-#: admin/assets/js/admin.js:1485
-#: admin/assets/js/admin.js:1489
+#: admin/assets/js/admin.js:1490
 #: admin/assets/js/admin.js:1494
+#: admin/assets/js/admin.js:1499
 msgid "Enter value..."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:30
+#: admin/assets/js/ai-analysis.js:58
 msgid "AI prompt"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:37
+#: admin/assets/js/ai-analysis.js:65
 msgid "Want AI insights without leaving WordPress?"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:38
+#: admin/assets/js/ai-analysis.js:66
 msgid "With SlimStat Pro, connect your AI provider and analyze reports in one click."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:52
+#: admin/assets/js/ai-analysis.js:80
 msgid "✓ AI Prompt Copied!"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:53
+#: admin/assets/js/ai-analysis.js:81
 msgid "Paste it into ChatGPT, Claude, Gemini, Grok, or your favorite AI to analyze your report."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:60
+#: admin/assets/js/ai-analysis.js:94
 msgid "Wait for the heatmap to finish loading."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:98
+#: admin/assets/js/ai-analysis.js:151
 msgid "Copy Prompt Instead"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:105
+#: admin/assets/js/ai-analysis.js:164
 msgid "AI analysis could not load. Please try again."
 msgstr ""
 
 #. translators: 1: generation date, 2: provider, 3: model.
-#: admin/assets/js/ai-analysis.js:127
+#: admin/assets/js/ai-analysis.js:199
 #, js-format
 msgid "Generated %1$s · %2$s / %3$s"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:131
+#: admin/assets/js/ai-analysis.js:203
 msgid "Saved result. Analytics may have changed since it was generated."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:132
+#: admin/assets/js/ai-analysis.js:204
 msgid "This saved result belongs to another date range, filter or report selection."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:133
+#: admin/assets/js/ai-analysis.js:205
 msgid "Copy Result"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:136
+#: admin/assets/js/ai-analysis.js:208
 msgid "Analysis copied"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:136
+#: admin/assets/js/ai-analysis.js:208
 msgid "Your analysis is ready to paste."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:137
+#: admin/assets/js/ai-analysis.js:209
 msgid "Copy failed. Select the result text and copy it manually."
 msgstr ""
 
 #. translators: %d: number of matching saved reports.
-#: admin/assets/js/ai-analysis.js:155
+#: admin/assets/js/ai-analysis.js:227
 #, js-format
 msgid "Matching saved reports: %d"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:165
-#: admin/assets/js/ai-analysis.js:186
+#: admin/assets/js/ai-analysis.js:237
+#: admin/assets/js/ai-analysis.js:266
 msgid "Loading saved analysis…"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:169
+#: admin/assets/js/ai-analysis.js:241
 msgid "This saved analysis is no longer available. Open the report to create a new one."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:175
+#: admin/assets/js/ai-analysis.js:247
 msgid "Close and reopen this entry to try again."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:194
+#: admin/assets/js/ai-analysis.js:274
 msgid "AI analysis is disabled. An administrator can enable it in SlimStat’s AI Analysis settings."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:195
+#: admin/assets/js/ai-analysis.js:275
 msgid "AI Analysis Settings →"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:200
-#: admin/assets/js/ai-analysis.js:243
+#: admin/assets/js/ai-analysis.js:280
+#: admin/assets/js/ai-analysis.js:323
 msgid "Regenerate Analysis"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:200
-#: admin/assets/js/ai-analysis.js:248
+#: admin/assets/js/ai-analysis.js:280
+#: admin/assets/js/ai-analysis.js:328
 msgid "Analyze Current Report"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:206
-#: admin/assets/js/ai-analysis.js:225
-#: admin/assets/js/ai-analysis.js:238
+#: admin/assets/js/ai-analysis.js:286
+#: admin/assets/js/ai-analysis.js:305
+#: admin/assets/js/ai-analysis.js:318
 msgid "The report selection changed. Close this panel and reopen it for the current report."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:210
+#: admin/assets/js/ai-analysis.js:290
 msgid "Connect AI to unlock instant insights"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:211
+#: admin/assets/js/ai-analysis.js:291
 msgid "Configure your preferred AI provider once to analyze reports directly in SlimStat."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:212
+#: admin/assets/js/ai-analysis.js:292
 msgid "Set Up AI →"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:213
+#: admin/assets/js/ai-analysis.js:293
 msgid "Ask a site administrator to manage AI Connections."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:217
+#: admin/assets/js/ai-analysis.js:297
 msgid "Selected aggregate analytics will be sent to this AI provider. Visitor identifiers and free-form labels are removed. Provider API charges may apply. Automatic selection does not guarantee the lowest price."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:221
+#: admin/assets/js/ai-analysis.js:301
 msgid "I agree to send this minimized report to the selected provider."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:231
+#: admin/assets/js/ai-analysis.js:311
 msgid "Analyzing your report…"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:232
+#: admin/assets/js/ai-analysis.js:312
 msgid "Reviewing your data and finding useful insights."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:241
+#: admin/assets/js/ai-analysis.js:321
 msgid "Analysis complete. This result was not saved."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:265
+#: admin/assets/js/ai-analysis.js:345
 msgid "Analysis in progress"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:265
+#: admin/assets/js/ai-analysis.js:345
 msgid "Wait for the current request to finish before starting another."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:270
+#: admin/assets/js/ai-analysis.js:350
 msgid "From copy and paste to one-click insights"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:271
+#: admin/assets/js/ai-analysis.js:351
 msgid "With SlimStat Pro, connect your AI provider through WordPress and analyze reports without leaving your dashboard."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:272
+#: admin/assets/js/ai-analysis.js:352
 msgid "Requires WordPress 7.0 or newer. Provider API charges may apply."
 msgstr ""
 

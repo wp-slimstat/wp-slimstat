@@ -226,7 +226,12 @@ jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
     document.dispatchEvent(new CustomEvent('slimstat:ai-copy', { detail: { copied } }));
 });
 
-// Shared clipboard behavior supports plain-HTTP WordPress administration too.
+/**
+ * Copy text with a selection fallback for plain HTTP or denied clipboard permissions.
+ *
+ * @param {string} text Plain text to copy.
+ * @returns {Promise<boolean>} True only when a clipboard method succeeds.
+ */
 window.SlimStatCopyText = async function (text) {
     let copied = false;
     try {

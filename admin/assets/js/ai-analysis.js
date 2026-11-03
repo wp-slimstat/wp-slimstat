@@ -10,20 +10,48 @@
     let sequence = 0;
     let active = false;
 
+    /**
+     * Create an element without interpreting report or provider text as HTML.
+     *
+     * @param {string} tag Trusted element name.
+     * @param {string} text Plain text content.
+     * @param {Object} attrs Trusted attribute names and values.
+     * @returns {HTMLElement} The detached element.
+     */
     function el(tag, text, attrs = {}) {
         const node = document.createElement(tag);
         if (text) node.textContent = text;
         Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
         return node;
     }
+    /**
+     * Create a non-submitting button for an explicit user action.
+     *
+     * @param {string} text Localized button label.
+     * @param {Function} callback Click handler.
+     * @param {boolean} primary Whether to use the primary button style.
+     * @returns {HTMLButtonElement} The detached button.
+     */
     function action(text, callback, primary = false) {
         const node = el('button', text, { type: 'button', class: primary ? 'button button-primary' : 'button' });
         node.addEventListener('click', callback);
         return node;
     }
+    /**
+     * Use the server-provided contextual upgrade URL.
+     *
+     * @returns {HTMLAnchorElement} The Pro invitation link.
+     */
     function upgrade() {
         return el('a', __('Explore Pro AI →', 'wp-slimstat'), { href: config.upgrade, class: 'button button-primary' });
     }
+    /**
+     * Confirm a completed copy without interrupting keyboard or pointer interaction.
+     *
+     * @param {string} title Localized status heading.
+     * @param {string} description Localized supporting text.
+     * @param {boolean} offer Allow the once-per-page administrator Pro invitation.
+     */
     function toast(title, description, offer = false) {
         clearTimeout(toastTimer);
         document.getElementById('slimstat-ai-toast')?.remove();
@@ -53,6 +81,12 @@
             __('Paste it into ChatGPT, Claude, Gemini, Grok, or your favorite AI to analyze your report.', 'wp-slimstat'), !config.native);
     });
 
+    /**
+     * Capture selection metadata only; the server authorizes and rebuilds report data.
+     *
+     * @param {HTMLElement} trigger Report action with its report identifier.
+     * @returns {Object} The selected dates, filters and report-specific controls.
+     */
     function context(trigger) {
         const report = trigger.dataset.report;
         const viewer = document.querySelector('.ss-hmv');
@@ -75,9 +109,22 @@
         if (granularity?.value) result.granularity = granularity.value;
         return result;
     }
+    /**
+     * Send one authenticated REST request without an automatic retry.
+     *
+     * @param {string} path Feature endpoint suffix.
+     * @param {Object} data Selection metadata and explicit consent, never report rows.
+     * @returns {Promise<Object>} The REST response, or a rejected request.
+     */
     function api(path, data) {
         return wp.apiFetch({ path: config.route + path, method: 'POST', data });
     }
+    /**
+     * Reuse the native dialog while invalidating responses from closed panels.
+     *
+     * @param {HTMLElement} trigger Action to restore focus to after closing.
+     * @returns {HTMLElement} The empty panel body.
+     */
     function open(trigger) {
         if (!dialog) {
             dialog = el('dialog', '', { class: 'ss-report-dialog ss-ai-dialog', 'aria-labelledby': 'ss-ai-title' });
@@ -94,17 +141,34 @@
         heading.focus();
         return body;
     }
+    /**
+     * Reuse the existing Free clipboard action for the same report.
+     *
+     * @param {HTMLElement} body Panel content container.
+     * @param {HTMLElement} trigger Original report action.
+     */
     function fallback(body, trigger) {
         body.append(action(__('Copy Prompt Instead', 'wp-slimstat'), () => {
             dialog.close();
             document.querySelector('.slimstat-ai-prompt[data-report="' + trigger.dataset.report + '"]')?.click();
         }));
     }
+    /**
+     * Replace only the error notice so a successful previous result stays readable.
+     *
+     * @param {HTMLElement} body Panel or library-entry content container.
+     * @param {Object} exception Safe REST or locally constructed error.
+     */
     function error(body, exception) {
         body.querySelector('.ss-ai-error')?.remove();
         body.prepend(el('p', exception?.message || __('AI analysis could not load. Please try again.', 'wp-slimstat'), { class: 'ss-ai-error', role: 'alert' }));
     }
-    // A deliberately small Markdown subset: provider text never enters HTML parsing.
+    /**
+     * Render headings and lists as text nodes; provider text never enters HTML parsing.
+     *
+     * @param {string} text Untrusted provider output.
+     * @returns {HTMLElement} The inert result content.
+     */
     function markdown(text) {
         const section = el('div', '', { class: 'ss-ai-result' });
         let list = null;
@@ -119,6 +183,14 @@
         });
         return section;
     }
+    /**
+     * Present one result with its original context and the shared clipboard fallback.
+     *
+     * @param {HTMLElement} body Panel or library-entry content container.
+     * @param {Object} saved Server-validated analysis and context.
+     * @param {boolean} cached Whether to label this as a saved snapshot.
+     * @param {boolean} matches Whether the current selection matches; library views use the neutral snapshot notice.
+     */
     function result(body, saved, cached, matches) {
         body.querySelector('.ss-ai-saved')?.remove();
         const section = el('section', '', { class: 'ss-ai-saved' });
@@ -180,6 +252,14 @@
             });
         });
     }
+    /**
+     * Load saved results first and bind explicit analysis actions to this panel selection.
+     *
+     * @param {HTMLElement} body Current dialog content container.
+     * @param {HTMLElement} trigger Original report action.
+     * @param {number} id Sequence token used to discard closed or superseded panel responses.
+     * @returns {Promise<void>} Completion of initial setup; generation remains a separate action.
+     */
     async function native(body, trigger, id) {
         let selection;
         let status;
