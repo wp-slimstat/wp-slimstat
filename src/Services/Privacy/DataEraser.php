@@ -27,84 +27,48 @@ class DataEraser
 	 *
 	 * @param string $email_address The user's email address
 	 * @param int    $page          Page number for pagination
-	 * @return array WordPress Privacy API formatted erase response
+	 * @return array|\WP_Error WordPress Privacy API formatted erase response
 	 */
 	public static function erasePageviews($email_address, $page = 1)
 	{
-		$number    = 500; // Process 500 records per page
-		$page      = (int) $page;
-		$offset    = ($page - 1) * $number;
 		$items_removed = false;
-		$items_retained = false;
 		$messages = [];
+		$done = true;
+		$tables = [$GLOBALS['wpdb']->prefix . 'slim_stats'];
+		$archive = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
+		$exists = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare('SHOW TABLES LIKE %s', $archive));
+		$failed = '' !== (string) $GLOBALS['wpdb']->last_error;
+		if ($exists) {
+			$tables[] = $archive;
+		}
 
-		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-
-		// Get total count before deletion
-		$total = Query::select('COUNT(*)')
-			->from($table)
-			->where('email', '=', $email_address)
-			->getVar();
-
-		if ($total > 0) {
-			// Delete pageviews for this email (main table)
-			$deleted = Query::delete($table)
-				->where('email', '=', $email_address)
-				->limit($number)
-				->execute();
-
+		// Each call drains the first batch; archives may outlive every live pageview.
+		foreach ($tables as $table) {
+			$deleted = Query::delete($table)->where('email', '=', $email_address)->limit(500)->execute();
+			$failed = $failed || false === $deleted;
 			if ($deleted > 0) {
 				$items_removed = true;
+				\wp_slimstat::bump_data_version();
 				$messages[] = sprintf(
 					/* translators: %d: number of pageview records removed. */
 					__('Removed %d pageview record(s) from SlimStat.', 'wp-slimstat'),
 					$deleted
 				);
 			}
-
-			// Also check archive table if it exists
-			$archive_table = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
-			$archive_exists = $GLOBALS['wpdb']->get_var(
-				$GLOBALS['wpdb']->prepare(
-					"SHOW TABLES LIKE %s",
-					$archive_table
-				)
-			);
-
-			if ($archive_exists) {
-				$deleted_archive = Query::delete($archive_table)
-					->where('email', '=', $email_address)
-					->limit($number)
-					->execute();
-
-				if ($deleted_archive > 0) {
-					$items_removed = true;
-					$messages[] = sprintf(
-						/* translators: %d: number of archived pageview records removed. */
-						__('Removed %d archived pageview record(s) from SlimStat.', 'wp-slimstat'),
-						$deleted_archive
-					);
-				}
-			}
+			$remaining = Query::select('COUNT(*)')->from($table)->where('email', '=', $email_address)->getVar();
+			$failed = $failed || '' !== (string) $GLOBALS['wpdb']->last_error;
+			$done = $done && 0 === (int) $remaining;
 		}
 
-		if ($items_removed) {
-			\wp_slimstat::bump_data_version();
+		if ($failed) {
+			return new \WP_Error('slimstat_erasure_failed', __('SlimStat could not finish erasing the data. Please try again.', 'wp-slimstat'));
 		}
-
-		// Check if there are more pages to process
-		$remaining = Query::select('COUNT(*)')
-			->from($table)
-			->where('email', '=', $email_address)
-			->getVar();
-
-		$done = ($remaining == 0);
 
 		return [
-			'items_removed'  => $items_removed,
-			'items_retained' => $items_retained,
-			'messages'       => $messages,
-			'done'           => $done,
+			'items_removed' => $items_removed,
+			'items_retained' => $failed,
+			'messages' => $messages,
+			'done' => $done,
 		];
 	}
 
@@ -113,126 +77,61 @@ class DataEraser
 	 *
 	 * @param string $email_address The user's email address
 	 * @param int    $page          Page number for pagination
-	 * @return array WordPress Privacy API formatted erase response
+	 * @return array|\WP_Error WordPress Privacy API formatted erase response
 	 */
 	public static function eraseEvents($email_address, $page = 1)
 	{
-		$number    = 500; // Process 500 records per page
-		$page      = (int) $page;
-		$offset    = ($page - 1) * $number;
+		$db = $GLOBALS['wpdb'];
 		$items_removed = false;
-		$items_retained = false;
 		$messages = [];
-
-		$stats_table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-		$events_table = $GLOBALS['wpdb']->prefix . 'slim_events';
-
-		$events_archive_table = $GLOBALS['wpdb']->prefix . 'slim_events_archive';
-		$stats_archive_table  = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
-		$archive_exists       = (bool) $GLOBALS['wpdb']->get_var(
-			$GLOBALS['wpdb']->prepare('SHOW TABLES LIKE %s', $events_archive_table)
-		);
-
-		// Delete events by joining with stats table to filter by email
-		// Get IDs first, then delete (safer than direct join delete)
-		//
-		// The archived pair is searched as well as the live one. An event is attributable
-		// to a person only through its parent pageview, so once retention moves a pageview
-		// into the archive its events are reachable ONLY via the archived parent — looking
-		// in the live tables alone would leave that person's notes, event descriptions and
-		// click positions in the archive forever. This mattered from the moment archiving
-		// began working: before that the archive tables were always empty. (D1)
-		$id_sql = "SELECT e.id FROM {$events_table} e
-				INNER JOIN {$stats_table} s ON e.id = s.id
-				WHERE s.email = %s";
-
-		if ($archive_exists) {
-			$id_sql .= " UNION SELECT a.id FROM {$events_archive_table} a
-				INNER JOIN {$stats_archive_table} sa ON a.id = sa.id
-				WHERE sa.email = %s";
+		$done = true;
+		$suffixes = [''];
+		$archive = $db->prefix . 'slim_events_archive';
+		$exists = $db->get_var($db->prepare('SHOW TABLES LIKE %s', $archive));
+		$failed = '' !== (string) $db->last_error;
+		if ($exists) {
+			$suffixes[] = '_archive';
 		}
 
-		$id_args = $archive_exists
-			? [$email_address, $email_address, $number, $offset]
-			: [$email_address, $number, $offset];
-
-		$event_ids = $GLOBALS['wpdb']->get_col(
-			$GLOBALS['wpdb']->prepare($id_sql . ' LIMIT %d OFFSET %d', ...$id_args)
-		);
-
-		if (!empty($event_ids)) {
-			$placeholders = implode(',', array_fill(0, count($event_ids), '%d'));
-			$deleted = $GLOBALS['wpdb']->query(
-				$GLOBALS['wpdb']->prepare(
-					"DELETE FROM {$events_table} WHERE id IN ({$placeholders})",
-					...$event_ids
-				)
-			);
-
-			if ($deleted > 0) {
-				$items_removed = true;
-				$messages[] = sprintf(
-					/* translators: %d: number of event records removed. */
-					__('Removed %d event record(s) from SlimStat.', 'wp-slimstat'),
-					$deleted
-				);
-			}
-
-			if ($archive_exists) {
-				$deleted_archive = $GLOBALS['wpdb']->query(
-					$GLOBALS['wpdb']->prepare(
-						"DELETE FROM {$events_archive_table} WHERE id IN ({$placeholders})",
-						...$event_ids
-					)
-				);
-
-				if ($deleted_archive > 0) {
+		// Live and archived IDs can belong to different people after an ID reset.
+		foreach ($suffixes as $suffix) {
+			$stats_table = $db->prefix . 'slim_stats' . $suffix;
+			$events_table = $db->prefix . 'slim_events' . $suffix;
+			$ids = $db->get_col($db->prepare(
+				"SELECT e.event_id FROM {$events_table} e INNER JOIN {$stats_table} s ON e.id = s.id
+				 WHERE s.email = %s ORDER BY e.event_id LIMIT 500",
+				$email_address
+			));
+			$failed = $failed || '' !== (string) $db->last_error;
+			if ($ids) {
+				$placeholders = implode(',', array_fill(0, count($ids), '%d'));
+				$deleted = $db->query($db->prepare("DELETE FROM {$events_table} WHERE event_id IN ({$placeholders})", ...$ids));
+				$failed = $failed || false === $deleted;
+				if ($deleted > 0) {
 					$items_removed = true;
+					\wp_slimstat::bump_data_version();
 					$messages[] = sprintf(
-						/* translators: %d: number of archived event records removed. */
-						__('Removed %d archived event record(s) from SlimStat.', 'wp-slimstat'),
-						$deleted_archive
+						/* translators: %d: number of event records removed. */
+						__('Removed %d event record(s) from SlimStat.', 'wp-slimstat'),
+						$deleted
 					);
 				}
 			}
-		}
-
-		if ($items_removed) {
-			\wp_slimstat::bump_data_version();
-		}
-
-		// Check if there are more pages.
-		//
-		// Counted across the archive too. Reporting done=true while archived events for
-		// this person remain would stop WordPress calling back, and the erasure request
-		// would be marked complete with the data still there.
-		$remaining = (int) $GLOBALS['wpdb']->get_var(
-			$GLOBALS['wpdb']->prepare(
-				"SELECT COUNT(*) FROM {$events_table} e
-				INNER JOIN {$stats_table} s ON e.id = s.id
-				WHERE s.email = %s",
+			$remaining = $db->get_var($db->prepare(
+				"SELECT COUNT(*) FROM {$events_table} e INNER JOIN {$stats_table} s ON e.id = s.id WHERE s.email = %s",
 				$email_address
-			)
-		);
-
-		if ($archive_exists) {
-			$remaining += (int) $GLOBALS['wpdb']->get_var(
-				$GLOBALS['wpdb']->prepare(
-					"SELECT COUNT(*) FROM {$events_archive_table} a
-					INNER JOIN {$stats_archive_table} sa ON a.id = sa.id
-					WHERE sa.email = %s",
-					$email_address
-				)
-			);
+			));
+			$failed = $failed || '' !== (string) $db->last_error;
+			$done = $done && 0 === (int) $remaining;
 		}
-
-		$done = (0 === $remaining);
-
+		if ($failed) {
+			return new \WP_Error('slimstat_erasure_failed', __('SlimStat could not finish erasing the data. Please try again.', 'wp-slimstat'));
+		}
 		return [
-			'items_removed'  => $items_removed,
-			'items_retained' => $items_retained,
-			'messages'       => $messages,
-			'done'           => $done,
+			'items_removed' => $items_removed,
+			'items_retained' => false,
+			'messages' => $messages,
+			'done' => $done,
 		];
 	}
 
