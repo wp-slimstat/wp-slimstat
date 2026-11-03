@@ -996,6 +996,7 @@ final class Schema
                 // A timeout must not begin another five-second wait. Driver codes cover
                 // translated server messages; the text fallback supports wpdb drop-ins.
                 $dbh = $db->dbh ?? null;
+                // phpcs:ignore WordPress.DB.RestrictedFunctions.mysql_mysqli_errno -- wpdb exposes error text only; the driver code recognizes translated lock failures without retrying another ALTER.
                 $errno = $dbh instanceof \mysqli ? mysqli_errno($dbh) : 0;
                 if (in_array($errno, [1205, 1213], true)
                     || preg_match('/lock wait timeout|deadlock/i', (string) $db->last_error)

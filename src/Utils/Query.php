@@ -52,6 +52,8 @@ class Query
 
     private $cacheExpiration = 3600;
 
+    private $cacheResultType = 'all';
+
     protected $db;
 
     private $_isLiveQuery = false;
@@ -851,7 +853,8 @@ class Query
      */
     protected function getCacheKeyForQuery($query, $args = [])
     {
-        return 'wp_slimstat_query_' . substr(self::cacheHash($this->db, $query, $args), 0, 16);
+        // The same SQL can return a scalar, object, column or row list.
+        return 'wp_slimstat_query_' . substr(self::cacheHash($this->db, $query, $args), 0, 16) . '_' . $this->cacheResultType;
     }
 
     /** Cache SQL as wpdb executes it, scoped to its analytics connection. */
@@ -1436,6 +1439,7 @@ class Query
      */
     public function getVar(string $networkAggregate = '')
     {
+        $this->cacheResultType = 'var';
         $this->lastQueryFailed = false;
         // Pageview IDs and their insertion dates are immutable. Filtered counts and SUMs
         // can change on a late heartbeat, so they must stay as fresh as grouped reports.
@@ -1601,12 +1605,11 @@ class Query
     /**
      * Execute the query and return a single row
      *
-     * This is a shortcut for `getAll()[0]`
-     *
-     * @return array The row, or false/null if no rows are returned
+     * @return \stdClass|null The row object, or null when no row is returned.
      */
     public function getRow()
     {
+        $this->cacheResultType = 'row';
         $useCache = $this->allowCaching;
         if ($useCache) {
             [$split] = $this->getSplitDateRanges();
@@ -1621,7 +1624,7 @@ class Query
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
                 self::recordSqlDebug($query, '', true);
-                return $cachedResult;
+                return null === $cachedResult ? null : (object) $cachedResult;
             }
         }
 
@@ -1643,6 +1646,7 @@ class Query
      */
     public function getCol()
     {
+        $this->cacheResultType = 'col';
         $useCache = $this->allowCaching;
         if ($useCache) {
             [$split] = $this->getSplitDateRanges();
@@ -1825,6 +1829,7 @@ class Query
      */
     public function getAll(string $networkIntent = '', string $selectNoAggregate = '', string $groupBy = '', string $orderBy = '', string $extraAggregate = '', int $outerLimit = 0)
     {
+        $this->cacheResultType = 'all';
         // D22 — a network-wide read is ONE query over a union of blogs, and it takes this path
         // instead of the live/historical partitioning below.
         //

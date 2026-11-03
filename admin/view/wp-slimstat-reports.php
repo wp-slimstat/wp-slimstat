@@ -1289,6 +1289,7 @@ class wp_slimstat_reports
         check_ajax_referer('meta-box-order', 'security');
         $requested = [];
         $allowed = array_flip(self::batch_report_ids());
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array shape is checked here; each scalar below is unslashed, sanitized and matched to the owned report registry.
         $input = isset($_POST['report_ids']) && is_array($_POST['report_ids']) ? $_POST['report_ids'] : [];
         foreach ($input as $value) {
             if (!is_string($value)) { continue; }
@@ -1297,6 +1298,7 @@ class wp_slimstat_reports
             if (count($requested) === 25) { break; }
         }
         $responses = [];
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each selected scalar is type-checked, unslashed and sanitized before reaching the report callback.
         $granularities = isset($_POST['granularities']) && is_array($_POST['granularities']) ? $_POST['granularities'] : [];
         foreach (array_keys($requested) as $id) {
             $filters = wp_slimstat_db::$filters_normalized;

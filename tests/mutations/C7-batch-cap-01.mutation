@@ -6,7 +6,7 @@ rationale: Bound the reports rendered by one request.
 ---
 --- a/admin/view/wp-slimstat-reports.php
 +++ b/admin/view/wp-slimstat-reports.php
-@@ -1300,7 +1300,7 @@
+@@ -1295,7 +1295,7 @@
              if (!is_string($value)) { continue; }
              $id = sanitize_key(wp_unslash($value));
              if (isset($allowed[$id])) { $requested[$id] = true; }
@@ -14,4 +14,4 @@ rationale: Bound the reports rendered by one request.
 +            if (count($requested) === 50) { break; }
          }
          $responses = [];
-         $granularities = isset($_POST['granularities']) && is_array($_POST['granularities']) ? $_POST['granularities'] : [];
+         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each selected scalar is type-checked, unslashed and sanitized before reaching the report callback.

@@ -1,0 +1,17 @@
+target: src/Utils/Query.php
+gate: php tests/query-result-contract-test.php
+kind: guard-removal
+expect: getRow warm: result shape or values changed
+rationale: Cached results must preserve the executor contract across new or reused query builders.
+---
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -1624,7 +1624,7 @@
+             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
+             if (false !== $cachedResult) {
+                 self::recordSqlDebug($query, '', true);
+-                return null === $cachedResult ? null : (object) $cachedResult;
++                return $cachedResult;
+             }
+         }
+ 

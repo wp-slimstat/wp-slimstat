@@ -6,11 +6,11 @@ rationale: A batch must authenticate its nonce before rendering.
 ---
 --- a/admin/view/wp-slimstat-reports.php
 +++ b/admin/view/wp-slimstat-reports.php
-@@ -1292,7 +1292,6 @@
+@@ -1286,7 +1286,6 @@
  
      public static function load_reports(): void
      {
 -        check_ajax_referer('meta-box-order', 'security');
          $requested = [];
          $allowed = array_flip(self::batch_report_ids());
-         $input = isset($_POST['report_ids']) && is_array($_POST['report_ids']) ? $_POST['report_ids'] : [];
+         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array shape is checked here; each scalar below is unslashed, sanitized and matched to the owned report registry.
