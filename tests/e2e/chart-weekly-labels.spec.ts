@@ -24,6 +24,7 @@ test('weekly chart: ranges do not overlap, the curve does not overshoot, this we
   // Short enough that the chart starts below the fold, as on an empty install under "Get started".
   await page.setViewportSize({ width: 1280, height: 480 });
   await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&type=last_28_days`);
+  await page.locator('#slim_p1_01').scrollIntoViewIfNeeded();
   await page.locator('select.slimstat-granularity-select').first().selectOption('weekly');
   const canvas = page.locator('canvas[id^="slimstat_chart_"]').first();
   await page.waitForFunction(() => {

@@ -1,6 +1,7 @@
 = Unreleased =
 
 **Faster**
+* Customize layout placeholders no longer fetch report data or display pagination over their controls.
 * Visible Free report widgets share a request and fall back to individual requests when needed. Manual refresh and pagination keep individual requests, and async lists retain their pagination controls.
 * Unfiltered pageview totals reuse cached history while reading today's count live, after a 30-minute midnight safety window. Filtered totals, sums and distinct counts retain fresh full-range queries.
 * Acquisition widgets share their schema check within a request and recheck after a migration or database change.

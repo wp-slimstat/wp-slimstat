@@ -502,6 +502,8 @@ jQuery(function () {
             loadReports();
         }, { rootMargin: '200px' }) : null;
         jQuery("div[id^=slim_p]").each(function () {
+            // Customize uses report IDs for layout placeholders, without a report body.
+            if (!SlimStatReportBody(this.id).length) return;
             // Skip Charts
             if (jQuery(this).find(".chart-placeholder, .refresh-timer").length == 0) {
                 SlimStatReportBody(jQuery(this).attr("id")).html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');

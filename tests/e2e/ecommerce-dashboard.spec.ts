@@ -112,7 +112,10 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     await page.goto(`/wp-admin/admin.php?${unfiltered}`);
     await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await page.locator('#slimstat-load-saved-filters').click();
-    await page.locator('#slim_filters_overlay a.slimstat-filter-link').filter({ hasText: 'google' }).click();
+    await Promise.all([
+      page.waitForURL(url => url.searchParams.get('fs[utm_source]') === 'equals google', { waitUntil: 'domcontentloaded' }),
+      page.locator('#slim_filters_overlay a.slimstat-filter-link').filter({ hasText: 'google' }).click(),
+    ]);
     await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('65.00');
     const savedDates = await page.evaluate(() => {

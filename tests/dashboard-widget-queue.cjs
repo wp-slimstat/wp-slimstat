@@ -10,6 +10,7 @@ const loader = source.slice(start, end);
 
 function run(observerSupported, enabled = true, manuallyRefreshed = false) {
     const widgets = Array.from({ length: 9 }, (_, i) => ({ id: 'slim_p1_' + i, chart: i === 8 }));
+    widgets.push({ id: 'slim_p_layout', placeholder: true });
     const started = [], pending = [], observed = new Set();
     let visibility, maximum = 0, active = 0;
     if (manuallyRefreshed) widgets[0]['slimstat-refresh'] = {};
@@ -31,7 +32,7 @@ function run(observerSupported, enabled = true, manuallyRefreshed = false) {
         jQuery,
         window: observerSupported ? { IntersectionObserver: Observer } : {},
         SlimStatAdminParams: { async_load: enabled ? 'on' : 'no' },
-        SlimStatReportBody: () => ({ html: () => {} }),
+        SlimStatReportBody: id => ({ length: widgets.find(w => w.id === id).placeholder ? 0 : 1, html: () => {} }),
         SlimStatAdmin: { refresh_report: id => () => {
             started.push(id);
             active++;
@@ -46,6 +47,7 @@ function run(observerSupported, enabled = true, manuallyRefreshed = false) {
     if (!enabled) { assert.equal(started.length, 0); return; }
     if (observerSupported) {
         assert.equal(started.length, 0, 'offscreen widgets wait for visibility');
+        assert(!observed.has(widgets[9]), 'layout placeholders must not load reports');
         assert.equal(observed.size, 8, 'charts retain their own loader');
         visibility(widgets.slice(0, 5).map(target => ({ target, isIntersecting: true })));
         assert.equal(started.length, 3, 'fill three slots without waiting for serial completion');
@@ -66,6 +68,7 @@ function run(observerSupported, enabled = true, manuallyRefreshed = false) {
         assert(!started.includes(widgets[0].id), 'manual request before visibility must not restart');
         assert(!started.includes(widgets[4].id), 'manual request while queued must not restart');
     }
+    assert(!started.includes('slim_p_layout'), 'layout placeholders must not load reports');
     assert.equal(maximum, 3);
     assert.equal(active, 0);
 }
