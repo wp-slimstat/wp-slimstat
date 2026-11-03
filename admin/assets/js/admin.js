@@ -50,12 +50,15 @@ function SlimStatReportRows(body) {
         const live = window.Chart && window.Chart.getChart(body.querySelector("canvas"));
         const shown = live ? live.data.datasets.filter((ds, i) => !ds.skipLegend && live.isDatasetVisible(i)) : [];
         if (!shown.length) return [];
-        const totals = JSON.parse(chart.dataset.data || "{}").totals || [];
-        const total = (ds) => (totals.find((row) => row.period === (ds.isPrevious ? "previous" : "current")) || {})[ds.key];
+        const data = JSON.parse(chart.dataset.data || "{}");
+        const total = (ds) => ((data.totals || []).find((row) => row.period === (ds.isPrevious ? "previous" : "current")) || {})[ds.key];
+        // Previous-period values line up by position, so each row also names the day they are from.
+        const prev = shown.some((ds) => ds.isPrevious) ? data.prev_labels || [] : null;
+        const dates = (current, previous) => (prev ? [current, previous] : [current]);
         return [
-            [__("Date", "wp-slimstat"), ...shown.map((ds) => ds.label)],
-            ...live.data.labels.map((label, i) => [String(label).replace(/'/g, ""), ...shown.map((ds) => ds.data[i])]),
-            [__("Total", "wp-slimstat"), ...shown.map(total)],
+            [...dates(__("Date", "wp-slimstat"), __("Previous date", "wp-slimstat")), ...shown.map((ds) => ds.label)],
+            ...live.data.labels.map((label, i) => [...dates(String(label).replace(/'/g, ""), prev && prev[i]), ...shown.map((ds) => ds.data[i])]),
+            [...dates(__("Total", "wp-slimstat"), ""), ...shown.map(total)],
         ].map((cells) => cells.join(" | "));
     }
     const rows = Array.from(body.querySelectorAll("p"), (p) => p.innerText.trim().split(/\s*\n\s*/).join(" | ")).filter(Boolean);
