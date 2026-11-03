@@ -68,6 +68,7 @@ $walk('test:all');
 // Standalone by design. Each entry states WHY, because "it is in the list" is not a reason, and
 // a list anyone may append to without argument is not a gate.
 $standalone = [
+    'test:purge-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',
     'test:schema-online-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',
     'test:query-topn-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',
     'test:privacy-erasure-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',

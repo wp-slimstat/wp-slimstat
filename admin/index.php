@@ -4890,15 +4890,14 @@ class wp_slimstat_admin
             'add_user_agent_dimension' => __('Migration: browser dimension column', 'wp-slimstat'),
             'event insert stored no row' => __('Event could not be recorded', 'wp-slimstat'),
             'anonymous visit reuse'      => __('Cookieless visit grouping', 'wp-slimstat'),
-            'purge (archiving events)'    => __('Retention: archiving events', 'wp-slimstat'),
-            'purge (deleting events)'     => __('Retention: deleting events', 'wp-slimstat'),
+            'purge (lock limits)'         => __('Retention: database lock limits', 'wp-slimstat'),
+            'purge (verified retention)'  => __('Retention: verified archive and deletion', 'wp-slimstat'),
             'purge (heatmap rows)'        => __('Retention: deleting heatmap clicks', 'wp-slimstat'),
             'heatmap insert'              => __('Tracking: saving heatmap clicks', 'wp-slimstat'),
             'heatmap delete'              => __('Heatmaps: deleting heatmap data', 'wp-slimstat'),
             'purge (checking retention)'  => __('Retention: checking expired data', 'wp-slimstat'),
             'purge (heatmap scheduling)'  => __('Heatmaps: scheduling retention cleanup', 'wp-slimstat'),
-            'purge (archiving pageviews)' => __('Retention: archiving pageviews', 'wp-slimstat'),
-            'purge (deleting pageviews)'  => __('Retention: deleting pageviews', 'wp-slimstat'),
+            'purge (checking completion)' => __('Retention: checking completion', 'wp-slimstat'),
             'purge (archive schema)'      => __('Retention: archive table columns', 'wp-slimstat'),
             // Synthesised inside get_degradations() from the last-success stamp, not recorded
             // by any call site — so a scan that derives its population from record_degradation()

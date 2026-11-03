@@ -1,0 +1,17 @@
+target: wp-slimstat.php
+gate: php tests/purge-health-test.php
+kind: guard-removal
+expect: archive-lost: success marker
+rationale: Shared-column equality cannot prove preservation of fields the archive lacks.
+---
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -1856,7 +1856,7 @@
+             $event_columns = $event_plan['copy'];
+             $stats_columns = $stats_plan['copy'];
+ 
+-            if ($event_plan['lost'] || $stats_plan['lost']) {
++            if (false) {
+                 self::record_degradation('purge (archive schema)',
+                     'Retention paused to prevent data loss. Repair the archive schema, or choose deletion without archiving in Maintenance. Missing fields: '
+                         . implode(', ', array_unique(array_merge($event_plan['lost'], $stats_plan['lost']))),

@@ -2411,11 +2411,11 @@ msgid "Cookieless visit grouping"
 msgstr ""
 
 #: admin/index.php:4886
-msgid "Retention: archiving events"
+msgid "Retention: database lock limits"
 msgstr ""
 
 #: admin/index.php:4887
-msgid "Retention: deleting events"
+msgid "Retention: verified archive and deletion"
 msgstr ""
 
 #: admin/index.php:4888
@@ -2439,11 +2439,7 @@ msgid "Heatmaps: scheduling retention cleanup"
 msgstr ""
 
 #: admin/index.php:4893
-msgid "Retention: archiving pageviews"
-msgstr ""
-
-#: admin/index.php:4894
-msgid "Retention: deleting pageviews"
+msgid "Retention: checking completion"
 msgstr ""
 
 #: admin/index.php:4895

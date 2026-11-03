@@ -1,0 +1,17 @@
+target: src/Utils/PurgeArchive.php
+gate: php tests/purge-archive-order-test.php
+kind: guard-removal
+expect: refuse a concurrent child
+rationale: A late child must not be cascaded away without being archived.
+---
+--- a/src/Utils/PurgeArchive.php
++++ b/src/Utils/PurgeArchive.php
+@@ -280,7 +280,7 @@
+                          ORDER BY s.id LIMIT 500", $from, $to
+                     ));
+                     $children = " LEFT JOIN {$events} e ON e.id = s.id";
+-                    $childGuard = ' AND e.event_id IS NULL';
++                    $childGuard = '';
+                     $ageGuard = 's.dt >= %d AND s.dt < %d';
+                     $dates = [$from, $to];
+                 }

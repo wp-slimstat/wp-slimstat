@@ -214,8 +214,9 @@ class PurgeArchive
     /**
      * SQL asserting that the archived row aliased `a` IS the live row about to be archived.
      *
-     * NULL-safe equality (`<=>`, because `=` is never true for NULL and most of these
-     * columns are nullable — `city` is 100% NULL on the reference dataset) across every
+     * Byte-exact, NULL-safe equality: collations must not equate a different spelling,
+     * accent or trailing space with the source. (`=` is never true for NULL and most of these
+     * columns are nullable — `city` is 100% NULL on the reference dataset.) Compare every
      * copied column except the one already joined on.
      *
      * Anything narrower has false negatives, and each false negative is a live row that
@@ -238,9 +239,107 @@ class PurgeArchive
                 continue;
             }
 
-            $tests[] = sprintf('a.%s <=> %s.%s', $column, $live_alias, $column);
+            $tests[] = sprintf('CAST(a.%s AS BINARY) <=> CAST(%s.%s AS BINARY)', $column, $live_alias, $column);
         }
 
         return implode(' AND ', $tests);
     }
+
+    /**
+     * Remove at most 500 events and 500 childless pageviews from one time window.
+     * Exact keys bound every write. Equality is checked again inside each DELETE,
+     * so a concurrent edit or a newly arrived child cannot be cascaded away unseen.
+     * No transaction is opened or committed on the shared WordPress connection.
+     *
+     * @return array{stats:int,events:int,error:string}
+     */
+    public static function purgeBatch($db, string $prefix, int $from, int $to, bool $archive, array $eventColumns, array $statsColumns): array
+    {
+        $result = ['stats' => 0, 'events' => 0, 'error' => ''];
+        $stats = $prefix . 'slim_stats';
+        $events = $prefix . 'slim_events';
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Core-prefix tables; bound dates; database keys validated as decimal strings before interpolation.
+        try {
+            foreach (['events', 'stats'] as $kind) {
+                if ('events' === $kind) {
+                    $table = $events; $alias = 'e'; $key = 'event_id'; $columns = $eventColumns;
+                    $ids = $db->get_col($db->prepare(
+                        "SELECT e.event_id FROM {$events} e LEFT JOIN {$stats} s ON s.id = e.id
+                         WHERE (e.dt >= %d AND e.dt < %d) OR (s.dt >= %d AND s.dt < %d)
+                         ORDER BY e.event_id LIMIT 500", $from, $to, $from, $to
+                    ));
+                    $children = " LEFT JOIN {$stats} p ON p.id = e.id";
+                    $childGuard = '';
+                    $ageGuard = '(e.dt >= %d AND e.dt < %d) OR (p.dt >= %d AND p.dt < %d)';
+                    $dates = [$from, $to, $from, $to];
+                } else {
+                    $table = $stats; $alias = 's'; $key = 'id'; $columns = $statsColumns;
+                    $ids = $db->get_col($db->prepare(
+                        "SELECT s.id FROM {$stats} s LEFT JOIN {$events} e ON e.id = s.id
+                         WHERE s.dt >= %d AND s.dt < %d AND e.event_id IS NULL
+                         ORDER BY s.id LIMIT 500", $from, $to
+                    ));
+                    $children = " LEFT JOIN {$events} e ON e.id = s.id";
+                    $childGuard = ' AND e.event_id IS NULL';
+                    $ageGuard = 's.dt >= %d AND s.dt < %d';
+                    $dates = [$from, $to];
+                }
+                if ('' !== (string) $db->last_error || !is_array($ids)) {
+                    $result['error'] = 'Could not select retention rows: ' . $db->last_error;
+                    return $result;
+                }
+                if (!$ids) { continue; }
+                foreach ($ids as $id) {
+                    if (!ctype_digit((string) $id) || strlen((string) $id) > 20) {
+                        $result['error'] = 'Retention encountered an invalid primary key; no batch was deleted.';
+                        return $result;
+                    }
+                }
+                $keys = implode(', ', $ids);
+                $archiveJoin = ''; $archiveGuard = '';
+                if ($archive) {
+                    $error = self::archiveBatch($db, $table, $alias, $key, $keys, $columns);
+                    if ('' !== $error) { $result['error'] = $error; return $result; }
+                    $archiveJoin = " INNER JOIN {$table}_archive a ON a.{$key} = {$alias}.{$key}";
+                    $archiveGuard = ' AND (' . (self::sameRow($columns, $key, $alias) ?: '1=1') . ')';
+                }
+                $deleted = $db->query($db->prepare("DELETE {$alias} FROM {$table} {$alias}{$archiveJoin}{$children}
+                    WHERE {$alias}.{$key} IN ({$keys}){$archiveGuard}{$childGuard} AND ({$ageGuard})", ...$dates));
+                if (false !== $deleted) { $result[$kind] += (int) $deleted; }
+                if (false === $deleted || (int) $deleted !== count($ids)) {
+                    $result['error'] = 'Retention stopped because the selected rows changed or could not be deleted: ' . $db->last_error;
+                    return $result;
+                }
+            }
+        } catch (\Throwable $error) {
+            $result['error'] = $error->getMessage();
+        }
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        return $result;
+    }
+
+    /** Copy exact keys and prove every copied value, including ignored/truncated writes. */
+    private static function archiveBatch($db, string $table, string $alias, string $key, string $keys, array $columns): string
+    {
+        $same = self::sameRow($columns, $key, $alias) ?: '1=1';
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Core-prefix tables and shared manifest-intersected columns; caller validates the database's decimal keys.
+        $collision = self::probeForCollision($db,
+            "SELECT 1 FROM {$table} {$alias} INNER JOIN {$table}_archive a ON a.{$key} = {$alias}.{$key}
+             WHERE {$alias}.{$key} IN ({$keys}) AND NOT ({$same}) LIMIT 1"
+        );
+        if (null === $collision || $collision) {
+            return 'Archive key collision or unreadable archive; original rows retained. ' . $db->last_error;
+        }
+        if (false === $db->query("INSERT IGNORE INTO {$table}_archive (" . implode(', ', $columns) . ")
+            SELECT " . implode(', ', $columns) . " FROM {$table} WHERE {$key} IN ({$keys})")) {
+            return 'Archive copy failed; original rows retained. ' . $db->last_error;
+        }
+        $missing = self::probeForCollision($db,
+            "SELECT 1 FROM {$table} {$alias} LEFT JOIN {$table}_archive a ON a.{$key} = {$alias}.{$key}
+             WHERE {$alias}.{$key} IN ({$keys}) AND (a.{$key} IS NULL OR NOT ({$same})) LIMIT 1"
+        );
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        return false === $missing ? '' : 'Archive verification failed; original rows retained. ' . $db->last_error;
+    }
+
 }
