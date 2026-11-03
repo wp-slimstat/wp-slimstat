@@ -51,9 +51,36 @@ rows = [
     {'dt': ts('2026-01-10T04:00:00'), 'ip': b'c'},
 ]
 capture_end = ts('2026-01-11T12:00:00')
+# Inclusive equal-length periods meet without sharing an endpoint. A pageview
+# at the previous period's first second must not disappear from the reference.
+boundary = pageviews_chart([
+    {'dt': ts('2026-01-05T00:00:00'), 'ip': b'previous-first'},
+    {'dt': ts('2026-01-07T23:59:59'), 'ip': b'previous-last'},
+    {'dt': ts('2026-01-08T00:00:00'), 'ip': b'current-first'},
+], capture_end, 3, 'DAY')
+assert boundary['datasets_prev']['v1'] == [1, 0, 1], boundary
+assert boundary['datasets']['v1'] == [1, 0, 0], boundary
+assert boundary['period_end'] == ts('2026-01-10T23:59:59')
+assert boundary['previous_end'] == ts('2026-01-07T23:59:59')
+
+# Jan 6-10 touches one calendar week; Jan 1-5 touches two. The second
+# previous bucket has a real value and the absent current bucket is unknown.
+unequal_weeks = pageviews_chart([
+    {'dt': ts('2026-01-01T00:00:00'), 'ip': b'a'},
+    {'dt': ts('2026-01-05T12:00:00'), 'ip': b'b'},
+    {'dt': ts('2026-01-06T12:00:00'), 'ip': b'c'},
+], capture_end, 5, 'WEEK')
+assert unequal_weeks['labels'] == ["'2026/01/06'", ''], unequal_weeks
+assert unequal_weeks['prev_labels'] == ['2026/01/01', '2026/01/05'], unequal_weeks
+assert unequal_weeks['datasets']['v1'] == [1, None], unequal_weeks
+assert unequal_weeks['datasets_prev']['v1'] == [1, 1], unequal_weeks
+assert unequal_weeks['totals'][1]['v1'] == 2, unequal_weeks
+
 daily = pageviews_chart(rows, capture_end, 3, 'DAY')
 assert daily == {
     'labels': ["'2026/01/08'", "'2026/01/09'", "'2026/01/10'"],
+    'period_end': ts('2026-01-10T23:59:59'),
+    'previous_end': ts('2026-01-07T23:59:59'),
     'totals': [
         {'v1': 4, 'v2': 3, 'period': 'current'},
         {'v1': 4, 'v2': 2, 'period': 'previous'},
