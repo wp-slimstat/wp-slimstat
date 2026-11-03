@@ -140,8 +140,10 @@ Offline, nothing is requested.
 ## Privacy
 
 - Nothing is requested until the user chooses **Show videos**, or turns on the marker.
-- Requests go from the user's browser straight to wp-slimstat.com, with no cookies, no
-  referrer, no custom headers and no query string. No analytics or account data is sent.
+- Requests go from the user's browser straight to wp-slimstat.com, with no referrer and no
+  analytics or account data. The catalog request also omits cookies (`credentials: 'omit'`) and
+  sends no custom headers or query string. Thumbnails are plain images, so a browser that allows
+  third-party cookies may send any cookie it already holds for wp-slimstat.com with them.
 - What any web request reveals still applies: wp-slimstat.com sees the user's IP address and
   browser, and the catalog request, being cross-origin, carries the browser's `Origin` header
   with the site's address. No request option removes it, so the consent text discloses it.
