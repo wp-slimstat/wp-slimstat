@@ -1,7 +1,7 @@
 = Unreleased =
 
 **New**
-* SlimStat → Videos lists video tutorials from wp-slimstat.com in one row per category, with thumbnails and titles. Each video opens on wp-slimstat.com in a new tab. Nothing is requested until you choose to load the list; your browser then fetches a static list from wp-slimstat.com without cookies, a referrer or analytics data (like any web request, it shows your IP address, browser and site address), keeps it for a day, and falls back to the saved copy when the site cannot be reached. Your WordPress server makes no requests and stores nothing for this feature.
+* SlimStat → Videos lists video tutorials from wp-slimstat.com in one row per category, with thumbnails and titles. Each video opens on wp-slimstat.com in a new tab. Nothing is requested until you choose to load the list; your browser then fetches a static list from wp-slimstat.com without cookies, a referrer or analytics data, keeps it for a day, and falls back to the saved copy when the site cannot be reached. Like any web request, this shows wp-slimstat.com your IP address, your browser and the address of this site. Your WordPress server makes no requests and stores nothing for this feature.
 * An optional marker (▶ before SlimStat in the admin menu) tells you when new videos are published. It is off until you turn it on, checks at most once a day from your browser, ignores the videos that existed when you turned it on and edits to existing ones, and clears once the Videos page has shown the new videos.
 
 = 6.0.1 - 2026-11-02 =

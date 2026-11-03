@@ -144,7 +144,7 @@ Offline, nothing is requested.
   referrer, no custom headers and no query string. No analytics or account data is sent.
 - What any web request reveals still applies: wp-slimstat.com sees the user's IP address and
   browser, and the catalog request, being cross-origin, carries the browser's `Origin` header
-  with the site's address. No request option removes it; the consent text and the readme say so.
+  with the site's address. No request option removes it, so the consent text discloses it.
 - The choices and the list of seen videos are stored in that browser's `localStorage`, keyed
   by a hash of the site address and user ID. "Stop loading videos in this browser" deletes them.
 - The readme's "Please note" section discloses the service and links the privacy policy.
