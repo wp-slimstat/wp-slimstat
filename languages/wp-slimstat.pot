@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-03T16:21:50+00:00\n"
+"POT-Creation-Date: 2026-11-03T16:23:08+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -2583,78 +2583,78 @@ msgstr ""
 msgid "AI Analysis sections"
 msgstr ""
 
-#: admin/view/ai-analysis.php:53
+#: admin/view/ai-analysis.php:52
 msgid "Included in Free"
 msgstr ""
 
-#: admin/view/ai-analysis.php:54
+#: admin/view/ai-analysis.php:53
 msgid "Your report, ready for a second opinion"
 msgstr ""
 
-#: admin/view/ai-analysis.php:55
+#: admin/view/ai-analysis.php:54
 msgid "Copy AI Prompt turns a report into a ready-to-paste question with its data, dates and metric definitions. Use it as often as you like."
 msgstr ""
 
-#: admin/view/ai-analysis.php:57
+#: admin/view/ai-analysis.php:56
 msgid "Open a report and choose your date range and filters."
 msgstr ""
 
-#: admin/view/ai-analysis.php:58
+#: admin/view/ai-analysis.php:57
 msgid "Click Copy AI Prompt below the report title."
 msgstr ""
 
-#: admin/view/ai-analysis.php:59
+#: admin/view/ai-analysis.php:58
 msgid "Paste it into ChatGPT, Claude, Gemini, Grok, or your preferred AI service."
 msgstr ""
 
-#: admin/view/ai-analysis.php:61
+#: admin/view/ai-analysis.php:60
 msgid "Open reports"
 msgstr ""
 
-#: admin/view/ai-analysis.php:64
+#: admin/view/ai-analysis.php:63
 #: admin/view/upgrade-pro.php:65
 msgid "SlimStat Pro"
 msgstr ""
 
-#: admin/view/ai-analysis.php:65
+#: admin/view/ai-analysis.php:64
 msgid "Get insights right here in WordPress"
 msgstr ""
 
-#: admin/view/ai-analysis.php:66
+#: admin/view/ai-analysis.php:65
 msgid "Connect your AI provider once, then use Analyze with AI on a report. Read the response here and return to your latest saved analyses anytime."
 msgstr ""
 
-#: admin/view/ai-analysis.php:68
+#: admin/view/ai-analysis.php:67
 msgid "AI Analysis settings"
 msgstr ""
 
-#: admin/view/ai-analysis.php:68
+#: admin/view/ai-analysis.php:67
 msgid "View saved analyses"
 msgstr ""
 
-#: admin/view/ai-analysis.php:70
+#: admin/view/ai-analysis.php:69
 #: admin/assets/js/ai-analysis.js:25
 msgid "Explore Pro AI →"
 msgstr ""
 
-#: admin/view/ai-analysis.php:71
+#: admin/view/ai-analysis.php:70
 msgid "Already have Pro? Activate the Pro plugin and your license to get started."
 msgstr ""
 
-#: admin/view/ai-analysis.php:71
+#: admin/view/ai-analysis.php:70
 #: admin/view/partials/ecommerce.php:30
 msgid "Manage plugins"
 msgstr ""
 
-#: admin/view/ai-analysis.php:73
+#: admin/view/ai-analysis.php:72
 msgid "Ask your site administrator to activate SlimStat Pro and connect an AI provider."
 msgstr ""
 
-#: admin/view/ai-analysis.php:75
+#: admin/view/ai-analysis.php:74
 msgid "Requires WordPress 7.0 or newer and an active Pro license. Provider API charges may apply."
 msgstr ""
 
-#: admin/view/ai-analysis.php:78
+#: admin/view/ai-analysis.php:77
 msgid "Review a copied prompt before sharing it. AI can make mistakes: check its suggestions against your reports before acting."
 msgstr ""
 
