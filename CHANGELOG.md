@@ -20,7 +20,7 @@
 * WordPress personal-data downloads no longer fail in the pageview exporter. Exports read fresh analytics data, preserve separate event IDs and stop on database errors.
 * Privacy erasure uses the external analytics database when configured. IP anonymization includes archives, supports older integer IP columns and stops on database errors.
 * Report-access allowlists match complete usernames. Partial usernames no longer grant access.
-* Retention cleanup verifies archived values before deleting bounded batches and resumes large backlogs. Truncated or incomplete archives, reused keys and concurrent updates retain their source rows. Archives missing fields pause cleanup with a diagnostic instead of silently losing those fields.
+* Retention cleanup verifies archived values before deleting bounded batches and resumes large backlogs. Truncated or incomplete archives, reused keys and concurrent updates retain their source rows. Missing archive fields or custom live columns pause cleanup with a diagnostic instead of silently losing those fields.
 * Personal-data erasure drains every live and archive batch, including visitors with more than 500 events, without touching another visitor whose archive ID was reused. A database error stops erasure for a safe retry.
 
 = 6.0.1 - 2026-11-02 =

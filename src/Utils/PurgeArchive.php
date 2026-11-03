@@ -148,7 +148,8 @@ class PurgeArchive
 
         return [
             'copy'   => $copy,
-            'lost'   => array_values(array_diff($onLive, $archive)),
+            // Custom fields are not copied by this manifest and must never be discarded.
+            'lost'   => array_values(array_diff($live, $copy)),
             'usable' => in_array($pair['key'], $copy, true),
         ];
     }
@@ -170,7 +171,7 @@ class PurgeArchive
             return $declared;
         }
 
-        return $state['present'];
+        return array_merge($state['present'], $state['undeclared']);
     }
 
     /**

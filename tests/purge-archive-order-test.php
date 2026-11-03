@@ -277,6 +277,23 @@ if ('' === $probe) {
     }
 }
 
+// Actual schema probes must not hide fields outside the archive manifest.
+define('ARRAY_A', 'ARRAY_A');
+class wpdb {
+    public $last_error = '';
+    public function suppress_errors($value) { return false; }
+    public function get_results($sql, $format) {
+        return array_map(static function ($name) { return ['Field' => $name, 'Type' => 'varchar(255)']; },
+            array_merge(array_keys(\SlimStat\Schema\Schema::columns('slim_stats')), ['custom_payload']));
+    }
+}
+require_once $plugin_root . '/src/Schema/Schema.php';
+require_once $plugin_root . '/src/Utils/PurgeArchive.php';
+$customPlan = \SlimStat\Utils\PurgeArchive::copyableColumns(new wpdb(), 'wp_', 'slim_stats');
+if (!in_array('custom_payload', $customPlan['lost'], true)) {
+    $failures[] = 'undeclared custom column must refuse archive-mode deletion';
+}
+
 if ($failures !== []) {
     fwrite(STDERR, 'FAIL: purge archive order (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {

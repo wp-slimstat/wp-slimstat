@@ -1858,7 +1858,7 @@ class wp_slimstat
 
             if ($event_plan['lost'] || $stats_plan['lost']) {
                 self::record_degradation('purge (archive schema)',
-                    'Retention paused to prevent data loss. Repair the archive schema, or choose deletion without archiving in Maintenance. Missing fields: '
+                    'Retention paused to prevent data loss. Repair the archive schema, or choose deletion without archiving in Maintenance. Unverified fields: '
                         . implode(', ', array_unique(array_merge($event_plan['lost'], $stats_plan['lost']))),
                     self::DEGRADATION_OPERATIONAL);
                 return;

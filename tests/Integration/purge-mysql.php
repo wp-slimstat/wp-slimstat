@@ -44,7 +44,7 @@ try {
     wp_slimstat::$settings['auto_purge'] = '30';
     wp_slimstat::$settings['auto_purge_optimize'] = 'no';
     foreach (['InnoDB', 'MyISAM'] as $engine) {
-        foreach (['complete', 'delete-only', 'partial-archive', 'missing-copy', 'truncated-copy', 'missing-column', 'case-collision', 'many-events', 'late-event', 'late-edit', 'budget-resume'] as $case) {
+        foreach (['complete', 'delete-only', 'partial-archive', 'missing-copy', 'truncated-copy', 'missing-column', 'custom-column', 'case-collision', 'many-events', 'late-event', 'late-edit', 'budget-resume'] as $case) {
             try {
                 $setup($engine);
                 $beforeStats = $read('slim_stats', 'id'); $beforeEvents = $read('slim_events', 'event_id');
@@ -58,6 +58,13 @@ try {
                     $run("UPDATE {$prefix}slim_stats_archive SET resource = '/alpha' WHERE id = 1");
                 }
                 if ($case === 'missing-column') { $run("ALTER TABLE {$prefix}slim_stats_archive DROP COLUMN resource"); }
+                if ($case === 'custom-column') {
+                    foreach (['slim_stats', 'slim_stats_archive'] as $suffix) {
+                        $run("ALTER TABLE {$prefix}{$suffix} ADD custom_payload VARCHAR(100)");
+                    }
+                    $run("UPDATE {$prefix}slim_stats SET custom_payload = 'must survive retention'");
+                    $beforeStats = $read('slim_stats', 'id');
+                }
                 if ($case === 'many-events') {
                     for ($i = 4; $i <= 1004; ++$i) { $run("INSERT INTO {$prefix}slim_events VALUES ({$i}, 1, 'event-{$i}', {$old})"); }
                     $beforeEvents = $read('slim_events', 'event_id');
@@ -96,7 +103,7 @@ try {
                 $archiveStats = $read('slim_stats_archive', 'id'); $archiveEvents = $read('slim_events_archive', 'event_id');
                 $find = static function ($rows, $key, $id) { foreach ($rows as $row) { if ((int) $row[$key] === $id) { return $row; } } return null; };
                 $check($find($stats, 'id', 2) === $beforeStats[1] && $find($events, 'event_id', 3) === $beforeEvents[2], 'retained canaries changed');
-                if (in_array($case, ['missing-copy', 'truncated-copy', 'missing-column', 'case-collision'], true)) {
+                if (in_array($case, ['missing-copy', 'truncated-copy', 'missing-column', 'custom-column', 'case-collision'], true)) {
                     $check($find($stats, 'id', 1) === $beforeStats[0], 'unverified original pageview was deleted');
                     if ($case === 'missing-copy') { $check($triggered && $find($events, 'event_id', 1) === $beforeEvents[0], 'unarchived event was deleted'); }
                     $check((int) get_option(wp_slimstat::LAST_PURGE_OK_OPTION) === 1, 'failed verification stamped success');
