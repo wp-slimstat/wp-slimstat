@@ -27,9 +27,20 @@ class AiPromptButtonTest extends WpSlimstatTestCase
         $html = AiPromptButton::html('slim_p1_08', $report, ['browser' => ['equals', 'Firefox']], false);
         self::assertStringStartsWith('<button type="button" class="slimstat-ai-prompt noslimstat"', $html);
         self::assertStringContainsString('Copy AI Prompt', $html);
+        self::assertStringContainsString('title="Click to copy this report as an AI prompt, then paste it into ChatGPT, Claude, Grok, or any AI tool you use."', $html);
+        self::assertStringContainsString('aria-description="Click to copy', $html);
         self::assertStringContainsString('data-title="Top Pages"', $html);
         self::assertStringContainsString('data-about="Pages &quot;people&quot; read. Bots excluded."', $html);
         self::assertStringNotContainsString('<b>', $html);
+    }
+
+    public function test_ecommerce_and_heatmap_summaries_keep_the_personal_filter_guard(): void
+    {
+        foreach (['slim_p10_01', 'slimheatmap'] as $id) {
+            self::assertStringContainsString('<button', AiPromptButton::html($id, ['title' => 'Summary'], [], false));
+            self::assertSame('', AiPromptButton::html($id, ['title' => 'Summary'], ['email' => ['equals', 'person@example.test']], true));
+            self::assertSame('', AiPromptButton::html($id, ['title' => 'Summary', 'callback_args' => ['columns' => 'email']], [], true));
+        }
     }
 
     public function test_reports_about_individual_visitors_get_no_button(): void

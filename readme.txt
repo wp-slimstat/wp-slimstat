@@ -170,7 +170,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 **New**
 
-* ✨ Copy AI Prompt beside each report's Export copies the rows on screen, the period, the filters and your site's title, tagline and address as a ready-to-paste prompt for any AI assistant. It only goes to your clipboard. Reports that list individual visitors have no button; Pro reports need Pro.
+* ✨ Copy AI Prompt beside each report's Export copies the rows on screen, the period, the filters and your site's title, tagline and address as a ready-to-paste prompt for any AI assistant. It only goes to your clipboard. Reports that list individual visitors have no button; Pro reports need Pro. Ecommerce, the Heatmaps page list and individual page heatmaps also support copying their displayed metrics. Hover over Copy AI Prompt for instructions on pasting it into ChatGPT, Claude, Grok or another AI tool.
 
 **Improved**
 

@@ -40,10 +40,86 @@ jQuery(document).on("click", "#slimstat-clear-cache", function (e) {
         });
 });
 
+function SlimStatHeatmapPersonalFilter(body) {
+    const who = body.querySelector('.ss-hmv [name="who"]');
+    const button = body.querySelector('.slimstat-ai-prompt');
+    if (!who || !button || !who.value.startsWith("fs:")) return false;
+    const personal = (button.dataset.personalFilters || "").split(",");
+    return who.value.slice(3).split("&&&").some((filter) => personal.includes(filter.trim().split(/\s+/)[0]));
+}
+
+jQuery(function () {
+    const body = document.querySelector(".ss-hm");
+    const who = body && body.querySelector('.ss-hmv [name="who"]');
+    const button = body && body.querySelector('.slimstat-ai-prompt');
+    if (!who || !button) return;
+    body.querySelector('.ss-hmv-bar').append(button);
+    const update = () => { button.hidden = SlimStatHeatmapPersonalFilter(body); };
+    who.addEventListener("change", update);
+    window.addEventListener("popstate", update);
+    update();
+});
+
 // A report's rows as "cell | cell" lines: the chart's visible series, list rows as shown.
 function SlimStatReportRows(body) {
-    const __ = window.wpSlimstatI18n.__;
+    const { __, sprintf } = window.wpSlimstatI18n;
     if (!body || body.querySelector(".slimstat-empty")) return [];
+    const text = (node) => node.textContent.trim().replace(/\s+/g, " ");
+    const visible = (node) => !node.closest("[hidden]") && getComputedStyle(node).visibility !== "hidden";
+    const cells = (row) => Array.from(row.cells).filter((cell) => !cell.hidden).map(text).join(" | ");
+    if (body.matches(".ss-hm")) {
+        const viewer = body.querySelector(".ss-hmv");
+        if (viewer) {
+            const status = viewer.querySelector(".ss-hmv-state");
+            // A blocked preview still has aggregate data; a failed data request does not.
+            const failed = !status.hidden && status.querySelector("button") && !status.querySelector("a");
+            if (SlimStatHeatmapPersonalFilter(body) || failed || viewer.querySelector('.ss-hmv-frame.is-loading, .ss-hmv-frame[aria-busy="true"]')) return [];
+            const scope = viewer.querySelector(".ss-hmv-scope");
+            if (!scope || !text(scope)) return [];
+            const rows = [text(viewer.querySelector(".ss-hmv-title")), text(scope)];
+            const device = viewer.querySelector('[data-device][aria-selected="true"]');
+            /* translators: %s: selected device, such as Mobile or Desktop. */
+            if (device) rows.push(sprintf(__("Device: %s", "wp-slimstat"), device.firstChild.textContent.trim()));
+            if (viewer.querySelector('[name="range"]').value === "custom") {
+                /* translators: 1: first day (YYYY-MM-DD), 2: last day (YYYY-MM-DD). */
+                rows.push(sprintf(__("Period: %1$s – %2$s", "wp-slimstat"), viewer.querySelector('[name="from"]').value, viewer.querySelector('[name="to"]').value));
+            }
+            /* translators: %s: selected visitor segment or saved filter. */
+            rows.push(sprintf(__("Visitors: %s", "wp-slimstat"), text(viewer.querySelector('[name="who"] option:checked'))));
+            const show = viewer.querySelector('[name="show"]:checked');
+            /* translators: %s: selected heatmap overlay (clicks or scroll depth). */
+            rows.push(sprintf(__("View: %s", "wp-slimstat"), text(show.closest("label"))));
+            if (show.value === "clicks") rows.push(text(viewer.querySelector('[name="type"] option:checked')));
+            viewer.querySelectorAll(".ss-hmv-side section").forEach((section) => {
+                rows.push(text(section.querySelector("h2")));
+                rows.push(...Array.from(section.querySelectorAll("li"), (item) => item.innerText.trim().split(/\s*\n\s*/).join(" | ")));
+            });
+            return rows;
+        }
+        const table = body.querySelector(".ss-hm-table");
+        if (table.hidden || table.getAttribute("aria-busy") === "true") return [];
+        const rows = Array.from(table.tBodies[0].rows).filter((row) => row.querySelector(".ss-hm-page"));
+        if (!rows.length) return [];
+        return [table.tHead.rows[0], ...rows].map((row) => Array.from(row.cells).slice(0, -1).filter((cell) => !cell.hidden).map((cell) => cell.querySelector(".ss-hm-device-locked") ? __("Available with Pro", "wp-slimstat") : cell.innerText.trim().replace(/\s*\n\s*/g, " | ")).join(" | "));
+    }
+    if (body.matches("[data-ecommerce]")) {
+        const performance = body.querySelector("[data-series]");
+        if (!performance || body.getAttribute("aria-busy") === "true") return [];
+        const rows = Array.from(body.querySelectorAll(".ss-ec-kpi:not([data-pro-locked])"), (kpi) => Array.from(kpi.children).filter(visible).map(text).join(" | "));
+        rows.push(text(body.querySelector(".ss-ec-currency summary")), text(body.querySelector("[data-chart-description]")));
+        // The exact-values table represents the active chart even while its disclosure is closed.
+        rows.push(...Array.from(body.querySelectorAll(".ss-ec-exact tr"), cells));
+        const comparison = body.querySelector(".ss-ec-comparison");
+        if (comparison && !comparison.hidden) rows.push(text(comparison));
+        body.querySelectorAll(".ss-ec-report").forEach((panel) => {
+            if (!visible(panel)) return;
+            rows.push(text(panel.querySelector(".ss-ec-report-question")));
+            rows.push(...Array.from(panel.querySelectorAll(".ss-ec-rankings > li")).filter(visible).map((row) => row.innerText.trim().split(/\s*\n\s*/).join(" | ")));
+            rows.push(...Array.from(panel.querySelectorAll(".ss-ec-footnote, .ss-ec-report-info p"), text));
+        });
+        rows.push(...Array.from(body.querySelectorAll(".ss-ec-quality summary, .ss-ec-quality-body p, .ss-ec-scope, .ss-ec-definitions dt, .ss-ec-definitions dd"), text));
+        return rows;
+    }
     const chart = body.querySelector("[data-data]");
     if (chart) {
         // Series hidden from the legend stay out; the previous period comes in while it is shown.
@@ -72,8 +148,8 @@ jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
     e.preventDefault();
     const { __, sprintf } = window.wpSlimstatI18n;
     const button = this;
-    const box = button.closest(".postbox");
-    const body = SlimStatReportBody(box.id)[0];
+    const box = button.closest("[data-ecommerce], .ss-hm, .postbox");
+    const body = box.matches(".postbox") ? SlimStatReportBody(box.id)[0] : box;
     const rows = SlimStatReportRows(body);
     const label = button.innerHTML;
     const show = (text) => {
@@ -85,9 +161,17 @@ jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
 
     // Visitor text cannot open or close a section of the prompt.
     const inert = (text) => text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const range = document.querySelector(".slimstat-date-range-input");
+    const range = box.querySelector(".ss-hmv") ? null : document.querySelector(".slimstat-date-range-input");
     const filters = Array.from(document.querySelectorAll(".slimstat-filter-list li"), (li) => inert(li.innerText.trim())).filter(Boolean);
-    const pagination = box.querySelector(".pagination");
+    if (box.matches(".ss-hm") && !box.querySelector(".ss-hmv")) {
+        const device = box.querySelector('[name="device"]');
+        const search = box.querySelector('[name="q"]');
+        /* translators: %s: selected device, such as Mobile or All devices. */
+        filters.push(sprintf(__("Device: %s", "wp-slimstat"), inert(device.selectedOptions[0].textContent)));
+        /* translators: %s: text used to search page addresses. */
+        if (search.value.trim()) filters.push(sprintf(__("Search: %s", "wp-slimstat"), inert(search.value.trim())));
+    }
+    const pagination = box.querySelector(".pagination, .ss-hm-pager:not([hidden]) span");
     const prompt = [
         __("You are a web analytics advisor for the owner of a WordPress website. The owner is not an analyst. Explain this SlimStat report in plain words and turn it into decisions that grow traffic, leads and revenue.", "wp-slimstat"),
         "",

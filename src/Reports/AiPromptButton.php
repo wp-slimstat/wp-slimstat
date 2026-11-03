@@ -26,7 +26,9 @@ final class AiPromptButton
     {
         // Rows about individual visitors, or a view narrowed to one, stay out of AI tools.
         $narrowed = array_intersect(self::ONE_VISITOR_FILTERS, array_keys($filterColumns));
-        if (empty($report) || $narrowed || Shortcode::isStaff($reportId, $report['callback_args'] ?? [])) {
+        // Ecommerce's shortcode is staff-only; the clipboard reads only its aggregate dashboard.
+        $privacyId = 'slim_p10_01' === $reportId ? '' : $reportId;
+        if (empty($report) || $narrowed || Shortcode::isStaff($privacyId, $report['callback_args'] ?? [])) {
             return '';
         }
 
@@ -40,6 +42,9 @@ final class AiPromptButton
 
         // Tooltip markup runs words together ("Solid line: current periodDashed line…").
         $about = trim(preg_replace('/\s+/', ' ', wp_strip_all_tags(str_replace('<', ' <', (string) ($report['tooltip'] ?? '')))));
-        return '<button type="button" class="slimstat-ai-prompt noslimstat" data-title="' . esc_attr(wp_strip_all_tags($report['title'] ?? '')) . '" data-about="' . esc_attr($about) . '">' . $label . '</button>';
+        $help = esc_attr__('Click to copy this report as an AI prompt, then paste it into ChatGPT, Claude, Grok, or any AI tool you use.', 'wp-slimstat');
+        $standalone = in_array($reportId, ['slim_p10_01', 'slimheatmap'], true) ? ' button' : '';
+        $privacy = 'slimheatmap' === $reportId ? ' data-personal-filters="' . esc_attr(implode(',', self::ONE_VISITOR_FILTERS)) . '"' : '';
+        return '<button type="button" class="slimstat-ai-prompt noslimstat' . $standalone . '" title="' . $help . '" aria-description="' . $help . '" data-title="' . esc_attr(wp_strip_all_tags($report['title'] ?? '')) . '" data-about="' . esc_attr($about) . '"' . $privacy . '>' . $label . '</button>';
     }
 }
