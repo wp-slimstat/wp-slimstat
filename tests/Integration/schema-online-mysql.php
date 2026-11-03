@@ -37,6 +37,28 @@ try {
     $check('must survive' === $db->get_var("SELECT payload FROM {$table} WHERE id = 1"), 'refused MyISAM migration preserves stored values');
     $check(false !== \SlimStat\Schema\Schema::alterOnline($db, "ALTER TABLE {$table} ADD COLUMN fixture INT NULL"), 'non-migration compatibility caller can explicitly retain legacy behavior');
     $check('must survive' === $db->get_var("SELECT payload FROM {$table} WHERE id = 1"), 'compatibility path preserves values');
+    $run("DROP TABLE {$table}");
+    $run("CREATE TABLE {$table} (id INT PRIMARY KEY, payload VARCHAR(100)) ENGINE=InnoDB CHARACTER SET utf8 COLLATE utf8_general_ci");
+    $run("INSERT INTO {$table} VALUES (1, 'café')");
+    $migration = new class($db) extends \SlimStat\Migration\Migrations\ConvertTablesToUtf8mb4 {
+        public function targetCollation(): string { return 'utf8mb4_unicode_ci'; }
+    };
+    $states = new ReflectionProperty(\SlimStat\Migration\Migrations\ConvertTablesToUtf8mb4::class, 'tableStatesCache');
+    if (PHP_VERSION_ID < 80100) { $states->setAccessible(true); }
+    $states->setValue($migration, [$table => ['total' => 2, 'stale' => 1]]);
+    $holder->query('START TRANSACTION');
+    $holder->get_var("SELECT payload FROM {$table} WHERE id = 1");
+    $started = microtime(true);
+    $check(!$migration->run(), 'manual charset conversion must refuse a held metadata lock');
+    $check(microtime(true) - $started < 8, 'manual charset conversion must not wait 30 seconds');
+    $check('37' === $db->get_var('SELECT @@SESSION.lock_wait_timeout'), 'manual conversion restores timeout after lock failure');
+    $holder->query('ROLLBACK');
+    $states->setValue($migration, [$table => ['total' => 2, 'stale' => 1]]);
+    $check($migration->run(), 'manual charset copy succeeds after release');
+    $check('37' === $db->get_var('SELECT @@SESSION.lock_wait_timeout'), 'manual conversion restores timeout after copy');
+    $check('café' === $db->get_var("SELECT payload FROM {$table} WHERE id = 1"), 'manual conversion preserves bytes');
+    $check('utf8mb4' === $db->get_var($db->prepare("SELECT CHARACTER_SET_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'payload'", $table)), 'manual conversion really changes the charset');
+    echo "PASS: optional charset conversion held-lock refusal, successful copy, session restoration and values\n";
     echo 'PASS: metadata lock refused in ' . round($elapsed, 3) . "s; retry, session restoration, InnoDB/MyISAM values and compatibility verified\n";
 } finally {
     $holder->query('ROLLBACK');

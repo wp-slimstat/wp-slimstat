@@ -2101,10 +2101,8 @@ class wp_slimstat_admin
         // A whitelisted user gets the minimum capability instead of the configured one.
 
         $login = (string) ($GLOBALS['current_user']->user_login ?? '');
-        $whitelisted = '' !== $login && false !== strpos(
-            (string) wp_slimstat::$settings['can_view'],
-            $login
-        );
+        $whitelist = preg_split('/[\s,]+/', (string) (wp_slimstat::$settings['can_view'] ?? ''), -1, PREG_SPLIT_NO_EMPTY);
+        $whitelisted = '' !== $login && in_array($login, $whitelist, true);
 
         if (!$whitelisted && !empty(wp_slimstat::$settings['capability_can_view'])) {
             return wp_slimstat::$settings['capability_can_view'];

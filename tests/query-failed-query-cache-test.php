@@ -25,6 +25,7 @@ class FailedQueryDb {
     public $queries = [];
     /** Statements containing this substring fail the way wpdb fails: last_error set, empty result. */
     public $failWhen = '';
+    public $throwFailures = false;
     public function remove_placeholder_escape($sql) { return $sql; }
     public function prepare($sql, ...$args) {
         if (1 === count($args) && is_array($args[0])) { $args = $args[0]; }
@@ -33,6 +34,7 @@ class FailedQueryDb {
     private function run($sql) {
         $this->queries[]  = $sql;
         $this->last_error = ('' !== $this->failWhen && false !== strpos($sql, $this->failWhen)) ? 'MySQL server has gone away' : '';
+        if ($this->throwFailures && '' !== $this->last_error) { throw new RuntimeException('driver failure'); }
         return '' === $this->last_error;
     }
     public function get_var($sql) { return $this->run($sql) ? '42' : null; }
@@ -130,6 +132,28 @@ failed_check('legacy get_results: a failed statement must not be cached', [] ===
 reset_world();
 wp_slimstat_db::get_results($legacySql);
 failed_check('legacy get_results: a clean historical answer is still cached', 1 === count($GLOBALS['failed_cache']));
+
+// Multiple date predicates are one SQL intersection, never concatenated answers.
+reset_world();
+$future = report($today, $today + 7200)->where('dt', 'BETWEEN', [$today + 1800, $today + 3600])->getAll();
+failed_check('multiple date predicates require one complete query', count($db->queries) === 1 && count($future) === 1);
+failed_check('multiple date predicates keep both SQL conditions', substr_count(end($db->queries), 'dt BETWEEN') === 2);
+reset_world();
+$intersection = report($span[0], $span[1])->where('dt', 'BETWEEN', [$today - 1, $now])->getAll();
+failed_check('cross-midnight intersection requires one uncached query', count($db->queries) === 1 && count($intersection) === 1 && !$GLOBALS['failed_cache']);
+// A driver that throws must trigger the same full-range fallback as a wpdb error.
+reset_world("AND '" . ($today - 1) . "'");
+$db->throwFailures = true;
+try {
+    $rows = report($span[0], $span[1])->getAll();
+    failed_check('thrown historical failure uses full range', [$span[0] . '-' . $now] === array_column($rows, 'resource') && count($db->queries) === 3);
+} catch (Throwable $failure) { failed_check('thrown historical failure uses full range', false); }
+reset_world("BETWEEN '{$today}'");
+try {
+    $rows = report($span[0], $span[1])->getAll();
+    failed_check('thrown live failure uses full range', [$span[0] . '-' . $now] === array_column($rows, 'resource') && count($db->queries) === 3);
+} catch (Throwable $failure) { failed_check('thrown live failure uses full range', false); }
+$db->throwFailures = false;
 
 if ([] !== $failures) {
     foreach ($failures as $f) { fwrite(STDERR, "FAIL: {$f}\n"); }

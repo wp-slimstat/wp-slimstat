@@ -50,6 +50,21 @@ try {
             }
         }
     }
+    // Repeated date filters retain SQL AND/intersection semantics, including entirely
+    // historical ranges which previously recursively reprocessed each other.
+    foreach ([[$today - 86400, $today + 3600], [$today - 86400, $today - 1], [$today, $today + 3600]] as $outer) {
+        foreach ([[$today - 100, $today + 100], [$today + 2, $today + 3]] as $inner) {
+            $q = \SlimStat\Utils\Query::select('resource, COUNT(*) AS n')->from($table)
+                ->where('dt', 'BETWEEN', $outer)->groupBy('resource')->orderBy('resource');
+            $expected = (clone $q)->whereDate('dt', ['from' => $inner[0], 'to' => $inner[1]], true)->getAll();
+            $before = $wpdb->num_queries;
+            $actual = (clone $q)->where('dt', 'BETWEEN', $inner)->getAll();
+            if ($actual !== $expected || $wpdb->num_queries !== $before + 1) {
+                throw new RuntimeException('Repeated date filters must execute one exact SQL intersection');
+            }
+        }
+    }
+    echo "PASS: six repeated-date-filter intersections, including historical and empty results\n";
     $wpdb->prefix = $prefix;
     \SlimStat\Utils\Query::setProcessingTimestamp($today + 3600);
     $count = static function () use ($table, $today) {

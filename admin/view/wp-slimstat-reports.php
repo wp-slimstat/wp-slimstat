@@ -1248,13 +1248,7 @@ class wp_slimstat_reports
 
     private static function render_report(array $arguments): bool
     {
-        // If this user is whitelisted, we use the minimum capability
-        $minimum_capability = 'read';
-        if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
-
-        if (!current_user_can($minimum_capability)) {
+        if (!wp_slimstat_admin::can_view_stats()) {
             return false;
         }
 

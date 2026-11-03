@@ -71,3 +71,22 @@ $db = new wpdb(); $db->failRestore = true;
 ddl_check(false === \SlimStat\Schema\Schema::alterOnline($db, $sql), 'restore failure is not successful completion');
 ddl_check(strpos($db->last_error, 'restore') !== false, 'restore failure remains visible');
 echo "PASS: bounded DDL, no migration copy, compatibility, lock refusal, failures and session restoration\n";
+
+class wp_slimstat { public static $failures = []; const DEGRADATION_OPERATIONAL = 'operational'; public static function record_degradation(...$args) { self::$failures[] = $args; } }
+class CharsetSafetyMigration extends \SlimStat\Migration\Migrations\ConvertTablesToUtf8mb4 {
+    public function targetCollation(): string { return 'utf8mb4_unicode_ci'; }
+}
+foreach (['success', 'read-failure', 'lock-failure'] as $case) {
+    $db = new wpdb();
+    $db->outcomes = $case === 'lock-failure' ? [[false, 'Lock wait timeout exceeded']] : [[0, '']];
+    if ($case === 'read-failure') { $db->timeout = null; }
+    $migration = new CharsetSafetyMigration($db);
+    $states = new ReflectionProperty(\SlimStat\Migration\Migrations\ConvertTablesToUtf8mb4::class, 'tableStatesCache');
+    if (PHP_VERSION_ID < 80100) { $states->setAccessible(true); }
+    $states->setValue($migration, ['wp_slim_stats' => ['total' => 2, 'stale' => 1]]);
+    $result = $migration->run();
+    ddl_check($result === ($case === 'success'), 'charset conversion refuses unsafe lock setup and failures');
+    ddl_check($case === 'read-failure' ? ddl_alters($db) === [] : end($db->queries) === 'SET SESSION lock_wait_timeout = 600', 'charset conversion restores lock limit');
+    ddl_check(!in_array('SET SESSION lock_wait_timeout = 30', $db->queries, true), 'charset conversion must not relax lock limits');
+}
+echo "PASS: optional charset conversion shares bounded lock acquisition and restoration\n";

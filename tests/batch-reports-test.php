@@ -1,7 +1,10 @@
 <?php
 /** Execute the batch dispatcher with adversarial inputs and stateful report callbacks. */
 function batch_check($ok, $message) { if (!$ok) { throw new RuntimeException($message); } }
-function current_user_can($capability) { return $GLOBALS['batch_allowed']; }
+function current_user_can($capability) { return $GLOBALS['batch_allowed'] && in_array($capability, $GLOBALS['batch_caps'] ?? ['read'], true); }
+require __DIR__ . '/lib/source-scan.php';
+$admin = file_get_contents(dirname(__DIR__) . '/admin/index.php');
+eval('class wp_slimstat_admin { public static $current_screen = "slimview2"; public static function can_view_stats() {' . slimstat_function_body($admin, 'can_view_stats') . '} private static function stats_view_capability() {' . slimstat_function_body($admin, 'stats_view_capability') . '} }');
 function get_current_screen() { return null; }
 function wp_doing_ajax() { return true; }
 function check_ajax_referer($action, $key) {
@@ -81,3 +84,9 @@ batch_check([] === batch_call('free_0'), 'scalar report_ids must be refused');
 batch_check(['free_1' => 'free_1:default'] === batch_call(['throws', 'free_1']), 'a failed report must discard partial HTML and restore state');
 batch_check(['denies_next' => 'allowed'] === batch_call(['denies_next', 'free_1']), 'capability must be checked for each report');
 echo "PASS: batch nonce, per-report permission, Free ownership, cap, deduplication, error isolation and request restoration\n";
+
+wp_slimstat::$settings['capability_can_view'] = 'manage_options';
+wp_slimstat::$settings['can_view'] = 'previewer';
+batch_check([] === batch_call(['free_0']), 'partial login must not grant report access');
+wp_slimstat::$settings['can_view'] = 'alice, viewer, bob';
+batch_check(count(batch_call(['free_0'])) === 1, 'exact listed login keeps access');

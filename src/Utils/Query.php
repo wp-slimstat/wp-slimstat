@@ -1878,23 +1878,11 @@ class Query
 
         $ranges = $this->extractDateRangesFromWhere();
         if (count($ranges) > 1) {
-            $results = [];
-            foreach ($ranges as $range) {
-                if (empty($range['from']) || empty($range['to'])) {
-                    continue;
-                }
-
-                $baseWhereClauses    = $this->whereClauses;
-                $baseValuesToPrepare = $this->valuesToPrepare;
-                array_splice($baseWhereClauses, $range['clauseIdx'], 1);
-                array_splice($baseValuesToPrepare, $range['valueIdx'], 2);
-                $data = $this->processDateRange($range['from'], $range['to'], $baseWhereClauses, $baseValuesToPrepare);
-                if (is_array($data)) {
-                    $results = array_merge($results, $data);
-                }
-            }
-
-            return $results;
+            // Multiple predicates describe one SQL intersection. Splitting each in turn
+            // duplicates rows and can recursively reprocess the other date predicate.
+            $full = clone $this;
+            $full->_isLiveQuery = true;
+            return $full->getAll();
         }
 
         [$split, $histFrom, $histTo, $liveFrom, $liveTo, $dtIdx, $dtClauseIdx] = $this->getSplitDateRanges();
@@ -1962,8 +1950,9 @@ class Query
             try {
                 $historical = $histQuery->getAll();
                 $histFailed = $histQuery->lastQueryFailed;
-            } catch (Exception $e) {
+            } catch (\Throwable $e) {
                 $historical = [];
+                $histFailed = true;
             }
 
             // Clone for live
@@ -1979,8 +1968,9 @@ class Query
             try {
                 $live       = $liveQuery->getAll();
                 $liveFailed = $liveQuery->lastQueryFailed;
-            } catch (Exception $e) {
+            } catch (\Throwable $e) {
                 $live = [];
+                $liveFailed = true;
             }
 
             // A failed half is an empty array, and merging it would hand the caller the other
@@ -2031,7 +2021,7 @@ class Query
         if ($useCache) {
             try {
                 $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
-            } catch (Exception $e) {
+            } catch (\Throwable $e) {
                 $cachedResult = false;
             }
 
@@ -2045,7 +2035,7 @@ class Query
             $result                = $this->db->get_results($query, ARRAY_A);
             self::recordSqlDebug($query, $this->db->last_error ?? '');
             $this->lastQueryFailed = $this->queryFailed();
-        } catch (Exception $exception) {
+        } catch (\Throwable $exception) {
             $result                = [];
             $this->lastQueryFailed = true;
         }
@@ -2053,7 +2043,7 @@ class Query
         if ($useCache && !$this->lastQueryFailed) {
             try {
                 $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
-            } catch (Exception $exception) {
+            } catch (\Throwable $exception) {
                 // ignore
             }
         }
