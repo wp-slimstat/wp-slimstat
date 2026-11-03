@@ -113,7 +113,8 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await page.locator('#slimstat-load-saved-filters').click();
     await Promise.all([
-      page.waitForURL(url => url.searchParams.get('fs[utm_source]') === 'equals google', { waitUntil: 'domcontentloaded' }),
+      // The filter navigation removes query parameters after transferring them into the form.
+      page.waitForEvent('domcontentloaded'),
       page.locator('#slim_filters_overlay a.slimstat-filter-link').filter({ hasText: 'google' }).click(),
     ]);
     await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
