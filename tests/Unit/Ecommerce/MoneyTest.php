@@ -28,6 +28,18 @@ class MoneyTest extends TestCase
 		]));
 	}
 
+	public function test_amount_only_full_refunds_leave_no_net_sales(): void
+	{
+		self::assertSame(0, Money::net('106', '0', '6', [['amount' => '106', 'tax' => '0', 'shipping' => '0']]));
+		self::assertSame(0, Money::net('125', '19', '6', [
+			['amount' => '25', 'tax' => '0', 'shipping' => '0'],
+			['amount' => '100', 'tax' => '0', 'shipping' => '0'],
+		]));
+		// Unallocated partial refunds and over-refunds must not be silently clamped.
+		self::assertSame(-3000000, Money::net('106', '0', '6', [['amount' => '103', 'tax' => '0', 'shipping' => '0']]));
+		self::assertSame(-7000000, Money::net('106', '0', '6', [['amount' => '107', 'tax' => '0', 'shipping' => '0']]));
+	}
+
 	/** @dataProvider invalidMoney */
 	public function test_invalid_or_unsupported_precision_is_not_silently_coerced(string $value): void
 	{

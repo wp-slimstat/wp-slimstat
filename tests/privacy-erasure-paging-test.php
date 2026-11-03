@@ -81,7 +81,7 @@ if ($failures) { fwrite(STDERR, implode("\n", $failures) . "\n"); exit(1); }
 echo "PASS: erasure drains live and archive batches, including 501 and 1001 rows\n";
 
 foreach (['eraseEvents', 'erasePageviews', 'anonymizeByIp'] as $method) {
-    $core = new EraserDb(); $analytics = new EraserDb(); $analytics->prefix = 'wrong_';
+    $core = new EraserDb(); $core->failRead = true; $analytics = new EraserDb(); $analytics->prefix = 'wrong_';
     foreach (['slim_stats', 'slim_stats_archive', 'slim_events', 'slim_events_archive'] as $table) {
         $core->rows[$table] = $analytics->rows[$table] = [1 => true, 2 => true];
     }

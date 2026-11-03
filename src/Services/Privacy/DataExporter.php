@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace SlimStat\Services\Privacy;
 
-use SlimStat\Utils\Query;
-
 /**
  * WordPress Privacy API Data Exporter for SlimStat
  *
@@ -28,24 +26,24 @@ class DataExporter
 	 *
 	 * @param string $email_address The user's email address
 	 * @param int    $page          Page number for pagination
-	 * @return array WordPress Privacy API formatted export data
+	 * @return array|\WP_Error WordPress Privacy API formatted export data
 	 */
 	public static function exportPageviews($email_address, $page = 1)
 	{
 		$number    = 500; // Export 500 records per page
-		$page      = (int) $page;
+		$page      = max(1, (int) $page);
 		$offset    = ($page - 1) * $number;
 		$data_to_export = [];
 
+		$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
 		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
-		// Query pageviews by email
-		$pageviews = Query::select('*')
-			->from($table)
-			->where('email', '=', $email_address)
-			->orderBy('dt', 'DESC')
-			->limit($number, $offset)
-			->getResults();
+		// Privacy exports read fresh objects and surface database failures to WordPress.
+		$pageviews = $db->get_results($db->prepare(
+			"SELECT * FROM {$table} WHERE email = %s ORDER BY dt DESC, id DESC LIMIT %d OFFSET %d",
+			$email_address, $number, $offset
+		));
+		if ($db->last_error) { return new \WP_Error('slimstat_privacy_export_failed', __('An error occurred while fetching data', 'wp-slimstat')); }
 
 		foreach ($pageviews as $pageview) {
 			$item_data = [];
@@ -161,13 +159,7 @@ class DataExporter
 			];
 		}
 
-		// Check if there are more pages
-		$total = Query::select('COUNT(*)')
-			->from($table)
-			->where('email', '=', $email_address)
-			->getVar();
-
-		$done = ($offset + $number) >= $total;
+		$done = count($pageviews) < $number;
 
 		return [
 			'data' => $data_to_export,
@@ -180,31 +172,34 @@ class DataExporter
 	 *
 	 * @param string $email_address The user's email address
 	 * @param int    $page          Page number for pagination
-	 * @return array WordPress Privacy API formatted export data
+	 * @return array|\WP_Error WordPress Privacy API formatted export data
 	 */
 	public static function exportEvents($email_address, $page = 1)
 	{
 		$number    = 500; // Export 500 records per page
-		$page      = (int) $page;
+		$page      = max(1, (int) $page);
 		$offset    = ($page - 1) * $number;
 		$data_to_export = [];
 
+		$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
 		$stats_table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 		$events_table = $GLOBALS['wpdb']->prefix . 'slim_events';
 
 		// Query events by joining with stats table to filter by email
-		$events = $GLOBALS['wpdb']->get_results(
-			$GLOBALS['wpdb']->prepare(
+		$events = $db->get_results(
+			$db->prepare(
 				"SELECT e.* FROM {$events_table} e
 				INNER JOIN {$stats_table} s ON e.id = s.id
 				WHERE s.email = %s
-				ORDER BY e.dt DESC
+				ORDER BY e.dt DESC, e.event_id DESC
 				LIMIT %d OFFSET %d",
 				$email_address,
 				$number,
 				$offset
 			)
 		);
+
+		if ($db->last_error) { return new \WP_Error('slimstat_privacy_export_failed', __('An error occurred while fetching data', 'wp-slimstat')); }
 
 		foreach ($events as $event) {
 			$item_data = [];
@@ -245,22 +240,12 @@ class DataExporter
 			$data_to_export[] = [
 				'group_id'    => 'slimstat_events',
 				'group_label' => __('SlimStat Events', 'wp-slimstat'),
-				'item_id'     => 'event-' . $event->id . '-' . $event->dt,
+				'item_id'     => 'event-' . $event->event_id,
 				'data'        => $item_data,
 			];
 		}
 
-		// Check if there are more pages
-		$total = $GLOBALS['wpdb']->get_var(
-			$GLOBALS['wpdb']->prepare(
-				"SELECT COUNT(*) FROM {$events_table} e
-				INNER JOIN {$stats_table} s ON e.id = s.id
-				WHERE s.email = %s",
-				$email_address
-			)
-		);
-
-		$done = ($offset + $number) >= $total;
+		$done = count($events) < $number;
 
 		return [
 			'data' => $data_to_export,

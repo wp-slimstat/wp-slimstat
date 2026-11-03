@@ -10,11 +10,14 @@
 * Column and index migrations limit metadata-lock waits to five seconds and leave unsupported online changes pending instead of copying tables. Connection settings are restored after success or failure.
 
 **Numbers you can trust**
+* Real-time charts retain their history after returning to the page, and manual refresh updates the header visitor count and chart from the same response.
+* Amount-only full WooCommerce refunds leave zero net sales, shipping, tax and product quantities. Existing reporting copies can be refreshed using Rebuild reports.
 * Repeated date filters keep their SQL intersection, and thrown query failures use the full-range fallback.
 * Database query failures no longer become cached empty reports. Removing analytics rows invalidates cached historical reports.
 * Reports that span midnight keep grouped counts, averages, distinct counts and top-list rankings exact. Some top lists now show corrected counts and ordering.
 
 **Security and privacy**
+* WordPress personal-data downloads no longer fail in the pageview exporter. Exports read fresh analytics data, preserve separate event IDs and stop on database errors.
 * Privacy erasure uses the external analytics database when configured. IP anonymization includes archives, supports older integer IP columns and stops on database errors.
 * Report-access allowlists match complete usernames. Partial usernames no longer grant access.
 * Retention cleanup verifies archived values before deleting bounded batches and resumes large backlogs. Truncated or incomplete archives, reused keys and concurrent updates retain their source rows. Archives missing fields pause cleanup with a diagnostic instead of silently losing those fields.
@@ -31,7 +34,6 @@
 * Pageviews are sent as soon as the page is ready, with a bounded idle delay. Consent checks and confirmed pageview creation work as before. ([#365](https://github.com/wp-slimstat/wp-slimstat/issues/365))
 
 **Numbers you can trust**
-* Repeated date filters keep their SQL intersection, and thrown query failures use the full-range fallback.
 * Server-only tracking assigns visit IDs, and Online Users excludes bots while retaining human and legacy unclassified visits. ([#257](https://github.com/wp-slimstat/wp-slimstat/issues/257), [#272](https://github.com/wp-slimstat/wp-slimstat/issues/272))
 * Opt-in URL normalization removes configured parameters after campaign attribution is extracted, so page totals combine without losing acquisition data. Chart refreshes retain submitted filters and the comparison setting. ([#276](https://github.com/wp-slimstat/wp-slimstat/issues/276), [#158](https://github.com/wp-slimstat/wp-slimstat/issues/158))
 * HeadlessChrome, PhantomJS and Lighthouse clients that identify themselves now count as bots, so the existing Bots exclusion filters them in both tracking modes. ([#364](https://github.com/wp-slimstat/wp-slimstat/issues/364))
@@ -43,7 +45,6 @@
 * Restored pageviews stay visible when stale heatmap rows reuse their IDs for another page or time. Pages still serving an older cached tracker keep working.
 
 **Upgrade with confidence**
-* Optional charset conversion restores lock settings and preserves stricter host timeouts.
 * First pageviews keep recording on older database schemas while the visitor-identity migration step is still waiting. Identity bytes are encoded in SQL, so recovery from a missing column or table can run.
 * The optional online repair for legacy column drift now covers email and fingerprint column widths and missing legacy archive fields. Migration shows schema state it cannot resolve or read, keeps its warnings when inspection fails, and no longer reports completion just because a notice was dismissed. Recorded values are preserved; there is no automatic table rebuild or blocking fallback. ([#360](https://github.com/wp-slimstat/wp-slimstat/issues/360))
 
@@ -60,7 +61,6 @@
 * Removed the unused legacy add-on catalog and manual-download callback for the retired update service. Stored add-on license settings are kept.
 
 **Security and privacy**
-* Privacy erasure uses the external analytics database when configured. IP anonymization includes archives, supports older integer IP columns and stops on database errors.
 * Report-access allowlists match complete usernames. Partial usernames no longer grant access.
 * Hidden consent banners no longer intercept form controls or keyboard focus, and visible banners use a lower stacking level. ([#181](https://github.com/wp-slimstat/wp-slimstat/issues/181))
 * Saved filters validate registered columns and supported operators. Unknown or malformed saved entries remain stored and deletable, but cannot apply a partial or unfiltered report. Valid acquisition and extension filters retain their values. ([#351](https://github.com/wp-slimstat/wp-slimstat/pull/351))
@@ -130,7 +130,6 @@
 * External-database installs read the right database and never create a second schema or show the hostname.
 
 **Upgrade with confidence**
-* Optional charset conversion restores lock settings and preserves stricter host timeouts.
 * Your settings carry over, including disabled tracking, consent, Heatmaps, user exclusions and network overrides. New installs turn on bot filtering and async loading.
 * A new Migration screen lists the database steps. Nothing runs until you click, and tracking keeps working. Required steps only add columns and indexes (about 8 seconds per 440,000 rows on MySQL 8) and change or remove no data. A notice on the Dashboard, Plugins and Updates screens says when a step is waiting, and the Migration screen warns if a MyISAM analytics table will pause tracking while a step runs.
 * Two optional table rebuilds, the browser backfill and the utf8mb4 conversion, run only when you pick them by name. To postpone everything, set `SLIMSTAT_DISABLE_MIGRATIONS` to true in `wp-config.php`.
@@ -148,7 +147,6 @@
 * Real-time shows the visitors, pages and countries online and the minute chart as soon as the page opens. In the 6.0.0 beta they read 0 until the first refresh a minute later.
 
 **Security and privacy**
-* Privacy erasure uses the external analytics database when configured. IP anonymization includes archives, supports older integer IP columns and stops on database errors.
 * Report-access allowlists match complete usernames. Partial usernames no longer grant access.
 * Fixed a SQL injection that any logged-in user could reach on sites with the "Posts and Pages" report column turned on (off by default). Found in-house; no report of it in the wild.
 * Shortcodes show personal data, access logs and user reports only to people allowed to view analytics; visitors see nothing.

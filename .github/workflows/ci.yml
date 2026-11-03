@@ -556,6 +556,9 @@ jobs:
           npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/purge-mysql.php
           npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/purge-selection-mysql.php
 
+      - name: Privacy export database boundaries
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/privacy-export-mysql.php
+
       - name: Privacy erasure database boundaries
         run: |
           npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/data-eraser-mysql.php
@@ -679,6 +682,12 @@ jobs:
           fi
           npx wp-env run tests-cli -- wp transient delete _wc_activation_redirect
           npx wp-env run tests-cli -- wp plugin get woocommerce --field=version
+
+      - name: Deletion cache invalidation and full WooCommerce refunds
+        if: ${{ matrix.wp == env.WOO_E2E_LANE }}
+        run: |
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/data-version-mysql.php
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/ecommerce-full-refund-mysql.php
 
       - name: Expose wp-env filesystem and MySQL to E2E tests
         # wp-env runs WordPress inside Docker containers. The E2E test helpers
