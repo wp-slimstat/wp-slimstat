@@ -385,15 +385,10 @@ test.describe('Meta-box-order conflict (#15036)', () => {
       const firstWidget = slimWidgets.first();
       await expect(firstWidget).toBeVisible();
 
-      // Widget should have an .inside container with content
+      // Dashboard widgets load when scrolled near the viewport; the Welcome panel can push them below the fold.
+      await firstWidget.scrollIntoViewIfNeeded();
       const insideContent = firstWidget.locator('.inside');
-      await expect(insideContent).toBeAttached();
-
-      const hasContent = await insideContent.evaluate((el) => {
-        const text = el.textContent?.trim() || '';
-        return text.length > 0;
-      });
-      expect(hasContent, 'Widget .inside should have text content').toBeTruthy();
+      await expect(insideContent, 'Widget .inside should have text content').toHaveText(/\S/);
     });
 
     test('3.2 — Dashboard widgets load via AJAX in async mode', async ({ page }) => {

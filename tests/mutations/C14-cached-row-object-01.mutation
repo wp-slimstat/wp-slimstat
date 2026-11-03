@@ -1,7 +1,7 @@
 target: src/Utils/Query.php
 gate: php tests/query-result-contract-test.php
 kind: guard-removal
-expect: getRow warm: result shape or values changed
+expect: getRow independent warm builder: result shape or values changed
 rationale: Cached results must preserve the executor contract across new or reused query builders.
 ---
 --- a/src/Utils/Query.php

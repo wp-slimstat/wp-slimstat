@@ -57,12 +57,14 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     scope.set('fs[utm_source]', 'equals google');
     await page.goto(`/wp-admin/admin.php?${scope}`);
     const campaignReport = page.locator('#slim_p3_04');
+    await campaignReport.scrollIntoViewIfNeeded();
     await campaignReport.locator('.slimstat-acquisition__group > summary').filter({ hasText: campaign }).click();
     await expect(campaignReport.getByRole('link', { name: 'View sales in Ecommerce' })).toHaveCount(0);
     if (!pro.pro_installed) return; // Free CI deliberately omits the private Pro plugin.
 
     runWordPressFixture("<?php $result=activate_plugin('wp-slimstat-pro/wp-slimstat-pro.php'); if(is_wp_error($result)) throw new RuntimeException($result->get_error_message());");
     await page.reload();
+    await campaignReport.scrollIntoViewIfNeeded();
     const campaignGroup = campaignReport.locator('.slimstat-acquisition__group').filter({ hasText: campaign });
     await campaignGroup.locator(':scope > summary').click();
     await campaignGroup.getByRole('link', { name: 'View sales in Ecommerce' }).click();
@@ -74,6 +76,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
 
     await page.goto(`/wp-admin/admin.php?${scope}`);
     const channels = page.locator('#slim_p3_03');
+    await channels.scrollIntoViewIfNeeded();
     await channels.locator('.slimstat-acquisition__group > summary').filter({ hasText: 'Paid Search' }).click();
     await channels.locator('.slimstat-acquisition__group').filter({ hasText: 'Paid Search' }).getByRole('link', { name: 'View sales in Ecommerce' }).click();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('65.00');
