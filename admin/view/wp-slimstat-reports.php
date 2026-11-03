@@ -122,7 +122,7 @@ class wp_slimstat_reports
                 'callback_args' => [
                     'id'         => 'slim_p1_01',
                     'chart_data' => [
-                        'data1' => 'COUNT( ip )',
+                        'data1' => 'COUNT( id )',
                         'data2' => 'COUNT( DISTINCT ip )',
                     ],
                     'chart_labels' => [

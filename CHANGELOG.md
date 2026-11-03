@@ -11,6 +11,7 @@
 * Column and index migrations limit metadata-lock waits to five seconds and leave unsupported online changes pending instead of copying tables. Connection settings are restored after success or failure.
 
 **Numbers you can trust**
+* Pageviews charts include visits whose IP address is unavailable, matching pageview totals. Unique-IP counts retain their distinct-address meaning.
 * Cached single-row queries keep their object format. Scalar, row, column and row-list queries use separate cache entries even when their SQL is identical.
 * Real-time charts retain their history after returning to the page, and manual refresh updates the header visitor count and chart from the same response.
 * Amount-only full WooCommerce refunds leave zero net sales, shipping, tax and product quantities. Existing reporting copies can be refreshed using Rebuild reports.

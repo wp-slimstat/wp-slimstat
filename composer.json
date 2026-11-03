@@ -506,7 +506,7 @@
     "test:free-deploy-evidence": "python3 tests/free-deploy-evidence-test.py",
     "test:purge-mysql": ["wp eval-file tests/Integration/purge-mysql.php", "wp eval-file tests/Integration/purge-selection-mysql.php"],
     "test:schema-online-mysql": "wp eval-file tests/Integration/schema-online-mysql.php",
-    "test:query-topn-mysql": "wp eval-file tests/Integration/query-topn-mysql.php",
+    "test:query-topn-mysql": ["wp eval-file tests/Integration/query-topn-mysql.php", "wp eval-file tests/Integration/pageview-chart-mysql.php"],
     "test:privacy-export-mysql": "wp eval-file tests/Integration/privacy-export-mysql.php",
     "test:privacy-export-archive": "php tests/privacy-export-archive-test.php",
     "test:data-version-mysql": "wp eval-file tests/Integration/data-version-mysql.php",

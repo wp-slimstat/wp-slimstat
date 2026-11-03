@@ -168,6 +168,10 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 = Unreleased =
 
+**Fixed**
+
+* Pageviews charts include visits without an IP address, matching pageview totals.
+
 **Security**
 
 * Personal-data downloads include live and archived visits and events, including large histories and older database layouts. A database error stops the export so an incomplete download is not reported as complete.

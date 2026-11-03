@@ -16,6 +16,9 @@ assert {key for key, value in contracts.items() if value['family'] == 'chart'} =
 assert (contracts['chart_daily']['duration_days'], contracts['chart_daily']['granularity']) == (5, 'DAY')
 assert (contracts['chart_weekly']['duration_days'], contracts['chart_weekly']['granularity']) == (60, 'WEEK')
 assert contracts['slim_p4_26_01_chart_daily']['metric_column'] == 'outbound_resource'
+for key in ('chart_daily', 'chart_weekly'):
+    assert contracts[key]['metric_column'] == 'id'
+    assert contracts[key]['metric2_column'] == 'ip'
 capture = (Path(__file__).parents[1] / 'docker' / 'report-answers.php').read_text()
 assert "$args['chart_data'] = $chart_data;" in capture
 for key in ('slim_p4_26_01_chart_daily', 'slim_p4_26_01_chart_weekly'):
@@ -67,6 +70,16 @@ assert weekly['labels'] == ["'2026/01/01'", "'2026/01/05'"], weekly
 assert weekly['prev_labels'] == ['2025/12/22', '2025/12/29'], weekly
 assert weekly['datasets'] == {'v1': [0, 8], 'v2': [0, 3]}, weekly
 assert weekly['today'] == '2026/01/05', weekly
+
+# Pageviews count every recorded ID; unique addresses still omit NULL independently.
+identified = [dict(row, id=index + 1) for index, row in enumerate(rows)]
+pageviews = pageviews_chart(identified, capture_end, 3, 'DAY', metric_column='id', metric2_column='ip')
+assert pageviews['datasets'] == {'v1': [2, 2, 1], 'v2': [1, 2, 1]}, pageviews
+assert pageviews['datasets_prev'] == {'v1': [2, 2, 1], 'v2': [1, 2, 1]}, pageviews
+assert pageviews['totals'] == [
+    {'v1': 5, 'v2': 3, 'period': 'current'},
+    {'v1': 5, 'v2': 2, 'period': 'previous'},
+], pageviews
 
 search_rows = [
     {'dt': ts('2026-01-08T04:00:00'), 'searchterms': b'term'},
