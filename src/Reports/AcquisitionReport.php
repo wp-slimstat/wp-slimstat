@@ -213,7 +213,7 @@ class AcquisitionReport
     private static function content(array $args): void
     {
         echo '<div class="slimstat-acquisition">';
-        $ready = is_admin() ? Acquisition::checkSchema() : '1' === get_option(Acquisition::readinessKey(), '0');
+        $ready = is_admin() ? Acquisition::checkSchema(true) : '1' === get_option(Acquisition::readinessKey(), '0');
         if (!$ready) {
             echo '<p class="slimstat-acquisition__empty">' . esc_html__('UTM and channel reports need a database update. Existing tracking continues while setup is pending.', 'wp-slimstat') . '</p>';
             if (current_user_can('manage_options')) {

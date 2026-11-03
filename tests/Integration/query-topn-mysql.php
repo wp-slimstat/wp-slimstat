@@ -4,14 +4,16 @@ global $wpdb;
 if (!defined('WP_CLI') || !WP_CLI || !preg_match('/^(tests?[-_]|wordpress$)/', DB_NAME)) {
     throw new RuntimeException('A disposable WordPress test database is required.');
 }
-$table = 'slimstat_topn_' . bin2hex(random_bytes(6));
+$originalPrefix = $wpdb->prefix;
+$prefix = 'slimstat_topn_' . bin2hex(random_bytes(6)) . '_';
+$table = $prefix . 'slim_stats';
 $today = (int) floor(wp_slimstat::now() / 86400) * 86400;
 $run = static function ($sql) use ($wpdb) {
     if (false === $wpdb->query($sql)) { throw new RuntimeException($wpdb->last_error); }
 };
 $checks = 0;
 try {
-    $run("CREATE TABLE {$table} (resource varchar(100) NULL, region varchar(20) NULL, n bigint, amount decimal(20,4), dt bigint) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    $run("CREATE TABLE {$table} (id bigint unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY, resource varchar(100) NULL, region varchar(20) NULL, n bigint, amount decimal(20,4), dt bigint) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
     // Values differ across midnight, including keys equal under the host's collation.
     foreach ([['X', 10, 0], ['Y', 9, 0], ['Z', 8, 0], ['Z', 5, 1], ['W', 4, 1],
         ['Alpha', 11, 0], ['ALPHA', 9, 1], ['é', 8, 0], ['e', 7, 1],
@@ -48,7 +50,31 @@ try {
             }
         }
     }
+    $wpdb->prefix = $prefix;
+    \SlimStat\Utils\Query::setProcessingTimestamp($today + 3600);
+    $count = static function () use ($table, $today) {
+        return \SlimStat\Utils\Query::select('COUNT(id)')->from($table)
+            ->whereDate('dt', ['from' => $today - 86400, 'to' => $today + 3600])->getVar();
+    };
+    $selects = 0;
+    $ledger = static function ($sql) use ($table, &$selects) {
+        if (strpos($sql, "FROM {$table}") !== false && strpos($sql, 'SELECT COUNT(id)') === 0) { ++$selects; }
+        return $sql;
+    };
+    add_filter('query', $ledger);
+    $expected = $wpdb->get_var("SELECT COUNT(*) FROM {$table}");
+    if ($count() !== $expected || 2 !== $selects) { throw new RuntimeException('Cold scalar must combine two exact halves'); }
+    $run("INSERT INTO {$table} (dt) VALUES (" . ($today + 2) . ')');
+    $selects = 0;
+    if ((int) $count() !== (int) $expected + 1 || 1 !== $selects) { throw new RuntimeException('Warm scalar must reuse history and count the new live pageview'); }
+    $run("DELETE FROM {$table} WHERE dt < {$today} ORDER BY id LIMIT 2");
+    wp_slimstat::bump_data_version();
+    if ((int) $count() !== (int) $expected - 1) { throw new RuntimeException('Deletion must invalidate cached history'); }
+    remove_filter('query', $ledger);
+    echo "PASS: native scalar counts reuse history, include new tracking and refresh after deletion\n";
 } finally {
+    \SlimStat\Utils\Query::setProcessingTimestamp(null);
+    $wpdb->prefix = $originalPrefix;
     $run("DROP TABLE IF EXISTS {$table}");
 }
 echo "PASS: {$checks} native SQL top-N comparisons: collations, NULL/quoted keys, tuples, decimal/negative sums, ties, offsets and aggregate fallbacks\n";

@@ -48,6 +48,8 @@ class Query
 
     private $allowCaching = false;
 
+    private $allowHistoricalCaching = false;
+
     private $cacheExpiration = 3600;
 
     protected $db;
@@ -526,6 +528,7 @@ class Query
     public function allowCaching($flag = true, $expiration = 3600)
     {
         $this->allowCaching    = $flag;
+        $this->allowHistoricalCaching = $flag;
         $this->cacheExpiration = $expiration;
         return $this;
     }
@@ -548,6 +551,7 @@ class Query
             $this->allowCaching(true, $this->cacheExpiration);
         } else {
             $this->allowCaching(false);
+            $this->allowHistoricalCaching = true;
         }
     }
 
@@ -924,6 +928,13 @@ class Query
      */
     protected function setCachedResultForQuery($query, $args, $result, $expiration = 300)
     {
+        if ($this->extractDateRangesFromWhere()) {
+            $now = self::$processingTimestamp ?? \wp_slimstat::now();
+            $graceRemaining = $this->getTodayDate() + 1800 - $now;
+            if ($graceRemaining > 0) {
+                $expiration = min($expiration, $graceRemaining);
+            }
+        }
         $cacheKey = $this->getCacheKeyForQuery($query, $args);
         // Use JSON encode instead of serialize for security
         $data     = wp_json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -1425,11 +1436,50 @@ class Query
      */
     public function getVar(string $networkAggregate = '')
     {
+        $this->lastQueryFailed = false;
+        // Pageview IDs and their insertion dates are immutable. Filtered counts and SUMs
+        // can change on a late heartbeat, so they must stay as fresh as grouped reports.
+        $canSplit = $this->allowHistoricalCaching && !$this->_isLiveQuery
+            && '' === $networkAggregate && !NetworkMerge::isMerging()
+            && $this->table === $GLOBALS['wpdb']->prefix . 'slim_stats'
+            && count($this->whereClauses) === 1 && !$this->rawWhereClause && !$this->joinClauses
+            && !$this->groupByClause && !$this->havingClauses && !$this->limitClause
+            && preg_match('/^COUNT\s*\(\s*(?:\*|id)\s*\)(?:\s+(?:AS\s+)?[a-zA-Z_][a-zA-Z0-9_]*)?$/i', trim($this->fields));
+        if ($canSplit) {
+            [$split, $histFrom, $histTo, $liveFrom, $liveTo, $dtIdx] = $this->getSplitDateRanges();
+            $now = self::$processingTimestamp ?? \wp_slimstat::now();
+            if ($split && $now >= $this->getTodayDate() + 1800) {
+                $history = clone $this;
+                $history->valuesToPrepare[$dtIdx] = $histFrom;
+                $history->valuesToPrepare[$dtIdx + 1] = $histTo;
+                $history->allowCaching(true, $this->cacheExpiration);
+                $live = clone $this;
+                $live->valuesToPrepare[$dtIdx] = $liveFrom;
+                $live->valuesToPrepare[$dtIdx + 1] = $liveTo;
+                $live->_isLiveQuery = true;
+                $live->allowCaching(false);
+                $h = $history->getVar();
+                $l = $live->getVar();
+                if (!$history->lastQueryFailed && !$live->lastQueryFailed
+                    && ctype_digit((string) $h) && ctype_digit((string) $l)
+                    && (float) $h <= min(PHP_INT_MAX / 2, 4503599627370495)
+                    && (float) $l <= min(PHP_INT_MAX / 2, 4503599627370495)) {
+                    return (string) ((int) $h + (int) $l);
+                }
+                // One failed half or an unsafe integer must never become a partial/rounded total.
+                $full = clone $this;
+                $full->_isLiveQuery = true;
+                $full->allowCaching(false);
+                $result = $full->getVar();
+                $this->lastQueryFailed = $full->lastQueryFailed;
+                return $result;
+            }
+        }
         // When caching is enabled and the date range includes today, skip cache
         // to stay consistent with getAll() which always fetches fresh live data.
         // Without this, cached scalar values (e.g. $pageviews) become stale while
         // getAll() returns fresh grouped data, causing percentage calculations >100%.
-        $useCache = $this->allowCaching;
+        $useCache = $this->allowCaching && !$this->_isLiveQuery;
         if ($useCache) {
             [$split] = $this->getSplitDateRanges();
             if ($split) {
@@ -1466,7 +1516,8 @@ class Query
 
         $result = $this->db->get_var($query);
         self::recordSqlDebug($query, $this->db->last_error ?? '');
-        if ($useCache && !$this->queryFailed()) {
+        $this->lastQueryFailed = $this->queryFailed();
+        if ($useCache && !$this->lastQueryFailed) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
 
