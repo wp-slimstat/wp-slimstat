@@ -13,13 +13,13 @@
 * Real-time charts retain their history after returning to the page, and manual refresh updates the header visitor count and chart from the same response.
 * Amount-only full WooCommerce refunds leave zero net sales, shipping, tax and product quantities. Existing reporting copies can be refreshed using Rebuild reports.
 * Repeated date filters keep their SQL intersection, and thrown query failures use the full-range fallback.
-* Database query failures no longer become cached empty reports. Removing analytics rows invalidates cached historical reports.
+* Database query failures no longer become cached empty reports. Removing analytics rows invalidates cached historical reports, including partial deletions from Maintenance.
 * Reports that span midnight keep grouped counts, averages, distinct counts and top-list rankings exact. Some top lists now show corrected counts and ordering.
 
 **Security and privacy**
 * WordPress personal-data downloads no longer fail in the pageview exporter. Exports read fresh analytics data, preserve separate event IDs and stop on database errors.
 * Privacy erasure uses the external analytics database when configured. IP anonymization includes archives, supports older integer IP columns and stops on database errors.
-* Report-access allowlists match complete usernames. Partial usernames no longer grant access.
+* Report-access allowlists match complete usernames. Partial usernames no longer grant access, including names containing spaces.
 * Retention cleanup verifies archived values before deleting bounded batches and resumes large backlogs. Truncated or incomplete archives, reused keys and concurrent updates retain their source rows. Missing archive fields or custom live columns pause cleanup with a diagnostic instead of silently losing those fields.
 * Personal-data erasure drains every live and archive batch, including visitors with more than 500 events, without touching another visitor whose archive ID was reused. A database error stops erasure for a safe retry.
 

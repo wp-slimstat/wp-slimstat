@@ -2,14 +2,14 @@ target: admin/index.php
 gate: php tests/chart-request-boundary-test.php
 kind: guard-removal
 expect: Unexpected chart acceptance
-rationale: Partial usernames must not satisfy the report allowlist.
+rationale: Partial usernames must not grant access.
 ---
 --- a/admin/index.php
 +++ b/admin/index.php
 @@ -2102,7 +2102,7 @@
  
          $login = (string) ($GLOBALS['current_user']->user_login ?? '');
-         $whitelist = preg_split('/[\s,]+/', (string) (wp_slimstat::$settings['can_view'] ?? ''), -1, PREG_SPLIT_NO_EMPTY);
+         $whitelist = array_map('trim', preg_split('/[\r\n,]+/', (string) (wp_slimstat::$settings['can_view'] ?? ''), -1, PREG_SPLIT_NO_EMPTY));
 -        $whitelisted = '' !== $login && in_array($login, $whitelist, true);
 +        $whitelisted = '' !== $login && false !== strpos((string) wp_slimstat::$settings['can_view'], $login);
  

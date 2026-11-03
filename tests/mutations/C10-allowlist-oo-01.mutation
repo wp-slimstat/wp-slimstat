@@ -2,14 +2,14 @@ target: src/Reports/Abstracts/AbstractReport.php
 gate: php tests/chart-request-boundary-test.php
 kind: guard-removal
 expect: OO report allowlist must match exact nonempty login
-rationale: New reports must enforce the same exact account boundary.
+rationale: Partial usernames must not grant access.
 ---
 --- a/src/Reports/Abstracts/AbstractReport.php
 +++ b/src/Reports/Abstracts/AbstractReport.php
 @@ -187,7 +187,7 @@
  		// Check if user is whitelisted
  		$login = (string) ( $GLOBALS['current_user']->user_login ?? '' );
- 		$whitelist = preg_split( '/[\s,]+/', (string) ( \wp_slimstat::$settings['can_view'] ?? '' ), -1, PREG_SPLIT_NO_EMPTY );
+ 		$whitelist = array_map('trim', preg_split( '/[\r\n,]+/', (string) ( \wp_slimstat::$settings['can_view'] ?? '' ), -1, PREG_SPLIT_NO_EMPTY ));
 -		if ( '' !== $login && in_array( $login, $whitelist, true ) ) {
 +		if ( '' !== $login && false !== strpos( ( \wp_slimstat::$settings['can_view'] ?? '' ), $login ) ) {
  			return current_user_can( 'read' );

@@ -63,3 +63,11 @@ foreach (['ann' => false, '' => false, 'alice' => true, 'bob' => true, 'Alice' =
     if ((new ReportPolicyProbe())->can_view() !== $expected) { throw new RuntimeException('OO report allowlist must match exact nonempty login'); }
 }
 echo "PASS: OO reports use exact allowlist tokens\n";
+
+wp_slimstat::$settings['can_view'] = "john smith, alice\nbob\r\n0";
+foreach (['john' => false, 'smith' => false, 'john smith' => true, 'alice' => true, 'bob' => true, '0' => true] as $login => $expected) {
+    $GLOBALS['current_user']->user_login = (string) $login;
+    if (wp_slimstat_admin::can_view_stats() !== $expected || (new ReportPolicyProbe())->can_view() !== $expected) {
+        throw new RuntimeException('Spaced username must remain one exact account');
+    }
+}

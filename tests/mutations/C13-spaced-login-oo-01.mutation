@@ -1,0 +1,17 @@
+target: src/Reports/Abstracts/AbstractReport.php
+gate: php tests/chart-request-boundary-test.php
+kind: guard-removal
+expect: Spaced username must remain one exact account
+rationale: An internal space belongs to the username, not a second account.
+---
+--- a/src/Reports/Abstracts/AbstractReport.php
++++ b/src/Reports/Abstracts/AbstractReport.php
+@@ -186,7 +186,7 @@
+ 	public function can_view(): bool {
+ 		// Check if user is whitelisted
+ 		$login = (string) ( $GLOBALS['current_user']->user_login ?? '' );
+-		$whitelist = array_map('trim', preg_split( '/[\r\n,]+/', (string) ( \wp_slimstat::$settings['can_view'] ?? '' ), -1, PREG_SPLIT_NO_EMPTY ));
++		$whitelist = array_map('trim', preg_split( '/[\s,]+/', (string) ( \wp_slimstat::$settings['can_view'] ?? '' ), -1, PREG_SPLIT_NO_EMPTY ));
+ 		if ( '' !== $login && in_array( $login, $whitelist, true ) ) {
+ 			return current_user_can( 'read' );
+ 		}

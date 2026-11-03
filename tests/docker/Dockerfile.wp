@@ -39,8 +39,11 @@ RUN set -eux; \
 # fileinfo is compiled-in on the official php images — asserted below.
 RUN set -eux; \
     docker-php-ext-configure gd --with-freetype --with-jpeg; \
-    docker-php-ext-install -j"$(nproc)" mysqli gd zip exif intl opcache; \
-    docker-php-ext-enable opcache
+    docker-php-ext-install -j"$(nproc)" mysqli gd zip exif intl; \
+    if ! php -r 'exit(extension_loaded("Zend OPcache") ? 0 : 1);'; then \
+        docker-php-ext-install -j"$(nproc)" opcache; \
+        docker-php-ext-enable opcache; \
+    fi
 
 # Opcache: revalidate every request so host edits to wp-config.php / mu-plugins
 # (done by the E2E setup) are seen immediately. JIT off to avoid 8.x noise in

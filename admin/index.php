@@ -670,7 +670,7 @@ class wp_slimstat_admin
             $user_id = 1;
         } else {
             $user = wp_get_current_user();
-            $whitelist = preg_split('/[\s,]+/', (string) (wp_slimstat::$settings['can_customize'] ?? ''), -1, PREG_SPLIT_NO_EMPTY);
+            $whitelist = array_map('trim', preg_split('/[\r\n,]+/', (string) (wp_slimstat::$settings['can_customize'] ?? ''), -1, PREG_SPLIT_NO_EMPTY));
             $capability = wp_slimstat::$settings['capability_can_customize'] ?? 'manage_options';
             if (!$user->ID || !(current_user_can('manage_options') || current_user_can($capability ?: 'read')
                 || (current_user_can('read') && in_array($user->user_login, $whitelist, true)))) {
@@ -2101,7 +2101,7 @@ class wp_slimstat_admin
         // A whitelisted user gets the minimum capability instead of the configured one.
 
         $login = (string) ($GLOBALS['current_user']->user_login ?? '');
-        $whitelist = preg_split('/[\s,]+/', (string) (wp_slimstat::$settings['can_view'] ?? ''), -1, PREG_SPLIT_NO_EMPTY);
+        $whitelist = array_map('trim', preg_split('/[\r\n,]+/', (string) (wp_slimstat::$settings['can_view'] ?? ''), -1, PREG_SPLIT_NO_EMPTY));
         $whitelisted = '' !== $login && in_array($login, $whitelist, true);
 
         if (!$whitelisted && !empty(wp_slimstat::$settings['capability_can_view'])) {
