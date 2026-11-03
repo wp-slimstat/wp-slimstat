@@ -1,3 +1,12 @@
+= 6.0.2 - Unreleased =
+
+**New: Country to city drilldown**
+* Click a country on the Audience Location map, in its country list or in Top Countries to see that country's top cities, for the same dates and filters. Shares are of the country you clicked, and its pageviews without a city are counted in a note rather than hidden.
+* Free shows the country's top city with its real numbers. Pro lists every city, a page at a time. The limit is applied on the server, so other cities are never sent to the browser.
+* Cities need Geolocation precision set to City (Settings → Tracker). While it is set to Country, the drilldown explains how to switch, and that cities are recorded only from then on. The country link still filters every report: hold a modifier key, or use the link inside the drilldown.
+
+**Translators:** new strings need translation.
+
 = 6.0.1 - 2026-11-02 =
 
 **Faster**
