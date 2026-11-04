@@ -1,0 +1,17 @@
+target: src/Utils/Query.php
+gate: php tests/query-split-topn-test.php
+kind: guard-removal
+expect: Split top-N differs
+rationale: Separate top-K reads omit contributions and can miss concurrent winners; grouped reports must use native full-range ranking.
+---
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -1865,7 +1865,7 @@
+         // A grouped split cannot preserve SQL collation, and a top-K threshold read in
+         // separate statements can miss a winner inserted between those reads. Keep native
+         // grouping, ranking and pagination in one full-range statement (C-4).
+-        $splitRefused = $split && (!empty($this->groupByClause) || !empty($this->havingClauses) || preg_match('/\bDISTINCT\b|\bAVG\s*\(/i', (string) $this->fields));
++        $splitRefused = $split && (!empty($this->havingClauses) || preg_match('/\bDISTINCT\b|\bAVG\s*\(/i', (string) $this->fields));
+         if ($splitRefused) {
+             $split = false;
+         }

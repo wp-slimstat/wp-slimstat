@@ -3,6 +3,7 @@
 use SlimStat\Services\GeoService;
 use SlimStat\Components\DateRangeHelper;
 use SlimStat\Services\Admin\Notification\NotificationFactory;
+use SlimStat\Services\Admin\VideoTutorials;
 use SlimStat\Schema\Schema;
 class wp_slimstat_admin
 {
@@ -203,6 +204,14 @@ class wp_slimstat_admin
                 'capability'      => 'can_admin',
                 'callback'        => [self::class, 'wp_slimstat_include_config'],
             ],
+            // No 'new_badge': its anchor is an option write. New videos are marked client-side.
+            'slimvideos' => [
+                'is_report_group' => false,
+                'show_in_sidebar' => true,
+                'title'           => __('Videos', 'wp-slimstat'),
+                'capability'      => 'can_view',
+                'callback'        => [self::class, 'wp_slimstat_include_videos'],
+            ],
             'slimpro' => [
                 'is_report_group' => false,
                 'show_in_sidebar' => current_user_can('manage_options'),
@@ -345,6 +354,7 @@ class wp_slimstat_admin
         $is_slimstat_page = (!empty($_GET['page']) && is_string($_GET['page']) && 0 === strpos($_GET['page'], 'slim'));
         $is_slimstat_ajax = (!empty($_POST['action']) && (
             'slimstat_load_report' === $_POST['action'] ||
+            'slimstat_load_reports' === $_POST['action'] ||
             'slimstat_get_live_analytics_data' === $_POST['action']
         ));
 
@@ -354,9 +364,10 @@ class wp_slimstat_admin
         }
 
         // Load the library of functions to generate the reports
-        if ($is_slimstat_page || (!empty($_POST['action']) && 'slimstat_load_report' == $_POST['action'])) {
+        if ($is_slimstat_page || (!empty($_POST['action']) && in_array($_POST['action'], ['slimstat_load_report', 'slimstat_load_reports'], true))) {
             include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-reports.php');
             wp_slimstat_reports::init();
+            add_action('wp_ajax_slimstat_load_reports', ['wp_slimstat_reports', 'load_reports']);
 
             if (!empty($_POST['report_id']) && is_string($_POST['report_id'])) {
                 $report_id = sanitize_title(wp_unslash($_POST['report_id']), 'slim_p0_00');
@@ -407,6 +418,7 @@ class wp_slimstat_admin
             foreach ($ajax_actions as $action => $handler) {
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
             }
+            add_action('wp_ajax_slimstat_country_cities', [\SlimStat\Reports\CountryCities::class, 'ajax']);
 
             // Live Analytics AJAX handler is registered via init_hooks() in Bootstrap
             // No need to call it separately here - it's already registered
@@ -574,8 +586,9 @@ class wp_slimstat_admin
     {
         // The sidebar "New" and "Pro" pills render in the global sidebar, so their
         // style must load on every admin page (not just SlimStat screens). Tiny,
-        // so always emit it. Both pills share one shape. (#20)
-        echo '<style> #adminmenu .slimstat-menu-label{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:13px}#adminmenu .wp-not-current-submenu .wp-submenu:has(.slimstat-menu-label),.folded #adminmenu .wp-submenu:has(.slimstat-menu-label){min-width:180px;width:max-content;max-width:calc(100vw - 48px)}#adminmenu a[href*="page=slimpro"]{color:#f78a9a;font-weight:600}#adminmenu .slimstat-menu-new-badge, #adminmenu .slimstat-menu-pro-badge {display:inline-block;flex:none;margin-inline-start:0;border-radius:9px;font-size:9px;font-weight:600;vertical-align:middle;} #adminmenu .slimstat-menu-new-badge {padding:0 6px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;line-height:16px;text-transform:uppercase;letter-spacing:.03em;} #adminmenu .slimstat-menu-pro-badge {padding:0 5px;border:1px solid currentColor;line-height:14px;opacity:.85;} </style>';
+        // so always emit it. Both pills share one shape. (#20) The Videos screen reuses
+        // the New pill on its cards, and the new-video ▶ is styled here for the same reason.
+        echo '<style> #adminmenu .slimstat-menu-label{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:13px}#adminmenu .wp-not-current-submenu .wp-submenu:has(.slimstat-menu-label),.folded #adminmenu .wp-submenu:has(.slimstat-menu-label){min-width:180px;width:max-content;max-width:calc(100vw - 48px)}#adminmenu a[href*="page=slimpro"]{color:#f78a9a;font-weight:600}#adminmenu .slimstat-menu-new-badge, #adminmenu .slimstat-menu-pro-badge, .ss-videos .slimstat-menu-new-badge {display:inline-block;flex:none;margin-inline-start:0;border-radius:9px;font-size:9px;font-weight:600;vertical-align:middle;} #adminmenu .slimstat-menu-new-badge, .ss-videos .slimstat-menu-new-badge {padding:0 6px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;line-height:16px;text-transform:uppercase;letter-spacing:.03em;} #adminmenu .slimstat-menu-pro-badge {padding:0 5px;border:1px solid currentColor;line-height:14px;opacity:.85;} #adminmenu .slimstat-menu-video-badge{display:inline-block;margin-inline-end:5px;padding:0 4px;border-radius:8px;background:#d63638;color:#fff;font-size:8px;line-height:15px;vertical-align:1px} </style>';
 
         // Dashboard only, once per load: the three data points of the chart-area glyph turn
         // SlimStat red left to right, then fade back; the rest of the icon keeps the scheme's
@@ -671,7 +684,7 @@ class wp_slimstat_admin
             $user_id = 1;
         } else {
             $user = wp_get_current_user();
-            $whitelist = preg_split('/[\s,]+/', (string) (wp_slimstat::$settings['can_customize'] ?? ''), -1, PREG_SPLIT_NO_EMPTY);
+            $whitelist = array_map('trim', preg_split('/[\r\n,]+/', (string) (wp_slimstat::$settings['can_customize'] ?? ''), -1, PREG_SPLIT_NO_EMPTY));
             $capability = wp_slimstat::$settings['capability_can_customize'] ?? 'manage_options';
             if (!$user->ID || !(current_user_can('manage_options') || current_user_can($capability ?: 'read')
                 || (current_user_can('read') && in_array($user->user_login, $whitelist, true)))) {
@@ -1573,27 +1586,9 @@ class wp_slimstat_admin
                 if (in_array($a_report_id, self::COMPACT_DASHBOARD_REPORTS, true)) {
                     wp_slimstat_reports::$reports[$a_report_id]['callback_args']['is_widget'] = true;
                 }
-                if (!wp_slimstat::pro_is_installed() && 'slim_p7_02' === $a_report_id) {
-                    wp_add_dashboard_widget($a_report_id, wp_slimstat_reports::$reports[$a_report_id]['title'], [self::class, 'dashboard_pro_preview']);
-                } else {
                 wp_add_dashboard_widget($a_report_id, wp_slimstat_reports::$reports[$a_report_id]['title'], ['wp_slimstat_reports', 'callback_wrapper']);
-                }
             }
         }
-    }
-
-    public static function dashboard_pro_preview($post, $args): void
-    {
-        echo '<div class="slimstat-dashboard-report">';
-        wp_slimstat_reports::callback_wrapper($post, $args);
-        echo '</div>';
-        // A hidden existing widget remains hidden, and an eligible release notice takes priority.
-        if (self::release_notice_visible(false)) {
-            echo '<p>' . esc_html__('Live charts are available with SlimStat Pro.', 'wp-slimstat') . '</p>';
-            return;
-        }
-        self::enqueue_promotions();
-        self::get_template('locked-preview', ['text' => __('Follow live visitors, pages and countries with Pro.', 'wp-slimstat'), 'campaign' => 'dashboard', 'content' => 'live-widget']);
     }
 
     // END: add_dashboard_widgets
@@ -1622,7 +1617,9 @@ class wp_slimstat_admin
             $where .= ' OR username = %s';
             $params[] = $user->user_login;
         }
-        $my_wpdb->query($my_wpdb->prepare('DELETE FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE ' . $where, $params));
+        if ($my_wpdb->query($my_wpdb->prepare('DELETE FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE ' . $where, $params)) > 0) {
+            wp_slimstat::bump_data_version();
+        }
     }
 
     // END: remove_spam
@@ -1647,6 +1644,8 @@ class wp_slimstat_admin
         wp_enqueue_style('wp-slimstat-tokens', plugins_url('/admin/assets/css/tokens.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
         wp_enqueue_script('slimstat-report-dialogs', plugins_url('/admin/assets/js/report-dialogs.js', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION, true);
         wp_enqueue_style('wp-slimstat-acquisition', plugins_url('/admin/assets/css/acquisition.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
+        // Country rows can sit on any report screen, like the dialogs above.
+        wp_enqueue_style('wp-slimstat-country-cities', plugins_url('/admin/assets/css/country-cities.css', __DIR__), ['wp-slimstat-acquisition'], SLIMSTAT_ANALYTICS_VERSION);
         if ('slimheatmap' === self::$current_screen) {
             wp_enqueue_style('wp-slimstat-heatmaps', plugins_url('/admin/assets/css/heatmaps.css', __DIR__), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
             wp_enqueue_script('slimstat-heatmaps', plugins_url('/admin/assets/js/heatmaps.js', __DIR__), ['wp-i18n', 'wp-api-fetch'], SLIMSTAT_ANALYTICS_VERSION, true);
@@ -1662,6 +1661,9 @@ class wp_slimstat_admin
         }
         if ('slimpro' === self::$current_screen) {
             wp_enqueue_style('wp-slimstat-pro-overview', plugins_url('/admin/assets/css/pro.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
+        }
+        if (VideoTutorials::SCREEN === self::$current_screen) {
+            VideoTutorials::enqueue_page();
         }
 
         // Same per-screen layout lookup as needs_goals_funnels_assets(): only where the widget renders.
@@ -1868,6 +1870,9 @@ class wp_slimstat_admin
         // this, the strings are extracted into the .pot but never translated.
         wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog', 'slimstat-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
         self::set_slimstat_script_translations('slimstat_admin');
+        // Country rows can sit on any report screen; cities load only when one is clicked.
+        wp_enqueue_script('slimstat-country-cities', plugins_url('/admin/assets/js/country-cities.js', __DIR__), ['slimstat-i18n', 'slimstat-report-dialogs'], SLIMSTAT_ANALYTICS_VERSION, true);
+        self::set_slimstat_script_translations('slimstat-country-cities');
         if ('slimview5' === self::$current_screen) {
             wp_enqueue_script('slimstat-utm-builder', plugins_url('/admin/assets/js/utm-builder.js', __DIR__), ['slimstat-i18n', 'slimstat-report-dialogs'], SLIMSTAT_ANALYTICS_VERSION, true);
             self::set_slimstat_script_translations('slimstat-utm-builder');
@@ -1877,6 +1882,7 @@ class wp_slimstat_admin
 
         // Pass some information to Javascript
         $params = [
+            'batch_report_ids' => class_exists('wp_slimstat_reports') ? wp_slimstat_reports::batch_report_ids() : [],
             'async_load'        => ($current_screen && 'dashboard' === $current_screen->id) ? 'on' : (empty(wp_slimstat::$settings['async_load']) ? 'no' : wp_slimstat::$settings['async_load']),
             'datepicker_image'  => plugins_url('/admin/assets/images/datepicker.png', __DIR__),
             'refresh_interval'  => intval(wp_slimstat::$settings['refresh_interval']),
@@ -2025,7 +2031,7 @@ class wp_slimstat_admin
             }
 
             if ($a_screen_info['show_in_sidebar']) {
-                $new_entry[] = add_submenu_page(
+                $new_entry[$a_screen_id] = add_submenu_page(
                     $parent,
                     $a_screen_info['title'],
                     self::sidebar_label($a_screen_info, $pro_installed),
@@ -2034,6 +2040,12 @@ class wp_slimstat_admin
                     $a_screen_info['callback']
                 );
             }
+        }
+
+        // The new-video marker sits on the Videos item, so it loads exactly where WordPress added
+        // that item: not for a user it was denied to, nor when a filter or layout removed it.
+        if (!empty($new_entry[VideoTutorials::SCREEN])) {
+            add_action('admin_enqueue_scripts', [VideoTutorials::class, 'enqueue_client']);
         }
 
         // Load styles and Javascript needed to make the reports look nice and interactive
@@ -2103,10 +2115,8 @@ class wp_slimstat_admin
         // A whitelisted user gets the minimum capability instead of the configured one.
 
         $login = (string) ($GLOBALS['current_user']->user_login ?? '');
-        $whitelisted = '' !== $login && false !== strpos(
-            (string) wp_slimstat::$settings['can_view'],
-            $login
-        );
+        $whitelist = array_map('trim', preg_split('/[\r\n,]+/', (string) (wp_slimstat::$settings['can_view'] ?? ''), -1, PREG_SPLIT_NO_EMPTY));
+        $whitelisted = '' !== $login && in_array($login, $whitelist, true);
 
         if (!$whitelisted && !empty(wp_slimstat::$settings['capability_can_view'])) {
             return wp_slimstat::$settings['capability_can_view'];
@@ -2404,6 +2414,15 @@ class wp_slimstat_admin
     // END: wp_slimstat_include_email_report
 
     /**
+     * Includes the Videos page
+     */
+    public static function wp_slimstat_include_videos()
+    {
+        include(__DIR__ . '/view/videos.php');
+    }
+
+
+    /**
      * Handles the upgrade to pro from the free version
      */
     public static function wp_slimstat_pro()
@@ -2562,7 +2581,7 @@ class wp_slimstat_admin
     }
 
     /** One release window per user, shared by every placement and patch version. */
-    public static function release_notice_visible(bool $start_window = true): bool
+    public static function release_notice_visible(): bool
     {
         $user = get_current_user_id();
         if (!$user || 'on' !== (wp_slimstat::$settings['notice_latest_news'] ?? 'no')
@@ -2570,7 +2589,7 @@ class wp_slimstat_admin
             return false;
         }
         $since = (int) get_user_meta($user, 'slimstat_release_60_since', true);
-        if (!$since && $start_window) {
+        if (!$since) {
             add_user_meta($user, 'slimstat_release_60_since', time(), true);
             $since = (int) get_user_meta($user, 'slimstat_release_60_since', true);
         }
@@ -3303,7 +3322,9 @@ class wp_slimstat_admin
         if (!$current_user_can_delete || $pageview_id <= 0 || !isset($_POST['security']) || !is_string($_POST['security']) || !wp_verify_nonce(wp_unslash($_POST['security']), 'meta-box-order')) {
             return;
         }
-        $my_wpdb->query($my_wpdb->prepare('DELETE FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE id = %d', $pageview_id));
+        if ($my_wpdb->query($my_wpdb->prepare('DELETE FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE id = %d', $pageview_id)) > 0) {
+            wp_slimstat::bump_data_version();
+        }
         exit();
     }
 
@@ -4890,15 +4911,14 @@ class wp_slimstat_admin
             'add_user_agent_dimension' => __('Migration: browser dimension column', 'wp-slimstat'),
             'event insert stored no row' => __('Event could not be recorded', 'wp-slimstat'),
             'anonymous visit reuse'      => __('Cookieless visit grouping', 'wp-slimstat'),
-            'purge (archiving events)'    => __('Retention: archiving events', 'wp-slimstat'),
-            'purge (deleting events)'     => __('Retention: deleting events', 'wp-slimstat'),
+            'purge (lock limits)'         => __('Retention: database lock limits', 'wp-slimstat'),
+            'purge (verified retention)'  => __('Retention: verified archive and deletion', 'wp-slimstat'),
             'purge (heatmap rows)'        => __('Retention: deleting heatmap clicks', 'wp-slimstat'),
             'heatmap insert'              => __('Tracking: saving heatmap clicks', 'wp-slimstat'),
             'heatmap delete'              => __('Heatmaps: deleting heatmap data', 'wp-slimstat'),
             'purge (checking retention)'  => __('Retention: checking expired data', 'wp-slimstat'),
             'purge (heatmap scheduling)'  => __('Heatmaps: scheduling retention cleanup', 'wp-slimstat'),
-            'purge (archiving pageviews)' => __('Retention: archiving pageviews', 'wp-slimstat'),
-            'purge (deleting pageviews)'  => __('Retention: deleting pageviews', 'wp-slimstat'),
+            'purge (checking completion)' => __('Retention: checking completion', 'wp-slimstat'),
             'purge (archive schema)'      => __('Retention: archive table columns', 'wp-slimstat'),
             // Synthesised inside get_degradations() from the last-success stamp, not recorded
             // by any call site — so a scan that derives its population from record_degradation()

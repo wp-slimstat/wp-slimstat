@@ -1,0 +1,17 @@
+target: src/Schema/Schema.php
+gate: php tests/schema-online-safety-test.php
+kind: guard-removal
+expect: restore after success
+rationale: Restore the exact session value after every DDL attempt.
+---
+--- a/src/Schema/Schema.php
++++ b/src/Schema/Schema.php
+@@ -1004,7 +1004,7 @@
+             }
+         } finally {
+             $error = (string) $db->last_error;
+-            if (false === $db->query('SET SESSION lock_wait_timeout = ' . (int) $oldTimeout)) {
++            if (false === 0) {
+                 $result = false;
+                 $error .= ' Could not restore the metadata-lock timeout: ' . $db->last_error;
+             }

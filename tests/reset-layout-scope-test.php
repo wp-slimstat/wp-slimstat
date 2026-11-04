@@ -53,6 +53,18 @@ run_reset('unknown', 'reset_layout-valid', false);
 run_reset(['network'], 'reset_layout-valid', false);
 $GLOBALS['user']->user_login = 'gated'; // substring of delegated must not grant customization.
 run_reset('personal', 'reset_layout-valid', false);
+wp_slimstat::$settings['can_customize'] = " john smith, delegated\n0 ";
+foreach (['john', 'smith', 'John Smith'] as $login) {
+    $GLOBALS['user']->user_login = $login;
+    run_reset('personal', 'reset_layout-valid', false);
+}
+foreach (['john smith', 'delegated', '0'] as $login) {
+    $GLOBALS['metadata'] = $fixtures;
+    $GLOBALS['user']->user_login = $login;
+    run_reset('personal', 'reset_layout-valid', true);
+    check(!isset($GLOBALS['metadata'][2][$personal]), 'exact customizer account could not reset personal layout');
+}
+$GLOBALS['metadata'] = $fixtures;
 $GLOBALS['caps']['manage_network_options'] = true;
 run_reset('network', 'reset_layout_network-valid', true);
 check($GLOBALS['metadata'][2] === $fixtures[2] && $GLOBALS['metadata'][3] === $fixtures[3], 'network reset touched personal users');

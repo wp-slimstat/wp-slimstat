@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wp-slimstat.com/videos/videos.schema.json",
+  "title": "SlimStat video tutorials catalog, version 1",
+  "description": "Served at https://wp-slimstat.com/videos/videos.json and read by SlimStat > Videos in the WordPress admin. The plugin validates every entry on its own and skips the ones that do not match; it also ignores fields it does not know, so fields may be added without bumping the version. Never change the meaning of a field in place: a breaking change gets a new file name.",
+  "type": "object",
+  "required": ["version", "videos"],
+  "properties": {
+    "version": {
+      "description": "Schema version. The plugin rejects the whole file unless this is exactly the number 1.",
+      "const": 1
+    },
+    "categories": {
+      "description": "Optional. Orders the category rows and adds new ones. The eight built-in ids keep the plugin's translated labels, so their title here is used only for ids the plugin does not know. At most 50 are read.",
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "title": { "type": "string", "maxLength": 80, "description": "Row heading for a category the plugin does not know. Without one, its videos are listed under More videos." },
+          "order": { "$ref": "#/$defs/order", "description": "Rows are sorted by this, lowest first. Built-in rows default to 10, 20 ... 80 in the order listed in docs/video-tutorials/README.md; new rows default to 1000." }
+        }
+      }
+    },
+    "videos": {
+      "description": "At most 500 are read. Within a row, videos are sorted by order, then newest first, then by title.",
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "slug", "youtubeId", "published"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id", "description": "Permanent and unique. The new-video marker tracks ids, so changing one makes the video new again for everyone, and reusing one hides a new video." },
+          "title": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Plain text. Markup is shown literally, never rendered." },
+          "slug": { "type": "string", "maxLength": 100, "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "description": "The watch page is https://wp-slimstat.com/videos/{slug}/. The plugin builds this link itself; the catalog cannot point anywhere else." },
+          "youtubeId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{11}$", "description": "For the watch page's player. The plugin never contacts YouTube, but skips a video without a valid id, as the website does." },
+          "thumbnail": { "type": "string", "maxLength": 2048, "description": "https://wp-slimstat.com/... or a root-relative path such as /images/videos/overview.webp. Anything else (another host, http, a YouTube thumbnail) is replaced by a placeholder, so the admin never requests images from YouTube." },
+          "category": { "$ref": "#/$defs/id", "description": "A built-in category id or one listed in categories. Unknown ids go to More videos." },
+          "published": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T\\d{2}:\\d{2}(?::\\d{2}(?:\\.\\d+)?)?(?:Z|[+-]\\d{2}:?\\d{2}))?$", "description": "A date (2026-11-03) or a date-time with Z or an offset (2026-11-03T09:05:58+00:00). A video counts as new only when it is published within a week before the user's baseline or later." },
+          "order": { "$ref": "#/$defs/order", "description": "Position in its row, lowest first. Defaults to 1000." },
+          "duration": { "type": "string", "pattern": "^(?:\\d{1,2}:)?\\d{1,2}:\\d{2}$", "description": "Optional. Shown on the thumbnail, e.g. 1:47." },
+          "description": { "type": "string", "maxLength": 500, "description": "Optional. Plain text, shown in two lines under the title." }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$" },
+    "order": { "type": "integer", "minimum": -1000000, "maximum": 1000000 }
+  }
+}

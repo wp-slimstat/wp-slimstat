@@ -568,6 +568,7 @@ delete_option('slimstat_heatmap_setup');
     delete_option('slimstat_goals');
     delete_option('slimstat_funnels');
     delete_option('slimstat_goals_cache_ver');
+    delete_option('slimstat_data_ver');
 
     // The goals/funnels/unique-visitor transients used to be swept here, and the
     // filter-options ones below. Both are now covered by slimstat_uninstall_transients(),

@@ -6,9 +6,9 @@ rationale: Delete the refusal that fires when an archive table has lost its prim
 ---
 --- a/wp-slimstat.php
 +++ b/wp-slimstat.php
-@@ -1886,19 +1886,6 @@
-             $event_columns = $event_plan['copy'];
-             $stats_columns = $stats_plan['copy'];
+@@ -1864,19 +1864,7 @@
+                 return;
+             }
  
 -            // No key, no statement. Refusing here is the same refusal probeForCollision()
 -            // makes: never DELETE through a question that could not be asked.
@@ -23,6 +23,7 @@ rationale: Delete the refusal that fires when an archive table has lost its prim
 -
 -                return;
 -            }
++
+         }
  
-             // Columns the LIVE table has and the archive does not are real fidelity loss, and
-             // they are NOT reported here. Archive drift is permanent -- the archive gains no
+         $limit = (int) ini_get('max_execution_time');

@@ -1,0 +1,17 @@
+target: src/Utils/Query.php
+gate: php tests/query-failed-query-cache-test.php
+kind: guard-removal
+expect: cross-midnight intersection requires one uncached query
+rationale: Repeated date predicates must remain one full-range SQL intersection.
+---
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -1877,7 +1877,7 @@
+         }
+ 
+         $ranges = $this->extractDateRangesFromWhere();
+-        if (count($ranges) > 1) {
++        if (false) {
+             // Multiple predicates describe one SQL intersection. Splitting each in turn
+             // duplicates rows and can recursively reprocess the other date predicate.
+             $full = clone $this;

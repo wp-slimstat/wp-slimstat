@@ -55,6 +55,16 @@ with tempfile.TemporaryDirectory() as temp:
         {'dt': '20', 'id': '3', 'resource': '/a', 'user_agent': None},
         {'dt': '20', 'id': '2', 'resource': '/b', 'user_agent': 'normal'},
     ], result
+    contracts['reports']['recent_searchterms_pinned'] = {
+        'family': 'recent', 'kind': 'filtered_recent', 'default_limit': 200,
+        'columns': ['searchterms', 'referer', 'resource', 'dt', 'ip'],
+        'where': [['searchterms', 'not_in', [None, '', '_']]],
+    }
+    result = oracle_for(path, 'recent_searchterms_pinned',
+                        {'family': 'recent', 'table': 'slim_stats'}, contracts,
+                        {'start': 10, 'end': 20})
+    assert result['value'] == [{'searchterms': 'q', 'referer': 'http://site.example/self',
+                               'resource': '/a', 'dt': '10', 'ip': 'a'}], result
     bad = {'reports': dict(contracts['reports'])}
     bad['reports']['get_recent'] = dict(contracts['reports']['get_recent'],
                                         columns=['id', 'missing', 'dt'])
@@ -113,7 +123,7 @@ with tempfile.TemporaryDirectory() as temp:
                         {'family': 'summary', 'table': 'slim_stats'}, contracts,
                         {'start': 10, 'end': 20})
     assert next(row for row in result['value'] if row['metric'] == '31 - 60 seconds') == {
-        'counthits': 1, 'details': 'Hits: 1', 'metric': '31 - 60 seconds', 'value': '100.00%'}, result
+        'counthits': 1, 'details': 'Visits: 1', 'metric': '31 - 60 seconds', 'value': '100.00%'}, result
     assert result['value'][-1]['value'] == '01:00', result
 
     for key, kind, expected in (

@@ -4,6 +4,7 @@ define('ABSPATH', '/');
 define('ARRAY_A', 'ARRAY_A');
 define('MINUTE_IN_SECONDS', 60);
 function apply_filters($tag, $value) { return $value; }
+function get_option($key, $default = false) { return $GLOBALS['version_options'][$key] ?? $default; }
 function get_transient($key) { return $GLOBALS['placeholder_cache'][$key] ?? false; }
 function set_transient($key, $value, $ttl = 0) { $GLOBALS['placeholder_cache'][$key] = $value; return true; }
 class PlaceholderCacheDb {
@@ -42,6 +43,11 @@ foreach (['{request-one}', '{request-two}'] as $marker) {
 placeholder_check('Prepared SQL keys survive a different request marker', $keys[0] === $keys[1]);
 placeholder_check('Escaped bound arguments survive a different request marker', $arg_keys[0] === $arg_keys[1]);
 $normal = $method->invoke(new SlimStat\Utils\Query(), $canonical, ['%page%', 0, null]);
+$legacy = SlimStat\Utils\Query::cacheHash($db, $canonical);
+$GLOBALS['version_options']['slimstat_data_ver'] = 'after-deletion';
+placeholder_check('Data deletion invalidates builder cache', $normal !== $method->invoke(new SlimStat\Utils\Query(), $canonical, ['%page%', 0, null]));
+placeholder_check('Data deletion invalidates legacy cache', $legacy !== SlimStat\Utils\Query::cacheHash($db, $canonical));
+$GLOBALS['version_options'] = [];
 placeholder_check('Canonical and placeholder-escaped SQL share identity', $normal === $keys[0]);
 placeholder_check('Different predicates retain different keys', $normal !== $method->invoke(new SlimStat\Utils\Query(), str_replace('page', 'other', $canonical), ['%page%', 0, null]));
 placeholder_check('Different bound values retain different keys', $normal !== $method->invoke(new SlimStat\Utils\Query(), $canonical, ['%other%', 0, null]));

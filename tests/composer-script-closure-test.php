@@ -68,6 +68,13 @@ $walk('test:all');
 // Standalone by design. Each entry states WHY, because "it is in the list" is not a reason, and
 // a list anyone may append to without argument is not a gate.
 $standalone = [
+    'test:privacy-export-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',
+    'test:data-version-mysql' => 'requires a disposable WordPress database with WooCommerce; runs in the Tier 2 WooCommerce lane',
+    'test:ecommerce-full-refund-mysql' => 'requires real WooCommerce orders; runs on disposable data in the Tier 2 WooCommerce lane',
+    'test:purge-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',
+    'test:schema-online-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',
+    'test:query-topn-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',
+    'test:privacy-erasure-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',
     'test:report-summary-counts-wp' => 'requires real WordPress and isolated analytics temporary tables; runs in Tier 2 CI on WordPress 6.4, 7.0 and 7.1.2',
     'test:notification-delivery-wp' => 'requires a disposable WordPress database and runs in minimum-compatibility CI',
     'test:shortcode-render-wp' => 'requires real WordPress, analytics tables and an administrator; runs via WP-CLI in the Tier 2 CI lane',
