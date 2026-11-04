@@ -11,6 +11,10 @@ function fixture(mode: string): any {
 
 test('Ecommerce reconciles known WC data, shared filters, refresh and responsive reports @woocommerce', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
+  await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText: async (text: string) => { (window as any).__copied = text; } },
+  }));
   await snapshotSlimstatOptions();
   await snapshotOption('slimstat_filters');
   fixture('cleanup');
@@ -30,6 +34,19 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     const dashboard = page.locator('[data-ecommerce]');
     const full = (await getProState(page)).pro_activated;
     await expect(dashboard.locator('[data-metric=net]')).toContainText('115.00', { timeout: 30_000 });
+    const copy = dashboard.locator('button.slimstat-ai-prompt');
+    await expect(copy).toBeVisible();
+    await copy.click();
+    await expect(copy).toContainText('Copied');
+    let prompt = await page.evaluate(() => (window as any).__copied as string);
+    expect(prompt).toContain('Report: Ecommerce');
+    expect(prompt).toContain('Currency: USD');
+    expect(prompt).toContain('115.00');
+    expect(prompt).toContain('20.00');
+    expect(prompt).toContain('Previous interval | Previous value');
+    expect(prompt).toContain('Which channels contribute the most net sales?');
+    expect(prompt).not.toContain('Which sources contribute orders and revenue?');
+    expect(prompt).not.toMatch(/••••|Illustrative report preview|Unlock Ecommerce/);
     if (full) {
     await expect(dashboard.locator('[data-metric=orders]')).toHaveText('4');
     await expect(dashboard.locator('[data-metric=aov]')).toContainText('28.75');
@@ -83,6 +100,12 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     }
     await page.getByLabel('Compare previous period').uncheck();
     await expect(dashboard.locator('[data-chart-table] tr').first().locator('td')).toHaveCount(1);
+    await copy.click();
+    await expect(copy).toContainText('Copied');
+    prompt = await page.evaluate(() => (window as any).__copied as string);
+    expect(prompt).not.toContain('Previous interval | Previous value');
+    expect(prompt).not.toContain('Which channels contribute the most net sales?');
+    expect(prompt).toContain('Which sources contribute orders and revenue?');
     await page.getByLabel('Compare previous period').check();
     await dashboard.getByLabel('Chart interval').selectOption('monthly');
     await expect(dashboard.getByLabel('Chart interval')).toHaveValue('monthly');
@@ -245,6 +268,10 @@ test('Ecommerce explains incomplete, empty and loading states and keeps the newe
 
 test('Ecommerce Free is useful alone and WooCommerce deactivation is safe @woocommerce', async ({ page }) => {
   test.setTimeout(90_000);
+  await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText: async (text: string) => { (window as any).__copied = text; } },
+  }));
   const proWasActive = runWordPressFixture("<?php echo is_plugin_active('wp-slimstat-pro/wp-slimstat-pro.php') ? 'yes' : 'no';") === 'yes';
   fixture('cleanup');
   try {
@@ -253,6 +280,11 @@ test('Ecommerce Free is useful alone and WooCommerce deactivation is safe @wooco
     runWordPressFixture("<?php deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php');");
     await page.goto(`/wp-admin/admin.php?${new URLSearchParams({ page: 'slimview7', type: 'custom', from: day, to: day })}`);
     await expect(page.locator('.ss-ec-report')).toHaveCount(3, { timeout: 30_000 });
+    await page.locator('[data-ecommerce] button.slimstat-ai-prompt').click();
+    await expect(page.locator('[data-ecommerce] button.slimstat-ai-prompt')).toContainText('Copied');
+    const prompt = await page.evaluate(() => (window as any).__copied as string);
+    expect(prompt).toContain('Net sales | $115.00');
+    expect(prompt).not.toMatch(/Orders \| 4|Average order value \| \$28.75|••••|Illustrative preview/);
     await expect(page.locator('[data-ecommerce]').getByRole('link', { name: 'Export CSV', exact: true })).toHaveCount(0);
     // Each tab still shows Export, and it opens the Pro page instead of downloading.
     const upsells = page.locator('[data-ecommerce] [data-ec-export]');

@@ -533,6 +533,9 @@ class wp_slimstat_admin
         // Add lock export button in report header
         add_filter('slimstat_report_header_buttons', fn ($_header_buttons, $_report_id) => self::add_lock_export_button($_header_buttons, $_report_id), 10, 2);
 
+        // ✨ Copy AI Prompt, left of Export (which prepends at 10)
+        add_filter('slimstat_report_header_buttons', fn ($_header_buttons, $_report_id) => \SlimStat\Reports\AiPromptButton::html((string) $_report_id, \wp_slimstat_reports::$reports[$_report_id] ?? [], wp_slimstat_db::$filters_normalized['columns'] ?? [], wp_slimstat::pro_is_installed()) . ' ' . $_header_buttons, 15, 2);
+
         self::register_goals_funnels_header_hooks();
 
         // Sync index options with actual DB state — one SHOW INDEX for all of them, and none at
@@ -1889,6 +1892,10 @@ class wp_slimstat_admin
             'clear_cache_nonce' => wp_create_nonce('slimstat_clear_cache'),
             'goals_nonce'       => wp_create_nonce('slimstat_goals_nonce'),
             'ajax_url'          => admin_url('admin-ajax.php'),
+            // Website context for Copy AI Prompt (wp_localize_script decodes the stored entities).
+            'site_name'         => get_bloginfo('name'),
+            'site_description'  => get_bloginfo('description'),
+            'site_url'          => home_url('/'),
             // Shared with the filter form-builder so value-less operators (is_empty/
             // is_not_empty) are never treated as a "remove filter" signal. See #305.
             // Guarded: this method also runs on the Dashboard-widget path, where

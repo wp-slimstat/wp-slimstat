@@ -75,6 +75,7 @@ $setup = static function ($label) {
 		}
 		?>
 		<div class="ss-ec-toolbar">
+            <?php if (is_admin()) { echo \SlimStat\Reports\AiPromptButton::html('slim_p10_01', ['title' => __('Ecommerce', 'wp-slimstat'), 'tooltip' => __('WooCommerce sales for the selected currency, order creation dates and traffic filters. Only visible metrics and ranked results are included. Locked metrics are unavailable, not zero.', 'wp-slimstat')], wp_slimstat_db::$filters_normalized['columns'] ?? [], $pro); } // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- AiPromptButton escapes its output. ?>
 			<span><?php esc_html_e('Order creation date', 'wp-slimstat'); ?></span>
 			<details class="ss-ec-currency"><summary><?php echo esc_html(sprintf(/* translators: %s: currency code, e.g. USD */ __('Currency: %s', 'wp-slimstat'), $currency)); ?></summary><div><?php foreach ($data['currencies'] as $row) : ?><a class="slimstat-filter-link" href="<?php echo esc_url(wp_slimstat_reports::fs_url(Report::CURRENCY_FILTER . ' equals ' . rawurlencode($row['currency']))); ?>" <?php if ($currency === $row['currency']) { echo 'aria-current="true"'; } ?>><?php echo esc_html($row['currency']); ?></a><?php endforeach; ?></div></details>
 			<label class="ss-ec-compare"><input type="checkbox" data-compare checked> <?php esc_html_e('Compare previous period', 'wp-slimstat'); ?></label>

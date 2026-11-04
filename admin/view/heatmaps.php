@@ -98,6 +98,7 @@ if ('' !== $error) {
         <?php endif; ?>
 
         <?php if ('' !== $page_key) : ?>
+            <?php echo \SlimStat\Reports\AiPromptButton::html('slimheatmap', ['title' => __('Page heatmap', 'wp-slimstat'), 'tooltip' => __('The selected page and device, with recorded click and scroll summaries, top elements and data notes. The visual heatmap is not included. Top elements count all clicks, regardless of the selected overlay.', 'wp-slimstat')], wp_slimstat_db::$filters_normalized['columns'] ?? [], $is_pro); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- AiPromptButton escapes its output. ?>
             <?php
             /**
              * Renders one page's heatmap. Pro hooks it; the list below is skipped.
@@ -112,6 +113,7 @@ if ('' !== $error) {
 
         <?php if ($is_admin && $is_pro) : ?><p><a class="button" href="<?php echo esc_url(admin_url('admin.php?page=slimconfig&tab=7#heatmap_capture')); ?>"><?php esc_html_e('Heatmap settings', 'wp-slimstat'); ?></a></p><?php endif; ?>
         <form class="ss-hm-toolbar" role="search" onsubmit="return false">
+            <?php echo \SlimStat\Reports\AiPromptButton::html('slimheatmap', ['title' => __('Heatmaps', 'wp-slimstat'), 'tooltip' => __('Recorded clicks on the pages shown. Missing or locked metrics are unavailable, not zero. This list does not show the position of clicks on a page.', 'wp-slimstat')], wp_slimstat_db::$filters_normalized['columns'] ?? [], $is_pro); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- AiPromptButton escapes its output. ?>
             <label>
                 <span class="screen-reader-text"><?php esc_html_e('Device', 'wp-slimstat'); ?></span>
                 <select name="device" <?php disabled(!$is_pro); ?> aria-describedby="ss-hm-device-access">
