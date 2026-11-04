@@ -137,6 +137,7 @@ deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php', true);
     await expect(body.locator('.nodata, p.header').first()).toBeVisible();
     await expect(body.locator('.slimstat-pro-adds, .slimstat-preview')).toHaveCount(0);
     await expect(body).not.toContainText('Live charts are available with SlimStat Pro.');
+    await body.evaluate(el => [...el.children].forEach(child => child.setAttribute('data-stale-probe', '')));
     const refreshed = page.waitForResponse(response => {
       if (!response.url().includes('admin-ajax.php')) return false;
       const params = new URLSearchParams(response.request().postData() || '');
@@ -146,6 +147,7 @@ deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php', true);
     const response = await refreshed;
     expect(response.ok()).toBe(true);
     expect(await response.text()).not.toMatch(/Fatal error|Warning:|nonce_failure/);
+    await expect(body.locator('[data-stale-probe]')).toHaveCount(0);
     await expect(body.locator('.loading')).toHaveCount(0);
     await expect(body.locator('.nodata, p.header').first()).toBeVisible();
     await expect(body.locator('.slimstat-pro-adds, .slimstat-preview')).toHaveCount(0);

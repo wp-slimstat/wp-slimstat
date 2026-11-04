@@ -22,7 +22,7 @@ class wp_slimstat_reports
     /**
      * Initalize class properties
      */
-    public static function init(bool $_use_request = true)
+    public static function init(bool $_use_request = true, bool $_load_data = true)
     {
         // Has the class already been initialized?
         if (!empty(self::$reports)) {
@@ -31,7 +31,7 @@ class wp_slimstat_reports
 
         // Include and initialize the API to interact with the database
         include_once(__DIR__ . '/wp-slimstat-db.php');
-        wp_slimstat_db::init('', $_use_request);
+        wp_slimstat_db::init('', $_use_request, $_load_data);
 
         // Include the localization library
         include_once(plugin_dir_path(dirname(__FILE__, 2)) . 'languages/index.php');
@@ -1139,7 +1139,7 @@ class wp_slimstat_reports
 
         // Header hooks intentionally accept developer HTML/SVG; built-in attributes and tooltip data are escaped above.
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Preserve slimstat_report_header_buttons/after_title HTML contracts.
-        echo "<div class='postbox " . esc_attr($header_classes) . "' style='" . esc_attr($style_attrs) . "' id='" . esc_attr($_report_id) . sprintf("'>%s %s <div class='inside'>", $header_buttons, $widget_title);
+        echo "<div class='postbox " . esc_attr($header_classes) . "' style='" . esc_attr($style_attrs) . "' id='" . esc_attr($_report_id) . sprintf("'>%s %s <div class='inside'>", $widget_title, $header_buttons);
         return null;
     }
 
@@ -1421,30 +1421,16 @@ class wp_slimstat_reports
         }
 
         wp_slimstat_db::$debug_message = '';
-        $where_params                  = $_args['where_params'] ?? null;
-        if (!empty($_args['raw']) && is_array($_args['raw']) && isset($_args['raw'][0]) && method_exists($_args['raw'][0], 'get_combined_where')) {
-            // Honour what the report declared. This was a hardcoded `true`, so a report
-            // asking for no date filter got one welded into its WHERE string here —
-            // before get_top(), which does honour the flag, ever saw it. The two
-            // "Currently Online" widgets declare it for a reason: "who is here right
-            // now" is not a question about the range being browsed, and with the filter
-            // applied the users one reported nobody online while somebody was. (D62)
-            $use_date_filters = $_args['use_date_filters'] ?? true;
+        $all_results = \SlimStat\Reports\ReportData::rawData($_args);
 
-            $_args['where'] = call_user_func(
-                [$_args['raw'][0], 'get_combined_where'],
-                $_args['where'] ?? '',
-                '',
-                $use_date_filters,
-                '',
-                $where_params
-            );
-        }
+        return self::render_raw_data($_args, $all_results);
+    }
 
-        $all_results = call_user_func($_args['raw'], $_args);
-
+    /** Render the same rows without issuing a second report query. */
+    private static function render_raw_data(array $_args, array $all_results)
+    {
         // Fix for Recent Outbound Links: wrap strings as arrays with the correct key
-        if (!empty($_args['columns']) && 'outbound_resource' === $_args['columns'] && !empty($all_results) && is_array($all_results)) {
+        if (!empty($_args['columns']) && 'outbound_resource' === $_args['columns'] && !empty($all_results)) {
             foreach ($all_results as $k => $v) {
                 if (!is_array($v)) {
                     $all_results[$k] = ['outbound_resource' => $v];
@@ -1452,21 +1438,14 @@ class wp_slimstat_reports
             }
         }
 
-        // Backward compatibility
-        if (!is_array($all_results)) {
-            $all_results = [];
-        }
-
         echo wp_kses_post(wp_slimstat_db::$debug_message);
 
         // Some reports don't need any kind of pre/post-processing, we just display the data contained in the array
         if (empty($_args['columns'])) {
-            // Rates carry their % here, not in the row: the row value is a report answer (audit C2).
-            $percent_metrics = [__('Bounce rate', 'wp-slimstat'), __('New Visitors Rate', 'wp-slimstat')];
             foreach ($all_results as $a_result) {
                 echo '<p>';
 
-                echo sprintf('%s <span>%s</span>', wp_kses_post($a_result['metric']), wp_kses_post($a_result['value']) . (in_array($a_result['metric'], $percent_metrics, true) ? '%' : ''));
+                echo sprintf('%s <span>%s</span>', wp_kses_post($a_result['metric']), wp_kses_post(\SlimStat\Reports\ReportData::summaryValue($a_result)));
 
                 if (!empty($a_result['tooltip'])) {
                     self::inline_help($a_result['tooltip']);

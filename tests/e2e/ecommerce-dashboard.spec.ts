@@ -24,6 +24,17 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     await testInfo.attach('commerce-reconciliation', { body: JSON.stringify(evidence), contentType: 'application/json' });
     expect(evidence.result).toBe('pass');
     expect(fixture('chart').result).toBe('pass');
+    const native = JSON.parse(runWordPressFixture(`<?php
+      wp_set_current_user(get_user_by('login', 'admin')->ID);
+      require_once dirname(SLIMSTAT_FILE) . '/admin/index.php';
+      $context = \\SlimStat\\Reports\\AiReport::context(['report' => 'slim_p10_01', 'from' => gmdate('Y-m-d', ${seed.start}), 'to' => gmdate('Y-m-d', ${seed.start}), 'filters' => ['addon_ecommerce_currency' => 'equals USD']]);
+      $result = is_wp_error($context) ? $context : \\SlimStat\\Reports\\AiReport::build($context);
+      echo wp_json_encode(is_wp_error($result) ? ['error' => $result->get_error_message()] : $result);
+    `));
+    expect(native.error).toBeUndefined();
+    expect(native.prompt).toContain('115.00');
+    expect(native.prompt).toContain('USD');
+
     await setSlimstatOptions({ async_load: 'on' });
     const day = new Date(seed.start * 1000);
     const params = new URLSearchParams({ page: 'slimview7', type: 'custom',

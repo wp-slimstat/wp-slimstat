@@ -203,8 +203,12 @@ echo "PASS: invalid saved entries stay intact and deletable, without partial or 
 
 function is_admin() { return true; }
 class wp_slimstat_db { public static $debug_message = ''; public static $all_columns_names = []; public static $operator_names = []; public static $valueless_operators = ['is_empty', 'is_not_empty']; public const NON_COLUMN_FILTER_KEYS = ['interval']; }
+if (!defined('ABSPATH')) {
+    define('ABSPATH', dirname(__DIR__) . '/');
+}
+require_once __DIR__ . '/../src/Reports/ReportData.php';
 $reports = file_get_contents(__DIR__ . '/../admin/view/wp-slimstat-reports.php');
-eval('class SlimstatSummaryProbe { public static function raw_results_to_html($_args = []) {' . slimstat_function_body($reports, 'raw_results_to_html') . '} }');
+eval('class SlimstatSummaryProbe { public static function raw_results_to_html($_args = []) {' . slimstat_function_body($reports, 'raw_results_to_html') . '} private static function render_raw_data(array $_args, array $all_results) {' . slimstat_function_body($reports, 'render_raw_data') . '} }');
 wp_slimstat::$settings['async_load'] = 'no';
 ob_start();
 SlimstatSummaryProbe::raw_results_to_html(['columns' => '', 'raw' => static function () {

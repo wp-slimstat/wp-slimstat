@@ -18,6 +18,14 @@ final class AiPromptButton
     /** Filters that narrow a report to one visitor: the shortcode's personal columns and more. */
     private const ONE_VISITOR_FILTERS = [...Shortcode::PERSONAL_COLUMNS, 'visit_id', 'location', 'notes'];
 
+    /** The native reader and clipboard use the same personal-report boundary. */
+    public static function eligible(string $reportId, array $report, array $filterColumns): bool
+    {
+        $privacyId = 'slim_p10_01' === $reportId ? '' : $reportId;
+        return !empty($report) && !array_intersect(self::ONE_VISITOR_FILTERS, array_keys($filterColumns))
+            && !Shortcode::isStaff($privacyId, $report['callback_args'] ?? []);
+    }
+
     /**
      * @param array $report        The report's wp_slimstat_reports::$reports entry.
      * @param array $filterColumns wp_slimstat_db::$filters_normalized['columns'].
@@ -25,10 +33,7 @@ final class AiPromptButton
     public static function html(string $reportId, array $report, array $filterColumns, bool $pro): string
     {
         // Rows about individual visitors, or a view narrowed to one, stay out of AI tools.
-        $narrowed = array_intersect(self::ONE_VISITOR_FILTERS, array_keys($filterColumns));
-        // Ecommerce's shortcode is staff-only; the clipboard reads only its aggregate dashboard.
-        $privacyId = 'slim_p10_01' === $reportId ? '' : $reportId;
-        if (empty($report) || $narrowed || Shortcode::isStaff($privacyId, $report['callback_args'] ?? [])) {
+        if (!self::eligible($reportId, $report, $filterColumns)) {
             return '';
         }
 
@@ -45,6 +50,10 @@ final class AiPromptButton
         $help = esc_attr__('Click to copy this report as an AI prompt, then paste it into ChatGPT, Claude, Grok, or any AI tool you use.', 'wp-slimstat');
         $standalone = in_array($reportId, ['slim_p10_01', 'slimheatmap'], true) ? ' button' : '';
         $privacy = 'slimheatmap' === $reportId ? ' data-personal-filters="' . esc_attr(implode(',', self::ONE_VISITOR_FILTERS)) . '"' : '';
-        return '<button type="button" class="slimstat-ai-prompt noslimstat' . $standalone . '" title="' . $help . '" aria-description="' . $help . '" data-title="' . esc_attr(wp_strip_all_tags($report['title'] ?? '')) . '" data-about="' . esc_attr($about) . '"' . $privacy . '>' . $label . '</button>';
+        $native = (bool) apply_filters('slimstat_native_ai_available', false);
+        $analysis = $native || current_user_can('manage_options')
+            ? '<button type="button" class="slimstat-ai-analyze noslimstat' . $standalone . '" data-report="' . esc_attr($reportId) . '"><span aria-hidden="true">✨</span> ' . esc_html($native ? __('Analyze with AI', 'wp-slimstat') : __('Analyze with AI (Pro)', 'wp-slimstat')) . '</button>'
+            : '';
+        return '<button type="button" class="slimstat-ai-prompt noslimstat' . $standalone . '" title="' . $help . '" aria-description="' . $help . '" data-report="' . esc_attr($reportId) . '" data-title="' . esc_attr(wp_strip_all_tags($report['title'] ?? '')) . '" data-about="' . esc_attr($about) . '"' . $privacy . '>' . $label . '</button>' . $analysis;
     }
 }

@@ -23,6 +23,7 @@ class MenuNewBadgeTest extends IntegrationTestCase
         'slimview6'      => 'slimstat_goals_funnels_since',
         'slimview7'      => 'slimstat_ecommerce_since',
         'slimheatmap'    => 'slimstat_heatmaps_since',
+        'slimai'         => 'slimstat_ai_since',
         'slimshortcodes' => 'slimstat_shortcodes_since',
     ];
 
