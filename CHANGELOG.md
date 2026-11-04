@@ -1,3 +1,33 @@
+= Unreleased =
+
+**Faster**
+* Customize layout placeholders no longer fetch report data or display pagination over their controls.
+* Visible Free report widgets share a request and fall back to individual requests when needed. Manual refresh and pagination keep individual requests, and async lists retain their pagination controls.
+* Unfiltered pageview totals reuse cached history while reading today's count live, after a 30-minute midnight safety window. Filtered totals, sums and distinct counts retain fresh full-range queries.
+* Acquisition widgets share their schema check within a request and recheck after a migration or database change.
+
+**Upgrade with confidence**
+* Optional charset conversion restores lock settings and preserves stricter host timeouts.
+* Column and index migrations limit metadata-lock waits to five seconds and leave unsupported online changes pending instead of copying tables. Connection settings are restored after success or failure.
+
+**Numbers you can trust**
+* The Traffic Sources chart labels distinct referring URLs accurately; its counts are unchanged.
+* Duration buckets label visits, country-map tooltips label pageviews, and geolocation notices distinguish unavailable new locations from retained history.
+* Pageviews charts include visits whose IP address is unavailable, matching pageview totals. Unique-IP counts retain their distinct-address meaning.
+* Cached single-row queries keep their object format. Scalar, row, column and row-list queries use separate cache entries even when their SQL is identical.
+* Real-time charts retain their history after returning to the page, and manual refresh updates the header visitor count and chart from the same response.
+* Amount-only full WooCommerce refunds leave zero net sales, shipping, tax and product quantities. Existing reporting copies can be refreshed using Rebuild reports.
+* Repeated date filters keep their SQL intersection, and thrown query failures use the full-range fallback.
+* Database query failures no longer become cached empty reports. Removing analytics rows invalidates cached historical reports, including partial deletions from Maintenance.
+* Reports that span midnight keep grouped counts, averages, distinct counts and top-list rankings exact. Some top lists now show corrected counts and ordering.
+
+**Security and privacy**
+* WordPress personal-data downloads no longer fail in the pageview exporter. Exports read fresh live and archived analytics data, preserve separate event and archive IDs, support legacy tables without email columns and stop on database errors.
+* Privacy erasure uses the external analytics database when configured. IP anonymization includes archives, supports older integer IP columns and stops on database errors.
+* Report-access allowlists match complete usernames. Partial usernames no longer grant access, including names containing spaces.
+* Retention cleanup verifies archived values before deleting bounded batches and resumes large backlogs. Truncated or incomplete archives, reused keys and concurrent updates retain their source rows. Missing archive fields or custom live columns pause cleanup with a diagnostic instead of silently losing those fields.
+* Personal-data erasure drains every live and archive batch, including visitors with more than 500 events, without touching another visitor whose archive ID was reused. A database error stops erasure for a safe retry.
+
 = 6.0.1 - 2026-11-02 =
 
 **Faster**
@@ -36,6 +66,7 @@
 * Removed the unused legacy add-on catalog and manual-download callback for the retired update service. Stored add-on license settings are kept.
 
 **Security and privacy**
+* Report-access allowlists match complete usernames. Partial usernames no longer grant access.
 * Hidden consent banners no longer intercept form controls or keyboard focus, and visible banners use a lower stacking level. ([#181](https://github.com/wp-slimstat/wp-slimstat/issues/181))
 * Saved filters validate registered columns and supported operators. Unknown or malformed saved entries remain stored and deletable, but cannot apply a partial or unfiltered report. Valid acquisition and extension filters retain their values. ([#351](https://github.com/wp-slimstat/wp-slimstat/pull/351))
 * The consent banner works in server tracking mode, and the first pageview is recorded only after the visitor accepts.
@@ -121,6 +152,7 @@
 * Real-time shows the visitors, pages and countries online and the minute chart as soon as the page opens. In the 6.0.0 beta they read 0 until the first refresh a minute later.
 
 **Security and privacy**
+* Report-access allowlists match complete usernames. Partial usernames no longer grant access.
 * Fixed a SQL injection that any logged-in user could reach on sites with the "Posts and Pages" report column turned on (off by default). Found in-house; no report of it in the wild.
 * Shortcodes show personal data, access logs and user reports only to people allowed to view analytics; visitors see nothing.
 * WooCommerce order-access keys are removed from newly stored page URLs and referrers.

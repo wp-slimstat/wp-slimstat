@@ -213,7 +213,6 @@ FREE_SCANS=(php74-no-php80-functions-test.php php-implicit-nullable-test.php
             goals-funnels-index-migration-test.php ci-matrix-coverage-test.php)
 PRO_SCANS=(pro-php80-syntax-scan-test.php pro-php82-84-forward-scan-test.php
            pro-implicit-nullable-test.php php81-runtime-null-args-test.php
-           scoper-patcher-implicit-nullable-test.php scoper-patcher-e-strict-test.php
            jquery4-own-code-shorthand-scan-test.php pro-wp-removed-core-fns-scan-test.php
            pro-wp70-tested-up-to-test.php)
 PRO_SRC="${PRO_SRC:-$(cd "$PLUGIN_SRC/../wp-slimstat-pro" 2>/dev/null && pwd)}"
@@ -222,6 +221,11 @@ PRO_SRC="${PRO_SRC:-$(cd "$PLUGIN_SRC/../wp-slimstat-pro" 2>/dev/null && pwd)}"
 run_scan_suite() {
   local label="$1" src="$2" dest="$3" logf="$4"; shift 4
   local t copied=0 ran=0 rc=0
+  local support=(tests/lib/source-scan.php .github/workflows/ci.yml)
+  local staged=()
+  if [ "$label" = free ]; then
+    support+=(tests/docker/report-answers.php .wp-env.json rector.php pint.json)
+  fi
 
   : > "$logf"
   if [ -z "$src" ] || [ ! -d "$src" ]; then
@@ -231,13 +235,30 @@ run_scan_suite() {
   fi
   dc exec -T -u root wp bash -c "mkdir -p '$dest/tests' && chown -R www-data '$dest/tests'" >/dev/null 2>&1
 
+  # Test helpers/configuration are excluded from release ZIPs. Stage them explicitly;
+  # never replace a shipping file, and remove only files we added after the scans.
+  for t in "${support[@]}"; do
+    if dc exec -T wp test -f "$dest/$t" >/dev/null 2>&1; then continue; fi
+    if [ ! -f "$src/../$t" ]; then
+      echo "support: $t — MISSING" >> "$logf"; rc=1; continue
+    fi
+    dc exec -T -u root wp mkdir -p "$dest/$(dirname "$t")" >/dev/null 2>&1
+    if dc cp "$src/../$t" "wp:$dest/$t" >/dev/null 2>&1; then
+      staged+=("$dest/$t")
+      echo "support: $t — staged" >> "$logf"
+    else
+      echo "support: $t — COPY FAILED" >> "$logf"; rc=1
+    fi
+  done
+
   for t in "$@"; do
     if dc exec -T -u www-data wp test -f "$dest/tests/$t" >/dev/null 2>&1; then
       echo "route: $t — already installed" >> "$logf"
       copied=$((copied + 1)); continue
     fi
     if [ ! -f "$src/$t" ]; then
-      echo "route: $t — ABSENT from the harness checkout, skipped" >> "$logf"
+      echo "route: $t — MISSING from the harness checkout" >> "$logf"
+      rc=1
       continue
     fi
     if dc cp "$src/$t" "wp:$dest/tests/$t" >/dev/null 2>&1; then
@@ -245,6 +266,7 @@ run_scan_suite() {
       copied=$((copied + 1))
     else
       echo "route: $t — COPY FAILED" >> "$logf"
+      rc=1
     fi
   done
   dc exec -T -u root wp bash -c "chown -R www-data '$dest/tests'" >/dev/null 2>&1
@@ -258,9 +280,12 @@ run_scan_suite() {
 
   echo "EXECUTED $ran of ${#@} $label suite(s) (staged $copied)" >> "$logf"
   dc exec -T -u root wp bash -c "rm -rf '$dest/tests'" >/dev/null 2>&1
+  if [ "${#staged[@]}" -gt 0 ]; then
+    dc exec -T -u root wp rm -f "${staged[@]}" >/dev/null 2>&1 || rc=1
+  fi
 
-  if [ "$ran" -eq 0 ]; then
-    fail "$label PHP suite executed ZERO tests — a step that runs nothing is not a passing step"
+  if [ "$ran" -ne "$#" ]; then
+    fail "$label PHP suite incomplete: executed $ran of $# required tests"
     return 1
   fi
   if [ ! -s "$logf" ]; then

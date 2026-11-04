@@ -186,9 +186,11 @@ def top_events(events, start, end, limit):
 def top_outbound(rows, start, end, limit):
     recent = sorted((row for row in rows if start <= row['dt'] <= end
                      and row['outbound_resource'] not in (None, '')),
-                    key=lambda row: (row['dt'], row['dt_out']), reverse=True)[:limit]
+                    key=lambda row: row['dt'], reverse=True)
+    if len(recent) > limit and recent[limit - 1]['dt'] == recent[limit]['dt']:
+        raise ValueError('outbound recent-row cutoff has an unspecified timestamp tie')
     grouped = {}
-    for row in recent:
+    for row in recent[:limit]:
         dt = row['dt_out'] if row['dt_out'] and row['dt_out'] > 0 else row['dt']
         for url in row['outbound_resource'].split(';;;'):
             if url:

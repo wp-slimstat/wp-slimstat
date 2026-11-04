@@ -122,6 +122,35 @@ namespace {
 subprocess.run(['php', '-r', bootstrap_probe, str(comparator.with_name('reports-bootstrap.php'))], check=True)
 print('PASS: report registry initialization failure cannot become a partial snapshot')
 
+# Exercise the real request/window preparation, including consecutive widgets.
+context_probe = r'''
+function wp_create_nonce($action) { if ($action !== 'meta-box-order') { throw new RuntimeException('wrong nonce action'); } return 'authorized-fixture'; }
+class wp_slimstat_db {
+    static $filters_normalized = [];
+    static $pageviews = 999;
+    static function count_records() { return self::$filters_normalized['utime']['end']; }
+    static function init($filters) {
+        self::$filters_normalized = ['utime'=>['start'=>100, 'end'=>999, 'range'=>899], 'columns'=>['fixture'=>$filters]];
+    }
+}
+require $argv[1];
+slimstat_bench_prepare_report('slim_p8_01', 'browser_type equals 0', 500);
+if ($_POST['report_id'] !== 'slim_p8_01'
+    || ($_REQUEST['security'] ?? '') !== 'authorized-fixture' || ($_POST['security'] ?? '') !== 'authorized-fixture'
+    || wp_slimstat_db::$filters_normalized['utime'] !== ['start'=>100, 'end'=>500, 'range'=>400]
+    || wp_slimstat_db::$pageviews !== 500
+    || wp_slimstat_db::$filters_normalized['columns']['fixture'] !== 'browser_type equals 0') { exit(1); }
+slimstat_bench_prepare_report('slim_p9_01', '', 0);
+if ($_POST['report_id'] !== 'slim_p9_01' || wp_slimstat_db::$filters_normalized['utime']['end'] !== 999) { exit(2); }
+try { slimstat_bench_prepare_report('slim_p8_01', '', 99); }
+catch (RuntimeException $e) { exit(0); }
+exit(3);
+'''
+subprocess.run(['php', '-r', context_probe, str(comparator.with_name('reports-bootstrap.php'))], check=True)
+print('PASS: report capture supplies AJAX identity and pins a valid shared window without changing filters')
+assert 'slimstat_bench_prepare_report($report_id, $filters,' in comparator.with_name('parity-snapshot.php').read_text()
+assert '-e SLIMSTAT_PARITY_END="$PARITY_END"' in (comparator.parents[2] / 'docker/compare-answers.sh').read_text()
+
 # The registry also contains raw-only reports consumed through the production table renderer.
 # Exercise the snapshot's actual dispatch; an absent/broken callback must still be an error.
 dispatch_probe = r'''
@@ -162,3 +191,53 @@ namespace {
 '''
 subprocess.run(['php', '-r', dispatch_probe, str(comparator.with_name('parity-snapshot.php'))], check=True)
 print('PASS: snapshot renders raw-only reports through the production table helper and retains callback failures')
+
+# The optional fixture is bounded, refuses existing definitions and is unavailable on real DB names.
+fixture_probe = r'''
+define('WP_CLI', true); define('DB_NAME', $argv[2]);
+putenv('SLIMSTAT_REPORT_FIXTURE=1');
+class wp_slimstat { static $wpdb; }
+class FixtureDb { public $last_error = ''; public $prefix = 'wp_'; function get_col($sql) { return ['user-1','user-2']; } }
+$GLOBALS['wpdb'] = wp_slimstat::$wpdb = new FixtureDb();
+$options = [];
+function username_exists($name) { return $name === 'user-1'; }
+function wp_generate_password() { return 'fixture-only'; }
+function wp_insert_user($user) { if ($user['user_login'] !== 'user-2' || $user['role'] !== 'subscriber') throw new RuntimeException('wrong user'); return 2; }
+function is_wp_error($v) { return false; }
+function get_option($key) { return $GLOBALS['options'][$key] ?? false; }
+function update_option($key, $v) { $GLOBALS['options'][$key] = $v; }
+function wp_json_encode($v, $flags = 0) { return json_encode($v, $flags); }
+require $argv[1];
+if (count($options['slimstat_goals']) !== 1 || count($options['slimstat_funnels'][0]['steps']) !== 2) exit(1);
+try { require $argv[1]; } catch (RuntimeException $e) { exit(0); }
+exit(2);
+'''
+for db, expected in [('wordpress', True), ('customer', False)]:
+    r = subprocess.run(['php', '-r', fixture_probe, str(comparator.with_name('prepare-report-fixture.php')), db], capture_output=True, text=True)
+    assert (r.returncode == 0) == expected, r.stdout + r.stderr
+print('PASS: bounded disposable report fixture persists definitions and refuses overwrite or a customer database')
+
+# Separate PHP requests prevent Pro's request-local login totals leaking between windows.
+import runpy
+merger = runpy.run_path(str(comparator.with_name('merge-snapshots.py')))
+parts = []
+for i, cell in enumerate(merger['CELLS']):
+    parts.append(dict(fingerprint_hash='same-server', stats_rows=10, anchor_date='2026-01-01',
+        report_ids=['report'], requested_live_window_end=500, live_window_end=500,
+        cells={cell: {'report': dict(report, numbers=[str(i)])}}, cell_contexts={cell: {'marker':i}},
+        captured_at=10+i, captured_day='2026-01-03',
+        coverage=dict(total=1, errored=0, empty=0, render_only=0, value_compared=1)))
+joined = merger['merge'](parts)
+assert joined['coverage']['total'] == 4 and len(joined['capture_times']) == 4
+assert [joined['cells'][cell]['report']['numbers'] for cell in merger['CELLS']] == [[str(i)] for i in range(4)]
+for bad in [parts[:3], [parts[0]] * 4,
+            [dict(parts[0], stats_rows=11), *parts[1:]],
+            [dict(parts[0], cells={'historical-unfiltered': {}}), *parts[1:]],
+            [*parts[:2], dict(parts[2], live_window_end=501), parts[3]]]:
+    try:
+        merger['merge'](bad)
+    except ValueError:
+        continue
+    raise AssertionError('Invalid cell merge accepted')
+assert '/tmp/slimstat-parity.json "$cell"' in (comparator.parents[2] / 'docker/compare-answers.sh').read_text()
+print('PASS: fresh-process capture merge preserves every value and refuses missing, duplicated or mismatched cells')

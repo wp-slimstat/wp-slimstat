@@ -219,6 +219,7 @@ test.describe('Download Link Tracking — DOM click path', () => {
 
     // Find the Top Downloads widget
     const widget = page.locator('#slim_p4_09');
+    await widget.scrollIntoViewIfNeeded();
     await expect(widget).toBeVisible({ timeout: 10_000 });
 
     await expect(widget).toContainText(`${marker}-file-a.pdf`);

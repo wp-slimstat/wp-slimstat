@@ -1,0 +1,17 @@
+target: src/Tracker/Acquisition.php
+gate: php tests/acquisition-schema-memo-test.php
+kind: guard-removal
+expect: migration probe must refresh
+rationale: A completed migration must replace an earlier missing-column result.
+---
+--- a/src/Tracker/Acquisition.php
++++ b/src/Tracker/Acquisition.php
+@@ -58,7 +58,7 @@
+         $db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+         $table = str_replace('`', '', $GLOBALS['wpdb']->prefix . 'slim_stats');
+         $key = spl_object_hash($db) . ':' . $table;
+-        if ($useCached && isset($checked[$key])) {
++        if (isset($checked[$key])) {
+             return $checked[$key]['ready'];
+         }
+         $suppressed = $db->suppress_errors(true);

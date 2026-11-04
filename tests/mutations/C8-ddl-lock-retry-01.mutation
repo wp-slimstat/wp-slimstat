@@ -1,0 +1,17 @@
+target: src/Schema/Schema.php
+gate: php tests/schema-online-safety-test.php
+kind: guard-removal
+expect: lock failure must stop retrying
+rationale: A lock timeout must not enter the next algorithm attempt.
+---
+--- a/src/Schema/Schema.php
++++ b/src/Schema/Schema.php
+@@ -999,7 +999,7 @@
+                 // phpcs:ignore WordPress.DB.RestrictedFunctions.mysql_mysqli_errno -- wpdb exposes error text only; the driver code recognizes translated lock failures without retrying another ALTER.
+                 $errno = $dbh instanceof \mysqli ? mysqli_errno($dbh) : 0;
+                 if (in_array($errno, [1205, 1213], true)
+-                    || preg_match('/lock wait timeout|deadlock/i', (string) $db->last_error)
++                    || false
+                     || microtime(true) - $started >= 5) {
+                     break;
+                 }

@@ -1,0 +1,17 @@
+target: src/Services/Privacy/DataExporter.php
+gate: composer test:privacy-export-archive
+kind: guard-removal
+expect: archive 1 exportEvents
+rationale: Archived events must not disclose or omit data through a reused live ID.
+---
+--- a/src/Services/Privacy/DataExporter.php
++++ b/src/Services/Privacy/DataExporter.php
+@@ -44,7 +44,7 @@
+ 			if ($metadata_error) { return new \WP_Error('slimstat_privacy_export_failed', __('An error occurred while fetching data', 'wp-slimstat')); }
+ 			if (!$email_column) { continue; }
+ 			$sql = $events
+-				? "SELECT e.* FROM {$table} e INNER JOIN {$stats_table} s ON e.id = s.id WHERE s.email = %s ORDER BY e.dt DESC, e.event_id DESC LIMIT %d OFFSET %d"
++				? "SELECT e.* FROM {$table} e INNER JOIN {$prefix}slim_stats s ON e.id = s.id WHERE s.email = %s ORDER BY e.dt DESC, e.event_id DESC LIMIT %d OFFSET %d"
+ 				: "SELECT * FROM {$table} WHERE email = %s ORDER BY dt DESC, id DESC LIMIT %d OFFSET %d";
+ 			$records = $db->get_results($db->prepare($sql, $email_address, $number, $offset));
+ 			if ($db->last_error || !is_array($records)) { return new \WP_Error('slimstat_privacy_export_failed', __('An error occurred while fetching data', 'wp-slimstat')); }
