@@ -1535,6 +1535,7 @@ class wp_slimstat_reports
                 $percentage_raw     = 0;
                 $percentage_rounded = 0;
                 $element_pre_value  = '';
+                $row_attributes     = '';
                 // Ensure $results[$i] is an array and the key exists
                 if (is_array($results[$i]) && isset($results[$i][$_args['columns']])) {
                     $element_value = $results[$i][$_args['columns']];
@@ -1602,6 +1603,10 @@ class wp_slimstat_reports
                         $element_value = '<img class="slimstat-flag-icon" src="' . esc_url($image_url) . '" width="16" height="16" alt="' . esc_attr($country) . '" />';
                         $row_details .= __('Code', 'wp-slimstat') . ': ' . esc_html($country);
                         $element_value .= esc_html(wp_slimstat_i18n::get_string('c-' . $country));
+                        // Opens the city drilldown; the filter link stays the no-JS and modified-click path.
+                        if ('' !== $flag_rel && is_admin()) {
+                            $row_attributes = ' data-slimstat-country="' . esc_attr(strtolower($country)) . '"';
+                        }
                         break;
 
                     case 'id':
@@ -1839,7 +1844,7 @@ class wp_slimstat_reports
                     // the printed number are the same figure and must round once, together.
                     $bar = '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . min(100, $percentage_rounded) . '%"></span></span>';
                 }
-                $row_output = sprintf("<p class='slimstat-tooltip-trigger'>%s%s%s%s %s</p>", $bar, $element_pre_value, $element_value, $percentage, $row_details);
+                $row_output = sprintf("<p class='slimstat-tooltip-trigger'%s>%s%s%s%s %s</p>", $row_attributes, $bar, $element_pre_value, $element_value, $percentage, $row_details);
 
                 // Strip all the filter links, if this information is shown on the frontend
                 if (!is_admin()) {
@@ -2786,7 +2791,8 @@ class wp_slimstat_reports
                     }
                     ?>
                     <?php foreach ($top_countries as $country): ?>
-                        <div class="country-bar">
+                        <?php // Opens the city drilldown (admin/assets/js/country-cities.js). ?>
+                        <div class="country-bar" role="button" tabindex="0" aria-haspopup="dialog" data-slimstat-country="<?php echo esc_attr($country['code']); ?>">
                             <div class="country-flag-container">
                                 <?php
                     $flag_rel  = '/admin/assets/images/flags/' . strtolower((string)($country['code'] ?? '')) . '.svg';
@@ -2830,6 +2836,13 @@ class wp_slimstat_reports
                     scaleColors: ['#fcd7dc', '#E7294B'],
                     borderColor: '#ffffff',
                     color: '#D4D7E2',
+                    // Opens the city drilldown instead of jqvmap's sticky region selection.
+                    onRegionClick: function (event, code, name) {
+                        if (window.SlimStatCountryCities) {
+                            event.preventDefault();
+                            window.SlimStatCountryCities.open(code, name);
+                        }
+                    },
                 });
             });
         </script>

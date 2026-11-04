@@ -418,6 +418,7 @@ class wp_slimstat_admin
             foreach ($ajax_actions as $action => $handler) {
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
             }
+            add_action('wp_ajax_slimstat_country_cities', [\SlimStat\Reports\CountryCities::class, 'ajax']);
 
             // Live Analytics AJAX handler is registered via init_hooks() in Bootstrap
             // No need to call it separately here - it's already registered
@@ -1640,6 +1641,8 @@ class wp_slimstat_admin
         wp_enqueue_style('wp-slimstat-tokens', plugins_url('/admin/assets/css/tokens.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
         wp_enqueue_script('slimstat-report-dialogs', plugins_url('/admin/assets/js/report-dialogs.js', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION, true);
         wp_enqueue_style('wp-slimstat-acquisition', plugins_url('/admin/assets/css/acquisition.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
+        // Country rows can sit on any report screen, like the dialogs above.
+        wp_enqueue_style('wp-slimstat-country-cities', plugins_url('/admin/assets/css/country-cities.css', __DIR__), ['wp-slimstat-acquisition'], SLIMSTAT_ANALYTICS_VERSION);
         if ('slimheatmap' === self::$current_screen) {
             wp_enqueue_style('wp-slimstat-heatmaps', plugins_url('/admin/assets/css/heatmaps.css', __DIR__), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
             wp_enqueue_script('slimstat-heatmaps', plugins_url('/admin/assets/js/heatmaps.js', __DIR__), ['wp-i18n', 'wp-api-fetch'], SLIMSTAT_ANALYTICS_VERSION, true);
@@ -1864,6 +1867,9 @@ class wp_slimstat_admin
         // this, the strings are extracted into the .pot but never translated.
         wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog', 'slimstat-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
         self::set_slimstat_script_translations('slimstat_admin');
+        // Country rows can sit on any report screen; cities load only when one is clicked.
+        wp_enqueue_script('slimstat-country-cities', plugins_url('/admin/assets/js/country-cities.js', __DIR__), ['slimstat-i18n', 'slimstat-report-dialogs'], SLIMSTAT_ANALYTICS_VERSION, true);
+        self::set_slimstat_script_translations('slimstat-country-cities');
         if ('slimview5' === self::$current_screen) {
             wp_enqueue_script('slimstat-utm-builder', plugins_url('/admin/assets/js/utm-builder.js', __DIR__), ['slimstat-i18n', 'slimstat-report-dialogs'], SLIMSTAT_ANALYTICS_VERSION, true);
             self::set_slimstat_script_translations('slimstat-utm-builder');

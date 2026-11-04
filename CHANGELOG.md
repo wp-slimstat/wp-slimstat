@@ -1,5 +1,12 @@
 = Unreleased =
 
+**New: Country to city drilldown**
+* Click a country on the Audience Location map, in its country list or in Top Countries to see that country's top cities, for the same dates and filters. Shares are of the country you clicked, and its pageviews without a city are counted in a note rather than hidden.
+* Free shows the country's top city with its real numbers. Pro lists every city, a page at a time. The limit is applied on the server, so other cities are never sent to the browser.
+* Cities need Geolocation precision set to City (Settings → Tracker). While it is set to Country, the drilldown explains how to switch, and that cities are recorded only from then on. The country link still filters every report: hold a modifier key, or use the link inside the drilldown.
+
+**Translators:** new strings need translation.
+
 **New**
 * SlimStat → Videos lists video tutorials from wp-slimstat.com in one row per category, with thumbnails and titles. Each video opens on wp-slimstat.com in a new tab. Nothing is requested until you choose to load the list or turn on the new-video marker; your browser then fetches a static list from wp-slimstat.com without cookies, a referrer or analytics data, keeps it for a day, and falls back to the saved copy when the site cannot be reached. Like any web request, this shows wp-slimstat.com your IP address, your browser and the address of this site. Your WordPress server makes no requests and stores nothing for this feature.
 * An optional marker (▶ before SlimStat in the admin menu) tells you when new videos are published. It is off until you turn it on, checks at most once a day from your browser, ignores the videos that existed when you turned it on and edits to existing ones, and clears once the Videos page has shown the new videos.

@@ -1432,6 +1432,11 @@ jQuery(function () {
     }
 
     jQuery(document).on("click", ".slimstat-filter-link, #toplevel_page_slimview1 a, #wp-admin-bar-slimstat-header li a:not([target='_blank'])", function (e) {
+        // Another handler claimed this click (the country-to-city drilldown opens a dialog).
+        if (e.isDefaultPrevented()) {
+            return true;
+        }
+
         url = jQuery(this).attr("href");
 
         // If this link doesn't have a valid HREF attribute, bail
