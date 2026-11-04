@@ -175,7 +175,7 @@ jobs:
         # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
         # this runs here rather than living in composer.json unreferenced.
         #
-        # The full registry holds 252 entries. The step took 210-270s per lane across all six
+        # The full registry holds 316 entries. The step took 210-270s per lane across all six
         # Tier 1 lanes on run 33874090767 (2026-09-04). THAT RUN IS THE AUTHORITY for the
         # duration: the seconds in this block are not gate-checked, and no sentence written here
         # can tell you whether they are still current.
@@ -545,6 +545,25 @@ jobs:
         if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/acquisition-reports-db-test.php
 
+      - name: Native SQL top list accuracy
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/query-topn-mysql.php
+
+      - name: Verify metadata-lock timeout and online migration safety
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/schema-online-mysql.php
+
+      - name: Verified retention, concurrency and resumption
+        run: |
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/purge-mysql.php
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/purge-selection-mysql.php
+
+      - name: Privacy export database boundaries
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/privacy-export-mysql.php
+
+      - name: Privacy erasure database boundaries
+        run: |
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/data-eraser-mysql.php
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/privacy-external-mysql.php
+
       - name: Summary accuracy, query budgets and cache isolation
         if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/report-summary-counts-db-test.php
@@ -663,6 +682,12 @@ jobs:
           fi
           npx wp-env run tests-cli -- wp transient delete _wc_activation_redirect
           npx wp-env run tests-cli -- wp plugin get woocommerce --field=version
+
+      - name: Deletion cache invalidation and full WooCommerce refunds
+        if: ${{ matrix.wp == env.WOO_E2E_LANE }}
+        run: |
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/data-version-mysql.php
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/ecommerce-full-refund-mysql.php
 
       - name: Expose wp-env filesystem and MySQL to E2E tests
         # wp-env runs WordPress inside Docker containers. The E2E test helpers

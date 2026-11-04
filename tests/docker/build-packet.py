@@ -47,6 +47,9 @@ for index,arm in enumerate(("arm-1","arm-2")):
         rendered={}
         for name in sorted(expected):
             snapshot=json.loads((directory/name).read_text())
+            # Preserve the shared timestamp without the denied capability's name.
+            if "requested_live_window_end" in snapshot:
+                snapshot["requested_end_epoch"]=snapshot.pop("requested_live_window_end")
             ids=snapshot.get("report_ids")
             if not isinstance(ids,list) or not ids or len(set(ids))!=len(ids):
                 raise SystemExit("SEAL REFUSED: rendered registry is missing or duplicated")

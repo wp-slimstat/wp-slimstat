@@ -89,11 +89,11 @@ if (!empty($saved_filters)) {
                 $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
                 if (!file_exists($service->getProvider()->getDbPath())) {
                     /* translators: %s: URL of the geolocation settings section. */
-                    wp_slimstat_admin::show_message(sprintf(__("Geolocation is off, so reports show no countries or cities. <a href='%s' class='noslimstat'>Turn it on in Settings</a>.", 'wp-slimstat'), self::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'geolite');
+                    wp_slimstat_admin::show_message(sprintf(__("Geolocation is unavailable for new visits. Previously collected locations remain in reports. <a href='%s' class='noslimstat'>Check Settings</a>.", 'wp-slimstat'), self::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'geolite');
                 }
             } catch (\Throwable $e) {
                 /* translators: %s: URL of the geolocation settings section. */
-                wp_slimstat_admin::show_message(sprintf(__("Geolocation is off, so reports show no countries or cities. <a href='%s' class='noslimstat'>Turn it on in Settings</a>.", 'wp-slimstat'), self::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'geolite');
+                wp_slimstat_admin::show_message(sprintf(__("Geolocation is unavailable for new visits. Previously collected locations remain in reports. <a href='%s' class='noslimstat'>Check Settings</a>.", 'wp-slimstat'), self::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'geolite');
             }
         }
 

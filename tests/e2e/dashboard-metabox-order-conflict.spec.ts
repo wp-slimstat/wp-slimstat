@@ -308,7 +308,15 @@ test.describe('Meta-box-order conflict (#15036)', () => {
     });
 
     test('2.2 — Clone button creates duplicate report on Customize page', async ({ page }) => {
+      await setSlimstatOption(page, 'async_load', 'on');
+      const reportRequests: string[] = [];
+      page.on('request', request => {
+        const action = new URLSearchParams(request.postData() || '').get('action');
+        if (action === 'slimstat_load_report' || action === 'slimstat_load_reports') reportRequests.push(action);
+      });
       await page.goto('/wp-admin/admin.php?page=slimlayout', { waitUntil: 'networkidle' });
+      expect(reportRequests, 'layout placeholders do not fetch report data').toEqual([]);
+      await expect(page.locator('.slimstat-layout .pagination')).toHaveCount(0);
 
       const firstPostbox = page.locator('.slimstat-layout .postbox').first();
       await expect(firstPostbox).toBeVisible();
@@ -385,7 +393,7 @@ test.describe('Meta-box-order conflict (#15036)', () => {
       const firstWidget = slimWidgets.first();
       await expect(firstWidget).toBeVisible();
 
-      // Dashboard widgets load when scrolled near the viewport; WP 6.4's Welcome panel pushes them below the fold.
+      // Dashboard widgets load when scrolled near the viewport; the Welcome panel can push them below the fold.
       await firstWidget.scrollIntoViewIfNeeded();
       const insideContent = firstWidget.locator('.inside');
       await expect(insideContent, 'Widget .inside should have text content').toHaveText(/\S/);
