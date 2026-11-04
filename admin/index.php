@@ -3,6 +3,7 @@
 use SlimStat\Services\GeoService;
 use SlimStat\Components\DateRangeHelper;
 use SlimStat\Services\Admin\Notification\NotificationFactory;
+use SlimStat\Services\Admin\VideoTutorials;
 use SlimStat\Schema\Schema;
 class wp_slimstat_admin
 {
@@ -202,6 +203,14 @@ class wp_slimstat_admin
                 'title'           => __('Settings', 'wp-slimstat'),
                 'capability'      => 'can_admin',
                 'callback'        => [self::class, 'wp_slimstat_include_config'],
+            ],
+            // No 'new_badge': its anchor is an option write. New videos are marked client-side.
+            'slimvideos' => [
+                'is_report_group' => false,
+                'show_in_sidebar' => true,
+                'title'           => __('Videos', 'wp-slimstat'),
+                'capability'      => 'can_view',
+                'callback'        => [self::class, 'wp_slimstat_include_videos'],
             ],
             'slimpro' => [
                 'is_report_group' => false,
@@ -573,8 +582,9 @@ class wp_slimstat_admin
     {
         // The sidebar "New" and "Pro" pills render in the global sidebar, so their
         // style must load on every admin page (not just SlimStat screens). Tiny,
-        // so always emit it. Both pills share one shape. (#20)
-        echo '<style> #adminmenu .slimstat-menu-label{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:13px}#adminmenu .wp-not-current-submenu .wp-submenu:has(.slimstat-menu-label),.folded #adminmenu .wp-submenu:has(.slimstat-menu-label){min-width:180px;width:max-content;max-width:calc(100vw - 48px)}#adminmenu a[href*="page=slimpro"]{color:#f78a9a;font-weight:600}#adminmenu .slimstat-menu-new-badge, #adminmenu .slimstat-menu-pro-badge {display:inline-block;flex:none;margin-inline-start:0;border-radius:9px;font-size:9px;font-weight:600;vertical-align:middle;} #adminmenu .slimstat-menu-new-badge {padding:0 6px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;line-height:16px;text-transform:uppercase;letter-spacing:.03em;} #adminmenu .slimstat-menu-pro-badge {padding:0 5px;border:1px solid currentColor;line-height:14px;opacity:.85;} </style>';
+        // so always emit it. Both pills share one shape. (#20) The Videos screen reuses
+        // the New pill on its cards, and the new-video ▶ is styled here for the same reason.
+        echo '<style> #adminmenu .slimstat-menu-label{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:13px}#adminmenu .wp-not-current-submenu .wp-submenu:has(.slimstat-menu-label),.folded #adminmenu .wp-submenu:has(.slimstat-menu-label){min-width:180px;width:max-content;max-width:calc(100vw - 48px)}#adminmenu a[href*="page=slimpro"]{color:#f78a9a;font-weight:600}#adminmenu .slimstat-menu-new-badge, #adminmenu .slimstat-menu-pro-badge, .ss-videos .slimstat-menu-new-badge {display:inline-block;flex:none;margin-inline-start:0;border-radius:9px;font-size:9px;font-weight:600;vertical-align:middle;} #adminmenu .slimstat-menu-new-badge, .ss-videos .slimstat-menu-new-badge {padding:0 6px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;line-height:16px;text-transform:uppercase;letter-spacing:.03em;} #adminmenu .slimstat-menu-pro-badge {padding:0 5px;border:1px solid currentColor;line-height:14px;opacity:.85;} #adminmenu .slimstat-menu-video-badge{display:inline-block;margin-inline-end:5px;padding:0 4px;border-radius:8px;background:#d63638;color:#fff;font-size:8px;line-height:15px;vertical-align:1px} </style>';
 
         // Dashboard only, once per load: the three data points of the chart-area glyph turn
         // SlimStat red left to right, then fade back; the rest of the icon keeps the scheme's
@@ -1646,6 +1656,9 @@ class wp_slimstat_admin
         if ('slimpro' === self::$current_screen) {
             wp_enqueue_style('wp-slimstat-pro-overview', plugins_url('/admin/assets/css/pro.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
         }
+        if (VideoTutorials::SCREEN === self::$current_screen) {
+            VideoTutorials::enqueue_page();
+        }
 
         // Same per-screen layout lookup as needs_goals_funnels_assets(): only where the widget renders.
         $ecommerce_screen = 'index.php' === ($GLOBALS['pagenow'] ?? '') ? 'dashboard' : self::$current_screen;
@@ -2005,7 +2018,7 @@ class wp_slimstat_admin
             }
 
             if ($a_screen_info['show_in_sidebar']) {
-                $new_entry[] = add_submenu_page(
+                $new_entry[$a_screen_id] = add_submenu_page(
                     $parent,
                     $a_screen_info['title'],
                     self::sidebar_label($a_screen_info, $pro_installed),
@@ -2014,6 +2027,12 @@ class wp_slimstat_admin
                     $a_screen_info['callback']
                 );
             }
+        }
+
+        // The new-video marker sits on the Videos item, so it loads exactly where WordPress added
+        // that item: not for a user it was denied to, nor when a filter or layout removed it.
+        if (!empty($new_entry[VideoTutorials::SCREEN])) {
+            add_action('admin_enqueue_scripts', [VideoTutorials::class, 'enqueue_client']);
         }
 
         // Load styles and Javascript needed to make the reports look nice and interactive
@@ -2380,6 +2399,15 @@ class wp_slimstat_admin
     }
 
     // END: wp_slimstat_include_email_report
+
+    /**
+     * Includes the Videos page
+     */
+    public static function wp_slimstat_include_videos()
+    {
+        include(__DIR__ . '/view/videos.php');
+    }
+
 
     /**
      * Handles the upgrade to pro from the free version

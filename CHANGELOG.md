@@ -1,5 +1,9 @@
 = Unreleased =
 
+**New**
+* SlimStat → Videos lists video tutorials from wp-slimstat.com in one row per category, with thumbnails and titles. Each video opens on wp-slimstat.com in a new tab. Nothing is requested until you choose to load the list or turn on the new-video marker; your browser then fetches a static list from wp-slimstat.com without cookies, a referrer or analytics data, keeps it for a day, and falls back to the saved copy when the site cannot be reached. Like any web request, this shows wp-slimstat.com your IP address, your browser and the address of this site. Your WordPress server makes no requests and stores nothing for this feature.
+* An optional marker (▶ before SlimStat in the admin menu) tells you when new videos are published. It is off until you turn it on, checks at most once a day from your browser, ignores the videos that existed when you turned it on and edits to existing ones, and clears once the Videos page has shown the new videos.
+
 **Faster**
 * Customize layout placeholders no longer fetch report data or display pagination over their controls.
 * Visible Free report widgets share a request and fall back to individual requests when needed. Manual refresh and pagination keep individual requests, and async lists retain their pagination controls.

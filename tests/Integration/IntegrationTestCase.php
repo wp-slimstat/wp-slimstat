@@ -150,6 +150,21 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
         Functions\when('delete_transient')->justReturn(true);
     }
 
+    protected static function adminSource(): string
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/admin/index.php');
+        self::assertNotFalse($source, 'Could not read admin/index.php');
+        return $source;
+    }
+
+    /** The $screens_info entry for $screen, up to the next screen key. $screens_info is built in init(), which this harness does not boot. */
+    protected static function screenEntry(string $source, string $screen): string
+    {
+        $found = preg_match("/^\s+'" . preg_quote($screen, '/') . "'\s*=>\s*\[((?:(?!^\s+'\w+'\s*=>\s*\[\s*$).)*)/ms", $source, $m);
+        self::assertSame(1, $found, "$screen is not a key in \$screens_info");
+        return $m[1];
+    }
+
     protected function setGoals(array $goals): void
     {
         $this->optionStore['slimstat_goals'] = $goals;
