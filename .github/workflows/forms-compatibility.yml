@@ -1,0 +1,89 @@
+name: Form Analytics compatibility
+on:
+  pull_request:
+    branches: [development]
+    paths: ['src/Forms/**', 'src/Schema/Schema.php', 'src/Tracker/Ajax.php', 'wp-slimstat*.js', 'wp-slimstat.php', 'admin/view/forms.php', 'admin/view/partials/forms-*.php', 'admin/assets/css/forms.css', 'admin/assets/js/forms.js', 'admin/assets/js/admin.js', 'src/Reports/**', 'src/Shortcodes/Shortcode.php', 'admin/view/wp-slimstat-reports.php', 'tests/forms/**', 'tests/forms-*.php', 'tests/forms-capture.cjs', '.github/workflows/forms-compatibility.yml']
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1'
+permissions:
+  contents: read
+jobs:
+  contracts:
+    name: Public builders (${{ matrix.release }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        release: [pinned, latest]
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: form-analytics-test
+          MYSQL_DATABASE: test_form_analytics_ci
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping -h localhost -pform-analytics-test" --health-interval=10s --health-timeout=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
+        with:
+          php-version: '8.3'
+          ini-values: memory_limit=512M
+          extensions: mysqli, mbstring, intl, zip
+          tools: composer, wp-cli:2.12.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install test tools
+        run: |
+          composer install --no-interaction --prefer-dist
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+      - name: Provision isolated WordPress and real builders
+        env:
+          FORM_RELEASE: ${{ matrix.release }}
+        run: |
+          set -euo pipefail
+          site="$RUNNER_TEMP/forms-site"
+          mkdir -p "$site"
+          wp core download --path="$site"
+          wp config create --path="$site" --dbname=test_form_analytics_ci --dbuser=root --dbpass=form-analytics-test --dbhost=127.0.0.1:3306
+          wp config set WP_ENVIRONMENT_TYPE local --path="$site"
+          wp config set DISABLE_WP_CRON true --raw --path="$site"
+          wp core install --path="$site" --url=http://127.0.0.1:9434 --title='Form Analytics QA' --admin_user=slimformsqa --admin_password=form-analytics-disposable --admin_email=qa@example.test --skip-email
+          ln -s "$GITHUB_WORKSPACE" "$site/wp-content/plugins/wp-slimstat"
+          mkdir -p "$site/wp-content/mu-plugins"
+          cp tests/forms/fixture-plugin.php "$site/wp-content/mu-plugins/forms-qa.php"
+          wp plugin activate wp-slimstat --path="$site"
+          python3 - <<'PY'
+          import json, os, subprocess
+          for slug, item in json.load(open('tests/forms/compatibility.json')).items():
+              args=['wp','plugin','install',slug,'--activate','--path='+os.environ['RUNNER_TEMP']+'/forms-site']
+              if os.environ['FORM_RELEASE']=='pinned': args+=['--version='+item['version']]
+              subprocess.run(args,check=True)
+              subprocess.run(['wp','plugin','verify-checksums',slug,'--path='+os.environ['RUNNER_TEMP']+'/forms-site'],check=True)
+          PY
+          wp option update permalink_structure '/%postname%/' --path="$site"
+          wp eval-file tests/forms/provision.php --path="$site" > "$RUNNER_TEMP/forms-fixture.json"
+          wp eval-file tests/forms/provision-builders.php --path="$site" > "$RUNNER_TEMP/forms-builders.json"
+          php -S 127.0.0.1:9434 -t "$site" > "$RUNNER_TEMP/forms-server.log" 2>&1 &
+      - name: Verify shared storage and public hook contracts
+        run: |
+          wp eval-file tests/forms/contracts.php --path="$RUNNER_TEMP/forms-site"
+          wp eval-file tests/forms-mysql-test.php --path="$RUNNER_TEMP/forms-site"
+          composer test:forms
+      - name: Verify real AJAX submissions and owner setup
+        env:
+          FORMS_QA_URL: http://127.0.0.1:9434
+          FORMS_QA_PASSWORD: form-analytics-disposable
+        run: FORMS_QA_FIXTURE="$RUNNER_TEMP/forms-fixture.json" FORMS_QA_BUILDERS="$RUNNER_TEMP/forms-builders.json" FORMS_QA_SITE="$RUNNER_TEMP/forms-site" FORMS_QA_WP="$(command -v wp)" npx playwright test --config=tests/forms/playwright.config.ts
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: forms-${{ matrix.release }}
+          path: |
+            test-results/
+            ${{ runner.temp }}/forms-server.log

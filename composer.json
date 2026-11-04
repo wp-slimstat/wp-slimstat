@@ -62,6 +62,8 @@
     }
   },
   "scripts": {
+    "test:forms-mysql": "wp eval-file tests/forms-mysql-test.php",
+    "test:forms": ["php tests/forms-outcomes-test.php", "php tests/forms-metrics-test.php", "php tests/forms-report-test.php", "node tests/forms-capture.cjs"],
     "test:pcp-regressions": "php tests/pcp-core-assets-test.php && php tests/dbip-stream-failure-test.php",
     "test:front-end-option-budget": "php tests/front-end-option-read-budget-test.php",
     "test:dashboard-widget-queue": "node tests/dashboard-widget-queue.cjs",
@@ -276,6 +278,7 @@
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
+      "@test:forms",
       "@test:front-end-option-budget",
       "@test:dashboard-widget-queue",
       "@test:video-catalog",

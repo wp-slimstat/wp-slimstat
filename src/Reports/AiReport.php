@@ -9,6 +9,7 @@ namespace SlimStat\Reports;
 
 use SlimStat\Ecommerce\Report as Ecommerce;
 use SlimStat\Heatmap\Query as Heatmap;
+use SlimStat\Forms\Report as Forms;
 use SlimStat\Modules\Chart;
 use SlimStat\Shortcodes\Shortcode;
 use SlimStat\Utils\NetworkMerge;
@@ -19,7 +20,7 @@ final class AiReport {
 	public const MAX_ROWS = 20;
 
 	private const SUMMARY_READERS = array( 'get_overview_summary', 'get_visitors_summary', 'get_traffic_sources_summary', 'get_visits_duration', 'get_your_blog' );
-	private const NUMBERS         = array( 'counthits', 'total', 'uniques', 'cr', 'pct', 'visitors', 'dropoff', 'step_order', 'clicks', 'pageviews', 'desktop', 'tablet', 'mobile', 'dead', 'rage', 'scroll', 'addon_hm_clicks', 'addon_hm_pageviews', 'addon_hm_dead', 'addon_hm_rage', 'addon_hm_scroll' );
+	private const NUMBERS         = array( 'seen', 'started', 'submitted', 'converted', 'invalid', 'spam', 'failed', 'counthits', 'total', 'uniques', 'cr', 'pct', 'visitors', 'dropoff', 'step_order', 'clicks', 'pageviews', 'desktop', 'tablet', 'mobile', 'dead', 'rage', 'scroll', 'addon_hm_clicks', 'addon_hm_pageviews', 'addon_hm_dead', 'addon_hm_rage', 'addon_hm_scroll' );
 
 	/** Initialize the existing registry without running an analytics query. */
 	public static function catalog(): array {
@@ -48,7 +49,7 @@ final class AiReport {
 			return self::invalid();
 		}
 		$report = $catalog[ $id ];
-		if ( 'slim_p10_01' === $id && ! Ecommerce::canView() ) {
+		if ( ( 'slim_p10_01' === $id && ! Ecommerce::canView() ) || ( 'slim_forms_01' === $id && ! Forms::canView() ) ) {
 			return self::error( 'permission', __( 'Store reporting permission is required.', 'wp-slimstat' ), 403 );
 		}
 		if ( in_array( $id, Shortcode::PRO_REPORTS, true ) && ! \wp_slimstat::pro_is_installed() ) {
@@ -82,6 +83,7 @@ final class AiReport {
 		if ( 'slim_p10_01' !== $id && isset( $normalized[ Ecommerce::CURRENCY_FILTER ] ) ) {
 			return self::invalid();
 		}
+		if ( 'slim_forms_01' !== $id && isset( $normalized[ Forms::FORM_FILTER ] ) ) { return self::invalid(); }
 		$device    = $input['device'] ?? '';
 		$page      = $input['page'] ?? '';
 		$search    = $input['search'] ?? '';
@@ -161,8 +163,8 @@ final class AiReport {
 			return self::invalid(); }
 		$result = array();
 		foreach ( $filters as $column => $expression ) {
-			if ( ! is_string( $column ) || ( ! isset( \wp_slimstat_db::$columns_names[ $column ] ) && Ecommerce::CURRENCY_FILTER !== $column )
-				|| ( 0 === strpos( $column, 'addon_' ) && Ecommerce::CURRENCY_FILTER !== $column ) || 0 === strpos( $column, 'no_filter' )
+			if ( ! is_string( $column ) || ( ! isset( \wp_slimstat_db::$columns_names[ $column ] ) && ! in_array( $column, array( Ecommerce::CURRENCY_FILTER, Forms::FORM_FILTER ), true ) )
+				|| ( 0 === strpos( $column, 'addon_' ) && ! in_array( $column, array( Ecommerce::CURRENCY_FILTER, Forms::FORM_FILTER ), true ) ) || 0 === strpos( $column, 'no_filter' )
 				|| ! is_string( $expression ) || strlen( $expression ) > 256
 				|| ! preg_match( '/\A([a-z_]+)(?: (.*))?\z/s', ( $literal_acquisition && ( 0 === strpos( $column, 'utm_' ) || 'traffic_source' === $column ) ? $expression : urldecode( $expression ) ), $parts )
 				|| ! isset( \wp_slimstat_db::$operator_names[ $parts[1] ] )

@@ -1,0 +1,36 @@
+{
+  "errors": [],
+  "findings": [
+    {
+      "name": "overview",
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ]
+    },
+    {
+      "name": "overview-mobile",
+      "overflow": false
+    },
+    {
+      "name": "detail",
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ]
+    },
+    {
+      "name": "detail-mobile",
+      "overflow": false
+    },
+    {
+      "name": "setup",
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "name": "setup-mobile",
+      "overflow": false
+    }
+  ]
+}

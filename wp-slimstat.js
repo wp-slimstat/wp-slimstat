@@ -438,7 +438,7 @@ var SlimStat = (function () {
 
         // Beacon acceptance does not mean delivery while the browser is offline.
         if (navigator.onLine === false) {
-            if (!opts.offlineReplay) storeOffline(payload);
+            if (!opts.offlineReplay && !/(?:^|&)fa=/.test(payload)) storeOffline(payload);
             if (typeof opts.onComplete === "function") opts.onComplete(false);
             return true;
         }
@@ -502,7 +502,7 @@ var SlimStat = (function () {
                         }, delay);
                     } else {
                         // Max attempts reached, move to offline storage
-                        if (!item.opts.offlineReplay) SlimStat.store_offline(item.payload);
+                        if (!item.opts.offlineReplay && !/(?:^|&)fa=/.test(item.payload)) SlimStat.store_offline(item.payload);
                         if (item.opts && typeof item.opts.onComplete === "function") {
                             item.opts.onComplete(false);
                         }
@@ -525,6 +525,14 @@ var SlimStat = (function () {
     function processQueueItem(item, callback) {
         var params = currentSlimStatParams();
         var payload = item.payload;
+        // Form observations stay bound to their original page and current consent.
+        if (/(?:^|&)fa=/.test(payload)) {
+            var formConsent = SlimStat.consent.checkAllowed(params);
+            if (!formConsent.allowed || formConsent.mode !== "full") {
+                callback({ success: false, rejected: true });
+                return;
+            }
+        }
         var useBeacon = shouldValidateIdWithXHR(item.useBeacon, payload) ? false : item.useBeacon;
         var requiresIdResponse = isEmpty(params.id) || isNaN(parseInt(params.id, 10)) || parseInt(params.id, 10) <= 0;
         var endpoints = {
@@ -576,7 +584,7 @@ var SlimStat = (function () {
         }
 
         function handleStaleIdRecovery(transport, url, onFail, xhrOpts) {
-            if (item.staleIdRecoveryTried || !hasIdParam(payload) || isFinalizePayload(payload) || hasActiveStaleIdGuard()) {
+            if (item.staleIdRecoveryTried || /(?:^|&)fa=/.test(payload) || !hasIdParam(payload) || isFinalizePayload(payload) || hasActiveStaleIdGuard()) {
                 return false;
             }
 
@@ -670,7 +678,9 @@ var SlimStat = (function () {
                             clearSessionState(PENDING_SESSION_KEY);
                             // Write to current global params (not local ref which may be stale
                             // if extractSlimStatParams replaced window.SlimStatParams)
+                            var previousPageId = currentSlimStatParams().id;
                             currentSlimStatParams().id = response.responseBody;
+                            if (previousPageId !== response.responseBody) document.dispatchEvent(new CustomEvent("slimstat:pageview"));
                             params.id = response.responseBody; // keep local ref in sync too
                             if (requiresIdResponse) rebaseQueuedInteractions(response.responseBody);
                             // Mark that we've successfully tracked the initial pageview for this load
@@ -815,6 +825,8 @@ var SlimStat = (function () {
         useBeacon = typeof useBeacon === "boolean" ? useBeacon : true;
         var target = event.target || event.srcElement;
         if (!target) return false;
+        var ownerForm = target.form || (target.closest ? target.closest("form") : null);
+        var privateForm = ownerForm && ownerForm.querySelector('input[data-slimstat-form]');
 
         var noteObj = {};
         if (!isEmpty(note)) noteObj.note = note;
@@ -827,16 +839,16 @@ var SlimStat = (function () {
             if (node === "input" || node === "button") {
                 var p = target.parentNode;
                 while (p && p.nodeName && p.nodeName.toLowerCase() !== "form") p = p.parentNode;
-                if (p && p.action) resourceUrl = p.action;
+                if (p) resourceUrl = typeof p.action === "string" ? p.action : (p.getAttribute("action") || location.href);
                 return;
             }
             // anchor resolution (support nested nodes)
             if (!target.href || typeof target.href !== "string") {
                 var p = target.parentNode;
-                while (p && p.nodeName && !p.href) p = p.parentNode;
+                while (p && p.nodeName && typeof p.href !== "string") p = p.parentNode;
                 if (p) {
                     if (p.hash && p.hostname === location.hostname) resourceUrl = p.hash;
-                    else if (p.href) resourceUrl = p.href;
+                    else if (typeof p.href === "string") resourceUrl = p.href;
                 }
             } else if (target.hash) resourceUrl = target.hash;
             else resourceUrl = target.href;
@@ -844,11 +856,11 @@ var SlimStat = (function () {
 
         // Element attributes
         if (typeof target.getAttribute === "function") {
-            if (target.textContent) noteObj.text = target.textContent;
+            if (!privateForm && target.textContent) noteObj.text = target.textContent;
             var val = target.getAttribute("value");
-            if (val) noteObj.value = val;
+            if (!privateForm && val) noteObj.value = val;
             var title = target.getAttribute("title");
-            if (title) noteObj.title = title;
+            if (!privateForm && title) noteObj.title = title;
             var idAttr = target.getAttribute("id");
             if (idAttr) noteObj.id = idAttr;
         }
@@ -858,7 +870,7 @@ var SlimStat = (function () {
         else if (resourceUrl && resourceUrl.indexOf("mailto:") === 0) noteObj.type = "mailto";
         else if (isSubmitControl(target)) noteObj.type = "submit";
 
-        if (event.type === "keypress") noteObj.key = String.fromCharCode(parseInt(event.which, 10));
+        if (!privateForm && event.type === "keypress") noteObj.key = String.fromCharCode(parseInt(event.which, 10));
         else if (event.type === "mousedown") noteObj.button = event.which === 1 ? "left" : event.which === 2 ? "middle" : "right";
 
         var doNotTrack = params.dnt ? params.dnt.split(",") : [];
@@ -907,7 +919,7 @@ var SlimStat = (function () {
         var target = (event && (event.target || event.srcElement)) || {};
         var resourceUrl = "";
         try {
-            if (target.href) resourceUrl = target.href;
+            if (typeof target.href === "string") resourceUrl = target.href;
         } catch (e) {
             /* ignore */
         }

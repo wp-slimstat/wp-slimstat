@@ -130,6 +130,17 @@ function SlimStatReportRows(body) {
         rows.push(...Array.from(body.querySelectorAll(".ss-ec-quality summary, .ss-ec-quality-body p, .ss-ec-scope, .ss-ec-definitions dt, .ss-ec-definitions dd"), text));
         return rows;
     }
+    const forms = body.querySelector(".ss-forms");
+    if (forms) {
+        if (forms.querySelector('[role="alert"], .ss-forms-empty')) return [];
+        const rows = Array.from(forms.querySelectorAll(".ss-forms-funnel > div"), text);
+        forms.querySelectorAll("table").forEach((table) => {
+            if (table.closest(".ss-forms-pro") && !table.closest("[data-forms-premium]")) return;
+            rows.push(...Array.from(table.rows, cells));
+        });
+        rows.push(...Array.from(forms.querySelectorAll(".ss-forms-definitions dt, .ss-forms-definitions dd"), text));
+        return rows;
+    }
     const chart = body.querySelector("[data-data]");
     if (chart) {
         // Series hidden from the legend stay out; the previous period comes in while it is shown.
@@ -2019,6 +2030,7 @@ var SlimStatAdmin = {
         return function () {
             var defer = jQuery.Deferred();
             var report = jQuery("#" + id);
+            if (id === "slim_forms_01" && window.SlimStatFormsReport) window.SlimStatFormsReport.destroy();
             report.data("slimstat-refresh", defer);
             var granularity = jQuery("#" + id + " .slimstat-granularity-select").val();
             // Fallback to localStorage when the select is missing or about to be destroyed
@@ -2100,6 +2112,9 @@ var SlimStatAdmin = {
                         if (typeof window.reinitializeSlimStatCharts === "function") {
                             window.reinitializeSlimStatCharts(id);
                         }
+                    } else if (id === "slim_forms_01") {
+                        SlimStatReportBody(id).html(filteredResponse.html());
+                        if (window.SlimStatFormsReport) window.SlimStatFormsReport.init();
                     } else if (id == SlimStatAdmin.ACCESS_LOG_REPORT_ID) {
                         // #258 B3 — Scroll-preserving swap for the Access Log.
                         // The fadeOut/fadeIn dance and scroll-resetting spinner are

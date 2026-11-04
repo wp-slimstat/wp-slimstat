@@ -23,13 +23,13 @@ final class Shortcode
     {
         // A registered report may expose a personal column even when its title sounds aggregate.
         $columns = array_map('trim', explode(',', (string) ($args['columns'] ?? '')));
-        return in_array($id, self::PERSONAL_COLUMNS, true) || in_array($id, self::STAFF_REPORTS, true) || 'slim_p10_01' === $id
+        return in_array($id, self::PERSONAL_COLUMNS, true) || in_array($id, self::STAFF_REPORTS, true) || in_array($id, ['slim_p10_01', 'slim_forms_01'], true)
             || (bool) array_intersect(self::PERSONAL_COLUMNS, $columns) || (bool) array_intersect(['*', 'id'], $columns);
     }
 
     public static function allowed(string $w): bool
     {
-        return in_array($w, ['*', 'count', 'display_name', 'hostname', 'post_link', 'post_link_no_qs', 'dt', 'username', 'ip', 'id', 'searchterms', 'resource', 'country', 'browser', 'platform', 'language', 'slim_p1_01', 'slim_p1_03', 'slim_p1_04', 'slim_p1_06', 'slim_p1_08', 'slim_p1_10', 'slim_p1_11', 'slim_p1_12', 'slim_p1_13', 'slim_p1_15', 'slim_p1_17', 'slim_p1_18', 'slim_p1_19_01', 'slim_p2_01', 'slim_p2_02', 'slim_p2_03', 'slim_p2_04', 'slim_p2_05', 'slim_p2_06', 'slim_p2_07', 'slim_p2_08', 'slim_p2_12', 'slim_p2_13', 'slim_p2_14', 'slim_p2_15', 'slim_p2_16', 'slim_p2_17', 'slim_p2_18', 'slim_p2_19', 'slim_p2_20', 'slim_p2_21', 'slim_p2_22_01', 'slim_p2_24', 'slim_p2_25', 'slim_p3_01', 'slim_p3_02', 'slim_p3_03', 'slim_p3_04', 'traffic_channel', 'traffic_source', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'utm_id', 'slim_p4_01', 'slim_p4_02', 'slim_p4_04', 'slim_p4_05', 'slim_p4_06', 'slim_p4_07', 'slim_p4_09', 'slim_p4_10', 'slim_p4_11', 'slim_p4_12', 'slim_p4_13', 'slim_p4_15', 'slim_p4_16', 'slim_p4_18', 'slim_p4_19', 'slim_p4_20', 'slim_p4_21', 'slim_p4_22', 'slim_p4_23', 'slim_p4_24', 'slim_p4_25', 'slim_p4_26_01', 'slim_p4_27', 'slim_p6_01', 'slim_p9_01', 'slim_p9_02', 'slim_p2_23', 'other_ip', 'email', 'fingerprint', 'user_agent', 'visit_id', 'slim_p7_02', 'slim_p8_01', 'slim_p8_02', 'slim_heatmap_01', 'slim_p10_01', 'users', 'pages', 'countries'], true);
+        return in_array($w, ['*', 'count', 'display_name', 'hostname', 'post_link', 'post_link_no_qs', 'dt', 'username', 'ip', 'id', 'searchterms', 'resource', 'country', 'browser', 'platform', 'language', 'slim_p1_01', 'slim_p1_03', 'slim_p1_04', 'slim_p1_06', 'slim_p1_08', 'slim_p1_10', 'slim_p1_11', 'slim_p1_12', 'slim_p1_13', 'slim_p1_15', 'slim_p1_17', 'slim_p1_18', 'slim_p1_19_01', 'slim_p2_01', 'slim_p2_02', 'slim_p2_03', 'slim_p2_04', 'slim_p2_05', 'slim_p2_06', 'slim_p2_07', 'slim_p2_08', 'slim_p2_12', 'slim_p2_13', 'slim_p2_14', 'slim_p2_15', 'slim_p2_16', 'slim_p2_17', 'slim_p2_18', 'slim_p2_19', 'slim_p2_20', 'slim_p2_21', 'slim_p2_22_01', 'slim_p2_24', 'slim_p2_25', 'slim_p3_01', 'slim_p3_02', 'slim_p3_03', 'slim_p3_04', 'traffic_channel', 'traffic_source', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'utm_id', 'slim_p4_01', 'slim_p4_02', 'slim_p4_04', 'slim_p4_05', 'slim_p4_06', 'slim_p4_07', 'slim_p4_09', 'slim_p4_10', 'slim_p4_11', 'slim_p4_12', 'slim_p4_13', 'slim_p4_15', 'slim_p4_16', 'slim_p4_18', 'slim_p4_19', 'slim_p4_20', 'slim_p4_21', 'slim_p4_22', 'slim_p4_23', 'slim_p4_24', 'slim_p4_25', 'slim_p4_26_01', 'slim_p4_27', 'slim_p6_01', 'slim_p9_01', 'slim_p9_02', 'slim_p2_23', 'other_ip', 'email', 'fingerprint', 'user_agent', 'visit_id', 'slim_p7_02', 'slim_p8_01', 'slim_p8_02', 'slim_heatmap_01', 'slim_p10_01', 'slim_forms_01', 'users', 'pages', 'countries'], true);
     }
 
     public static function canView(): bool
@@ -216,7 +216,7 @@ final class Shortcode
             $report = wp_slimstat_reports::$reports[$w];
             $args = ($report['callback_args'] ?? []);
             $args['is_widget'] = true;
-            if (in_array($w, ['slim_heatmap_01', 'slim_p10_01'], true)) {
+            if (in_array($w, ['slim_heatmap_01', 'slim_p10_01', 'slim_forms_01'], true)) {
                 $raw = $args['raw'] ?? null;
                 return is_callable($raw) ? self::table(call_user_func($raw, $args)) : self::comment(__('Update SlimStat Pro to use this shortcode.', 'wp-slimstat'));
             }

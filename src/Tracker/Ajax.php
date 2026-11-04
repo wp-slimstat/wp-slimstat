@@ -332,6 +332,19 @@ class Ajax
                 }
             }
 
+            // Form behavior reuses the verified tracker identity and its abuse limits.
+            if (isset($data_js['fa'])) {
+                try {
+                    if (is_string($data_js['fa'])) {
+                        \SlimStat\Forms\Store::ingest((int) $stat['id'], $data_js['fa']);
+                    }
+                } catch (\Throwable $error) {
+                    \wp_slimstat::record_degradation('form analytics', 'A form analytics batch could not be recorded.');
+                    return 0; // Transport retries; never acknowledge a failed write.
+                }
+                return Utils::getValueWithChecksum((int) $stat['id']);
+            }
+
             // Heatmap batch for this verified pageview; it never stops the hit.
             if (!empty($data_js['hm']) && is_string($data_js['hm'])) {
                 try {

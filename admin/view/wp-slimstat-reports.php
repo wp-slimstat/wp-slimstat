@@ -13,6 +13,7 @@ class wp_slimstat_reports
         'slimview5' => [],
         'slimview6' => [],
         'slimview7' => [],
+        'slimforms' => [],
         'dashboard' => [],
         'inactive'  => [],
     ];
@@ -947,6 +948,15 @@ class wp_slimstat_reports
             ],
 
             // Goals & Funnels reports
+            'slim_forms_01' => [
+                'title' => __('Form performance', 'wp-slimstat'),
+                'callback' => [\SlimStat\Forms\Report::class, 'render'],
+                'callback_args' => ['raw' => [\SlimStat\Forms\Report::class, 'raw']],
+                'classes' => ['full-width', 'slimstat-forms-box'],
+                'locations' => ['slimforms'],
+                'pinned' => true,
+                'tooltip' => __('Visits that saw, started or successfully completed a form. Completions require confirmation from the form plugin. These are not counts of qualified leads or purchases. Completion rate excludes confirmations without a recorded view.', 'wp-slimstat'),
+            ],
             'slim_p10_01' => [
                 'title' => __('Ecommerce', 'wp-slimstat'),
                 'callback' => [\SlimStat\Ecommerce\Report::class, 'render'],
@@ -2882,17 +2892,21 @@ class wp_slimstat_reports
     public static function get_filters_html($_filters_array = [])
     {
         $filters_html = '';
+        $filter_names = wp_slimstat_db::$columns_names;
+        if (isset(wp_slimstat_db::$all_columns_names['addon_form'])) {
+            $filter_names['addon_form'] = wp_slimstat_db::$all_columns_names['addon_form'];
+        }
 
         if (!empty($_filters_array)) {
             foreach ($_filters_array as $a_filter_label => $a_filter_details) {
-                if (!array_key_exists($a_filter_label, wp_slimstat_db::$columns_names) || false !== strpos($a_filter_label, 'no_filter')) {
+                if (!array_key_exists($a_filter_label, $filter_names) || false !== strpos($a_filter_label, 'no_filter')) {
                     continue;
                 }
 
                 $filter_value = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label
                     ? $a_filter_details[1] : str_replace('\\', '', $a_filter_details[1]);
                 $a_filter_value_no_slashes = in_array($a_filter_details[0], wp_slimstat_db::$valueless_operators, true) ? '' : htmlentities($filter_value, ENT_QUOTES, 'UTF-8');
-                $filters_html .= '<li>' . strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]) . ' ' . esc_html(wp_slimstat_db::$operator_names[$a_filter_details[0]] ?? str_replace('_', ' ', $a_filter_details[0])) . sprintf(" %s <a class='slimstat-filter-link slimstat-font-cancel' title='", $a_filter_value_no_slashes) . htmlentities(__('Remove filter for', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . ' ' . wp_slimstat_db::$columns_names[$a_filter_label][0] . "' href='" . self::fs_url($a_filter_label . ' equals ') . "'></a></li>";
+                $filters_html .= '<li>' . strtolower($filter_names[$a_filter_label][0]) . ' ' . esc_html(wp_slimstat_db::$operator_names[$a_filter_details[0]] ?? str_replace('_', ' ', $a_filter_details[0])) . sprintf(" %s <a class='slimstat-filter-link slimstat-font-cancel' title='", $a_filter_value_no_slashes) . htmlentities(__('Remove filter for', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . ' ' . $filter_names[$a_filter_label][0] . "' href='" . self::fs_url($a_filter_label . ' equals ') . "'></a></li>";
             }
         }
 

@@ -522,6 +522,8 @@ class wp_slimstat
 
         \SlimStat\Heatmap\Store::boot();
 
+        \SlimStat\Forms\Integration::boot();
+
         // WP-Cron has no logged-in user, so its handlers must boot outside the admin library.
         new \SlimStat\Services\CronEventManager();
 
@@ -2093,6 +2095,10 @@ class wp_slimstat
 
         if (\SlimStat\Heatmap\Store::capturing()) {
             $content .= '<li>' . __('Heatmaps: Where visitors click on links, buttons and other page elements, and how far they scroll. What you type is never recorded.', 'wp-slimstat') . '</li>';
+        }
+
+        if (\SlimStat\Forms\Store::enabled() && \SlimStat\Forms\Registry::active()) {
+            $content .= '<li>' . __('Form activity: Whether a form is seen, started, or successfully submitted, and whether validation errors or spam are reported. Form activity is linked to the existing tracked visit. Answers, passwords, messages, and payment details are never collected by Form Analytics.', 'wp-slimstat') . '</li>';
         }
 
         $content .= '</ul>';

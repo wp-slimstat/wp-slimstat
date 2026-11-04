@@ -30,4 +30,5 @@ parameters:
     scanFiles:
         - languages/index.php
         - tests/phpstan/woocommerce.php
+        - tests/phpstan/forms.php
     treatPhpDocTypesAsCertain: false

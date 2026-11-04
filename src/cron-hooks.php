@@ -19,6 +19,7 @@
  */
 
 return [
+    'slimstat_forms_purge',
     // Recurring (wp_schedule_event).
     'wp_slimstat_purge',
     'slimstat_heatmap_purge_continue',

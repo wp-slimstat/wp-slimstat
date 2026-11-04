@@ -167,9 +167,14 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 == Changelog ==
 
+= 6.1.1 (Unreleased) =
+
+* **Form Analytics:** discover supported forms automatically and compare observed visits, starts, builder-confirmed completions, devices, sources and trends. Uses SlimStat privacy settings without collecting answers. Native dates, filters, saved segments and Copy AI Prompt work on the new report.
+
 = 6.1.0 - 2026-11-04 =
 
 **New**
+
 
 * **AI Analysis:** ✨ Copy AI Prompt beside each report's Export copies the rows on screen, the period, the filters and your site's title, tagline and address as a ready-to-paste prompt for ChatGPT, Claude, Grok or any AI assistant. It only goes to your clipboard. Reports that list individual visitors have no button; Pro reports need Pro. Ecommerce, the Heatmaps page list and individual page heatmaps support it too.
 * A new SlimStat → AI Analysis page explains the workflow. SlimStat Pro adds analysis inside SlimStat through an AI provider connected in WordPress, run only when you ask and without visitor identifiers, URLs or free-text labels.

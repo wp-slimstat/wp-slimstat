@@ -1,3 +1,9 @@
+= 6.1.1 - Unreleased =
+
+**New: Form Analytics**
+* See which forms are seen, started and confirmed by their builder, with device and traffic-source comparisons, trends and careful suggestions. All form integrations are included in Free.
+* Form Analytics uses SlimStat privacy settings and native dates, filters, saved segments and Copy AI Prompt. Answers are never collected; pages without eligible forms load no form module and make no Form Analytics requests.
+
 = 6.1.0 - 2026-11-04 =
 
 **New: AI Analysis**
