@@ -36,11 +36,10 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
-          cache: npm
       - name: Install test tools
         run: |
           composer install --no-interaction --prefer-dist
-          npm ci --ignore-scripts
+          npm install --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Provision isolated WordPress and real builders
         env:
