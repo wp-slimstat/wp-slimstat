@@ -74,6 +74,7 @@ jobs:
           wp eval-file tests/forms/contracts.php --path="$RUNNER_TEMP/forms-site"
           wp eval-file tests/forms-mysql-test.php --path="$RUNNER_TEMP/forms-site"
           composer test:forms
+          node tests/forms-capture.cjs
       - name: Verify real AJAX submissions and owner setup
         env:
           FORMS_QA_URL: http://127.0.0.1:9434
