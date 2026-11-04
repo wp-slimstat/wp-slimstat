@@ -1,7 +1,5 @@
 function SlimStatReportBody(id) {
-    var inside = jQuery("#" + id + " .inside");
-    var body = inside.children(".slimstat-dashboard-report");
-    return body.length ? body : inside;
+    return jQuery("#" + id + " .inside");
 }
 
 if (typeof SlimStatAdminParams == "undefined") {
