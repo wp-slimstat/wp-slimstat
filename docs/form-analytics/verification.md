@@ -8,7 +8,7 @@ These results describe an isolated QA site, not customer traffic or a production
 - Pro: **15 Playwright scenarios passed**, including all eight public builders, validation, MW/Snow confirmation steps, CF7 spam/mail failure, duplicate delivery, native date/filter/segment/refresh/AI/CSV controls, privacy-safe payloads, no-form overhead, pause/resume, mobile/RTL, and a real WooCommerce 10.6.2 classic checkout. An unpaid order contributes no revenue; completing it credits its preceding form once.
 - Free: **14 Playwright scenarios passed**, including saved-segment round trips, CF7 spam/mail failure and the final privacy/visibility fixes.
 - Existing Free suites: **701 unit tests / 1,871 assertions** and **209 integration tests / 867 assertions** passed on PHP 8.2.29.
-- Pro suite: **162 unit tests / 418 assertions** passed on PHP 8.2.29, including bounded structural field summaries. Source-level checks passed in both repositories. Clean-tree mutation checks run after the implementation commits.
+- Pro suite: **162 unit tests / 418 assertions** passed on PHP 8.2.29, including bounded structural field summaries. Source-level checks passed in both repositories. The full Pro suite also passed all 43 clean-tree mutation checks (zero survivors or invalid checks).
 - Live MySQL Free tests passed: fresh/idempotent schema, server-only success authority, forged payload rejection, same-page binding, tracking disable, duplicate confirmation, distinct Goal events and native Goal totals/unique visitors, builder transaction isolation, report filters, privacy export/erasure, retention before and after purge, and anonymous denial.
 - Live MySQL Pro tests passed: temporal attribution, one order/one form, same-second ambiguity, currency separation, refunds, erasure/cache invalidation, structural summaries, explicit/idempotent online journey-index setup, complete-history comparison and authorization before cache reads.
 - Both browser capture contracts passed: pending/revoked consent, sensitive and CSS-hidden controls, visibility, native validation, payload minimization and absence of client success flags.
@@ -59,7 +59,7 @@ PCP 2.1.0 found **no new feature-code errors or warnings** after fixes. Full raw
 
 - Free's pre-existing scoped `src/Dependencies` libraries produce 712 findings, predominantly generic exception-output/filesystem checks; these libraries are unchanged. A first-party scan excluding that bundled dependency tree leaves only `trademarked_term` for the established `wp-slimstat` slug. Renaming the existing WordPress.org plugin is not a valid feature fix.
 - Pro is distributed privately. Its existing updater triggers `plugin_updater_detected` / `update_modification_detected`, its established slug triggers `trademarked_term`, and `storage/.htaccess` triggers `hidden_files`. The access-denial file and authorized private updater are retained; removing them to satisfy WordPress.org distribution rules would be incorrect.
-- These are explicit pre-existing/distribution-context exceptions, not hidden clean-check claims. Production-package checks and remote CI remain required before merge.
+- These are explicit pre-existing/distribution-context exceptions, not hidden clean-check claims. Both committed production packages built successfully. Pro passed all V1–V12 artifact checks, including parsing 3,098 PHP files on PHP 8.2.29; its packaged PCP output contains only the same exceptions above. Remote CI remains required before merge.
 
 ## Impeccable audit and polish
 

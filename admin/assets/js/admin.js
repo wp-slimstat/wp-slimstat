@@ -88,7 +88,7 @@ function SlimStatReportRows(body) {
             if (!scope || !text(scope)) return [];
             const rows = [text(viewer.querySelector(".ss-hmv-title")), text(scope)];
             const device = viewer.querySelector('[data-device][aria-selected="true"]');
-            /* translators: %s: selected device, such as Mobile or Desktop. */
+            /* translators: %s: selected device filter, such as Mobile, Desktop or All devices. */
             if (device) rows.push(sprintf(__("Device: %s", "wp-slimstat"), device.firstChild.textContent.trim()));
             if (viewer.querySelector('[name="range"]').value === "custom") {
                 /* translators: 1: first day (YYYY-MM-DD), 2: last day (YYYY-MM-DD). */
@@ -187,7 +187,7 @@ jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
     if (box.matches(".ss-hm") && !box.querySelector(".ss-hmv")) {
         const device = box.querySelector('[name="device"]');
         const search = box.querySelector('[name="q"]');
-        /* translators: %s: selected device, such as Mobile or All devices. */
+        /* translators: %s: selected device filter, such as Mobile, Desktop or All devices. */
         filters.push(sprintf(__("Device: %s", "wp-slimstat"), inert(device.selectedOptions[0].textContent)));
         /* translators: %s: text used to search page addresses. */
         if (search.value.trim()) filters.push(sprintf(__("Search: %s", "wp-slimstat"), inert(search.value.trim())));
