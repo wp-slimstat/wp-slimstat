@@ -34,4 +34,14 @@ class ShortcodeTest extends WpSlimstatTestCase
         self::assertStringContainsString('&lt;b&gt;key&lt;/b&gt;', $html);
         self::assertStringContainsString('1,234', $html);
     }
+    public function test_form_completion_rate_keeps_its_precision(): void
+    {
+        Functions\stubTranslationFunctions();
+        Functions\when('esc_html')->alias(static fn($value) => htmlspecialchars((string) $value, ENT_QUOTES));
+        Functions\when('number_format_i18n')->alias('number_format');
+        $html = Shortcode::table([['form' => 'Inquiry', 'submitted' => 1, 'seen' => 1000, 'cr' => 0.1]]);
+        self::assertStringContainsString('<td>0.1%</td>', $html);
+        self::assertStringContainsString('<td>1,000</td>', $html);
+        self::assertStringContainsString('<td>0</td>', Shortcode::table([['cr' => 0.1]]));
+    }
 }

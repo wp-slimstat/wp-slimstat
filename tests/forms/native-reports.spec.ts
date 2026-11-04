@@ -68,4 +68,10 @@ test('Native form navigation, refresh, AI copy, filters and date range agree', a
   await page.getByText('Yesterday',{exact:true}).click();
   await expect(formInput).toHaveValue('equals cf7:'+fixture.form);
   await expect(page.locator('.ss-forms-empty')).toBeVisible();
+  await page.locator('#adminmenu .wp-submenu a[href="admin.php?page=slimview1"]').click();
+  await expect(page).toHaveURL(/page=slimview1/);
+  await expect(formInput).toHaveCount(0);
+  await expect(page.locator('.slimstat-filter-list').filter({hasText:'cf7:'+fixture.form})).toHaveCount(0);
+  await page.goto('/wp-admin/admin.php?page=slimview1&fs[addon_form]=equals%20cf7%3A'+fixture.form);
+  await expect(formInput).toHaveCount(0);
 });

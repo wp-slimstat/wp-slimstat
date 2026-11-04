@@ -10,6 +10,7 @@ global $wpdb;
 $prefix=$wpdb->prefix;
 $settings=wp_slimstat::$settings;
 $state=get_option(Store::STATE);
+$degradations=get_option(wp_slimstat::DEGRADATION_OPTION);
 $wpdb->prefix='formsqa_'.getmypid().'_';
 $created=[];
 try {
@@ -40,6 +41,13 @@ try {
  forms_check(0===Store::ingest(9001,str_repeat('a',Store::MAX_BYTES+1)),'Oversized payload rejected');
  $_SERVER['HTTP_REFERER']=home_url('/other-page/');
  forms_check(0===Store::ingest(9001,$payload(15)),'Different source page rejected');
+ $_SERVER['HTTP_REFERER']=home_url('/forms-contract/');
+ $wpdb->update($stats,['resource'=>\SlimStat\Tracker\Processor::sanitizeResource('/caf%C3%A9/')],['id'=>9001]);
+ $_SERVER['HTTP_REFERER']=home_url('/caf%C3%A9/');
+ forms_check(1===Store::ingest(9001,$payload(7)),'Encoded non-ASCII paths use the same normalization as the tracker');
+ $_SERVER['HTTP_REFERER']=home_url('/caf%C3%A9-other/');
+ forms_check(0===Store::ingest(9001,$payload(7)),'Normalization does not accept a different source path');
+ $wpdb->update($stats,['resource'=>'/forms-contract/'],['id'=>9001]);
  $_SERVER['HTTP_REFERER']=home_url('/forms-contract/');
  wp_slimstat::$settings['is_tracking']='off';
  forms_check(0===Store::ingest(9001,$payload(15)),'Global tracking disable is respected');
@@ -92,6 +100,13 @@ try {
  forms_check($retained['retention_limited'] && 1===(int)$retained['forms'][0]['submitted'],'Expired daily rows are excluded even before the purge runs');
  Store::purge();
  forms_check(0===(int)$wpdb->get_var("SELECT COUNT(*) FROM $daily WHERE day<".Store::retentionStart()),'Bounded aggregate purge removes expired rows');
+ $failPurge=static function($sql) use ($daily) { return 0===strpos($sql,"DELETE FROM {$daily} WHERE day") ? 'DELETE FROM slimstat_qa_missing_table' : $sql; };
+ $quiet=$wpdb->suppress_errors(true);
+ add_filter('query',$failPurge);
+ try {
+  Store::purge();
+  forms_check(isset(wp_slimstat::get_degradations()['purge (form analytics)']),'A purge failure returns to cron and records an operational notice');
+ } finally { remove_filter('query',$failPurge); $wpdb->suppress_errors($quiet); }
  wp_set_current_user(0);
  try { Report::raw(); throw new LogicException('Anonymous export must be refused'); }
  catch (RuntimeException $expected) { /* Authorization precedes cached data reads. */ }
@@ -112,4 +127,5 @@ try {
  foreach(array_reverse($created) as $table) {$wpdb->query('DROP TABLE IF EXISTS `'. $table .'`');}
  $wpdb->prefix=$prefix;wp_slimstat::$settings=$settings;
  update_option(Store::STATE,$state,false);
+ if (false===$degradations) { delete_option(wp_slimstat::DEGRADATION_OPTION); } else { update_option(wp_slimstat::DEGRADATION_OPTION,$degradations,false); }
 }

@@ -178,7 +178,7 @@ final class Store {
 		$ref = isset( $_SERVER['HTTP_REFERER'] ) && is_string( $_SERVER['HTTP_REFERER'] ) ? esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '';
 		if ( ! is_string( $ref ) || wp_parse_url( $ref, PHP_URL_HOST ) !== wp_parse_url( home_url(), PHP_URL_HOST )
 			|| wp_parse_url( $ref, PHP_URL_PORT ) !== wp_parse_url( home_url(), PHP_URL_PORT )
-			|| wp_parse_url( $ref, PHP_URL_PATH ) !== wp_parse_url( $row['resource'], PHP_URL_PATH ) ) {
+			|| wp_parse_url( Processor::sanitizeResource( $ref ), PHP_URL_PATH ) !== wp_parse_url( $row['resource'], PHP_URL_PATH ) ) {
 			return null;
 		}
 		// Plain permalinks share a path. Compare routing IDs without retaining query values.
@@ -358,7 +358,10 @@ final class Store {
 		$db      = Store::db();
 		$table   = self::table( 'slim_form_daily' );
 		$deleted = $db->query( $db->prepare( "DELETE FROM {$table} WHERE day < %d LIMIT 1000", self::retentionStart() ) );
-		self::checked( $deleted );
+		if ( false === $deleted ) {
+			\wp_slimstat::record_degradation( 'purge (form analytics)', 'Expired form analytics totals could not be deleted.', \wp_slimstat::DEGRADATION_OPERATIONAL );
+			return;
+		}
 		if ( $deleted > 0 ) {
 			\wp_slimstat::bump_data_version();
 		}

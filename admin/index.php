@@ -2408,6 +2408,10 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_include_view()
     {
+        // Other report queries do not apply a form cohort selection.
+        if ('slimforms' !== self::$current_screen) {
+            unset(wp_slimstat_db::$filters_normalized['columns']['addon_form']);
+        }
         include(__DIR__ . '/view/index.php');
     }
 
@@ -4953,6 +4957,7 @@ class wp_slimstat_admin
             'purge (lock limits)'         => __('Retention: database lock limits', 'wp-slimstat'),
             'purge (verified retention)'  => __('Retention: verified archive and deletion', 'wp-slimstat'),
             'purge (heatmap rows)'        => __('Retention: deleting heatmap clicks', 'wp-slimstat'),
+            'purge (form analytics)'      => __('Retention: deleting form totals', 'wp-slimstat'),
             'form adapter initialization' => __('Form Analytics integration setup', 'wp-slimstat'),
             'form adapter'               => __('Form Analytics integration callback', 'wp-slimstat'),
             'form analytics'             => __('Tracking: saving form activity', 'wp-slimstat'),

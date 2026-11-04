@@ -27,6 +27,8 @@ jobs:
         options: --health-cmd="mysqladmin ping -h localhost -pform-analytics-test" --health-interval=10s --health-timeout=5s --health-retries=10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
           php-version: '8.3'
@@ -39,8 +41,9 @@ jobs:
       - name: Install test tools
         run: |
           composer install --no-interaction --prefer-dist
-          npm install --ignore-scripts --no-audit --no-fund
-          npx playwright install --with-deps chromium
+          npm install --prefix "$RUNNER_TEMP/forms-tools" --ignore-scripts --no-audit --no-fund @playwright/test@1.58.2
+          ln -s "$RUNNER_TEMP/forms-tools/node_modules" node_modules
+          npx --no-install playwright install --with-deps chromium
       - name: Provision isolated WordPress and real builders
         env:
           FORM_RELEASE: ${{ matrix.release }}
@@ -86,4 +89,5 @@ jobs:
           name: forms-${{ matrix.release }}
           path: |
             test-results/
+            tests/forms/test-results/
             ${{ runner.temp }}/forms-server.log

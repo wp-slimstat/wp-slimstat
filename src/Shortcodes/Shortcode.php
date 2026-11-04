@@ -145,6 +145,9 @@ final class Shortcode
             $html .= '<tr>';
             foreach ($keys as $key) {
                 $value = $row[$key] ?? '';
+                if ('cr' === $key && isset($row['form'], $row['submitted']) && is_numeric($value)) {
+                    $value = number_format_i18n((float) $value, 1) . '%';
+                }
                 $html .= '<td>' . esc_html(is_int($value) || is_float($value) ? number_format_i18n($value) : (is_scalar($value) ? (string) $value : '')) . '</td>';
             }
             $html .= '</tr>';
