@@ -85,11 +85,11 @@ class wp_slimstat_reports
             . '</ul>';
 
         $traffic_sources_chart_tooltip = '<strong>' . __('Traffic Sources', 'wp-slimstat') . '</strong><br>'
-            . __('See how many visits come from each traffic source.', 'wp-slimstat')
+            . __('Compare unique referring URLs and IP addresses.', 'wp-slimstat')
             . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
             . '<li>' . __('Solid line: current period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Dashed line: previous period', 'wp-slimstat') . '</li>'
-            . '<li>' . __('Tap “Domains” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Tap “Referring URLs” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
 
@@ -604,7 +604,7 @@ class wp_slimstat_reports
                         'where' => '(referer IS NOT NULL AND referer NOT LIKE "%' . home_url() . '%")',
                     ],
                     'chart_labels' => [
-                        __('Domains', 'wp-slimstat'),
+                        __('Referring URLs', 'wp-slimstat'),
                         __('Unique IPs', 'wp-slimstat'),
                     ],
                 ],

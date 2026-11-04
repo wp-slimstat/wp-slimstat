@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-03T18:37:21+00:00\n"
+"POT-Creation-Date: 2026-11-04T05:36:43+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -5449,11 +5449,11 @@ msgid "Tap “Search Terms” or “Unique Terms” to toggle each line."
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:88
-msgid "See how many visits come from each traffic source."
+msgid "Compare unique referring URLs and IP addresses."
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:92
-msgid "Tap “Domains” or “Unique IPs” to toggle each line."
+msgid "Tap “Referring URLs” or “Unique IPs” to toggle each line."
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:96
@@ -5690,7 +5690,7 @@ msgid "Compare tagged pageviews by campaign, source and medium. Campaign values 
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:607
-msgid "Domains"
+msgid "Referring URLs"
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:616

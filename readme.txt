@@ -171,6 +171,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 **Fixed**
 
 * Pageviews charts include visits without an IP address, matching pageview totals.
+* The Traffic Sources chart labels distinct referring URLs accurately; its counts are unchanged.
 * Report labels distinguish visits from pageviews, and geolocation notices clarify that collected history remains available.
 
 **Security**
