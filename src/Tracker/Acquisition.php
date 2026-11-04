@@ -52,17 +52,27 @@ class Acquisition
     }
 
     /** Admin/report path only. Tracking reads an autoloaded marker, never probes schema. */
-    public static function checkSchema(): bool
+    public static function checkSchema(bool $useCached = false): bool
     {
+        static $checked = [];
         $db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
         $table = str_replace('`', '', $GLOBALS['wpdb']->prefix . 'slim_stats');
+        $key = spl_object_hash($db) . ':' . $table;
+        if ($useCached && isset($checked[$key])) {
+            return $checked[$key]['ready'];
+        }
         $suppressed = $db->suppress_errors(true);
         try {
             $columns = $db->get_col("SHOW COLUMNS FROM `{$table}`");
-            $ready = '' === (string) $db->last_error && is_array($columns) && !array_diff(self::COLUMNS, $columns);
+            $failed = '' !== (string) $db->last_error;
+            $ready = !$failed && is_array($columns) && !array_diff(self::COLUMNS, $columns);
         } finally {
             $db->suppress_errors($suppressed);
         }
+        // A migration's default fresh probe replaces this entry; retain the handle so its
+        // object hash cannot be reused for another analytics connection in this request.
+        unset($checked[$key]);
+        if (!$failed) { $checked[$key] = ['db' => $db, 'ready' => $ready]; }
         update_option(self::readinessKey(), $ready ? '1' : '0', true);
         return $ready;
     }

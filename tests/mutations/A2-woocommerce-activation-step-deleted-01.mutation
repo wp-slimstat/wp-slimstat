@@ -6,7 +6,7 @@ rationale: Deletes the WooCommerce activation step while the override step still
 ---
 --- a/.github/workflows/ci.yml
 +++ b/.github/workflows/ci.yml
-@@ -615,36 +615,6 @@
+@@ -653,36 +653,6 @@
              fi
            done
  
@@ -40,6 +40,6 @@ rationale: Deletes the WooCommerce activation step while the override step still
 -          npx wp-env run tests-cli -- wp transient delete _wc_activation_redirect
 -          npx wp-env run tests-cli -- wp plugin get woocommerce --field=version
 -
-       - name: Expose wp-env filesystem and MySQL to E2E tests
-         # wp-env runs WordPress inside Docker containers. The E2E test helpers
-         # (setup.ts) need direct filesystem access to wp-config.php and mu-plugins,
+       - name: Deletion cache invalidation and full WooCommerce refunds
+         if: ${{ matrix.wp == env.WOO_E2E_LANE }}
+         run: |

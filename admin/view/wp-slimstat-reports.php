@@ -3,6 +3,8 @@
 class wp_slimstat_reports
 {
     public static $reports      = []; // Structures to store all the information about what screens and reports are available
+    private static $free_reports = [];
+    private static $batch_rendering = false;
     public static $user_reports = [
         'slimview1' => [],
         'slimview2' => [],
@@ -83,11 +85,11 @@ class wp_slimstat_reports
             . '</ul>';
 
         $traffic_sources_chart_tooltip = '<strong>' . __('Traffic Sources', 'wp-slimstat') . '</strong><br>'
-            . __('See how many visits come from each traffic source.', 'wp-slimstat')
+            . __('Compare unique referring URLs and IP addresses.', 'wp-slimstat')
             . '<ul style="margin-top: 8px; margin-bottom: 8px;">'
             . '<li>' . __('Solid line: current period', 'wp-slimstat') . '</li>'
             . '<li>' . __('Dashed line: previous period', 'wp-slimstat') . '</li>'
-            . '<li>' . __('Tap “Domains” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
+            . '<li>' . __('Tap “Referring URLs” or “Unique IPs” to toggle each line.', 'wp-slimstat') . '</li>'
             . '<li>' . __('Use the dropdown (Hourly, Daily, Weekly, Monthly, Yearly) to adjust the chart’s interval.', 'wp-slimstat') . '</li>'
             . '</ul>';
 
@@ -120,7 +122,7 @@ class wp_slimstat_reports
                 'callback_args' => [
                     'id'         => 'slim_p1_01',
                     'chart_data' => [
-                        'data1' => 'COUNT( ip )',
+                        'data1' => 'COUNT( id )',
                         'data2' => 'COUNT( DISTINCT ip )',
                     ],
                     'chart_labels' => [
@@ -602,7 +604,7 @@ class wp_slimstat_reports
                         'where' => '(referer IS NOT NULL AND referer NOT LIKE "%' . home_url() . '%")',
                     ],
                     'chart_labels' => [
-                        __('Domains', 'wp-slimstat'),
+                        __('Referring URLs', 'wp-slimstat'),
                         __('Unique IPs', 'wp-slimstat'),
                     ],
                 ],
@@ -1001,6 +1003,7 @@ class wp_slimstat_reports
         }
 
         // Allow third party tools to manipulate this list here above: please use unique report IDs that don't interfere with built-in ones, if you add your own custom report
+        self::$free_reports = self::$reports;
         self::$reports = apply_filters('slimstat_reports_info', self::$reports);
         $merge_reports = array_keys(self::$reports);
 
@@ -1240,26 +1243,103 @@ class wp_slimstat_reports
 
     public static function callback_wrapper()
     {
-        // If this user is whitelisted, we use the minimum capability
-        $minimum_capability = 'read';
-        if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
+        self::render_report(func_get_args());
+    }
 
-        if (!current_user_can($minimum_capability)) {
-            return;
+    private static function render_report(array $arguments): bool
+    {
+        if (!wp_slimstat_admin::can_view_stats()) {
+            return false;
         }
 
         // Dashboard widgets must not delay the page, including upgraded sites with Async mode off.
         $screen = function_exists('get_current_screen') ? get_current_screen() : null;
         if (!wp_doing_ajax() && $screen && 'dashboard' === $screen->id) {
-            return;
+            return false;
         }
 
-        $_args = self::_check_args(func_get_args());
+        $_args = self::_check_args($arguments);
         if (!empty($_args) && !empty($_args['callback'])) {
             call_user_func($_args['callback'], $_args['callback_args']);
+            return true;
         }
+        return false;
+    }
+
+    public static function batch_report_ids(): array
+    {
+        return array_keys(array_filter(self::$free_reports, static function ($report, $id) {
+            // An extension may replace a built-in ID as well as register its own.
+            return 'slim_p10_01' !== $id && isset(self::$reports[$id]) && self::$reports[$id] === $report;
+        }, ARRAY_FILTER_USE_BOTH));
+    }
+
+    public static function is_batch_rendering(): bool
+    {
+        return self::$batch_rendering;
+    }
+
+    private static function finish_ajax(): void
+    {
+        if (!self::$batch_rendering) { die(); }
+    }
+
+    public static function load_reports(): void
+    {
+        check_ajax_referer('meta-box-order', 'security');
+        $requested = [];
+        $allowed = array_flip(self::batch_report_ids());
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array shape is checked here; each scalar below is unslashed, sanitized and matched to the owned report registry.
+        $input = isset($_POST['report_ids']) && is_array($_POST['report_ids']) ? $_POST['report_ids'] : [];
+        foreach ($input as $value) {
+            if (!is_string($value)) { continue; }
+            $id = sanitize_key(wp_unslash($value));
+            if (isset($allowed[$id])) { $requested[$id] = true; }
+            if (count($requested) === 25) { break; }
+        }
+        $responses = [];
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each selected scalar is type-checked, unslashed and sanitized before reaching the report callback.
+        $granularities = isset($_POST['granularities']) && is_array($_POST['granularities']) ? $_POST['granularities'] : [];
+        foreach (array_keys($requested) as $id) {
+            $filters = wp_slimstat_db::$filters_normalized;
+            $where = wp_slimstat_db::$sql_where;
+            $pageviews = wp_slimstat_db::$pageviews;
+            $debug = wp_slimstat_db::$debug_message;
+            $settings = wp_slimstat::$settings;
+            $post = $_POST;
+            $request = $_REQUEST;
+            $previousBatch = self::$batch_rendering;
+            $db = wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+            $lastError = $db->last_error;
+            $level = ob_get_level();
+            ob_start();
+            try {
+                self::$batch_rendering = true;
+                $db->last_error = '';
+                unset($_POST['report_id'], $_REQUEST['report_id'], $_POST['granularity'], $_REQUEST['granularity']);
+                $granularity = $granularities[$id] ?? null;
+                if (is_string($granularity)) {
+                    $_POST['granularity'] = $_REQUEST['granularity'] = sanitize_key(wp_unslash($granularity));
+                }
+                if (self::render_report([['id' => $id]])) {
+                    $responses[$id] = ob_get_contents();
+                }
+            } catch (\Throwable $error) {
+                // Omit only this item so the client can retry it through the single route.
+            } finally {
+                while (ob_get_level() > $level) { ob_end_clean(); }
+                self::$batch_rendering = $previousBatch;
+                wp_slimstat_db::$filters_normalized = $filters;
+                wp_slimstat_db::$sql_where = $where;
+                wp_slimstat_db::$pageviews = $pageviews;
+                wp_slimstat_db::$debug_message = $debug;
+                wp_slimstat::$settings = $settings;
+                $db->last_error = $lastError;
+                $_POST = $post;
+                $_REQUEST = $request;
+            }
+        }
+        wp_send_json_success($responses);
     }
 
     /**
@@ -1397,7 +1477,8 @@ class wp_slimstat_reports
                 self::empty_state($_args['empty_hint'] ?? '', $_args['empty_title'] ?? '');
 
                 if (defined('DOING_AJAX') && DOING_AJAX) {
-                    die();
+                    self::finish_ajax();
+                    return;
                 } else {
                     return [];
                 }
@@ -1433,6 +1514,7 @@ class wp_slimstat_reports
                 $percentage_raw     = 0;
                 $percentage_rounded = 0;
                 $element_pre_value  = '';
+                $row_attributes     = '';
                 // Ensure $results[$i] is an array and the key exists
                 if (is_array($results[$i]) && isset($results[$i][$_args['columns']])) {
                     $element_value = $results[$i][$_args['columns']];
@@ -1500,6 +1582,10 @@ class wp_slimstat_reports
                         $element_value = '<img class="slimstat-flag-icon" src="' . esc_url($image_url) . '" width="16" height="16" alt="' . esc_attr($country) . '" />';
                         $row_details .= __('Code', 'wp-slimstat') . ': ' . esc_html($country);
                         $element_value .= esc_html(wp_slimstat_i18n::get_string('c-' . $country));
+                        // Opens the city drilldown; the filter link stays the no-JS and modified-click path.
+                        if ('' !== $flag_rel && is_admin()) {
+                            $row_attributes = ' data-slimstat-country="' . esc_attr(strtolower($country)) . '"';
+                        }
                         break;
 
                     case 'id':
@@ -1737,7 +1823,7 @@ class wp_slimstat_reports
                     // the printed number are the same figure and must round once, together.
                     $bar = '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . min(100, $percentage_rounded) . '%"></span></span>';
                 }
-                $row_output = sprintf("<p class='slimstat-tooltip-trigger'>%s%s%s%s %s</p>", $bar, $element_pre_value, $element_value, $percentage, $row_details);
+                $row_output = sprintf("<p class='slimstat-tooltip-trigger'%s>%s%s%s%s %s</p>", $row_attributes, $bar, $element_pre_value, $element_value, $percentage, $row_details);
 
                 // Strip all the filter links, if this information is shown on the frontend
                 if (!is_admin()) {
@@ -1757,7 +1843,8 @@ class wp_slimstat_reports
         }
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
+            self::finish_ajax();
+            return;
         }
         return null;
     }
@@ -1768,7 +1855,8 @@ class wp_slimstat_reports
         include(__DIR__ . '/right-now.php');
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
+            self::finish_ajax();
+            return;
         }
     }
 
@@ -1777,7 +1865,8 @@ class wp_slimstat_reports
         $chart = new \SlimStat\Modules\Chart();
         $chart->showChart($args);
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
+            self::finish_ajax();
+            return;
         }
     }
 
@@ -1801,7 +1890,8 @@ class wp_slimstat_reports
             self::empty_state($_args['empty_hint'] ?? '', $_args['empty_title'] ?? '');
 
             if (defined('DOING_AJAX') && DOING_AJAX) {
-                die();
+                self::finish_ajax();
+                return;
             } else {
                 return [];
             }
@@ -1866,7 +1956,8 @@ class wp_slimstat_reports
             echo '<div>';
         }
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
+            self::finish_ajax();
+            return;
         }
         return null;
     }
@@ -2100,7 +2191,8 @@ class wp_slimstat_reports
             $goals = get_option('slimstat_goals', []);
             self::show_goals_compact($goals);
             if (wp_doing_ajax()) {
-                die();
+                self::finish_ajax();
+                return;
             }
             return;
         }
@@ -2122,7 +2214,8 @@ class wp_slimstat_reports
         include __DIR__ . '/partials/goals-funnels/goals-card.php';
 
         if (wp_doing_ajax()) {
-            die();
+            self::finish_ajax();
+            return;
         }
     }
 
@@ -2241,7 +2334,8 @@ class wp_slimstat_reports
             $funnels     = $max_funnels > 0 ? get_option('slimstat_funnels', []) : [];
             self::show_funnels_compact($max_funnels, $funnels);
             if (wp_doing_ajax()) {
-                die();
+                self::finish_ajax();
+                return;
             }
             return;
         }
@@ -2288,7 +2382,8 @@ class wp_slimstat_reports
         include __DIR__ . '/partials/goals-funnels/funnels-card.php';
 
         if (wp_doing_ajax()) {
-            die();
+            self::finish_ajax();
+            return;
         }
     }
 
@@ -2467,7 +2562,8 @@ class wp_slimstat_reports
             self::empty_state($_args['empty_hint'] ?? '', $_args['empty_title'] ?? '');
 
             if (defined('DOING_AJAX') && DOING_AJAX) {
-                die();
+                self::finish_ajax();
+                return;
             } else {
                 return 0;
             }
@@ -2519,7 +2615,8 @@ class wp_slimstat_reports
         }
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
+            self::finish_ajax();
+            return;
         }
         return null;
     }
@@ -2586,7 +2683,8 @@ class wp_slimstat_reports
         }
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
+            self::finish_ajax();
+            return;
         }
     }
 
@@ -2667,12 +2765,13 @@ class wp_slimstat_reports
                     }
                     if ($uses_db && $db_missing) {
                         /* translators: %s: URL of the geolocation settings section. */
-                        echo wp_kses_post(sprintf(__("Geolocation is off, so reports show no countries or cities. <a href='%s' class='noslimstat'>Turn it on in Settings</a>.", 'wp-slimstat'), esc_url($settings_url . '2#wp-slimstat-third-party-libraries')));
+                        echo wp_kses_post(sprintf(__("Geolocation is unavailable for new visits. Previously collected locations remain in reports. <a href='%s' class='noslimstat'>Check Settings</a>.", 'wp-slimstat'), esc_url($settings_url . '2#wp-slimstat-third-party-libraries')));
                         echo '<br>';
                     }
                     ?>
                     <?php foreach ($top_countries as $country): ?>
-                        <div class="country-bar">
+                        <?php // Opens the city drilldown (admin/assets/js/country-cities.js). ?>
+                        <div class="country-bar" role="button" tabindex="0" aria-haspopup="dialog" data-slimstat-country="<?php echo esc_attr($country['code']); ?>">
                             <div class="country-flag-container">
                                 <?php
                     $flag_rel  = '/admin/assets/images/flags/' . strtolower((string)($country['code'] ?? '')) . '.svg';
@@ -2706,22 +2805,31 @@ class wp_slimstat_reports
                     onLabelShow: function (event, label, code) {
                         const data = <?php echo wp_json_encode($country_stats); ?>;
                         const country = data.find(c => c.code === code);
+                        const pageviewsLabel = <?php echo wp_json_encode(__('Pageviews', 'wp-slimstat')); ?>;
                         if (country) {
-                            label.html( '<canvas></canvas><h3>'  + country.name  + '</h3><p>' + country.visits.toLocaleString() + ' Visitors</p>');
+                            label.html( '<canvas></canvas><h3>'  + country.name  + '</h3><p>' + country.visits.toLocaleString() + ' ' + pageviewsLabel + '</p>');
                         } else {
-                            label.html( '<canvas></canvas><h3>'  + label.text()  + '</h3><p>0 Visitors</p>');
+                            label.html( '<canvas></canvas><h3>'  + label.text()  + '</h3><p>0 ' + pageviewsLabel + '</p>');
                         }
                     },
                     scaleColors: ['#fcd7dc', '#E7294B'],
                     borderColor: '#ffffff',
                     color: '#D4D7E2',
+                    // Opens the city drilldown instead of jqvmap's sticky region selection.
+                    onRegionClick: function (event, code, name) {
+                        if (window.SlimStatCountryCities) {
+                            event.preventDefault();
+                            window.SlimStatCountryCities.open(code, name);
+                        }
+                    },
                 });
             });
         </script>
 
         <?php
         if (defined('DOING_AJAX') && DOING_AJAX) {
-            die();
+            self::finish_ajax();
+            return;
         }
     }
 

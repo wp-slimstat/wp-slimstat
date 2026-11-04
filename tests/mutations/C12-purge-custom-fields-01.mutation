@@ -1,0 +1,17 @@
+target: src/Utils/PurgeArchive.php
+gate: php tests/purge-archive-order-test.php
+kind: guard-removal
+expect: undeclared custom column must refuse
+rationale: Fields outside the archive manifest must not be silently discarded.
+---
+--- a/src/Utils/PurgeArchive.php
++++ b/src/Utils/PurgeArchive.php
+@@ -149,7 +149,7 @@
+         return [
+             'copy'   => $copy,
+             // Custom fields are not copied by this manifest and must never be discarded.
+-            'lost'   => array_values(array_diff($live, $copy)),
++            'lost'   => array_values(array_diff($onLive, $archive)),
+             'usable' => in_array($pair['key'], $copy, true),
+         ];
+     }

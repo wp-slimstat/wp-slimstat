@@ -42,6 +42,11 @@ if (!defined('WP_CLI') || !WP_CLI) {
     exit(1);
 }
 
+// Match the web request's own-host exclusion in legacy referrer reports.
+if (empty($_SERVER['SERVER_NAME'])) {
+    $_SERVER['SERVER_NAME'] = (string) wp_parse_url(home_url(), PHP_URL_HOST);
+}
+
 $db_file = WP_PLUGIN_DIR . '/wp-slimstat/admin/view/wp-slimstat-db.php';
 if (!class_exists('wp_slimstat_db') && is_readable($db_file)) {
     require_once $db_file;

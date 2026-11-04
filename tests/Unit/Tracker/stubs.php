@@ -197,6 +197,8 @@ if (!class_exists('wp_slimstat')) {
          *
          * The assertion count is what gave it away: 602 -> 598 while the test count held at 317.
          */
+        public static function bump_data_version(): void { update_option('slimstat_data_ver', (string) microtime(true), true); }
+
         public static function now(): int
         {
             return self::date_i18n('U');

@@ -1,0 +1,17 @@
+target: src/Services/Privacy/DataEraser.php
+gate: php tests/privacy-erasure-paging-test.php
+kind: guard-removal
+expect: Privacy must use analytics handle and core prefix
+rationale: External privacy requests must not touch core lookalike tables.
+---
+--- a/src/Services/Privacy/DataEraser.php
++++ b/src/Services/Privacy/DataEraser.php
+@@ -31,7 +31,7 @@
+ 	 */
+ 	public static function erasePageviews($email_address, $page = 1)
+ 	{
+-		$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
++		$db = $GLOBALS['wpdb'];
+ 		$items_removed = false;
+ 		$messages = [];
+ 		$done = true;

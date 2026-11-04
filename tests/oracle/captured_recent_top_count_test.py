@@ -35,10 +35,29 @@ assert top_outbound(stats, 10, 30, 2) == [
     {'counthits': 1, 'dt': 10, 'outbound_resource': 'https://b/'},
 ]
 
+# The underlying recent-row query orders by dt alone. A tied LIMIT boundary
+# does not identify which rows contributed to the grouped outbound counts.
+try:
+    top_outbound([
+        {'outbound_resource': 'https://a/', 'dt': 20, 'dt_out': 25},
+        {'outbound_resource': 'https://b/', 'dt': 20, 'dt_out': 30},
+    ], 10, 30, 1)
+    raise AssertionError('ambiguous recent-row cutoff was guessed')
+except ValueError:
+    pass
+
+assert top_outbound([
+    {'outbound_resource': 'https://a/', 'dt': 20, 'dt_out': 25},
+    {'outbound_resource': 'https://b/', 'dt': 20, 'dt_out': 30},
+], 10, 30, 2) == [
+    {'outbound_resource': 'https://b/', 'counthits': 1, 'dt': 30},
+    {'outbound_resource': 'https://a/', 'counthits': 1, 'dt': 25},
+]
+
 assert count_singletons(stats, 'visit_id', 'id', [('visit_id', 'gt', 0),
     ('browser_type', 'ne', 1)], 10, 30) == 3
 assert count_singletons(stats, 'resource', 'visit_id', [('visit_id', 'gt', 0),
-    ('content_type', 'ne', '404')], 10, 30, 'ascii_ci') == 1
+    ('content_type', 'ne', '404')], 10, 30, 'ascii_ci') == 0
 
 try:
     count_singletons([{'resource': '/café', 'visit_id': 1, 'dt': 10}], 'resource',

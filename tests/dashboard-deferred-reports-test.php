@@ -15,7 +15,7 @@ function wp_unslash($value) { return $value; }
 class wp_slimstat { public static $settings = ['can_view' => '', 'capability_can_view' => 'read', 'rows_to_show' => 20, 'async_load' => 'no']; }
 $admin = file_get_contents(__DIR__ . '/../admin/index.php');
 check(preg_match('/public const COMPACT_DASHBOARD_REPORTS = (.+);/', $admin, $compact) === 1, 'missing shared compact-widget policy');
-eval('class wp_slimstat_admin { public const COMPACT_DASHBOARD_REPORTS = ' . $compact[1] . '; public static $current_screen = "slimview1"; }');
+eval('class wp_slimstat_admin { public const COMPACT_DASHBOARD_REPORTS = ' . $compact[1] . '; public static $current_screen = "slimview1"; public static function can_view_stats() {' . slimstat_function_body($admin, 'can_view_stats') . '} private static function stats_view_capability() {' . slimstat_function_body($admin, 'stats_view_capability') . '} }');
 require __DIR__ . '/../admin/view/wp-slimstat-reports.php';
 $GLOBALS['current_user'] = (object) ['user_login' => 'admin'];
 $GLOBALS['allowed'] = true;

@@ -41,6 +41,7 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
       from: day.toISOString().slice(0, 10), to: day.toISOString().slice(0, 10),
       'fs[addon_ecommerce_currency]': 'equals USD' });
     await page.goto(`/wp-admin/admin.php?${params}`);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     const dashboard = page.locator('[data-ecommerce]');
     const full = (await getProState(page)).pro_activated;
     await expect(dashboard.locator('[data-metric=net]')).toContainText('115.00', { timeout: 30_000 });
@@ -136,14 +137,21 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     await page.screenshot({ path: testInfo.outputPath('ecommerce-mobile.png'), fullPage: true });
     params.set('fs[utm_source]', 'equals google');
     await page.goto(`/wp-admin/admin.php?${params}`);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('65.00');
     await expect(dashboard.locator('[data-metric=orders]')).toHaveText(full ? '2' : '••••Available with Pro');
     await page.locator('#slimstat-save-filter').click();
     await expect(page.locator('#slimstat-save-filter')).toHaveText(/Saved|Already saved/);
     const unfiltered = new URLSearchParams(params); unfiltered.delete('fs[utm_source]');
     await page.goto(`/wp-admin/admin.php?${unfiltered}`);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await page.locator('#slimstat-load-saved-filters').click();
-    await page.locator('#slim_filters_overlay a.slimstat-filter-link').filter({ hasText: 'google' }).click();
+    await Promise.all([
+      // The filter navigation removes query parameters after transferring them into the form.
+      page.waitForEvent('domcontentloaded'),
+      page.locator('#slim_filters_overlay a.slimstat-filter-link').filter({ hasText: 'google' }).click(),
+    ]);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('65.00');
     const savedDates = await page.evaluate(() => {
       const picker = (window as any).jQuery('.slimstat-date-range-input').data('daterangepicker');
@@ -151,20 +159,26 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     });
     expect(savedDates).toEqual([day.toISOString().slice(0, 10), day.toISOString().slice(0, 10)]);
     await page.locator('.slimstat-date-range-btn').click();
-    await page.evaluate(() => {
-      const picker = (window as any).jQuery('.slimstat-date-range-input').data('daterangepicker');
-      picker.setEndDate(picker.endDate.clone().add(1, 'day')); picker.chosenLabel = 'Custom range'; picker.clickApply();
-    });
+    await Promise.all([
+      page.waitForEvent('domcontentloaded'),
+      page.evaluate(() => {
+        const picker = (window as any).jQuery('.slimstat-date-range-input').data('daterangepicker');
+        picker.setEndDate(picker.endDate.clone().add(1, 'day')); picker.chosenLabel = 'Custom range'; picker.clickApply();
+      }),
+    ]);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('65.00');
     await expect(page.locator('#slimstat-current-filters')).toContainText('google');
     await expect(dashboard).toContainText('Traffic filters are active');
     params.delete('fs[utm_source]');
     params.set('fs[addon_ecommerce_currency]', 'equals EUR');
     await page.goto(`/wp-admin/admin.php?${params}`);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('200.00');
     await expect(dashboard.locator('[data-metric=orders]')).toHaveText(full ? '1' : '••••Available with Pro');
     params.set('fs[addon_unsupported]', 'equals test');
     await page.goto(`/wp-admin/admin.php?${params}`);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.getByRole('alert')).toContainText('cannot be applied to Ecommerce');
     expect(fixture('safety').checks).toBeGreaterThanOrEqual(53);
     expect(fixture('edges').checks).toBeGreaterThanOrEqual(35);

@@ -851,6 +851,7 @@ foreach ($minted_options as $option_name => $declared_in) {
 foreach ([
     'wp_slimstat_notifications',
     'slimstat_purge_optimized_at',
+    'slimstat_data_ver',
     'slimstat_channels_since',
     'slimstat_goals_funnels_since',
     'slimstat_ecommerce_since',

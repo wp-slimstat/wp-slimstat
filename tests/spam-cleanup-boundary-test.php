@@ -2,7 +2,7 @@
 require __DIR__ . '/lib/source-scan.php';
 function apply_filters($hook, $value) { return $value; }
 function get_userdata($id) { return $id === 7 ? (object) ['user_login' => 'verified-login'] : false; }
-class wp_slimstat { public static $wpdb; }
+class wp_slimstat { public static $bumps = 0; public static function bump_data_version() { ++self::$bumps; } public static $wpdb; }
 $GLOBALS['wpdb'] = new class {
     public $prefix = 'wp_', $sql, $params, $writes = 0;
     public function prepare($sql, $params) { $this->sql = $sql; $this->params = $params; return $sql; }
@@ -25,4 +25,5 @@ $before = $GLOBALS['wpdb']->writes;
 $comment->comment_author_IP = 'not-an-ip'; SpamCleanup::run('spam', 'unapproved', $comment);
 $comment->comment_author_IP = '192.0.2.1'; SpamCleanup::run('approved', 'unapproved', $comment);
 if ($GLOBALS['wpdb']->writes !== $before) { throw new RuntimeException('Non-spam or invalid identity caused deletion'); }
+if (wp_slimstat::$bumps !== $before) { throw new RuntimeException('Spam cleanup must invalidate once per successful deletion'); }
 echo "PASS: spam cleanup binds IPv4/IPv6 and integer-era addresses; forged guest names cannot delete another login\n";

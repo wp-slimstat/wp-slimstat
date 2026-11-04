@@ -6,14 +6,14 @@ rationale: The intersection is still computed - copyableColumns() is called, the
 ---
 --- a/wp-slimstat.php
 +++ b/wp-slimstat.php
-@@ -1883,8 +1883,8 @@
-             $event_plan = \SlimStat\Utils\PurgeArchive::copyableColumns(self::$wpdb, $prefix, 'slim_events');
-             $stats_plan = \SlimStat\Utils\PurgeArchive::copyableColumns(self::$wpdb, $prefix, 'slim_stats');
+@@ -1853,8 +1853,8 @@
+             $event_plan = \SlimStat\Utils\PurgeArchive::copyableColumns($db, $prefix, 'slim_events');
+             $stats_plan = \SlimStat\Utils\PurgeArchive::copyableColumns($db, $prefix, 'slim_stats');
  
 -            $event_columns = $event_plan['copy'];
 -            $stats_columns = $stats_plan['copy'];
 +            $event_columns = \SlimStat\Utils\PurgeArchive::EVENT_COLUMNS;
 +            $stats_columns = \SlimStat\Utils\PurgeArchive::STATS_COLUMNS;
  
-             // No key, no statement. Refusing here is the same refusal probeForCollision()
-             // makes: never DELETE through a question that could not be asked.
+             if ($event_plan['lost'] || $stats_plan['lost']) {
+                 self::record_degradation('purge (archive schema)',

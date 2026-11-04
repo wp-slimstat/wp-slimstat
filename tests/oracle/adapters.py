@@ -10,7 +10,7 @@ from families.group_by import grouped_concat
 from families.count import count_values, count_singletons
 from families.summary import (bouncing_pages, bouncing_visits, pages_per_visit,
                               traffic_sources_summary, visit_duration, visitors_summary)
-from families.pages import (filtered_recent, grouped_dimensions, grouped_values, recent_downloads,
+from families.pages import (filtered_recent as filtered_recent_pages, grouped_dimensions, grouped_values, recent_downloads,
                             recent_outbound, visit_boundary_pages)
 from families.goals import funnel_results, goal_results, percent_text
 
@@ -355,8 +355,8 @@ def pages(export_path, surface, adapter, contract, windows):
                                    contract['default_limit'], contract['filter_column'],
                                    contract['filter_value'], contract.get('exclude_filter') is True)
     elif recent_filtered:
-        value = filtered_recent(rows, windows['start'], windows['end'], dimension,
-                                contract['default_limit'], contract['mode'])
+        value = filtered_recent_pages(rows, windows['start'], windows['end'], dimension,
+                                      contract['default_limit'], contract['mode'])
     else:
         value = visit_boundary_pages(rows, windows['start'], windows['end'],
                                      'MIN' if contract['kind'] == 'entry_pages' else 'MAX',

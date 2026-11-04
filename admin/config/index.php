@@ -834,7 +834,9 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
                 foreach (['DELETE te FROM %sslim_events te', 'OPTIMIZE TABLE %sslim_events', 'DELETE t1 FROM %sslim_stats t1', 'OPTIMIZE TABLE %sslim_stats'] as $slimstat_statement) {
                     // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Trusted core table prefix and schema-manifest identifiers; dynamic values are bound on the analytics connection.
                     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Nonce/capability-protected maintenance uses core-prefix and manifest identifiers; schema probes and mutations require fresh state.
-                    if (false === wp_slimstat::$wpdb->query(sprintf($slimstat_statement, $GLOBALS['wpdb']->prefix))) {
+                    $slimstat_result = wp_slimstat::$wpdb->query(sprintf($slimstat_statement, $GLOBALS['wpdb']->prefix));
+                    if ($slimstat_result > 0 && 0 === strpos($slimstat_statement, 'DELETE ')) { wp_slimstat::bump_data_version(); }
+                    if (false === $slimstat_result) {
                         $slimstat_deleted = false;
                     // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
                         break;

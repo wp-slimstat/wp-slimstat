@@ -1,0 +1,17 @@
+target: wp-slimstat.php
+gate: php tests/purge-health-test.php
+kind: guard-removal
+expect: budget must stop before another batch
+rationale: A pass must yield when its time budget expires.
+---
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -1908,7 +1908,7 @@
+                     if (null !== $value) { $oldest[] = (int) $value; }
+                 }
+                 $from = $oldest ? min($oldest) : $days_ago;
+-                while ($from < $days_ago && microtime(true) < $deadline) {
++                while ($from < $days_ago) {
+                     $to = min($days_ago, $from + $width);
+                     $started = microtime(true);
+                     $batch = \SlimStat\Utils\PurgeArchive::purgeBatch($db, $GLOBALS['wpdb']->prefix,

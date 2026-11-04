@@ -42,7 +42,7 @@ class AddVisitIdentityDegradationTest extends WpSlimstatTestCase
     public function test_a_failed_run_keeps_the_notice(): void
     {
         $wpdb = $this->addVisitIdentityDb(false, ['PRIMARY']);
-        $wpdb->shouldReceive('query')->andReturn(false);
+        $wpdb->shouldReceive('query')->with(\Mockery::pattern('/^ALTER TABLE /'))->andReturn(false);
         \wp_slimstat::$degradations = ['anonymous visit reuse' => 'still true'];
 
         $this->assertFalse((new AddVisitIdentity($wpdb))->run());

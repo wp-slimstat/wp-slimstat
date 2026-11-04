@@ -1,0 +1,18 @@
+target: src/Utils/Query.php
+gate: php tests/query-split-scalar-test.php
+kind: guard-removal
+expect: overflow must preserve
+rationale: Cache freshness and exact integer arithmetic are required before returning a split total.
+---
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -1462,8 +1462,7 @@
+                 $l = $live->getVar();
+                 if (!$history->lastQueryFailed && !$live->lastQueryFailed
+                     && ctype_digit((string) $h) && ctype_digit((string) $l)
+-                    && (float) $h <= min(PHP_INT_MAX / 2, 4503599627370495)
+-                    && (float) $l <= min(PHP_INT_MAX / 2, 4503599627370495)) {
++                    ) {
+                     return (string) ((int) $h + (int) $l);
+                 }
+                 // One failed half or an unsafe integer must never become a partial/rounded total.

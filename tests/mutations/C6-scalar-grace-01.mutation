@@ -1,0 +1,17 @@
+target: src/Utils/Query.php
+gate: php tests/query-split-scalar-test.php
+kind: guard-removal
+expect: first 30 minutes
+rationale: Do not freeze a historical total while requests begun before midnight can still finish.
+---
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -1448,7 +1448,7 @@
+         if ($canSplit) {
+             [$split, $histFrom, $histTo, $liveFrom, $liveTo, $dtIdx] = $this->getSplitDateRanges();
+             $now = self::$processingTimestamp ?? \wp_slimstat::now();
+-            if ($split && $now >= $this->getTodayDate() + 1800) {
++            if ($split) {
+                 $history = clone $this;
+                 $history->valuesToPrepare[$dtIdx] = $histFrom;
+                 $history->valuesToPrepare[$dtIdx + 1] = $histTo;
