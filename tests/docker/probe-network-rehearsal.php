@@ -107,6 +107,8 @@ if ('mutate-isolation' === $mode) {
     return;
 }
 if ('snapshot' !== $mode && 'baseline' !== $mode) { throw new RuntimeException('Unknown network mode'); }
+// Activation creates required tables; optional feature tables are created on demand.
+$requiredTables = array_filter((new ReflectionClass(\SlimStat\Schema\Schema::class))->getConstant('TABLES'), static fn ($definition) => empty($definition['on_demand']));
 $baseline = 'snapshot' === $mode ? json_decode(file_get_contents('/tmp/network-before.json'), true) : null;
 $networkSettings = get_site_option('slimstat_options', []);
 $result = ['owner' => $owner, 'network_credentials_present' => !empty($networkSettings['addon_custom_db_dbpass']), 'blogs' => [], 'pending' => array_values((array) get_site_option('slimstat_network_activation_pending', [])),
@@ -128,7 +130,8 @@ foreach ($sites as $site) {
         $rows[$suffix] = $values;
     }
     $missing = [];
-    foreach (\SlimStat\Schema\Schema::tableNames($prefix) as $table) {
+    foreach (array_keys($requiredTables) as $suffix) {
+        $table = $prefix . $suffix;
         if (null === $analytics->get_var($analytics->prepare('SHOW TABLES LIKE %s', $analytics->esc_like($table)))) { $missing[] = $table; }
         $must('' === $analytics->last_error, 'Unreadable table metadata');
     }

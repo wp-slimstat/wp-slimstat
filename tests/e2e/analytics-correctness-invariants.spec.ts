@@ -21,6 +21,7 @@ import {
   getPool,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
+import { runWordPressFixture } from './helpers/chart';
 
 // ─── Run-scoped correlation tag ────────────────────────────────────────────
 
@@ -97,6 +98,26 @@ test.describe('Analytics Correctness Invariants', () => {
   });
 
   // ─── Invariant 1: Row exists ────────────────────────────────────────────
+
+  test('top pages spanning midnight match the full-range SQL ranking and counts', async ({ page }) => {
+    await setSlimstatOptions({ limit_results: '2', rows_to_show: '2', async_load: 'no', convert_resource_to_title: 'off' });
+    const today = Number(runWordPressFixture('<?php echo floor(wp_slimstat::now() / 86400) * 86400;').trim());
+    for (const [key, count, live] of [['X', 10, 0], ['Y', 9, 0], ['Z', 8, 0], ['Z', 5, 1], ['W', 4, 1]] as const) {
+      for (let i = 0; i < count; i++) {
+        await getPool().execute('INSERT INTO wp_slim_stats (resource, dt) VALUES (?, ?)', [`/topn-${key}`, today + (live ? 1 : -1)]);
+      }
+    }
+    const [oracle] = await getPool().query<mysql.RowDataPacket[]>(
+      'SELECT resource, COUNT(*) AS counthits FROM wp_slim_stats GROUP BY resource ORDER BY counthits DESC, resource ASC LIMIT 2',
+    );
+    expect(oracle.map(row => Number(row.counthits))).toEqual([13, 10]);
+    await page.goto('/wp-admin/admin.php?page=slimview2&type=last_28_days');
+    const report = page.locator('#slim_p1_08');
+    await report.scrollIntoViewIfNeeded();
+    await expect(report.locator('.inside p.slimstat-tooltip-trigger .slimstat-filter-link')).toHaveText(oracle.map(row => String(row.resource)));
+    expect(await report.locator('.slimstat-count-pct').evaluateAll(nodes => nodes.map(node => Number(node.firstChild?.textContent?.trim()))))
+      .toEqual(oracle.map(row => Number(row.counthits)));
+  });
 
   test('INV-1: tracked pageview creates exactly one row in wp_slim_stats', async ({ page }) => {
     const marker = `${RUN_ID}-inv1-${Date.now()}`;

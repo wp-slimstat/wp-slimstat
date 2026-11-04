@@ -354,6 +354,7 @@ class wp_slimstat_admin
         $is_slimstat_page = (!empty($_GET['page']) && is_string($_GET['page']) && 0 === strpos($_GET['page'], 'slim'));
         $is_slimstat_ajax = (!empty($_POST['action']) && (
             'slimstat_load_report' === $_POST['action'] ||
+            'slimstat_load_reports' === $_POST['action'] ||
             'slimstat_get_live_analytics_data' === $_POST['action']
         ));
 
@@ -363,9 +364,10 @@ class wp_slimstat_admin
         }
 
         // Load the library of functions to generate the reports
-        if ($is_slimstat_page || (!empty($_POST['action']) && 'slimstat_load_report' == $_POST['action'])) {
+        if ($is_slimstat_page || (!empty($_POST['action']) && in_array($_POST['action'], ['slimstat_load_report', 'slimstat_load_reports'], true))) {
             include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-reports.php');
             wp_slimstat_reports::init();
+            add_action('wp_ajax_slimstat_load_reports', ['wp_slimstat_reports', 'load_reports']);
 
             if (!empty($_POST['report_id']) && is_string($_POST['report_id'])) {
                 $report_id = sanitize_title(wp_unslash($_POST['report_id']), 'slim_p0_00');
@@ -678,7 +680,7 @@ class wp_slimstat_admin
             $user_id = 1;
         } else {
             $user = wp_get_current_user();
-            $whitelist = preg_split('/[\s,]+/', (string) (wp_slimstat::$settings['can_customize'] ?? ''), -1, PREG_SPLIT_NO_EMPTY);
+            $whitelist = array_map('trim', preg_split('/[\r\n,]+/', (string) (wp_slimstat::$settings['can_customize'] ?? ''), -1, PREG_SPLIT_NO_EMPTY));
             $capability = wp_slimstat::$settings['capability_can_customize'] ?? 'manage_options';
             if (!$user->ID || !(current_user_can('manage_options') || current_user_can($capability ?: 'read')
                 || (current_user_can('read') && in_array($user->user_login, $whitelist, true)))) {
@@ -1580,27 +1582,9 @@ class wp_slimstat_admin
                 if (in_array($a_report_id, self::COMPACT_DASHBOARD_REPORTS, true)) {
                     wp_slimstat_reports::$reports[$a_report_id]['callback_args']['is_widget'] = true;
                 }
-                if (!wp_slimstat::pro_is_installed() && 'slim_p7_02' === $a_report_id) {
-                    wp_add_dashboard_widget($a_report_id, wp_slimstat_reports::$reports[$a_report_id]['title'], [self::class, 'dashboard_pro_preview']);
-                } else {
                 wp_add_dashboard_widget($a_report_id, wp_slimstat_reports::$reports[$a_report_id]['title'], ['wp_slimstat_reports', 'callback_wrapper']);
-                }
             }
         }
-    }
-
-    public static function dashboard_pro_preview($post, $args): void
-    {
-        echo '<div class="slimstat-dashboard-report">';
-        wp_slimstat_reports::callback_wrapper($post, $args);
-        echo '</div>';
-        // A hidden existing widget remains hidden, and an eligible release notice takes priority.
-        if (self::release_notice_visible(false)) {
-            echo '<p>' . esc_html__('Live charts are available with SlimStat Pro.', 'wp-slimstat') . '</p>';
-            return;
-        }
-        self::enqueue_promotions();
-        self::get_template('locked-preview', ['text' => __('Follow live visitors, pages and countries with Pro.', 'wp-slimstat'), 'campaign' => 'dashboard', 'content' => 'live-widget']);
     }
 
     // END: add_dashboard_widgets
@@ -1629,7 +1613,9 @@ class wp_slimstat_admin
             $where .= ' OR username = %s';
             $params[] = $user->user_login;
         }
-        $my_wpdb->query($my_wpdb->prepare('DELETE FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE ' . $where, $params));
+        if ($my_wpdb->query($my_wpdb->prepare('DELETE FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE ' . $where, $params)) > 0) {
+            wp_slimstat::bump_data_version();
+        }
     }
 
     // END: remove_spam
@@ -1887,6 +1873,7 @@ class wp_slimstat_admin
 
         // Pass some information to Javascript
         $params = [
+            'batch_report_ids' => class_exists('wp_slimstat_reports') ? wp_slimstat_reports::batch_report_ids() : [],
             'async_load'        => ($current_screen && 'dashboard' === $current_screen->id) ? 'on' : (empty(wp_slimstat::$settings['async_load']) ? 'no' : wp_slimstat::$settings['async_load']),
             'datepicker_image'  => plugins_url('/admin/assets/images/datepicker.png', __DIR__),
             'refresh_interval'  => intval(wp_slimstat::$settings['refresh_interval']),
@@ -2115,10 +2102,8 @@ class wp_slimstat_admin
         // A whitelisted user gets the minimum capability instead of the configured one.
 
         $login = (string) ($GLOBALS['current_user']->user_login ?? '');
-        $whitelisted = '' !== $login && false !== strpos(
-            (string) wp_slimstat::$settings['can_view'],
-            $login
-        );
+        $whitelist = array_map('trim', preg_split('/[\r\n,]+/', (string) (wp_slimstat::$settings['can_view'] ?? ''), -1, PREG_SPLIT_NO_EMPTY));
+        $whitelisted = '' !== $login && in_array($login, $whitelist, true);
 
         if (!$whitelisted && !empty(wp_slimstat::$settings['capability_can_view'])) {
             return wp_slimstat::$settings['capability_can_view'];
@@ -2583,7 +2568,7 @@ class wp_slimstat_admin
     }
 
     /** One release window per user, shared by every placement and patch version. */
-    public static function release_notice_visible(bool $start_window = true): bool
+    public static function release_notice_visible(): bool
     {
         $user = get_current_user_id();
         if (!$user || 'on' !== (wp_slimstat::$settings['notice_latest_news'] ?? 'no')
@@ -2591,7 +2576,7 @@ class wp_slimstat_admin
             return false;
         }
         $since = (int) get_user_meta($user, 'slimstat_release_60_since', true);
-        if (!$since && $start_window) {
+        if (!$since) {
             add_user_meta($user, 'slimstat_release_60_since', time(), true);
             $since = (int) get_user_meta($user, 'slimstat_release_60_since', true);
         }
@@ -3324,7 +3309,9 @@ class wp_slimstat_admin
         if (!$current_user_can_delete || $pageview_id <= 0 || !isset($_POST['security']) || !is_string($_POST['security']) || !wp_verify_nonce(wp_unslash($_POST['security']), 'meta-box-order')) {
             return;
         }
-        $my_wpdb->query($my_wpdb->prepare('DELETE FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE id = %d', $pageview_id));
+        if ($my_wpdb->query($my_wpdb->prepare('DELETE FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE id = %d', $pageview_id)) > 0) {
+            wp_slimstat::bump_data_version();
+        }
         exit();
     }
 
@@ -4911,15 +4898,14 @@ class wp_slimstat_admin
             'add_user_agent_dimension' => __('Migration: browser dimension column', 'wp-slimstat'),
             'event insert stored no row' => __('Event could not be recorded', 'wp-slimstat'),
             'anonymous visit reuse'      => __('Cookieless visit grouping', 'wp-slimstat'),
-            'purge (archiving events)'    => __('Retention: archiving events', 'wp-slimstat'),
-            'purge (deleting events)'     => __('Retention: deleting events', 'wp-slimstat'),
+            'purge (lock limits)'         => __('Retention: database lock limits', 'wp-slimstat'),
+            'purge (verified retention)'  => __('Retention: verified archive and deletion', 'wp-slimstat'),
             'purge (heatmap rows)'        => __('Retention: deleting heatmap clicks', 'wp-slimstat'),
             'heatmap insert'              => __('Tracking: saving heatmap clicks', 'wp-slimstat'),
             'heatmap delete'              => __('Heatmaps: deleting heatmap data', 'wp-slimstat'),
             'purge (checking retention)'  => __('Retention: checking expired data', 'wp-slimstat'),
             'purge (heatmap scheduling)'  => __('Heatmaps: scheduling retention cleanup', 'wp-slimstat'),
-            'purge (archiving pageviews)' => __('Retention: archiving pageviews', 'wp-slimstat'),
-            'purge (deleting pageviews)'  => __('Retention: deleting pageviews', 'wp-slimstat'),
+            'purge (checking completion)' => __('Retention: checking completion', 'wp-slimstat'),
             'purge (archive schema)'      => __('Retention: archive table columns', 'wp-slimstat'),
             // Synthesised inside get_degradations() from the last-success stamp, not recorded
             // by any call site — so a scan that derives its population from record_degradation()

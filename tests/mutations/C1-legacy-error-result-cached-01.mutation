@@ -1,0 +1,17 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      php tests/query-failed-query-cache-test.php
+kind:      guard-removal
+expect:    legacy get_results: a failed statement must not be cached
+rationale: Every Pro report reaches the database through the legacy string-SQL get_results(), which keeps its own ten-minute transient. Without the last_error condition a failed statement is cached as an empty report. The gate fails the statement on a historical window and asserts nothing was written.
+---
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -651,7 +651,7 @@
+         //
+         // A failed statement returns [] here too, and caching it would serve "no rows" for ten
+         // minutes after the database recovered. (C-1)
+-        if ('' !== $cache_key && self::window_is_cacheable() && '' === (string) (wp_slimstat::$wpdb->last_error ?? '')) {
++        if ('' !== $cache_key && self::window_is_cacheable()) {
+             set_transient($cache_key, $results, 10 * MINUTE_IN_SECONDS);
+         }
+ 

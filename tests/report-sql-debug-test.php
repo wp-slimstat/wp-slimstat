@@ -1,4 +1,5 @@
 <?php
+function get_option($key, $default = false) { return $default; }
 /** #362: diagnostics must not change answers, SQL, cache hits or database errors. */
 define('ABSPATH', '/');
 define('ARRAY_A', 'ARRAY_A');

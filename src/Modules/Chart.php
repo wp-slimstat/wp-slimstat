@@ -197,7 +197,7 @@ class Chart
         // Ensure chart_data is present with defaults
         if (!isset($args['chart_data'])) {
             $args['chart_data'] = [
-                'data1' => 'COUNT( ip )',
+                'data1' => 'COUNT( id )',
                 'data2' => 'COUNT( DISTINCT ip )',
             ];
         }

@@ -309,7 +309,7 @@ final class Integration
 				throw new \RuntimeException('Ecommerce transaction unavailable.');
 			}
 			// The checkout capture upsert locks this same summary row, avoiding lost associations.
-			$association = $db->get_row($db->prepare("SELECT stat_id, erased FROM {$table} WHERE order_id = %d AND item_id = 0 FOR UPDATE", $id), ARRAY_A);
+			$association = $db->get_row($db->prepare("SELECT stat_id, erased, dt FROM {$table} WHERE order_id = %d AND item_id = 0 FOR UPDATE", $id), ARRAY_A);
 			if ($db->last_error) {
 				throw new \RuntimeException('Ecommerce association unavailable.');
 			}
@@ -331,6 +331,10 @@ final class Integration
 				throw new \RuntimeException('Ecommerce commit failed.');
 			}
 			self::invalidate();
+			$today = intdiv(\wp_slimstat::now(), DAY_IN_SECONDS) * DAY_IN_SECONDS;
+			if (isset($association['dt']) && (int) $association['dt'] < $today) {
+				\wp_slimstat::bump_data_version();
+			}
 		} catch (\Throwable $error) {
 			$db->query('ROLLBACK');
 			self::failure();
@@ -478,6 +482,7 @@ final class Integration
 		if (self::retentionStart()) {
 			$deleted = $db->query($db->prepare("DELETE FROM {$table} WHERE dt > 0 AND dt < %d LIMIT 1000", self::retentionStart()));
 			if (false === $deleted) { self::failure(); }
+			if ($deleted > 0) { \wp_slimstat::bump_data_version(); }
 			if (1000 === $deleted) {
 				// Drain large retention backlogs without an unbounded request.
 				wp_schedule_single_event(time() + 10, 'slimstat_ecommerce_maintenance');
