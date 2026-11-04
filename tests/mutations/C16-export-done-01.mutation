@@ -1,0 +1,17 @@
+target: src/Services/Privacy/DataExporter.php
+gate: composer test:privacy-export-archive
+kind: guard-removal
+expect: live 501 exportPageviews
+rationale: Pagination finishes only when both sources are exhausted.
+---
+--- a/src/Services/Privacy/DataExporter.php
++++ b/src/Services/Privacy/DataExporter.php
+@@ -48,7 +48,7 @@
+ 				: "SELECT * FROM {$table} WHERE email = %s ORDER BY dt DESC, id DESC LIMIT %d OFFSET %d";
+ 			$records = $db->get_results($db->prepare($sql, $email_address, $number, $offset));
+ 			if ($db->last_error || !is_array($records)) { return new \WP_Error('slimstat_privacy_export_failed', __('An error occurred while fetching data', 'wp-slimstat')); }
+-			$done = $done && count($records) < $number;
++			$done = count($records) < $number;
+ 			$id_column = $events ? 'event_id' : 'id';
+ 			foreach ($records as $record) {
+ 				// After an ID reset, live and archived IDs can identify different visits.

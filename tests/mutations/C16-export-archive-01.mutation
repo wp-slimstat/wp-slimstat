@@ -1,0 +1,17 @@
+target: src/Services/Privacy/DataExporter.php
+gate: composer test:privacy-export-archive
+kind: guard-removal
+expect: archive 1 exportPageviews
+rationale: Retained archive rows remain exportable.
+---
+--- a/src/Services/Privacy/DataExporter.php
++++ b/src/Services/Privacy/DataExporter.php
+@@ -30,7 +30,7 @@
+ 		$offset = (max(1, (int) $page) - 1) * $number;
+ 		$rows = [];
+ 		$done = true;
+-		foreach (['', '_archive'] as $suffix) {
++		foreach ([''] as $suffix) {
+ 			$stats_table = $prefix . 'slim_stats' . $suffix;
+ 			$table = $events ? $prefix . 'slim_events' . $suffix : $stats_table;
+ 			if ($suffix) {

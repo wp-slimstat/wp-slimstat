@@ -77,6 +77,18 @@ class PurgeArchiveColumnIntersectionTest extends WpSlimstatTestCase
         return array_values(array_diff(PurgeArchive::STATS_COLUMNS, [$omit]));
     }
 
+    public function testUndeclaredLiveColumnsAreReportedAsUnverifiedEvenWhenArchiveHasThem(): void
+    {
+        $live = array_merge(PurgeArchive::STATS_COLUMNS, ['custom_payload']);
+        foreach ([PurgeArchive::STATS_COLUMNS, $live] as $archive) {
+            $plan = PurgeArchive::copyableColumns($this->db([
+                'wp_slim_stats' => $live, 'wp_slim_stats_archive' => $archive,
+            ]), 'wp_', 'slim_stats');
+            self::assertSame(['custom_payload'], $plan['lost']);
+            self::assertNotContains('custom_payload', $plan['copy']);
+        }
+    }
+
     /**
      * The shipped case: an upgraded install where neither table has `ua_id`.
      *

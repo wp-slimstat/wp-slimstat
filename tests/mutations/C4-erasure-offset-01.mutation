@@ -1,0 +1,17 @@
+target: src/Services/Privacy/DataEraser.php
+gate: php tests/privacy-erasure-paging-test.php
+kind: guard-removal
+expect: live 501 eraseEvents
+rationale: Erasure must drain shrinking live and archive batches and stop the parent eraser when child data cannot be erased.
+---
+--- a/src/Services/Privacy/DataEraser.php
++++ b/src/Services/Privacy/DataEraser.php
+@@ -101,7 +101,7 @@
+ 			$events_table = $prefix . 'slim_events' . $suffix;
+ 			$ids = $db->get_col($db->prepare(
+ 				"SELECT e.event_id FROM {$events_table} e INNER JOIN {$stats_table} s ON e.id = s.id
+-				 WHERE s.email = %s ORDER BY e.event_id LIMIT 500",
++				 WHERE s.email = %s ORDER BY e.event_id LIMIT 500 OFFSET " . (((int) $page - 1) * 500),
+ 				$email_address
+ 			));
+ 			$failed = $failed || '' !== (string) $db->last_error;

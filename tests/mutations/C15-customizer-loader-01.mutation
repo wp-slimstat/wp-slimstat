@@ -1,0 +1,17 @@
+target: admin/assets/js/admin.js
+gate: composer test:dashboard-widget-queue
+kind: guard-removal
+expect: layout placeholders must not load reports
+rationale: Layout placeholders have report IDs but must not fetch report data or receive pagination over their controls.
+---
+--- a/admin/assets/js/admin.js
++++ b/admin/assets/js/admin.js
+@@ -503,7 +503,7 @@
+         }, { rootMargin: '200px' }) : null;
+         jQuery("div[id^=slim_p]").each(function () {
+             // Customize uses report IDs for layout placeholders, without a report body.
+-            if (!SlimStatReportBody(this.id).length) return;
++            // mutation: load layout placeholders as reports
+             // Skip Charts
+             if (jQuery(this).find(".chart-placeholder, .refresh-timer").length == 0) {
+                 SlimStatReportBody(jQuery(this).attr("id")).html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');

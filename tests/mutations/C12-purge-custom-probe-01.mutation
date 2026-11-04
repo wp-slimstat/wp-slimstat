@@ -1,0 +1,17 @@
+target: src/Utils/PurgeArchive.php
+gate: php tests/purge-archive-order-test.php
+kind: guard-removal
+expect: undeclared custom column must refuse
+rationale: Fields outside the archive manifest must not be silently discarded.
+---
+--- a/src/Utils/PurgeArchive.php
++++ b/src/Utils/PurgeArchive.php
+@@ -171,7 +171,7 @@
+             return $declared;
+         }
+ 
+-        return array_merge($state['present'], $state['undeclared']);
++        return $state['present'];
+     }
+ 
+     /**

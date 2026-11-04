@@ -3,15 +3,13 @@ declare(strict_types=1);
 
 namespace SlimStat\Services\Privacy;
 
-use SlimStat\Utils\Query;
-
 /**
  * WordPress Privacy API Data Exporter for SlimStat
  *
  * Implements GDPR Article 15 - Right to Access Personal Data
  *
- * This class exports all personal data collected by SlimStat for a given
- * email address or IP address, formatted for the WordPress Privacy Tools.
+ * Exports personal data linked to the requested email address from live and
+ * archive tables, formatted for the WordPress Privacy Tools.
  *
  * Exported data includes:
  * - Pageviews (URLs visited, timestamps, user agent)
@@ -23,31 +21,58 @@ use SlimStat\Utils\Query;
  */
 class DataExporter
 {
+	/** Read one bounded, uncached page from each applicable storage table. */
+	private static function getExportRows($email_address, $page, $events)
+	{
+		$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+		$prefix = $GLOBALS['wpdb']->prefix;
+		$number = 500;
+		$offset = (max(1, (int) $page) - 1) * $number;
+		$rows = [];
+		$done = true;
+		foreach (['', '_archive'] as $suffix) {
+			$stats_table = $prefix . 'slim_stats' . $suffix;
+			$table = $events ? $prefix . 'slim_events' . $suffix : $stats_table;
+			if ($suffix) {
+				$exists = $db->get_var($db->prepare('SHOW TABLES LIKE %s', $db->esc_like($table)));
+				if ($db->last_error) { return new \WP_Error('slimstat_privacy_export_failed', __('An error occurred while fetching data', 'wp-slimstat')); }
+				if (!$exists) { continue; }
+			}
+			// Legacy tables without an email column contain no email-linked records.
+			$email_column = $db->get_var("SHOW COLUMNS FROM {$stats_table} LIKE 'email'");
+			$metadata_error = $db->last_error;
+			if ($metadata_error) { return new \WP_Error('slimstat_privacy_export_failed', __('An error occurred while fetching data', 'wp-slimstat')); }
+			if (!$email_column) { continue; }
+			$sql = $events
+				? "SELECT e.* FROM {$table} e INNER JOIN {$stats_table} s ON e.id = s.id WHERE s.email = %s ORDER BY e.dt DESC, e.event_id DESC LIMIT %d OFFSET %d"
+				: "SELECT * FROM {$table} WHERE email = %s ORDER BY dt DESC, id DESC LIMIT %d OFFSET %d";
+			$records = $db->get_results($db->prepare($sql, $email_address, $number, $offset));
+			if ($db->last_error || !is_array($records)) { return new \WP_Error('slimstat_privacy_export_failed', __('An error occurred while fetching data', 'wp-slimstat')); }
+			$done = $done && count($records) < $number;
+			$id_column = $events ? 'event_id' : 'id';
+			foreach ($records as $record) {
+				// After an ID reset, live and archived IDs can identify different visits.
+				$rows[] = ['row' => $record, 'id' => ($events ? 'event' : 'pageview') . ($suffix ? '-archive' : '') . '-' . $record->$id_column];
+			}
+		}
+		return ['rows' => $rows, 'done' => $done];
+	}
+
 	/**
 	 * Export pageview data for a user
 	 *
 	 * @param string $email_address The user's email address
 	 * @param int    $page          Page number for pagination
-	 * @return array WordPress Privacy API formatted export data
+	 * @return array|\WP_Error WordPress Privacy API formatted export data
 	 */
 	public static function exportPageviews($email_address, $page = 1)
 	{
-		$number    = 500; // Export 500 records per page
-		$page      = (int) $page;
-		$offset    = ($page - 1) * $number;
+		$records = self::getExportRows($email_address, $page, false);
+		if (is_wp_error($records)) { return $records; }
 		$data_to_export = [];
 
-		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-
-		// Query pageviews by email
-		$pageviews = Query::select('*')
-			->from($table)
-			->where('email', '=', $email_address)
-			->orderBy('dt', 'DESC')
-			->limit($number, $offset)
-			->getResults();
-
-		foreach ($pageviews as $pageview) {
+		foreach ($records['rows'] as $record) {
+			$pageview = $record['row'];
 			$item_data = [];
 
 			// Basic visit information
@@ -156,22 +181,14 @@ class DataExporter
 			$data_to_export[] = [
 				'group_id'    => 'slimstat_pageviews',
 				'group_label' => __('SlimStat Pageviews', 'wp-slimstat'),
-				'item_id'     => 'pageview-' . $pageview->id,
+				'item_id'     => $record['id'],
 				'data'        => $item_data,
 			];
 		}
 
-		// Check if there are more pages
-		$total = Query::select('COUNT(*)')
-			->from($table)
-			->where('email', '=', $email_address)
-			->getVar();
-
-		$done = ($offset + $number) >= $total;
-
 		return [
 			'data' => $data_to_export,
-			'done' => $done,
+			'done' => $records['done'],
 		];
 	}
 
@@ -180,33 +197,16 @@ class DataExporter
 	 *
 	 * @param string $email_address The user's email address
 	 * @param int    $page          Page number for pagination
-	 * @return array WordPress Privacy API formatted export data
+	 * @return array|\WP_Error WordPress Privacy API formatted export data
 	 */
 	public static function exportEvents($email_address, $page = 1)
 	{
-		$number    = 500; // Export 500 records per page
-		$page      = (int) $page;
-		$offset    = ($page - 1) * $number;
+		$records = self::getExportRows($email_address, $page, true);
+		if (is_wp_error($records)) { return $records; }
 		$data_to_export = [];
 
-		$stats_table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-		$events_table = $GLOBALS['wpdb']->prefix . 'slim_events';
-
-		// Query events by joining with stats table to filter by email
-		$events = $GLOBALS['wpdb']->get_results(
-			$GLOBALS['wpdb']->prepare(
-				"SELECT e.* FROM {$events_table} e
-				INNER JOIN {$stats_table} s ON e.id = s.id
-				WHERE s.email = %s
-				ORDER BY e.dt DESC
-				LIMIT %d OFFSET %d",
-				$email_address,
-				$number,
-				$offset
-			)
-		);
-
-		foreach ($events as $event) {
+		foreach ($records['rows'] as $record) {
+			$event = $record['row'];
 			$item_data = [];
 
 			$item_data[] = [
@@ -245,26 +245,14 @@ class DataExporter
 			$data_to_export[] = [
 				'group_id'    => 'slimstat_events',
 				'group_label' => __('SlimStat Events', 'wp-slimstat'),
-				'item_id'     => 'event-' . $event->id . '-' . $event->dt,
+				'item_id'     => $record['id'],
 				'data'        => $item_data,
 			];
 		}
 
-		// Check if there are more pages
-		$total = $GLOBALS['wpdb']->get_var(
-			$GLOBALS['wpdb']->prepare(
-				"SELECT COUNT(*) FROM {$events_table} e
-				INNER JOIN {$stats_table} s ON e.id = s.id
-				WHERE s.email = %s",
-				$email_address
-			)
-		);
-
-		$done = ($offset + $number) >= $total;
-
 		return [
 			'data' => $data_to_export,
-			'done' => $done,
+			'done' => $records['done'],
 		];
 	}
 

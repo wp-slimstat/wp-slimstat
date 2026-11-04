@@ -1784,6 +1784,14 @@ class wp_slimstat
      * Removes old entries from the main table and performs other daily tasks
      */
     // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Retention uses core-prefix tables, manifest-intersected columns and bound cutoffs; archive/delete operations require fresh state.
+    public static function bump_data_version(): void
+    {
+        $version = sprintf('%.6F', microtime(true));
+        update_option('slimstat_data_ver', $version, true);
+        // Goal and unique-visitor caches also contain answers derived from erased rows.
+        update_option('slimstat_goals_cache_ver', $version, false);
+    }
+
     public static function wp_slimstat_purge()
     {
         $autopurge_interval = intval(self::$settings['auto_purge']);
@@ -1792,6 +1800,7 @@ class wp_slimstat
             return;
         }
 
+        $db = self::$wpdb;
         $days_ago             = self::now() - ( $autopurge_interval * DAY_IN_SECONDS );
         $table_stats          = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $table_stats_archive  = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
@@ -1804,10 +1813,11 @@ class wp_slimstat
         // read error stops the job; if both are empty, stop without any rebuild. (D1)
         $has_work = false;
         foreach ([$table_stats, $table_events] as $table) {
-            $found = self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table} WHERE dt < %d LIMIT 1", $days_ago));
+            $found = $db->get_var($db->prepare("SELECT 1 FROM {$table} WHERE dt < %d LIMIT 1", $days_ago));
             // Check immediately: the next successful query clears last_error.
-            if ('' !== (string) self::$wpdb->last_error) {
-                self::record_degradation('purge (checking retention)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);
+            $query_error = (string) $db->last_error;
+            if ('' !== $query_error) {
+                self::record_degradation('purge (checking retention)', $query_error, self::DEGRADATION_OPERATIONAL);
                 return;
             }
             $has_work = $has_work || !empty($found);
@@ -1840,11 +1850,19 @@ class wp_slimstat
 
         if ($archive) {
             $prefix     = $GLOBALS['wpdb']->prefix;
-            $event_plan = \SlimStat\Utils\PurgeArchive::copyableColumns(self::$wpdb, $prefix, 'slim_events');
-            $stats_plan = \SlimStat\Utils\PurgeArchive::copyableColumns(self::$wpdb, $prefix, 'slim_stats');
+            $event_plan = \SlimStat\Utils\PurgeArchive::copyableColumns($db, $prefix, 'slim_events');
+            $stats_plan = \SlimStat\Utils\PurgeArchive::copyableColumns($db, $prefix, 'slim_stats');
 
             $event_columns = $event_plan['copy'];
             $stats_columns = $stats_plan['copy'];
+
+            if ($event_plan['lost'] || $stats_plan['lost']) {
+                self::record_degradation('purge (archive schema)',
+                    'Retention paused to prevent data loss. Repair the archive schema, or choose deletion without archiving in Maintenance. Unverified fields: '
+                        . implode(', ', array_unique(array_merge($event_plan['lost'], $stats_plan['lost']))),
+                    self::DEGRADATION_OPERATIONAL);
+                return;
+            }
 
             // No key, no statement. Refusing here is the same refusal probeForCollision()
             // makes: never DELETE through a question that could not be asked.
@@ -1859,189 +1877,86 @@ class wp_slimstat
 
                 return;
             }
-
-            // Columns the LIVE table has and the archive does not are real fidelity loss, and
-            // they are NOT reported here. Archive drift is permanent -- the archive gains no
-            // columns, ever -- and the degradation channel heals by forgetting: DEGRADATION_TTL
-            // is 3 hours while this cron runs twicedaily, so the warning would be visible for 3
-            // hours in every 12 and look healthy the rest of the time. That is C34's shape
-            // exactly, and admin/index.php's record_column_drift() docblock rejects this channel
-            // for that reason in so many words. Schema::columnDrift() now observes archive
-            // tables, so the loss surfaces durably in the schema-drift notice instead.
         }
 
-        // ── Events first. This ordering is the whole defect. ────────────────────────
-        //
-        // {prefix}slim_events.id is a FOREIGN KEY into {prefix}slim_stats(id) ON DELETE
-        // CASCADE, created by this plugin. Deleting the parent pageviews first destroyed
-        // the event rows before the archive INSERT below could copy them — measured at
-        // 102,573 of 102,573 events lost at a 30-day cutoff, because an event is stamped
-        // with its parent's id when the pageview is recorded and so is never older than
-        // its parent.
-        //
-        // Selection keys off the PARENT's dt as well as the event's own, because the
-        // cascade keys off the parent: an event still inside the retention window whose
-        // parent has aged out was being destroyed without ever being eligible to archive.
-        $event_where = 'e.dt < %d OR s.dt < %d';
-
-        if ($archive) {
-            // Before trusting INSERT IGNORE, make sure nothing is standing on our keys.
-            //
-            // IGNORE cannot tell "this row is already archived" (the replay case, which is
-            // exactly what it is here for) from "a DIFFERENT row already owns this primary
-            // key" — and it reports the second as a silent no-op. Deleting afterwards would
-            // then destroy live rows that were never archived: data loss where the old code
-            // merely stopped working, which is the one direction a data-safety fix must not
-            // move.
-            //
-            // Reachable in the wild. DELETE does not reset AUTO_INCREMENT, but MariaDB and
-            // MySQL 5.7 re-derive it as MAX(id)+1 on restart, so an admin who uses "Delete
-            // Records" and later reboots gets fresh rows numbered from 1, colliding with
-            // whatever is already archived.
-            //
-            // The comparison covers every column the INSERT below copies. Anything narrower
-            // has false negatives, and a false negative here is worse than the bug being
-            // fixed: the row is dropped by IGNORE and then deleted, with nothing recorded.
-            $events_are_replays = \SlimStat\Utils\PurgeArchive::sameRow($event_columns, 'event_id', 'e');
-
-            // Tri-state: null means the probe itself could not run. On a half-converted
-            // install the cross-table comparison raises ER_CANT_AGGREGATE_2COLLATIONS,
-            // and reading that as "clean" is what let the DELETE through (C25).
-            $event_collision = \SlimStat\Utils\PurgeArchive::probeForCollision(
-                self::$wpdb,
-                "SELECT 1 FROM {$table_events} e
-                 INNER JOIN {$table_events_archive} a ON a.event_id = e.event_id
-                 LEFT JOIN {$table_stats} s ON s.id = e.id
-                 WHERE ({$event_where})
-                   AND NOT ({$events_are_replays})
-                 LIMIT 1",
-                [$days_ago, $days_ago]
-            );
-
-            if (null === $event_collision) {
-                self::record_degradation(
-                    'purge (archiving events)',
-                    'could not check the event archive for key collisions, so nothing was deleted: '
-                        . self::$wpdb->last_error
-                        . '. An "Illegal mix of collations" here means the utf8mb4 conversion ran on '
-                        . 'some tables and not others - finish it before the purge can run again.',
-                    self::DEGRADATION_OPERATIONAL
-                );
-                return;
-            }
-
-            if ($event_collision) {
-                self::record_degradation(
-                    'purge (archiving events)',
-                    'the events archive already holds different rows under the primary keys about to be '
-                        . 'archived, so nothing was deleted. This usually means AUTO_INCREMENT was reset '
-                        . 'after records were cleared.',
-                    self::DEGRADATION_OPERATIONAL
-                );
-                return;
-            }
-
-            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
-            // INSERT IGNORE, with event_id carried explicitly, so a run interrupted between
-            // archiving and deleting is replayable: the next run re-copies the same rows
-            // and MySQL ignores the ones already there. Without event_id there is no key to
-            // dedupe on and the retry would duplicate every archived event instead.
-            if (false === self::$wpdb->query(self::$wpdb->prepare(
-                "INSERT IGNORE INTO {$table_events_archive} (" . implode(', ', $event_columns) . ")
-                 SELECT e." . implode(', e.', $event_columns) . "
-                 FROM {$table_events} e LEFT JOIN {$table_stats} s ON s.id = e.id
-                 WHERE {$event_where}",
-                $days_ago,
-                $days_ago
-            ))) {
-                // Fail closed. If the events could not be archived — missing table, schema
-                // drift, anything — do not touch the pageviews, because deleting them
-                // cascades the events away with no copy anywhere.
-                self::record_degradation(
-                    'purge (archiving events)',
-                    self::$wpdb->last_error,
-                    self::DEGRADATION_OPERATIONAL
-                );
-            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
-                return;
-            }
-        }
-
-        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
-        // Delete the events explicitly rather than leaning on the cascade, so the set
-        // removed is exactly the set archived, and so the behaviour is the same on an
-        // install whose tables are MyISAM and silently ignore the foreign key.
-        if (false === self::$wpdb->query(self::$wpdb->prepare(
-            "DELETE e FROM {$table_events} e LEFT JOIN {$table_stats} s ON s.id = e.id WHERE {$event_where}",
-            $days_ago,
-            $days_ago
-        ))) {
-            self::record_degradation('purge (deleting events)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);
-        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
+        $limit = (int) ini_get('max_execution_time');
+        $budget = $limit > 0 ? min(20.0, $limit / 2) : 20.0;
+        $deadline = microtime(true) + $budget;
+        $width = DAY_IN_SECONDS;
+        $rows_removed = 0;
+        $error = '';
+        $old_timeouts = $db->get_row('SELECT @@SESSION.lock_wait_timeout AS metadata_wait, @@SESSION.innodb_lock_wait_timeout AS row_wait', ARRAY_A);
+        $query_error = (string) $db->last_error;
+        if ('' !== $query_error || !is_array($old_timeouts)
+            || !ctype_digit((string) ($old_timeouts['metadata_wait'] ?? ''))
+            || !ctype_digit((string) ($old_timeouts['row_wait'] ?? ''))) {
+            self::record_degradation('purge (lock limits)', 'Could not read safe retention lock limits; no rows were removed.', self::DEGRADATION_OPERATIONAL);
             return;
         }
-
-        // ── Then the pageviews ──────────────────────────────────────────────────────
-        if ($archive) {
-            // Same collision guard as for events, on the pageviews' own primary key, and
-            // over the same 33 columns the INSERT below copies.
-            $stats_are_replays = \SlimStat\Utils\PurgeArchive::sameRow($stats_columns, 'id', 's');
-
-            // Same tri-state as the events probe above.
-            $stats_collision = \SlimStat\Utils\PurgeArchive::probeForCollision(
-                self::$wpdb,
-                "SELECT 1 FROM {$table_stats} s
-                 INNER JOIN {$table_stats_archive} a ON a.id = s.id
-                 WHERE s.dt < %d
-                   AND NOT ({$stats_are_replays})
-                 LIMIT 1",
-                [$days_ago]
-            );
-
-            if (null === $stats_collision) {
-                self::record_degradation(
-                    'purge (archiving pageviews)',
-                    'could not check the pageview archive for key collisions, so nothing was deleted: '
-                        . self::$wpdb->last_error
-                        . '. An "Illegal mix of collations" here means the utf8mb4 conversion ran on '
-                        . 'some tables and not others - finish it before the purge can run again.',
-                    self::DEGRADATION_OPERATIONAL
-                );
-                return;
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix tables; validated integer session limits and prepared retention dates.
+        try {
+            $wait = max(1, min(5, (int) ceil($budget)));
+            if (false === $db->query('SET SESSION lock_wait_timeout = ' . min($wait, (int) $old_timeouts['metadata_wait'])
+                . ', innodb_lock_wait_timeout = ' . min($wait, (int) $old_timeouts['row_wait']))) {
+                $error = 'Could not establish safe retention lock limits: ' . $db->last_error;
+            } else {
+                $oldest = [];
+                foreach ([$table_stats, $table_events] as $table) {
+                    $value = $db->get_var($db->prepare("SELECT MIN(dt) FROM {$table} WHERE dt < %d", $days_ago));
+                    $query_error = (string) $db->last_error;
+                    if ('' !== $query_error) { throw new \RuntimeException($query_error); }
+                    if (null !== $value) { $oldest[] = (int) $value; }
+                }
+                $from = $oldest ? min($oldest) : $days_ago;
+                while ($from < $days_ago && microtime(true) < $deadline) {
+                    $to = min($days_ago, $from + $width);
+                    $started = microtime(true);
+                    $batch = \SlimStat\Utils\PurgeArchive::purgeBatch($db, $GLOBALS['wpdb']->prefix,
+                        $from, $to, $archive, $event_columns, $stats_columns);
+                    $rows_removed += $batch['stats'];
+                    if ($batch['stats'] > 0 || $batch['events'] > 0) { self::bump_data_version(); }
+                    $error = $batch['error'];
+                    if ('' !== $error) {
+                        if ($width > HOUR_IN_SECONDS && preg_match('/lock wait timeout|deadlock/i', $error)) {
+                            $width = max(HOUR_IN_SECONDS, (int) floor($width / 2));
+                            $error = '';
+                            continue;
+                        }
+                        break;
+                    }
+                    // Drain exact-key batches before advancing, including new events on an old parent.
+                    if (0 === $batch['stats'] && 0 === $batch['events']) { $from = $to; }
+                    if (microtime(true) - $started > 1 && $width > HOUR_IN_SECONDS) {
+                        $width = max(HOUR_IN_SECONDS, (int) floor($width / 2));
+                    }
+                }
             }
-
-            if ($stats_collision) {
-                self::record_degradation(
-                    'purge (archiving pageviews)',
-                    'the pageview archive already holds different rows under the primary keys about to '
-                        . 'be archived, so nothing was deleted. This usually means AUTO_INCREMENT was '
-                        . 'reset after records were cleared.',
-                    self::DEGRADATION_OPERATIONAL
-                );
-                return;
+        } catch (\Throwable $failure) {
+            $error = $failure->getMessage();
+        } finally {
+            if (false === $db->query('SET SESSION lock_wait_timeout = ' . (int) $old_timeouts['metadata_wait']
+                . ', innodb_lock_wait_timeout = ' . (int) $old_timeouts['row_wait'])) {
+                $error .= ' Could not restore retention lock limits: ' . $db->last_error;
             }
-
-            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
-            if (false === self::$wpdb->query(self::$wpdb->prepare(
-                "INSERT IGNORE INTO {$table_stats_archive} (" . implode(', ', $stats_columns) . ")
-                 SELECT " . implode(', ', $stats_columns) . " FROM {$table_stats} WHERE dt < %d",
-                $days_ago
-            ))) {
-                self::record_degradation(
-                    'purge (archiving pageviews)',
-                    self::$wpdb->last_error,
-                    self::DEGRADATION_OPERATIONAL
-                );
-            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
-                return;
-            }
-
         }
-
-        $rows_removed = \SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)->execute();
-
-        if (false === $rows_removed) {
-            self::record_degradation('purge (deleting pageviews)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);
+        if ('' !== $error) {
+            self::record_degradation('purge (verified retention)', $error, self::DEGRADATION_OPERATIONAL);
+            return;
+        }
+        $remaining = false;
+        foreach ([$table_stats, $table_events] as $table) {
+            $found = $db->get_var($db->prepare("SELECT 1 FROM {$table} WHERE dt < %d LIMIT 1", $days_ago));
+            $query_error = (string) $db->last_error;
+            if ('' !== $query_error) {
+                self::record_degradation('purge (checking completion)', $query_error, self::DEGRADATION_OPERATIONAL);
+                return;
+            }
+            $remaining = $remaining || null !== $found;
+        }
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
+        if ($remaining) {
+            $next = wp_next_scheduled('wp_slimstat_purge');
+            if (!$next || $next > time() + 120) { wp_schedule_single_event(time() + 60, 'wp_slimstat_purge'); }
             return;
         }
 
@@ -2065,10 +1980,10 @@ class wp_slimstat
             && $rows_removed > 0 && (self::now() - $last_optimized) > 30 * DAY_IN_SECONDS) {
             self::update_option('slimstat_purge_optimized_at', self::now(), false);
             // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
-            self::$wpdb->query('OPTIMIZE TABLE ' . $table_stats);
+            $db->query('OPTIMIZE TABLE ' . $table_stats);
             // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
-            self::$wpdb->query('OPTIMIZE TABLE ' . $table_events);
+            $db->query('OPTIMIZE TABLE ' . $table_events);
             // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         }
 

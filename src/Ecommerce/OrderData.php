@@ -63,11 +63,12 @@ final class OrderData
 				$lineRefunds[$id]['quantity'] = ($lineRefunds[$id]['quantity'] ?? 0) + Money::units((string) $line->get_quantity());
 			}
 		}
+		$fullyRefunded = Money::units((string) $order->get_total()) > 0 && $refunded === Money::units((string) $order->get_total());
 		$base['net'] = Money::decimal(Money::net((string) $order->get_total(), (string) $order->get_total_tax(), (string) $order->get_shipping_total(), $refunds));
 		$base['refund'] = Money::decimal($refunded);
 		$base['discount'] = (string) $order->get_discount_total();
-		$base['tax'] = Money::decimal(Money::units((string) $order->get_total_tax()) - $taxRefunded);
-		$base['shipping'] = Money::decimal(Money::units((string) $order->get_shipping_total()) - $shippingRefunded);
+		$base['tax'] = Money::decimal($fullyRefunded ? 0 : Money::units((string) $order->get_total_tax()) - $taxRefunded);
+		$base['shipping'] = Money::decimal($fullyRefunded ? 0 : Money::units((string) $order->get_shipping_total()) - $shippingRefunded);
 		$rows = [$base];
 		foreach ($order->get_items('line_item') as $id => $item) {
 			$line = $base;
@@ -78,6 +79,10 @@ final class OrderData
 			$line['net'] = Money::decimal(Money::units((string) $item->get_total()) + ($lineRefunds[$id]['total'] ?? 0));
 			$line['quantity'] = Money::decimal(Money::units((string) $item->get_quantity()) + ($lineRefunds[$id]['quantity'] ?? 0));
 			$line['refund'] = Money::decimal(-($lineRefunds[$id]['total'] ?? 0));
+			if ($fullyRefunded) {
+				$line['net'] = $line['quantity'] = '0.000000';
+				$line['refund'] = Money::decimal(Money::units((string) $item->get_total()));
+			}
 			$line['discount'] = Money::decimal(Money::units((string) $item->get_subtotal()) - Money::units((string) $item->get_total()));
 			$rows[] = $line;
 		}

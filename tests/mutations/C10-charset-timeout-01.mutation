@@ -1,0 +1,18 @@
+target: src/Migration/Migrations/ConvertTablesToUtf8mb4.php
+gate: php tests/schema-online-safety-test.php
+kind: guard-removal
+expect: charset conversion restores lock limit
+rationale: Manual conversion must retain bounded and restored session settings.
+---
+--- a/src/Migration/Migrations/ConvertTablesToUtf8mb4.php
++++ b/src/Migration/Migrations/ConvertTablesToUtf8mb4.php
+@@ -295,8 +295,7 @@
+ 
+             // This optional, explicitly requested conversion permits a copy. The shared
+             // helper bounds lock_wait_timeout and restores the connection after each table.
+-            $result = Schema::alterOnline(
+-                $this->wpdb,
++            $result = $this->wpdb->query(
+                 "ALTER TABLE `{$table}` CONVERT TO CHARACTER SET utf8mb4 COLLATE {$collation}",
+                 true
+             );

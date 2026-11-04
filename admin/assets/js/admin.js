@@ -1,7 +1,5 @@
 function SlimStatReportBody(id) {
-    var inside = jQuery("#" + id + " .inside");
-    var body = inside.children(".slimstat-dashboard-report");
-    return body.length ? body : inside;
+    return jQuery("#" + id + " .inside");
 }
 
 if (typeof SlimStatAdminParams == "undefined") {
@@ -471,8 +469,22 @@ jQuery(function () {
                 var reportId = pendingReports.shift();
                 // Pagination or a manual refresh may have loaded this queued report already.
                 if (jQuery("#" + reportId).data("slimstat-refresh")) continue;
+                var batchIds = [];
+                var freeIds = SlimStatAdminParams.batch_report_ids || [];
+                if (!jQuery('body').hasClass('index-php') && freeIds.indexOf(reportId) !== -1) {
+                    batchIds.push(reportId);
+                    pendingReports = pendingReports.filter(function (id) {
+                        if (jQuery('#' + id).data('slimstat-refresh')) return false;
+                        if (batchIds.length < 25 && freeIds.indexOf(id) !== -1) {
+                            batchIds.push(id);
+                            return false;
+                        }
+                        return true;
+                    });
+                }
                 activeReports++;
-                jQuery.when(SlimStatAdmin.refresh_report(reportId)()).always(function () {
+                var loading = batchIds.length ? SlimStatAdmin.refresh_reports(batchIds) : SlimStatAdmin.refresh_report(reportId)();
+                jQuery.when(loading).always(function () {
                     activeReports--;
                     loadReports();
                 });
@@ -488,6 +500,8 @@ jQuery(function () {
             loadReports();
         }, { rootMargin: '200px' }) : null;
         jQuery("div[id^=slim_p]").each(function () {
+            // Customize uses report IDs for layout placeholders, without a report body.
+            if (!SlimStatReportBody(this.id).length) return;
             // Skip Charts
             if (jQuery(this).find(".chart-placeholder, .refresh-timer").length == 0) {
                 SlimStatReportBody(jQuery(this).attr("id")).html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
@@ -1737,6 +1751,53 @@ var SlimStatAdmin = {
     // could fire well within refresh_interval seconds of the manual refresh.
     _resetAutoRefreshSchedule: null,
 
+    refresh_reports: function (ids) {
+        var requests = [];
+        var pending = ids.map(function (id) {
+            var response = jQuery.Deferred();
+            var item = { id: id, response: response };
+            // Reuse the single-report renderer, including charts, pagination and stale-response guards.
+            var loaded = SlimStatAdmin.refresh_report(id, { request: function (data) {
+                item.data = data;
+                return response.promise();
+            } })();
+            item.token = jQuery('#' + id).data('slimstat-refresh');
+            requests.push(item);
+            return loaded;
+        });
+        if (!requests.length) return jQuery.Deferred().resolve().promise();
+        var data = jQuery.extend({}, requests[0].data, { action: 'slimstat_load_reports', report_ids: ids, granularities: {} });
+        delete data.report_id;
+        delete data.granularity;
+        requests.forEach(function (item) { data.granularities[item.id] = item.data.granularity || ''; });
+        var fallback = [];
+        function retryNext() {
+            var item = fallback.shift();
+            if (!item) return;
+            if (jQuery('#' + item.id).data('slimstat-refresh') !== item.token) {
+                item.response.reject();
+                retryNext();
+                return;
+            }
+            // One fallback per batch at a time keeps the outer three-request bound intact.
+            jQuery.ajax({ method: 'POST', url: ajaxurl, data: item.data })
+                .done(function (html) { item.response.resolve(html); })
+                .fail(function () { item.response.reject(); })
+                .always(retryNext);
+        }
+        jQuery.ajax({ method: 'POST', url: ajaxurl, data: data, dataType: 'json' })
+            .done(function (payload) {
+                requests.forEach(function (item) {
+                    var html = payload && payload.success && payload.data && payload.data[item.id];
+                    if (typeof html === 'string') item.response.resolve(html);
+                    else fallback.push(item);
+                });
+            })
+            .fail(function () { fallback = requests.slice(); })
+            .always(retryNext);
+        return jQuery.when.apply(jQuery, pending);
+    },
+
     refresh_report: function (id, opts) {
         opts = opts || {};
         if (id === 'slim_p10_01' && window.SlimStatEcommerce) {
@@ -1757,7 +1818,7 @@ var SlimStatAdmin = {
                 SlimStatReportBody(id).html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
             }
 
-            data = {
+            var data = {
                 action: "slimstat_load_report",
                 security: jQuery("#meta-box-order-nonce").val(),
                 page: SlimStatAdmin.get_current_tab() || (jQuery("body").hasClass("index-php") ? "dashboard" : ""),
@@ -1775,8 +1836,8 @@ var SlimStatAdmin = {
             }
 
             // Append the data from the hidden form
-            filters_input = jQuery("#slimstat-filters-form .slimstat-post-filter").toArray();
-            for (i in filters_input) {
+            var filters_input = jQuery("#slimstat-filters-form .slimstat-post-filter").toArray();
+            for (var i in filters_input) {
                 data[filters_input[i]["name"]] = filters_input[i]["value"];
             }
 
@@ -1805,16 +1866,18 @@ var SlimStatAdmin = {
                 SlimStatAdmin._isAccessLogInFlight = true;
             }
 
-            jQuery
-                .ajax({ method: "POST", url: ajaxurl, data: data })
+            var request = opts.request ? opts.request(data) : jQuery.ajax({ method: "POST", url: ajaxurl, data: data });
+            request
                 .done(function (response) {
                     if (report.data("slimstat-refresh") !== defer) return;
                     var filteredResponse = jQuery("<div>").html(response);
 
                     if (id !== "slim_p8_02" && id !== "slim_p8_01") {
-                        filteredResponse.find(".pagination").remove();
-                        var paginationHtml = jQuery(response).last().html();
-                        jQuery("#" + id + " .pagination").html(paginationHtml);
+                        // Async shells have no footer yet. Keep it outside the replaceable body
+                        // so a spinner or a delayed content animation cannot erase navigation.
+                        var pagination = filteredResponse.find(".pagination").detach();
+                        report.find(".pagination").remove();
+                        report.append(pagination);
                     }
 
                     if (jQuery("#" + id).hasClass("chart") || filteredResponse.find('[id^="slimstat_chart_data_"]').length) {

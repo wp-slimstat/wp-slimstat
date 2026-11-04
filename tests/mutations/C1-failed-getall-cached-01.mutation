@@ -1,0 +1,17 @@
+target:    src/Utils/Query.php
+gate:      php tests/query-failed-query-cache-test.php
+kind:      guard-removal
+expect:    getAll: a failed statement must not be cached
+rationale: The non-split getAll() writer is the one every historical report goes through. A failed get_results() returns [] and, unguarded, is cached as 'no rows' for an hour. The gate fails the statement, asserts no transient, and asserts the next call reaches the database.
+---
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -2040,7 +2040,7 @@
+             $this->lastQueryFailed = true;
+         }
+ 
+-        if ($useCache && !$this->lastQueryFailed) {
++        if ($useCache) {
+             try {
+                 $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
+             } catch (\Throwable $exception) {
