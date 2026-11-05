@@ -526,6 +526,7 @@ function slimstat_uninstall($_wpdb = '')
     delete_option('slimstat_channels_since');
     delete_option('slimstat_goals_funnels_since');
     delete_option('slimstat_ecommerce_since');
+    delete_option('slimstat_forms_since');
     delete_option('slimstat_heatmaps_since');
     delete_option('slimstat_ai_since');
     delete_option('slimstat_shortcodes_since');
@@ -562,6 +563,9 @@ delete_option('slimstat_migration_dismissed');
 delete_option('slimstat_heatmap_recovery_watermark');
 // SlimStat\Heatmap\Store: STATE, GENERATION and the setup CLAIM. Its tables come from the manifest.
 delete_option('slimstat_heatmap_state');
+delete_option('slimstat_forms_state');
+delete_option('slimstat_forms_enabled');
+delete_option('slimstat_forms_setup');
 delete_option('slimstat_heatmap_generation');
 delete_option('slimstat_heatmap_setup');
 

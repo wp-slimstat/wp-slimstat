@@ -612,5 +612,13 @@ assert_not_contains('javascript:', $tooltip_html, 'Tooltip rejects unsafe URL');
 $tooltip_report->test_tooltip = null;
 assert_contains('tooltip-test', $tooltip_report->tooltip_html(), 'Absent tooltip uses escaped report ID');
 
+$filter_label = 'Customer\'s "form" <img src=x onerror="attack()">';
+wp_slimstat_db::$all_columns_names['addon_form'] = [$filter_label];
+wp_slimstat_db::$operator_names['equals'] = 'equals';
+$filter_html = wp_slimstat_reports::get_filters_html(['addon_form' => ['equals', 'cf7:5']]);
+assert_contains("title='Remove filter for " . esc_attr($filter_label) . "'", $filter_html, 'Filter title escapes quotes and markup from its label');
+assert_contains(esc_html(strtolower($filter_label)), $filter_html, 'Visible filter label is plain text');
+assert_not_contains('<img', $filter_html, 'Filter labels cannot inject image markup');
+
 $GLOBALS['reports_escaping_verdict_reached'] = true;
 echo "All {$assertions} assertions passed in reports-output-escaping-test.php\n";

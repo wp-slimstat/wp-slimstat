@@ -88,7 +88,7 @@ function SlimStatReportRows(body) {
             if (!scope || !text(scope)) return [];
             const rows = [text(viewer.querySelector(".ss-hmv-title")), text(scope)];
             const device = viewer.querySelector('[data-device][aria-selected="true"]');
-            /* translators: %s: selected device, such as Mobile or Desktop. */
+            /* translators: %s: selected device filter, such as Mobile, Desktop or All devices. */
             if (device) rows.push(sprintf(__("Device: %s", "wp-slimstat"), device.firstChild.textContent.trim()));
             if (viewer.querySelector('[name="range"]').value === "custom") {
                 /* translators: 1: first day (YYYY-MM-DD), 2: last day (YYYY-MM-DD). */
@@ -128,6 +128,17 @@ function SlimStatReportRows(body) {
             rows.push(...Array.from(panel.querySelectorAll(".ss-ec-footnote, .ss-ec-report-info p"), text));
         });
         rows.push(...Array.from(body.querySelectorAll(".ss-ec-quality summary, .ss-ec-quality-body p, .ss-ec-scope, .ss-ec-definitions dt, .ss-ec-definitions dd"), text));
+        return rows;
+    }
+    const forms = body.querySelector(".ss-forms");
+    if (forms) {
+        if (forms.querySelector('[role="alert"], .ss-forms-empty')) return [];
+        const rows = Array.from(forms.querySelectorAll(".ss-forms-funnel > div"), text);
+        forms.querySelectorAll("table").forEach((table) => {
+            if (table.closest(".ss-forms-pro") && !table.closest("[data-forms-premium]")) return;
+            rows.push(...Array.from(table.rows, cells));
+        });
+        rows.push(...Array.from(forms.querySelectorAll(".ss-forms-definitions dt, .ss-forms-definitions dd"), text));
         return rows;
     }
     const chart = body.querySelector("[data-data]");
@@ -176,7 +187,7 @@ jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
     if (box.matches(".ss-hm") && !box.querySelector(".ss-hmv")) {
         const device = box.querySelector('[name="device"]');
         const search = box.querySelector('[name="q"]');
-        /* translators: %s: selected device, such as Mobile or All devices. */
+        /* translators: %s: selected device filter, such as Mobile, Desktop or All devices. */
         filters.push(sprintf(__("Device: %s", "wp-slimstat"), inert(device.selectedOptions[0].textContent)));
         /* translators: %s: text used to search page addresses. */
         if (search.value.trim()) filters.push(sprintf(__("Search: %s", "wp-slimstat"), inert(search.value.trim())));
@@ -1663,6 +1674,9 @@ jQuery(function () {
 
         SlimStatAdmin.add_url_filters_to_form(url, typeof jQuery(this).attr("data-reset-filters") != "undefined", jQuery(this).hasClass("slimstat-filter-temp"));
 
+        if (SlimStatAdmin.get_current_tab(url.split("?")[1]) !== "slimforms") {
+            jQuery('#slimstat-filters-form [name="fs[addon_form]"]').remove();
+        }
         jQuery("#slimstat-filters-form").trigger("submit");
 
         // Remove any temporary filters set here above
@@ -2019,6 +2033,7 @@ var SlimStatAdmin = {
         return function () {
             var defer = jQuery.Deferred();
             var report = jQuery("#" + id);
+            if (id === "slim_forms_01" && window.SlimStatFormsReport) window.SlimStatFormsReport.destroy();
             report.data("slimstat-refresh", defer);
             var granularity = jQuery("#" + id + " .slimstat-granularity-select").val();
             // Fallback to localStorage when the select is missing or about to be destroyed
@@ -2100,6 +2115,9 @@ var SlimStatAdmin = {
                         if (typeof window.reinitializeSlimStatCharts === "function") {
                             window.reinitializeSlimStatCharts(id);
                         }
+                    } else if (id === "slim_forms_01") {
+                        SlimStatReportBody(id).html(filteredResponse.html());
+                        if (window.SlimStatFormsReport) window.SlimStatFormsReport.init();
                     } else if (id == SlimStatAdmin.ACCESS_LOG_REPORT_ID) {
                         // #258 B3 — Scroll-preserving swap for the Access Log.
                         // The fadeOut/fadeIn dance and scroll-resetting spinner are

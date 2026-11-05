@@ -1,0 +1,69 @@
+{
+  "contact-form-7": {
+    "version": "6.2.4.1",
+    "adapter": "cf7",
+    "hooks": [
+      "wpcf7_form_elements",
+      "wpcf7_submit"
+    ]
+  },
+  "wpforms-lite": {
+    "version": "2.0.3.1",
+    "adapter": "wpforms",
+    "hooks": [
+      "wpforms_frontend_output",
+      "wpforms_process_complete",
+      "wpforms_process_anti_spam_entry_marked_as_spam"
+    ]
+  },
+  "fluentform": {
+    "version": "6.2.17",
+    "adapter": "fluent",
+    "hooks": [
+      "fluentform/form_element_start",
+      "fluentform/before_insert_submission",
+      "fluentform/submission_inserted"
+    ]
+  },
+  "forminator": {
+    "version": "1.58.4",
+    "adapter": "forminator",
+    "hooks": [
+      "forminator_before_form_render",
+      "forminator_render_form_submit_markup",
+      "forminator_custom_form_submit_before_set_fields"
+    ]
+  },
+  "ninja-forms": {
+    "version": "3.16.0",
+    "adapter": "ninja",
+    "hooks": [
+      "ninja_forms_display_before_fields",
+      "ninja_forms_after_submission"
+    ]
+  },
+  "formidable": {
+    "version": "7.0",
+    "adapter": "formidable",
+    "hooks": [
+      "frm_entry_form",
+      "frm_after_create_entry"
+    ]
+  },
+  "snow-monkey-forms": {
+    "version": "13.0.1",
+    "adapter": "snow",
+    "hooks": [
+      "snow_monkey_forms/complete/message"
+    ]
+  },
+  "mw-wp-form": {
+    "version": "5.1.8",
+    "adapter": "mw",
+    "hooks": [
+      "mwform_start_main_process",
+      "mwform_form_end_html",
+      "mwform_error_message_html"
+    ]
+  }
+}

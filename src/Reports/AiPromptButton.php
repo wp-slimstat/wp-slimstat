@@ -21,7 +21,8 @@ final class AiPromptButton
     /** The native reader and clipboard use the same personal-report boundary. */
     public static function eligible(string $reportId, array $report, array $filterColumns): bool
     {
-        $privacyId = 'slim_p10_01' === $reportId ? '' : $reportId;
+        if ('slim_forms_01' === $reportId && !\SlimStat\Forms\Report::canView()) { return false; }
+        $privacyId = in_array($reportId, ['slim_p10_01', 'slim_forms_01'], true) ? '' : $reportId;
         return !empty($report) && !array_intersect(self::ONE_VISITOR_FILTERS, array_keys($filterColumns))
             && !Shortcode::isStaff($privacyId, $report['callback_args'] ?? []);
     }

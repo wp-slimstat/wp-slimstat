@@ -855,6 +855,7 @@ foreach ([
     'slimstat_channels_since',
     'slimstat_goals_funnels_since',
     'slimstat_ecommerce_since',
+    'slimstat_forms_since',
     'slimstat_heatmaps_since',
     'slimstat_ai_since',
     'slimstat_shortcodes_since',

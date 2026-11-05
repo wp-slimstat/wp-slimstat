@@ -98,6 +98,59 @@ final class Schema
      * @var array<string,array<string,mixed>>
      */
     private const TABLES = [
+        // Form-session state: one mutable summary, never a raw interaction log.
+        'slim_form_sessions' => [
+            'on_demand' => true,
+            'columns' => [
+                'form' => 'VARCHAR(48) NOT NULL',
+                'cohort' => 'VARCHAR(32) NOT NULL',
+                'stat_id' => 'INT UNSIGNED NOT NULL',
+                'visit_id' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+                'dt' => 'INT UNSIGNED NOT NULL',
+                'updated' => 'INT UNSIGNED NOT NULL',
+                'day' => 'INT UNSIGNED NOT NULL',
+                'device' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0',
+                'channel' => "VARCHAR(32) NOT NULL DEFAULT ''",
+                'flags' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0',
+                'started_at' => 'INT UNSIGNED NOT NULL DEFAULT 0',
+                'submitted_at' => 'INT UNSIGNED NOT NULL DEFAULT 0',
+                'duration' => 'INT UNSIGNED NOT NULL DEFAULT 0',
+                'fields' => 'TEXT NOT NULL',
+            ],
+            'primary' => 'form, cohort',
+            'foreign_key' => [
+                'name' => 'fk_{prefix}slim_form_session_stat',
+                'column' => 'stat_id', 'references' => 'slim_stats', 'on' => 'id', 'delete' => 'CASCADE',
+            ],
+            'indexes' => [
+                'idx_forms_stat' => 'stat_id',
+                'idx_forms_period' => 'day, form',
+                'idx_forms_visit' => 'visit_id, form',
+            ],
+        ],
+        'slim_form_daily' => [
+            'on_demand' => true,
+            'columns' => [
+                'day' => 'INT UNSIGNED NOT NULL',
+                'form' => 'VARCHAR(48) NOT NULL',
+                'device' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0',
+                'channel' => "VARCHAR(32) NOT NULL DEFAULT ''",
+                'loaded' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+                'seen' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+                'started' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+                'submitted' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+                'converted' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+                'completed_starts' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+                'invalid' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+                'spam' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+                'failed' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+                'duration' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+                'timed' => 'BIGINT UNSIGNED NOT NULL DEFAULT 0',
+            ],
+            'primary' => 'day, form, device, channel',
+            'indexes' => ['idx_forms_detail' => 'form, day'],
+        ],
+
         // Rebuildable WooCommerce projection. Created only by Ecommerce setup;
         // declaring it here keeps inventory, recovery and uninstall consistent.
         'slim_ecommerce' => [

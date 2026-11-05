@@ -1,0 +1,145 @@
+{
+  "boot_php_bytes": 195887104,
+  "seed_seconds": 12.48,
+  "rows": {
+    "visits": 1000000,
+    "cohorts": 100000,
+    "daily": 6000
+  },
+  "storage": [
+    {
+      "TABLE_NAME": "slim_form_daily",
+      "DATA_LENGTH": "1589248",
+      "INDEX_LENGTH": "311296"
+    },
+    {
+      "TABLE_NAME": "slim_form_sessions",
+      "DATA_LENGTH": "19447808",
+      "INDEX_LENGTH": "10010624"
+    }
+  ],
+  "overview": {
+    "median_ms": 7.26,
+    "p95_ms": 7.48,
+    "analytics_queries": 1,
+    "allocated_delta_bytes": 0,
+    "explain": [
+      [
+        {
+          "id": "1",
+          "select_type": "SIMPLE",
+          "table": "formsbench_36652_slim_form_daily",
+          "partitions": null,
+          "type": "range",
+          "possible_keys": "PRIMARY,idx_forms_detail",
+          "key": "PRIMARY",
+          "key_len": "4",
+          "ref": null,
+          "rows": "3000",
+          "filtered": "100.00",
+          "Extra": "Using where; Using temporary; Using filesort"
+        }
+      ]
+    ],
+    "cached_ms": 0.06,
+    "cached_analytics_queries": 0
+  },
+  "detail": {
+    "median_ms": 2.75,
+    "p95_ms": 2.88,
+    "analytics_queries": 4,
+    "allocated_delta_bytes": 0,
+    "explain": [
+      [
+        {
+          "id": "1",
+          "select_type": "SIMPLE",
+          "table": "formsbench_36652_slim_form_daily",
+          "partitions": null,
+          "type": "range",
+          "possible_keys": "PRIMARY,idx_forms_detail",
+          "key": "idx_forms_detail",
+          "key_len": "198",
+          "ref": null,
+          "rows": "300",
+          "filtered": "100.00",
+          "Extra": "Using index condition"
+        }
+      ],
+      [
+        {
+          "id": "1",
+          "select_type": "SIMPLE",
+          "table": "formsbench_36652_slim_form_daily",
+          "partitions": null,
+          "type": "range",
+          "possible_keys": "PRIMARY,idx_forms_detail",
+          "key": "idx_forms_detail",
+          "key_len": "198",
+          "ref": null,
+          "rows": "300",
+          "filtered": "100.00",
+          "Extra": "Using index condition; Using temporary; Using filesort"
+        }
+      ],
+      [
+        {
+          "id": "1",
+          "select_type": "SIMPLE",
+          "table": "formsbench_36652_slim_form_daily",
+          "partitions": null,
+          "type": "range",
+          "possible_keys": "PRIMARY,idx_forms_detail",
+          "key": "idx_forms_detail",
+          "key_len": "198",
+          "ref": null,
+          "rows": "300",
+          "filtered": "100.00",
+          "Extra": "Using index condition; Using temporary; Using filesort"
+        }
+      ],
+      [
+        {
+          "id": "1",
+          "select_type": "SIMPLE",
+          "table": "formsbench_36652_slim_form_daily",
+          "partitions": null,
+          "type": "range",
+          "possible_keys": "PRIMARY,idx_forms_detail",
+          "key": "idx_forms_detail",
+          "key_len": "198",
+          "ref": null,
+          "rows": "300",
+          "filtered": "100.00",
+          "Extra": "Using index condition"
+        }
+      ]
+    ],
+    "cached_ms": 0.06,
+    "cached_analytics_queries": 0
+  },
+  "journey_index_seconds": 0.607,
+  "pro_fields": {
+    "median_ms": 11.39,
+    "p95_ms": 17.92,
+    "allocated_delta_bytes": 2097152
+  },
+  "pro_journeys": {
+    "median_ms": 24.32,
+    "p95_ms": 33.41,
+    "allocated_delta_bytes": 0
+  },
+  "write_flow": {
+    "visits": 100,
+    "seconds": 0.196,
+    "statements_per_transition": {
+      "seen": 8,
+      "started": 8,
+      "confirmed": 9
+    },
+    "retry_statements": 6
+  },
+  "peak_php_bytes": 202178560,
+  "php": "8.5.5",
+  "mysql": "8.0.35"
+}

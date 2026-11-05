@@ -210,7 +210,8 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         // update this number deliberately, which is the point.
         // Ecommerce enabled: three projection indexes; the opt-in visit index is unmanaged here.
         // Heatmaps enabled: two capture indexes; the element dictionary has none.
-        $this->assertCount(24, $report['present']);
+        // Form Analytics enabled: three cohort indexes and one daily report index.
+        $this->assertCount(28, $report['present']);
 
         // One patterned SHOW TABLES for ALL tables, then per RECONCILED table one SHOW INDEX and
         // one SHOW COLUMNS: 1 + 4 + 4 (slim_events, slim_events_archive, slim_stats,
@@ -233,7 +234,7 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         // questions before changing it. 12 to 15 for heatmaps (6.1.0): only on sites that enabled
         // heatmap tracking, on the same two non-per-request paths; ordinary sites keep 10 (below).
         $this->assertCount(
-            16,
+            20,
             $this->probes,
             'a healthy install must cost one table probe plus one index probe and one column '
                 . 'probe per reconciled table: ' . implode(' | ', $this->probes)
@@ -243,10 +244,10 @@ class SchemaEnsureTest extends WpSlimstatTestCase
     public function testCommerceIsNotCreatedOrIndexedBeforeOptIn(): void
     {
         [$tables, $indexes] = $this->healthy();
-        $tables = array_values(array_diff($tables, ['wp_slim_ecommerce', 'wp_slim_heatmap', 'wp_slim_heatmap_elements']));
+        $tables = array_values(array_diff($tables, ['wp_slim_ecommerce', 'wp_slim_heatmap', 'wp_slim_heatmap_elements', 'wp_slim_form_sessions', 'wp_slim_form_daily']));
         $indexes['wp_slim_stats'] = array_values(array_diff($indexes['wp_slim_stats'], ['idx_ecommerce_visit']));
         $report = Schema::ensure($this->db($tables, $indexes), 'wp_', static fn() => 'utf8mb4_unicode_ci');
-        $this->assertSame([], $this->queries, 'ordinary sites incur no Ecommerce or heatmap DDL');
+        $this->assertSame([], $this->queries, 'ordinary sites incur no Ecommerce, heatmap or Form Analytics DDL');
         $this->assertSame([], $report['failed']);
         $this->assertCount(19, $report['present']);
         $this->assertCount(11, $this->probes, 'one additional archive metadata probe on activation/upgrade, never per request');
