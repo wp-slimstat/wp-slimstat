@@ -1160,7 +1160,11 @@ class wp_slimstat_admin
         }
 
         try {
-            return self::run_schema_upgrade();
+            $complete = self::run_schema_upgrade();
+            if ($complete) {
+                wp_slimstat::clear_degradation('schema upgrade');
+            }
+            return $complete;
         } catch (\Throwable $e) {
             wp_slimstat::record_degradation('schema upgrade', $e, wp_slimstat::DEGRADATION_OPERATIONAL);
 
@@ -1543,7 +1547,7 @@ class wp_slimstat_admin
         update_option('slimstat_goals_cache_ver', (string) microtime(true), false);
 
         // Do not declare the upgrade complete while historical visit IDs could be reused.
-        if (\SlimStat\Tracker\VisitIdGenerator::initializeCounter() < 0) {
+        if (\SlimStat\Tracker\VisitIdGenerator::initializeCounter() < 0 || !\SlimStat\Tracker\VisitIdGenerator::isInitialized()) {
             throw new \RuntimeException('Visit counter initialization did not complete.');
         }
 
@@ -1562,6 +1566,11 @@ class wp_slimstat_admin
         }
         wp_slimstat::$settings['version'] = SLIMSTAT_ANALYTICS_VERSION;
         wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
+
+        $stored_settings = is_network_admin() ? get_site_option('slimstat_options', []) : get_option('slimstat_options', []);
+        if (($stored_settings['version'] ?? '') !== SLIMSTAT_ANALYTICS_VERSION) {
+            throw new \RuntimeException('The database upgrade version could not be saved.');
+        }
 
         return true;
     }

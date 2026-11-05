@@ -24,6 +24,8 @@ $has_required_migrations = isset($has_required_migrations) ? $has_required_migra
 $offered_migrations      = (isset($offered_migrations) && is_array($offered_migrations)) ? $offered_migrations : [];
 $analytics_myisam        = !empty($analytics_myisam);
 $column_drift = isset($column_drift) && is_array($column_drift) ? $column_drift : null;
+$counter_initialized = !empty($counter_initialized);
+$upgrade_pending = !empty($upgrade_pending);
 
 ?>
 
@@ -72,17 +74,32 @@ $column_drift = isset($column_drift) && is_array($column_drift) ? $column_drift 
                     // element, so a failed step reported into something with display:none.
                     // Pinned by tests/migration-notice-visibility-test.php.
                     ?>
-                    <div id="slimstat-status-note" class="status-note notice inline slimstat-migration-notice <?php echo $has_required_migrations ? 'notice-info' : ([] === $column_drift ? 'notice-success' : 'notice-warning'); ?>">
+                    <div id="slimstat-status-note" class="status-note notice inline slimstat-migration-notice <?php echo $has_required_migrations ? 'notice-info' : ([] === $column_drift && $counter_initialized && !$upgrade_pending ? 'notice-success' : 'notice-warning'); ?>">
                         <?php if ($has_required_migrations): ?>
                             <?php echo esc_html__('Click "Start Migration" to begin. Progress and details will appear here.', 'wp-slimstat'); ?>
                         <?php elseif (null === $column_drift): ?>
                             <?php echo esc_html__('SlimStat could not verify the database structure. Check the database connection and permissions, then reload this page. Existing warnings are retained.', 'wp-slimstat'); ?>
                         <?php elseif ([] !== $column_drift): ?>
                             <?php echo esc_html__('Database columns still differ from this version. Review the details and the optional repairs below. If no matching repair is offered, ask your database administrator or SlimStat support to review the definitions before changing them.', 'wp-slimstat'); ?>
+                        <?php elseif (!$counter_initialized || $upgrade_pending): ?>
+                            <?php echo esc_html__('Database upgrade is incomplete. Review the recovery guidance below.', 'wp-slimstat'); ?>
                         <?php else: ?>
                             <?php echo esc_html__('✓ Database is up to date', 'wp-slimstat'); ?>
                         <?php endif; ?>
                     </div>
+
+                    <?php if (!$counter_initialized || $upgrade_pending): ?>
+                        <div class="notice notice-warning inline slimstat-migration-notice">
+                            <?php if (!$counter_initialized): ?>
+                                <p><?php echo esc_html__('Visit counter initialization has not been verified for this database and version. New visits may not be recorded until initialization succeeds.', 'wp-slimstat'); ?></p>
+                            <?php endif; ?>
+                            <p><?php echo esc_html__('Back up your database, then retry the database upgrade. Existing visit IDs are preserved and the counter is never lowered. If the retry fails, ask your database administrator or SlimStat support to check access to the analytics table and writes to the WordPress options table.', 'wp-slimstat'); ?></p>
+                            <form class="slimstat-retry-upgrade" method="post" action="<?php echo esc_url(admin_url('admin.php?page=slimstat_migration')); ?>">
+                                <?php wp_nonce_field('slimstat_retry_upgrade'); ?>
+                                <button type="submit" name="slimstat_retry_upgrade" value="1" class="button button-secondary"><?php echo esc_html__('Retry database upgrade', 'wp-slimstat'); ?></button>
+                            </form>
+                        </div>
+                    <?php endif; ?>
 
                     <?php if (is_array($column_drift) && [] !== $column_drift): ?>
                         <ul class="slimstat-column-drift"><?php foreach ($column_drift as $column): ?><li><?php echo esc_html($column); ?></li><?php endforeach; ?></ul>

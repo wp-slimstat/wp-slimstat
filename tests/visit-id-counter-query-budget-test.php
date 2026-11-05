@@ -95,6 +95,9 @@ class VicqbFakeWpdb
             $new = (int) $match[1];
             if (null === $this->counter) {
                 $this->counter = $new;
+            } elseif ($this->counter < 0) {
+                // Casting a negative integer to UNSIGNED wraps; initialization must avoid it.
+                $this->counter = strpos($sql, "LEFT(TRIM(option_value), 1) = '-'") !== false ? $new : PHP_INT_MAX;
             } else {
                 // MySQL semantics, not PHP's. option_value is LONGTEXT, so GREATEST()
                 // compares its arguments as strings unless BOTH are cast to UNSIGNED —
@@ -244,6 +247,30 @@ function vicqb_boot(?int $counter, int $max_visit_id): VicqbFakeWpdb
 
     return $db;
 }
+
+// The Migration screen reads initialization evidence without allocating or writing.
+$db = vicqb_boot(null, 5000);
+vicqb_assert('missing counter is not initialized', !VisitIdGenerator::isInitialized());
+VisitIdGenerator::initializeCounter();
+$db->log = [];
+vicqb_assert('successful initialization is visible', VisitIdGenerator::isInitialized());
+vicqb_assert('status does not allocate or scan history', $db->log === ['OPTION-READ:' . VisitIdGenerator::OPTION_NAME, 'OPTION-READ:' . VisitIdGenerator::REPAIR_MARKER_OPTION]);
+$GLOBALS['_vicqb_blog_id'] = 2;
+vicqb_assert('another site needs its own initialization', !VisitIdGenerator::isInitialized());
+$GLOBALS['_vicqb_blog_id'] = 1;
+$db->dbname = 'other_dataset';
+vicqb_assert('another dataset needs its own initialization', !VisitIdGenerator::isInitialized());
+$db->dbname = 'analytics';
+foreach ([false, '', -1, 'invalid', [], new \stdClass(), '18446744073709551615', '4294967295'] as $invalid) {
+    $GLOBALS['_vicqb_options'][VisitIdGenerator::OPTION_NAME] = $invalid;
+    vicqb_assert('invalid or missing counter is not healthy', !VisitIdGenerator::isInitialized());
+}
+$GLOBALS['_vicqb_options'][VisitIdGenerator::OPTION_NAME] = 0;
+vicqb_assert('zero is valid for an empty dataset', VisitIdGenerator::isInitialized());
+
+$db = vicqb_boot(-1, 5000);
+vicqb_assert('negative corruption is repaired from history without unsigned wrap', VisitIdGenerator::initializeCounter() === 5000);
+vicqb_assert('repaired negative counter issues the next unused ID', VisitIdGenerator::generateNextVisitId() === 5001);
 
 // ── 1. The steady state costs one query ─────────────────────────────────────
 $db = vicqb_boot(5000, 4999);

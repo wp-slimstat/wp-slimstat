@@ -6,6 +6,7 @@ namespace SlimStat\Migration\Admin;
 use SlimStat\Migration\MigrationManager;
 use SlimStat\Migration\MigrationService;
 use SlimStat\Schema\Schema;
+use SlimStat\Tracker\VisitIdGenerator;
 use wp_slimstat_admin;
 
 class MigrationAdmin
@@ -54,8 +55,23 @@ class MigrationAdmin
 			'slimstat_migration',
 			[$this, 'renderPage']
 		);
+		add_action('load-' . $hook, [$this, 'retryUpgrade']);
 		add_action('load-' . $hook, [$this, 'enqueueAssets']);
 	}
+
+    /** Handle an explicit retry before the admin header sends output. */
+    public function retryUpgrade(): void
+    {
+        if (!isset($_POST['slimstat_retry_upgrade'])) {
+            return;
+        }
+        if (!current_user_can('manage_options')) {
+            wp_die(esc_html__('Sorry, you are not allowed to access this page.', 'wp-slimstat'));
+        }
+        check_admin_referer('slimstat_retry_upgrade');
+        wp_slimstat_admin::update_tables_and_options();
+        $this->manager->forgetProbe();
+    }
 
 	public function enqueueAssets(): void
 	{
@@ -207,6 +223,10 @@ class MigrationAdmin
 		if (!current_user_can('manage_options')) {
 			wp_die(esc_html__('Sorry, you are not allowed to access this page.', 'wp-slimstat'));
 		}
+
+        $counter_initialized = VisitIdGenerator::isInitialized();
+        $stored_settings = is_network_admin() ? get_site_option('slimstat_options', []) : get_option('slimstat_options', []);
+        $upgrade_pending = ($stored_settings['version'] ?? '') !== SLIMSTAT_ANALYTICS_VERSION;
 
 		// Nothing owed AND nothing offered — only then is there no page to show. Testing the
 		// required set alone redirected the admin away from the one screen an optional

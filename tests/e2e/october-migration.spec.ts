@@ -105,3 +105,60 @@ test('issue 360: legacy drift offers an explicit repair and clears only after ve
   await closeDb();
  }
 });
+
+test('issue 395: visible counter retry survives failure and verifies recovery', async ({page}, info) => {
+ test.setTimeout(90000);
+ const fixture = (body:string) => runWordPressFixture(`<?php
+  if (DB_NAME !== 'tests-wordpress') throw new RuntimeException('Disposable DB required');
+  global $wpdb;
+  ${body}
+ `).trim();
+ const before = JSON.parse(fixture(`echo wp_json_encode([
+  'settings'=>get_option('slimstat_options'), 'degradations'=>get_option('slimstat_degradations',[]),
+  'counter'=>get_option('slimstat_visit_id_counter'), 'marker'=>get_option('slimstat_visit_id_repair_marker'),
+  'max'=>(int)$wpdb->get_var('SELECT COALESCE(MAX(id),0) FROM '.$wpdb->prefix.'slim_stats')
+ ]);`));
+ const history = () => fixture(`echo hash('sha256',serialize($wpdb->get_results('SELECT id,visit_id,resource FROM '.$wpdb->prefix.'slim_stats WHERE id<=${before.max} ORDER BY id',ARRAY_A)));`);
+ const hash = history();
+ const fault = Buffer.from(`<?php
+  add_filter('query', static function($sql) {
+   if (strpos($sql,'COALESCE(MAX(visit_id), 0)') !== false) return 'SELECT * FROM issue395_missing_table';
+   return $sql;
+  });
+ `).toString('base64');
+ try {
+  fixture(`
+   $file=WP_CONTENT_DIR.'/mu-plugins/slimstat-issue395-query-fixture.php';
+   if (file_exists($file)) throw new RuntimeException('Fault fixture already exists');
+   wp_mkdir_p(dirname($file)); file_put_contents($file,base64_decode('${fault}'));
+   delete_option('slimstat_visit_id_repair_marker');
+   wp_slimstat::record_degradation('issue395 unrelated','Preserve this warning',wp_slimstat::DEGRADATION_OPERATIONAL);
+  `);
+  await page.goto('/wp-admin/admin.php?page=slimstat_migration');
+  const retry=page.getByRole('button',{name:'Retry database upgrade',exact:true});
+  await expect(retry).toBeVisible();
+  await expect(page.locator('#slimstat-status-note')).not.toContainText('Database is up to date');
+  await page.screenshot({path:info.outputPath('issue395-incomplete.png'),fullPage:true});
+  const refused=await page.request.post('/wp-admin/admin.php?page=slimstat_migration',{form:{slimstat_retry_upgrade:'1',_wpnonce:'invalid'}});
+  expect(refused.status()).toBe(403);
+  await retry.click();
+  await expect(retry).toBeVisible();
+  expect(fixture(`echo isset(get_option('slimstat_degradations',[])['schema upgrade'])?'failure':'missing';`)).toBe('failure');
+  expect(history()).toBe(hash);
+  fixture(`unlink(WP_CONTENT_DIR.'/mu-plugins/slimstat-issue395-query-fixture.php');`);
+  await retry.click();
+  await expect(retry).toHaveCount(0);
+  await expect(page.locator('#slimstat-status-note')).toContainText('Database is up to date');
+  expect(fixture(`$d=get_option('slimstat_degradations',[]); echo !isset($d['schema upgrade'])&&isset($d['issue395 unrelated'])?'recovered':'wrong';`)).toBe('recovered');
+  expect(Number(fixture(`echo SlimStat\\Tracker\\VisitIdGenerator::getCurrentCounter();`))).toBeGreaterThanOrEqual(Number(before.counter));
+  expect(history()).toBe(hash);
+  await page.screenshot({path:info.outputPath('issue395-recovered.png'),fullPage:true});
+ } finally {
+  fixture(`
+   $file=WP_CONTENT_DIR.'/mu-plugins/slimstat-issue395-query-fixture.php'; if (file_exists($file)) unlink($file);
+   $before=json_decode(base64_decode('${Buffer.from(JSON.stringify(before)).toString('base64')}'),true);
+   update_option('slimstat_options',$before['settings']); update_option('slimstat_degradations',$before['degradations'],false);
+   if (false === $before['marker']) delete_option('slimstat_visit_id_repair_marker'); else update_option('slimstat_visit_id_repair_marker',$before['marker'],false);
+  `);
+ }
+});
