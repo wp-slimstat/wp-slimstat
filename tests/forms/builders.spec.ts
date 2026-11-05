@@ -16,7 +16,11 @@ for (const [builder, fixture] of Object.entries(fixtures) as [string, {form:numb
     const id = parseInt(await page.evaluate(()=>(window as any).SlimStatParams.id),10);
     const key = builder+':'+fixture.form;
     const form = page.locator('form').first();
-    const submit = ()=>form.locator('button:not([type]):visible,button[type=submit]:visible,input[type=submit]:visible,input[type=button]:visible').last().click();
+    const submit = async () => {
+      // Full-page validation/confirmation steps must establish their own tracked visit context.
+      await expect(form.locator('input[name="_slimstat_context"]')).toHaveValue(/^[1-9][0-9]*\.[a-f0-9]{64}$/);
+      await form.locator('button:not([type]):visible,button[type=submit]:visible,input[type=submit]:visible,input[type=button]:visible').last().click();
+    };
     await expect.poll(async()=>Number((await snapshot(key,id)).cohort?.flags)&2).toBe(2);
     await submit();
     await expect.poll(async()=>Number((await snapshot(key,id)).cohort?.flags)&8).toBe(8);
