@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-04T16:47:09+00:00\n"
+"POT-Creation-Date: 2026-11-05T06:00:47+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -476,7 +476,7 @@ msgstr ""
 
 #: admin/config/index.php:388
 #: admin/config/index.php:616
-#: admin/view/forms.php:59
+#: admin/view/forms.php:34
 msgid "Reports"
 msgstr ""
 
@@ -1231,13 +1231,13 @@ msgid "Sales, orders and the traffic that drove them."
 msgstr ""
 
 #: admin/index.php:172
-#: admin/view/forms.php:46
+#: admin/view/forms.php:21
 #: src/Forms/Store.php:465
 msgid "Form Analytics"
 msgstr ""
 
 #: admin/index.php:173
-#: admin/view/forms.php:47
+#: admin/view/forms.php:22
 msgid "See where visitors stop and help more of them complete your forms."
 msgstr ""
 
@@ -2712,203 +2712,203 @@ msgstr ""
 msgid "Pro sends a daily, weekly or monthly summary of your top pages, sources and goals to your team."
 msgstr ""
 
-#: admin/view/forms.php:55
+#: admin/view/forms.php:30
 msgid "Form Analytics sections"
 msgstr ""
 
-#: admin/view/forms.php:60
+#: admin/view/forms.php:35
 msgid "Setup & privacy"
 msgstr ""
 
-#: admin/view/forms.php:71
+#: admin/view/forms.php:46
 msgid "Setting saved. New form activity allowed by your privacy settings will be collected when SlimStat tracking is on."
 msgstr ""
 
-#: admin/view/forms.php:71
+#: admin/view/forms.php:46
 msgid "Setting saved. Form activity collection is paused."
 msgstr ""
 
-#: admin/view/forms.php:73
+#: admin/view/forms.php:48
 msgid "Part of this period is outside your analytics retention limit and is excluded from these figures."
 msgstr ""
 
-#: admin/view/forms.php:76
+#: admin/view/forms.php:51
 msgid "This segment uses retained form visits. Privacy erasures and retention limits can make it smaller than the unfiltered daily totals."
 msgstr ""
 
-#: admin/view/forms.php:79
+#: admin/view/forms.php:54
 msgid "New form activity is paused"
 msgstr ""
 
-#: admin/view/forms.php:79
+#: admin/view/forms.php:54
 msgid "Your saved reports are still available. Resume tracking when you are ready to collect new activity."
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/forms.php:79
+#: admin/view/forms.php:54
 #: admin/view/partials/ecommerce.php:188
 #: admin/view/partials/ecommerce.php:199
 msgid "Review tracking settings"
 msgstr ""
 
-#: admin/view/forms.php:83
+#: admin/view/forms.php:58
 msgid "Ready to collect form activity"
 msgstr ""
 
-#: admin/view/forms.php:83
+#: admin/view/forms.php:58
 msgid "Set up form tracking"
 msgstr ""
 
-#: admin/view/forms.php:84
+#: admin/view/forms.php:59
 msgid "Supported forms connect automatically. You do not need API keys, tracking code, or field mapping."
 msgstr ""
 
-#: admin/view/forms.php:87
+#: admin/view/forms.php:62
 msgid "Collect form activity"
 msgstr ""
 
-#: admin/view/forms.php:88
+#: admin/view/forms.php:63
 msgid "Turning this off pauses new activity. It does not delete saved reports or change how your forms work."
 msgstr ""
 
-#: admin/view/forms.php:89
+#: admin/view/forms.php:64
 msgid "Save setting"
 msgstr ""
 
-#: admin/view/forms.php:92
+#: admin/view/forms.php:67
 msgid "Available integrations"
 msgstr ""
 
-#: admin/view/forms.php:93
+#: admin/view/forms.php:68
 msgid "All supported integrations are included in Free. A form appears in Reports after SlimStat records its first tracked visit."
 msgstr ""
 
-#: admin/view/forms.php:101
+#: admin/view/forms.php:76
 msgid "Plugin detected"
 msgstr ""
 
-#: admin/view/forms.php:105
+#: admin/view/forms.php:80
 msgid "No supported form plugin is active. Activate a supported form plugin, publish a form, then return here."
 msgstr ""
 
-#: admin/view/forms.php:105
+#: admin/view/forms.php:80
 msgid "Manage form plugins"
 msgstr ""
 
-#: admin/view/forms.php:106
+#: admin/view/forms.php:81
 msgid "Which plugins can connect?"
 msgstr ""
 
-#: admin/view/forms.php:106
+#: admin/view/forms.php:81
 msgid "An available integration is not proof of a successful submission. SlimStat records completion only when the form plugin confirms it."
 msgstr ""
 
-#: admin/view/forms.php:108
+#: admin/view/forms.php:83
 msgid "Your existing privacy settings apply"
 msgstr ""
 
-#: admin/view/forms.php:109
+#: admin/view/forms.php:84
 msgid "SlimStat records form activity, never the answers people enter. It follows your consent requirements, tracking exclusions, and data retention settings. Activity without the required consent is not included."
 msgstr ""
 
-#: admin/view/forms.php:110
+#: admin/view/forms.php:85
 msgid "Review SlimStat privacy and retention settings"
 msgstr ""
 
-#: admin/view/forms.php:112
+#: admin/view/forms.php:87
 msgid "Why is my form missing?"
 msgstr ""
 
-#: admin/view/forms.php:112
+#: admin/view/forms.php:87
 msgid "Confirm that your form plugin is listed above and the form is published."
 msgstr ""
 
-#: admin/view/forms.php:112
+#: admin/view/forms.php:87
 msgid "Open the form page in a private browser window. Give analytics consent if your site asks for it."
 msgstr ""
 
-#: admin/view/forms.php:112
+#: admin/view/forms.php:87
 msgid "Bring the form into view, then refresh this report after about 30 seconds. Visits excluded by your SlimStat settings will not appear."
 msgstr ""
 
-#: admin/view/forms.php:112
+#: admin/view/forms.php:87
 msgid "If you recently enabled tracking, clear your page cache so visitors receive the updated form."
 msgstr ""
 
-#: admin/view/forms.php:115
+#: admin/view/forms.php:90
 msgid "Form tracking is not ready yet"
 msgstr ""
 
-#: admin/view/forms.php:115
+#: admin/view/forms.php:90
 msgid "SlimStat could not prepare storage for form activity. Your forms still work. Retry setup; if this continues, ask your host to check database permissions and SlimStat migration settings."
 msgstr ""
 
-#: admin/view/forms.php:115
+#: admin/view/forms.php:90
 msgid "Retry form tracking setup"
 msgstr ""
 
-#: admin/view/forms.php:120
+#: admin/view/forms.php:95
 msgid "← All forms"
 msgstr ""
 
-#: admin/view/forms.php:122
+#: admin/view/forms.php:97
 msgid "Adjust your report selection"
 msgstr ""
 
-#: admin/view/forms.php:124
+#: admin/view/forms.php:99
 msgid "This report could not load"
 msgstr ""
 
-#: admin/view/forms.php:124
+#: admin/view/forms.php:99
 msgid "The database did not return form activity. Refresh this page. If the problem continues, ask your host to check the analytics database connection."
 msgstr ""
 
-#: admin/view/forms.php:126
+#: admin/view/forms.php:101
 msgid "Your next form visit starts the story"
 msgstr ""
 
-#: admin/view/forms.php:126
+#: admin/view/forms.php:101
 msgid "No form activity is available for this period. Once visitors see a supported form, you can follow their progress here."
 msgstr ""
 
-#: admin/view/forms.php:126
+#: admin/view/forms.php:101
 msgid "Check setup and privacy"
 msgstr ""
 
-#: admin/view/forms.php:129
+#: admin/view/forms.php:104
 msgid "Which forms get completed?"
 msgstr ""
 
-#: admin/view/forms.php:129
+#: admin/view/forms.php:104
 msgid "Choose a form to see where visitors stop and what to check next."
 msgstr ""
 
-#: admin/view/forms.php:129
+#: admin/view/forms.php:104
 msgid "Confirmed by your form plugins"
 msgstr ""
 
 #. translators: %s: Number of visits that completed a form.
-#: admin/view/forms.php:133
+#: admin/view/forms.php:108
 #, php-format
 msgid "%s completed"
 msgstr ""
 
-#: admin/view/forms.php:137
+#: admin/view/forms.php:112
 msgid "All recorded forms"
 msgstr ""
 
-#: admin/view/forms.php:138
+#: admin/view/forms.php:113
 msgid "Each form is counted once per tracked visit. Completed means the form plugin confirmed success; it does not mean a qualified lead or a sale."
 msgstr ""
 
-#: admin/view/forms.php:139
+#: admin/view/forms.php:114
 #: src/Forms/Integration.php:15
 #: src/Forms/Store.php:410
 msgid "Form"
 msgstr ""
 
-#: admin/view/forms.php:139
-#: admin/view/forms.php:160
+#: admin/view/forms.php:114
+#: admin/view/forms.php:135
 #: admin/view/partials/forms-detail.php:23
 #: admin/view/partials/forms-detail.php:61
 #: admin/view/partials/forms-detail.php:66
@@ -2919,16 +2919,16 @@ msgstr ""
 msgid "Seen"
 msgstr ""
 
-#: admin/view/forms.php:139
-#: admin/view/forms.php:160
+#: admin/view/forms.php:114
+#: admin/view/forms.php:135
 #: admin/view/partials/forms-detail.php:24
 #: admin/view/partials/forms-trend.php:36
 #: src/Forms/Store.php:437
 msgid "Started"
 msgstr ""
 
-#: admin/view/forms.php:139
-#: admin/view/forms.php:160
+#: admin/view/forms.php:114
+#: admin/view/forms.php:135
 #: admin/view/partials/forms-detail.php:25
 #: admin/view/partials/forms-trend.php:15
 #: admin/view/partials/forms-trend.php:31
@@ -2938,8 +2938,8 @@ msgstr ""
 msgid "Completed"
 msgstr ""
 
-#: admin/view/forms.php:139
-#: admin/view/forms.php:160
+#: admin/view/forms.php:114
+#: admin/view/forms.php:135
 #: admin/view/partials/forms-detail.php:29
 #: admin/view/partials/forms-detail.php:61
 #: admin/view/partials/forms-detail.php:66
@@ -2947,31 +2947,31 @@ msgstr ""
 msgid "Completion rate"
 msgstr ""
 
-#: admin/view/forms.php:154
+#: admin/view/forms.php:129
 msgid "Showing the 100 most active forms in this period."
 msgstr ""
 
-#: admin/view/forms.php:160
+#: admin/view/forms.php:135
 msgid "How to read these numbers"
 msgstr ""
 
-#: admin/view/forms.php:160
+#: admin/view/forms.php:135
 msgid "Tracked visits in which the form came into view. Loading the page alone does not count."
 msgstr ""
 
-#: admin/view/forms.php:160
+#: admin/view/forms.php:135
 msgid "Tracked visits in which someone focused or changed a form field. Password and payment fields are excluded."
 msgstr ""
 
-#: admin/view/forms.php:160
+#: admin/view/forms.php:135
 msgid "Tracked visits with a successful submission confirmed by the form plugin. Repeated submissions during the same visit count once."
 msgstr ""
 
-#: admin/view/forms.php:160
+#: admin/view/forms.php:135
 msgid "Of the visits that saw the form, the percentage that also completed it. Confirmations with no observed view are excluded from this percentage."
 msgstr ""
 
-#: admin/view/forms.php:160
+#: admin/view/forms.php:135
 msgid "Consent choices, blockers, missing visit context, and unsupported submission paths can reduce coverage. Counts can differ from entries saved by your form plugin. Recent activity can take about 30 seconds to appear."
 msgstr ""
 
@@ -9278,49 +9278,49 @@ msgstr ""
 msgid "Exception occurred: [Code %1$d] %2$s at %3$s:%4$d"
 msgstr ""
 
-#: src/Forms/Report.php:46
+#: src/Forms/Report.php:45
 msgid "Choose a date range of up to 366 whole days for Form Analytics."
 msgstr ""
 
-#: src/Forms/Report.php:49
+#: src/Forms/Report.php:48
 msgid "Open an individual site dashboard to review its forms."
 msgstr ""
 
-#: src/Forms/Report.php:53
+#: src/Forms/Report.php:52
 msgid "Select a form from the overview to load its report."
 msgstr ""
 
-#: src/Forms/Report.php:65
+#: src/Forms/Report.php:64
 msgid "This selection needs advanced form segmentation. Use an Equals or Is not equal to filter for Browser Type or Traffic Channel, or remove this filter to view the report."
 msgstr ""
 
-#: src/Forms/Report.php:70
+#: src/Forms/Report.php:69
 msgid "Choose regular browsers or mobile devices. Form Analytics excludes automated traffic."
 msgstr ""
 
 #. translators: 1: Form builder name, 2: form identifier.
-#: src/Forms/Report.php:207
+#: src/Forms/Report.php:206
 #, php-format
 msgid "%1$s form #%2$s"
 msgstr ""
 
 #. translators: 1: Form builder name, 2: form identifier.
-#: src/Forms/Report.php:207
+#: src/Forms/Report.php:206
 msgid "Unavailable integration"
 msgstr ""
 
 #. translators: %s: Localized completion percentage.
-#: src/Forms/Report.php:214
+#: src/Forms/Report.php:213
 msgid "Not enough data"
 msgstr ""
 
 #. translators: %s: Localized completion percentage.
-#: src/Forms/Report.php:214
+#: src/Forms/Report.php:213
 #, php-format
 msgid "%s%%"
 msgstr ""
 
-#: src/Forms/Report.php:241
+#: src/Forms/Report.php:240
 msgid "Ask your site administrator for access to Form Analytics."
 msgstr ""
 

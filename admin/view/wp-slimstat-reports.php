@@ -2906,7 +2906,7 @@ class wp_slimstat_reports
                 $filter_value = 0 === strpos($a_filter_label, 'utm_') || 'traffic_source' === $a_filter_label
                     ? $a_filter_details[1] : str_replace('\\', '', $a_filter_details[1]);
                 $a_filter_value_no_slashes = in_array($a_filter_details[0], wp_slimstat_db::$valueless_operators, true) ? '' : htmlentities($filter_value, ENT_QUOTES, 'UTF-8');
-                $filters_html .= '<li>' . strtolower($filter_names[$a_filter_label][0]) . ' ' . esc_html(wp_slimstat_db::$operator_names[$a_filter_details[0]] ?? str_replace('_', ' ', $a_filter_details[0])) . sprintf(" %s <a class='slimstat-filter-link slimstat-font-cancel' title='", $a_filter_value_no_slashes) . htmlentities(__('Remove filter for', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . ' ' . $filter_names[$a_filter_label][0] . "' href='" . self::fs_url($a_filter_label . ' equals ') . "'></a></li>";
+                $filters_html .= '<li>' . esc_html(strtolower($filter_names[$a_filter_label][0])) . ' ' . esc_html(wp_slimstat_db::$operator_names[$a_filter_details[0]] ?? str_replace('_', ' ', $a_filter_details[0])) . sprintf(" %s <a class='slimstat-filter-link slimstat-font-cancel' title='", $a_filter_value_no_slashes) . htmlentities(__('Remove filter for', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . ' ' . esc_attr($filter_names[$a_filter_label][0]) . "' href='" . self::fs_url($a_filter_label . ' equals ') . "'></a></li>";
             }
         }
 
@@ -3113,6 +3113,11 @@ class wp_slimstat_reports
             $report_id = sanitize_key(wp_unslash($_POST['report_id']));
         } elseif (!empty($_args['id'])) {
             $report_id = $_args['id'];
+        }
+
+        // A shared layout may place the owner-only form widget on another stats screen.
+        if ('slim_forms_01' === $report_id && !\SlimStat\Forms\Report::canView()) {
+            return [];
         }
 
         if (!empty(self::$reports[$report_id]) && is_array(self::$reports[$report_id])) {

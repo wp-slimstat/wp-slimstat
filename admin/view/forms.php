@@ -1,40 +1,15 @@
 <?php
 /** Form Analytics: automatic setup and an evidence-first report. @license GPL-2.0-or-later */
-// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Local variables in Report::render().
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Prepared local variables in Report::view().
 use SlimStat\Forms\Report;
-use SlimStat\Forms\Store;
 use SlimStat\Forms\Registry;
-use SlimStat\Forms\Insights;
-use SlimStat\Tracker\Acquisition;
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 if ( ! Report::canView() ) {
 	return; }
-// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only allowlisted report navigation.
-$saved = isset( $_GET['saved'] ) && '1' === $_GET['saved'];
-// phpcs:enable WordPress.Security.NonceVerification.Recommended
-$base            = admin_url( 'admin.php?page=slimforms' );
-$active          = Registry::active();
-$ready           = Store::ready();
-$enabled         = Store::enabled();
-$tracking        = 'on' === ( wp_slimstat::$settings['is_tracking'] ?? 'on' );
-$report          = null;
-$failed          = false;
-$selection_error = '';
-$form            = '';
-$days            = 0;
-$tab             = isset( $tab ) && 'setup' === $tab ? 'setup' : 'overview';
-if ( 'overview' === $tab && $ready ) {
-	try {
-		$report = Report::load();
-		$form   = $report['form'];
-		$days   = $report['days'];
-		Report::primeTitles( array_column( $report['forms'], 'form' ) );
-	} catch ( InvalidArgumentException $error ) {
-		$selection_error = $error->getMessage();
-	} catch ( Throwable $error ) {
-		$failed = true; }
-}
+// This template requires the display state prepared by Report::view().
+if ( ! isset( $tab, $base, $active, $ready, $enabled, $tracking, $saved, $form, $days, $failed, $selection_error ) ) {
+	return; }
 ?>
 <?php if ( 'setup' === $tab ) : ?>
 <div class="backdrop-container"><div class="wrap-slimstat slimstat-config ss-forms">

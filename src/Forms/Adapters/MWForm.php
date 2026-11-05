@@ -32,7 +32,7 @@ final class MWForm implements Adapter {
 		Hooks::filter(
 			'mwform_error_message_html',
 			static function ( $html, $unused_error, $unused_start, $unused_end, $key ) use ( &$invalid ) {
-				if ( is_string( $key ) && preg_match( '/\Amw-wp-form-([1-9][0-9]*)\z/', $key, $matches ) ) {
+				if ( is_string( $key ) && preg_match( '/\Amw-wp-form-([1-9][0-9]*)\z/', $key, $matches ) && empty( $invalid[ $matches[1] ] ) ) {
 					$invalid[ $matches[1] ] = true;
 					Integration::outcome( 'mw', $matches[1], 'invalid' );
 				}

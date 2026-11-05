@@ -19,8 +19,7 @@ final class Report {
 			return; }
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only navigation.
 		if ( isset( $_GET['tab'] ) && 'setup' === $_GET['tab'] ) {
-			$tab = 'setup';
-			require SLIMSTAT_DIR . '/admin/view/forms.php';
+			self::view( 'setup' );
 			return;
 		}
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Backwards-compatible read-only form link.
@@ -240,10 +239,38 @@ final class Report {
 		if ( ! self::canView() ) {
 			wp_die( esc_html__( 'Ask your site administrator for access to Form Analytics.', 'wp-slimstat' ), '', array( 'response' => 403 ) );
 		}
-		$tab = 'overview';
-		require SLIMSTAT_DIR . '/admin/view/forms.php';
+		self::view( 'overview' );
 		if ( wp_doing_ajax() && ! \wp_slimstat_reports::is_batch_rendering() ) {
 			wp_die();
 		}
+	}
+
+	/** Prepare display state once; setup must never load report aggregates. */
+	private static function view( string $tab ): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only save confirmation.
+		$saved           = isset( $_GET['saved'] ) && '1' === $_GET['saved'];
+		$base            = admin_url( 'admin.php?page=slimforms' );
+		$active          = Registry::active();
+		$ready           = Store::ready();
+		$enabled         = Store::enabled();
+		$tracking        = 'on' === ( \wp_slimstat::$settings['is_tracking'] ?? 'on' );
+		$report          = null;
+		$failed          = false;
+		$selection_error = '';
+		$form            = '';
+		$days            = 0;
+		if ( 'overview' === $tab && $ready ) {
+			try {
+				$report = self::load();
+				$form   = $report['form'];
+				$days   = $report['days'];
+				self::primeTitles( array_column( $report['forms'], 'form' ) );
+			} catch ( \InvalidArgumentException $error ) {
+				$selection_error = $error->getMessage();
+			} catch ( \Throwable $error ) {
+				$failed = true;
+			}
+		}
+		require SLIMSTAT_DIR . '/admin/view/forms.php';
 	}
 }

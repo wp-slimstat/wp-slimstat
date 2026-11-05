@@ -3,7 +3,9 @@
 if (PHP_SAPI !== 'cli') { exit(1); }
 require __DIR__ . '/lib/source-scan.php';
 function check($ok, $message) { if (!$ok) { throw new RuntimeException($message); } }
-function current_user_can($capability) { return $GLOBALS['allowed']; }
+function current_user_can($capability) { return $GLOBALS['allowed'] && ($capability !== 'manage_options' || ($GLOBALS['forms_owner'] ?? true)); }
+function esc_html__($message, $domain) { return $message; }
+function wp_die($message = '', $title = '', $args = []) { throw new LogicException('denied:' . ($args['response'] ?? 200)); }
 function get_current_screen() { return $GLOBALS['screen']; }
 function wp_doing_ajax() { return $GLOBALS['ajax']; }
 function check_ajax_referer($action, $key) {
@@ -17,6 +19,7 @@ $admin = file_get_contents(__DIR__ . '/../admin/index.php');
 check(preg_match('/public const COMPACT_DASHBOARD_REPORTS = (.+);/', $admin, $compact) === 1, 'missing shared compact-widget policy');
 eval('class wp_slimstat_admin { public const COMPACT_DASHBOARD_REPORTS = ' . $compact[1] . '; public static $current_screen = "slimview1"; public static function can_view_stats() {' . slimstat_function_body($admin, 'can_view_stats') . '} private static function stats_view_capability() {' . slimstat_function_body($admin, 'stats_view_capability') . '} }');
 require __DIR__ . '/../admin/view/wp-slimstat-reports.php';
+require __DIR__ . '/../src/Forms/Report.php';
 $GLOBALS['current_user'] = (object) ['user_login' => 'admin'];
 $GLOBALS['allowed'] = true;
 $GLOBALS['ajax'] = false;
@@ -57,4 +60,26 @@ $GLOBALS['allowed'] = false;
 $GLOBALS['queries'] = 0;
 wp_slimstat_reports::callback_wrapper([]);
 check($GLOBALS['queries'] === 0, 'unauthorized report executed');
+
+// Shared layouts must omit owner-only forms without terminating another report screen.
+$GLOBALS['allowed'] = true;
+$GLOBALS['forms_owner'] = false;
+$GLOBALS['screen'] = null;
+$GLOBALS['ajax'] = false;
+$_POST = [];
+wp_slimstat_reports::$reports['slim_forms_01'] = ['callback' => function () { echo 'private forms'; }, 'callback_args' => []];
+ob_start();
+wp_slimstat_reports::callback_wrapper(['id' => 'slim_forms_01']);
+wp_slimstat_reports::callback_wrapper(['id' => 'fixture']);
+$html = ob_get_clean();
+check($html === 'accurate report', 'restricted shared-layout widget must not dispatch or interrupt other reports');
+$GLOBALS['ajax'] = true;
+$_POST = ['report_id' => 'slim_forms_01', 'security' => 'valid'];
+ob_start(); wp_slimstat_reports::callback_wrapper([]); $html = ob_get_clean();
+check($html === '', 'restricted forms must not dispatch through single-report AJAX');
+try { \SlimStat\Forms\Report::render(); throw new RuntimeException('direct form access accepted'); }
+catch (LogicException $error) { check($error->getMessage() === 'denied:403', 'direct form access must still be denied'); }
+$GLOBALS['forms_owner'] = true;
+ob_start(); wp_slimstat_reports::callback_wrapper([]); $html = ob_get_clean();
+check($html === 'private forms', 'authorized owner must retain form widget access');
 echo "Dashboard deferral, saved settings, AJAX dispatch and authorization passed.\n";
