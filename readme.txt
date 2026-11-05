@@ -187,6 +187,8 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 **Fixed**
 
+* Migration identifies incomplete visit-counter setup, offers an administrator-only retry, and clears the upgrade warning after recovery. ([#395](https://github.com/wp-slimstat/wp-slimstat/issues/395))
+* Server tracking counts the destination page once after WordPress redirects to its preferred URL, preventing duplicate trailing-slash pageviews. Existing history is unchanged. ([#396](https://github.com/wp-slimstat/wp-slimstat/issues/396))
 * Head-loaded trackers initialize safely and capture clicks, form submissions and heatmap clicks after DOM readiness. Hidden consent banners no longer block form controls or keyboard focus. ([#120](https://github.com/wp-slimstat/wp-slimstat/issues/120), [#181](https://github.com/wp-slimstat/wp-slimstat/issues/181))
 * Server-only visits receive session IDs, Online Users excludes bots, and opt-in URL normalization removes configured parameters after campaign attribution. Chart refreshes keep active filters and the comparison setting. ([#257](https://github.com/wp-slimstat/wp-slimstat/issues/257), [#272](https://github.com/wp-slimstat/wp-slimstat/issues/272), [#276](https://github.com/wp-slimstat/wp-slimstat/issues/276), [#158](https://github.com/wp-slimstat/wp-slimstat/issues/158))
 * Self-identifying headless browsers and Lighthouse are recognized by the existing Bots exclusion. ([#364](https://github.com/wp-slimstat/wp-slimstat/issues/364))
