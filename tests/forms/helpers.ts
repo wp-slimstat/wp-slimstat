@@ -8,7 +8,8 @@ export async function fixtureScript(script: string, args: string[] = []) {
   return stdout;
 }
 export async function snapshot(key: string, id: number) {
-  const stdout = await fixtureScript('tests/forms/snapshot.php', [key, String(id)]);
+  // Reconciliation reads wpdb only; booting every builder on each poll can exhaust its deadline.
+  const stdout = await fixtureScript('tests/forms/snapshot.php', [key, String(id), '--skip-plugins', '--skip-themes']);
   const line = stdout.split('\n').find(line=>line.startsWith('FORMS_QA_JSON:'));
   if (!line) throw new Error('The isolated database reader returned no result.');
   return JSON.parse(line.slice('FORMS_QA_JSON:'.length));
