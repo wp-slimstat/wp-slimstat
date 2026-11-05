@@ -3,8 +3,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 const fixture = JSON.parse(readFileSync(process.env.FORMS_QA_FIXTURE!, 'utf8'));
 const password = process.env.FORMS_QA_PASSWORD_FILE ? readFileSync(process.env.FORMS_QA_PASSWORD_FILE, 'utf8').trim() : process.env.FORMS_QA_PASSWORD!;
-test('Native form navigation, refresh, AI copy, filters and date range agree', async ({ page, context }) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+test.beforeEach(async ({ page }) => {
   await page.goto('/wp-login.php');
   // WordPress focuses the username on a delayed timer; finish that before typing.
   await expect(page.locator('#user_login')).toBeFocused();
@@ -12,6 +11,10 @@ test('Native form navigation, refresh, AI copy, filters and date range agree', a
   await page.locator('#user_pass').fill(password);
   await page.locator('#wp-submit').click();
   await expect(page).toHaveURL(/\/wp-admin\//);
+});
+
+test('Native form navigation, segments, refresh, AI copy and export agree', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('/wp-admin/admin.php?page=slimforms');
   await expect(page.locator('#adminmenu a[href="admin.php?page=slimforms"] .slimstat-menu-new-badge')).toBeVisible();
   await expect(page.locator('.slimstat-date-range-btn')).toBeVisible();
@@ -49,6 +52,11 @@ test('Native form navigation, refresh, AI copy, filters and date range agree', a
   expect(prompt).toContain('Completed');
   expect(prompt).not.toContain('Illustrative report preview');
   expect(prompt).not.toContain('Upgrade to Pro');
+});
+
+test('Filters and date range preserve form selection only on Form Analytics', async ({ page }) => {
+  await page.goto('/wp-admin/admin.php?page=slimforms&fs[addon_form]=equals%20cf7%3A'+fixture.form);
+  const formInput = page.locator('[name="fs[addon_form]"]');
   await page.locator('#slimstat-filter-name').selectOption('browser_type');
   await page.locator('#slimstat-filter-value').fill('2');
   await page.locator('#slimstat-filters input[type=submit]').click();
@@ -67,11 +75,37 @@ test('Native form navigation, refresh, AI copy, filters and date range agree', a
   await page.locator('.slimstat-date-range-btn').click();
   await page.getByText('Yesterday',{exact:true}).click();
   await expect(formInput).toHaveValue('equals cf7:'+fixture.form);
-  await expect(page.locator('.ss-forms-empty')).toBeVisible();
+  await expect(page).toHaveURL(/[?&]type=yesterday(?:&|$)/);
+  await expect(page.locator('.slimstat-date-range-btn')).toContainText('Yesterday');
+  // A reused QA site may already have yesterday's visits; verify the selected period.
+  await expect(page.locator('.ss-forms-empty, .ss-forms-funnel')).toBeVisible();
   await page.locator('#adminmenu .wp-submenu a[href="admin.php?page=slimview1"]').click();
   await expect(page).toHaveURL(/page=slimview1/);
   await expect(formInput).toHaveCount(0);
   await expect(page.locator('.slimstat-filter-list').filter({hasText:'cf7:'+fixture.form})).toHaveCount(0);
   await page.goto('/wp-admin/admin.php?page=slimview1&fs[addon_form]=equals%20cf7%3A'+fixture.form);
   await expect(formInput).toHaveCount(0);
+});
+
+test('Single and batched form refresh return identical complete HTML', async ({ page }) => {
+  await page.goto('/wp-admin/admin.php?page=slimforms');
+  const params = await page.evaluate(() => {
+    const values: Record<string, string> = {
+      page: 'slimforms',
+      security: (document.querySelector('#meta-box-order-nonce') as HTMLInputElement).value,
+    };
+    document.querySelectorAll<HTMLInputElement>('#slimstat-filters-form .slimstat-post-filter').forEach(input => { values[input.name] = input.value; });
+    return values;
+  });
+  const single = await page.request.post('/wp-admin/admin-ajax.php', {
+    form: { ...params, action: 'slimstat_load_report', report_id: 'slim_forms_01' },
+  });
+  const batch = await page.request.post('/wp-admin/admin-ajax.php', {
+    form: { ...params, action: 'slimstat_load_reports', 'report_ids[]': 'slim_forms_01' },
+  });
+  expect(single.ok()).toBe(true);
+  expect(batch.ok()).toBe(true);
+  const html = await single.text();
+  expect(html.trim()).toMatch(/^<div class="ss-forms">[\s\S]*<\/div>$/);
+  expect((await batch.json()).data.slim_forms_01).toBe(html);
 });

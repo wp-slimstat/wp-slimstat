@@ -242,5 +242,8 @@ final class Report {
 		}
 		$tab = 'overview';
 		require SLIMSTAT_DIR . '/admin/view/forms.php';
+		if ( wp_doing_ajax() && ! \wp_slimstat_reports::is_batch_rendering() ) {
+			wp_die();
+		}
 	}
 }
