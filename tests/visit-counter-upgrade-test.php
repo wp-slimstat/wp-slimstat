@@ -1,22 +1,23 @@
 <?php
 // Exercise the real activation and upgrade bodies, including failure recording and lock release.
 namespace SlimStat\Tracker {
-    class VisitIdGenerator { public static $result = -1; public static function initializeCounter() { return self::$result; } }
+    class VisitIdGenerator { public static $result = -1, $marker = true; public static function initializeCounter() { return self::$result; } public static function isInitialized() { return self::$marker && self::$result >= 0; } }
 }
 namespace {
     require __DIR__ . '/lib/source-scan.php';
     define('SLIMSTAT_ANALYTICS_VERSION', '6.0.0');
     class wp_slimstat {
-        public static $settings = [], $degraded = [], $saved = [];
+        public static $settings = [], $degraded = [], $saved = [], $persist = true;
         const DEGRADATION_OPERATIONAL = 'operational';
         public static function record_degradation($key, ...$args) { self::$degraded[$key] = $args; }
         public static function clear_degradation($key) { unset(self::$degraded[$key]); }
-        public static function update_option($name, $value) { self::$saved[$name] = $value; }
+        public static function update_option($name, $value) { if (self::$persist) { self::$saved[$name] = $value; } }
     }
+    function is_network_admin() { return false; }
     function apply_filters($hook, $value) { return $value; }
     function update_option(...$args) { return true; }
     // An upgrade: the settings row exists, so activation's fresh-install seeding stays out of the way.
-    function get_option($name, $default = false) { return $name === 'slimstat_options' ? ['version' => '5.5.0'] : $default; }
+    function get_option($name, $default = false) { return $name === 'slimstat_options' ? (wp_slimstat::$saved[$name] ?? ['version' => '5.5.0']) : $default; }
     function delete_option($name) { $GLOBALS['released'][] = $name; }
     function flush_rewrite_rules() { $GLOBALS['flushed']++; }
     $GLOBALS['wpdb'] = new class { public $options = 'wp_options'; public function query($sql) { return 0; } };
@@ -56,5 +57,19 @@ namespace {
     \SlimStat\Tracker\VisitIdGenerator::$result = 5000000;
     AdminCounterProbe::update_tables_and_options();
     if (wp_slimstat::$degraded !== ['purge' => ['keep']]) { throw new \RuntimeException('Recovery did not selectively clear the warning'); }
+    foreach (['marker', 'settings'] as $failure) {
+        wp_slimstat::$settings = ['version' => '5.5.0', 'goals_indexes' => 'on'];
+        wp_slimstat::$saved = [];
+        wp_slimstat::$degraded = ['purge' => ['keep']];
+        \SlimStat\Tracker\VisitIdGenerator::$marker = $failure !== 'marker';
+        wp_slimstat::$persist = $failure !== 'settings';
+        if (AdminCounterProbe::update_tables_and_options() || !isset(wp_slimstat::$degraded['schema upgrade'])) {
+            throw new \RuntimeException('Failed ' . $failure . ' write reported successful recovery');
+        }
+        \SlimStat\Tracker\VisitIdGenerator::$marker = wp_slimstat::$persist = true;
+        if (!AdminCounterProbe::update_tables_and_options() || wp_slimstat::$degraded !== ['purge' => ['keep']]) {
+            throw new \RuntimeException('Retry did not recover after ' . $failure . ' write failure');
+        }
+    }
     echo "PASS: failed visit counter blocks activation/upgrade completion, records degradation and releases claim; success proceeds\n";
 }

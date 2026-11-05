@@ -20,7 +20,7 @@ namespace {
     define('ABSPATH', __DIR__);
     define('SLIMSTAT_ANALYTICS_VERSION', '6.1.0');
     class wp_slimstat {
-        public static $settings = ['version' => '6.0.0'];
+        public static $settings = ['version' => '6.0.0'], $stored = ['version' => '6.0.0'];
         public static function pro_is_installed() { return false; }
     }
     class wp_slimstat_admin {
@@ -31,11 +31,13 @@ namespace {
             self::$retries++;
             if (self::$succeeds) {
                 \SlimStat\Tracker\VisitIdGenerator::$ready = true;
-                wp_slimstat::$settings['version'] = SLIMSTAT_ANALYTICS_VERSION;
+                wp_slimstat::$settings['version'] = wp_slimstat::$stored['version'] = SLIMSTAT_ANALYTICS_VERSION;
             }
             return self::$succeeds;
         }
     }
+    function is_network_admin() { return false; }
+    function get_option($key, $default = false) { return $key === 'slimstat_options' ? wp_slimstat::$stored : $default; }
     function current_user_can($capability) { return $GLOBALS['authorized'] && $capability === 'manage_options'; }
     function check_admin_referer($action) {
         if (($_POST['_wpnonce'] ?? '') !== 'valid' || $action !== 'slimstat_retry_upgrade') { throw new \RuntimeException('nonce denied'); }
@@ -55,6 +57,7 @@ namespace {
     $admin = new \SlimStat\Migration\Admin\MigrationAdmin($manager);
     $GLOBALS['authorized'] = true;
     function render($admin) {
+        $admin->retryUpgrade();
         ob_start();
         try { $admin->renderPage(); return ob_get_contents(); } finally { ob_end_clean(); }
     }
@@ -77,9 +80,9 @@ namespace {
     // Stale error records do not drive current health; readiness and version do.
     $_POST = [];
     expect_text('Database is up to date', render($admin));
-    wp_slimstat::$settings['version'] = '6.0.0';
+    wp_slimstat::$stored['version'] = '6.0.0'; // Runtime version is current, but the write failed.
     expect_text('Database is up to date', render($admin), false);
-    wp_slimstat::$settings['version'] = SLIMSTAT_ANALYTICS_VERSION;
+    wp_slimstat::$settings['version'] = wp_slimstat::$stored['version'] = SLIMSTAT_ANALYTICS_VERSION;
     \SlimStat\Tracker\VisitIdGenerator::$ready = false;
     expect_text('Database is up to date', render($admin), false);
     \SlimStat\Tracker\VisitIdGenerator::$ready = true;

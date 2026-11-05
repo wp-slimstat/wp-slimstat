@@ -94,7 +94,7 @@ $upgrade_pending = !empty($upgrade_pending);
                                 <p><?php echo esc_html__('Visit counter initialization has not been verified for this database and version. New visits may not be recorded until initialization succeeds.', 'wp-slimstat'); ?></p>
                             <?php endif; ?>
                             <p><?php echo esc_html__('Back up your database, then retry the database upgrade. Existing visit IDs are preserved and the counter is never lowered. If the retry fails, ask your database administrator or SlimStat support to check access to the analytics table and writes to the WordPress options table.', 'wp-slimstat'); ?></p>
-                            <form method="post" action="<?php echo esc_url(admin_url('admin.php?page=slimstat_migration')); ?>">
+                            <form class="slimstat-retry-upgrade" method="post" action="<?php echo esc_url(admin_url('admin.php?page=slimstat_migration')); ?>">
                                 <?php wp_nonce_field('slimstat_retry_upgrade'); ?>
                                 <button type="submit" name="slimstat_retry_upgrade" value="1" class="button button-secondary"><?php echo esc_html__('Retry database upgrade', 'wp-slimstat'); ?></button>
                             </form>
