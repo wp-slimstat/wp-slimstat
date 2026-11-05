@@ -112,6 +112,14 @@ class VisitIdGenerator
         return (int) get_option(self::OPTION_NAME, 0);
     }
 
+    /** Read-only evidence that initialization completed for this dataset and version. */
+    public static function isInitialized(): bool
+    {
+        $counter = get_option(self::OPTION_NAME, false);
+        return ctype_digit((string) $counter)
+            && self::repairMarker() === get_option(self::REPAIR_MARKER_OPTION);
+    }
+
     /**
      * Reset the counter to a specific value.
      *

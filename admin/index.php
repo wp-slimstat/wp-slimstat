@@ -1160,7 +1160,11 @@ class wp_slimstat_admin
         }
 
         try {
-            return self::run_schema_upgrade();
+            $complete = self::run_schema_upgrade();
+            if ($complete) {
+                wp_slimstat::clear_degradation('schema upgrade');
+            }
+            return $complete;
         } catch (\Throwable $e) {
             wp_slimstat::record_degradation('schema upgrade', $e, wp_slimstat::DEGRADATION_OPERATIONAL);
 

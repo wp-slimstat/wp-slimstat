@@ -6,6 +6,7 @@ namespace SlimStat\Migration\Admin;
 use SlimStat\Migration\MigrationManager;
 use SlimStat\Migration\MigrationService;
 use SlimStat\Schema\Schema;
+use SlimStat\Tracker\VisitIdGenerator;
 use wp_slimstat_admin;
 
 class MigrationAdmin
@@ -207,6 +208,14 @@ class MigrationAdmin
 		if (!current_user_can('manage_options')) {
 			wp_die(esc_html__('Sorry, you are not allowed to access this page.', 'wp-slimstat'));
 		}
+
+        if (isset($_POST['slimstat_retry_upgrade'])) {
+            check_admin_referer('slimstat_retry_upgrade');
+            wp_slimstat_admin::update_tables_and_options();
+            $this->manager->forgetProbe();
+        }
+        $counter_initialized = VisitIdGenerator::isInitialized();
+        $upgrade_pending = (\wp_slimstat::$settings['version'] ?? '') !== SLIMSTAT_ANALYTICS_VERSION;
 
 		// Nothing owed AND nothing offered — only then is there no page to show. Testing the
 		// required set alone redirected the admin away from the one screen an optional

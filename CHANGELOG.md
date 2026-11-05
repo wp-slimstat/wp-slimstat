@@ -50,6 +50,7 @@
 * Restored pageviews stay visible when stale heatmap rows reuse their IDs for another page or time. Pages still serving an older cached tracker keep working.
 
 **Upgrade with confidence**
+* Migration identifies incomplete visit-counter initialization, offers an administrator-only retry, and clears the upgrade warning after recovery. ([#395](https://github.com/wp-slimstat/wp-slimstat/issues/395))
 * First pageviews keep recording on older database schemas while the visitor-identity migration step is still waiting. Identity bytes are encoded in SQL, so recovery from a missing column or table can run.
 * The optional online repair for legacy column drift now covers email and fingerprint column widths and missing legacy archive fields. Migration shows schema state it cannot resolve or read, keeps its warnings when inspection fails, and no longer reports completion just because a notice was dismissed. Recorded values are preserved; there is no automatic table rebuild or blocking fallback. ([#360](https://github.com/wp-slimstat/wp-slimstat/issues/360))
 * Optional charset conversion restores lock settings and preserves stricter host timeouts.

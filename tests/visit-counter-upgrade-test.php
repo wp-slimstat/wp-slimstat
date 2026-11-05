@@ -9,7 +9,8 @@ namespace {
     class wp_slimstat {
         public static $settings = [], $degraded = [], $saved = [];
         const DEGRADATION_OPERATIONAL = 'operational';
-        public static function record_degradation(...$args) { self::$degraded[] = $args; }
+        public static function record_degradation($key, ...$args) { self::$degraded[$key] = $args; }
+        public static function clear_degradation($key) { unset(self::$degraded[$key]); }
         public static function update_option($name, $value) { self::$saved[$name] = $value; }
     }
     function apply_filters($hook, $value) { return $value; }
@@ -45,5 +46,15 @@ namespace {
             if ($result >= 0 && $method === 'update_tables_and_options' && wp_slimstat::$settings['version'] !== '6.0.0') { throw new \RuntimeException('Successful upgrade never completes'); }
         }
     }
+    // A retry clears only the recovered upgrade record, never unrelated failures.
+    wp_slimstat::$settings = ['version' => '5.5.0', 'goals_indexes' => 'on'];
+    wp_slimstat::$degraded = ['purge' => ['keep']];
+    \SlimStat\Tracker\VisitIdGenerator::$result = -1;
+    AdminCounterProbe::update_tables_and_options();
+    AdminCounterProbe::update_tables_and_options();
+    if (!isset(wp_slimstat::$degraded['schema upgrade'])) { throw new \RuntimeException('Persistent failure lost its warning'); }
+    \SlimStat\Tracker\VisitIdGenerator::$result = 5000000;
+    AdminCounterProbe::update_tables_and_options();
+    if (wp_slimstat::$degraded !== ['purge' => ['keep']]) { throw new \RuntimeException('Recovery did not selectively clear the warning'); }
     echo "PASS: failed visit counter blocks activation/upgrade completion, records degradation and releases claim; success proceeds\n";
 }
