@@ -83,7 +83,7 @@
     "test:cf-country-validation": "php tests/cloudflare-geolocation-country-validation-test.php",
     "test:legacy-sync": "php tests/legacy-sync-mapping-test.php",
     "test:lazy-migration": "php tests/lazy-migration-test.php",
-    "test:content-type-attachment": "php tests/content-type-attachment-test.php",
+    "test:content-type-attachment": ["php tests/content-type-attachment-test.php", "php tests/server-canonical-redirect-test.php"],
     "test:rest-controller": "php tests/tracking-rest-controller-test.php",
     "test:reports-escaping": "php tests/reports-output-escaping-test.php",
     "test:fingerprint-sanitize": "php tests/fingerprint-sanitization-test.php",

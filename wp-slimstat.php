@@ -418,7 +418,8 @@ class wp_slimstat
 
             // Is server-side tracking active?
             if ('on' != self::$settings['javascript_mode']) {
-                add_action(is_admin() ? 'admin_init' : 'wp', [\SlimStat\Tracker\Tracker::class, 'slimtrack'], 5);
+                // Canonical redirects run at template_redirect priority 10, before a page is rendered.
+                add_action(is_admin() ? 'admin_init' : 'template_redirect', [\SlimStat\Tracker\Tracker::class, 'slimtrack'], is_admin() ? 5 : 20);
 
                 if ('on' != self::$settings['ignore_wp_users']) {
                     add_action('login_init', [\SlimStat\Tracker\Tracker::class, 'slimtrack'], 10);

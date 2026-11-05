@@ -30,6 +30,7 @@
 * Acquisition widgets share their schema check within a request and recheck after a migration or database change.
 
 **Numbers you can trust**
+* Server tracking records the rendered page after WordPress canonical redirects, preventing duplicate trailing-slash pageviews. ([#396](https://github.com/wp-slimstat/wp-slimstat/issues/396))
 * Server-only tracking assigns visit IDs, and Online Users excludes bots while retaining human and legacy unclassified visits. ([#257](https://github.com/wp-slimstat/wp-slimstat/issues/257), [#272](https://github.com/wp-slimstat/wp-slimstat/issues/272))
 * Opt-in URL normalization removes configured parameters after campaign attribution is extracted, so page totals combine without losing acquisition data. Chart refreshes retain submitted filters and the comparison setting. ([#276](https://github.com/wp-slimstat/wp-slimstat/issues/276), [#158](https://github.com/wp-slimstat/wp-slimstat/issues/158))
 * HeadlessChrome, PhantomJS and Lighthouse clients that identify themselves now count as bots, so the existing Bots exclusion filters them in both tracking modes. ([#364](https://github.com/wp-slimstat/wp-slimstat/issues/364))
