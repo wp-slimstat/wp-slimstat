@@ -116,7 +116,7 @@ class VisitIdGenerator
     public static function isInitialized(): bool
     {
         $counter = get_option(self::OPTION_NAME, false);
-        return ctype_digit((string) $counter)
+        return (is_int($counter) || is_string($counter)) && ctype_digit((string) $counter)
             && self::repairMarker() === get_option(self::REPAIR_MARKER_OPTION);
     }
 

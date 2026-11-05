@@ -258,7 +258,7 @@ $GLOBALS['_vicqb_blog_id'] = 1;
 $db->dbname = 'other_dataset';
 vicqb_assert('another dataset needs its own initialization', !VisitIdGenerator::isInitialized());
 $db->dbname = 'analytics';
-foreach ([false, '', -1, 'invalid'] as $invalid) {
+foreach ([false, '', -1, 'invalid', [], new \stdClass()] as $invalid) {
     $GLOBALS['_vicqb_options'][VisitIdGenerator::OPTION_NAME] = $invalid;
     vicqb_assert('invalid or missing counter is not healthy', !VisitIdGenerator::isInitialized());
 }
