@@ -471,14 +471,6 @@ jQuery(document).ready(function($) {
             autoUpdateInput: false
         };
 
-        // Set the chosen label if we have a preset
-        if (currentRange.preset && currentRange.preset !== 'custom') {
-            const presetLabel = getPresetLabel(currentRange.preset);
-            if (presetLabel) {
-                datePickerOptions.chosenLabel = presetLabel;
-            }
-        }
-
         $input.daterangepicker(datePickerOptions);
 
         // Set initial button label based on current range
@@ -490,6 +482,12 @@ jQuery(document).ready(function($) {
 
         // Add custom CSS class to the daterangepicker and handle calendar visibility
         $input.on('show.daterangepicker', function(ev, picker) {
+            // maxDate can make different presets identical; retain the button's resolved selection.
+            const resolvedLabel = getPresetLabel(currentRange.preset) || SlimStatDatePicker.strings.custom_range;
+            picker.chosenLabel = resolvedLabel;
+            picker.container.find('.ranges li').removeClass('active')
+                .filter(function() { return $(this).attr('data-range-key') === resolvedLabel; })
+                .addClass('active');
             picker.container.addClass(CONFIG.CLASSES.daterangepicker);
             $button.addClass(CONFIG.CLASSES.active);
             $button.attr('aria-expanded', 'true');

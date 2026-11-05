@@ -1,0 +1,105 @@
+{
+  "$schema": "./videos.schema.json",
+  "version": 1,
+  "categories": [
+    { "id": "getting-started", "title": "Getting started", "order": 10 },
+    { "id": "dashboard-reports", "title": "Dashboard and reports", "order": 20 },
+    { "id": "real-time", "title": "Real-time analytics", "order": 30 },
+    { "id": "woocommerce", "title": "WooCommerce analytics", "order": 40 },
+    { "id": "heatmaps", "title": "Heatmaps", "order": 50 },
+    { "id": "goals-funnels", "title": "Goals and funnels", "order": 60 },
+    { "id": "advanced", "title": "Advanced features", "order": 70 },
+    { "id": "pro", "title": "SlimStat Pro", "order": 80 }
+  ],
+  "videos": [
+    {
+      "id": "overview",
+      "title": "SlimStat 6: analytics that stay on your server",
+      "slug": "slimstat-6-overview",
+      "youtubeId": "cW3xr-0bMMc",
+      "thumbnail": "https://wp-slimstat.com/images/videos/overview.webp",
+      "category": "getting-started",
+      "published": "2026-10-25T13:39:31+00:00",
+      "order": 10,
+      "duration": "0:30",
+      "description": "Track AI traffic, campaigns and WooCommerce revenue in your own WordPress database."
+    },
+    {
+      "id": "sessions-users-pageviews",
+      "title": "Sessions vs users vs pageviews: what did they come for?",
+      "slug": "sessions-vs-users-vs-pageviews",
+      "youtubeId": "PgNy_x1iT3A",
+      "thumbnail": "https://wp-slimstat.com/images/videos/sessions-users-pageviews.webp",
+      "category": "dashboard-reports",
+      "published": "2026-11-01T09:05:58+00:00",
+      "order": 10,
+      "duration": "1:47"
+    },
+    {
+      "id": "bounce-vs-exit",
+      "title": "Bounce rate vs exit rate: is a high exit rate bad?",
+      "slug": "bounce-rate-vs-exit-rate",
+      "youtubeId": "RfwQRWDmMaE",
+      "thumbnail": "https://wp-slimstat.com/images/videos/bounce-vs-exit.webp",
+      "category": "dashboard-reports",
+      "published": "2026-11-01T09:08:32+00:00",
+      "order": 20,
+      "duration": "1:28"
+    },
+    {
+      "id": "woocommerce",
+      "title": "WooCommerce revenue, next to your traffic",
+      "slug": "woocommerce-revenue-analytics",
+      "youtubeId": "cjEofK7uSW0",
+      "thumbnail": "https://wp-slimstat.com/images/videos/woocommerce.webp",
+      "category": "woocommerce",
+      "published": "2026-10-25T13:48:13+00:00",
+      "order": 10,
+      "duration": "0:23"
+    },
+    {
+      "id": "heatmaps",
+      "title": "Heatmaps: see what visitors actually do",
+      "slug": "wordpress-heatmaps",
+      "youtubeId": "q8Gyr_LXyuo",
+      "thumbnail": "https://wp-slimstat.com/images/videos/heatmaps.webp",
+      "category": "heatmaps",
+      "published": "2026-10-25T13:44:14+00:00",
+      "order": 10,
+      "duration": "0:27"
+    },
+    {
+      "id": "heatmaps-vs-scrollmaps",
+      "title": "Heatmaps vs scroll maps: do visitors see your button?",
+      "slug": "heatmaps-vs-scroll-maps",
+      "youtubeId": "tvIQEymVhUk",
+      "thumbnail": "https://wp-slimstat.com/images/videos/heatmaps-vs-scrollmaps.webp",
+      "category": "heatmaps",
+      "published": "2026-11-01T09:04:29+00:00",
+      "order": 20,
+      "duration": "1:43"
+    },
+    {
+      "id": "utm-campaigns",
+      "title": "Campaign links: find out which campaign worked",
+      "slug": "utm-campaign-links",
+      "youtubeId": "5dfmRJq1aGc",
+      "thumbnail": "https://wp-slimstat.com/images/videos/utm-campaigns.webp",
+      "category": "advanced",
+      "published": "2026-10-25T13:49:28+00:00",
+      "order": 10,
+      "duration": "0:20"
+    },
+    {
+      "id": "ai-traffic",
+      "title": "AI traffic: know when ChatGPT sends you visitors",
+      "slug": "ai-traffic-analytics",
+      "youtubeId": "otZpOyqGkLs",
+      "thumbnail": "https://wp-slimstat.com/images/videos/ai-traffic.webp",
+      "category": "advanced",
+      "published": "2026-10-25T13:46:17+00:00",
+      "order": 20,
+      "duration": "0:19"
+    }
+  ]
+}

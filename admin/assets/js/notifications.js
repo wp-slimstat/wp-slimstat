@@ -7,6 +7,7 @@ jQuery(function ($) {
     const dismissAll = sidebar.querySelector('.slimstat-notification-sidebar__dismiss-all');
     const tabs = sidebar.querySelectorAll('.slimstat-notification-sidebar__tab');
     let pending = false;
+    const queuedActions = [];
     let timer = 0;
     let checked = Date.now();
 
@@ -70,7 +71,12 @@ jQuery(function ($) {
         if (!document.hidden) timer = setTimeout(() => refresh('notification_status'), Math.max(0, 60000 - (Date.now() - checked)));
     }
     function refresh(action, extra) {
-        if (pending || (action === 'notification_status' && document.hidden)) return;
+        if (action === 'notification_status' && document.hidden) return;
+        if (pending) {
+            // Background polls coalesce; user actions must survive an in-flight request.
+            if (action !== 'notification_status') queuedActions.push([action, extra]);
+            return;
+        }
         pending = true;
         clearTimeout(timer);
         if (action === 'refresh_notifications') reload?.classList.add('is-loading');
@@ -83,7 +89,9 @@ jQuery(function ($) {
             pending = false;
             checked = Date.now();
             reload?.classList.remove('is-loading');
-            schedule();
+            const next = queuedActions.shift();
+            if (next) refresh(...next);
+            else schedule();
         });
     }
     reload?.addEventListener('click', () => refresh('refresh_notifications'));

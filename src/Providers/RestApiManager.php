@@ -111,12 +111,6 @@ class RestApiManager
      */
     public static function rewriteRuleRequest(): void
     {
-        if (get_option('slimstat_permalink_structure_updated', false)) {
-            // If the permalink structure has been updated, we need to flush rewrite rules
-            flush_rewrite_rules();
-            delete_option('slimstat_permalink_structure_updated');
-        }
-
         if (isset(\wp_slimstat::$settings['tracking_request_method']) && 'adblock_bypass' === \wp_slimstat::$settings['tracking_request_method']) {
             add_rewrite_tag('%slimstat_request%', '([a-f0-9]{32})');
             add_rewrite_rule(

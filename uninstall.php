@@ -274,6 +274,9 @@ function slimstat_uninstall_artifacts($delete_data = false)
     }
 
     $wp_filesystem->delete($upload_dir . '/browscap-cache-master', true, 'd');
+    $wp_filesystem->delete($upload_dir . '/browscap-cache-backup', true, 'd');
+    $wp_filesystem->delete($upload_dir . '/browscap-staging', true, 'd');
+    $wp_filesystem->delete($upload_dir . '/browscap-update.lock');
 }
 
 /**
@@ -524,6 +527,7 @@ function slimstat_uninstall($_wpdb = '')
     delete_option('slimstat_goals_funnels_since');
     delete_option('slimstat_ecommerce_since');
     delete_option('slimstat_heatmaps_since');
+    delete_option('slimstat_ai_since');
     delete_option('slimstat_shortcodes_since');
     delete_option('slimstat_release_notice_since');
     delete_option('slimstat_dt_out_indexed');
@@ -565,6 +569,7 @@ delete_option('slimstat_heatmap_setup');
     delete_option('slimstat_goals');
     delete_option('slimstat_funnels');
     delete_option('slimstat_goals_cache_ver');
+    delete_option('slimstat_data_ver');
 
     // The goals/funnels/unique-visitor transients used to be swept here, and the
     // filter-options ones below. Both are now covered by slimstat_uninstall_transients(),

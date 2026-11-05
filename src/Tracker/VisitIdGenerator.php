@@ -81,7 +81,7 @@ class VisitIdGenerator
         global $wpdb;
         $added = $wpdb->query($wpdb->prepare(
             "INSERT INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %d, %s)
-            ON DUPLICATE KEY UPDATE option_value = GREATEST(CAST(option_value AS UNSIGNED), CAST(VALUES(option_value) AS UNSIGNED))",
+            ON DUPLICATE KEY UPDATE option_value = IF(LEFT(TRIM(option_value), 1) = '-', VALUES(option_value), GREATEST(CAST(option_value AS UNSIGNED), CAST(VALUES(option_value) AS UNSIGNED)))",
             self::OPTION_NAME,
             $initial_value,
             'no'
@@ -110,6 +110,15 @@ class VisitIdGenerator
     public static function getCurrentCounter(): int
     {
         return (int) get_option(self::OPTION_NAME, 0);
+    }
+
+    /** Read-only evidence that initialization completed for this dataset and version. */
+    public static function isInitialized(): bool
+    {
+        $counter = get_option(self::OPTION_NAME, false);
+        return (is_int($counter) || is_string($counter)) && ctype_digit((string) $counter)
+            && (float) $counter < 4294967295
+            && self::repairMarker() === get_option(self::REPAIR_MARKER_OPTION);
     }
 
     /**

@@ -14,11 +14,18 @@
  *   - Previous period data populated for both granularities
  */
 import { test, expect } from '@playwright/test';
-import { getPool, snapshotOption, restoreOption } from './helpers/setup';
+import { getPool, snapshotOption, restoreOption, snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions } from './helpers/setup';
 import {
   fetchChartData, insertRows, clearTestData,
   getV1, getV1Prev, getLabels, sumArr, utcMidnight,
 } from './helpers/chart';
+
+// Previous-period assertions require comparison to be enabled, regardless of saved site defaults.
+test.beforeAll(async () => {
+  await snapshotSlimstatOptions();
+  await setSlimstatOptions({ comparison_chart: 'on' });
+});
+test.afterAll(async () => { await restoreSlimstatOptions(); });
 
 // ─── DAILY TESTS ──────────────────────────────────────────────────────────────
 

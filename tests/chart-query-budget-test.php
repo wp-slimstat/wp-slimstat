@@ -136,6 +136,15 @@ if (!preg_match('/const\s+CACHE_LIVE_BUCKET_SECONDS\s*=\s*\d+/', $source)) {
 }
 
 // ── Report ─────────────────────────────────────────────────────────────────
+// Native SQL coverage is in pageview-chart-mysql.php; pin both shipped entry points here.
+$registry = file_get_contents($plugin_root . '/admin/view/wp-slimstat-reports.php');
+preg_match("/'slim_p1_01'\\s*=>\\s*\\[(.*?)'chart_labels'/s", $registry, $pageviews);
+foreach (['registered' => $pageviews[1] ?? '', 'default' => slimstat_function_body($source, 'normalizeArgs')] as $entry => $body) {
+    if (!preg_match("/'data1'\\s*=>\\s*'COUNT\\(\\s*(?:id|\\*)\\s*\\)'/", $body)) {
+        $failures[] = $entry . ' Pageviews must count rows even when their IP is NULL';
+    }
+}
+
 if ($failures !== []) {
     fwrite(STDERR, 'FAIL: chart query budget (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {

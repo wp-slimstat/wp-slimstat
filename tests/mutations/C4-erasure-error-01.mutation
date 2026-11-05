@@ -1,0 +1,26 @@
+target: src/Services/Privacy/DataEraser.php
+gate: php tests/privacy-erasure-paging-test.php
+kind: guard-removal
+expect: query failure must stop erasure
+rationale: Erasure must drain shrinking live and archive batches and stop the parent eraser when child data cannot be erased.
+---
+--- a/src/Services/Privacy/DataEraser.php
++++ b/src/Services/Privacy/DataEraser.php
+@@ -61,7 +61,7 @@
+ 			$done = $done && 0 === (int) $remaining;
+ 		}
+ 
+-		if ($failed) {
++		if (false) {
+ 			return new \WP_Error('slimstat_erasure_failed', __('SlimStat could not finish erasing the data. Please try again.', 'wp-slimstat'));
+ 		}
+ 
+@@ -126,7 +126,7 @@
+ 			$failed = $failed || '' !== (string) $db->last_error;
+ 			$done = $done && 0 === (int) $remaining;
+ 		}
+-		if ($failed) {
++		if (false) {
+ 			return new \WP_Error('slimstat_erasure_failed', __('SlimStat could not finish erasing the data. Please try again.', 'wp-slimstat'));
+ 		}
+ 		return [

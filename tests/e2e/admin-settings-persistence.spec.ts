@@ -157,20 +157,11 @@ test.describe('Admin Settings Persistence', () => {
     // Pick a different tracking request method
     const newMethod = currentMethod === 'rest' ? 'ajax' : 'rest';
 
-    // Flip both toggles and change the select
-    if (jsWasChecked) {
-      await setSettingsToggle(jsModeCheckbox, false);
-    } else {
-      await setSettingsToggle(jsModeCheckbox, true);
-    }
-
-    if (dashWasChecked) {
-      await setSettingsToggle(dashWidgetsCheckbox, false);
-    } else {
-      await setSettingsToggle(dashWidgetsCheckbox, true);
-    }
-
+    // The transport field is hidden in server-only mode; choose it while client mode is visible.
+    if (!jsWasChecked) await setSettingsToggle(jsModeCheckbox, true);
     await requestMethodSelect.selectOption(newMethod);
+    if (jsWasChecked) await setSettingsToggle(jsModeCheckbox, false);
+    await setSettingsToggle(dashWidgetsCheckbox, !dashWasChecked);
 
     // Submit
     await page.locator('input.slimstat-settings-button[type="submit"]').click();

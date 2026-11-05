@@ -5,15 +5,26 @@
  * - The 0.3-tension spline overshot: above the real peak, and below 0 into the partial week.
  * - The week still in progress reads as one, not as a week that collapsed.
  *
- * Read-only: it draws whatever the database holds, so it runs on an empty install too.
+ * Seed the chart: an empty report correctly renders its empty state without a select.
  */
 import { test, expect } from '@playwright/test';
 import { BASE_URL } from './helpers/env';
+import { clearTestData, insertRows } from './helpers/chart';
+
+test.beforeEach(async () => {
+  await clearTestData();
+  const now = Math.floor(Date.now() / 1000);
+  for (const [days, count] of [[15, 5], [8, 20], [0, 3]]) {
+    await insertRows(now - days * 86400, count, `weekly-label-${days}`);
+  }
+});
+test.afterEach(async () => { await clearTestData(); });
 
 test('weekly chart: ranges do not overlap, the curve does not overshoot, this week says so', async ({ page }) => {
   // Short enough that the chart starts below the fold, as on an empty install under "Get started".
   await page.setViewportSize({ width: 1280, height: 480 });
   await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&type=last_28_days`);
+  await page.locator('#slim_p1_01').scrollIntoViewIfNeeded();
   await page.locator('select.slimstat-granularity-select').first().selectOption('weekly');
   const canvas = page.locator('canvas[id^="slimstat_chart_"]').first();
   await page.waitForFunction(() => {

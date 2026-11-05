@@ -101,8 +101,9 @@ check(!preg_match('/\.pages-label\s*\{[^}]*underline/', read_or_die('admin/asset
 // C2: rate rows render with a % sign. The suffix is added by the renderer, not the
 // data row, because the report-answer contract pins the raw value ("66.67").
 $reports = read_or_die('admin/view/wp-slimstat-reports.php');
-check((bool) preg_match('/\$percent_metrics\s*=\s*\[__\(\'Bounce rate\', \'wp-slimstat\'\), __\(\'New Visitors Rate\', \'wp-slimstat\'\)\]/', $reports), 'C2: Bounce rate and New Visitors Rate are listed as percentages');
-check(false !== strpos($reports, 'in_array($a_result[\'metric\'], $percent_metrics, true) ? \'%\' : \'\''), 'C2: the summary renderer appends % to rate rows');
+$report_data = file_get_contents(dirname(__DIR__) . '/src/Reports/ReportData.php');
+check((bool) preg_match('/\$percent_metrics\s*=\s*array\(\s*__\( \'Bounce rate\', \'wp-slimstat\' \), __\( \'New Visitors Rate\', \'wp-slimstat\' \)\s*\)/', $report_data), 'C2: Bounce rate and New Visitors Rate are listed as percentages');
+check(false !== strpos($report_data, 'in_array( $row[\'metric\'], $percent_metrics, true ) ? \'%\' : \'\''), 'C2: the shared summary formatter appends % to rate rows');
 check(false === strpos($rightnow, "__('SL'") && false === strpos($rightnow, "__('PS'"), 'B11: no SL/PS abbreviations in the Access Log');
 // QA §5: the count floated right AFTER the label, so a label that wrapped pushed its count onto
 // a line of its own. The row is flex instead; DOM order (which the parity harness reads) is kept.

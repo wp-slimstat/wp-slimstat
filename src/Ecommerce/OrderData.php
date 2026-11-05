@@ -36,7 +36,9 @@ final class OrderData
 			}
 			$referrer = (string) $order->get_meta('_wc_order_attribution_referrer');
 			if ('typein' === $type || isset($tags['utm_source']) || filter_var($referrer, FILTER_VALIDATE_URL)) {
-				$attribution = Acquisition::classify($tags, $referrer, '', 0, home_url());
+				// WooCommerce synthesizes referral UTMs; classify the actual referrer when available.
+				$classifierTags = 'referral' === $type && filter_var($referrer, FILTER_VALIDATE_URL) ? [] : $tags;
+				$attribution = Acquisition::classify($classifierTags, $referrer, '', 0, home_url());
 				$base['channel'] = 'typein' === $type ? 'direct' : $attribution['traffic_channel'];
 				$base['source'] = self::text($attribution['traffic_source'] ?? '', 191);
 				$base['campaign'] = self::text($tags['utm_campaign'] ?? '', 191);
@@ -61,11 +63,12 @@ final class OrderData
 				$lineRefunds[$id]['quantity'] = ($lineRefunds[$id]['quantity'] ?? 0) + Money::units((string) $line->get_quantity());
 			}
 		}
+		$fullyRefunded = Money::units((string) $order->get_total()) > 0 && $refunded === Money::units((string) $order->get_total());
 		$base['net'] = Money::decimal(Money::net((string) $order->get_total(), (string) $order->get_total_tax(), (string) $order->get_shipping_total(), $refunds));
 		$base['refund'] = Money::decimal($refunded);
 		$base['discount'] = (string) $order->get_discount_total();
-		$base['tax'] = Money::decimal(Money::units((string) $order->get_total_tax()) - $taxRefunded);
-		$base['shipping'] = Money::decimal(Money::units((string) $order->get_shipping_total()) - $shippingRefunded);
+		$base['tax'] = Money::decimal($fullyRefunded ? 0 : Money::units((string) $order->get_total_tax()) - $taxRefunded);
+		$base['shipping'] = Money::decimal($fullyRefunded ? 0 : Money::units((string) $order->get_shipping_total()) - $shippingRefunded);
 		$rows = [$base];
 		foreach ($order->get_items('line_item') as $id => $item) {
 			$line = $base;
@@ -76,6 +79,10 @@ final class OrderData
 			$line['net'] = Money::decimal(Money::units((string) $item->get_total()) + ($lineRefunds[$id]['total'] ?? 0));
 			$line['quantity'] = Money::decimal(Money::units((string) $item->get_quantity()) + ($lineRefunds[$id]['quantity'] ?? 0));
 			$line['refund'] = Money::decimal(-($lineRefunds[$id]['total'] ?? 0));
+			if ($fullyRefunded) {
+				$line['net'] = $line['quantity'] = '0.000000';
+				$line['refund'] = Money::decimal(Money::units((string) $item->get_total()));
+			}
 			$line['discount'] = Money::decimal(Money::units((string) $item->get_subtotal()) - Money::units((string) $item->get_total()));
 			$rows[] = $line;
 		}

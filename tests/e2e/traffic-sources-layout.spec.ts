@@ -38,6 +38,7 @@ test('the campaign link builder sits in the header left of Export, and the botto
 
 test('the chart keeps its last x label clear of the card edge', async ({ page }) => {
   await page.goto(PAGE);
+  await page.locator('#slim_p3_01').scrollIntoViewIfNeeded();
   const gap = () => page.evaluate(() => {
     const canvas = document.querySelector<HTMLCanvasElement>('#slimstat_chart_slim_p3_01');
     const chart = canvas && (window as any).Chart?.getChart(canvas);

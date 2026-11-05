@@ -18,6 +18,7 @@
 import { test, expect, Page } from '@playwright/test';
 import { ADMIN_PASS, ADMIN_USER, BASE_URL } from './helpers/env';
 import { getPool, closeDb, clearStatsTable } from './helpers/setup';
+import { liveSafeTodayTs } from './helpers/chart';
 
 /** Login if the page was redirected to wp-login.php */
 async function ensureLoggedIn(page: Page): Promise<void> {
@@ -39,7 +40,7 @@ async function seedOutboundPageview(
   resource: string,
   outboundResource: string,
 ): Promise<number> {
-  const now = Math.floor(Date.now() / 1000);
+  const now = liveSafeTodayTs();
   const [result] = (await getPool().execute(
     `INSERT INTO wp_slim_stats
        (resource, outbound_resource, dt, dt_out, ip, visit_id, browser, platform, content_type)
@@ -92,13 +93,10 @@ test.describe('Outbound Link Report Display', () => {
 
     const widget = page.locator('#slim_p4_01');
     await expect(widget).toBeVisible({ timeout: 30_000 });
+    await widget.scrollIntoViewIfNeeded();
 
-    // Wait for async-loaded content (if async_load is on)
-    await page.waitForTimeout(6_000);
-
-    const widgetText = await widget.textContent();
-    expect(await widget.locator('.nodata').count(), 'Recent Outbound Links should not be empty').toBe(0);
-    expect(widgetText, 'Should contain seeded outbound URL').toContain('example.com');
+    await expect(widget, 'Should contain seeded outbound URL').toContainText('example.com');
+    await expect(widget.locator('.nodata'), 'Recent Outbound Links should not be empty').toHaveCount(0);
   });
 
   // ─── Test 2: slim_p4_21 — Top Outbound Links ─────────────────────
@@ -111,12 +109,10 @@ test.describe('Outbound Link Report Display', () => {
 
     const widget = page.locator('#slim_p4_21');
     await expect(widget).toBeVisible({ timeout: 30_000 });
+    await widget.scrollIntoViewIfNeeded();
 
-    await page.waitForTimeout(6_000);
-
-    const widgetText = await widget.textContent();
-    expect(await widget.locator('.nodata').count(), 'Top Outbound Links should not be empty').toBe(0);
-    expect(widgetText, 'Should contain seeded outbound URL').toContain('example.com');
+    await expect(widget, 'Should contain seeded outbound URL').toContainText('example.com');
+    await expect(widget.locator('.nodata'), 'Top Outbound Links should not be empty').toHaveCount(0);
   });
 
   // ─── Test 3: slim_p4_26_01 — Pages with Outbound Links chart ─────
@@ -129,10 +125,14 @@ test.describe('Outbound Link Report Display', () => {
 
     const widget = page.locator('#slim_p4_26_01');
     await expect(widget).toBeVisible({ timeout: 30_000 });
+    await widget.scrollIntoViewIfNeeded();
 
-    await page.waitForTimeout(6_000);
-
-    expect(await widget.locator('.nodata').count(), 'Chart should not show no data').toBe(0);
+    await expect(widget.locator('canvas')).toBeVisible();
+    await expect(widget.locator('.nodata'), 'Chart should not show no data').toHaveCount(0);
+    await expect.poll(async () => {
+      const totals = await widget.locator('[id^="slimstat_chart_data_"]').getAttribute('data-totals');
+      return JSON.parse(totals ?? '{}').current?.v1 ?? 0;
+    }, { message: 'The outbound chart must contain both seeded links' }).toBe(2);
   });
 
   // ─── Test 4: slim_p7_02 — Access Log shows outbound_resource ─────
@@ -145,12 +145,10 @@ test.describe('Outbound Link Report Display', () => {
 
     const widget = page.locator('#slim_p7_02');
     await expect(widget).toBeVisible({ timeout: 30_000 });
+    await widget.scrollIntoViewIfNeeded();
 
-    await page.waitForTimeout(6_000);
-
-    const widgetHtml = await widget.innerHTML();
-    // The access log should contain at least one of our outbound URLs
-    expect(widgetHtml, 'Access log should show outbound URL').toContain('example.com');
+    // The access log should contain at least one of our outbound URLs.
+    await expect.poll(() => widget.innerHTML(), { message: 'Access log should show outbound URL' }).toContain('example.com');
   });
 
   // ─── Test 5: Reports don't show empty entries ─────────────────────
@@ -163,8 +161,9 @@ test.describe('Outbound Link Report Display', () => {
 
     const widget = page.locator('#slim_p4_01');
     await expect(widget).toBeVisible({ timeout: 30_000 });
+    await widget.scrollIntoViewIfNeeded();
 
-    await page.waitForTimeout(6_000);
+    await expect(widget).toContainText('example.com');
 
     // Count visible <p> items inside the widget (each outbound link is a <p>)
     const items = widget.locator('p');

@@ -1,6 +1,6 @@
 <?php
 /**
- * Regression test: getVar() must skip cache when date range overlaps today.
+ * Regression test: getVar() keeps today live when reusing historical pageview counts.
  *
  * Covers the fix for issue #270 — country percentages >100% in Audience Location map
  * caused by getVar() returning stale cached $pageviews while getAll() returned
@@ -54,6 +54,7 @@ class QueryGetVarCacheTest extends WpSlimstatTestCase
 
     protected function tearDown(): void
     {
+        Query::setProcessingTimestamp(null);
         unset($GLOBALS['wpdb']);
         parent::tearDown();
     }
@@ -79,19 +80,20 @@ class QueryGetVarCacheTest extends WpSlimstatTestCase
     }
 
     /**
-     * When the date range includes today, getVar() must NOT read from cache.
-     * This prevents stale $pageviews from causing percentages >100%.
-     * Verify by: get_transient must NOT be called (cache is bypassed entirely).
+     * Today's contribution remains live while an immutable historical row count is reusable.
      */
-    public function testGetVarSkipsCacheWhenDateRangeIncludesToday(): void
+    public function testGetVarCachesOnlyHistoryWhenDateRangeIncludesToday(): void
     {
         $threeDaysAgo = strtotime('-3 days 00:00:00');
-        $now = time();
+        $now = strtotime('today 12:00:00');
+        Query::setProcessingTimestamp($now);
 
-        // get_transient should NOT be called (cache bypassed)
-        Functions\expect('get_transient')->never();
-
-        $this->wpdb->shouldReceive('get_var')->once()->andReturn('100');
+        $writes = [];
+        Functions\stubs(['set_transient' => static function ($key, $value) use (&$writes) {
+            $writes[] = $value;
+            return true;
+        }]);
+        $this->wpdb->shouldReceive('get_var')->twice()->andReturn('80', '20');
 
         $query = Query::select('COUNT(id) as counthits')
             ->from('wp_slim_stats')
@@ -100,6 +102,7 @@ class QueryGetVarCacheTest extends WpSlimstatTestCase
 
         $result = $query->getVar();
         $this->assertEquals('100', $result);
+        $this->assertCount(1, $writes);
     }
 
     /**

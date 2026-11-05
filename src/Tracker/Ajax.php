@@ -369,6 +369,7 @@ class Ajax
 
                         // Extract path from resource URL
                         $stat['resource'] = $path . (empty($parsed_resource['query']) ? '' : '?' . $parsed_resource['query']);
+                        $stat['resource'] = Utils::normalizeResourceParameters($stat['resource']);
                         $stat['resource'] = sanitize_text_field(urldecode($stat['resource']));
                         $stat['resource'] = preg_replace_callback('/[^\x20-\x7E]/', function ($m) {
                             return '%' . bin2hex($m[0]);

@@ -20,7 +20,8 @@ for (const initialId of ['', 'invalid-cache-id']) {
     await page.goto(origin);
     await page.evaluate(({ origin }) => {
       const w = window as any;
-      w.SlimStatParams = { id: '999.abcdef', ajaxurl_rest: `${origin}/hit`, transport: 'rest', gdpr_enabled: 'off', is_logged_in: '0' };
+      // Keep automatic DOM-ready tracking blocked while this test exercises the transport directly.
+      w.SlimStatParams = { id: '999.abcdef', ajaxurl_rest: `${origin}/hit`, transport: 'rest', gdpr_enabled: 'on', anonymous_tracking: 'off', consent_integration: 'slimstat_banner', use_slimstat_banner: 'on', is_logged_in: '0' };
       w.beaconCalls = 0;
       Object.defineProperty(navigator, 'sendBeacon', { configurable: true, value: () => { w.beaconCalls++; return true; } });
     }, { origin });

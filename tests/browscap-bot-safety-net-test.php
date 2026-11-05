@@ -162,4 +162,33 @@ foreach ($required_regex_tokens as $token) {
     );
 }
 
+// Execute both shared detection paths; real browsers must keep their existing type.
+require_once dirname(__DIR__) . '/src/Utils/UADetector.php';
+require_once dirname(__DIR__) . '/src/Services/Browscap.php';
+foreach ([
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 HeadlessChrome/141.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 HeadlessChrome/141.0.7390.122 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/538.1 PhantomJS/2.1.1 Safari/538.1',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/141.0.0.0 Safari/537.36 Chrome-Lighthouse',
+    'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/141.0.0.0 Mobile Safari/537.36 Chrome-Lighthouse',
+] as $ua) {
+    safety_assert(1 === \SlimStat\Utils\UADetector::get_browser($ua)['browser_type'], 'Self-identifying automation: ' . $ua);
+    foreach ([0, 2, 3] as $type) {
+        $original = ['user_agent' => $ua, 'browser' => 'Chrome', 'browser_type' => $type, 'platform' => 'linux'];
+        $expected = $original;
+        $expected['browser_type'] = 1;
+        safety_assert($expected === \SlimStat\Services\Browscap::apply_bot_safety_net($original), 'Browscap safety net changes only the type');
+    }
+}
+foreach ([
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/141.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/141.0.0.0 Mobile Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15',
+] as $ua) {
+    $original = \SlimStat\Utils\UADetector::get_browser($ua);
+    safety_assert(1 !== $original['browser_type'], 'Real browser stays human');
+    safety_assert($original === \SlimStat\Services\Browscap::apply_bot_safety_net($original), 'Real browser metadata unchanged');
+}
+
 echo "All {$assertions} assertions passed in browscap-bot-safety-net-test.php\n";

@@ -116,7 +116,7 @@ class HeatmapRestController implements RestControllerInterface
             $url    = (string) apply_filters('slimstat_heatmap_row_url', '', $row['page']);
             $rows[] = [
                 'page'      => $row['page'],
-                'title'     => $row['content_id'] ? wp_strip_all_tags(get_the_title($row['content_id'])) : '',
+                'title'     => $row['content_id'] ? wp_strip_all_tags(html_entity_decode(get_the_title($row['content_id']), ENT_QUOTES, 'UTF-8')) : '',
                 'clicks'    => $row['clicks'],
                 'pageviews' => $row['pageviews'],
                 'devices'   => $pro ? [$row['desktop'], $row['tablet'], $row['mobile']] : null,

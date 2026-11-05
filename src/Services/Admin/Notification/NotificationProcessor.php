@@ -125,11 +125,13 @@ class NotificationProcessor
 			$old = \get_option($key, false);
 			$new = (is_array($old) ? $old : []) + array_fill_keys($ids, true);
 			if ($old === $new) return true;
+			// Older installations may have an autoloaded dismissal option.
 			$won = false === $old ? OptionClaim::insert($key, serialize($new))
-				: OptionClaim::compareAndSwap($key, serialize($old), serialize($new));
+				: OptionClaim::compareAndSwap($key, serialize($old), serialize($new), 'yes');
 			if ($won) return true;
 			\wp_cache_delete($key, 'options');
 			\wp_cache_delete('notoptions', 'options');
+			\wp_cache_delete('alloptions', 'options');
 		}
 		return false;
 	}

@@ -192,11 +192,8 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForSelector(GRANULARITY_SELECT, { timeout: 20_000 });
 
-    // Wait for async reports to finish loading (loading spinners disappear)
-    await page.waitForFunction(
-      () => document.querySelectorAll('.loading .slimstat-font-spin4').length === 0,
-      { timeout: 20_000 },
-    );
+    // Off-screen reports remain deferred; wait for the chart being checked.
+    await expect(page.locator(`.postbox:has(${GRANULARITY_SELECT}) .loading .slimstat-font-spin4`)).toHaveCount(0);
 
     // Allow chart re-initialization to complete
     await page.waitForTimeout(2_000);
@@ -218,10 +215,7 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
     await goToOverview(page);
 
     // Wait for async loading to finish
-    await page.waitForFunction(
-      () => document.querySelectorAll('.loading .slimstat-font-spin4').length === 0,
-      { timeout: 20_000 },
-    );
+    await expect(page.locator(`.postbox:has(${GRANULARITY_SELECT}) .loading .slimstat-font-spin4`)).toHaveCount(0);
     await page.waitForTimeout(1_000);
 
     // Verify the chart canvas exists and has been initialized
@@ -320,10 +314,7 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
 
     // Step 1: Go to Overview, wait for async load, change to "daily"
     await goToOverview(page);
-    await page.waitForFunction(
-      () => document.querySelectorAll('.loading .slimstat-font-spin4').length === 0,
-      { timeout: 20_000 },
-    );
+    await expect(page.locator(`.postbox:has(${GRANULARITY_SELECT}) .loading .slimstat-font-spin4`)).toHaveCount(0);
     await page.waitForSelector(GRANULARITY_SELECT, { timeout: 15_000 });
     await setGranularity(page, 'daily');
     expect(await getSelectedGranularity(page)).toBe('daily');
@@ -331,10 +322,7 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
     // Step 2: Reload
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForSelector(GRANULARITY_SELECT, { timeout: 20_000 });
-    await page.waitForFunction(
-      () => document.querySelectorAll('.loading .slimstat-font-spin4').length === 0,
-      { timeout: 20_000 },
-    );
+    await expect(page.locator(`.postbox:has(${GRANULARITY_SELECT}) .loading .slimstat-font-spin4`)).toHaveCount(0);
     await page.waitForTimeout(2_000);
     await page.waitForSelector(GRANULARITY_SELECT, { timeout: 10_000 });
 
@@ -346,10 +334,7 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
     // Step 3: Navigate away and back
     await page.goto(`${BASE_URL}/wp-admin/edit.php`, { waitUntil: 'domcontentloaded' });
     await goToOverview(page);
-    await page.waitForFunction(
-      () => document.querySelectorAll('.loading .slimstat-font-spin4').length === 0,
-      { timeout: 20_000 },
-    );
+    await expect(page.locator(`.postbox:has(${GRANULARITY_SELECT}) .loading .slimstat-font-spin4`)).toHaveCount(0);
     await page.waitForTimeout(2_000);
     await page.waitForSelector(GRANULARITY_SELECT, { timeout: 10_000 });
 
@@ -392,23 +377,29 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
     expect(errors, 'No chart-related console errors or warnings').toEqual([]);
   });
 
-  test('chart and date changes remain free of browser errors after reload', async ({ page }) => {
-    const errors: string[] = [];
-    // Attach before the first navigation so initialization failures are covered.
-    page.on('pageerror', error => errors.push(error.message));
-    page.on('console', message => {
-      if (message.type() === 'error') errors.push(message.text());
+  for (const asyncLoad of ['off', 'on']) {
+    test(`chart and date changes remain free of browser errors after reload (Async ${asyncLoad})`, async ({ page }) => {
+      await setSlimstatOption(page, 'async_load', asyncLoad);
+      const errors: string[] = [];
+      // Attach before the first navigation so initialization failures are covered.
+      page.on('pageerror', error => errors.push(error.message));
+      page.on('console', message => {
+        if (message.type() === 'error') errors.push(message.text());
+      });
+      await goToOverview(page);
+      await waitForChartInitialized(page);
+      await setGranularity(page, 'daily');
+      await page.locator('.slimstat-date-range-btn').click();
+      await page.locator('.daterangepicker:visible .ranges li').filter({ hasText: /^Last 28 days$/ }).click();
+      await expect(page).toHaveURL(/type=last_28_days/);
+      await waitForChartInitialized(page);
+      // Let WordPress finish its navigation animation before this test reloads again.
+      await page.waitForFunction(() => !(document as Document & { activeViewTransition?: unknown }).activeViewTransition);
+      await page.reload({ waitUntil: 'networkidle' });
+      await waitForChartInitialized(page);
+      await expect(page.locator('[id^="slimstat_chart_data_"]').first()).toHaveAttribute('data-granularity', 'daily');
+      expect(errors, 'Initial chart, granularity, date selection and reload must not log browser errors').toEqual([]);
     });
-    await goToOverview(page);
-    await waitForChartInitialized(page);
-    await setGranularity(page, 'daily');
-    await page.locator('.slimstat-date-range-btn').click();
-    await page.locator('.daterangepicker:visible .ranges li').filter({ hasText: /^Last 28 days$/ }).click();
-    await expect(page).toHaveURL(/type=last_28_days/);
-    await waitForChartInitialized(page);
-    await page.reload({ waitUntil: 'networkidle' });
-    await waitForChartInitialized(page);
-    expect(errors, 'Initial chart, granularity, date selection and reload must not log browser errors').toEqual([]);
-  });
+  }
 
 });

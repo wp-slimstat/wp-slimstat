@@ -19,6 +19,7 @@ import {
   ensureWpUser,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
+import { runWordPressFixture } from './helpers/chart';
 import { requireProBooted } from './helpers/pro-state';
 
 // ─── DB helpers ──────────────────────────────────────────────────
@@ -67,7 +68,8 @@ function userNote(prefix: string = ''): string {
 }
 
 async function loginAsGerlando(
-  browser: import('@playwright/test').Browser
+  browser: import('@playwright/test').Browser,
+  withoutTrackingCookie = false
 ): Promise<{
   context: import('@playwright/test').BrowserContext;
   page: import('@playwright/test').Page;
@@ -79,6 +81,10 @@ async function loginAsGerlando(
   });
   await page.fill('#user_login', TEST_USER);
   await page.fill('#user_pass', TEST_USER_PASS);
+  if (withoutTrackingCookie) {
+    await context.clearCookies({ name: 'slimstat_tracking_code' });
+    expect((await context.cookies()).some(cookie => cookie.name === 'slimstat_tracking_code')).toBe(false);
+  }
   await page.click('#wp-submit');
   await page.waitForURL('**/wp-admin/**', {
     timeout: 45_000,
@@ -88,6 +94,7 @@ async function loginAsGerlando(
 }
 
 async function getUserOverviewData(page: import('@playwright/test').Page) {
+  await page.locator('#slim_p8_01').scrollIntoViewIfNeeded();
   await expect(page.locator('#slim_p8_01 table')).toBeVisible();
   return page.evaluate(() => {
     const panel = document.getElementById('slim_p8_01');
@@ -160,8 +167,8 @@ test.describe('User Overview (slim_p8_01)', () => {
       const now = Math.floor(Date.now() / 1000);
       await seedPageviewWithNotes('gerlando', userNote(), now);
 
-      const { context, page } = await loginAsGerlando(browser);
-      await page.waitForTimeout(2000);
+      const { context } = await loginAsGerlando(browser, true);
+      await expect.poll(getLoginNotes).not.toHaveLength(0);
 
       const loginNotes = await getLoginNotes();
       expect(loginNotes.length).toBeGreaterThanOrEqual(1);
@@ -174,6 +181,27 @@ test.describe('User Overview (slim_p8_01)', () => {
       expect(note.notes).not.toContain(';loggedin:gerlando');
 
       await context.close();
+    });
+
+    test('login note survives the post-login redirect with a tracking cookie', async ({ browser }) => {
+      // The redirect updates a server-tracked pageview; the default client mode has no such row.
+      const mode = JSON.parse(runWordPressFixture('<?php echo wp_json_encode(wp_slimstat::$settings["javascript_mode"]);'));
+      await setSlimstatSetting('javascript_mode', 'no');
+      let context: import('@playwright/test').BrowserContext | undefined;
+      try {
+        ({ context } = await loginAsGerlando(browser));
+        expect((await context.cookies()).some(cookie => cookie.name === 'slimstat_tracking_code')).toBe(true);
+        await expect.poll(async () => (await getLoginNotes()).filter(row => row.notes.includes('[loggedin:gerlando]')).length).toBe(1);
+        const [rows] = await getPool().execute(
+          "SELECT notes, content_type FROM wp_slim_stats WHERE notes LIKE '%[loggedin:gerlando]%'"
+        ) as any;
+        expect(rows).toHaveLength(1);
+        expect(rows[0].content_type).toBe('redirect:302');
+        expect(rows[0].notes.match(/\[loggedin:gerlando\]/g)).toHaveLength(1);
+      } finally {
+        await context?.close();
+        await setSlimstatSetting('javascript_mode', mode);
+      }
     });
 
     test('login note is NOT written when no recent pageview exists', async ({
@@ -244,6 +272,7 @@ test.describe('User Overview (slim_p8_01)', () => {
         waitUntil: 'domcontentloaded',
       });
 
+      await page.locator('#slim_p8_01').scrollIntoViewIfNeeded();
       await expect(page.locator('#slim_p8_01 table')).toBeVisible();
       const columns = await page.evaluate(() => {
         const panel = document.getElementById('slim_p8_01');

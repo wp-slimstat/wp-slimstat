@@ -326,6 +326,31 @@ class Utils
 		return false;
 	}
 
+	/** Remove explicitly configured query keys without decoding or rebuilding other values. */
+	public static function normalizeResourceParameters(string $resource): string
+	{
+		$configured = trim((string) (\wp_slimstat::$settings['ignore_resource_parameters'] ?? ''));
+		if ('' === $configured || false === strpos($resource, '?')) {
+			return $resource;
+		}
+		$ignored = array_fill_keys(preg_split('/[\s,]+/', $configured, -1, PREG_SPLIT_NO_EMPTY), true);
+		$parts = explode('#', $resource, 2);
+		$fragment = isset($parts[1]) ? '#' . $parts[1] : '';
+		$url = explode('?', $parts[0], 2);
+		if (!isset($url[1])) {
+			return $resource;
+		}
+		$kept = [];
+		foreach (explode('&', $url[1]) as $parameter) {
+			$key = urldecode(explode('=', $parameter, 2)[0]);
+			if (!isset($ignored[$key])) {
+				$kept[] = $parameter;
+			}
+		}
+		$query = implode('&', $kept);
+		return $url[0] . ('' === $query ? '' : '?' . $query) . $fragment;
+	}
+
 	public static function isBlacklisted($needles = [], $haystackString = '')
 	{
 		if (!is_array($needles)) {

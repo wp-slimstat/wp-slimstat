@@ -3266,6 +3266,28 @@ body.slimstat-admin-page {
           }
         }
 
+        .slimstat-ai-prompt {
+          padding: 5px;
+          border: 0;
+          background: none;
+          font-family: inherit;
+          font-weight: 700;
+          font-size: 12px;
+          line-height: 100%;
+          color: rgb(103, 110, 116);
+          text-decoration: none;
+          transition: 0.3s all ease-out;
+          cursor: pointer;
+
+          &:hover:not(:disabled) {
+            color: #202224;
+          }
+
+          &:disabled {
+            cursor: default;
+          }
+        }
+
         [dir="rtl"] & {
           float: left;
 
@@ -3273,6 +3295,20 @@ body.slimstat-admin-page {
             margin-right: 0px;
             margin-left: 3px;
           }
+        }
+      }
+
+      // The report title keeps the first row; actions wrap below without displacing it.
+      h3 ~ .slimstat-header-buttons {
+        float: none;
+        flex-wrap: wrap;
+        gap: 6px 0;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0 10px 12px;
+
+        [dir="rtl"] & {
+          float: none;
         }
       }
 

@@ -35,6 +35,12 @@ function get_current_network_id() { return 1; }
 function wp_insert_site($site) { global $inserted; $inserted = $site; return 2; }
 require_once __DIR__ . '/lib/source-scan.php';
 $probe = slimstat_blank_comments(file_get_contents(__DIR__ . '/docker/probe-network-rehearsal.php'));
+// Evaluate the probe's real manifest selection, including a required-table failure above.
+require_once dirname(__DIR__) . '/src/Schema/Schema.php';
+$check(1 === preg_match('/\$requiredTables = .*?;/s', $probe, $selection), 'required table inventory located');
+eval($selection[0]);
+$check(isset($requiredTables['slim_meta'], $requiredTables['slim_user_agents'], $requiredTables['slim_stats'], $requiredTables['slim_events']), 'activation-owned tables remain required');
+$check(!isset($requiredTables['slim_ecommerce'], $requiredTables['slim_heatmap'], $requiredTables['slim_heatmap_elements']), 'on-demand tables are not activation requirements');
 $check(1 === preg_match('/\$id = wp_insert_site\((.*?)\);/s', $probe, $matches), 'real site creation expression located');
 foreach ([false, true] as $subdomains) {
     $i = 2;

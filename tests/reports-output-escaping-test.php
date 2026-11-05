@@ -353,6 +353,7 @@ class TestDataProvider
     }
 }
 
+require_once __DIR__ . '/../src/Reports/ReportData.php';
 require_once __DIR__ . '/../admin/view/wp-slimstat-reports.php';
 
 function render_column(string $column, ?string $value): string

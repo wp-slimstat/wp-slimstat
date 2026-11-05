@@ -1,4 +1,4 @@
-=== SlimStat Analytics – Real-Time Stats, Heatmaps & Ecommerce ===
+=== SlimStat Analytics ===
 Contributors: veronalabs, coolmann, toxicum, parhumm, mostafas1990
 Tags: analytics, statistics, tracking, heatmap, woocommerce analytics
 Text Domain: wp-slimstat
@@ -6,7 +6,7 @@ Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
 Tested up to: 7.1
-Stable tag: 6.0.0
+Stable tag: 6.1.0
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -73,6 +73,7 @@ Love the free plugin? [SlimStat Pro](https://wp-slimstat.com/) is for sites that
 
 == Please note ==
 * **Optional database downloads:** If an administrator enables or updates browser detection or DB-IP geolocation, SlimStat downloads the Browscap database from GitHub and the DB-IP Lite database from jsDelivr. No analytics data is sent with these requests.
+* **Optional video tutorials:** SlimStat → Videos lists tutorials published on wp-slimstat.com, our website. Nothing is requested until you choose **Show videos**, or turn on the new-video marker, on that screen. Your browser then downloads the list (https://wp-slimstat.com/videos/videos.json) and its thumbnails directly from wp-slimstat.com, with no referrer and no analytics or account data, and the list request without cookies; your WordPress server sends nothing. Like any web request, this shows wp-slimstat.com your IP address and browser, and the list request also names this site's address (the browser's standard Origin header). With the marker on, your browser checks the list at most once a day. Your choices are kept in your browser only, and videos play on wp-slimstat.com in a new tab. See the [wp-slimstat.com privacy policy](https://wp-slimstat.com/privacy-policy/).
 * **Your stats survive uninstalling.** Deleting Slimstat Analytics keeps every visit, setting and table in your database, so reinstalling picks up exactly where you left off.
 * If you *want* the data gone — decommissioning a site, or honouring a data-erasure request — turn on **Settings → Maintenance → "Delete Data on Uninstall"** *before* deleting the plugin, then delete it. That is the only one-step option that removes **everything**, archive tables included. Deleting the plugin on its own will not clear the database.
 * **Delete Records** (Settings → Maintenance) clears your live records but **not** the archived ones in `wp_slim_stats_archive` / `wp_slim_events_archive`, which still count as retained data under GDPR. If you are handling an erasure request and want to keep the plugin installed, clear the records *and* empty those archive tables.
@@ -120,7 +121,13 @@ https://www.youtube.com/watch?v=otZpOyqGkLs
 Google AI Overviews cannot be told apart from a normal Google search, so those visits stay in Organic Search.
 
 = Will SlimStat slow down my site? =
-It's built to stay light, and version 6 is lighter still: the tracker writes far fewer option updates per pageview and the admin charts read half as many database rows. Choose client-side tracking for cached sites or server-side to catch every request, and SlimStat plays nicely with W3 Total Cache, WP Super Cache, Cloudflare and the rest.
+It's built to stay light, and version 6 is lighter still: the tracker writes far fewer option updates per pageview and the admin charts read half as many database rows. Choose client-side tracking for cached sites. Server-side tracking records requests that reach WordPress; pages served entirely by a cache do not run the PHP tracker.
+
+= Which tracking URLs should I exclude from page caches and CDNs? =
+
+Use the URLs in your site's rendered tracker settings, including any site subdirectory. Exclude the bypass path `/request/{hash}/`, the `/wp-json/slimstat/` tracking routes, plain-permalink requests containing `?rest_route=/slimstat/`, and `/wp-admin/admin-ajax.php` at each applicable page, server and CDN cache. The bypass path exists only when the Ad-blocker bypass tracking method is selected. Do not cache tracking POST requests or rejection responses.
+
+Apply exclusions before purging cached tracking responses. Then check that an ordinary frontend page still gets a cache HIT and that tracking returns a pageview ID instead of HTML, including when bypass is the only available transport. Plugin no-store headers cannot fix a response already served by an earlier cache. Purge outdated tracker assets when updating; a query parameter alone may not bypass caches configured to ignore it. Compatibility depends on the cache version and configuration.
 
 = Is it really GDPR-ready out of the box? =
 Yes. IP anonymization and hashing, Do Not Track, a translatable consent banner, WP Consent API integration and scheduled data purging are all built in, no extra plugins required.
@@ -151,11 +158,59 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Upgrade Notice ==
 
+= 6.1.0 =
+Older versions keep working and added columns stay. This update removes no rows. Adds Copy AI Prompt, AI Analysis, city drilldown and video tutorials. Fixes privacy exports, consent, tracking and report accuracy. Back up first; database repairs still wait for your click.
+
 = 6.0.0 =
 SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster reports. Back up first. The update adds columns and indexes and removes no rows; older versions keep working and the added columns stay. Database steps wait for your click. Some totals change on purpose: see changelog.
 
 
 == Changelog ==
+
+= 6.1.0 - 2026-11-04 =
+
+**New**
+
+* **AI Analysis:** ✨ Copy AI Prompt beside each report's Export copies the rows on screen, the period, the filters and your site's title, tagline and address as a ready-to-paste prompt for ChatGPT, Claude, Grok or any AI assistant. It only goes to your clipboard. Reports that list individual visitors have no button; Pro reports need Pro. Ecommerce, the Heatmaps page list and individual page heatmaps support it too.
+* A new SlimStat → AI Analysis page explains the workflow. SlimStat Pro adds analysis inside SlimStat through an AI provider connected in WordPress, run only when you ask and without visitor identifiers, URLs or free-text labels.
+* **Country to city drilldown:** click a country on the Audience Location map, its country list or Top Countries to see that country's top cities for the same dates and filters. Free shows the top city; Pro lists every city. Cities need Geolocation precision set to City.
+* **Video tutorials:** SlimStat → Videos lists tutorials from wp-slimstat.com. Nothing is requested until you choose to load the list, and an optional menu marker tells you when new videos are published.
+
+**Improved**
+
+* Ordinary page loads avoid absent Ecommerce and permalink-update option queries; privacy exports and erasure still work after WooCommerce is deactivated.
+* Nearby report widgets share requests or load up to three at a time; offscreen widgets load as you scroll. Customize layout placeholders no longer fetch report data.
+* Historical reports and unfiltered pageview totals reuse cached results across requests while today's count stays live and separate analytics databases stay apart.
+* Pageview tracking starts when the page is ready, with a bounded delay. Notification dismissals and refreshes wait for background checks to finish.
+* Missing browser-detection data recovers in the background when enabled, with clearer failure details and a manual retry. ([#363](https://github.com/wp-slimstat/wp-slimstat/issues/363))
+* Migrations try a fast metadata-only change first, wait at most five seconds for table locks, and leave unsupported online changes pending instead of copying tables.
+
+**Fixed**
+
+* Migration identifies incomplete visit-counter setup, offers an administrator-only retry, and clears the upgrade warning after recovery. ([#395](https://github.com/wp-slimstat/wp-slimstat/issues/395))
+* Server tracking counts the destination page once after WordPress redirects to its preferred URL, preventing duplicate trailing-slash pageviews. Existing history is unchanged. ([#396](https://github.com/wp-slimstat/wp-slimstat/issues/396))
+* Head-loaded trackers initialize safely and capture clicks, form submissions and heatmap clicks after DOM readiness. Hidden consent banners no longer block form controls or keyboard focus. ([#120](https://github.com/wp-slimstat/wp-slimstat/issues/120), [#181](https://github.com/wp-slimstat/wp-slimstat/issues/181))
+* Server-only visits receive session IDs, Online Users excludes bots, and opt-in URL normalization removes configured parameters after campaign attribution. Chart refreshes keep active filters and the comparison setting. ([#257](https://github.com/wp-slimstat/wp-slimstat/issues/257), [#272](https://github.com/wp-slimstat/wp-slimstat/issues/272), [#276](https://github.com/wp-slimstat/wp-slimstat/issues/276), [#158](https://github.com/wp-slimstat/wp-slimstat/issues/158))
+* Self-identifying headless browsers and Lighthouse are recognized by the existing Bots exclusion. ([#364](https://github.com/wp-slimstat/wp-slimstat/issues/364))
+* Reports that span midnight keep grouped counts and top-list rankings exact, and database errors no longer become cached empty reports.
+* Pageviews charts include visits without an IP address, matching pageview totals. The Traffic Sources chart labels distinct referring URLs accurately, and report labels distinguish visits from pageviews.
+* Fully refunded WooCommerce orders show zero net sales, shipping and tax; Rebuild reports refreshes existing totals. WooCommerce social and messaging attribution handles synthetic referral tags correctly.
+* WordPress Dashboard widgets load without slowing the page, and the Dashboard Access Log no longer shows a Pro promotion. ([#361](https://github.com/wp-slimstat/wp-slimstat/issues/361), [#388](https://github.com/wp-slimstat/wp-slimstat/issues/388))
+* First visits keep recording on upgraded sites while the visitor-identity database step is still pending. Optional migration repairs cover legacy column differences and preserve recorded values. ([#360](https://github.com/wp-slimstat/wp-slimstat/issues/360))
+* Heatmaps show readable titles, sample across pageviews and avoid duplicate clicks; restored pageviews remain visible.
+* Report refreshes ignore replaced charts, pagination no longer jumps back to page 1, and Real-time charts keep their history after you return to the page.
+* Offline tracking survives a failed reconnect and page reload, keeping pending visits until the server confirms them.
+* The date picker's highlighted preset matches the selected range. Report SQL diagnostics show the correct query and display errors safely. ([#362](https://github.com/wp-slimstat/wp-slimstat/issues/362))
+* Restored the tracker's deprecated checksum helper and the geolocation service's deprecated MaxMind getter and setter, and removed the retired add-on catalog while preserving stored license settings. ([#227](https://github.com/wp-slimstat/wp-slimstat/issues/227))
+
+**Security**
+
+* Personal-data downloads include live and archived visits and events, including large histories and older database layouts. A database error stops the export so an incomplete download is not reported as complete.
+* Privacy erasure covers the external analytics database, archives and visitors with long histories, and stops safely on a database error. IP anonymization includes archives.
+* Retention cleanup verifies archived values before deleting old records and pauses instead of losing fields it cannot archive.
+* Report-access allowlists match complete usernames; a partial username no longer grants access.
+* Unknown or malformed saved filters cannot apply partial or unfiltered reports. Stored entries remain available for deletion, and valid saved filters keep their values. ([#351](https://github.com/wp-slimstat/wp-slimstat/pull/351))
+* Consent withdrawal works reliably, the consent banner works in server tracking mode, and saving Tracker settings preserves unchosen consent options. Heatmaps discard activity recorded before consent. WooCommerce attribution waits for consent and respects other integrations' tracking denials. ([#366](https://github.com/wp-slimstat/wp-slimstat/issues/366), [#367](https://github.com/wp-slimstat/wp-slimstat/issues/367), [#375](https://github.com/wp-slimstat/wp-slimstat/issues/375))
 
 = 6.0.0 - 2026-10-24 =
 

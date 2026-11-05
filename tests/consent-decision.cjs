@@ -83,3 +83,123 @@ for (const [waitForId, consentUpgrade, expected] of [[true, false, false], [fals
     assert.equal(vm.runInNewContext(beaconDeclaration[1], {waitForId, options: {consentUpgrade}}), expected);
 }
 console.log('PASS: consent upgrades await acknowledged response and retain transport fallback');
+
+const flushStart = source.indexOf('    function storeOffline(');
+const flushEnd = source.indexOf('\n    // -------------------------- Public API', flushStart);
+assert(flushStart >= 0 && flushEnd > flushStart);
+vm.runInContext(source.slice(flushStart, flushEnd), scope);
+let offline = [{p: 'action=slimtrack&res=page-a'}, {p: 'action=slimtrack&res=page-b'}, {p: 'action=slimtrack&id=pending&no=click'}];
+const delivered = [];
+const acknowledgements = [];
+scope.offlineInFlight = {};
+scope.OFFLINE_REPLAY_KEY = 'slimstat_offline_replay';
+let sessionPending = [];
+scope.loadSessionState = () => JSON.parse(JSON.stringify(sessionPending));
+scope.saveSessionState = (key, value) => { sessionPending = JSON.parse(JSON.stringify(value)); return true; };
+const durableCount = () => offline.length + sessionPending.length;
+scope.loadOfflineQueue = () => offline;
+scope.saveOfflineQueue = value => { offline = value; };
+scope.sendToServer = (payload, beacon, opts) => { delivered.push(payload); acknowledgements.push(opts.onComplete); return true; };
+scope.navigator.onLine = true;
+settings.anonymous_tracking = 'off';
+consent = false;
+scope.flushOfflineQueue();
+assert.equal(delivered.length, 0, 'withdrawn consent must stop offline replay');
+assert.equal(offline.length, 3, 'blocked replay must not discard queued data');
+consent = true;
+scope.flushOfflineQueue();
+assert.deepEqual(delivered, ['action=slimtrack&res=page-a', 'action=slimtrack&res=page-b']);
+assert.equal(durableCount(), 3, 'queued transport is not an acknowledgement; reload must retain the payloads');
+assert.equal(offline.length, 1, 'active replays must be owned by this tab');
+scope.flushOfflineQueue();
+assert.equal(delivered.length, 2, 'repeated online signals must not duplicate an in-flight replay');
+acknowledgements[0](false);
+assert.equal(durableCount(), 3, 'failed transport must retain durable payloads');
+scope.flushOfflineQueue();
+assert.equal(delivered.length, 3, 'a failed replay can be retried');
+acknowledgements[2](true);
+acknowledgements[1](true);
+assert.equal(offline.length, 1, 'only interactions need an assigned pageview ID');
+settings.id = '123.signed';
+scope.flushOfflineQueue();
+assert.equal(delivered[3], 'action=slimtrack&id=123.signed&no=click');
+assert.equal(sessionPending.length, 1, 'the original pending payload remains durable until acknowledged');
+assert.equal(sessionPending[0].p, 'action=slimtrack&id=123.signed&no=click', 'reload must retain the interaction\'s resolved pageview ID');
+acknowledgements[3](false, true);
+assert.equal(offline.length, 0);
+scope.flushOfflineQueue();
+assert.equal(delivered.length, 4, 'an empty replay must not enqueue duplicates');
+offline = [{p: 'action=slimtrack&res=page-c'}];
+scope.flushOfflineQueue();
+offline.push({p: 'action=slimtrack&res=new-while-sending'}, null);
+acknowledgements[4](true);
+assert.deepEqual(offline, [{p: 'action=slimtrack&res=new-while-sending'}, null], 'acknowledgement must preserve newly queued data');
+offline = [{p: 'action=slimtrack&res=shared-tab-page'}];
+scope.flushOfflineQueue();
+const otherTab = vm.createContext({...scope, offlineInFlight: {}, loadSessionState: () => [], saveSessionState: () => true});
+vm.runInContext(source.slice(flushStart, flushEnd), otherTab);
+otherTab.flushOfflineQueue();
+assert.equal(delivered.filter(payload => payload === 'action=slimtrack&res=shared-tab-page').length, 1, 'another tab must not replay a payload already being delivered');
+scope.offlineInFlight = {};
+scope.restoreOfflineReplays();
+assert.equal(offline.length, 1, 'reload recovers this tab\'s unacknowledged replay');
+assert.equal(sessionPending.length, 0, 'restored entries must not remain claimed');
+const sentBeforeStorageFailure = delivered.length;
+const saveSession = scope.saveSessionState;
+scope.saveSessionState = () => false;
+scope.flushOfflineQueue();
+assert.equal(offline.length, 1, 'unavailable tab storage must not discard queued data');
+assert.equal(delivered.length, sentBeforeStorageFailure);
+scope.saveSessionState = saveSession;
+scope.saveOfflineQueue = () => {};
+scope.flushOfflineQueue();
+assert.equal(sessionPending.length, 0, 'a failed shared-queue claim must be abandoned');
+assert.equal(delivered.length, sentBeforeStorageFailure);
+scope.saveOfflineQueue = value => { offline = value; };
+console.log('PASS: offline replay survives reload, owns in-flight data per tab, preserves new data and honors rejection/consent');
+
+const apiStart = source.indexOf('    function detectWPConsentAPI(');
+const apiEnd = source.indexOf('\n    function ', apiStart + 1);
+assert(apiStart >= 0 && apiEnd > apiStart);
+scope.isFunction = value => typeof value === 'function';
+scope.isObject = value => value !== null && typeof value === 'object';
+vm.runInContext(source.slice(apiStart, apiEnd), scope);
+// WP Consent API 2.x services are distinct from categories. A permissive service
+// result must never override the selected statistics category's denial.
+scope.window = {wp_has_service_consent: () => true, wp_has_consent: () => false};
+assert.equal(scope.detectWPConsentAPI('statistics'), false, 'service fallback cannot grant category consent');
+for (const type of [undefined, '', 'optin', 'optout']) {
+    for (const choice of ['', 'deny', 'allow']) {
+        scope.window = {wp_fallback_consent_type: '', wp_has_consent: category => {
+            assert.equal(category, 'statistics');
+            const effectiveType = scope.window.wp_consent_type ?? scope.window.wp_fallback_consent_type;
+            return !effectiveType || (effectiveType === 'optout' && choice === '') || choice === 'allow';
+        }};
+        if (type !== undefined) scope.window.wp_consent_type = type;
+        assert.equal(scope.detectWPConsentAPI('statistics'), choice === 'allow' || (type === 'optout' && choice === ''), `type=${type}, choice=${choice}`);
+        assert.equal(scope.window.wp_consent_type, type, 'temporary consent type must be restored');
+        assert.equal(Object.hasOwn(scope.window, 'wp_consent_type'), type !== undefined);
+    }
+}
+console.log('PASS: WP Consent API categories respect denial and unset types without changing CMP state');
+
+// Run the actual bootstrap for both parser-time and late/deferred script execution.
+const initialStart = source.indexOf('    function startInitialPageview()');
+const initialEnd = source.indexOf('    // Listen for WP Consent API', initialStart);
+assert(initialStart >= 0 && initialEnd > initialStart);
+for (const readyState of ['loading', 'interactive', 'complete']) {
+    let sends = 0;
+    const handlers = {};
+    const env = { document: {readyState}, navigator: {onLine: true}, setTimeout() {},
+        SlimStat: { _extract_params() {}, _send_pageview() { sends++; }, add_event(target, event, fn) { handlers[event] = fn; } } };
+    vm.runInNewContext(source.slice(initialStart, initialEnd), env);
+    if (readyState === 'loading') { assert.equal(sends, 0); assert.equal(typeof handlers.DOMContentLoaded, 'function'); handlers.DOMContentLoaded(); }
+    assert.equal(sends, 1, `one initial dispatch for ${readyState}`);
+    assert.equal(handlers.load, undefined, 'load must not dispatch a second pageview');
+}
+const idle = source.match(/if \(window.requestIdleCallback\) window.requestIdleCallback\(run[^;]+;/);
+assert(idle);
+let deadline;
+vm.runInNewContext(idle[0], {window: {requestIdleCallback(fn, options) { deadline = options && options.timeout; }}, run() {}});
+assert(deadline > 0 && deadline <= 1000, 'initial pageview idle delay has a bounded deadline');
+console.log('PASS: parser-time and late bootstraps dispatch once; idle delay is bounded');

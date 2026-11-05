@@ -57,16 +57,19 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     scope.set('fs[utm_source]', 'equals google');
     await page.goto(`/wp-admin/admin.php?${scope}`);
     const campaignReport = page.locator('#slim_p3_04');
+    await campaignReport.scrollIntoViewIfNeeded();
     await campaignReport.locator('.slimstat-acquisition__group > summary').filter({ hasText: campaign }).click();
     await expect(campaignReport.getByRole('link', { name: 'View sales in Ecommerce' })).toHaveCount(0);
     if (!pro.pro_installed) return; // Free CI deliberately omits the private Pro plugin.
 
     runWordPressFixture("<?php $result=activate_plugin('wp-slimstat-pro/wp-slimstat-pro.php'); if(is_wp_error($result)) throw new RuntimeException($result->get_error_message());");
     await page.reload();
+    await campaignReport.scrollIntoViewIfNeeded();
     const campaignGroup = campaignReport.locator('.slimstat-acquisition__group').filter({ hasText: campaign });
     await campaignGroup.locator(':scope > summary').click();
     await campaignGroup.getByRole('link', { name: 'View sales in Ecommerce' }).click();
     expect(new URL(page.url()).searchParams.get('fs[utm_campaign]')).toBe(`equals ${campaign}`);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('65.00');
     await expect(page.locator('#slimstat-current-filters')).toContainText(campaign);
     await expect(dashboard).toContainText('Traffic filters are active');
@@ -74,8 +77,10 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
 
     await page.goto(`/wp-admin/admin.php?${scope}`);
     const channels = page.locator('#slim_p3_03');
+    await channels.scrollIntoViewIfNeeded();
     await channels.locator('.slimstat-acquisition__group > summary').filter({ hasText: 'Paid Search' }).click();
     await channels.locator('.slimstat-acquisition__group').filter({ hasText: 'Paid Search' }).getByRole('link', { name: 'View sales in Ecommerce' }).click();
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('65.00');
     expect(new URL(page.url()).searchParams.get('fs[traffic_channel]')).toBe('equals paid_search');
 
@@ -83,6 +88,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     scope.set('page', 'slimview7'); scope.delete('fs[utm_source]');
     scope.set('fs[utm_campaign]', `equals ${campaign}`);
     await page.goto(`/wp-admin/admin.php?${scope}#ss-ec-panel-campaign`);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.getByRole('tabpanel', { name: 'Campaigns', exact: true })).toBeVisible();
     await expect(dashboard.getByRole('heading', { name: 'Your Pro reports are ready' })).toBeVisible();
     await expect(dashboard.getByRole('link', { name: 'See what Pro adds to Ecommerce' })).toHaveCount(0);
@@ -94,8 +100,8 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await page.screenshot({ path: testInfo.outputPath('pro-first-insights-mobile.png'), fullPage: true });
     await dashboard.getByRole('link', { name: 'Check your update license' }).click();
     await expect(page).toHaveURL(/tab=8/);
-    await expect(page.getByText('Enter your license key', { exact: true })).toBeVisible();
-    await expect(page.getByText(/Save Changes to verify/)).toBeVisible();
+    await expect(page.getByLabel('License key', { exact: true })).toBeVisible();
+    await expect(page.locator('.slimstat-license-saved .slimstat-license-help')).toContainText('Save Changes to activate it');
     await page.goto('/wp-admin/admin.php?page=slimpro');
     await expect(page.getByRole('heading', { name: 'What Pro adds to your reports' })).toBeVisible();
     await expect(page.getByText('Pro is active on this site')).toBeVisible();
@@ -105,6 +111,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await expect(page.getByRole('link', { name: 'Upload Pro in WordPress' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Set up email reports' })).toBeVisible();
     await page.getByRole('link', { name: 'Compare campaign revenue' }).click();
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.getByRole('tabpanel', { name: 'Campaigns', exact: true })).toBeVisible();
   } finally {
     fixture('cleanup');

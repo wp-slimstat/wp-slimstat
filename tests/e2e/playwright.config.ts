@@ -32,6 +32,8 @@ export default defineConfig({
     ['json', { outputFile: path.join(__dirname, 'run-artifacts', 'results.json') }],
   ],
   use: {
+    // Default journeys model a real Chrome visitor; bot tests supply an explicit UA.
+    launchOptions: { args: ['--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36'] },
     baseURL: BASE_URL,
     // LocalWP serves a self-signed cert Chromium rejects. Gated by PW_IGNORE_HTTPS
     // so it is a no-op in CI (which uses plain HTTP / a trusted cert).

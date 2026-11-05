@@ -151,7 +151,7 @@ final class Query
 	public static function cachedPages(int $start, int $end, string $device = '', bool $refresh = false): array
 	{
 		$key       = 'slimstat_hm_pages_' . md5((string) wp_json_encode([get_current_blog_id(), $start, $end, $device, \wp_slimstat::report_scope()['cache']]));
-		$signature = [(string) get_option(Store::GENERATION, ''), \wp_slimstat::$settings['auto_purge'] ?? 0, Store::ready()];
+		$signature = [2, (string) get_option(Store::GENERATION, ''), \wp_slimstat::$settings['auto_purge'] ?? 0, Store::ready()];
 		$cached    = $refresh ? null : get_transient($key);
 		if (is_array($cached) && ($cached['signature'] ?? null) === $signature && time() - (int) ($cached['data']['updated'] ?? 0) < MINUTE_IN_SECONDS) {
 			return $cached['data'];
@@ -394,7 +394,8 @@ final class Query
 		$scope = '(' . $scope . ') AND ' . self::authorScope('t1.id');
 		$db    = self::db();
 		$since = Store::ready() ? (int) (get_option(Store::STATE, [])['since'] ?? 0) : PHP_INT_MAX;
-		$row   = self::rows($db->prepare('SELECT COUNT(*) views, ' . self::deviceSplit() . ', SUM(t1.dt < %d) older, MAX(t1.content_id) content_id
+		$uncovered = self::legacyProbe('t1.id');
+		$row   = self::rows($db->prepare('SELECT COUNT(*) views, ' . self::deviceSplit() . ', SUM(t1.dt < %d' . $uncovered . ') older, MAX(t1.content_id) content_id
 			FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats t1
 			WHERE t1.dt BETWEEN %d AND %d AND ', $since, $start, $end) . self::pageWhere($pageKey) . " AND ({$scope})")[0] ?? [];
 
@@ -423,15 +424,16 @@ final class Query
 	}
 
 	/**
-	 * Each pageview is read by one layer: once capture began, a pageview with heatmap rows
-	 * is not legacy. History before capture skips the probe; after it, it is a primary-key seek.
+	 * Each pageview is read by one layer, including imported or backdated full capture.
 	 */
-	private static function legacyProbe(): string
+	private static function legacyProbe(string $id = 'te.id'): string
 	{
 		if (!Store::ready()) {
 			return '';
 		}
-		return self::db()->prepare(' AND (te.dt < %d OR NOT EXISTS (SELECT 1 FROM ' . Store::table() . ' h WHERE h.id = te.id))', (int) (get_option(Store::STATE, [])['since'] ?? 0));
+		// A restore can reuse IDs; a row for another page or timestamp does not cover this pageview.
+		return ' AND NOT EXISTS (SELECT 1 FROM ' . Store::table() . ' h WHERE h.id = ' . $id
+			. ' AND h.dt = t1.dt AND h.page = UNHEX(LEFT(MD5(' . self::pageKeySql('t1.resource') . '), 16)))';
 	}
 
 	/** SUM columns counting t1 pageviews per device bucket. */

@@ -16,6 +16,7 @@
 import { test, expect, Page } from '@playwright/test';
 import { BASE_URL, ADMIN_USER, ADMIN_PASS } from './helpers/env';
 import {
+  fillAndConfirm,
   installOptionMutator,
   uninstallOptionMutator,
   setSlimstatOption,
@@ -52,8 +53,8 @@ async function ensureLoggedIn(page: Page): Promise<void> {
     await page.goto(`${BASE_URL}/wp-login.php`);
   }
   if (page.url().includes('wp-login.php')) {
-    await page.fill('#user_login', ADMIN_USER);
-    await page.fill('#user_pass', ADMIN_PASS);
+    await fillAndConfirm(page, '#user_login', ADMIN_USER);
+    await fillAndConfirm(page, '#user_pass', ADMIN_PASS);
     await page.click('#wp-submit');
     await page.waitForURL('**/wp-admin/**', { waitUntil: 'domcontentloaded', timeout: 30_000 });
   }
@@ -119,6 +120,10 @@ test.describe('CF-IPCountry stored XSS (#5)', () => {
       'INSERT INTO wp_slim_stats (resource, country, ip, dt) VALUES (?, ?, ?, UNIX_TIMESTAMP())',
       ['/xss-poison', POISON, '8.8.8.8'],
     );
+    // Two pageviews in one visit distinguish the map's unit from a visitor count.
+    await getPool().execute(
+      "INSERT INTO wp_slim_stats (resource, country, ip, visit_id, dt) VALUES ('/map-unit', 'us', '192.0.2.1', 77, UNIX_TIMESTAMP()), ('/map-unit', 'us', '192.0.2.1', 77, UNIX_TIMESTAMP())",
+    );
 
     await ensureLoggedIn(page);
     // Sentinel: any injected onload/onerror that runs would flip this to true.
@@ -127,6 +132,7 @@ test.describe('CF-IPCountry stored XSS (#5)', () => {
     });
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, { waitUntil: 'domcontentloaded' });
 
+    await page.locator('#slim_p6_01').scrollIntoViewIfNeeded();
     // World-map flags carry class country-flag; wait for the map to populate.
     await page.locator('img.country-flag').first().waitFor({ state: 'attached', timeout: 30_000 });
 
@@ -136,6 +142,14 @@ test.describe('CF-IPCountry stored XSS (#5)', () => {
       .locator('img.country-flag')
       .evaluateAll((els) => els.map((e) => e.getAttribute('alt')));
     expect(altValues).toContain(POISON);
+
+    const tooltip = await page.evaluate(() => {
+      const $ = (window as any).jQuery;
+      const label = $('<div>');
+      $('#map_slim_p6_01').trigger('labelShow.jqvmap', [label, 'us', 'United States']);
+      return label.text();
+    });
+    expect(tooltip).toContain('2 Pageviews');
 
     // And nothing executed.
     expect(await page.evaluate(() => window.__xss_fired === true)).toBe(false);

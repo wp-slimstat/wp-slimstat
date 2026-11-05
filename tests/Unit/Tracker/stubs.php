@@ -106,7 +106,7 @@ if (!class_exists('wp_slimstat')) {
 
         public static function report_scope(): array
         {
-            return ['where' => '1=1', 'cache' => 'unit-default-report-scope'];
+            return ['where' => '1=1', 'humans' => '(1=1) AND (browser_type IS NULL OR browser_type <> 1)', 'cache' => 'unit-default-report-scope'];
         }
 
         public static function record_degradation($step, $e): void
@@ -197,6 +197,8 @@ if (!class_exists('wp_slimstat')) {
          *
          * The assertion count is what gave it away: 602 -> 598 while the test count held at 317.
          */
+        public static function bump_data_version(): void { update_option('slimstat_data_ver', (string) microtime(true), true); }
+
         public static function now(): int
         {
             return self::date_i18n('U');

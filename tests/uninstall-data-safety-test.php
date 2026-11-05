@@ -511,12 +511,11 @@ foreach (['absent', 'no'] as $case) {
         "no option is written back when there is no credential to remove, key '{$case}'"
     );
 
-    // Exactly one filesystem delete, and it must be the browscap cache — NOT the
-    // parent directory, which also holds a hand-uploaded GeoIP database.
-    assert_same(1, $result['fsDeletes'], "one artifact removed when the key is '{$case}'");
-    assert_true(
-        substr((string) $result['fsDeleted'][0], -22) === '/browscap-cache-master',
-        "only the browscap cache is removed when the key is '{$case}', got: " . $result['fsDeleted'][0]
+    // Only regenerable Browscap artifacts, never the parent or a hand-uploaded GeoIP DB.
+    assert_same(
+        ['browscap-cache-master', 'browscap-cache-backup', 'browscap-staging', 'browscap-update.lock'],
+        array_map('basename', $result['fsDeleted']),
+        "only Browscap artifacts are removed when the key is '{$case}'"
     );
 }
 
@@ -852,10 +851,12 @@ foreach ($minted_options as $option_name => $declared_in) {
 foreach ([
     'wp_slimstat_notifications',
     'slimstat_purge_optimized_at',
+    'slimstat_data_ver',
     'slimstat_channels_since',
     'slimstat_goals_funnels_since',
     'slimstat_ecommerce_since',
     'slimstat_heatmaps_since',
+    'slimstat_ai_since',
     'slimstat_shortcodes_since',
     'slimstat_release_notice_since',
 ] as $literal_option) {

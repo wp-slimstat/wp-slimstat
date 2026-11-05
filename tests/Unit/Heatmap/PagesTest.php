@@ -135,7 +135,7 @@ class PagesTest extends WpSlimstatTestCase
 		self::assertNull($rows[2]['dead']);
 
 		// After capture began, legacy rows of a pageview that has heatmap rows are skipped.
-		self::assertStringContainsString('te.dt < 100 OR NOT EXISTS (SELECT 1 FROM wp_slim_heatmap h WHERE h.id = te.id)', $this->query('slim_events te'));
+		self::assertStringContainsString('AND NOT EXISTS (SELECT 1 FROM wp_slim_heatmap h WHERE h.id = te.id AND h.dt = t1.dt AND h.page = UNHEX(LEFT(MD5(', $this->query('slim_events te'));
 		self::assertStringContainsString('WHERE id IN (7,9)', $this->query('SELECT id, resource'));
 	}
 
@@ -151,7 +151,7 @@ class PagesTest extends WpSlimstatTestCase
 				['page' => 'AAAA', 'id' => '4', 'clicks' => '2', 'desktop' => '2', 'tablet' => '0', 'mobile' => '0', 'dead' => '0', 'rage' => '0', 'last' => '300'],
 			],
 			'SELECT id, resource' => [['id' => '3', 'resource' => '/checkout/?e2e_run=1'], ['id' => '4', 'resource' => '/gone']],
-			'MD5('                => [['page' => $home, 'resource' => '/?utm_source=x']],
+			'SELECT HEX(h.page)'  => [['page' => $home, 'resource' => '/?utm_source=x']],
 		];
 
 		self::assertSame(['/'], array_column(Query::pages(1, 999), 'page'), 'a group no pageview hashes to is not shown under another page');

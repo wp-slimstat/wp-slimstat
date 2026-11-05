@@ -74,13 +74,14 @@ ART="$CELL_DIR/artifacts"
 # for both is what stops that from becoming a silent `patch -p1 -d` into the wrong tree.
 WORKTREES="$(dirname "$(arm_worktree_dir _ "$CELL")")"
 
-export COMPOSE_PROJECT_NAME="ssanswers" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
+export COMPOSE_PROJECT_NAME="${SLIMSTAT_COMPARISON_PROJECT:-ssanswers}" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
+[[ "$COMPOSE_PROJECT_NAME" =~ ^[a-z0-9][a-z0-9_-]*$ ]] || { err 'invalid comparison project name'; exit 1; }
 export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
 
-# Fixed-name project: refuse a concurrent run before installing an EXIT cleanup.
-existing=$(docker ps -aq --filter label=com.docker.compose.project=ssanswers) || exit 1
-[ -z "$existing" ] || { err 'ssanswers is already owned by another run'; exit 1; }
+# Refuse an occupied project before installing an EXIT cleanup.
+existing=$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || exit 1
+[ -z "$existing" ] || { err "$COMPOSE_PROJECT_NAME is already owned by another run"; exit 1; }
 ARTIFACT_INPUT="${SLIMSTAT_COMPARISON_ARTIFACTS:-}"
 ARTIFACT_ARMS="$CELL_DIR/artifact-arms"
 if [ -n "$ARTIFACT_INPUT" ]; then
@@ -88,7 +89,13 @@ if [ -n "$ARTIFACT_INPUT" ]; then
   BEFORE=$(git -C "$PLUGIN_SRC" rev-parse "$BEFORE^{commit}") || exit 1
   AFTER=$(git -C "$PLUGIN_SRC" rev-parse "$AFTER^{commit}") || exit 1
 fi
-cleanup() { dc down -v --remove-orphans >/dev/null 2>&1 || true; }
+cleanup() {
+  if [ -d "$ART" ]; then
+    dc logs --no-color db >"$ART/database-container.log" 2>&1 || true
+    dc ps -a --format json >"$ART/container-state.json" 2>&1 || true
+  fi
+  dc down -v --remove-orphans >/dev/null 2>&1 || true
+}
 trap cleanup EXIT
 
 # $ART is CLEARED, not merely created. It used to be only mkdir -p'd, so every artifact from
@@ -258,6 +265,13 @@ wpc --skip-plugins --skip-themes eval '
   wp_clear_scheduled_hook("wp_slimstat_purge");' >>"$ART/install.log" 2>&1 \
   || { err 'could not freeze analytics writers'; exit 1; }
 
+if [ "${SLIMSTAT_REPORT_FIXTURE:-0}" = 1 ]; then
+  dc exec -T -u www-data -e SLIMSTAT_REPORT_FIXTURE=1 wp wp --path=/var/www/html \
+    eval-file wp-content/plugins/wp-slimstat/tests/bench/lib/prepare-report-fixture.php \
+    > "$ART/report-fixture.json" 2> "$ART/report-fixture.log" \
+    || { err 'report fixture preparation failed'; exit 1; }
+fi
+
 # Absolute window bounds, computed ONCE and passed to both arms. "Last 30 days" evaluated
 # independently per arm would select different rows on either side of a minute boundary and diff
 # for a reason that is not the code.
@@ -269,6 +283,7 @@ else
   WIN_END=$(wpc eval 'echo time();' 2>/dev/null | tr -dc '0-9')
 fi
 WIN_START=$((WIN_END - 30 * 86400))
+PARITY_END="${SLIMSTAT_PARITY_END:-$(date +%s)}"
 python3 - "$ART/run.json" "$WIN_START" "$WIN_END" <<'PY' || exit 1
 import json, pathlib, sys
 p = pathlib.Path(sys.argv[1]); data = json.loads(p.read_text())
@@ -289,19 +304,29 @@ answers_for() {
     local side="$(basename "${out%.json}")" rep=0
     mkdir -p "$ART/rendered/$side" || return 1
     while [ "$rep" -lt "${SLIMSTAT_TIMING_REPS:-5}" ]; do
+      local parts="$ART/rendered/$side/inputs/block-$b-rep-$rep" cell
+      mkdir -p "$parts" || return 1
+      # Each report window is a real request: Pro's per-request login memo must
+      # not leak from the first date/filter cell into the remaining three.
+      for cell in historical-unfiltered historical-filtered straddling-unfiltered straddling-filtered; do
       local snapshot_rc=0
       dc exec -T wp rm -f /tmp/slimstat-parity.json /tmp/slimstat-parity-diagnostic.json || return 1
       dc exec -T -u www-data -e SLIMSTAT_PARITY_DIAGNOSTIC=/tmp/slimstat-parity-diagnostic.json \
+        -e SLIMSTAT_PARITY_END="$PARITY_END" \
         wp wp --path=/var/www/html eval-file \
-        wp-content/plugins/wp-slimstat/tests/bench/lib/parity-snapshot.php /tmp/slimstat-parity.json \
-        >"$ART/rendered/$side/block-$b-rep-$rep.log" 2>&1 || snapshot_rc=$?
+        wp-content/plugins/wp-slimstat/tests/bench/lib/parity-snapshot.php /tmp/slimstat-parity.json "$cell" \
+        >"$parts/$cell.log" 2>&1 || snapshot_rc=$?
       if [ "$snapshot_rc" -ne 0 ]; then
         dc exec -T wp cat /tmp/slimstat-parity-diagnostic.json \
           >"$ART/rendered/$side/block-$b-rep-$rep.diagnostic.invalid.json" 2>/dev/null || true
         return "$snapshot_rc"
       fi
       dc exec -T wp cat /tmp/slimstat-parity.json \
-        >"$ART/rendered/$side/block-$b-rep-$rep.json" || return 1
+        >"$parts/$cell.json" || return 1
+      done
+      python3 "$PLUGIN_SRC/tests/bench/lib/merge-snapshots.py" "$ART/rendered/$side/block-$b-rep-$rep.json" \
+        "$parts/historical-unfiltered.json" "$parts/historical-filtered.json" \
+        "$parts/straddling-unfiltered.json" "$parts/straddling-filtered.json" || return 1
       rep=$((rep + 1))
     done
     local arm=before
