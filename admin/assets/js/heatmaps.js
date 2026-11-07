@@ -24,13 +24,6 @@
 
     const filters = () => config.filters || '';
 
-    // POST navigation becomes a reloadable deep link without putting state in shared storage.
-    const currentUrl = new URL(location.href);
-    document.querySelectorAll('#slimstat-filters-form input[name]').forEach(input => {
-        if (input.name.startsWith('fs[')) currentUrl.searchParams.set(input.name, input.value);
-    });
-    history.replaceState(history.state, '', currentUrl);
-
     function el(tag, attrs, children) {
         const node = document.createElement(tag);
         Object.keys(attrs || {}).forEach((key) => node.setAttribute(key, attrs[key]));

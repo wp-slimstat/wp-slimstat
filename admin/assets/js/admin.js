@@ -1654,6 +1654,18 @@ jQuery(function () {
         });
     });
 
+    // Keep POST-selected filters when the browser restores a report with a GET request.
+    if (jQuery("#slimstat-filters-form").length) {
+        var currentUrl = new URL(window.location.href);
+        Array.from(currentUrl.searchParams.keys()).forEach(function (name) {
+            if (name.startsWith('fs[')) currentUrl.searchParams.delete(name);
+        });
+        jQuery('#slimstat-filters-form input[name]').each(function () {
+            if (this.name.startsWith('fs[')) currentUrl.searchParams.set(this.name, this.value);
+        });
+        window.history.replaceState(window.history.state, '', currentUrl);
+    }
+
     // Since we handle all "filter links" as POST requests (see code here above), we need to add dummy form tag to the dashboard,
     // for when our reports are displayed on that page
     if (!jQuery("#slimstat-filters-form").length) {
