@@ -456,7 +456,10 @@ class Utils
 		// Never trust a client-supplied forwarding header on a direct connection.
 		// Other proxies can restore REMOTE_ADDR at the server, or explicitly opt in
 		// below. Walk X-Forwarded-For from the nearest hop, stopping at an untrusted one.
-		if (self::trustedProxy($remoteAddr)) {
+		$cfIp = self::getCfClientIp();
+		if ($cfIp && $cfIp !== $remoteAddr) {
+			$ipArray[1] = $cfIp;
+		} elseif (self::trustedProxy($remoteAddr)) {
 			$forwarded = isset($_SERVER['HTTP_X_FORWARDED_FOR']) && is_string($_SERVER['HTTP_X_FORWARDED_FOR'])
 				? sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR'])) : '';
 			foreach (array_reverse(explode(',', $forwarded)) as $candidate) {

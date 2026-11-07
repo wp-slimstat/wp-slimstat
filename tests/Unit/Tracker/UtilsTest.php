@@ -22,6 +22,7 @@ class UtilsTest extends WpSlimstatTestCase
             foreach (['173.245.48.1', '2606:4700::1'] as $edge) {
                 $_SERVER['REMOTE_ADDR'] = $edge;
                 $this->assertSame('1.1.1.1', \SlimStat\Tracker\Utils::getCfClientIp());
+                $this->assertSame([$edge, '1.1.1.1'], \SlimStat\Tracker\Utils::getRemoteIp());
             }
             $_SERVER['REMOTE_ADDR'] = '173.245.64.1'; // Just outside the /20.
             $this->assertNull(\SlimStat\Tracker\Utils::getCfClientIp());
