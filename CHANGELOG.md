@@ -1,5 +1,6 @@
-= Unreleased =
+= 6.1.0 - 2026-11-08 =
 
+**Report actions, filters and geolocation**
 * Recover clipboard feedback after retries and report refreshes, omit unavailable AI action spacing, preserve existing non-Ecommerce analysis cache identities, and sample Ecommerce trends across the full selected period.
 * Add shared AI prompt and analysis actions to every Ecommerce report, with the selected view, currency, metric, comparison, filters and privacy limits.
 * Keep shared report filters through Heatmaps navigation and apply supported filters to clicks, scroll data and pageview counts. Explain retained filters that Heatmaps cannot apply.
@@ -7,8 +8,6 @@
 * Add a permanent, translated Tutorial badge to Videos and placement-specific attribution to its Browse videos link.
 * Check geolocation database health independently of the visiting IP and explain download/filesystem failures. Align Countries live with the live visitor activity window and exclude unknown locations.
 * Reject forged proxy headers. Cloudflare client/location headers require a connecting edge IP; other proxies must restore REMOTE_ADDR or explicitly opt in through the slimstat_trusted_proxy filter.
-
-= 6.1.0 - 2026-11-04 =
 
 **New: AI Analysis**
 * A new SlimStat → AI Analysis page explains how to turn a report into plain-language findings. Copy AI Prompt stays unlimited in Free; SlimStat Pro adds analysis inside SlimStat through an AI provider connected in WordPress, plus a private library of saved results.

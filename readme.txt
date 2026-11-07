@@ -159,7 +159,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Upgrade Notice ==
 
 = 6.1.0 =
-Older versions keep working and added columns stay. This update removes no rows. Adds Copy AI Prompt, AI Analysis, city drilldown and video tutorials. Fixes privacy exports, consent, tracking and report accuracy. Back up first; database repairs still wait for your click.
+Older versions keep working, added columns stay, and this update removes no rows. Adds Copy AI Prompt, AI Analysis, city drilldown and video tutorials. Fixes privacy exports, consent, tracking, report filters and geolocation. Back up first; database repairs still wait for your click.
 
 = 6.0.0 =
 SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster reports. Back up first. The update adds columns and indexes and removes no rows; older versions keep working and the added columns stay. Database steps wait for your click. Some totals change on purpose: see changelog.
@@ -167,13 +167,11 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 == Changelog ==
 
-= Unreleased =
-* Added AI actions for individual Ecommerce views, clearer AI modal actions, and a Tutorial badge with attributed video browsing.
-* Fixed shared Heatmaps filters, geolocation health diagnostics, trusted proxy handling and live-country activity counts.
-
-= 6.1.0 - 2026-11-04 =
+= 6.1.0 - 2026-11-08 =
 
 **New**
+
+* Shared AI actions cover every Ecommerce view. Videos gains a Tutorial badge and attribution on the Browse videos link.
 
 * **AI Analysis:** ✨ Copy AI Prompt beside each report's Export copies the rows on screen, the period, the filters and your site's title, tagline and address as a ready-to-paste prompt for ChatGPT, Claude, Grok or any AI assistant. It only goes to your clipboard. Reports that list individual visitors have no button; Pro reports need Pro. Ecommerce, the Heatmaps page list and individual page heatmaps support it too.
 * A new SlimStat → AI Analysis page explains the workflow. SlimStat Pro adds analysis inside SlimStat through an AI provider connected in WordPress, run only when you ask and without visitor identifiers, URLs or free-text labels.
@@ -181,6 +179,8 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 * **Video tutorials:** SlimStat → Videos lists tutorials from wp-slimstat.com. Nothing is requested until you choose to load the list, and an optional menu marker tells you when new videos are published.
 
 **Improved**
+
+* AI modal explanations and actions stay readable and keyboard accessible on narrow and right-to-left layouts.
 
 * Ordinary page loads avoid absent Ecommerce and permalink-update option queries; privacy exports and erasure still work after WooCommerce is deactivated.
 * Nearby report widgets share requests or load up to three at a time; offscreen widgets load as you scroll. Customize layout placeholders no longer fetch report data.
@@ -190,6 +190,9 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 * Migrations try a fast metadata-only change first, wait at most five seconds for table locks, and leave unsupported online changes pending instead of copying tables.
 
 **Fixed**
+
+* Shared Heatmaps filters survive navigation and reloads. Geolocation checks explain database problems, verify trusted proxies and count only known live countries.
+* Clipboard retries and refreshed Ecommerce actions keep the correct report context, and trend prompts sample the full selected period.
 
 * Migration identifies incomplete visit-counter setup, offers an administrator-only retry, and clears the upgrade warning after recovery. ([#395](https://github.com/wp-slimstat/wp-slimstat/issues/395))
 * Server tracking counts the destination page once after WordPress redirects to its preferred URL, preventing duplicate trailing-slash pageviews. Existing history is unchanged. ([#396](https://github.com/wp-slimstat/wp-slimstat/issues/396))

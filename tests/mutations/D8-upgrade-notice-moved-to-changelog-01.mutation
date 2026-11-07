@@ -6,21 +6,20 @@ rationale: Deletes the current Upgrade Notice entry and leaves a dateless change
 ---
 --- a/readme.txt
 +++ b/readme.txt
-@@ -158,9 +158,6 @@
+@@ -158,16 +158,13 @@
  
  == Upgrade Notice ==
  
 -= 6.1.0 =
--Older versions keep working and added columns stay. This update removes no rows. Adds Copy AI Prompt, AI Analysis, city drilldown and video tutorials. Fixes privacy exports, consent, tracking and report accuracy. Back up first; database repairs still wait for your click.
+-Older versions keep working, added columns stay, and this update removes no rows. Adds Copy AI Prompt, AI Analysis, city drilldown and video tutorials. Fixes privacy exports, consent, tracking, report filters and geolocation. Back up first; database repairs still wait for your click.
 -
  = 6.0.0 =
  SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster reports. Back up first. The update adds columns and indexes and removes no rows; older versions keep working and the added columns stay. Database steps wait for your click. Some totals change on purpose: see changelog.
  
-@@ -171,7 +168,7 @@
- * Added AI actions for individual Ecommerce views, clearer AI modal actions, and a Tutorial badge with attributed video browsing.
- * Fixed shared Heatmaps filters, geolocation health diagnostics, trusted proxy handling and live-country activity counts.
  
--= 6.1.0 - 2026-11-04 =
+ == Changelog ==
+ 
+-= 6.1.0 - 2026-11-08 =
 += 6.1.0 =
  
  **New**
