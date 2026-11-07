@@ -22,7 +22,7 @@
  */
 
 import http from 'k6/http';
-import { check, sleep, group } from 'k6';
+import { check, fail, sleep, group } from 'k6';
 import { Trend, Counter, Rate } from 'k6/metrics';
 import { BASE_URL, credentials } from './lib/env.js';
 
@@ -38,7 +38,6 @@ const phpWarningRate = new Rate('php_warnings');
 // ─── Options ─────────────────────────────────────────────────────────────────
 
 export const options = {
-  noCookiesReset: true, // Login is retained once per virtual user.
   scenarios: {
     // Scenario 1: Sustained admin usage (worst case for cache bypass)
     sustained_admin: {
@@ -90,12 +89,9 @@ const REPORT_PAGES = [
   '/wp-admin/admin.php?page=slimview5', // Custom Reports
 ];
 
-let loggedIn = false;
-
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
-function ensureLogin() {
-  if (loggedIn) return;
+export function setup() {
   http.get(`${BASE_URL}/wp-login.php`);
   const loginRes = http.post(`${BASE_URL}/wp-login.php`, {
     log: WP_USER,
@@ -103,12 +99,17 @@ function ensureLogin() {
     'wp-submit': 'Log In',
     redirect_to: `${BASE_URL}/wp-admin/`,
     testcookie: '1',
-  }, { redirects: 5 });
+  }, { redirects: 0 });
 
-  check(loginRes, {
-    'login successful': (r) => r.status === 200 && !r.body.includes('login_error'),
-  });
-  loggedIn = true;
+  // Concurrent logins for one account can overwrite each other's WordPress sessions.
+  const cookies = {};
+  for (const [name, values] of Object.entries(loginRes.cookies)) {
+    cookies[name] = values[0].value;
+  }
+  if (!Object.keys(cookies).some(name => name.startsWith('wordpress_logged_in_'))) {
+    fail(`Login failed with status ${loginRes.status}`);
+  }
+  return { cookies };
 }
 
 // ─── Checks ──────────────────────────────────────────────────────────────────
@@ -132,14 +133,13 @@ function checkResponse(res, pageName) {
 
 // ─── Main test function ──────────────────────────────────────────────────────
 
-export function adminReportPages() {
-  ensureLogin();
-
+export function adminReportPages(data) {
   group('report_page_load', () => {
     // Pick a random report page (simulates real admin behavior)
     const pageIdx = Math.floor(Math.random() * REPORT_PAGES.length);
     const pagePath = REPORT_PAGES[pageIdx];
     const res = http.get(`${BASE_URL}${pagePath}`, {
+      cookies: data.cookies,
       tags: { page_name: pagePath },
     });
 
@@ -162,7 +162,7 @@ export function adminReportPages() {
             action: 'slimstat_load_report',
             report_id: 'slim_p6_01', // Audience Location (the affected report)
             security: nonceMatch[1],
-          });
+          }, { cookies: data.cookies });
           ajaxReportDuration.add(ajaxRes.timings.duration);
           check(ajaxRes, {
             'AJAX report: status 200': (r) => r.status === 200,
