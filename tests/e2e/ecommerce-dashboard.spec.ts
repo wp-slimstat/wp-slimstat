@@ -294,7 +294,8 @@ test('Ecommerce Free is useful alone and WooCommerce deactivation is safe @wooco
     await page.locator('[data-ec-view=summary] button.slimstat-ai-prompt').click();
     await expect(page.locator('[data-ec-view=summary] button.slimstat-ai-prompt')).toContainText('Copied');
     const prompt = await page.evaluate(() => (window as any).__copied as string);
-    expect(prompt).toContain('"net":"115.00"');
+    const rows = JSON.parse(prompt.match(/<data>\n([\s\S]*?)\n<\/data>/)![1]);
+    expect(Number(rows[0].net)).toBe(115);
     expect(prompt).not.toMatch(/"orders":|"aov":|••••|Illustrative preview/);
     await expect(page.locator('[data-ecommerce]').getByRole('link', { name: 'Export CSV', exact: true })).toHaveCount(0);
     // Each tab still shows Export, and it opens the Pro page instead of downloading.
@@ -466,7 +467,7 @@ test('every Ecommerce AI action copies its own authorized context @woocommerce',
     await expect(page.locator('[data-ec-view]')).toHaveCount(views.length);
     let previous = '';
     for (const view of views) {
-      if (tabs[view]) await page.getByRole('tab', { name: tabs[view], exact: true }).click();
+      if (tabs[view] && view !== 'landing') await page.getByRole('tab', { name: tabs[view], exact: true }).click();
       const actions = page.locator(`[data-ec-view=${view}]`);
       const copy = actions.locator('.slimstat-ai-prompt');
       const response = page.waitForResponse(r => decodeURIComponent(r.url()).includes('/slimstat/v1/ai/prompt'));
