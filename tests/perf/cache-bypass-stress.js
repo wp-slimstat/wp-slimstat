@@ -38,6 +38,7 @@ const phpWarningRate = new Rate('php_warnings');
 // ─── Options ─────────────────────────────────────────────────────────────────
 
 export const options = {
+  noCookiesReset: true, // Login is retained once per virtual user.
   scenarios: {
     // Scenario 1: Sustained admin usage (worst case for cache bypass)
     sustained_admin: {
@@ -115,6 +116,7 @@ function ensureLogin() {
 function checkResponse(res, pageName) {
   const ok = check(res, {
     [`${pageName}: status 200`]: (r) => r.status === 200,
+    [`${pageName}: still authenticated`]: (r) => !r.url.includes('/wp-login.php'),
     [`${pageName}: no Fatal error`]: (r) => !r.body.includes('Fatal error'),
     [`${pageName}: no DB error`]: (r) => !r.body.includes('WordPress database error'),
     [`${pageName}: not empty`]: (r) => r.body.length > 500,
