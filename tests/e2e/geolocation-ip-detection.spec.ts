@@ -62,7 +62,6 @@ test.describe('AC-GEO-005/006: IP Detection Header Priority', () => {
       'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-ip-priority-cf',
       'CF-Connecting-IP': '8.8.8.8',         // US
-      'REMOTE_ADDR': '127.0.0.1',
       'X-Forwarded-For': '5.9.49.12',        // DE
     });
 
@@ -89,7 +88,7 @@ test.describe('AC-GEO-005/006: IP Detection Header Priority', () => {
 
     const stat = await waitForStat(marker);
     expect(stat).toBeTruthy();
-    expect(stat!.country).toBe('');
+    expect(stat!.country ?? '').toBe('');
   });
 
   // ─── Test 3: Multiple proxy hops in X-Forwarded-For ────────────
@@ -106,7 +105,7 @@ test.describe('AC-GEO-005/006: IP Detection Header Priority', () => {
 
     const stat = await waitForStat(marker);
     expect(stat).toBeTruthy();
-    expect(stat!.country).toBe('');
+    expect(stat!.country ?? '').toBe('');
   });
 
   // ─── Test 4: CF-Connecting-IP with CF-Ray resolves correct IP ──
@@ -137,14 +136,15 @@ test.describe('AC-GEO-005/006: IP Detection Header Priority', () => {
   // ─── Test 5: No proxy headers falls back to REMOTE_ADDR ───────
 
   test('no proxy headers falls back to REMOTE_ADDR (local dev = private IP)', async ({ page }) => {
-    // No header overrides → REMOTE_ADDR is 127.0.0.1 on local dev
+    // Pin the connecting peer: a container gateway is not necessarily loopback.
+    setHeaderOverrides({ REMOTE_ADDR: '127.0.0.1' });
     const marker = `ip-remoteaddr-${Date.now()}`;
     await page.goto(`/?p=${marker}`);
 
     const stat = await waitForStat(marker);
     expect(stat).toBeTruthy();
     // REMOTE_ADDR (127.0.0.1) is private → no country
-    expect(stat!.country).toBe('');
+    expect(stat!.country ?? '').toBe('');
   });
 
   // ─── Test 6: CF-Connecting-IP ignored without CF-Ray ───────────
