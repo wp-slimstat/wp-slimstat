@@ -19,6 +19,14 @@ test('shared filters survive reports → Heatmaps → reports and reload @compat
   await page.locator('#toplevel_page_slimview1 a[href*="page=slimview2"]').click();
   await expect(country).toHaveValue('equals us');
   await expect(source).toHaveValue('contains newsletter+50% & sale');
+  await page.goBack();
+  await expect(page).toHaveURL(/page=slimheatmap/);
+  await expect(country).toHaveValue('equals us');
+  await expect(source).toHaveValue('contains newsletter+50% & sale');
+  await page.goForward();
+  await expect(page).toHaveURL(/page=slimview2/);
+  await expect(country).toHaveValue('equals us');
+  await expect(source).toHaveValue('contains newsletter+50% & sale');
 });
 
 test('unsupported Heatmaps filters remain selected and are disclosed @compat', async ({ page }) => {
