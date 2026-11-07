@@ -88,7 +88,7 @@ function SlimStatReportRows(body) {
             if (!scope || !text(scope)) return [];
             const rows = [text(viewer.querySelector(".ss-hmv-title")), text(scope)];
             const device = viewer.querySelector('[data-device][aria-selected="true"]');
-            /* translators: %s: selected device, such as Mobile or Desktop. */
+            /* translators: %s: selected device, such as Mobile or All devices. */
             if (device) rows.push(sprintf(__("Device: %s", "wp-slimstat"), device.firstChild.textContent.trim()));
             if (viewer.querySelector('[name="range"]').value === "custom") {
                 /* translators: 1: first day (YYYY-MM-DD), 2: last day (YYYY-MM-DD). */

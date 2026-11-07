@@ -178,9 +178,7 @@ class Processor
         // Store original IP for GeoIP lookup (before hashing)
         $originalIpForGeo = !empty($stat['other_ip']) ? $stat['other_ip'] : $stat['ip'];
 
-        // Cloudflare: prefer CF-Connecting-IP for geolocation when request is verified
-        // as coming through CF (CF-Ray header present). This handles the edge case where
-        // mod_remoteip restores real IP to REMOTE_ADDR but other_ip picks up the CF edge IP.
+        // Only a verified Cloudflare edge may supply the visitor address.
         $cfIp = Utils::getCfClientIp();
         if ($cfIp) {
             $originalIpForGeo = $cfIp;

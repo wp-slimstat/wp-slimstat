@@ -95,25 +95,8 @@ class GeoService
 
     public function getUserIP()
     {
-        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Validate raw IP format first; only a valid address is then unslashed and sanitized.
-        if (!empty($_SERVER['REMOTE_ADDR']) && false !== filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP)) {
-            return sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
-        }
-
-        // CF-Connecting-IP is handled separately via Utils::getCfClientIp() with CF-Ray validation.
-        $originating_ip_headers = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
-        foreach ($originating_ip_headers as $a_header) {
-            if (!empty($_SERVER[$a_header])) {
-                foreach (explode(',', sanitize_text_field(wp_unslash($_SERVER[$a_header]))) as $ip) {
-                    $ip = trim($ip);
-                    if (false !== filter_var($ip, FILTER_VALIDATE_IP)) {
-                        return $ip;
-                    }
-                }
-            }
-        }
-
-        return false;
+        [$peer, $forwarded] = \SlimStat\Tracker\Utils::getRemoteIp();
+        return \SlimStat\Tracker\Utils::getCfClientIp() ?: ($forwarded ?: ($peer ?: false));
     }
 
 	public function download()

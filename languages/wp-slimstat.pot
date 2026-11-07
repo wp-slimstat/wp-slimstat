@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-07T14:52:15+00:00\n"
+"POT-Creation-Date: 2026-11-07T15:42:37+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -1690,8 +1690,8 @@ msgstr ""
 
 #: admin/index.php:4408
 #: admin/index.php:4456
-#: src/Services/GeoService.php:124
-#: src/Services/GeoService.php:151
+#: src/Services/GeoService.php:107
+#: src/Services/GeoService.php:134
 msgid "Geolocation is disabled."
 msgstr ""
 
@@ -1700,12 +1700,12 @@ msgid "Cloudflare geolocation does not require a database."
 msgstr ""
 
 #: admin/index.php:4424
-#: src/Services/GeoService.php:133
+#: src/Services/GeoService.php:116
 msgid "Geolocation database updated."
 msgstr ""
 
 #: admin/index.php:4427
-#: src/Services/GeoService.php:133
+#: src/Services/GeoService.php:116
 msgid "The geolocation database could not be updated."
 msgstr ""
 
@@ -8469,7 +8469,7 @@ msgid "Tracking is turned off, but it looks like the client-side code is still a
 msgstr ""
 
 #: languages/index.php:581
-#: src/Tracker/Processor.php:399
+#: src/Tracker/Processor.php:397
 msgid "The geolocation database file is missing or damaged. In Settings > Tracker, click \"Update Database\" to download a fresh copy."
 msgstr ""
 
@@ -9497,49 +9497,49 @@ msgstr ""
 msgid "Visitors who did not convert"
 msgstr ""
 
-#: src/Reports/AiReport.php:212
+#: src/Reports/AiReport.php:221
 msgid "Net sales is after discounts and refunds, excluding tax and shipping, for processing, completed and refunded orders by creation date. Product amounts use itemized refunds; fees and amount-only refunds are unallocated. Coupon discounts are not incremental revenue; orders can use multiple coupons. Customer segments mean guest or account, not new or returning customers. Purchase rate is buying divided by eligible tracked visits; average order value is net sales divided by included orders. Attribution depends on retained visits or WooCommerce acquisition; landing and device attribution require a retained visit. Traffic filters exclude unlinked orders. Missing data is unknown, not zero."
 msgstr ""
 
-#: src/Reports/AiReport.php:213
+#: src/Reports/AiReport.php:222
 msgid "At most 20 rows or intervals are included. Ranked reports start from at most 1,000 groups and may be limited further by access. These rows are not the entire dataset; do not sum them as a store total. Free-form labels and personal identifiers are withheld. Currency is never combined. Comparisons, partial intervals and provisional or retention-limited data must be qualified."
 msgstr ""
 
-#: src/Reports/AiReport.php:276
+#: src/Reports/AiReport.php:285
 msgid "There is not enough available server memory to prepare this report. Copy its prompt instead."
 msgstr ""
 
-#: src/Reports/AiReport.php:371
+#: src/Reports/AiReport.php:380
 msgid "At most 20 representative rows; this is not the complete dataset. Free-form labels, page addresses and personal identifiers are withheld. Small samples are directional. Some summary metrics explicitly cover today or another period. Saved analyses are snapshots and are not refreshed automatically."
 msgstr ""
 
-#: src/Reports/AiReport.php:373
+#: src/Reports/AiReport.php:382
 msgid "Website inventory is site-wide and independent of the selected date range."
 msgstr ""
 
-#: src/Reports/AiReport.php:379
+#: src/Reports/AiReport.php:388
 msgid "This report could not be prepared safely within the analysis limits. Try a shorter range or copy the prompt."
 msgstr ""
 
 #. translators: %d: ordinal row number; the original label is withheld for privacy.
-#: src/Reports/AiReport.php:412
+#: src/Reports/AiReport.php:421
 #, php-format
 msgid "Row %d"
 msgstr ""
 
-#: src/Reports/AiReport.php:446
+#: src/Reports/AiReport.php:455
 msgid "Current period total"
 msgstr ""
 
-#: src/Reports/AiReport.php:446
+#: src/Reports/AiReport.php:455
 msgid "Previous period total"
 msgstr ""
 
-#: src/Reports/AiReport.php:476
+#: src/Reports/AiReport.php:485
 msgid "There is no usable aggregate data to analyze for this selection."
 msgstr ""
 
-#: src/Reports/AiReport.php:483
+#: src/Reports/AiReport.php:492
 msgid "This report selection is invalid or unavailable. Reload the report and try again."
 msgstr ""
 
@@ -10021,28 +10021,28 @@ msgstr ""
 msgid "License key authentication failed. Please verify your MaxMind license key."
 msgstr ""
 
-#: src/Services/GeoService.php:136
-#: src/Services/GeoService.php:154
+#: src/Services/GeoService.php:119
+#: src/Services/GeoService.php:137
 msgid "This provider does not use a local database."
 msgstr ""
 
-#: src/Services/GeoService.php:160
+#: src/Services/GeoService.php:143
 msgid "The geolocation database was not found. Click \"Update Database\" to download it."
 msgstr ""
 
-#: src/Services/GeoService.php:163
+#: src/Services/GeoService.php:146
 msgid "The geolocation database cannot be read. Ask your host to check file permissions, then try again."
 msgstr ""
 
-#: src/Services/GeoService.php:175
+#: src/Services/GeoService.php:158
 msgid "The database does not support the selected precision. Click \"Update Database\" to download the correct file."
 msgstr ""
 
-#: src/Services/GeoService.php:180
+#: src/Services/GeoService.php:163
 msgid "The geolocation database is readable and supports the selected precision. Private addresses have no location; city coverage varies. New visits use this database."
 msgstr ""
 
-#: src/Services/GeoService.php:187
+#: src/Services/GeoService.php:170
 msgid "The geolocation database file is damaged. Click \"Update Database\" to download a fresh copy."
 msgstr ""
 
@@ -10357,7 +10357,7 @@ msgid "Internal Navigation"
 msgstr ""
 
 #. translators: %s: referring URL rejected as an attempted XSS injection.
-#: src/Tracker/Processor.php:256
+#: src/Tracker/Processor.php:254
 #, php-format
 msgid "Attempted XSS Injection: %s"
 msgstr ""
@@ -10703,7 +10703,6 @@ msgstr ""
 msgid "Cache clear failed!"
 msgstr ""
 
-#. translators: %s: selected device, such as Mobile or Desktop.
 #. translators: %s: selected device, such as Mobile or All devices.
 #: admin/assets/js/admin.js:92
 #: admin/assets/js/admin.js:196
