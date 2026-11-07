@@ -45,6 +45,7 @@ class HeatmapRestController implements RestControllerInterface
             'to'     => $date,
             'days'   => ['type' => 'integer', 'minimum' => 1, 'maximum' => 3660, 'default' => 30],
             'device' => ['type' => 'string', 'enum' => ['', 'desktop', 'tablet', 'mobile'], 'default' => ''],
+            'fs'     => ['type' => 'string', 'default' => '', 'maxLength' => 8192],
         ];
     }
 
@@ -72,6 +73,7 @@ class HeatmapRestController implements RestControllerInterface
         return class_exists('wp_slimstat_admin', false) && \wp_slimstat_admin::can_view_stats();
     }
 
+    /** Return the authorized page list, preserving shared filters and Free result limits. */
     public function pages(\WP_REST_Request $request)
     {
         $range = self::range($request);
@@ -82,8 +84,10 @@ class HeatmapRestController implements RestControllerInterface
             return new \WP_Error('slimstat_heatmap_device_pro', __('Device insights are available with Pro.', 'wp-slimstat'), ['status' => 403]);
         }
 
+        $filters = self::filters((string) $request['fs']);
+        if (is_wp_error($filters)) { return $filters; }
         try {
-            $data = Query::cachedPages($range['start'], $range['end'], (string) $request['device'], (bool) $request['refresh']);
+            $data = Query::cachedPages($range['start'], $range['end'], (string) $request['device'], (bool) $request['refresh'], $filters['scope']);
             // Empty list: "never recorded a click" gets its own message.
             $ever = $data['rows'] || Query::anyClicks();
         } catch (\Throwable $e) {
@@ -111,6 +115,11 @@ class HeatmapRestController implements RestControllerInterface
             _prime_post_caches($ids, false, false);
         }
         $format = (string) get_option('date_format');
+        $link_filters = [];
+        foreach ('' === (string) $request['fs'] ? [] : explode('&&&', (string) $request['fs']) as $filter) {
+            $parts = preg_split('/\s+/', trim($filter), 3);
+            $link_filters[$parts[0]] = $parts[1] . ' ' . rawurldecode($parts[2] ?? '');
+        }
         $rows   = [];
         foreach ($data['rows'] as $row) {
             $url    = (string) apply_filters('slimstat_heatmap_row_url', '', $row['page']);
@@ -127,11 +136,11 @@ class HeatmapRestController implements RestControllerInterface
                 'lastText'  => \wp_slimstat::date_i18n($format, $row['last']),
                 'full'      => $row['full'],
                 // Pro's viewer URL for this page, on the list's range; empty in Free, where the row opens a preview of its clicks.
-                'url'       => '' === $url ? '' : esc_url_raw(add_query_arg(['from' => $range['from'], 'to' => $range['to']], $url)),
+                'url'       => '' === $url ? '' : esc_url_raw(add_query_arg(['from' => $range['from'], 'to' => $range['to'], 'fs' => $link_filters], $url)),
             ];
         }
 
-        return rest_ensure_response(['from' => $range['from'], 'to' => $range['to'], 'updated' => $data['updated'], 'rows' => $rows, 'total' => $total, 'locked' => !$pro, 'ever' => $ever]);
+        return rest_ensure_response(['from' => $range['from'], 'to' => $range['to'], 'updated' => $data['updated'], 'rows' => $rows, 'total' => $total, 'locked' => !$pro, 'ever' => $ever, 'ignored_filters' => $filters['ignored']]);
     }
 
     /** Free's preview of a page's heatmap: its five most clicked links and buttons, by their text. */
@@ -145,8 +154,10 @@ class HeatmapRestController implements RestControllerInterface
             return new \WP_Error('slimstat_heatmap_device_pro', __('Device insights are available with Pro.', 'wp-slimstat'), ['status' => 403]);
         }
 
+        $filters = self::filters((string) $request['fs']);
+        if (is_wp_error($filters)) { return $filters; }
         try {
-            $points = Query::legacyPoints(Query::pageKey((string) $request['page']), (string) $request['device'], Query::db()->prepare('t1.dt BETWEEN %d AND %d', $range['start'], $range['end']));
+            $points = Query::legacyPoints(Query::pageKey((string) $request['page']), (string) $request['device'], Query::db()->prepare('t1.dt BETWEEN %d AND %d', $range['start'], $range['end']) . ' AND (' . $filters['scope'] . ')');
         } catch (\Throwable $e) {
             return new \WP_Error('slimstat_heatmap_read', $e->getMessage(), ['status' => 500]);
         }
@@ -163,5 +174,36 @@ class HeatmapRestController implements RestControllerInterface
             $targets[] = ['label' => (string) $label, 'clicks' => $n];
         }
         return rest_ensure_response($targets);
+    }
+
+    /** Validate before using the shared bound-query filter parser; disclose unsupported dimensions. */
+    public static function filters(string $fs)
+    {
+        if ('' === $fs) { return ['scope' => '1=1', 'ignored' => []]; }
+        if (!class_exists('wp_slimstat_db')) { require_once dirname(SLIMSTAT_FILE) . '/admin/view/wp-slimstat-db.php'; }
+        $old = [\wp_slimstat_db::$filters_normalized, \wp_slimstat_db::$sql_where];
+        try {
+            \wp_slimstat_db::init('', false, false);
+            $parts = explode('&&&', $fs);
+            if (strlen($fs) > 8192 || count($parts) > 20) {
+                return new \WP_Error('slimstat_heatmap_filters', __('Too many filters for Heatmaps.', 'wp-slimstat'), ['status' => 400]);
+            }
+            $supported = []; $ignored = [];
+            foreach ($parts as $part) {
+                $filter = preg_split('/\s+/', trim($part), 3);
+                if (count($filter) < 2 || !preg_match('/\A[a-z_]+\z/', $filter[0]) || !isset(\wp_slimstat_db::$operator_names[$filter[1]])) {
+                    return new \WP_Error('slimstat_heatmap_filters', __('The Heatmaps filter is invalid. Review the selected filters.', 'wp-slimstat'), ['status' => 400]);
+                }
+                if (!isset(\wp_slimstat_db::$columns_names[$filter[0]]) || false !== strpos($filter[0], 'addon_') || false !== strpos($filter[0], 'no_filter')) {
+                    $ignored[] = $filter[0];
+                } else {
+                    $supported[] = $part;
+                }
+            }
+            \wp_slimstat_db::init(implode('&&&', $supported), false, false);
+            return ['scope' => \wp_slimstat_db::get_combined_where('', '', false, 't1'), 'ignored' => $ignored];
+        } finally {
+            [\wp_slimstat_db::$filters_normalized, \wp_slimstat_db::$sql_where] = $old;
+        }
     }
 }

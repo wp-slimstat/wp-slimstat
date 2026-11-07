@@ -57,6 +57,7 @@ test.describe('AC-GEO-003: DB-IP Provider Precision', () => {
 
   test('DB-IP resolves country for known public IP (8.8.8.8 → US)', async ({ page }) => {
     setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-dbip-precision-us',
       'CF-Connecting-IP': '8.8.8.8',
     });
@@ -74,6 +75,7 @@ test.describe('AC-GEO-003: DB-IP Provider Precision', () => {
   test('DB-IP resolves country and city (not empty) for known IP', async ({ page }) => {
     // 5.9.49.12 = Hetzner IP in Germany, should have country and city
     setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-dbip-precision-de',
       'CF-Connecting-IP': '5.9.49.12',
     });
@@ -94,6 +96,7 @@ test.describe('AC-GEO-003: DB-IP Provider Precision', () => {
 
   test('private IP (127.0.0.1) produces no geolocation country', async ({ page }) => {
     // No header overrides → REMOTE_ADDR is 127.0.0.1 (local dev)
+    setHeaderOverrides({ REMOTE_ADDR: '127.0.0.1' });
     const marker = `dbip-private-${Date.now()}`;
     await page.goto(`/?p=${marker}`);
 
@@ -112,6 +115,7 @@ test.describe('AC-GEO-003: DB-IP Provider Precision', () => {
   test('DB-IP resolves Japanese IP to JP', async ({ page }) => {
     // 1.0.16.0 is an APNIC JP allocation
     setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-dbip-precision-jp',
       'CF-Connecting-IP': '1.0.16.0',
     });
@@ -131,6 +135,7 @@ test.describe('AC-GEO-003: DB-IP Provider Precision', () => {
     await setSlimstatOption(page, 'geolocation_country', 'yes');
 
     setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-dbip-country-only',
       'CF-Connecting-IP': '8.8.8.8',
     });

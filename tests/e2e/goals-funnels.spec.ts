@@ -36,6 +36,13 @@ async function gotoSlimview6(page: Page): Promise<void> {
     await page.goto(SLIMVIEW6, { waitUntil: 'domcontentloaded' });
 }
 
+async function waitForGoalsReload(page: Page): Promise<void> {
+    const filteredUrl = page.url();
+    // A same-URL reload must complete and retain the shared report filters.
+    await page.waitForEvent('domcontentloaded', { timeout: 15_000 });
+    await expect(page).toHaveURL(filteredUrl);
+}
+
 /**
  * Type a value into the goal drawer's Value field the way a user does.
  *
@@ -427,7 +434,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await page.fill('[data-role="goal-name"]', 'E2E Test Goal');
         await fillGoalValue(page, '/e2e');
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="save-goal"]'),
         ]);
 
@@ -454,7 +461,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         expect(nativeConfirmInvoked).toBe(false);
 
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="confirm-destructive"]'),
         ]);
         await expect(page.locator('.slimstat-gf-goal')).toHaveCount(0);
@@ -478,7 +485,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await fillStepValue(rows.nth(1), '/pricing');
 
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="save-funnel"]'),
         ]);
 
@@ -652,7 +659,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await fillGoalValue(page, '/totally-custom-xyz');
 
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="save-goal"]'),
         ]);
 
@@ -684,7 +691,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         // The committed value still round-trips on save.
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="save-goal"]'),
         ]);
         await expect(page.locator('.slimstat-gf-rule-chip code')).toContainText('https://metricet.com');
@@ -727,7 +734,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await page.selectOption('[data-role="goal-operator"]', 'is_empty');
 
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="save-goal"]'),
         ]);
         await expect(page.locator('.slimstat-gf-goal__name')).toContainText('Empty Ref Goal');
@@ -958,7 +965,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         await page.fill('[data-role="goal-name"]', 'After Edit');
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="save-goal"]'),
         ]);
 
@@ -986,7 +993,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         expect(nativeConfirmInvoked).toBe(false);
 
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="confirm-destructive"]'),
         ]);
         await expect(page.locator('.slimstat-gf-funnel-panel')).toHaveCount(0);
@@ -1007,7 +1014,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         await page.fill('[data-role="funnel-name"]', 'New Funnel Name');
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="save-funnel"]'),
         ]);
 

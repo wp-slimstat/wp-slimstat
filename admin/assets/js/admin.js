@@ -2,6 +2,18 @@ function SlimStatReportBody(id) {
     return jQuery("#" + id + " .inside");
 }
 
+/** Encode selected filters before navigation so reload and history can restore them. */
+function SlimStatFilterUrl(url, form) {
+    const target = new URL(url, window.location.href);
+    Array.from(target.searchParams.keys()).forEach(name => {
+        if (name.startsWith('fs[')) target.searchParams.delete(name);
+    });
+    form.querySelectorAll('input[name]').forEach(input => {
+        if (input.name.startsWith('fs[')) target.searchParams.set(input.name, input.value);
+    });
+    return target;
+}
+
 if (typeof SlimStatAdminParams == "undefined") {
     SlimStatAdminParams = {
         async_load: "no",
@@ -88,7 +100,7 @@ function SlimStatReportRows(body) {
             if (!scope || !text(scope)) return [];
             const rows = [text(viewer.querySelector(".ss-hmv-title")), text(scope)];
             const device = viewer.querySelector('[data-device][aria-selected="true"]');
-            /* translators: %s: selected device, such as Mobile or Desktop. */
+            /* translators: %s: selected device, such as Mobile or All devices. */
             if (device) rows.push(sprintf(__("Device: %s", "wp-slimstat"), device.firstChild.textContent.trim()));
             if (viewer.querySelector('[name="range"]').value === "custom") {
                 /* translators: 1: first day (YYYY-MM-DD), 2: last day (YYYY-MM-DD). */
@@ -167,6 +179,23 @@ jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
         button.textContent = text;
         setTimeout(() => { button.innerHTML = label; button.disabled = false; }, 2500);
     };
+    if (button.dataset.report === 'slim_p10_01') {
+        const feedback = box.querySelector('.ss-ec-copy-feedback');
+        if (feedback) { feedback.textContent = ''; feedback.hidden = true; }
+        try {
+            const selection = window.SlimStatAiContext(button);
+            button.disabled = true;
+            const data = await wp.apiFetch({ path: '/slimstat/v1/ai/prompt', method: 'POST', data: selection });
+            if (JSON.stringify(window.SlimStatAiContext(button)) !== JSON.stringify(selection)) throw new Error(__('The report selection changed. Try copying again.', 'wp-slimstat'));
+            const copied = await window.SlimStatCopyText(data.prompt);
+            show(copied ? '✓ ' + __('Copied', 'wp-slimstat') : __('Copy failed', 'wp-slimstat'));
+            document.dispatchEvent(new CustomEvent('slimstat:ai-copy', { detail: { copied } }));
+        } catch (error) {
+            show(__('Copy failed', 'wp-slimstat'));
+            if (feedback) { feedback.textContent = error?.message || __('The report could not be prepared. Try again.', 'wp-slimstat'); feedback.hidden = false; }
+        }
+        return;
+    }
     if (!rows.length) return show(__("No data to copy", "wp-slimstat"));
 
     // Visitor text cannot open or close a section of the prompt.
@@ -1638,11 +1667,21 @@ jQuery(function () {
         });
     });
 
+    // Keep POST-selected filters when the browser restores a report with a GET request.
+    if (jQuery("#slimstat-filters-form").length) {
+        var currentUrl = SlimStatFilterUrl(window.location.href, document.getElementById('slimstat-filters-form'));
+        window.history.replaceState(window.history.state, '', currentUrl);
+    }
+
     // Since we handle all "filter links" as POST requests (see code here above), we need to add dummy form tag to the dashboard,
     // for when our reports are displayed on that page
     if (!jQuery("#slimstat-filters-form").length) {
         jQuery('<form id="slimstat-filters-form" method="post"/>').appendTo("body");
     }
+
+    jQuery('#slimstat-filters-form').on('submit', function () {
+        this.action = SlimStatFilterUrl(this.action, this).href;
+    });
 
     jQuery(document).on("click", ".slimstat-filter-link, #toplevel_page_slimview1 a, #wp-admin-bar-slimstat-header li a:not([target='_blank'])", function (e) {
         // Another handler claimed this click (the country-to-city drilldown opens a dialog).

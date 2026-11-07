@@ -17,6 +17,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import {
   installOptionMutator,
+  installHeaderInjector, uninstallHeaderInjector, setHeaderOverrides, clearHeaderOverrides,
   uninstallOptionMutator,
   installNonceHelper,
   uninstallNonceHelper,
@@ -95,6 +96,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
 
   test.beforeAll(async () => {
     installOptionMutator();
+    installHeaderInjector();
     installNonceHelper();
     installVersionFloorPlugin();
   });
@@ -104,11 +106,13 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
   });
 
   test.afterEach(async () => {
+    clearHeaderOverrides();
     await restoreSlimstatOptions();
   });
 
   test.afterAll(async () => {
     uninstallVersionFloorPlugin();
+    uninstallHeaderInjector();
     uninstallOptionMutator();
     uninstallNonceHelper();
     restoreWpConfig();
@@ -252,7 +256,8 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
 
     // Visit as anonymous user with CF headers injecting a public IP
     const anonContext = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-    await anonContext.setExtraHTTPHeaders({
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-e2e-dbip-whois-data',
       'CF-Connecting-IP': '8.8.8.8',
     });

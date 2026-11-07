@@ -576,7 +576,9 @@ jobs:
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/shortcode-render-wp-test.php
 
       - name: Heatmap author isolation
-        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/heatmap-author-scope-wp-test.php
+        run: |
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/heatmap-author-scope-wp-test.php
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/live-country-scope-wp-test.php
 
       - name: Pretty permalinks, and prove /wp-json/ actually routes
         # WordPress installs with an EMPTY permalink_structure, so /wp-json/ is not rewritten

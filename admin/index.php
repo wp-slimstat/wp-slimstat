@@ -217,6 +217,7 @@ class wp_slimstat_admin
                 'is_report_group' => false,
                 'show_in_sidebar' => true,
                 'title'           => __('Videos', 'wp-slimstat'),
+                'tutorial_badge'  => true,
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_videos'],
             ],
@@ -642,6 +643,9 @@ class wp_slimstat_admin
         $label = $screen_info['title'];
         if (!empty($screen_info['new_badge'])) {
             $label .= self::new_badge($screen_info['new_badge']);
+        }
+        if (!empty($screen_info['tutorial_badge'])) {
+            $label .= ' <span class="slimstat-menu-pro-badge slimstat-menu-tutorial-badge">' . esc_html__('Tutorial', 'wp-slimstat') . '</span>';
         }
         if (!$pro_installed && !empty($screen_info['pro_badge'])) {
             $label .= ' <span class="slimstat-menu-pro-badge">' . esc_html__('Pro', 'wp-slimstat') . '</span>';

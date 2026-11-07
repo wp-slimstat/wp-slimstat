@@ -22,6 +22,8 @@
     let request = 0, pending = false, reload = false;
     let previews = 0, searchTimer;
 
+    const filters = () => config.filters || '';
+
     function el(tag, attrs, children) {
         const node = document.createElement(tag);
         Object.keys(attrs || {}).forEach((key) => node.setAttribute(key, attrs[key]));
@@ -80,7 +82,7 @@
         button.setAttribute('aria-controls', panel.id);
         button.setAttribute('aria-expanded', 'true');
 
-        const params = new URLSearchParams({ page: row.page, device: form.device.value, from: range.dataset.start, to: range.dataset.end });
+        const params = new URLSearchParams({ page: row.page, device: form.device.value, from: range.dataset.start, to: range.dataset.end, fs: filters() });
         wp.apiFetch({ path: '/slimstat/v1/heatmap/targets?' + params })
             .then((targets) => {
                 if (!targets.length) {
@@ -233,7 +235,7 @@
         pending = true;
         const scroll = { x: window.scrollX, y: window.scrollY };
         const id = ++request;
-        const params = new URLSearchParams({ device: form.device.value, from: range.dataset.start, to: range.dataset.end });
+        const params = new URLSearchParams({ device: form.device.value, from: range.dataset.start, to: range.dataset.end, fs: filters() });
         if (refresh) params.set('refresh', '1');
         if (config.mode === 'free') { params.set('q', form.q.value.trim()); params.set('sort', state.sort); params.set('dir', state.dir); }
         table.setAttribute('aria-busy', 'true');
@@ -242,6 +244,9 @@
             .then((data) => {
                 if (id !== request) return;
                 state.rows = data.rows; state.total = data.total; state.locked = data.locked;
+                const notice = document.querySelector('.ss-hm-filter-notice');
+                notice.hidden = !data.ignored_filters?.length;
+                notice.textContent = notice.hidden ? '' : __('Some selected filters are not supported by Heatmaps. They are kept for other reports and are not applied here:', 'wp-slimstat') + ' ' + data.ignored_filters.join(', ');
                 state.ever = false !== data.ever;
                 state.updated = data.updated;
                 if (state.highlight && !automatic) {

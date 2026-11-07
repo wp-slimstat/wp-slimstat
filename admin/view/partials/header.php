@@ -102,7 +102,7 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
         </div>
 
         <?php if (isset($is_pro) && $is_pro): ?>
-            <span class="slimstat-header__status-pill" aria-label="<?php esc_attr_e('Pro is active', 'wp-slimstat'); ?>">
+            <span class="slimstat-header__status-pill" aria-label="<?php esc_attr_e('SlimStat Pro plugin is active', 'wp-slimstat'); ?>" title="<?php esc_attr_e('License status is shown in SlimStat License settings.', 'wp-slimstat'); ?>">
                 <span class="slimstat-header__status-icon" aria-hidden="true">
                     <svg width="12" height="14" viewBox="0 0 12 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path fill-rule="evenodd" clip-rule="evenodd" d="M0.251677 2.05494C0 2.41352 0 3.47938 0 5.6111V6.66091C0 10.4196 2.82597 12.2437 4.59904 13.0182C5.08001 13.2283 5.32049 13.3333 6 13.3333C6.67951 13.3333 6.91999 13.2283 7.40096 13.0182C9.17402 12.2437 12 10.4196 12 6.66091V5.6111C12 3.47938 12 2.41352 11.7483 2.05494C11.4966 1.69636 10.4945 1.3533 8.49006 0.667195L8.10819 0.536478C7.06335 0.178826 6.54093 0 6 0C5.45907 0 4.93666 0.178826 3.89182 0.536478L3.50994 0.667195C1.50555 1.3533 0.503354 1.69636 0.251677 2.05494ZM8.03964 5.66634C8.22355 5.46036 8.20566 5.14428 7.99967 4.96036C7.79369 4.77645 7.47761 4.79434 7.2937 5.00033L5.28571 7.24927L4.7063 6.60033C4.52239 6.39434 4.20631 6.37645 4.00033 6.56036C3.79434 6.74428 3.77645 7.06036 3.96036 7.26634L4.91275 8.33301C5.00761 8.43925 5.14328 8.5 5.28571 8.5C5.42815 8.5 5.56382 8.43925 5.65868 8.33301L8.03964 5.66634Z" fill="#18A456"/>

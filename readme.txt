@@ -167,6 +167,10 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 == Changelog ==
 
+= Unreleased =
+* Added AI actions for individual Ecommerce views, clearer AI modal actions, and a Tutorial badge with attributed video browsing.
+* Fixed shared Heatmaps filters, geolocation health diagnostics, trusted proxy handling and live-country activity counts.
+
 = 6.1.0 - 2026-11-04 =
 
 **New**

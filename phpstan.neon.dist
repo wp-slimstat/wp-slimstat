@@ -24,7 +24,8 @@ parameters:
         - admin
         - src
     excludePaths:
-        - src/Dependencies/*    # WP Scoper-scoped vendor — not own code
+        analyse:
+            - src/Dependencies/*    # Discover vendor symbols without analyzing third-party code.
     scanDirectories:
         - src/Dependencies      # known to the analyzer, but not analyzed
     scanFiles:

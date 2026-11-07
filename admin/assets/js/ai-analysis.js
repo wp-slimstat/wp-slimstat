@@ -101,6 +101,19 @@
             if (match) filters[match[1]] = value;
         });
         const result = { report, from: range?.dataset.start || '', to: range?.dataset.end || '', filters };
+        if (report === 'slim_p10_01') {
+            const dashboard = trigger.closest('[data-ecommerce]') || document.querySelector('[data-ecommerce]');
+            if (!trigger.isConnected || !dashboard || dashboard.getAttribute('aria-busy') === 'true') throw new Error(__('Wait for the report to finish loading.', 'wp-slimstat'));
+            const panel = trigger.closest('[data-dimension]');
+            const view = trigger.closest('[data-ec-view]')?.dataset.ecView || 'summary';
+            result.ecommerce = {
+                view,
+                metric: view === 'journey' ? 'net' : panel?.querySelector('[data-rank-metric]')?.value || dashboard.querySelector('[data-chart-metric][aria-pressed="true"]')?.dataset.chartMetric || 'net',
+                compare: dashboard.querySelector('[data-compare]')?.checked ?? true,
+                ascending: panel?.querySelector('[data-sort]')?.getAttribute('aria-pressed') === 'true',
+            };
+            result.granularity = dashboard.querySelector('[data-interval]')?.value || 'daily';
+        }
         if (report === 'slimheatmap') {
             result.device = document.querySelector('.ss-hm [name="device"]')?.value || '';
             result.search = document.querySelector('.ss-hm [name="q"]')?.value || '';
@@ -109,6 +122,7 @@
         if (granularity?.value) result.granularity = granularity.value;
         return result;
     }
+    window.SlimStatAiContext = context;
     /**
      * Send one authenticated REST request without an automatic retry.
      *
@@ -145,13 +159,20 @@
      * Reuse the existing Free clipboard action for the same report.
      *
      * @param {HTMLElement} body Panel content container.
-     * @param {HTMLElement} trigger Original report action.
+     * @param {HTMLElement} trigger Original report action, which may have been replaced.
+     * @param {HTMLAnchorElement|null} link Optional settings recovery link.
      */
-    function fallback(body, trigger) {
-        body.append(action(__('Copy Prompt Instead', 'wp-slimstat'), () => {
+    function fallback(body, trigger, link = null) {
+        const actions = el('div', '', { class: 'ss-ai-actions' });
+        const view = trigger.closest('[data-ec-view]')?.dataset.ecView;
+        if (link) actions.append(link);
+        actions.append(action(__('Copy Prompt Instead', 'wp-slimstat'), () => {
             dialog.close();
-            document.querySelector('.slimstat-ai-prompt[data-report="' + trigger.dataset.report + '"]')?.click();
+            const local = trigger.parentElement?.querySelector('.slimstat-ai-prompt');
+            const scope = view ? document.querySelector('[data-ec-view="' + CSS.escape(view) + '"]') : document;
+            (local?.isConnected ? local : scope?.querySelector('.slimstat-ai-prompt[data-report="' + trigger.dataset.report + '"]'))?.click();
         }));
+        body.append(actions);
     }
     /**
      * Replace only the error notice so a successful previous result stays readable.
@@ -161,7 +182,12 @@
      */
     function error(body, exception) {
         body.querySelector('.ss-ai-error')?.remove();
-        body.prepend(el('p', exception?.message || __('AI analysis could not load. Please try again.', 'wp-slimstat'), { class: 'ss-ai-error', role: 'alert' }));
+        const notice = el('div', '', { class: 'ss-ai-error', role: 'alert' });
+        notice.append(el('p', exception?.message || __('AI analysis could not load. Please try again.', 'wp-slimstat')));
+        if (exception?.code === 'slimstat_ai_license' && config.license) {
+            notice.append(el('a', __('License settings →', 'wp-slimstat'), { href: config.license }));
+        }
+        body.prepend(notice);
     }
     /**
      * Render headings and lists as text nodes; provider text never enters HTML parsing.
@@ -272,8 +298,7 @@
             if (status.saved) result(body, status.saved, true, status.matches);
             if (!status.enabled) {
                 body.append(el('p', __('AI analysis is disabled. An administrator can enable it in SlimStat’s AI Analysis settings.', 'wp-slimstat')));
-                if (config.settings) body.append(el('a', __('AI Analysis Settings →', 'wp-slimstat'), { href: config.settings }));
-                fallback(body, trigger);
+                fallback(body, trigger, config.settings ? el('a', __('AI Analysis Settings →', 'wp-slimstat'), { href: config.settings }) : null);
                 return;
             }
             const controls = el('div', '', { class: 'ss-ai-controls' });
@@ -349,8 +374,8 @@
         else {
             body.append(el('h3', __('From copy and paste to one-click insights', 'wp-slimstat')),
                 el('p', __('With SlimStat Pro, connect your AI provider through WordPress and analyze reports without leaving your dashboard.', 'wp-slimstat')),
-                el('p', __('Requires WordPress 7.0 or newer. Provider API charges may apply.', 'wp-slimstat')), upgrade());
-            fallback(body, trigger);
+                el('p', __('Requires WordPress 7.0 or newer. Provider API charges may apply.', 'wp-slimstat')));
+            fallback(body, trigger, upgrade());
         }
     });
 })();
