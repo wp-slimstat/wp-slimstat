@@ -22,6 +22,7 @@ $day      = 'custom' === $range['preset'] ? 'gmdate' : 'wp_date';
 
 wp_localize_script('slimstat-heatmaps', 'SlimStatHeatmaps', [
     'route' => '/slimstat/v1/heatmap/pages',
+    'filters' => implode('&&&', array_map(static function ($column, $rule) { return $column . ' ' . $rule[0] . ' ' . rawurlencode($rule[1]); }, array_keys(wp_slimstat_db::$filters_normalized['columns']), wp_slimstat_db::$filters_normalized['columns'])),
     // Free: rows open a preview of the page's clicks. Pro without the row filter is an older Pro: ask to update.
     'mode'  => $viewer ? 'pro' : ($is_pro ? 'update' : 'free'),
     'home'  => home_url('/'),
@@ -63,6 +64,11 @@ if ('' !== $error) {
             : __('See which pages get clicks, from the link and button clicks SlimStat already records. SlimStat Pro opens each page\'s click and scroll heatmap.', 'wp-slimstat')) : '',
     ]);
     ?>
+    <?php wp_slimstat_admin::get_template('report-filters', ['show_date' => false]); ?>
+    <div id="slimstat-current-filters">
+        <?php echo wp_kses_post(wp_slimstat_reports::get_filters_html(wp_slimstat_db::$filters_normalized['columns'])); ?>
+    </div>
+    <p class="ss-hm-filter-notice" role="status" hidden></p>
     <div class="ss-hm">
 
         <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only notice after the nonce-checked delete redirect. ?>

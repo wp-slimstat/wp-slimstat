@@ -11,7 +11,9 @@
 .ss-ai-dialog h3 { color: var(--ss-text-primary); font-size: 16px; margin: 22px 0 8px; }
 .ss-ai-body { padding: 0 24px 24px; font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
 .ss-ai-body p { font-size: inherit; line-height: inherit; }
-.ss-ai-body > .button { margin-top: 16px; }
+.ss-ai-dialog .ss-ai-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-block-start: 20px; }
+.ss-ai-dialog .button { white-space: normal; height: auto; text-align: center; }
+.ss-ai-dialog a:focus-visible, .ss-ai-dialog button:focus-visible { outline: 2px solid var(--ss-info-fg); outline-offset: 3px; }
 .ss-ai-result ul { padding-inline-start: 24px; list-style: disc; }
 .ss-ai-result li { margin-block: 8px; }
 .ss-ai-meta { color: var(--ss-text-muted); font-size: 12px !important; margin: 6px 0; }

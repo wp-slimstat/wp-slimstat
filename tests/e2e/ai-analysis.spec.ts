@@ -50,6 +50,33 @@ test('clipboard failure never announces success @compat', async ({ page }) => {
   await expect(page.locator('#slimstat-ai-toast')).toHaveCount(0);
 });
 
+test('disabled AI actions stay aligned with long text, RTL and a narrow viewport @compat', async ({ page }, info) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => Object.assign((window as any).SlimStatAdminParams.ai, { native: true, route: '/slimstat/v1/ai', settings: '/wp-admin/admin.php?page=slimai&tab=settings' }));
+  await page.route(url => decodeURIComponent(url.href).includes('/slimstat/v1/ai/status'), route => route.fulfill({ json: { enabled: false, saved: null } }));
+  const trigger = page.locator(`${report} .slimstat-ai-analyze`);
+  await trigger.click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText('AI analysis is disabled');
+  const actions = dialog.locator('.ss-ai-actions');
+  await expect(actions.getByRole('link')).toHaveCount(1);
+  await expect(actions.getByRole('button', { name: 'Copy Prompt Instead' })).toBeVisible();
+  for (const dir of ['ltr', 'rtl']) {
+    await dialog.evaluate((node, direction) => {
+      node.setAttribute('dir', direction);
+      node.querySelector('.ss-ai-actions a')!.textContent = 'AI Analysis Settings with a substantially longer translated explanation';
+    }, dir);
+    const bounds = await actions.evaluate(node => {
+      const rect = node.getBoundingClientRect();
+      return [...node.children].every(child => { const box = child.getBoundingClientRect(); return box.left >= rect.left - 1 && box.right <= rect.right + 1; });
+    });
+    expect(bounds).toBe(true);
+    await page.screenshot({ path: info.outputPath(`disabled-ai-${dir}.png`) });
+  }
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(trigger).toBeFocused();
+});
+
 test('Free explanation supports keyboard close and restores focus @compat', async ({ page }) => {
   await page.evaluate(() => { (window as any).SlimStatAdminParams.ai.native = false; });
   const button = page.locator(`${report} .slimstat-ai-analyze`);

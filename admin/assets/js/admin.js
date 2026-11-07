@@ -167,6 +167,22 @@ jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
         button.textContent = text;
         setTimeout(() => { button.innerHTML = label; button.disabled = false; }, 2500);
     };
+    if (button.dataset.report === 'slim_p10_01') {
+        try {
+            const selection = window.SlimStatAiContext(button);
+            button.disabled = true;
+            const data = await wp.apiFetch({ path: '/slimstat/v1/ai/prompt', method: 'POST', data: selection });
+            if (JSON.stringify(window.SlimStatAiContext(button)) !== JSON.stringify(selection)) throw new Error(__('The report selection changed. Try copying again.', 'wp-slimstat'));
+            const copied = await window.SlimStatCopyText(data.prompt);
+            show(copied ? '✓ ' + __('Copied', 'wp-slimstat') : __('Copy failed', 'wp-slimstat'));
+            document.dispatchEvent(new CustomEvent('slimstat:ai-copy', { detail: { copied } }));
+        } catch (error) {
+            show(__('Copy failed', 'wp-slimstat'));
+            const feedback = box.querySelector('.ss-ec-feedback');
+            if (feedback) { feedback.textContent = error?.message || __('The report could not be prepared. Try again.', 'wp-slimstat'); feedback.classList.remove('screen-reader-text'); }
+        }
+        return;
+    }
     if (!rows.length) return show(__("No data to copy", "wp-slimstat"));
 
     // Visitor text cannot open or close a section of the prompt.

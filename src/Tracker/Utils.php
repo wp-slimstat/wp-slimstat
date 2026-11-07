@@ -453,21 +453,17 @@ class Utils
 			$ipArray[0] = $remoteAddr;
 		}
 
-		// CF-Connecting-IP is handled separately via getCfClientIp() with CF-Ray validation.
-		// Including it here would bypass that check and allow IP spoofing on non-CF origins.
-		$originatingIpHeaders = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
-		foreach ($originatingIpHeaders as $header) {
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
-			$headerValue = $_SERVER[$header] ?? '';
-			if (is_string($headerValue) && '' !== $headerValue) {
-				$headerValue = sanitize_text_field(wp_unslash($headerValue));
-				foreach (explode(',', $headerValue) as $ip) {
-					$ip = trim($ip);
-					if (false !== filter_var($ip, FILTER_VALIDATE_IP) && $ip != $ipArray[0]) {
-						$ipArray[1] = $ip;
-						break 2;
-					}
-				}
+		// Never trust a client-supplied forwarding header on a direct connection.
+		// Other proxies can restore REMOTE_ADDR at the server, or explicitly opt in
+		// below. Walk X-Forwarded-For from the nearest hop, stopping at an untrusted one.
+		if (self::trustedProxy($remoteAddr)) {
+			$forwarded = isset($_SERVER['HTTP_X_FORWARDED_FOR']) && is_string($_SERVER['HTTP_X_FORWARDED_FOR'])
+				? sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR'])) : '';
+			foreach (array_reverse(explode(',', $forwarded)) as $candidate) {
+				$candidate = trim($candidate);
+				if (!filter_var($candidate, FILTER_VALIDATE_IP)) { break; }
+				$ipArray[1] = $candidate;
+				if (!self::trustedProxy($candidate)) { break; }
 			}
 		}
 
@@ -475,14 +471,13 @@ class Utils
 	}
 
 	/**
-	 * Returns the validated Cloudflare client IP when the request is verified as coming
-	 * through Cloudflare (CF-Ray header present). Returns null for non-CF requests.
+	 * Returns the client IP only when the connecting peer is a Cloudflare edge.
 	 *
 	 * @return string|null Validated IP address, or null if not a CF request.
 	 */
 	public static function getCfClientIp(): ?string
 	{
-		if (empty($_SERVER['HTTP_CF_RAY']) || empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+		if (!self::isCloudflareRequest() || empty($_SERVER['HTTP_CF_CONNECTING_IP']) || !is_string($_SERVER['HTTP_CF_CONNECTING_IP'])) {
 			return null;
 		}
 
@@ -492,6 +487,34 @@ class Utils
 		);
 
 		return $cfIp ?: null;
+	}
+
+	/** Explicit trust for a site's own forwarding proxies; never inferred from headers. */
+	private static function trustedProxy(string $ip): bool
+	{
+		return false !== filter_var($ip, FILTER_VALIDATE_IP) && true === apply_filters('slimstat_trusted_proxy', false, $ip);
+	}
+
+	/** Cloudflare's published edge networks: https://www.cloudflare.com/ips/ */
+	public static function isCloudflareRequest(): bool
+	{
+		$peer = isset($_SERVER['REMOTE_ADDR']) && is_string($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
+		if (empty($_SERVER['HTTP_CF_RAY']) || !filter_var($peer, FILTER_VALIDATE_IP)) { return false; }
+		$networks = array('173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22', '141.101.64.0/18', '108.162.192.0/18',
+			'190.93.240.0/20', '188.114.96.0/20', '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13', '104.24.0.0/14',
+			'172.64.0.0/13', '131.0.72.0/22', '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32', '2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32');
+		$packed = inet_pton($peer);
+		foreach ($networks as $network) {
+			[$address, $bits] = explode('/', $network);
+			$base = inet_pton($address);
+			$bytes = intdiv((int) $bits, 8);
+			$remainder = (int) $bits % 8;
+			if (strlen($packed) === strlen($base) && substr($packed, 0, $bytes) === substr($base, 0, $bytes)
+				&& (!$remainder || (ord($packed[$bytes]) >> (8 - $remainder)) === (ord($base[$bytes]) >> (8 - $remainder)))) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static function getLanguage()

@@ -82,7 +82,7 @@ test.describe('Video tutorials', () => {
     const labels = items.map((text) => text.replace(/\s+/g, ' ').trim());
     const settings = labels.indexOf('Settings');
     expect(settings, labels.join(' | ')).toBeGreaterThan(0);
-    expect(labels[settings + 1], labels.join(' | ')).toBe('Videos');
+    expect(labels[settings + 1], labels.join(' | ')).toBe('Videos Tutorial');
 
     await page.goto(VIDEOS_PAGE);
     await expect(page.getByRole('heading', { level: 1, name: 'Video tutorials' })).toBeVisible();
@@ -90,7 +90,8 @@ test.describe('Video tutorials', () => {
     await expect(page.locator('[data-show="consent"]').getByText('your browser and the address of this site'), 'disclosed before consent').toBeVisible();
     await expect(page.locator('.ss-videos-row')).toHaveCount(0);
     const browse = page.getByRole('link', { name: /Browse the videos on wp-slimstat\.com/ });
-    await expect(browse).toHaveAttribute('href', `${ORIGIN}/videos/`);
+    await expect(browse).toHaveAttribute('href', `${ORIGIN}/videos/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=videos&utm_content=browse-videos`);
+    await expect(page.locator('.slimstat-menu-tutorial-badge')).toHaveText('Tutorial');
     await expect(browse).toHaveAttribute('rel', 'noopener noreferrer');
     await page.goto('/wp-admin/edit.php');
     expect(r.requests.map((q) => q.url()), 'no request to wp-slimstat.com without consent').toEqual([]);
@@ -189,7 +190,7 @@ test.describe('Video tutorials', () => {
     await page.getByRole('button', { name: 'Show videos' }).click();
     const error = page.getByRole('alert');
     await expect(error).toContainText('could not be loaded');
-    await expect(error.getByRole('link', { name: /Browse the videos on wp-slimstat\.com/ })).toHaveAttribute('href', `${ORIGIN}/videos/`);
+    await expect(error.getByRole('link', { name: /Browse the videos on wp-slimstat\.com/ })).toHaveAttribute('href', `${ORIGIN}/videos/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=videos&utm_content=browse-videos`);
     r.fail = false;
     await error.getByRole('button', { name: 'Try again' }).click();
     await expect(page.locator('.ss-videos-card')).toHaveCount(example.videos.length);

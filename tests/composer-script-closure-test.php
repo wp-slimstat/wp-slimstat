@@ -68,6 +68,7 @@ $walk('test:all');
 // Standalone by design. Each entry states WHY, because "it is in the list" is not a reason, and
 // a list anyone may append to without argument is not a gate.
 $standalone = [
+    'test:live-country-scope-wp' => 'requires disposable WordPress tables; runs in the Tier 2 CI lane beside Heatmaps scope',
     'test:privacy-export-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',
     'test:data-version-mysql' => 'requires a disposable WordPress database with WooCommerce; runs in the Tier 2 WooCommerce lane',
     'test:ecommerce-full-refund-mysql' => 'requires real WooCommerce orders; runs on disposable data in the Tier 2 WooCommerce lane',

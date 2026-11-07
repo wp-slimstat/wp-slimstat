@@ -127,9 +127,10 @@ class GeoService
                 // GeolocationService reads settings automatically
                 $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
                 $ok      = $service->updateDatabase();
+                $reason  = !$ok && method_exists($service->getProvider(), 'getLastError') ? $service->getProvider()->getLastError() : '';
                 return [
                     'status' => (bool) $ok,
-                    'notice' => $ok ? __('Geolocation database updated.', 'wp-slimstat') : __('The geolocation database could not be updated.', 'wp-slimstat'),
+                    'notice' => $ok ? __('Geolocation database updated.', 'wp-slimstat') : ($reason ?: __('The geolocation database could not be updated.', 'wp-slimstat')),
                 ];
             }
             return [ 'status' => true, 'notice' => __('This provider does not use a local database.', 'wp-slimstat') ];
@@ -156,23 +157,27 @@ class GeoService
             $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
             $dbPath  = $service->getProvider()->getDbPath();
             if (!file_exists($dbPath)) {
-                throw new \Exception(__('The geolocation database was not found.', 'wp-slimstat'));
+                return ['status' => false, 'notice' => __('The geolocation database was not found. Click "Update Database" to download it.', 'wp-slimstat')];
+            }
+            if (!is_readable($dbPath)) {
+                return ['status' => false, 'notice' => __('The geolocation database cannot be read. Ask your host to check file permissions, then try again.', 'wp-slimstat')];
             }
 
             $reader = new Reader($dbPath);
-            $ip = $this->getUserIP();
-
-            // Determine which method to use based on database type
-            $precision = $this->getPack();
-            if ('city' === $precision) {
-                $reader->city($ip);
-            } else {
-                $reader->country($ip);
+            try {
+                // Local/private IPs and uncovered cities say nothing about database health.
+                $type = $reader->metadata()->databaseType;
+                $compatible = false !== stripos($type, 'City') || ('country' === $this->getPack() && false !== stripos($type, 'Country'));
+            } finally {
+                $reader->close();
+            }
+            if (!$compatible) {
+                return ['status' => false, 'notice' => __('The database does not support the selected precision. Click "Update Database" to download the correct file.', 'wp-slimstat')];
             }
 
             $response = [
                 'status' => true,
-                'notice' => __('The geolocation database is working.', 'wp-slimstat'),
+                'notice' => __('The geolocation database is readable and supports the selected precision. Private addresses have no location; city coverage varies. New visits use this database.', 'wp-slimstat'),
             ];
         } catch (\Exception $exception) {
             $this->logError($exception->getMessage());

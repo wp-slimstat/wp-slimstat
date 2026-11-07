@@ -42,6 +42,7 @@ if (!function_exists('wp_unslash')) {
     }
 }
 
+require_once dirname(__DIR__) . '/src/Tracker/Utils.php';
 require_once dirname(__DIR__) . '/src/Services/Geolocation/Provider/GeoServiceProviderInterface.php';
 require_once dirname(__DIR__) . '/src/Services/Geolocation/Provider/CloudflareGeolocationProvider.php';
 
@@ -68,6 +69,7 @@ function assert_same($expected, $actual, string $message): void
 function country_code_for($cf_ipcountry): ?string
 {
     $_SERVER = [
+        'REMOTE_ADDR'       => '173.245.48.1',
         'HTTP_CF_RAY'       => '8aabbccddeeff001-SJC',
         'HTTP_CF_IPCOUNTRY' => $cf_ipcountry,
     ];

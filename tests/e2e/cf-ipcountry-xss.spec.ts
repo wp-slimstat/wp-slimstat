@@ -18,6 +18,7 @@ import { BASE_URL, ADMIN_USER, ADMIN_PASS } from './helpers/env';
 import {
   fillAndConfirm,
   installOptionMutator,
+  installHeaderInjector, uninstallHeaderInjector, setHeaderOverrides, clearHeaderOverrides,
   uninstallOptionMutator,
   setSlimstatOption,
   snapshotSlimstatOptions,
@@ -65,6 +66,7 @@ test.describe('CF-IPCountry stored XSS (#5)', () => {
 
   test.beforeAll(async () => {
     installOptionMutator();
+    installHeaderInjector();
   });
 
   test.beforeEach(async ({ page }) => {
@@ -75,17 +77,20 @@ test.describe('CF-IPCountry stored XSS (#5)', () => {
   });
 
   test.afterEach(async () => {
+    clearHeaderOverrides();
     await restoreSlimstatOptions();
   });
 
   test.afterAll(async () => {
+    uninstallHeaderInjector();
     uninstallOptionMutator();
     await closeDb();
   });
 
   // ─── A: input validation rejects the payload ──────────────────────
   test('A1: quote-bearing CF-IPCountry header is never stored', async ({ page, context }) => {
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'xss-e2e-reject',
       'CF-Connecting-IP': '8.8.8.8',
       'CF-IPCountry': POISON,
@@ -100,7 +105,8 @@ test.describe('CF-IPCountry stored XSS (#5)', () => {
   });
 
   test('A2: a legitimate CF-IPCountry (US) still resolves and is stored', async ({ page, context }) => {
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'xss-e2e-ok',
       'CF-Connecting-IP': '8.8.8.8',
       'CF-IPCountry': 'US',

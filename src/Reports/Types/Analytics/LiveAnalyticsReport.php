@@ -178,10 +178,11 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		$now         = \wp_slimstat::now();
 
 		// 2) pages and countries in last 30 minutes (unique)
-		$threshold_30 = $now - ( 30 * 60 );
-		$row          = Query::select( "COUNT(DISTINCT NULLIF(resource,'')) AS pages_count, COUNT(DISTINCT NULLIF(country,'')) AS countries_count" )
+		$threshold_30 = (int) floor($now / 60) * 60 - (29 * 60);
+		$row          = Query::select( "COUNT(DISTINCT NULLIF(resource,'')) AS pages_count, COUNT(DISTINCT CASE WHEN country REGEXP '^[a-zA-Z]{2}$' AND LOWER(country) <> 'xx' THEN LOWER(country) END) AS countries_count" )
 			->from( "{$GLOBALS['wpdb']->prefix}slim_stats" )
-			->where( 'dt', '>=', $threshold_30 )
+			->whereRaw($wpdb->prepare('(dt >= %d OR (dt_out >= dt AND dt_out >= %d))', $threshold_30, $threshold_30))
+			->where('visit_id', '>', 0)
 			->whereRaw( \wp_slimstat::report_scope()['humans'] )
 			->getRow();
 

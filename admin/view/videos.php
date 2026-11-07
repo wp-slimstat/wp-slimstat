@@ -13,7 +13,8 @@ use SlimStat\Services\Admin\VideoTutorials;
 // Every state is rendered here, translated, and hidden until admin/assets/js/videos.js shows it.
 // The script fills #ss-videos-rows with DOM nodes built from the validated catalog, never HTML.
 $browse = static function (): void {
-    ?><a target="_blank" rel="noopener noreferrer" href="<?php echo esc_url(VideoTutorials::WATCH_BASE); ?>"><?php esc_html_e('Browse the videos on wp-slimstat.com', 'wp-slimstat'); ?><span class="screen-reader-text"> <?php esc_html_e('(opens in a new tab)', 'wp-slimstat'); ?></span></a><?php
+    $url = add_query_arg(['utm_source' => 'wp-slimstat', 'utm_medium' => 'link', 'utm_campaign' => 'videos', 'utm_content' => 'browse-videos'], VideoTutorials::WATCH_BASE);
+    ?><a target="_blank" rel="noopener noreferrer" href="<?php echo esc_url($url); ?>"><?php esc_html_e('Browse the videos on wp-slimstat.com', 'wp-slimstat'); ?><span class="screen-reader-text"> <?php esc_html_e('(opens in a new tab)', 'wp-slimstat'); ?></span></a><?php
 };
 ?>
 <div class="backdrop-container"><div class="wrap-slimstat slimstat-videos">

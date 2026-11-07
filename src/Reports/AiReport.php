@@ -38,7 +38,7 @@ final class AiReport {
 		if ( ! Shortcode::canView() || NetworkMerge::isMerging() || is_network_admin() ) {
 			return self::error( 'permission', __( 'Open a site dashboard with permission to view this report.', 'wp-slimstat' ), 403 );
 		}
-		$allowed = array( 'report', 'from', 'to', 'filters', 'granularity', 'page', 'device', 'search', 'fs', 'goal', 'converted', 'selection', 'consent' );
+		$allowed = array( 'report', 'from', 'to', 'filters', 'granularity', 'page', 'device', 'search', 'fs', 'goal', 'converted', 'selection', 'consent', 'ecommerce' );
 		if ( array_diff( array_keys( $input ), $allowed ) ) {
 			return self::invalid();
 		}
@@ -48,6 +48,23 @@ final class AiReport {
 			return self::invalid();
 		}
 		$report = $catalog[ $id ];
+		$ecommerce = $input['ecommerce'] ?? array();
+		if (!is_array($ecommerce) || ($ecommerce && 'slim_p10_01' !== $id)
+			|| array_diff(array_keys($ecommerce), array('view', 'metric', 'compare', 'ascending'))) {
+			return self::invalid();
+		}
+		$ecommerce += array('view' => 'summary', 'metric' => 'net', 'compare' => true, 'ascending' => false);
+		if (!in_array($ecommerce['view'], array('summary', 'trend', 'journey', 'channel', 'source', 'campaign', 'product', 'coupon', 'device', 'customer', 'landing'), true)
+			|| !in_array($ecommerce['metric'], array('net', 'orders', 'aov', 'rate', 'discount'), true)
+			|| !is_bool($ecommerce['compare']) || !is_bool($ecommerce['ascending'])
+			|| ('slim_p10_01' === $id && !\wp_slimstat::pro_is_installed() && (!in_array($ecommerce['view'], array('summary', 'trend', 'channel', 'source', 'product'), true) || 'net' !== $ecommerce['metric']))) {
+			return self::invalid();
+		}
+		$metrics = in_array($ecommerce['view'], array('summary', 'trend'), true) ? array('net', 'orders', 'aov', 'rate')
+			: ('coupon' === $ecommerce['view'] ? array('discount', 'orders') : array('net', 'orders'));
+		if ('slim_p10_01' === $id && !in_array($ecommerce['metric'], $metrics, true)) {
+			return self::invalid();
+		}
 		if ( 'slim_p10_01' === $id && ! Ecommerce::canView() ) {
 			return self::error( 'permission', __( 'Store reporting permission is required.', 'wp-slimstat' ), 403 );
 		}
@@ -132,10 +149,78 @@ final class AiReport {
 			'timezone' => wp_timezone_string(),
 			'filters'  => $labels,
 		);
-		$context                  = compact( 'id', 'from', 'to', 'normalized', 'device', 'page', 'search', 'goal', 'converted', 'gran', 'public' );
+		$context                  = compact( 'id', 'from', 'to', 'normalized', 'device', 'page', 'search', 'goal', 'converted', 'gran', 'public', 'ecommerce' );
 		$context['authorization'] = self::fingerprint( array( get_current_blog_id(), get_current_user_id(), \wp_slimstat::report_scope()['cache'] ) );
 		$context['fingerprint']   = self::fingerprint( array( $context, $args, AiPrompt::VERSION, array_intersect_key( \wp_slimstat::$settings, array_flip( array( 'hash_ip', 'anonymize_ip', 'geolocation_country' ) ) ) ) );
 		return $context;
+	}
+
+	/** Reuse the dashboard reader, including its Free field removal and currency boundary. */
+	private static function ecommerce(array $context): array {
+		$selection = $context['ecommerce'];
+		$reader = new Ecommerce();
+		$data = $reader->data($context['gran']) + $reader->context();
+		$view = $selection['view'];
+		$metric = $selection['metric'];
+		$titles = array('summary' => __('Store summary', 'wp-slimstat'), 'trend' => __('Store performance', 'wp-slimstat'),
+			'journey' => __('Purchase journey', 'wp-slimstat'), 'channel' => __('Channels', 'wp-slimstat'), 'source' => __('Sources', 'wp-slimstat'),
+			'campaign' => __('Campaigns', 'wp-slimstat'), 'product' => __('Products', 'wp-slimstat'), 'coupon' => __('Coupons', 'wp-slimstat'),
+			'device' => __('Devices', 'wp-slimstat'), 'customer' => __('Customer segments', 'wp-slimstat'), 'landing' => __('Landing pages', 'wp-slimstat'));
+		$public = $context['public'];
+		$public['title'] .= ' · ' . $titles[$view];
+		$public['currency'] = $data['currency'];
+		$public['metric'] = $metric;
+		$public['provisional'] = $data['provisional'];
+		$public['retention_limited'] = $data['retention_limited'];
+		$public['from'] = gmdate('Y-m-d H:i:s', $data['range'][0]);
+		$public['to'] = gmdate('Y-m-d H:i:s', $data['range'][1]);
+		if ($selection['compare'] && in_array($view, array('summary', 'trend'), true)) {
+			$public['previous_period'] = gmdate('Y-m-d H:i:s', $data['previous_range'][0]) . ' – ' . gmdate('Y-m-d H:i:s', $data['previous_range'][1]);
+		}
+		$rows = array();
+		$fields = array('net', 'orders', 'matched', 'wc_attributed', 'refund', 'discount', 'tax', 'shipping', 'product_net', 'quantity');
+		if ('summary' === $view) {
+			foreach ($selection['compare'] ? array('current', 'previous') : array('current') as $period) {
+				$row = array('period' => $period) + array_intersect_key($data[$period], array_flip($fields));
+				if (isset($row['orders'])) {
+					$row['aov'] = $row['orders'] ? (float) $row['net'] / (int) $row['orders'] : 0.0;
+					if ('current' === $period) {
+						$row['visits'] = $data['journey']['visits'];
+						$row['buyers'] = $data['journey']['buyers'];
+						$row['rate'] = $row['visits'] ? 100 * $row['buyers'] / $row['visits'] : 0.0;
+					}
+				}
+				$rows[] = $row;
+			}
+		} elseif ('trend' === $view) {
+			$periods = $selection['compare'] ? array('current', 'previous') : array('current');
+			$limit = (int) floor(self::MAX_ROWS / count($periods));
+			foreach ($periods as $period) {
+				foreach (array_slice($data['series'][$period], 0, $limit) as $point) {
+					$rows[] = array('period' => $period, 'from' => gmdate('Y-m-d H:i:s', $point['start']), 'to' => gmdate('Y-m-d H:i:s', $point['end']),
+						'value' => $point[$metric] ?? null, 'partial' => $point['partial'], 'provisional' => $point['provisional']);
+				}
+			}
+			$public['intervals_available'] = count($data['series']['current']);
+		} elseif ('journey' === $view) {
+			$rows[] = array_intersect_key($data['journey'], array_flip(array('visits', 'products', 'carts', 'checkouts', 'buyers', 'completed')));
+		} else {
+			if (!isset($data['groups'][$view])) { throw new \RuntimeException('Unavailable Ecommerce dimension.'); }
+			$ranked = $data['groups'][$view];
+			usort($ranked, static function ($a, $b) use ($selection, $metric) {
+				return ((float) ($a[$metric] ?? 0) <=> (float) ($b[$metric] ?? 0)) * ($selection['ascending'] ? 1 : -1);
+			});
+			foreach (array_slice($ranked, 0, self::MAX_ROWS) as $index => $row) {
+				// Product names, coupons, URLs and acquisition labels can contain identifying text.
+				$rows[] = array('rank' => $index + 1) + array_intersect_key($row, array_flip($fields));
+			}
+			$public['groups_available'] = count($ranked);
+			$public['ascending'] = $selection['ascending'];
+		}
+		$public['rows_included'] = count($rows);
+		$public['limitations'] = __('Net sales is after discounts and refunds, excluding tax and shipping, for processing, completed and refunded orders by creation date. Product amounts use itemized refunds; fees and amount-only refunds are unallocated. Coupon discounts are not incremental revenue; orders can use multiple coupons. Customer segments mean guest or account, not new or returning customers. Purchase rate is buying divided by eligible tracked visits; average order value is net sales divided by included orders. Attribution depends on retained visits or WooCommerce acquisition; landing and device attribution require a retained visit. Traffic filters exclude unlinked orders. Missing data is unknown, not zero.', 'wp-slimstat');
+		$public['limitations'] .= ' ' . __('At most 20 rows or intervals are included. Ranked reports start from at most 1,000 groups and may be limited further by access. These rows are not the entire dataset; do not sum them as a store total. Free-form labels and personal identifiers are withheld. Currency is never combined. Comparisons, partial intervals and provisional or retention-limited data must be qualified.', 'wp-slimstat');
+		return array('prompt' => AiPrompt::build($public, $rows), 'context' => $public);
 	}
 
 	/**
@@ -236,6 +321,11 @@ final class AiReport {
 			if ( ! AiPromptButton::eligible( $context['id'], $report, \wp_slimstat_db::$filters_normalized['columns'] ) ) {
 				return self::invalid(); }
 			$args    = $report['callback_args'] ?? array();
+			if ('slim_p10_01' === $context['id']) {
+				$data = self::ecommerce($context);
+				$check_database('');
+				return $data;
+			}
 			$rows    = array();
 			$summary = false;
 			if ( 'slimheatmap' === $context['id'] ) {
@@ -262,15 +352,13 @@ final class AiReport {
 				$summary             = true;
 			} else {
 				$reader  = is_array( $args['raw'] ) ? $args['raw'][1] : '';
-				$summary = in_array( $reader, self::SUMMARY_READERS, true ) || 'slim_p10_01' === $context['id'];
+				$summary = in_array( $reader, self::SUMMARY_READERS, true );
 				if ( in_array( $reader, self::SUMMARY_READERS, true ) && 'get_your_blog' !== $reader ) {
 					\wp_slimstat_db::$pageviews = \wp_slimstat_db::count_records();
 					if ( ! \wp_slimstat_db::$pageviews ) {
 						return self::emptyReport(); }
 				}
 				$rows = ReportData::rawData( $args );
-				if ( 'slim_p10_01' === $context['id'] && count( $rows ) < 2 ) {
-					return self::emptyReport(); }
 			}
 			$check_database( '' );
 			if ( $summary && ! isset( $args['chart_data'] ) && 'slimheatmap' !== $context['id'] ) {

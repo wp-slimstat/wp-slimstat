@@ -58,6 +58,7 @@ class RestApiManager
             static function () { return new TrackerHealthRestController(); },
             static function () { return new HeatmapRestController(); },
             static function () { return new ShortcodeRestController(); },
+            static function () { return new \SlimStat\Controllers\Rest\AiPromptRestController(); },
         ];
         foreach ($factories as $factory) {
             try {

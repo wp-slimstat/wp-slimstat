@@ -10,6 +10,14 @@ $data = $data ?? null;
 $error = $error ?? '';
 $state = $state ?? [];
 
+$ai = static function (string $view, string $title): void {
+    if (!is_admin()) { return; }
+    echo '<div class="ss-ec-ai" data-ec-view="' . esc_attr($view) . '">';
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shared action renderer escapes attributes and labels.
+    echo \SlimStat\Reports\AiPromptButton::html('slim_p10_01', ['title' => $title], wp_slimstat_db::$filters_normalized['columns'] ?? [], wp_slimstat::pro_is_installed());
+    echo '</div>';
+};
+
 $setup = static function ($label) {
 	if (!current_user_can('manage_woocommerce') && !current_user_can('manage_options')) { return; }
 	?>
@@ -75,7 +83,7 @@ $setup = static function ($label) {
 		}
 		?>
 		<div class="ss-ec-toolbar">
-            <?php if (is_admin()) { echo \SlimStat\Reports\AiPromptButton::html('slim_p10_01', ['title' => __('Ecommerce', 'wp-slimstat'), 'tooltip' => __('WooCommerce sales for the selected currency, order creation dates and traffic filters. Only visible metrics and ranked results are included. Locked metrics are unavailable, not zero.', 'wp-slimstat')], wp_slimstat_db::$filters_normalized['columns'] ?? [], $pro); } // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- AiPromptButton escapes its output. ?>
+            <?php $ai('summary', __('Store summary', 'wp-slimstat')); ?>
 			<span><?php esc_html_e('Order creation date', 'wp-slimstat'); ?></span>
 			<details class="ss-ec-currency"><summary><?php echo esc_html(sprintf(/* translators: %s: currency code, e.g. USD */ __('Currency: %s', 'wp-slimstat'), $currency)); ?></summary><div><?php foreach ($data['currencies'] as $row) : ?><a class="slimstat-filter-link" href="<?php echo esc_url(wp_slimstat_reports::fs_url(Report::CURRENCY_FILTER . ' equals ' . rawurlencode($row['currency']))); ?>" <?php if ($currency === $row['currency']) { echo 'aria-current="true"'; } ?>><?php echo esc_html($row['currency']); ?></a><?php endforeach; ?></div></details>
 			<label class="ss-ec-compare"><input type="checkbox" data-compare checked> <?php esc_html_e('Compare previous period', 'wp-slimstat'); ?></label>
@@ -100,6 +108,7 @@ $setup = static function ($label) {
 			</div>
             <?php if (!$pro) : ?><div id="ss-ec-unlock" tabindex="-1"><p class="slimstat-preview-caption"><?php esc_html_e('Illustrative report preview, not measured activity.', 'wp-slimstat'); ?></p><?php wp_slimstat_admin::get_template('pro-adds', ['text' => __('Understand order volume, basket value and purchase rates with Pro.', 'wp-slimstat'), 'action' => __('Unlock Ecommerce insights with Pro', 'wp-slimstat'), 'campaign' => 'ecommerce', 'content' => 'kpi-blur']); ?></div><?php endif; ?>
 			<figure class="ss-ec-chart" id="ss-ec-chart">
+                <?php $ai('trend', __('Store performance', 'wp-slimstat')); ?>
 				<figcaption><div><strong data-chart-title><?php esc_html_e('Net sales', 'wp-slimstat'); ?></strong><span class="ss-ec-chart-unit"><?php echo esc_html($currency); ?></span></div><label><span class="screen-reader-text"><?php esc_html_e('Chart interval', 'wp-slimstat'); ?></span><select data-interval><?php foreach (['daily' => __('Daily', 'wp-slimstat'), 'weekly' => __('Weekly', 'wp-slimstat'), 'monthly' => __('Monthly', 'wp-slimstat')] as $key => $label) : ?><option value="<?php echo esc_attr($key); ?>" <?php selected($key, $series['interval']); ?> <?php disabled(('daily' === $key && $data['range'][1] - $data['range'][0] > 366 * DAY_IN_SECONDS) || ('weekly' === $key && $data['range'][1] - $data['range'][0] > 2562 * DAY_IN_SECONDS)); ?>><?php echo esc_html($label); ?></option><?php endforeach; ?></select></label></figcaption>
 				<p class="ss-ec-chart-description" data-chart-description><?php echo esc_html($metrics['net'][3]); ?></p>
 				<div class="ss-ec-canvas"><canvas aria-label="<?php esc_attr_e('Selected metric over time. Use the exact values table below for all dates and comparisons.', 'wp-slimstat'); ?>" role="img"></canvas><p data-chart-empty hidden><?php esc_html_e('Not enough observations to draw this trend. Try a wider interval or review tracking coverage.', 'wp-slimstat'); ?></p></div>
@@ -130,7 +139,8 @@ $setup = static function ($label) {
 					$ceiling = $rows ? max(array_map(static function ($row) use ($measure) { return abs((float) $row[$measure]); }, $rows)) : 0;
 					?>
 					<div class="ss-ec-report" id="ss-ec-panel-<?php echo esc_attr($dimension); ?>" role="tabpanel" aria-labelledby="ss-ec-tab-<?php echo esc_attr($dimension); ?>" tabindex="0" data-dimension="<?php echo esc_attr($dimension); ?>" data-page-size="<?php echo esc_attr((string) max(1, (int) wp_slimstat::$settings['rows_to_show'])); ?>" <?php if ($index) { echo 'hidden'; } ?>>
-						<p class="ss-ec-report-question"><?php echo esc_html($questions[$dimension]); ?></p><?php do_action('slimstat_ecommerce_group_actions', $dimension, $data); if (is_admin() && !wp_slimstat::pro_is_installed()) { echo wp_slimstat_admin::pro_export_link(' data-ec-export', 'ecommerce-' . $dimension); } // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pro_export_link() escapes its URL and strings. ?>
+						<?php $ai($dimension, $titles[$dimension]); ?>
+                        <p class="ss-ec-report-question"><?php echo esc_html($questions[$dimension]); ?></p><?php do_action('slimstat_ecommerce_group_actions', $dimension, $data); if (is_admin() && !wp_slimstat::pro_is_installed()) { echo wp_slimstat_admin::pro_export_link(' data-ec-export', 'ecommerce-' . $dimension); } // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pro_export_link() escapes its URL and strings. ?>
 						<div class="ss-ec-rank-heading"><span><?php echo esc_html($isCoupon ? __('Top by discounts', 'wp-slimstat') : __('Top by net sales', 'wp-slimstat')); ?></span><label><span class="screen-reader-text"><?php esc_html_e('Sort these results', 'wp-slimstat'); ?></span><select data-rank-metric><option value="<?php echo esc_attr($measure); ?>"><?php echo esc_html($isCoupon ? __('Discounts', 'wp-slimstat') : __('Net sales', 'wp-slimstat')); ?></option><?php if ($pro) : ?><option value="orders"><?php esc_html_e('Orders', 'wp-slimstat'); ?></option><?php endif; ?></select><button type="button" class="ss-ec-icon-button" data-sort aria-label="<?php esc_attr_e('Reverse sort order', 'wp-slimstat'); ?>" aria-pressed="false"><span class="dashicons dashicons-arrow-down-alt" aria-hidden="true"></span></button></label></div>
 						<?php if (!$rows) : ?><div class="ss-ec-report-empty"><strong><?php esc_html_e('No results for this view', 'wp-slimstat'); ?></strong><?php if ($data['filtered']) : ?><p><?php esc_html_e('Try a different period or remove a filter to explore more activity.', 'wp-slimstat'); ?></p><?php endif; ?></div><?php else : ?>
 						<ol class="ss-ec-rankings" tabindex="0" aria-label="<?php echo esc_attr($titles[$dimension]); ?>">
@@ -183,7 +193,7 @@ $setup = static function ($label) {
 			<?php endif; ?>
 		</section>
 		<?php endif; ?>
-		<section class="ss-ec-journey" id="ss-ec-journey"><div class="ss-ec-section-heading"><h2><?php esc_html_e('Purchase journey', 'wp-slimstat'); ?></h2><p><?php echo esc_html(sprintf(/* translators: 1: eligible visit count, 2: start date, 3: end date. */ __('Observed in %1$s eligible visits · %2$s to %3$s', 'wp-slimstat'), number_format_i18n($journey['visits']), Report::date('M j, Y', $data['range'][0]), Report::date('M j, Y', $data['range'][1]))); ?></p></div>
+		<section class="ss-ec-journey" id="ss-ec-journey"><?php $ai('journey', __('Purchase journey', 'wp-slimstat')); ?><div class="ss-ec-section-heading"><h2><?php esc_html_e('Purchase journey', 'wp-slimstat'); ?></h2><p><?php echo esc_html(sprintf(/* translators: 1: eligible visit count, 2: start date, 3: end date. */ __('Observed in %1$s eligible visits · %2$s to %3$s', 'wp-slimstat'), number_format_i18n($journey['visits']), Report::date('M j, Y', $data['range'][0]), Report::date('M j, Y', $data['range'][1]))); ?></p></div>
 			<?php if (!$journey['visits'] || !array_sum([$journey['products'], $journey['carts'], $journey['checkouts'], $journey['buyers']])) : ?>
 				<div class="ss-ec-journey-empty"><span class="dashicons dashicons-chart-line" aria-hidden="true"></span><div><h3><?php esc_html_e('Journey data is not available yet', 'wp-slimstat'); ?></h3><p><?php esc_html_e('No shopping steps were observed in eligible tracked visits in this period. Order history cannot reconstruct these steps or prove abandonment.', 'wp-slimstat'); ?></p><a href="<?php echo esc_url(admin_url('admin.php?page=slimconfig')); ?>"><?php esc_html_e('Review tracking settings', 'wp-slimstat'); ?></a></div></div>
 			<?php else : $prior = null; ?>

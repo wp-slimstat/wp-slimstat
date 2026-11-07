@@ -275,7 +275,9 @@
     "test:tracker-repair-gate": "php tests/tracker-repair-gate-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
+    "test:geolocation-diagnostics": "php tests/geolocation-diagnostics-test.php",
     "test:source-level": [
+      "@test:geolocation-diagnostics",
       "@test:front-end-option-budget",
       "@test:dashboard-widget-queue",
       "@test:video-catalog",
@@ -515,6 +517,7 @@
     "test:ecommerce-full-refund-mysql": "wp eval-file tests/Integration/ecommerce-full-refund-mysql.php",
     "test:privacy-erasure-mysql": ["wp eval-file tests/Integration/data-eraser-mysql.php", "wp eval-file tests/Integration/privacy-external-mysql.php"],
     "test:settings-cache-family-wp": "wp eval-file tests/settings-cache-family-wp-test.php",
+    "test:live-country-scope-wp": "wp eval-file tests/live-country-scope-wp-test.php",
     "test:heatmap-legacy-oracle-wp": "wp eval-file tests/heatmap-legacy-oracle-wp-test.php",
     "test:date-i18n-filter-suspension-wp": "wp eval-file tests/date-i18n-filter-suspension-wp-test.php",
     "test:notification-delivery-wp": "wp eval-file tests/notification-delivery-wp-test.php",

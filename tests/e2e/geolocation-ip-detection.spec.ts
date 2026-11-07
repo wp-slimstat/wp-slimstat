@@ -60,6 +60,7 @@ test.describe('AC-GEO-005/006: IP Detection Header Priority', () => {
   test('CF-Connecting-IP used when CF-Ray is present (highest priority)', async ({ page }) => {
     // CF-Connecting-IP (US) should win over X-Forwarded-For (DE)
     setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-ip-priority-cf',
       'CF-Connecting-IP': '8.8.8.8',         // US
       'X-Forwarded-For': '5.9.49.12',        // DE
@@ -120,6 +121,7 @@ test.describe('AC-GEO-005/006: IP Detection Header Priority', () => {
     const baseline = await waitForStatWithIp(baselineMarker);
     expect(baseline).toBeTruthy();
     setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-ip-detection-record',
       'CF-Connecting-IP': '1.0.16.0',        // JP
     });
