@@ -1,5 +1,6 @@
 = Unreleased =
 
+* Recover clipboard feedback after retries and report refreshes, omit unavailable AI action spacing, preserve existing non-Ecommerce analysis cache identities, and sample Ecommerce trends across the full selected period.
 * Add shared AI prompt and analysis actions to every Ecommerce report, with the selected view, currency, metric, comparison, filters and privacy limits.
 * Keep shared report filters through Heatmaps navigation and apply supported filters to clicks, scroll data and pageview counts. Explain retained filters that Heatmaps cannot apply.
 * Improve AI modal spacing, wrapped actions and keyboard focus on narrow and RTL screens.

@@ -159,14 +159,18 @@
      * Reuse the existing Free clipboard action for the same report.
      *
      * @param {HTMLElement} body Panel content container.
-     * @param {HTMLElement} trigger Original report action.
+     * @param {HTMLElement} trigger Original report action, which may have been replaced.
+     * @param {HTMLAnchorElement|null} link Optional settings recovery link.
      */
     function fallback(body, trigger, link = null) {
         const actions = el('div', '', { class: 'ss-ai-actions' });
+        const view = trigger.closest('[data-ec-view]')?.dataset.ecView;
         if (link) actions.append(link);
         actions.append(action(__('Copy Prompt Instead', 'wp-slimstat'), () => {
             dialog.close();
-            (trigger.parentElement.querySelector('.slimstat-ai-prompt') || document.querySelector('.slimstat-ai-prompt[data-report="' + trigger.dataset.report + '"]'))?.click();
+            const local = trigger.parentElement?.querySelector('.slimstat-ai-prompt');
+            const scope = view ? document.querySelector('[data-ec-view="' + CSS.escape(view) + '"]') : document;
+            (local?.isConnected ? local : scope?.querySelector('.slimstat-ai-prompt[data-report="' + trigger.dataset.report + '"]'))?.click();
         }));
         body.append(actions);
     }

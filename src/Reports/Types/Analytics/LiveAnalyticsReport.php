@@ -286,14 +286,15 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			$end_minute = (int) floor( $now / 60 ) * 60; // start of current minute
 			$start_minute = $end_minute - ( 29 * 60 );
 
-			$field     = 'pages' === $metric ? 'resource' : 'country';
-			$condition = 'pages' === $metric ? "resource IS NOT NULL AND resource != ''" : "country IS NOT NULL AND country != ''";
+			$field     = 'pages' === $metric ? 'resource' : 'LOWER(country)';
+			$condition = 'pages' === $metric ? "resource IS NOT NULL AND resource != ''" : "country REGEXP '^[a-zA-Z]{2}$' AND LOWER(country) <> 'xx'";
 
 			// Use Query class for secure and cached queries
 			$minuteExpr = 'FLOOR(dt / 60) * 60';
 			$results = Query::select( "{$minuteExpr} as minute_timestamp, COUNT(DISTINCT {$field}) as count" )
 				->from( "{$GLOBALS['wpdb']->prefix}slim_stats" )
 				->where( 'dt', '>=', $start_minute )
+				->where( 'visit_id', '>', 0 )
 					->whereRaw( $condition )
 					->whereRaw( \wp_slimstat::report_scope()['humans'] )
 					// Use the select alias in GROUP BY and ORDER BY for MySQL 5.7 compatibility

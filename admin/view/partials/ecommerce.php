@@ -10,11 +10,14 @@ $data = $data ?? null;
 $error = $error ?? '';
 $state = $state ?? [];
 
+/** Omit both actions and spacing when the shared privacy gate denies this view. */
 $ai = static function (string $view, string $title): void {
     if (!is_admin()) { return; }
+    $html = \SlimStat\Reports\AiPromptButton::html('slim_p10_01', ['title' => $title], wp_slimstat_db::$filters_normalized['columns'] ?? [], wp_slimstat::pro_is_installed());
+    if ('' === $html) { return; }
     echo '<div class="ss-ec-ai" data-ec-view="' . esc_attr($view) . '">';
     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shared action renderer escapes attributes and labels.
-    echo \SlimStat\Reports\AiPromptButton::html('slim_p10_01', ['title' => $title], wp_slimstat_db::$filters_normalized['columns'] ?? [], wp_slimstat::pro_is_installed());
+    echo $html;
     echo '</div>';
 };
 
@@ -33,6 +36,7 @@ $setup = static function ($label) {
 	<div class="ss-ec-heading">
 		<div class="ss-ec-refresh-line"><span class="ss-ec-updated"><?php esc_html_e('Updated just now', 'wp-slimstat'); ?></span> · <a href="#" class="refresh" aria-label="<?php esc_attr_e('Refresh Ecommerce reports', 'wp-slimstat'); ?>"><?php esc_html_e('Refresh', 'wp-slimstat'); ?></a></div>
 	</div>
+	<p class="ss-ec-copy-feedback" role="status" hidden></p>
 	<p class="ss-ec-feedback screen-reader-text" role="status" aria-live="polite"></p>
 	<?php if (!$available) : ?>
 		<div class="ss-ec-state"><span class="dashicons dashicons-cart" aria-hidden="true"></span><h2><?php esc_html_e('Bring your store into focus', 'wp-slimstat'); ?></h2><p><?php esc_html_e('Activate WooCommerce 8.3 or later on 64-bit PHP to connect orders with your SlimStat traffic. Existing traffic reports continue to work.', 'wp-slimstat'); ?></p><?php if (current_user_can('activate_plugins')) : ?><a class="button" href="<?php echo esc_url(admin_url('plugins.php')); ?>"><?php esc_html_e('Manage plugins', 'wp-slimstat'); ?></a><?php endif; ?></div>

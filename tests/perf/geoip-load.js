@@ -68,6 +68,7 @@ const ADMIN_PAGES = [
   '/wp-admin/tools.php',
 ];
 
+/** Verify the test site and pass authenticated cookies explicitly to every VU. */
 export function setup() {
   // Authenticate by POSTing to wp-login.php
   const loginPage = http.get(`${BASE_URL}/wp-login.php`);
@@ -93,6 +94,7 @@ export function setup() {
   return { cookies };
 }
 
+/** Exercise tracker and report paths while checking that report access remains authenticated. */
 export default function (data) {
   // Pick a random admin page
   const page = ADMIN_PAGES[Math.floor(Math.random() * ADMIN_PAGES.length)];

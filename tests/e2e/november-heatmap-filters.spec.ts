@@ -9,7 +9,9 @@ test('shared filters survive reports → Heatmaps → reports and reload @compat
   await page.locator('#toplevel_page_slimview1 a[href*="page=slimview3"]').click();
   await expect(country).toHaveValue('equals us');
   const request = page.waitForRequest(r => decodeURIComponent(r.url()).includes('/slimstat/v1/heatmap/pages'));
+  const navigation = page.waitForRequest(r => r.isNavigationRequest() && r.url().includes('page=slimheatmap'));
   await page.locator('#toplevel_page_slimview1 a[href*="page=slimheatmap"]').click();
+  expect(new URL((await navigation).url()).searchParams.get('fs[country]')).toBe('equals us');
   expect(new URL((await request).url()).searchParams.get('fs')).toContain('country equals us');
   await expect(country).toHaveValue('equals us');
   await expect(source).toHaveValue('contains newsletter+50% & sale');

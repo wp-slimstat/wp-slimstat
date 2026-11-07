@@ -46,6 +46,7 @@ const ADMIN_PAGES = [
 
 let loggedIn = false;
 
+/** Authenticate once per VU; noCookiesReset keeps the session across iterations. */
 function ensureLogin() {
   if (loggedIn) return;
   http.get(`${BASE_URL}/wp-login.php`);
@@ -59,6 +60,7 @@ function ensureLogin() {
   loggedIn = true;
 }
 
+/** Measure authenticated reports and reject login-page redirects masquerading as HTTP 200. */
 export default function () {
   ensureLogin();
 

@@ -2,6 +2,18 @@ function SlimStatReportBody(id) {
     return jQuery("#" + id + " .inside");
 }
 
+/** Encode selected filters before navigation so reload and history can restore them. */
+function SlimStatFilterUrl(url, form) {
+    const target = new URL(url, window.location.href);
+    Array.from(target.searchParams.keys()).forEach(name => {
+        if (name.startsWith('fs[')) target.searchParams.delete(name);
+    });
+    form.querySelectorAll('input[name]').forEach(input => {
+        if (input.name.startsWith('fs[')) target.searchParams.set(input.name, input.value);
+    });
+    return target;
+}
+
 if (typeof SlimStatAdminParams == "undefined") {
     SlimStatAdminParams = {
         async_load: "no",
@@ -168,6 +180,8 @@ jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
         setTimeout(() => { button.innerHTML = label; button.disabled = false; }, 2500);
     };
     if (button.dataset.report === 'slim_p10_01') {
+        const feedback = box.querySelector('.ss-ec-copy-feedback');
+        if (feedback) { feedback.textContent = ''; feedback.hidden = true; }
         try {
             const selection = window.SlimStatAiContext(button);
             button.disabled = true;
@@ -178,8 +192,7 @@ jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
             document.dispatchEvent(new CustomEvent('slimstat:ai-copy', { detail: { copied } }));
         } catch (error) {
             show(__('Copy failed', 'wp-slimstat'));
-            const feedback = box.querySelector('.ss-ec-feedback');
-            if (feedback) { feedback.textContent = error?.message || __('The report could not be prepared. Try again.', 'wp-slimstat'); feedback.classList.remove('screen-reader-text'); }
+            if (feedback) { feedback.textContent = error?.message || __('The report could not be prepared. Try again.', 'wp-slimstat'); feedback.hidden = false; }
         }
         return;
     }
@@ -1656,13 +1669,7 @@ jQuery(function () {
 
     // Keep POST-selected filters when the browser restores a report with a GET request.
     if (jQuery("#slimstat-filters-form").length) {
-        var currentUrl = new URL(window.location.href);
-        Array.from(currentUrl.searchParams.keys()).forEach(function (name) {
-            if (name.startsWith('fs[')) currentUrl.searchParams.delete(name);
-        });
-        jQuery('#slimstat-filters-form input[name]').each(function () {
-            if (this.name.startsWith('fs[')) currentUrl.searchParams.set(this.name, this.value);
-        });
+        var currentUrl = SlimStatFilterUrl(window.location.href, document.getElementById('slimstat-filters-form'));
         window.history.replaceState(window.history.state, '', currentUrl);
     }
 
@@ -1671,6 +1678,10 @@ jQuery(function () {
     if (!jQuery("#slimstat-filters-form").length) {
         jQuery('<form id="slimstat-filters-form" method="post"/>').appendTo("body");
     }
+
+    jQuery('#slimstat-filters-form').on('submit', function () {
+        this.action = SlimStatFilterUrl(this.action, this).href;
+    });
 
     jQuery(document).on("click", ".slimstat-filter-link, #toplevel_page_slimview1 a, #wp-admin-bar-slimstat-header li a:not([target='_blank'])", function (e) {
         // Another handler claimed this click (the country-to-city drilldown opens a dialog).

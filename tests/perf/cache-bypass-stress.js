@@ -91,6 +91,7 @@ const REPORT_PAGES = [
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
+/** Share one verified session so concurrent VU logins cannot invalidate each other. */
 export function setup() {
   http.get(`${BASE_URL}/wp-login.php`);
   const loginRes = http.post(`${BASE_URL}/wp-login.php`, {
@@ -114,6 +115,7 @@ export function setup() {
 
 // ─── Checks ──────────────────────────────────────────────────────────────────
 
+/** Record authentication and PHP diagnostic failures alongside response latency. */
 function checkResponse(res, pageName) {
   const ok = check(res, {
     [`${pageName}: status 200`]: (r) => r.status === 200,
@@ -133,6 +135,7 @@ function checkResponse(res, pageName) {
 
 // ─── Main test function ──────────────────────────────────────────────────────
 
+/** Exercise both complete reports and refresh requests with the setup session. */
 export function adminReportPages(data) {
   group('report_page_load', () => {
     // Pick a random report page (simulates real admin behavior)

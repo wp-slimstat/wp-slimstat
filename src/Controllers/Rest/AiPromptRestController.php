@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) { exit; }
 /** Prepare a clipboard prompt locally; no AI connection or external request. */
 final class AiPromptRestController implements RestControllerInterface
 {
+    /** Register the local prompt endpoint; it never invokes an AI provider. */
     public function register_routes(): void
     {
         register_rest_route('slimstat/v1', '/ai/prompt', [
@@ -20,11 +21,15 @@ final class AiPromptRestController implements RestControllerInterface
         ]);
     }
 
+    /** Require a logged-in report viewer and a REST nonce before reading analytics. */
     public function permission(\WP_REST_Request $request): bool
     {
         return get_current_user_id() && wp_verify_nonce($request->get_header('X-WP-Nonce'), 'wp_rest') && Shortcode::canView();
     }
 
+    /** Validate bounded selection metadata and return only authorized aggregate data.
+     * @return array|\WP_Error Prepared prompt or a safe context/permission error.
+     */
     public function prompt(\WP_REST_Request $request)
     {
         $input = $request->get_json_params();

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-07T16:53:41+00:00\n"
+"POT-Creation-Date: 2026-11-07T22:45:11+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -1179,7 +1179,7 @@ msgid "Traffic, top content and sources for the selected period."
 msgstr ""
 
 #: admin/index.php:127
-#: admin/view/partials/ecommerce.php:127
+#: admin/view/partials/ecommerce.php:131
 #: src/Shortcodes/Shortcode.php:78
 msgid "Audience"
 msgstr ""
@@ -1301,7 +1301,7 @@ msgstr ""
 
 #: admin/index.php:651
 #: admin/index.php:2287
-#: admin/view/partials/ecommerce.php:106
+#: admin/view/partials/ecommerce.php:110
 #: admin/view/partials/header.php:111
 #: admin/view/upgrade-pro.php:103
 #: admin/assets/js/shortcodes.js:45
@@ -1595,7 +1595,7 @@ msgstr ""
 #: admin/index.php:3224
 #: admin/index.php:3592
 #: src/Modules/Chart.php:74
-#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:641
+#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:642
 msgid "Insufficient permissions"
 msgstr ""
 
@@ -2638,7 +2638,7 @@ msgid "Already have Pro? Activate the Pro plugin and your license to get started
 msgstr ""
 
 #: admin/view/ai-analysis.php:70
-#: admin/view/partials/ecommerce.php:38
+#: admin/view/partials/ecommerce.php:42
 msgid "Manage plugins"
 msgstr ""
 
@@ -2718,8 +2718,8 @@ msgid "Average clicks each pageview of this page received."
 msgstr ""
 
 #: admin/view/heatmaps.php:36
-#: admin/view/partials/ecommerce.php:125
-#: src/Reports/AiReport.php:168
+#: admin/view/partials/ecommerce.php:129
+#: src/Reports/AiReport.php:171
 msgid "Devices"
 msgstr ""
 
@@ -2805,7 +2805,7 @@ msgstr ""
 
 #. translators: 1: linked order count, 2: included order count.
 #: admin/view/heatmaps.php:93
-#: admin/view/partials/ecommerce.php:93
+#: admin/view/partials/ecommerce.php:97
 #: src/Migration/Admin/MigrationAdmin.php:160
 msgid "Details"
 msgstr ""
@@ -2860,8 +2860,8 @@ msgid "Mobile"
 msgstr ""
 
 #: admin/view/heatmaps.php:134
-#: src/Controllers/Rest/HeatmapRestController.php:83
-#: src/Controllers/Rest/HeatmapRestController.php:153
+#: src/Controllers/Rest/HeatmapRestController.php:84
+#: src/Controllers/Rest/HeatmapRestController.php:154
 msgid "Device insights are available with Pro."
 msgstr ""
 
@@ -2874,7 +2874,7 @@ msgid "Search pages, e.g. /pricing"
 msgstr ""
 
 #: admin/view/heatmaps.php:141
-#: admin/view/partials/ecommerce.php:34
+#: admin/view/partials/ecommerce.php:37
 #: admin/view/wp-slimstat-reports.php:1115
 #: src/Reports/Abstracts/AbstractReport.php:279
 msgid "Refresh"
@@ -2893,13 +2893,13 @@ msgid "Pages of results"
 msgstr ""
 
 #: admin/view/heatmaps.php:186
-#: admin/view/partials/ecommerce.php:160
+#: admin/view/partials/ecommerce.php:164
 #: src/Reports/AcquisitionReport.php:366
 msgid "Previous"
 msgstr ""
 
 #: admin/view/heatmaps.php:188
-#: admin/view/partials/ecommerce.php:160
+#: admin/view/partials/ecommerce.php:164
 #: src/Reports/AcquisitionReport.php:369
 msgid "Next"
 msgstr ""
@@ -3016,676 +3016,676 @@ msgstr ""
 msgid "Reset layout"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:34
+#: admin/view/partials/ecommerce.php:37
 #: admin/assets/js/ecommerce.js:182
 #: admin/assets/js/heatmaps.js:227
 msgid "Updated just now"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:34
+#: admin/view/partials/ecommerce.php:37
 msgid "Refresh Ecommerce reports"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:38
+#: admin/view/partials/ecommerce.php:42
 msgid "Bring your store into focus"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:38
+#: admin/view/partials/ecommerce.php:42
 msgid "Activate WooCommerce 8.3 or later on 64-bit PHP to connect orders with your SlimStat traffic. Existing traffic reports continue to work."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:40
+#: admin/view/partials/ecommerce.php:44
 msgid "Setup did not finish"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:40
+#: admin/view/partials/ecommerce.php:44
 msgid "Try setup again"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:42
+#: admin/view/partials/ecommerce.php:46
 msgid "Understand what drives your sales"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:42
+#: admin/view/partials/ecommerce.php:46
 msgid "Connect your WooCommerce orders to see net sales, products, acquisition and the observed purchase journey in one place."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:42
+#: admin/view/partials/ecommerce.php:46
 msgid "Setup builds a reporting table and a visit index, then imports orders in the background. The index can take time on a large site. WooCommerce orders stay unchanged; visit association follows your existing consent and tracking settings."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:42
+#: admin/view/partials/ecommerce.php:46
 msgid "Set up Ecommerce"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:44
+#: admin/view/partials/ecommerce.php:48
 msgid "This report needs attention"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:44
-#: admin/view/partials/ecommerce.php:220
+#: admin/view/partials/ecommerce.php:48
+#: admin/view/partials/ecommerce.php:224
 msgid "Rebuild reports"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:58
+#: admin/view/partials/ecommerce.php:62
 msgid "Comparison incomplete"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:59
+#: admin/view/partials/ecommerce.php:63
 msgid "Not enough data in the previous period"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:60
+#: admin/view/partials/ecommerce.php:64
 msgid "No positive comparison baseline"
 msgstr ""
 
 #. translators: %s: net unit count.
-#: admin/view/partials/ecommerce.php:65
-#: admin/view/partials/ecommerce.php:112
-#: admin/view/partials/ecommerce.php:115
-#: admin/view/partials/ecommerce.php:144
-#: admin/view/partials/ecommerce.php:149
+#: admin/view/partials/ecommerce.php:69
+#: admin/view/partials/ecommerce.php:116
+#: admin/view/partials/ecommerce.php:119
+#: admin/view/partials/ecommerce.php:148
+#: admin/view/partials/ecommerce.php:153
 #: src/Ecommerce/Report.php:374
 #: src/Ecommerce/Report.php:384
 #: admin/assets/js/ecommerce.js:54
 msgid "Net sales"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:65
+#: admin/view/partials/ecommerce.php:69
 msgid "Sales after discounts and refunds, excluding tax and shipping."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:66
-#: admin/view/partials/ecommerce.php:144
+#: admin/view/partials/ecommerce.php:70
+#: admin/view/partials/ecommerce.php:148
 #: src/Ecommerce/Report.php:384
 msgid "Orders"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:66
+#: admin/view/partials/ecommerce.php:70
 msgid "Processing, completed and refunded orders, by creation date."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:67
-#: admin/view/partials/ecommerce.php:216
+#: admin/view/partials/ecommerce.php:71
+#: admin/view/partials/ecommerce.php:220
 #: src/Ecommerce/Report.php:385
 msgid "Average order value"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:67
+#: admin/view/partials/ecommerce.php:71
 msgid "Net sales divided by included orders in each interval."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:68
-#: admin/view/partials/ecommerce.php:217
+#: admin/view/partials/ecommerce.php:72
+#: admin/view/partials/ecommerce.php:221
 #: src/Ecommerce/Report.php:386
 msgid "Purchase rate (tracked visits)"
 msgstr ""
 
 #. translators: 1: buying visit count, 2: eligible visit count.
-#: admin/view/partials/ecommerce.php:68
+#: admin/view/partials/ecommerce.php:72
 #: admin/assets/js/ecommerce.js:151
 #, php-format,js-format
 msgid "%1$s buying / %2$s eligible visits"
 msgstr ""
 
 #. translators: 1: buying visit count, 2: eligible visit count.
-#: admin/view/partials/ecommerce.php:68
+#: admin/view/partials/ecommerce.php:72
 msgid "Buying visits divided by eligible visits in each interval."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:76
+#: admin/view/partials/ecommerce.php:80
 msgid "No data"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:86
-#: src/Reports/AiReport.php:165
+#: admin/view/partials/ecommerce.php:90
+#: src/Reports/AiReport.php:168
 msgid "Store summary"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:87
+#: admin/view/partials/ecommerce.php:91
 msgid "Order creation date"
 msgstr ""
 
 #. translators: %s: currency code, e.g. USD
-#: admin/view/partials/ecommerce.php:88
+#: admin/view/partials/ecommerce.php:92
 #, php-format
 msgid "Currency: %s"
 msgstr ""
 
 #. translators: %s: currency code, e.g. USD
-#: admin/view/partials/ecommerce.php:89
+#: admin/view/partials/ecommerce.php:93
 msgid "Compare previous period"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:90
+#: admin/view/partials/ecommerce.php:94
 msgid "Metric definitions"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:93
+#: admin/view/partials/ecommerce.php:97
 msgid "Sync needs attention · figures are provisional"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:93
-#: admin/view/partials/ecommerce.php:101
+#: admin/view/partials/ecommerce.php:97
+#: admin/view/partials/ecommerce.php:105
 msgid "Importing your orders · figures are provisional"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:93
+#: admin/view/partials/ecommerce.php:97
 msgid "Some orders could not be imported"
 msgstr ""
 
 #. translators: %s: WooCommerce order ID.
-#: admin/view/partials/ecommerce.php:93
+#: admin/view/partials/ecommerce.php:97
 #, php-format
 msgid "Order %s could not be imported"
 msgstr ""
 
 #. translators: %s: WooCommerce order ID.
-#: admin/view/partials/ecommerce.php:93
+#: admin/view/partials/ecommerce.php:97
 msgid "WooCommerce totals, with tracked visit coverage"
 msgstr ""
 
 #. translators: 1: linked order count, 2: included order count.
-#: admin/view/partials/ecommerce.php:93
+#: admin/view/partials/ecommerce.php:97
 #, php-format
 msgid "%1$s of %2$s orders in this report linked to a tracked visit"
 msgstr ""
 
 #. translators: 1: linked order count, 2: included order count.
-#: admin/view/partials/ecommerce.php:93
+#: admin/view/partials/ecommerce.php:97
 msgid "No orders in this report"
 msgstr ""
 
 #. translators: 1: linked order count, 2: included order count.
-#: admin/view/partials/ecommerce.php:93
+#: admin/view/partials/ecommerce.php:97
 msgid "Comparison includes unavailable history"
 msgstr ""
 
 #. translators: %s: number of orders processed.
-#: admin/view/partials/ecommerce.php:95
+#: admin/view/partials/ecommerce.php:99
 #, php-format
 msgid "%s orders processed. Figures are provisional until synchronization completes."
 msgstr ""
 
 #. translators: %s: WooCommerce order ID.
-#: admin/view/partials/ecommerce.php:95
+#: admin/view/partials/ecommerce.php:99
 #, php-format
 msgid "Order %s could not be synchronized. Review it in WooCommerce and check database status, then rebuild. Other orders can continue importing."
 msgstr ""
 
 #. translators: %s: WooCommerce order ID.
-#: admin/view/partials/ecommerce.php:95
+#: admin/view/partials/ecommerce.php:99
 msgid "An order change could not be synchronized. Retry the import to reconcile with WooCommerce."
 msgstr ""
 
 #. translators: %s: WooCommerce order ID.
-#: admin/view/partials/ecommerce.php:95
-#: admin/view/partials/ecommerce.php:101
+#: admin/view/partials/ecommerce.php:99
+#: admin/view/partials/ecommerce.php:105
 msgid "Retry import"
 msgstr ""
 
 #. translators: %s: WooCommerce order ID.
-#: admin/view/partials/ecommerce.php:96
+#: admin/view/partials/ecommerce.php:100
 msgid "WooCommerce supplies sales totals. Consent, excluded traffic, older orders and deleted visits can leave gaps in traffic attribution."
 msgstr ""
 
 #. translators: %s: number of orders with WooCommerce attribution only.
-#: admin/view/partials/ecommerce.php:96
+#: admin/view/partials/ecommerce.php:100
 #, php-format
 msgid "%s additional orders have WooCommerce acquisition data without a visit link."
 msgstr ""
 
 #. translators: %s: number of orders with WooCommerce attribution only.
-#: admin/view/partials/ecommerce.php:97
+#: admin/view/partials/ecommerce.php:101
 msgid "Part of this range or its comparison is outside your analytics retention window. Older commerce records are unavailable; comparisons may be incomplete."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:98
+#: admin/view/partials/ecommerce.php:102
 msgid "Reports cache for up to one minute. Refresh checks the latest synchronized data."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:101
+#: admin/view/partials/ecommerce.php:105
 msgid "Synchronization needs attention"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:101
+#: admin/view/partials/ecommerce.php:105
 msgid "WooCommerce Net sales"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:101
+#: admin/view/partials/ecommerce.php:105
 msgid "Synchronization is incomplete; Net sales is provisional."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:101
+#: admin/view/partials/ecommerce.php:105
 msgid "Net sales uses included WooCommerce orders. Order and visit coverage insights are available with Pro."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:102
+#: admin/view/partials/ecommerce.php:106
 msgid "Traffic filters are active: only orders linked to matching retained visits are included. Unlinked orders are excluded."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:103
-#: admin/view/partials/ecommerce.php:111
-#: src/Reports/AiReport.php:165
+#: admin/view/partials/ecommerce.php:107
+#: admin/view/partials/ecommerce.php:115
+#: src/Reports/AiReport.php:168
 msgid "Store performance"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:104
+#: admin/view/partials/ecommerce.php:108
 msgid "Choose a chart metric"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:106
-#: admin/assets/js/admin.js:113
+#: admin/view/partials/ecommerce.php:110
+#: admin/assets/js/admin.js:125
 msgid "Available with Pro"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:106
+#: admin/view/partials/ecommerce.php:110
 msgid "Visits with a purchase ÷ eligible tracked visits."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:109
+#: admin/view/partials/ecommerce.php:113
 #: admin/view/partials/locked-preview.php:13
 msgid "Illustrative report preview, not measured activity."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:109
+#: admin/view/partials/ecommerce.php:113
 msgid "Understand order volume, basket value and purchase rates with Pro."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:109
+#: admin/view/partials/ecommerce.php:113
 msgid "Unlock Ecommerce insights with Pro"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:112
+#: admin/view/partials/ecommerce.php:116
 msgid "Chart interval"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:112
+#: admin/view/partials/ecommerce.php:116
 #: views/modules/chart-view.php:16
 msgid "Daily"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:112
+#: admin/view/partials/ecommerce.php:116
 #: views/modules/chart-view.php:15
 msgid "Weekly"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:112
+#: admin/view/partials/ecommerce.php:116
 #: views/modules/chart-view.php:14
 msgid "Monthly"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:114
+#: admin/view/partials/ecommerce.php:118
 msgid "Selected metric over time. Use the exact values table below for all dates and comparisons."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:114
+#: admin/view/partials/ecommerce.php:118
 msgid "Not enough observations to draw this trend. Try a wider interval or review tracking coverage."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:115
+#: admin/view/partials/ecommerce.php:119
 #: admin/assets/js/ecommerce.js:104
 #: admin/assets/js/ecommerce.js:117
 #: admin/assets/js/ecommerce.js:131
 msgid "Selected period"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:115
+#: admin/view/partials/ecommerce.php:119
 #: admin/assets/js/ecommerce.js:104
 #: admin/assets/js/ecommerce.js:123
 #: admin/assets/js/ecommerce.js:156
 msgid "Previous period"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:115
+#: admin/view/partials/ecommerce.php:119
 msgid "View exact values"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:115
+#: admin/view/partials/ecommerce.php:119
 msgid "Chart values and comparisons"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:115
+#: admin/view/partials/ecommerce.php:119
 msgid "Interval (site time)"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:115
+#: admin/view/partials/ecommerce.php:119
 msgid "Previous interval"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:115
+#: admin/view/partials/ecommerce.php:119
 msgid "Previous value"
 msgstr ""
 
 #. translators: 1: previous period start, 2: previous period end, both with the time.
-#: admin/view/partials/ecommerce.php:116
+#: admin/view/partials/ecommerce.php:120
 #, php-format
 msgid "%1$s to %2$s (site time)"
 msgstr ""
 
 #. translators: 1: previous period start date, 2: previous period end date.
-#: admin/view/partials/ecommerce.php:116
+#: admin/view/partials/ecommerce.php:120
 #, php-format
 msgid "Compared with the same length of time before (%1$s to %2$s). Points align by elapsed time; partial intervals are labeled."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:119
+#: admin/view/partials/ecommerce.php:123
 msgid "Revenue drivers"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:119
+#: admin/view/partials/ecommerce.php:123
 msgid "Explore the leading contributions to your sales."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:121
+#: admin/view/partials/ecommerce.php:125
 msgid "Orders are still importing. Revenue drivers fill in when synchronization completes."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:121
+#: admin/view/partials/ecommerce.php:125
 msgid "No included orders for this currency, date range and filters. Choose another currency or period to explore sales."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:125
+#: admin/view/partials/ecommerce.php:129
 #: admin/view/wp-slimstat-reports.php:581
-#: src/Reports/AiReport.php:166
+#: src/Reports/AiReport.php:169
 msgid "Channels"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:125
-#: src/Reports/AiReport.php:166
+#: admin/view/partials/ecommerce.php:129
+#: src/Reports/AiReport.php:169
 msgid "Sources"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:125
-#: src/Reports/AiReport.php:167
+#: admin/view/partials/ecommerce.php:129
+#: src/Reports/AiReport.php:170
 msgid "Products"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:125
-#: src/Reports/AiReport.php:167
+#: admin/view/partials/ecommerce.php:129
+#: src/Reports/AiReport.php:170
 msgid "Campaigns"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:125
-#: admin/view/partials/ecommerce.php:127
-#: src/Reports/AiReport.php:168
+#: admin/view/partials/ecommerce.php:129
+#: admin/view/partials/ecommerce.php:131
+#: src/Reports/AiReport.php:171
 msgid "Landing pages"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:125
-#: src/Reports/AiReport.php:168
+#: admin/view/partials/ecommerce.php:129
+#: src/Reports/AiReport.php:171
 msgid "Customer segments"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:125
-#: src/Reports/AiReport.php:167
+#: admin/view/partials/ecommerce.php:129
+#: src/Reports/AiReport.php:170
 msgid "Coupons"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:130
 msgid "Which channels contribute the most net sales?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:130
 msgid "Which sources contribute orders and revenue?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:130
 msgid "Which products contribute the most after refunds?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:130
 msgid "Which tagged campaigns contribute sales?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:130
 msgid "Which entry pages are associated with sales?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:130
 msgid "How do sales differ across tracked devices?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:130
 msgid "How do account and guest orders compare?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:126
+#: admin/view/partials/ecommerce.php:130
 msgid "Which coupons account for the most discounts?"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:127
+#: admin/view/partials/ecommerce.php:131
 msgid "Acquisition"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:127
+#: admin/view/partials/ecommerce.php:131
 msgid "Shopping"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:144
+#: admin/view/partials/ecommerce.php:148
 msgid "Top by discounts"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:144
+#: admin/view/partials/ecommerce.php:148
 msgid "Top by net sales"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:144
+#: admin/view/partials/ecommerce.php:148
 msgid "Sort these results"
 msgstr ""
 
 #. translators: %s: net unit count.
-#: admin/view/partials/ecommerce.php:144
-#: admin/view/partials/ecommerce.php:149
+#: admin/view/partials/ecommerce.php:148
+#: admin/view/partials/ecommerce.php:153
 #: admin/assets/js/ecommerce.js:54
 msgid "Discounts"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:144
+#: admin/view/partials/ecommerce.php:148
 msgid "Reverse sort order"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:145
+#: admin/view/partials/ecommerce.php:149
 msgid "No results for this view"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:145
+#: admin/view/partials/ecommerce.php:149
 msgid "Try a different period or remove a filter to explore more activity."
 msgstr ""
 
 #. translators: %s: order count.
-#: admin/view/partials/ecommerce.php:149
+#: admin/view/partials/ecommerce.php:153
 #, php-format
 msgid "Orders: %s"
 msgstr ""
 
 #. translators: %s: net unit count.
-#: admin/view/partials/ecommerce.php:149
+#: admin/view/partials/ecommerce.php:153
 #, php-format
 msgid "Net units: %s"
 msgstr ""
 
 #. translators: %s: net unit count.
-#: admin/view/partials/ecommerce.php:149
+#: admin/view/partials/ecommerce.php:153
 msgid "Item refunds:"
 msgstr ""
 
 #. translators: %s: net unit count.
-#: admin/view/partials/ecommerce.php:149
+#: admin/view/partials/ecommerce.php:153
 msgid "Orders: Pro"
 msgstr ""
 
 #. translators: %s: the acquisition dimension value.
-#: admin/view/partials/ecommerce.php:150
+#: admin/view/partials/ecommerce.php:154
 #, php-format
 msgid "Filter tracked visits by %s; unlinked orders will be excluded"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:156
+#: admin/view/partials/ecommerce.php:160
 #: src/Reports/AcquisitionReport.php:183
 #: src/Reports/CountryCities.php:191
 msgid "Illustrative preview of additional results."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:157
+#: admin/view/partials/ecommerce.php:161
 msgid "Unlock all ranked results, order counts and exports."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:157
+#: admin/view/partials/ecommerce.php:161
 #: src/Reports/AcquisitionReport.php:187
 msgid "Upgrade to see more"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:159
+#: admin/view/partials/ecommerce.php:163
 msgid "No retained visit links in this period. Sales remain unattributed here."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:160
+#: admin/view/partials/ecommerce.php:164
 #: src/Reports/AcquisitionReport.php:360
 msgid "Report pages"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:160
+#: admin/view/partials/ecommerce.php:164
 #: admin/assets/js/ecommerce.js:33
 msgid "Full report"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:160
+#: admin/view/partials/ecommerce.php:164
 msgid "About"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:160
+#: admin/view/partials/ecommerce.php:164
 msgid "After item discounts and itemized refunds. Fees and amount-only refunds are unallocated adjustments."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:160
+#: admin/view/partials/ecommerce.php:164
 msgid "Applied discounts, not incremental revenue. Orders using multiple coupons appear in multiple rows."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:160
+#: admin/view/partials/ecommerce.php:164
 msgid "Guest and registered-account orders; these are not new and returning customer counts."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:160
+#: admin/view/partials/ecommerce.php:164
 msgid "Based only on retained SlimStat visit entries. Orders without matching traffic stay unattributed."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:160
+#: admin/view/partials/ecommerce.php:164
 msgid "Retained SlimStat visit attribution where available; otherwise recorded WooCommerce acquisition. Missing data stays unattributed."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:162
+#: admin/view/partials/ecommerce.php:166
 msgid "Current dates, currency and traffic filters apply. Results are limited to 1,000 groups; narrow your filters if this limit is reached."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:164
+#: admin/view/partials/ecommerce.php:168
 msgid "Other results:"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:165
+#: admin/view/partials/ecommerce.php:169
 msgid "Unallocated adjustments:"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:175
+#: admin/view/partials/ecommerce.php:179
 msgid "Check your update license"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:175
+#: admin/view/partials/ecommerce.php:179
 msgid "Pro reports are available. Review licensing for plugin updates on this site."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:181
+#: admin/view/partials/ecommerce.php:185
 #: views/components/notification/card.php:39
 #: admin/assets/js/ai-analysis.js:69
 msgid "Dismiss"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:182
+#: admin/view/partials/ecommerce.php:186
 msgid "Your Pro reports are ready"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:183
+#: admin/view/partials/ecommerce.php:187
 msgid "Explore your sales by campaign, device, or coupon. Choose a report below, then open Full report to see more results or export them."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:185
+#: admin/view/partials/ecommerce.php:189
 msgid "Open campaigns report"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:186
+#: admin/view/partials/ecommerce.php:190
 msgid "Open devices report"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:187
+#: admin/view/partials/ecommerce.php:191
 msgid "Open coupons report"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:191
+#: admin/view/partials/ecommerce.php:195
 msgid "Update Pro to explore more reports"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:192
+#: admin/view/partials/ecommerce.php:196
 msgid "Your installed Pro version has not enabled Ecommerce reports. Update both SlimStat plugins to compatible versions."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:196
-#: src/Reports/AiReport.php:166
+#: admin/view/partials/ecommerce.php:200
+#: src/Reports/AiReport.php:169
 msgid "Purchase journey"
 msgstr ""
 
 #. translators: 1: eligible visit count, 2: start date, 3: end date.
-#: admin/view/partials/ecommerce.php:196
+#: admin/view/partials/ecommerce.php:200
 #, php-format
 msgid "Observed in %1$s eligible visits · %2$s to %3$s"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:198
+#: admin/view/partials/ecommerce.php:202
 msgid "Journey data is not available yet"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:198
+#: admin/view/partials/ecommerce.php:202
 msgid "No shopping steps were observed in eligible tracked visits in this period. Order history cannot reconstruct these steps or prove abandonment."
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/partials/ecommerce.php:198
-#: admin/view/partials/ecommerce.php:209
+#: admin/view/partials/ecommerce.php:202
+#: admin/view/partials/ecommerce.php:213
 msgid "Review tracking settings"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:200
+#: admin/view/partials/ecommerce.php:204
 msgid "Viewed a product"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:200
+#: admin/view/partials/ecommerce.php:204
 msgid "Added to cart"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:200
+#: admin/view/partials/ecommerce.php:204
 msgid "Reached checkout"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:200
+#: admin/view/partials/ecommerce.php:204
 msgid "Placed an order in this report"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:200
+#: admin/view/partials/ecommerce.php:204
 msgid "Observed product visits"
 msgstr ""
 
 #. translators: %s: percentage of visits that reached this step.
-#: admin/view/partials/ecommerce.php:200
+#: admin/view/partials/ecommerce.php:204
 #, php-format
 msgid "%s%% of previous step"
 msgstr ""
 
 #. translators: %s: percentage of visits that reached this step.
-#: admin/view/partials/ecommerce.php:200
+#: admin/view/partials/ecommerce.php:204
 msgid "No previous-step observations"
 msgstr ""
 
 #. translators: %s: buying visit count.
-#: admin/view/partials/ecommerce.php:201
+#: admin/view/partials/ecommerce.php:205
 #, php-format
 msgid "In %s visit that ended in a purchase, not all steps were recorded. Visitors may have used express checkout or taken another route, or tracking may have missed a step. This does not mean they abandoned their purchase."
 msgid_plural "In %s visits that ended in a purchase, not all steps were recorded. Visitors may have used express checkout or taken another route, or tracking may have missed a step. This does not mean they abandoned their purchase."
@@ -3693,198 +3693,198 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: buying visit count.
-#: admin/view/partials/ecommerce.php:201
+#: admin/view/partials/ecommerce.php:205
 msgid "Explore products"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:203
+#: admin/view/partials/ecommerce.php:207
 msgid "Observation window and coverage"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:203
+#: admin/view/partials/ecommerce.php:207
 msgid "Steps must occur in order within the same tracked visit and selected window. Journey tracking starts after setup; imported orders do not create historical steps. Counts describe only the observed portion of the period."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:205
+#: admin/view/partials/ecommerce.php:209
 msgid "Your next investigation"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:205
+#: admin/view/partials/ecommerce.php:209
 msgid "What this period suggests checking, most important first."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:206
+#: admin/view/partials/ecommerce.php:210
 #: src/Ecommerce/Report.php:364
 #: src/Ecommerce/Report.php:383
 #: src/Ecommerce/Report.php:396
 msgid "Data quality"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:206
+#: admin/view/partials/ecommerce.php:210
 msgid "Complete synchronization first"
 msgstr ""
 
 #. translators: %s: number of orders processed.
-#: admin/view/partials/ecommerce.php:206
+#: admin/view/partials/ecommerce.php:210
 #, php-format
 msgid "%s orders processed. Resolve the import status before comparing revenue drivers."
 msgstr ""
 
 #. translators: %s: number of orders processed.
-#: admin/view/partials/ecommerce.php:206
+#: admin/view/partials/ecommerce.php:210
 msgid "Review synchronization"
 msgstr ""
 
 #. translators: %s: number of orders processed.
-#: admin/view/partials/ecommerce.php:207
+#: admin/view/partials/ecommerce.php:211
 msgid "Attribution coverage"
 msgstr ""
 
 #. translators: %s: number of orders without a linked visit.
-#: admin/view/partials/ecommerce.php:207
+#: admin/view/partials/ecommerce.php:211
 #, php-format
 msgid "%s orders have no tracked visit"
 msgstr ""
 
 #. translators: %s: number of orders without a linked visit.
-#: admin/view/partials/ecommerce.php:207
+#: admin/view/partials/ecommerce.php:211
 msgid "Their sales count, but traffic efficiency cannot be inferred. Review consent and excluded traffic before comparing acquisition performance."
 msgstr ""
 
 #. translators: %s: number of orders without a linked visit.
-#: admin/view/partials/ecommerce.php:207
+#: admin/view/partials/ecommerce.php:211
 msgid "Inspect coverage"
 msgstr ""
 
 #. translators: %s: number of orders without a linked visit.
-#: admin/view/partials/ecommerce.php:208
+#: admin/view/partials/ecommerce.php:212
 msgid "Refunds"
 msgstr ""
 
 #. translators: %s: number of orders without a linked visit.
-#: admin/view/partials/ecommerce.php:208
+#: admin/view/partials/ecommerce.php:212
 msgid "refunded on these orders"
 msgstr ""
 
 #. translators: %s: number of orders without a linked visit.
-#: admin/view/partials/ecommerce.php:208
+#: admin/view/partials/ecommerce.php:212
 msgid "Includes refunded tax and shipping. Review product patterns before changing offers or messaging; amount-only refunds may be unallocated."
 msgstr ""
 
 #. translators: %s: number of orders without a linked visit.
-#: admin/view/partials/ecommerce.php:208
+#: admin/view/partials/ecommerce.php:212
 msgid "Explore product contribution"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:209
+#: admin/view/partials/ecommerce.php:213
 msgid "product to cart"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:209
+#: admin/view/partials/ecommerce.php:213
 msgid "cart to checkout"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:209
+#: admin/view/partials/ecommerce.php:213
 msgid "checkout to order"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:209
+#: admin/view/partials/ecommerce.php:213
 msgid "Observed journey"
 msgstr ""
 
 #. translators: %s: journey transition, such as product to cart.
-#: admin/view/partials/ecommerce.php:209
+#: admin/view/partials/ecommerce.php:213
 #, php-format
 msgid "Inspect %s"
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/partials/ecommerce.php:209
+#: admin/view/partials/ecommerce.php:213
 #, php-format
 msgid "%1$s of %2$s observed visits did not reach the next step in this window. Test this path on your main devices; friction is a hypothesis, not a measured cause."
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/partials/ecommerce.php:209
+#: admin/view/partials/ecommerce.php:213
 msgid "Review observed steps"
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/partials/ecommerce.php:209
+#: admin/view/partials/ecommerce.php:213
 msgid "First observations"
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/partials/ecommerce.php:209
+#: admin/view/partials/ecommerce.php:213
 msgid "Verify the first complete journey"
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/partials/ecommerce.php:209
+#: admin/view/partials/ecommerce.php:213
 msgid "Check a consented product-to-checkout visit, then confirm an included order appears after background synchronization. Pending and on-hold orders do not count as sales."
 msgstr ""
 
 #. translators: 1: visits without the next step, 2: visits at the current step.
-#: admin/view/partials/ecommerce.php:209
+#: admin/view/partials/ecommerce.php:213
 msgid "Revenue contribution"
 msgstr ""
 
 #. translators: %s: order count in the leading channel.
-#: admin/view/partials/ecommerce.php:209
+#: admin/view/partials/ecommerce.php:213
 #, php-format
 msgid "%s included orders in the leading channel. Explore its sources before deciding what to test next; contribution alone does not measure efficiency."
 msgstr ""
 
 #. translators: %s: order count in the leading channel.
-#: admin/view/partials/ecommerce.php:209
+#: admin/view/partials/ecommerce.php:213
 msgid "Explore sources"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:213
+#: admin/view/partials/ecommerce.php:217
 msgid "Definitions, coverage and reporting setup"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:214
+#: admin/view/partials/ecommerce.php:218
 msgid "Revenue basis"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:214
+#: admin/view/partials/ecommerce.php:218
 msgid "Net sales = discounted order total minus tax and shipping, minus recorded refunds excluding their explicitly refunded tax and shipping. Fees remain included. Refunds revise the original order period, even when refunded later. This is not cash flow or profit."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:215
+#: admin/view/partials/ecommerce.php:219
 msgid "Included orders"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:215
+#: admin/view/partials/ecommerce.php:219
 msgid "Processing, completed and refunded standard orders, grouped by creation date in the site timezone. Fully refunded and zero-value orders remain in the order count. Pending, on-hold, failed, cancelled, draft, trash and custom statuses are excluded. Processing does not guarantee gateway settlement."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:216
+#: admin/view/partials/ecommerce.php:220
 msgid "Net sales divided by included orders. Discounts are already in the order total and are never subtracted twice."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:217
+#: admin/view/partials/ecommerce.php:221
 msgid "Distinct eligible visits associated with an included order created in this window, divided by eligible visits active in the same window. Multiple orders in one visit count once. Shared traffic filters apply to both. Visits have no currency: the numerator uses the selected order currency. This rate does not describe untracked shoppers."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:218
+#: admin/view/partials/ecommerce.php:222
 msgid "Attribution and privacy"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:218
+#: admin/view/partials/ecommerce.php:222
 msgid "Existing consented session cookies connect checkout to a retained SlimStat visit. No email/IP matching or cross-device inference. The session entry supplies traffic dimensions; existing WooCommerce order attribution is a fallback. Historical order imports cannot recreate visitor associations. Retention and privacy erasure remove those associations."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:219
+#: admin/view/partials/ecommerce.php:223
 msgid "Freshness and comparisons"
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:219
+#: admin/view/partials/ecommerce.php:223
 msgid "Background jobs update orders and refunds. Reports cache for up to one minute and invalidate when synchronized. Comparisons use the immediately preceding equal-length window in the site calendar. Current periods end at the current time. Late refunds and status changes can revise previous periods."
 msgstr ""
 
-#: admin/view/partials/ecommerce.php:220
+#: admin/view/partials/ecommerce.php:224
 msgid "Rebuild the reporting copy after a timezone change or an interrupted import. This does not alter orders or fabricate historical traffic."
 msgstr ""
 
@@ -4245,7 +4245,7 @@ msgstr ""
 
 #: admin/view/partials/goals-funnels/goals-card.php:115
 #: admin/view/wp-slimstat-reports.php:2283
-#: admin/assets/js/admin.js:147
+#: admin/assets/js/admin.js:159
 msgid "Total"
 msgstr ""
 
@@ -6178,7 +6178,7 @@ msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:1930
 #: src/Heatmap/Store.php:395
-#: admin/assets/js/admin.js:145
+#: admin/assets/js/admin.js:157
 msgid "Date"
 msgstr ""
 
@@ -8619,7 +8619,7 @@ msgstr ""
 msgid "View file not found: %s"
 msgstr ""
 
-#: src/Controllers/Rest/AiPromptRestController.php:32
+#: src/Controllers/Rest/AiPromptRestController.php:37
 msgid "Choose a valid Ecommerce report."
 msgstr ""
 
@@ -8657,11 +8657,11 @@ msgstr ""
 msgid "Choose a start date on or before the end date."
 msgstr ""
 
-#: src/Controllers/Rest/HeatmapRestController.php:188
+#: src/Controllers/Rest/HeatmapRestController.php:189
 msgid "Too many filters for Heatmaps."
 msgstr ""
 
-#: src/Controllers/Rest/HeatmapRestController.php:194
+#: src/Controllers/Rest/HeatmapRestController.php:195
 msgid "The Heatmaps filter is invalid. Review the selected filters."
 msgstr ""
 
@@ -9445,7 +9445,7 @@ msgid "Click to copy this report as an AI prompt, then paste it into ChatGPT, Cl
 msgstr ""
 
 #: src/Reports/AiPromptButton.php:55
-#: admin/assets/js/ai-analysis.js:301
+#: admin/assets/js/ai-analysis.js:305
 msgid "Analyze with AI"
 msgstr ""
 
@@ -9501,49 +9501,53 @@ msgstr ""
 msgid "Visitors who did not convert"
 msgstr ""
 
-#: src/Reports/AiReport.php:221
+#: src/Reports/AiReport.php:214
+msgid "Intervals are sampled evenly across the full period; comparisons use matching positions. Missing intervals are omitted, not treated as zero."
+msgstr ""
+
+#: src/Reports/AiReport.php:231
 msgid "Net sales is after discounts and refunds, excluding tax and shipping, for processing, completed and refunded orders by creation date. Product amounts use itemized refunds; fees and amount-only refunds are unallocated. Coupon discounts are not incremental revenue; orders can use multiple coupons. Customer segments mean guest or account, not new or returning customers. Purchase rate is buying divided by eligible tracked visits; average order value is net sales divided by included orders. Attribution depends on retained visits or WooCommerce acquisition; landing and device attribution require a retained visit. Traffic filters exclude unlinked orders. Missing data is unknown, not zero."
 msgstr ""
 
-#: src/Reports/AiReport.php:222
+#: src/Reports/AiReport.php:232
 msgid "At most 20 rows or intervals are included. Ranked reports start from at most 1,000 groups and may be limited further by access. These rows are not the entire dataset; do not sum them as a store total. Free-form labels and personal identifiers are withheld. Currency is never combined. Comparisons, partial intervals and provisional or retention-limited data must be qualified."
 msgstr ""
 
-#: src/Reports/AiReport.php:285
+#: src/Reports/AiReport.php:295
 msgid "There is not enough available server memory to prepare this report. Copy its prompt instead."
 msgstr ""
 
-#: src/Reports/AiReport.php:380
+#: src/Reports/AiReport.php:390
 msgid "At most 20 representative rows; this is not the complete dataset. Free-form labels, page addresses and personal identifiers are withheld. Small samples are directional. Some summary metrics explicitly cover today or another period. Saved analyses are snapshots and are not refreshed automatically."
 msgstr ""
 
-#: src/Reports/AiReport.php:382
+#: src/Reports/AiReport.php:392
 msgid "Website inventory is site-wide and independent of the selected date range."
 msgstr ""
 
-#: src/Reports/AiReport.php:388
+#: src/Reports/AiReport.php:398
 msgid "This report could not be prepared safely within the analysis limits. Try a shorter range or copy the prompt."
 msgstr ""
 
 #. translators: %d: ordinal row number; the original label is withheld for privacy.
-#: src/Reports/AiReport.php:421
+#: src/Reports/AiReport.php:431
 #, php-format
 msgid "Row %d"
 msgstr ""
 
-#: src/Reports/AiReport.php:455
+#: src/Reports/AiReport.php:465
 msgid "Current period total"
 msgstr ""
 
-#: src/Reports/AiReport.php:455
+#: src/Reports/AiReport.php:465
 msgid "Previous period total"
 msgstr ""
 
-#: src/Reports/AiReport.php:485
+#: src/Reports/AiReport.php:495
 msgid "There is no usable aggregate data to analyze for this selection."
 msgstr ""
 
-#: src/Reports/AiReport.php:492
+#: src/Reports/AiReport.php:502
 msgid "This report selection is invalid or unavailable. Reload the report and try again."
 msgstr ""
 
@@ -9688,26 +9692,26 @@ msgstr ""
 msgid "• Red bars highlight peak activity periods"
 msgstr ""
 
-#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:622
+#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:623
 msgid "Too many requests. Please try again later."
 msgstr ""
 
-#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:631
+#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:632
 msgid "Security check failed"
 msgstr ""
 
-#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:659
+#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:660
 msgid "Invalid report ID format"
 msgstr ""
 
-#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:678
+#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:679
 #: src/Services/Privacy/DataExporter.php:38
 #: src/Services/Privacy/DataExporter.php:44
 #: src/Services/Privacy/DataExporter.php:50
 msgid "An error occurred while fetching data"
 msgstr ""
 
-#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:684
+#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:685
 msgid "A fatal error occurred while fetching data"
 msgstr ""
 
@@ -10699,160 +10703,160 @@ msgstr ""
 msgid "SlimStat cache cleared (%d items)"
 msgstr ""
 
-#: admin/assets/js/admin.js:30
+#: admin/assets/js/admin.js:42
 msgid "Cache cleared!"
 msgstr ""
 
-#: admin/assets/js/admin.js:33
+#: admin/assets/js/admin.js:45
 msgid "Cache clear failed!"
 msgstr ""
 
 #. translators: %s: selected device, such as Mobile or All devices.
-#: admin/assets/js/admin.js:92
-#: admin/assets/js/admin.js:196
+#: admin/assets/js/admin.js:104
+#: admin/assets/js/admin.js:209
 #, js-format
 msgid "Device: %s"
 msgstr ""
 
 #. translators: 1: first day (YYYY-MM-DD), 2: last day (YYYY-MM-DD).
-#: admin/assets/js/admin.js:95
-#: admin/assets/js/admin.js:217
+#: admin/assets/js/admin.js:107
+#: admin/assets/js/admin.js:230
 #, js-format
 msgid "Period: %1$s – %2$s"
 msgstr ""
 
 #. translators: %s: selected visitor segment or saved filter.
-#: admin/assets/js/admin.js:98
+#: admin/assets/js/admin.js:110
 #, js-format
 msgid "Visitors: %s"
 msgstr ""
 
 #. translators: %s: selected heatmap overlay (clicks or scroll depth).
-#: admin/assets/js/admin.js:101
+#: admin/assets/js/admin.js:113
 #, js-format
 msgid "View: %s"
 msgstr ""
 
-#: admin/assets/js/admin.js:145
+#: admin/assets/js/admin.js:157
 msgid "Previous date"
 msgstr ""
 
-#: admin/assets/js/admin.js:175
+#: admin/assets/js/admin.js:189
 msgid "The report selection changed. Try copying again."
 msgstr ""
 
-#: admin/assets/js/admin.js:177
-#: admin/assets/js/admin.js:239
+#: admin/assets/js/admin.js:191
+#: admin/assets/js/admin.js:252
 #: admin/assets/js/shortcodes.js:185
 msgid "Copied"
 msgstr ""
 
-#: admin/assets/js/admin.js:177
-#: admin/assets/js/admin.js:180
-#: admin/assets/js/admin.js:239
+#: admin/assets/js/admin.js:191
+#: admin/assets/js/admin.js:194
+#: admin/assets/js/admin.js:252
 msgid "Copy failed"
 msgstr ""
 
-#: admin/assets/js/admin.js:182
+#: admin/assets/js/admin.js:195
 msgid "The report could not be prepared. Try again."
 msgstr ""
 
-#: admin/assets/js/admin.js:186
+#: admin/assets/js/admin.js:199
 msgid "No data to copy"
 msgstr ""
 
 #. translators: %s: text used to search page addresses.
-#: admin/assets/js/admin.js:198
+#: admin/assets/js/admin.js:211
 #, js-format
 msgid "Search: %s"
 msgstr ""
 
 #. translators: 1: site title, 2: site address.
-#: admin/assets/js/admin.js:206
+#: admin/assets/js/admin.js:219
 #, js-format
 msgid "Site: %1$s (%2$s)"
 msgstr ""
 
 #. translators: %s: site tagline.
-#: admin/assets/js/admin.js:208
+#: admin/assets/js/admin.js:221
 #, js-format
 msgid "Description: %s"
 msgstr ""
 
 #. translators: %s: report title.
-#: admin/assets/js/admin.js:213
+#: admin/assets/js/admin.js:226
 #, js-format
 msgid "Report: %s"
 msgstr ""
 
 #. translators: %s: what the report shows.
-#: admin/assets/js/admin.js:215
+#: admin/assets/js/admin.js:228
 #, js-format
 msgid "About: %s"
 msgstr ""
 
 #. translators: %s: the active filters, separated by semicolons, or "none".
-#: admin/assets/js/admin.js:219
+#: admin/assets/js/admin.js:232
 #, js-format
 msgid "Filters: %s"
 msgstr ""
 
-#: admin/assets/js/admin.js:219
+#: admin/assets/js/admin.js:232
 msgid "none"
 msgstr ""
 
 #. translators: %s: the pagination text, such as "1–20 of 45".
-#: admin/assets/js/admin.js:221
+#: admin/assets/js/admin.js:234
 #, js-format
 msgid "Rows shown: %s"
 msgstr ""
 
-#: admin/assets/js/admin.js:222
+#: admin/assets/js/admin.js:235
 msgid "Percentages in brackets are SlimStat’s: each row’s share of the period total, not of this list."
 msgstr ""
 
-#: admin/assets/js/admin.js:766
-#: admin/assets/js/admin.js:1502
+#: admin/assets/js/admin.js:779
+#: admin/assets/js/admin.js:1515
 msgid "Select value..."
 msgstr ""
 
-#: admin/assets/js/admin.js:767
+#: admin/assets/js/admin.js:780
 msgid "Search..."
 msgstr ""
 
-#: admin/assets/js/admin.js:768
+#: admin/assets/js/admin.js:781
 msgid "No results found"
 msgstr ""
 
-#: admin/assets/js/admin.js:769
-#: admin/assets/js/admin.js:1505
+#: admin/assets/js/admin.js:782
+#: admin/assets/js/admin.js:1518
 msgid "No matches. Select Apply to filter by this value."
 msgstr ""
 
-#: admin/assets/js/admin.js:770
+#: admin/assets/js/admin.js:783
 msgid "Loading..."
 msgstr ""
 
-#: admin/assets/js/admin.js:1464
-#: admin/assets/js/admin.js:1506
+#: admin/assets/js/admin.js:1477
+#: admin/assets/js/admin.js:1519
 msgid "Loading options..."
 msgstr ""
 
-#: admin/assets/js/admin.js:1493
+#: admin/assets/js/admin.js:1506
 msgid "No matching options found"
 msgstr ""
 
-#: admin/assets/js/admin.js:1497
+#: admin/assets/js/admin.js:1510
 msgid "No data in this time range"
 msgstr ""
 
-#: admin/assets/js/admin.js:1503
+#: admin/assets/js/admin.js:1516
 msgid "Search options..."
 msgstr ""
 
-#: admin/assets/js/admin.js:1520
-#: admin/assets/js/admin.js:1524
-#: admin/assets/js/admin.js:1529
+#: admin/assets/js/admin.js:1533
+#: admin/assets/js/admin.js:1537
+#: admin/assets/js/admin.js:1542
 msgid "Enter value..."
 msgstr ""
 
@@ -10884,144 +10888,144 @@ msgstr ""
 msgid "Wait for the report to finish loading."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:167
+#: admin/assets/js/ai-analysis.js:169
 msgid "Copy Prompt Instead"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:182
+#: admin/assets/js/ai-analysis.js:186
 msgid "AI analysis could not load. Please try again."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:184
+#: admin/assets/js/ai-analysis.js:188
 msgid "License settings →"
 msgstr ""
 
 #. translators: 1: generation date, 2: provider, 3: model.
-#: admin/assets/js/ai-analysis.js:221
+#: admin/assets/js/ai-analysis.js:225
 #, js-format
 msgid "Generated %1$s · %2$s / %3$s"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:225
+#: admin/assets/js/ai-analysis.js:229
 msgid "Saved result. Analytics may have changed since it was generated."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:226
+#: admin/assets/js/ai-analysis.js:230
 msgid "This saved result belongs to another date range, filter or report selection."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:227
+#: admin/assets/js/ai-analysis.js:231
 msgid "Copy Result"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:230
+#: admin/assets/js/ai-analysis.js:234
 msgid "Analysis copied"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:230
+#: admin/assets/js/ai-analysis.js:234
 msgid "Your analysis is ready to paste."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:231
+#: admin/assets/js/ai-analysis.js:235
 msgid "Copy failed. Select the result text and copy it manually."
 msgstr ""
 
 #. translators: %d: number of matching saved reports.
-#: admin/assets/js/ai-analysis.js:249
+#: admin/assets/js/ai-analysis.js:253
 #, js-format
 msgid "Matching saved reports: %d"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:259
-#: admin/assets/js/ai-analysis.js:288
+#: admin/assets/js/ai-analysis.js:263
+#: admin/assets/js/ai-analysis.js:292
 msgid "Loading saved analysis…"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:263
+#: admin/assets/js/ai-analysis.js:267
 msgid "This saved analysis is no longer available. Open the report to create a new one."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:269
+#: admin/assets/js/ai-analysis.js:273
 msgid "Close and reopen this entry to try again."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:296
+#: admin/assets/js/ai-analysis.js:300
 msgid "AI analysis is disabled. An administrator can enable it in SlimStat’s AI Analysis settings."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:297
+#: admin/assets/js/ai-analysis.js:301
 msgid "AI Analysis Settings →"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:301
-#: admin/assets/js/ai-analysis.js:344
+#: admin/assets/js/ai-analysis.js:305
+#: admin/assets/js/ai-analysis.js:348
 msgid "Regenerate Analysis"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:301
-#: admin/assets/js/ai-analysis.js:349
+#: admin/assets/js/ai-analysis.js:305
+#: admin/assets/js/ai-analysis.js:353
 msgid "Analyze Current Report"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:307
-#: admin/assets/js/ai-analysis.js:326
-#: admin/assets/js/ai-analysis.js:339
+#: admin/assets/js/ai-analysis.js:311
+#: admin/assets/js/ai-analysis.js:330
+#: admin/assets/js/ai-analysis.js:343
 msgid "The report selection changed. Close this panel and reopen it for the current report."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:311
+#: admin/assets/js/ai-analysis.js:315
 msgid "Connect AI to unlock instant insights"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:312
+#: admin/assets/js/ai-analysis.js:316
 msgid "Configure your preferred AI provider once to analyze reports directly in SlimStat."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:313
+#: admin/assets/js/ai-analysis.js:317
 msgid "Set Up AI →"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:314
+#: admin/assets/js/ai-analysis.js:318
 msgid "Ask a site administrator to manage AI Connections."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:318
+#: admin/assets/js/ai-analysis.js:322
 msgid "Selected aggregate analytics will be sent to this AI provider. Visitor identifiers and free-form labels are removed. Provider API charges may apply. Automatic selection does not guarantee the lowest price."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:322
+#: admin/assets/js/ai-analysis.js:326
 msgid "I agree to send this minimized report to the selected provider."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:332
+#: admin/assets/js/ai-analysis.js:336
 msgid "Analyzing your report…"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:333
+#: admin/assets/js/ai-analysis.js:337
 msgid "Reviewing your data and finding useful insights."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:342
+#: admin/assets/js/ai-analysis.js:346
 msgid "Analysis complete. This result was not saved."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:366
+#: admin/assets/js/ai-analysis.js:370
 msgid "Analysis in progress"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:366
+#: admin/assets/js/ai-analysis.js:370
 msgid "Wait for the current request to finish before starting another."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:371
+#: admin/assets/js/ai-analysis.js:375
 msgid "From copy and paste to one-click insights"
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:372
+#: admin/assets/js/ai-analysis.js:376
 msgid "With SlimStat Pro, connect your AI provider through WordPress and analyze reports without leaving your dashboard."
 msgstr ""
 
-#: admin/assets/js/ai-analysis.js:373
+#: admin/assets/js/ai-analysis.js:377
 msgid "Requires WordPress 7.0 or newer. Provider API charges may apply."
 msgstr ""
 

@@ -73,6 +73,7 @@ class HeatmapRestController implements RestControllerInterface
         return class_exists('wp_slimstat_admin', false) && \wp_slimstat_admin::can_view_stats();
     }
 
+    /** Return the authorized page list, preserving shared filters and Free result limits. */
     public function pages(\WP_REST_Request $request)
     {
         $range = self::range($request);

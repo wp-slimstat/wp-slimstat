@@ -88,6 +88,30 @@ test('Free explanation supports keyboard close and restores focus @compat', asyn
   await expect(button).toBeFocused();
 });
 
+test('copy fallback survives replacement of its original report actions @compat', async ({ page }) => {
+  await page.evaluate(() => {
+    Object.assign((window as any).SlimStatAdminParams.ai, { native: true, route: '/slimstat/v1/ai' });
+    document.addEventListener('click', event => {
+      if ((event.target as Element).closest('.slimstat-ai-prompt')) (window as any).__fallbackConnected = true;
+    });
+  });
+  await page.route(url => decodeURIComponent(url.href).includes('/slimstat/v1/ai/status'), route => route.fulfill({ json: { enabled: false, saved: null } }));
+  for (const removeTrigger of [false, true]) {
+    const trigger = page.locator(`${report} .slimstat-ai-analyze`);
+    await trigger.click();
+    await expect(page.getByRole('dialog')).toContainText('AI analysis is disabled');
+    await expect(page.locator(`${report} .slimstat-ai-prompt`)).toBeEnabled();
+    await trigger.evaluate((node, remove) => {
+      (window as any).__fallbackConnected = false;
+      const parent = node.parentElement!;
+      parent.replaceWith(parent.cloneNode(true));
+      if (remove) node.remove();
+    }, removeTrigger);
+    await page.getByRole('dialog').getByRole('button', { name: 'Copy Prompt Instead' }).click();
+    await expect.poll(() => page.evaluate(() => (window as any).__fallbackConnected)).toBe(true);
+  }
+});
+
 test('native consent, loading, safe results, copy and failed regeneration @compat', async ({ page }, info) => {
   let generated = 0;
   let release: (() => void) | undefined;

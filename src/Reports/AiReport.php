@@ -149,7 +149,10 @@ final class AiReport {
 			'timezone' => wp_timezone_string(),
 			'filters'  => $labels,
 		);
-		$context                  = compact( 'id', 'from', 'to', 'normalized', 'device', 'page', 'search', 'goal', 'converted', 'gran', 'public', 'ecommerce' );
+		$context                  = compact( 'id', 'from', 'to', 'normalized', 'device', 'page', 'search', 'goal', 'converted', 'gran', 'public' );
+		if ('slim_p10_01' === $id) {
+			$context['ecommerce'] = $ecommerce;
+		}
 		$context['authorization'] = self::fingerprint( array( get_current_blog_id(), get_current_user_id(), \wp_slimstat::report_scope()['cache'] ) );
 		$context['fingerprint']   = self::fingerprint( array( $context, $args, AiPrompt::VERSION, array_intersect_key( \wp_slimstat::$settings, array_flip( array( 'hash_ip', 'anonymize_ip', 'geolocation_country' ) ) ) ) );
 		return $context;
@@ -195,13 +198,20 @@ final class AiReport {
 		} elseif ('trend' === $view) {
 			$periods = $selection['compare'] ? array('current', 'previous') : array('current');
 			$limit = (int) floor(self::MAX_ROWS / count($periods));
+			$count = count($data['series']['current']);
+			$positions = $count > $limit ? array_map(static function ($index) use ($count, $limit) {
+				return (int) round($index * ($count - 1) / ($limit - 1));
+			}, range(0, $limit - 1)) : array_keys($data['series']['current']);
 			foreach ($periods as $period) {
-				foreach (array_slice($data['series'][$period], 0, $limit) as $point) {
+				foreach ($positions as $position) {
+					$point = $data['series'][$period][$position] ?? null;
+					if (null === $point) { continue; }
 					$rows[] = array('period' => $period, 'from' => gmdate('Y-m-d H:i:s', $point['start']), 'to' => gmdate('Y-m-d H:i:s', $point['end']),
 						'value' => $point[$metric] ?? null, 'partial' => $point['partial'], 'provisional' => $point['provisional']);
 				}
 			}
 			$public['intervals_available'] = count($data['series']['current']);
+			$public['sampling'] = __('Intervals are sampled evenly across the full period; comparisons use matching positions. Missing intervals are omitted, not treated as zero.', 'wp-slimstat');
 		} elseif ('journey' === $view) {
 			$rows[] = array_intersect_key($data['journey'], array_flip(array('visits', 'products', 'carts', 'checkouts', 'buyers', 'completed')));
 		} else {
