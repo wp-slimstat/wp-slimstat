@@ -65,9 +65,12 @@ if ('' !== $error) {
     ]);
     ?>
     <?php wp_slimstat_admin::get_template('report-filters', ['show_date' => false]); ?>
+    <?php $filters_html = wp_slimstat_reports::get_filters_html(wp_slimstat_db::$filters_normalized['columns']); ?>
+    <?php if (!empty($filters_html)) : ?>
     <div id="slimstat-current-filters">
-        <?php echo wp_kses_post(wp_slimstat_reports::get_filters_html(wp_slimstat_db::$filters_normalized['columns'])); ?>
+        <?php echo wp_kses_post($filters_html); ?>
     </div>
+    <?php endif; ?>
     <p class="ss-hm-filter-notice" role="status" hidden></p>
     <div class="ss-hm">
 

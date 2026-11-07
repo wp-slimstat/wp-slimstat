@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-07T16:47:03+00:00\n"
+"POT-Creation-Date: 2026-11-07T16:53:41+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -1235,8 +1235,8 @@ msgstr ""
 #: admin/index.php:4592
 #: admin/index.php:4610
 #: admin/view/heatmaps.php:61
-#: admin/view/heatmaps.php:122
-#: admin/view/heatmaps.php:206
+#: admin/view/heatmaps.php:125
+#: admin/view/heatmaps.php:209
 #: admin/view/upgrade-pro.php:34
 #: src/Reports/AiReport.php:28
 #: src/Services/Admin/VideoTutorials.php:83
@@ -1405,7 +1405,7 @@ msgid "Heatmap"
 msgstr ""
 
 #: admin/index.php:2399
-#: admin/view/heatmaps.php:107
+#: admin/view/heatmaps.php:110
 msgid "Page heatmap"
 msgstr ""
 
@@ -2789,135 +2789,135 @@ msgstr ""
 msgid "See which pages get clicks, from the link and button clicks SlimStat already records. SlimStat Pro opens each page's click and scroll heatmap."
 msgstr ""
 
-#: admin/view/heatmaps.php:77
+#: admin/view/heatmaps.php:80
 msgid "Heatmap data deleted. Link and button click history is kept."
 msgstr ""
 
-#: admin/view/heatmaps.php:77
+#: admin/view/heatmaps.php:80
 msgid "Heatmap data could not be deleted. Try again in a minute."
 msgstr ""
 
 #. translators: 1: why the heatmap tables could not be created, 2: what to do about it (may be empty).
-#: admin/view/heatmaps.php:86
+#: admin/view/heatmaps.php:89
 #, php-format
 msgid "Heatmap tables could not be created: %1$s. %2$s Link and button click history still works."
 msgstr ""
 
 #. translators: 1: linked order count, 2: included order count.
-#: admin/view/heatmaps.php:90
+#: admin/view/heatmaps.php:93
 #: admin/view/partials/ecommerce.php:93
 #: src/Migration/Admin/MigrationAdmin.php:160
 msgid "Details"
 msgstr ""
 
-#: admin/view/heatmaps.php:96
+#: admin/view/heatmaps.php:99
 #: admin/view/shortcodes.php:53
 #: admin/assets/js/ecommerce.js:206
 #: admin/assets/js/heatmaps.js:265
 msgid "Retry"
 msgstr ""
 
-#: admin/view/heatmaps.php:103
+#: admin/view/heatmaps.php:106
 msgid "Expired heatmap data is being removed in batches. Cleanup continues through scheduled tasks, even when recording is off."
 msgstr ""
 
-#: admin/view/heatmaps.php:107
+#: admin/view/heatmaps.php:110
 msgid "The selected page and device, with recorded click and scroll summaries, top elements and data notes. The visual heatmap is not included. Top elements count all clicks, regardless of the selected overlay."
 msgstr ""
 
-#: admin/view/heatmaps.php:120
+#: admin/view/heatmaps.php:123
 msgid "Heatmap settings"
 msgstr ""
 
-#: admin/view/heatmaps.php:122
+#: admin/view/heatmaps.php:125
 msgid "Recorded clicks on the pages shown. Missing or locked metrics are unavailable, not zero. This list does not show the position of clicks on a page."
 msgstr ""
 
-#: admin/view/heatmaps.php:124
+#: admin/view/heatmaps.php:127
 msgid "Device"
 msgstr ""
 
-#: admin/view/heatmaps.php:126
+#: admin/view/heatmaps.php:129
 msgid "All devices"
 msgstr ""
 
-#: admin/view/heatmaps.php:127
+#: admin/view/heatmaps.php:130
 #: src/Ecommerce/Report.php:465
 #: admin/assets/js/heatmaps.js:106
 msgid "Desktop"
 msgstr ""
 
-#: admin/view/heatmaps.php:128
+#: admin/view/heatmaps.php:131
 #: src/Ecommerce/Report.php:466
 #: admin/assets/js/heatmaps.js:106
 msgid "Tablet"
 msgstr ""
 
-#: admin/view/heatmaps.php:129
+#: admin/view/heatmaps.php:132
 #: src/Ecommerce/Report.php:465
 #: admin/assets/js/heatmaps.js:106
 msgid "Mobile"
 msgstr ""
 
-#: admin/view/heatmaps.php:131
+#: admin/view/heatmaps.php:134
 #: src/Controllers/Rest/HeatmapRestController.php:83
 #: src/Controllers/Rest/HeatmapRestController.php:153
 msgid "Device insights are available with Pro."
 msgstr ""
 
-#: admin/view/heatmaps.php:134
+#: admin/view/heatmaps.php:137
 msgid "Search pages"
 msgstr ""
 
-#: admin/view/heatmaps.php:135
+#: admin/view/heatmaps.php:138
 msgid "Search pages, e.g. /pricing"
 msgstr ""
 
-#: admin/view/heatmaps.php:138
+#: admin/view/heatmaps.php:141
 #: admin/view/partials/ecommerce.php:34
 #: admin/view/wp-slimstat-reports.php:1115
 #: src/Reports/Abstracts/AbstractReport.php:279
 msgid "Refresh"
 msgstr ""
 
-#: admin/view/heatmaps.php:158
+#: admin/view/heatmaps.php:161
 msgid "Actions"
 msgstr ""
 
-#: admin/view/heatmaps.php:168
+#: admin/view/heatmaps.php:171
 msgid "Unlock device insights, every page and full click and scroll heatmaps with Pro."
 msgstr ""
 
-#: admin/view/heatmaps.php:182
+#: admin/view/heatmaps.php:185
 msgid "Pages of results"
 msgstr ""
 
-#: admin/view/heatmaps.php:183
+#: admin/view/heatmaps.php:186
 #: admin/view/partials/ecommerce.php:160
 #: src/Reports/AcquisitionReport.php:366
 msgid "Previous"
 msgstr ""
 
-#: admin/view/heatmaps.php:185
+#: admin/view/heatmaps.php:188
 #: admin/view/partials/ecommerce.php:160
 #: src/Reports/AcquisitionReport.php:369
 msgid "Next"
 msgstr ""
 
-#: admin/view/heatmaps.php:189
-#: admin/view/heatmaps.php:196
+#: admin/view/heatmaps.php:192
+#: admin/view/heatmaps.php:199
 msgid "Delete heatmap data"
 msgstr ""
 
-#: admin/view/heatmaps.php:192
+#: admin/view/heatmaps.php:195
 msgid "Delete all full-tracking heatmap data? Link and button click history is kept. This can't be undone."
 msgstr ""
 
-#: admin/view/heatmaps.php:194
+#: admin/view/heatmaps.php:197
 msgid "Type DELETE to confirm."
 msgstr ""
 
-#: admin/view/heatmaps.php:197
+#: admin/view/heatmaps.php:200
 #: admin/view/partials/goals-funnels/confirm-sheet.php:31
 #: admin/view/partials/goals-funnels/funnel-builder.php:61
 #: admin/view/partials/goals-funnels/goal-drawer.php:91
@@ -2926,28 +2926,28 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: admin/view/heatmaps.php:207
+#: admin/view/heatmaps.php:210
 msgid "Update SlimStat Pro to open heatmaps here. The on-page heatmap keeps working until you do."
 msgstr ""
 
-#: admin/view/heatmaps.php:209
+#: admin/view/heatmaps.php:212
 #: admin/assets/js/shortcodes.js:67
 msgid "Go to Plugins"
 msgstr ""
 
-#: admin/view/heatmaps.php:210
+#: admin/view/heatmaps.php:213
 msgid "Not now"
 msgstr ""
 
-#: admin/view/heatmaps.php:219
+#: admin/view/heatmaps.php:222
 msgid "SlimStat Pro shows these on the page itself, with every other click, how far visitors scroll, and dead and rage clicks."
 msgstr ""
 
-#: admin/view/heatmaps.php:221
+#: admin/view/heatmaps.php:224
 msgid "Get SlimStat Pro"
 msgstr ""
 
-#: admin/view/heatmaps.php:222
+#: admin/view/heatmaps.php:225
 msgid "Already have Pro? Install it"
 msgstr ""
 
