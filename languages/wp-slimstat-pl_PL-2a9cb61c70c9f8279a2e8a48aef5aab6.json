@@ -1,0 +1,168 @@
+{
+    "translation-revision-date": "2019-06-10 15:36-0400",
+    "generator": "WP-CLI\/2.12.0",
+    "source": "admin\/assets\/js\/ai-analysis.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "pl_PL",
+                "plural-forms": "nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;"
+            },
+            "AI Analysis": [
+                ""
+            ],
+            "Explore Pro AI \u2192": [
+                ""
+            ],
+            "Retry": [
+                ""
+            ],
+            "Dismiss": [
+                ""
+            ],
+            "Close": [
+                ""
+            ],
+            "Analyze with AI": [
+                ""
+            ],
+            "AI prompt": [
+                ""
+            ],
+            "Want AI insights without leaving WordPress?": [
+                ""
+            ],
+            "With SlimStat Pro, connect your AI provider and analyze reports in one click.": [
+                ""
+            ],
+            "\u2713 AI Prompt Copied!": [
+                ""
+            ],
+            "Paste it into ChatGPT, Claude, Gemini, Grok, or your favorite AI to analyze your report.": [
+                ""
+            ],
+            "Wait for the heatmap to finish loading.": [
+                ""
+            ],
+            "Wait for the report to finish loading.": [
+                ""
+            ],
+            "Copy Prompt Instead": [
+                ""
+            ],
+            "License settings \u2192": [
+                ""
+            ],
+            "AI Connections \u2192": [
+                ""
+            ],
+            "AI Analysis Settings \u2192": [
+                ""
+            ],
+            "Your browser lost contact with this site before the response arrived. Check your connection, then retry.": [
+                ""
+            ],
+            "AI analysis could not load. Please try again.": [
+                ""
+            ],
+            "Provider error: %s": [
+                ""
+            ],
+            "Retry in %ds": [
+                ""
+            ],
+            "A new attempt may incur another provider charge.": [
+                ""
+            ],
+            "Generated %1$s \u00b7 %2$s \/ %3$s": [
+                ""
+            ],
+            "Saved result. Analytics may have changed since it was generated.": [
+                ""
+            ],
+            "This saved result belongs to another date range, filter or report selection.": [
+                ""
+            ],
+            "Copy Result": [
+                ""
+            ],
+            "Analysis copied": [
+                ""
+            ],
+            "Your analysis is ready to paste.": [
+                ""
+            ],
+            "Copy failed. Select the result text and copy it manually.": [
+                ""
+            ],
+            "Matching saved reports: %d": [
+                ""
+            ],
+            "Loading saved analysis\u2026": [
+                ""
+            ],
+            "This saved analysis is no longer available. Open the report to create a new one.": [
+                ""
+            ],
+            "Close and reopen this entry to try again.": [
+                ""
+            ],
+            "AI analysis is disabled. An administrator can enable it in SlimStat\u2019s AI Analysis settings.": [
+                ""
+            ],
+            "Regenerate Analysis": [
+                ""
+            ],
+            "Analyze Current Report": [
+                ""
+            ],
+            "The report selection changed. Close this panel and reopen it for the current report.": [
+                ""
+            ],
+            "Connect AI to unlock instant insights": [
+                ""
+            ],
+            "Configure your preferred AI provider once to analyze reports directly in SlimStat.": [
+                ""
+            ],
+            "Set Up AI \u2192": [
+                ""
+            ],
+            "Ask a site administrator to manage AI Connections.": [
+                ""
+            ],
+            "Selected aggregate analytics will be sent to this AI provider. Visitor identifiers and free-form labels are removed. Provider API charges may apply. Automatic selection does not guarantee the lowest price.": [
+                ""
+            ],
+            "I agree to send this minimized report to the selected provider.": [
+                ""
+            ],
+            "Analysis complete. This result was not saved.": [
+                ""
+            ],
+            "Analyzing your report\u2026": [
+                ""
+            ],
+            "Reviewing your data and finding useful insights. Large reports can take up to a minute.": [
+                ""
+            ],
+            "Analysis in progress": [
+                ""
+            ],
+            "Wait for the current request to finish before starting another.": [
+                ""
+            ],
+            "From copy and paste to one-click insights": [
+                ""
+            ],
+            "With SlimStat Pro, connect your AI provider through WordPress and analyze reports without leaving your dashboard.": [
+                ""
+            ],
+            "Requires WordPress 7.0 or newer. Provider API charges may apply.": [
+                ""
+            ]
+        }
+    }
+}

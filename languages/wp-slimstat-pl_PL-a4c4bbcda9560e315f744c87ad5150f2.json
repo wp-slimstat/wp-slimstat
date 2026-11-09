@@ -19,13 +19,13 @@
             "Go to Plugins": [
                 ""
             ],
+            "Compare Free and Pro": [
+                ""
+            ],
             "Filter operator": [
                 ""
             ],
             "Filter value": [
-                ""
-            ],
-            "Compare Free and Pro": [
                 ""
             ],
             "Report": [
@@ -38,6 +38,9 @@
                 ""
             ],
             "This report is unavailable. Activate WooCommerce and set up reporting for Ecommerce.": [
+                ""
+            ],
+            "Copied": [
                 ""
             ],
             "Number": [
@@ -89,9 +92,6 @@
                 ""
             ],
             "Remove filter": [
-                ""
-            ],
-            "Copied": [
                 ""
             ],
             "Your browser could not copy automatically. The shortcode is selected; use your keyboard to copy it.": [

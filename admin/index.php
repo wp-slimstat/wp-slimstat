@@ -2652,7 +2652,9 @@ class wp_slimstat_admin
             $link = static function ($page, $text) {
                 return '<a href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($text) . '</a>';
             };
-            $rows = [['admin-links', __('Channels and UTM Campaigns', 'wp-slimstat'), __('Side by side, in one report.', 'wp-slimstat'), 'slimview5', __('Open Traffic Sources', 'wp-slimstat')]];
+            $rows = [
+                ['admin-links', __('Channels and UTM Campaigns', 'wp-slimstat'), __('Side by side, in one report.', 'wp-slimstat'), 'slimview5', __('Open Traffic Sources', 'wp-slimstat')],
+            ];
             if ($commerce) {
                 $rows[] = ['cart', __('Ecommerce', 'wp-slimstat'), __('Net sales, orders and top products.', 'wp-slimstat'), 'slimview7', __('Open Ecommerce', 'wp-slimstat')];
             }
@@ -2661,7 +2663,12 @@ class wp_slimstat_admin
             $html = '<div id="slimstat-notice-latest-news" class="notice notice-info slimstat-release-notice" role="region"' . $attributes
                 . '<p><strong class="slimstat-release-notice__title">' . esc_html__('SlimStat 6 is here.', 'wp-slimstat') . '</strong> '
                 . esc_html__('Reports are faster, and your settings and data carry over. Includes important security hardening.', 'wp-slimstat')
-                . ($is_pro ? ' ' . esc_html__('SlimStat Pro 3.0.0 adds heatmap page previews and Ecommerce email reports.', 'wp-slimstat') : '') . '</p><ul class="slimstat-whats-new">';
+                . ($is_pro ? ' ' . esc_html__('SlimStat Pro 3.0.0 adds heatmap page previews and Ecommerce email reports.', 'wp-slimstat') : '') . '</p>'
+                // AI Analysis leads as its own block, with the ✨ of "Analyze with AI" and one primary action.
+                . '<div class="slimstat-ai-spotlight"><span class="slimstat-ai-spark" aria-hidden="true">✨</span><p><strong>' . esc_html__('AI Analysis', 'wp-slimstat') . '</strong> '
+                . esc_html__('Turn any report into plain-language findings.', 'wp-slimstat') . ' <span class="slimstat-ai-spotlight__how">'
+                . esc_html($is_pro ? __('Analyze reports inside WordPress 7.0 or newer; results stay in a private, searchable library.', 'wp-slimstat') : __('Free copies a ready-made prompt for ChatGPT, Claude or Gemini; Pro runs the analysis inside WordPress.', 'wp-slimstat'))
+                . '</span></p><a class="button button-primary" href="' . esc_url(admin_url('admin.php?page=slimai')) . '">' . esc_html__('Try AI Analysis', 'wp-slimstat') . '</a></div><ul class="slimstat-whats-new">';
             foreach ($rows as [$icon, $name, $why, $page, $open]) {
                 $html .= '<li><span class="dashicons dashicons-' . esc_attr($icon) . '" aria-hidden="true"></span><strong>' . esc_html($name) . '</strong><span class="slimstat-whats-new__why">' . esc_html($why) . '</span>' . $link($page, $open) . '</li>';
             }
@@ -2679,7 +2686,9 @@ class wp_slimstat_admin
         if (current_user_can('manage_options')) {
             $links['slimshortcodes'] = __('Shortcodes', 'wp-slimstat');
         }
-        $html = '<aside id="slimstat-notice-latest-news" class="slimstat-release-bar"' . $attributes . '<strong>' . esc_html__('New in SlimStat 6', 'wp-slimstat') . '</strong><nav aria-label="' . esc_attr__('Explore features', 'wp-slimstat') . '">';
+        $html = '<aside id="slimstat-notice-latest-news" class="slimstat-release-bar"' . $attributes . '<strong>' . esc_html__('New in SlimStat 6', 'wp-slimstat') . '</strong><nav aria-label="' . esc_attr__('Explore features', 'wp-slimstat') . '">'
+            . '<a class="slimstat-release-bar__ai" href="' . esc_url(admin_url('admin.php?page=slimai')) . '"><span class="slimstat-ai-spark" aria-hidden="true">✨</span>'
+            . esc_html($is_pro ? __('Open AI Analysis', 'wp-slimstat') : __('AI Analysis: prompts in Free, analysis in Pro', 'wp-slimstat')) . '</a>';
         foreach ($links as $page => $label) {
             $html .= '<a href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($label) . '</a>';
         }

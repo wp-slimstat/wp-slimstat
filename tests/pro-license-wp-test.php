@@ -88,30 +88,64 @@ try {
         $check(trim($expected) === $ask->invoke(null, $client($answer), $key), 'Answer maps to ' . trim($expected) . ': ' . wp_json_encode(is_wp_error($answer) ? $answer->get_error_data() : $answer));
     }
 
-    // Locked notice and its link, per state.
+    // Locked notice and its links, per state: the fix first, then the account and plans when a key is missing or wrong.
     $hasClient = class_exists(ProLicense::CLIENT);
-    $states = ['none' => ['activate a license', 'Activate license'], 'domain_not_activated' => ['not activated for this site', 'Activate license'], 'invalid' => ['expired, revoked', 'Open License settings'], 'unreachable' => ['could not verify', 'Open License settings']];
-    foreach ($states as $state => [$text, $label]) {
+    $admin = get_users(['role' => 'administrator', 'number' => 1])[0]->ID;
+    $states = [
+        'none'                 => ['activate a license', ['Activate license', 'Find my license', 'View plans']],
+        'domain_not_activated' => ['not activated for this site', ['Activate license', 'Find my license']],
+        'invalid'              => ['expired, revoked', ['Open License settings', 'Find my license', 'View plans']],
+        'unreachable'          => ['could not verify', ['Open License settings']],
+    ];
+    foreach ($states as $state => [$text, $labels]) {
         delete_option(ProLicense::OPTION);
         $key = 'none' === $state ? '' : 'wp-test-license';
         if ('none' !== $state) { ProLicense::record($key, $state); }
         $message = ProLicense::message();
-        $action = ProLicense::action();
+        $links = ProLicense::links();
         $check(false !== strpos($message, $hasClient ? $text : 'Update SlimStat Pro') && false !== strpos($message, 'settings and data are kept'), 'Notice for ' . $state . ': ' . $message);
-        $check(($hasClient ? $label : 'Open Plugins') === ($action[0] ?? null), 'Link for ' . $state);
+        $check(($hasClient ? $labels : ['Open Plugins']) === array_column($links, 0), 'Links for ' . $state . ': ' . wp_json_encode($links));
+        $check($links[0] === ProLicense::action(), 'The header button is the banner\'s first link for ' . $state);
+        ob_start();
+        ProLicense::render();
+        $tone = $hasClient && in_array($state, ['invalid', 'domain_not_activated'], true) ? 'notice-error' : 'notice-warning';
+        $check(false !== strpos((string) ob_get_clean(), 'class="notice ' . $tone . ' '), 'A wrong key is an error, anything else a warning, for ' . $state);
+        $check(!$hasClient || false !== strpos($links[0][1], 'page=slimconfig&tab=8') && false === $links[0][2], 'The fix opens License settings for ' . $state);
+        foreach (array_slice($links, 1) as [$label, $url, $external]) {
+            $expected = 'Find my license' === $label ? ProLicense::ACCOUNT : 'https://wp-slimstat.com/pricing/?';
+            $check($external && 0 === strpos($url, $expected), $label . ' leads to ' . $expected . ' for ' . $state . ': ' . $url);
+        }
     }
-    $key = 'wp-test-license';
+
+    // One banner on the Dashboard and the Plugins screen, for administrators only; never elsewhere.
+    $check(10 === has_action('admin_notices', [ProLicense::class, 'screen_notice']), 'The Dashboard and Plugins banner is registered');
+    $pagenow = $GLOBALS['pagenow'] ?? null;
+    $screen = static function ($page) { $GLOBALS['pagenow'] = $page; ob_start(); ProLicense::screen_notice(); return (string) ob_get_clean(); };
+    delete_option(ProLicense::OPTION);
+    $key = '';
+    foreach (['index.php', 'plugins.php'] as $page) {
+        $html = $screen($page);
+        $check(1 === substr_count($html, 'slimstat-pro-license-notice" role="status"') && 1 === substr_count($html, 'button-primary') && false === strpos($html, 'is-dismissible'), 'One banner that cannot be dismissed on ' . $page);
+        $check(!$hasClient || false !== strpos($html, 'href="' . ProLicense::ACCOUNT . '" target="_blank" rel="noopener noreferrer"'), 'Find my license opens the account in a new tab on ' . $page);
+    }
+    $check('' === $screen('edit.php') && '' === $screen('admin.php'), 'No banner on other WordPress screens');
     wp_set_current_user(0);
-    $check(false !== strpos(ProLicense::message(), 'site administrator') && [] === ProLicense::action(), 'Users who cannot fix the lock get no link');
-    wp_set_current_user(get_users(['role' => 'administrator', 'number' => 1])[0]->ID);
+    $check('' === $screen('index.php'), 'No Dashboard banner for users who cannot manage the license');
+    $key = 'wp-test-license';
+    ob_start();
+    ProLicense::render();
+    $html = (string) ob_get_clean();
+    $check(false !== strpos(ProLicense::message(), 'site administrator') && [] === ProLicense::links() && false !== strpos($html, 'site administrator') && false === strpos($html, '<a '), 'Users who cannot fix the lock get the administrator message and no link');
+    wp_set_current_user($admin);
     ProLicense::record($key, 'valid');
-    $check('' === ProLicense::message() && [] === ProLicense::action(), 'No notice while licensed');
+    $check('' === ProLicense::message() && [] === ProLicense::links() && '' === $screen('index.php') && '' === $screen('plugins.php'), 'No notice while licensed');
     remove_filter('option_active_plugins', $pro);
     add_filter('option_active_plugins', $noPro);
     delete_option(ProLicense::OPTION);
-    $check('' === ProLicense::message(), 'No notice without Pro');
+    $check('' === ProLicense::message() && '' === $screen('index.php') && '' === $screen('plugins.php'), 'No notice without Pro');
     remove_filter('option_active_plugins', $noPro);
     add_filter('option_active_plugins', $pro);
+    $GLOBALS['pagenow'] = $pagenow;
 
     // The lock detaches Pro features and keeps the license screen, the updater, Custom DB and Free.
     $tag = 'slimstat_pro_license_probe';
