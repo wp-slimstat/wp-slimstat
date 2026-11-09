@@ -105,7 +105,7 @@ if (!class_exists('wp_slimstat_db')) {
 $plugin_root = dirname(__DIR__);
 define('ABSPATH', $plugin_root . '/');
 define('WP_PLUGIN_DIR', dirname($plugin_root));
-class wp_slimstat { public static function pro_is_installed() { return false; } }
+class wp_slimstat { public static function pro_is_installed() { return false; } public static function pro_plugin_active() { return false; } }
 function current_user_can($cap) { return 'manage_options' === $cap; }
 function sanitize_key($value) { return preg_replace('/[^a-z0-9_-]/', '', strtolower($value)); }
 function admin_url($path) { return '/wp-admin/' . $path; }

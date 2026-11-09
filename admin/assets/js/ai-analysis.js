@@ -175,39 +175,123 @@
         body.append(actions);
     }
     /**
+     * Whether the browser lost the site response, so the server may still have finished.
+     *
+     * @param {Object} exception REST or local error.
+     * @returns {boolean} True for apiFetch network and non-JSON gateway failures.
+     */
+    function lost(exception) {
+        return exception?.code === 'fetch_error' || exception?.code === 'invalid_json';
+    }
+    // Configuration errors link to the screen that fixes them; the URLs exist only for administrators.
+    const fixes = {
+        slimstat_ai_license: ['license', __('License settings →', 'wp-slimstat')],
+        slimstat_ai_credentials: ['connectors', __('AI Connections →', 'wp-slimstat')],
+        slimstat_ai_model: ['settings', __('AI Analysis Settings →', 'wp-slimstat')],
+        slimstat_ai_rejected: ['settings', __('AI Analysis Settings →', 'wp-slimstat')],
+        slimstat_ai_timeout: ['settings', __('AI Analysis Settings →', 'wp-slimstat')],
+    };
+    /**
      * Replace only the error notice so a successful previous result stays readable.
      *
      * @param {HTMLElement} body Panel or library-entry content container.
      * @param {Object} exception Safe REST or locally constructed error.
+     * @param {Function|null} retry Explicit user retry for recoverable failures.
+     * @param {boolean} paid Whether retrying sends a new provider request.
      */
-    function error(body, exception) {
+    function error(body, exception, retry = null, paid = false) {
         body.querySelector('.ss-ai-error')?.remove();
         const notice = el('div', '', { class: 'ss-ai-error', role: 'alert' });
-        notice.append(el('p', exception?.message || __('AI analysis could not load. Please try again.', 'wp-slimstat')));
-        if (exception?.code === 'slimstat_ai_license' && config.license) {
-            notice.append(el('a', __('License settings →', 'wp-slimstat'), { href: config.license }));
+        notice.append(el('p', lost(exception)
+            ? __('Your browser lost contact with this site before the response arrived. Check your connection, then retry.', 'wp-slimstat')
+            : exception?.message || __('AI analysis could not load. Please try again.', 'wp-slimstat')));
+        /* translators: %s: HTTP status and error type, for example "HTTP 429 · ClientException". */
+        if (exception?.data?.diagnostic) notice.append(el('p', sprintf(__('Provider error: %s', 'wp-slimstat'), exception.data.diagnostic), { class: 'ss-ai-meta', dir: 'ltr' }));
+        const [key, label] = fixes[exception?.code] || [];
+        if (key && config[key]) notice.append(el('a', label, { href: config[key] }));
+        let wait = Math.ceil(Number(exception?.data?.retry_after) || 0);
+        if (retry && (lost(exception) || exception?.data?.retryable) && wait <= 300) {
+            const button = action(__('Retry', 'wp-slimstat'), () => { notice.remove(); retry(); });
+            const tick = () => {
+                button.disabled = wait > 0;
+                /* translators: %d: seconds until retrying is allowed. */
+                button.textContent = wait > 0 ? sprintf(__('Retry in %ds', 'wp-slimstat'), wait) : __('Retry', 'wp-slimstat');
+                if (wait-- > 0) setTimeout(() => { if (notice.isConnected) tick(); }, 1000);
+            };
+            tick();
+            notice.append(button);
+            if (paid) notice.append(el('p', __('A new attempt may incur another provider charge.', 'wp-slimstat'), { class: 'ss-ai-meta' }));
         }
         body.prepend(notice);
     }
+    // ***both***, **bold** or *italic*: no space inside the markers, so "2 * 3" and unclosed markers stay literal.
+    const EMPHASIS = /\*\*\*([^*\s](?:[^*]*[^*\s])?)\*\*\*|\*\*([^*\s](?:[^*]*[^*\s])?)\*\*|\*([^*\s](?:[^*]*[^*\s])?)\*/g;
     /**
-     * Render headings and lists as text nodes; provider text never enters HTML parsing.
+     * Build the replacer that swaps opaque row labels for the local names saved with this snapshot.
+     *
+     * @param {Object} labels Map of opaque label to local name.
+     * @returns {function(string): string} Replaces known labels in plain text.
+     */
+    function named(labels) {
+        const keys = Object.keys(labels || {}).sort((a, b) => b.length - a.length);
+        if (!keys.length) return text => text;
+        // Longest first and never before a digit, so "Row 1" cannot match inside "Row 12".
+        const pattern = new RegExp('(?:' + keys.map(key => key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')(?!\\d)', 'g');
+        return text => text.replace(pattern, key => labels[key]);
+    }
+    /**
+     * Append text with supported emphasis as elements; everything else stays a text node.
+     *
+     * @param {HTMLElement} node Target element.
+     * @param {string} text Untrusted provider text.
+     * @param {function(string): string} name Label replacer from named().
+     * @returns {HTMLElement} The target element.
+     */
+    function inline(node, text, name) {
+        let at = 0;
+        for (const match of text.matchAll(EMPHASIS)) {
+            const [, both, bold, italic] = match;
+            const strong = el(italic ? 'em' : 'strong', both ? '' : name(bold || italic));
+            if (both) strong.append(el('em', name(both)));
+            node.append(name(text.slice(at, match.index)), strong);
+            at = match.index + match[0].length;
+        }
+        node.append(name(text.slice(at)));
+        return node;
+    }
+    /**
+     * Render headings, lists and emphasis as DOM nodes; provider text never enters HTML parsing.
      *
      * @param {string} text Untrusted provider output.
+     * @param {Object} labels Local label map saved with the analysis.
      * @returns {HTMLElement} The inert result content.
      */
-    function markdown(text) {
+    function markdown(text, labels) {
         const section = el('div', '', { class: 'ss-ai-result' });
+        const name = named(labels);
         let list = null;
         String(text).split('\n').forEach(line => {
-            const heading = /^#{1,6}\s+(.+)$/.exec(line);
-            const bullet = /^(?:[-*+] |\d+[.)] )(.+)$/.exec(line);
-            if (heading) { section.append(el('h3', heading[1])); list = null; }
+            const heading = /^\s*#{1,6}\s+(.+)$/.exec(line);
+            const bullet = /^\s*(?:[-*+]|(\d+)[.)]) (.+)$/.exec(line);
+            if (/^\s*([-*_])(?:\s*\1){2,}\s*$/.test(line)) { list = null; }
+            else if (heading) { section.append(inline(el('h3'), heading[1], name)); list = null; }
             else if (bullet) {
-                if (!list) { list = el('ul'); section.append(list); }
-                list.append(el('li', bullet[1]));
-            } else if (line.trim()) { section.append(el('p', line)); list = null; }
+                const tag = bullet[1] ? 'OL' : 'UL';
+                if (list?.tagName !== tag) { list = el(tag.toLowerCase(), '', bullet[1] ? { start: bullet[1] } : {}); section.append(list); }
+                list.append(inline(el('li'), bullet[2], name));
+            } else if (line.trim()) { section.append(inline(el('p'), line, name)); list = null; }
         });
         return section;
+    }
+    /**
+     * Readable clipboard text: local names, no emphasis or heading markers.
+     *
+     * @param {string} text Provider output.
+     * @param {Object} labels Local label map.
+     * @returns {string} Plain text.
+     */
+    function plain(text, labels) {
+        return named(labels)(String(text).replace(EMPHASIS, (match, both, bold, italic) => both || bold || italic).replace(/^[ \t]*#{1,6}[ \t]+/gm, ''));
     }
     /**
      * Present one result with its original context and the shared clipboard fallback.
@@ -228,9 +312,9 @@
         if (cached) section.append(el('p', matches
             ? __('Saved result. Analytics may have changed since it was generated.', 'wp-slimstat')
             : __('This saved result belongs to another date range, filter or report selection.', 'wp-slimstat'), { class: 'ss-ai-cache' }));
-        section.append(markdown(saved.content), action(__('Copy Result', 'wp-slimstat'), async () => {
+        section.append(markdown(saved.content, saved.labels), action(__('Copy Result', 'wp-slimstat'), async () => {
             try {
-                if (!await window.SlimStatCopyText(saved.content)) throw new Error('Clipboard unavailable');
+                if (!await window.SlimStatCopyText(plain(saved.content, saved.labels))) throw new Error('Clipboard unavailable');
                 toast(__('Analysis copied', 'wp-slimstat'), __('Your analysis is ready to paste.', 'wp-slimstat'));
             } catch (_) { error(body, new Error(__('Copy failed. Select the result text and copy it manually.', 'wp-slimstat'))); }
         }));
@@ -302,6 +386,7 @@
                 return;
             }
             const controls = el('div', '', { class: 'ss-ai-controls' });
+            let last = status.saved?.generated || 0;
             const prepare = action(status.saved ? (status.matches ? __('Regenerate Analysis', 'wp-slimstat') : __('Analyze Current Report', 'wp-slimstat')) : __('Analyze with AI', 'wp-slimstat'), async () => {
                 if (active) return;
                 active = true;
@@ -324,8 +409,18 @@
                     consent.checked = !!connection.consented;
                     const label = el('label', '', { class: 'ss-ai-consent' });
                     label.append(consent, document.createTextNode(__('I agree to send this minimized report to the selected provider.', 'wp-slimstat')));
+                    let blocked = false;
+                    const done = (analysis, saved) => {
+                        result(body, analysis, false, true);
+                        last = analysis.generated;
+                        if (!saved) body.prepend(el('p', __('Analysis complete. This result was not saved.', 'wp-slimstat'), { role: 'status' }));
+                        controls.replaceChildren(prepare);
+                        prepare.textContent = __('Regenerate Analysis', 'wp-slimstat');
+                        prepare.disabled = false;
+                    };
                     const perform = async () => {
                         if (active || !consent.checked) return;
+                        body.querySelector('.ss-ai-error')?.remove();
                         try {
                             if (JSON.stringify(context(trigger)) !== JSON.stringify(selection)) throw new Error(__('The report selection changed. Close this panel and reopen it for the current report.', 'wp-slimstat'));
                         } catch (exception) { error(body, exception); return; }
@@ -334,7 +429,7 @@
                         consent.disabled = true;
                         const loading = el('div', '', { class: 'ss-ai-loading', role: 'status' });
                         loading.append(el('strong', __('Analyzing your report…', 'wp-slimstat')),
-                            el('p', __('Reviewing your data and finding useful insights.', 'wp-slimstat')), el('div', '', { class: 'ss-ai-skeleton', 'aria-hidden': 'true' }));
+                            el('p', __('Reviewing your data and finding useful insights. Large reports can take up to a minute.', 'wp-slimstat')), el('div', '', { class: 'ss-ai-skeleton', 'aria-hidden': 'true' }));
                         controls.append(loading);
                         try {
                             const answer = await api('/analyze', { ...selection, consent: true, selection: connection.selection });
@@ -342,27 +437,39 @@
                             if (JSON.stringify(context(trigger)) !== JSON.stringify(selection)) {
                                 throw new Error(__('The report selection changed. Close this panel and reopen it for the current report.', 'wp-slimstat'));
                             }
-                            result(body, answer.analysis, false, true);
-                            if (!answer.saved) body.prepend(el('p', __('Analysis complete. This result was not saved.', 'wp-slimstat'), { role: 'status' }));
-                            controls.replaceChildren(prepare);
-                            prepare.textContent = __('Regenerate Analysis', 'wp-slimstat');
-                            prepare.disabled = false;
-                        } catch (exception) { if (id === sequence && dialog.open) error(body, exception); }
-                        finally { active = false; loading.remove(); run.disabled = !consent.checked; consent.disabled = false; }
+                            done(answer.analysis, answer.saved);
+                        } catch (exception) {
+                            if (id !== sequence || !dialog.open) return;
+                            if (lost(exception)) {
+                                // The site may have finished after the browser lost the response: show that result instead of paying again.
+                                const latest = await api('/status', selection).catch(() => null);
+                                if (id !== sequence || !dialog.open) return;
+                                if (latest?.matches && latest.saved?.generated > last) { done(latest.saved, true); return; }
+                            }
+                            // Quota, credential and configuration failures repeat until someone fixes them.
+                            blocked = exception?.data?.retryable === false;
+                            error(body, exception, perform, true);
+                        } finally { active = false; loading.remove(); run.disabled = blocked || !consent.checked; consent.disabled = false; }
                     };
                     const run = action(__('Analyze Current Report', 'wp-slimstat'), perform, true);
                     run.disabled = !consent.checked;
-                    consent.addEventListener('change', () => { run.disabled = !consent.checked; });
+                    consent.addEventListener('change', () => { run.disabled = blocked || !consent.checked; });
                     controls.append(label, run);
                     if (connection.consented) { active = false; await perform(); }
-                } catch (exception) { if (id === sequence && dialog.open) error(body, exception); }
+                } catch (exception) { if (id === sequence && dialog.open) error(body, exception, () => prepare.click()); }
                 finally { active = false; prepare.disabled = false; }
             }, true);
             controls.append(prepare);
             body.append(controls);
             fallback(body, trigger);
             if (!status.saved) prepare.click();
-        } catch (exception) { if (id === sequence && dialog.open) { body.replaceChildren(); error(body, exception); fallback(body, trigger); } }
+        } catch (exception) {
+            if (id === sequence && dialog.open) {
+                body.replaceChildren();
+                error(body, exception, () => { body.replaceChildren(); native(body, trigger, id); });
+                fallback(body, trigger);
+            }
+        }
     }
     document.addEventListener('click', event => {
         const trigger = event.target.closest('.slimstat-ai-analyze');

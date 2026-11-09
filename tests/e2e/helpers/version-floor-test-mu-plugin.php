@@ -55,5 +55,6 @@ add_action('wp_ajax_e2e_get_slimstat_version', function() {
         'pro_activated' => $pro_activated,
         'pro_booted' => $pro_activated && !$pro_degradations && isset($reports['slim_p8_01']),
         'pro_degradations' => $pro_degradations,
+        'pro_license' => class_exists('\\SlimStat\\Services\\ProLicense') ? \SlimStat\Services\ProLicense::state() : null,
     ]);
 });

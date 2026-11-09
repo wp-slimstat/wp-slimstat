@@ -1104,7 +1104,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
             <?php echo wp_kses_post(__('<strong>AdBlock browser extension detected.</strong> If you see this notice, it means that your browser is not loading our stylesheet and/or JavaScript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat')); ?>
         </div>
 
-        <?php if (!wp_slimstat::pro_is_installed() && current_user_can('manage_options') && in_array($current_tab, [7, 8], true)) : ?>
+        <?php if (!wp_slimstat::pro_plugin_active() && current_user_can('manage_options') && in_array($current_tab, [7, 8], true)) : ?>
             <section class="slimstat-settings-preview">
                 <h2><?php echo esc_html(8 === $current_tab ? __('License', 'wp-slimstat') : __('Pro settings', 'wp-slimstat')); ?></h2>
                 <p><?php echo esc_html(8 === $current_tab

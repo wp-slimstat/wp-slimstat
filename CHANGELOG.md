@@ -1,6 +1,10 @@
 = 6.1.0 - 2026-11-08 =
 
 **Report actions, filters and geolocation**
+* Heatmaps opened from a report tab keep that report's date range, such as Last 6 months or a custom range, in the picker and in every Heatmaps request.
+* AI Analysis, Email Reports, Shortcodes and Settings pass the selected date range and filters on to the next report, including Ecommerce, and filter suggestions use the date range the reports show.
+* AI results show bold, italic, headings and numbered lists, and name report rows by their own labels instead of "Row 3". Prompts define each metric, with its currency and period, and tell the provider not to group or guess rows.
+* AI analysis failures say what went wrong (connection, timeout, rate limit, quota, access or model) with a safe diagnostic, link the settings that fix configuration problems, and offer Retry only when a retry can help, after any wait the provider asks for. A response lost on the way back is recovered from the saved result instead of a new paid request, and the last saved result is kept.
 * Recover clipboard feedback after retries and report refreshes, omit unavailable AI action spacing, preserve existing non-Ecommerce analysis cache identities, and sample Ecommerce trends across the full selected period.
 * Add shared AI prompt and analysis actions to every Ecommerce report, with the selected view, currency, metric, comparison, filters and privacy limits.
 * Keep shared report filters through Heatmaps navigation and apply supported filters to clicks, scroll data and pageview counts. Explain retained filters that Heatmaps cannot apply.
@@ -8,6 +12,10 @@
 * Add a permanent, translated Tutorial badge to Videos and placement-specific attribution to its Browse videos link.
 * Check geolocation database health independently of the visiting IP and explain download/filesystem failures. Align Countries live with the live visitor activity window and exclude unknown locations.
 * Reject forged proxy headers. Cloudflare client/location headers require a connecting edge IP; other proxies must restore REMOTE_ADDR or explicitly opt in through the slimstat_trusted_proxy filter.
+
+**SlimStat Pro needs a valid license**
+* SlimStat Pro features run only with a license that is valid and activated for this site, including Pro versions older than this release. Otherwise Pro stays locked, the SlimStat header says why and links the fix, and Pro settings, data and the Custom DB connection are kept. Pro older than 3.0.0 stays locked until it is updated.
+* SlimStat checks the license through SlimStat Pro about every 12 hours, and at once when an administrator saves License settings. A confirmed license keeps working through a license-server outage for up to 3 days.
 
 **New: AI Analysis**
 * A new SlimStat → AI Analysis page explains how to turn a report into plain-language findings. Copy AI Prompt stays unlimited in Free; SlimStat Pro adds analysis inside SlimStat through an AI provider connected in WordPress, plus a private library of saved results.

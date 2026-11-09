@@ -36,4 +36,5 @@ return [
     // pending event firing against a plugin that is no longer there.
     'slimstat_initial_notification_fetch',
     'wp_slimstat_update_browscap',
+    'slimstat_pro_license_refresh', // \SlimStat\Services\ProLicense::HOOK
 ];

@@ -575,6 +575,9 @@ jobs:
         if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/shortcode-render-wp-test.php
 
+      - name: Pro license gate
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/pro-license-wp-test.php
+
       - name: Heatmap author isolation
         run: |
           npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/heatmap-author-scope-wp-test.php
@@ -1172,5 +1175,6 @@ jobs:
           wp plugin activate wp-slimstat --path="$WP_DIR"
           wp eval 'require_once WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php"; wp_slimstat_admin::init_tables($GLOBALS["wpdb"]);' --path="$WP_DIR"
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/shortcode-render-wp-test.php" --path="$WP_DIR"
+          wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/pro-license-wp-test.php" --path="$WP_DIR"
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/heatmap-author-scope-wp-test.php" --path="$WP_DIR"
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/notification-delivery-wp-test.php" --path="$WP_DIR"

@@ -178,6 +178,8 @@
     "test:jquery4-shorthand": "php tests/jquery4-own-code-shorthand-scan-test.php",
     "test:loginnote-bracket-parse": "php tests/loginnote-bracket-parse-test.php",
     "test:shortcode-render-wp": "wp eval-file tests/shortcode-render-wp-test.php",
+    "test:pro-license-wp": "wp eval-file tests/pro-license-wp-test.php",
+    "test:pro-license-network-wp": "wp eval-file tests/pro-license-network-wp-test.php",
     "test:shortcode-w-whitelist": "php tests/shortcode-w-whitelist-test.php",
     "test:avg-duration-format": "php tests/avg-duration-format-test.php",
     "test:rounding-contract": "php tests/rounding-contract-test.php",

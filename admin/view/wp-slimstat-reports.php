@@ -1997,10 +1997,11 @@ class wp_slimstat_reports
         // upgrade. Idempotent — writes only when it actually pauses something. (#11)
         if (!$is_pro) {
             $normalized = self::pause_excess_free_goals($goals, $max_goals);
-            if ($normalized !== $goals) {
+            // Pro that is active but unlicensed only pauses for display, so relicensing restores every goal as it was.
+            if ($normalized !== $goals && !wp_slimstat::pro_plugin_active()) {
                 update_option('slimstat_goals', $normalized);
-                $goals = $normalized;
             }
+            $goals = $normalized;
         }
 
         // The "N of M used" pill counts ACTIVE goals only, so it stays accurate.

@@ -1383,9 +1383,16 @@ jQuery(function () {
             from: '',
             to: ''
         };
+        // The picker shows the window the reports queried; tab links carry it as fs[...], never as type.
+        var picker = document.querySelector('.slimstat-date-range-input[data-start][data-end]');
 
-        // First, check URL parameters
-        if (urlParams.has('type')) {
+        if (picker) {
+            timeRange.type = 'custom';
+            timeRange.from = picker.getAttribute('data-start');
+            timeRange.to = picker.getAttribute('data-end');
+        }
+        // Then, check URL parameters
+        else if (urlParams.has('type')) {
             var typeParam = urlParams.get('type');
             if (typeParam === 'custom' && urlParams.has('from') && urlParams.has('to')) {
                 timeRange.type = 'custom';
@@ -1675,8 +1682,10 @@ jQuery(function () {
 
     // Since we handle all "filter links" as POST requests (see code here above), we need to add dummy form tag to the dashboard,
     // for when our reports are displayed on that page
+    // Pages without the filter bar (AI Analysis, Email Report, Settings) pass the shared dates and filters they arrived with on to the next report.
     if (!jQuery("#slimstat-filters-form").length) {
         jQuery('<form id="slimstat-filters-form" method="post"/>').appendTo("body");
+        SlimStatAdmin.add_url_filters_to_form(window.location.href);
     }
 
     jQuery('#slimstat-filters-form').on('submit', function () {

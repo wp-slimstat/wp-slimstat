@@ -138,7 +138,7 @@ $setup = static function ($label) {
 				<div class="ss-ec-tabs" role="tablist" aria-label="<?php echo esc_attr($title); ?>"<?php echo 1 === count($dimensions) ? ' hidden' : ''; ?>><?php foreach ($dimensions as $index => $dimension) : ?><button type="button" role="tab" id="ss-ec-tab-<?php echo esc_attr($dimension); ?>" aria-controls="ss-ec-panel-<?php echo esc_attr($dimension); ?>" aria-selected="<?php echo 0 === $index ? 'true' : 'false'; ?>" tabindex="<?php echo 0 === $index ? '0' : '-1'; ?>"><?php echo esc_html($titles[$dimension]); ?></button><?php endforeach; ?></div>
 				<?php foreach ($dimensions as $index => $dimension) :
 					$rows = $data['groups'][$dimension]; $isCoupon = 'coupon' === $dimension;
-					$productDetails = 'product' === $dimension && apply_filters('slimstat_ecommerce_product_details', false);
+					$productDetails = 'product' === $dimension && wp_slimstat::pro_is_installed() && apply_filters('slimstat_ecommerce_product_details', false);
 					$measure = $isCoupon ? 'discount' : 'net'; $shown = 0;
 					$ceiling = $rows ? max(array_map(static function ($row) use ($measure) { return abs((float) $row[$measure]); }, $rows)) : 0;
 					?>
@@ -176,9 +176,8 @@ $setup = static function ($label) {
 		<?php endif; ?>
 		<?php if ($pro) : ?>
 		<?php // Below Revenue drivers, not above (audit F5). ?>
-		<?php $pro = isset($data['groups']['campaign']); $license = $pro && empty(wp_slimstat::$settings['slimstat_pro_license_status']) && current_user_can('manage_options') ? '<a href="' . esc_url(admin_url('admin.php?page=slimconfig&tab=8')) . '">' . esc_html__('Check your update license', 'wp-slimstat') . '</a> ' . esc_html__('Pro reports are available. Review licensing for plugin updates on this site.', 'wp-slimstat') : ''; ?>
+		<?php $pro = isset($data['groups']['campaign']); ?>
 		<?php if ($pro && get_user_setting('slimstat_ec_discover')) : // QA C3: retired once a report it lists was opened, or on Dismiss. ?>
-			<?php if ($orders && $license) : ?><p class="ss-ec-footnote"><?php echo wp_kses_post($license); ?></p><?php endif; ?>
 		<?php elseif ($orders || !$pro) : // Pro's reports have nothing to show in a range without orders. ?>
 		<section class="ss-ec-discover" aria-labelledby="ss-ec-discover-title">
 			<?php if ($pro) : ?>
@@ -190,7 +189,6 @@ $setup = static function ($label) {
 					<button type="button" class="button" data-open-report="device"><?php esc_html_e('Open devices report', 'wp-slimstat'); ?></button>
 					<button type="button" class="button" data-open-report="coupon"><?php esc_html_e('Open coupons report', 'wp-slimstat'); ?></button>
 				</div>
-				<?php if ($license) : ?><p><?php echo wp_kses_post($license); ?></p><?php endif; ?>
 			<?php else : ?>
 				<h2 id="ss-ec-discover-title"><?php esc_html_e('Update Pro to explore more reports', 'wp-slimstat'); ?></h2>
 				<p><?php esc_html_e('Your installed Pro version has not enabled Ecommerce reports. Update both SlimStat plugins to compatible versions.', 'wp-slimstat'); ?></p>

@@ -34,6 +34,11 @@ namespace {
 		{
 			return self::$proInstalled;
 		}
+
+		public static function pro_plugin_active()
+		{
+			return self::$proInstalled;
+		}
 	}
 
 	$GLOBALS['slimstat_test_actions'] = [];

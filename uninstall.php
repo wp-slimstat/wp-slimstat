@@ -552,6 +552,7 @@ function slimstat_uninstall($_wpdb = '')
     delete_option('slimstat_notification_execution_lock');
     delete_option('slimstat_notification_dismissed');
     delete_option('slimstat_purge_optimized_at');
+    delete_option('slimstat_pro_license_verdict'); // \SlimStat\Services\ProLicense::OPTION
 // Migration runner state. Every option this plugin creates has to be removable — and the
 // run claim especially, since a stranded one is the single thing a user cannot clear from
 // the UI, making reinstall the only remedy that must actually work.

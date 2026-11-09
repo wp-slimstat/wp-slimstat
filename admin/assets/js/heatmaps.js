@@ -202,7 +202,8 @@
             if ('last_90_days' !== new URLSearchParams(location.search).get('type')) {
                 buttons.push([__('Use last 90 days', 'wp-slimstat'), () => {
                     const url = new URL(location.href);
-                    ['from', 'to'].forEach((key) => url.searchParams.delete(key));
+                    // Date filters carried over from another tab outrank type; drop them too.
+                    ['from', 'to'].concat(Array.from(document.querySelectorAll('#slimstat-filters-form .slimstat-date-filter'), (input) => input.name)).forEach((key) => url.searchParams.delete(key));
                     url.searchParams.set('type', 'last_90_days');
                     location.href = url;
                 }]);

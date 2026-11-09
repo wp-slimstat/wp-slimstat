@@ -27,6 +27,7 @@ class wp_slimstat {
     public static $wpdb;
     public static $settings = [];
     public static function pro_is_installed() { return false; }
+    public static function pro_plugin_active() { return false; }
     public static function update_option(...$args) { $GLOBALS['writes']++; }
     public static function get_fresh_defaults() { return []; }
 }

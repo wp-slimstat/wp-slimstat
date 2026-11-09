@@ -63,6 +63,7 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
                 ];
                 public static $wpdb = null;
                 public static function pro_is_installed() { return false; }
+                public static function pro_plugin_active() { return false; }
             }
             PHP);
         }

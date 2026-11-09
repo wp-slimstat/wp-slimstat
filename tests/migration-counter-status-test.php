@@ -22,6 +22,7 @@ namespace {
     class wp_slimstat {
         public static $settings = ['version' => '6.0.0'], $stored = ['version' => '6.0.0'];
         public static function pro_is_installed() { return false; }
+        public static function pro_plugin_active() { return false; }
     }
     class wp_slimstat_admin {
         public static $retries = 0, $succeeds = false, $drift = [];
