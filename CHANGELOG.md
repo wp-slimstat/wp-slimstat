@@ -2,6 +2,7 @@
 
 **Report actions, filters and geolocation**
 * Heatmaps opened from a report tab keep that report's date range, such as Last 6 months or a custom range, in the picker and in every Heatmaps request.
+* AI Analysis, Email Reports, Shortcodes and Settings pass the selected date range and filters on to the next report, including Ecommerce, and filter suggestions use the date range the reports show.
 * AI results show bold, italic, headings and numbered lists, and name report rows by their own labels instead of "Row 3". Prompts define each metric, with its currency and period, and tell the provider not to group or guess rows.
 * AI analysis failures say what went wrong (connection, timeout, rate limit, quota, access or model) with a safe diagnostic, link the settings that fix configuration problems, and offer Retry only when a retry can help, after any wait the provider asks for. A response lost on the way back is recovered from the saved result instead of a new paid request, and the last saved result is kept.
 * Recover clipboard feedback after retries and report refreshes, omit unavailable AI action spacing, preserve existing non-Ecommerce analysis cache identities, and sample Ecommerce trends across the full selected period.

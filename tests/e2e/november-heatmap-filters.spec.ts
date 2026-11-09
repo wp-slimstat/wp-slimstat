@@ -59,6 +59,28 @@ test('Heatmaps keep the reports date range through tab navigation @compat', asyn
   }
 });
 
+test('AI Analysis, Ecommerce and filter suggestions keep the reports date range and filters @compat', async ({ page }) => {
+  const window = page.locator('.slimstat-date-range-input');
+  const browser = page.locator('#slimstat-filters-form input[name="fs[browser]"]');
+  const menu = page.locator('#toplevel_page_slimview1');
+  await page.goto('/wp-admin/admin.php?' + new URLSearchParams({ page: 'slimview2', type: 'last_6_months', 'fs[browser]': 'equals Firefox' }));
+  const range = [await window.getAttribute('data-start'), await window.getAttribute('data-end')];
+  // Only the rendered window may decide; a remembered picker choice must not mask a lost one.
+  await page.evaluate(() => sessionStorage.removeItem('slimstat_date_range'));
+  await menu.locator('a[href*="page=slimai"]').click();
+  await expect(page).toHaveURL(/page=slimai/);
+  // Ecommerce is listed only with WooCommerce; any report proves the hand-off.
+  const target = (await menu.locator('a[href*="page=slimview7"]').count()) ? 'slimview7' : 'slimview3';
+  await menu.locator(`a[href*="page=${target}"]`).click();
+  await expect(page).toHaveURL(new RegExp('page=' + target));
+  await expect(browser).toHaveValue('equals Firefox');
+  expect([await window.getAttribute('data-start'), await window.getAttribute('data-end')], 'leaving a page without the filter bar keeps the window').toEqual(range);
+  const options = page.waitForRequest(r => (r.postData() || '').includes('slimstat_get_filter_options'));
+  await page.locator('#slimstat-filter-name').selectOption('browser');
+  const sent = new URLSearchParams((await options).postData()!);
+  expect([sent.get('time_range_from'), sent.get('time_range_to')], 'filter suggestions use the window the reports show').toEqual(range);
+});
+
 test('unsupported Heatmaps filters remain selected and are disclosed @compat', async ({ page }) => {
   const query = new URLSearchParams({ page: 'slimheatmap', 'fs[addon_ecommerce_currency]': 'equals USD' });
   await page.goto('/wp-admin/admin.php?' + query);
