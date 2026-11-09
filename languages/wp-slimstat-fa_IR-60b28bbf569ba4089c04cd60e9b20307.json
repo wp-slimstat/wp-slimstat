@@ -10,6 +10,9 @@
                 "lang": "fa",
                 "plural-forms": "nplurals=1; plural=0;"
             },
+            "View heatmap": [
+                ""
+            ],
             "Retry": [
                 ""
             ],
@@ -49,10 +52,13 @@
             "%s click": [
                 ""
             ],
-            "Percentage of all recorded clicks in the selected date range and device filter. Unknown means no usable viewport width.": [
+            "Unlock device insights with Pro": [
                 ""
             ],
-            "View heatmap": [
+            "Device insights: Pro": [
+                ""
+            ],
+            "Percentage of all recorded clicks in the selected date range and device filter. Unknown means no usable viewport width.": [
                 ""
             ],
             "Available in SlimStat Pro": [
@@ -74,6 +80,9 @@
                 ""
             ],
             "Link and button clicks": [
+                ""
+            ],
+            "%s additional page. Illustrative preview; unlock with Pro.": [
                 ""
             ],
             "No clicks recorded on this site yet. SlimStat records link and button clicks on every tracked page. Open your homepage, click a link, then select Refresh.": [
@@ -98,6 +107,9 @@
                 ""
             ],
             "Page %1$d of %2$d": [
+                ""
+            ],
+            "Some selected filters are not supported by Heatmaps. They are kept for other reports and are not applied here:": [
                 ""
             ]
         }
