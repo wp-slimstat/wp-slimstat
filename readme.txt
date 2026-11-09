@@ -160,7 +160,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Upgrade Notice ==
 
 = 6.1.0 =
-Older versions keep working, added columns stay, and this update removes no rows. Adds Copy AI Prompt, AI Analysis, city drilldown and video tutorials. Fixes privacy exports, consent, tracking, report filters and geolocation. Back up first; database repairs still wait for your click.
+Older versions keep working, added columns stay, and it removes no rows. Adds Copy AI Prompt, AI Analysis, city drilldown and video tutorials. SlimStat Pro now needs a valid, activated license. Fixes privacy exports, tracking, filters and geolocation. Back up first; repairs wait for your click.
 
 = 6.0.0 =
 SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster reports. Back up first. The update adds columns and indexes and removes no rows; older versions keep working and the added columns stay. Database steps wait for your click. Some totals change on purpose: see changelog.
