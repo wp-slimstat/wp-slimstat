@@ -106,6 +106,10 @@ try {
         $check(false !== strpos($message, $hasClient ? $text : 'Update SlimStat Pro') && false !== strpos($message, 'settings and data are kept'), 'Notice for ' . $state . ': ' . $message);
         $check(($hasClient ? $labels : ['Open Plugins']) === array_column($links, 0), 'Links for ' . $state . ': ' . wp_json_encode($links));
         $check($links[0] === ProLicense::action(), 'The header button is the banner\'s first link for ' . $state);
+        ob_start();
+        ProLicense::render();
+        $tone = $hasClient && in_array($state, ['invalid', 'domain_not_activated'], true) ? 'notice-error' : 'notice-warning';
+        $check(false !== strpos((string) ob_get_clean(), 'class="notice ' . $tone . ' '), 'A wrong key is an error, anything else a warning, for ' . $state);
         $check(!$hasClient || false !== strpos($links[0][1], 'page=slimconfig&tab=8') && false === $links[0][2], 'The fix opens License settings for ' . $state);
         foreach (array_slice($links, 1) as [$label, $url, $external]) {
             $expected = 'Find my license' === $label ? ProLicense::ACCOUNT : 'https://wp-slimstat.com/pricing/?';

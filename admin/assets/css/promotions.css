@@ -1,5 +1,5 @@
 .slimstat-release-bar{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:8px 18px;margin:12px 0;padding:12px 44px 12px 16px;border:1px solid #c5d9ed;border-radius:4px;background:#f0f6fc;color:#1d2327;box-shadow:none;font-size:13px;line-height:1.5}
-.slimstat-release-bar nav{display:flex;flex-wrap:wrap;gap:8px 16px;flex:1}
+.slimstat-release-bar>strong{flex-basis:100%;font-size:14px}.slimstat-release-bar nav{display:flex;flex-wrap:wrap;gap:8px 16px;flex:1}
 .slimstat-release-bar a{color:#2271b1;text-decoration:underline;text-underline-offset:3px}.slimstat-release-bar a:hover{color:#135e96}.slimstat-release-bar__pro{font-weight:600}
 .slimstat-release-dismiss{position:absolute;inset-inline-end:4px;top:4px;width:36px;height:36px;border:0;background:transparent;color:#50575e;font-size:24px;cursor:pointer}
 .slimstat-release-bar a:focus-visible,.slimstat-release-dismiss:focus-visible{outline:2px solid currentColor;outline-offset:3px}
@@ -26,6 +26,11 @@
 .slimstat-release-bar a.slimstat-release-bar__ai{display:inline-flex;align-items:center;gap:6px;padding:2px 10px 2px 6px;border-radius:12px;color:#1d2327;font-weight:600;text-decoration:none}
 .slimstat-release-bar a.slimstat-release-bar__ai:hover{border-color:oklch(76% .12 75)}.slimstat-release-bar__ai .slimstat-ai-spark{font-size:14px}
 @media (prefers-reduced-motion:reduce){.slimstat-whats-new li,.slimstat-whats-new a::after,.slimstat-ai-spark{transition:none;animation:none}}
+/* Locked Pro: a full tinted border instead of the 4px side stripe, led by the lock that names the problem. Red for a wrong key, amber otherwise. */
+.notice.slimstat-pro-license-notice{--slimstat-tone:oklch(60% .13 70);position:relative;padding-block:4px;padding-inline:44px 14px;border:1px solid oklch(86% .09 82);border-radius:6px;background:oklch(97.6% .03 88)}
+.notice-error.slimstat-pro-license-notice{--slimstat-tone:oklch(53% .19 27);border-color:oklch(84% .08 22);background:oklch(97.4% .017 22)}
+.slimstat-pro-license-notice::before{content:"\f160";content:"\f160"/"";position:absolute;inset-inline-start:14px;top:12px;color:var(--slimstat-tone);font:20px/1 dashicons}
+.slimstat-pro-license-notice__actions{display:flex;flex-wrap:wrap;gap:8px}
 .slimstat-pro-adds .slimstat-upgrade-action,.wrap-slimstat .slimstat-upgrade-action{background:#bc2442;border-color:#bc2442;color:#fff7f9;white-space:normal;text-align:center}
 .slimstat-pro-adds .slimstat-upgrade-action:hover,.wrap-slimstat .slimstat-upgrade-action:hover{background:#98203a;border-color:#98203a;color:#fff7f9}
 .slimstat-preview{position:relative;overflow:hidden;width:100%;box-sizing:border-box;min-height:140px}
