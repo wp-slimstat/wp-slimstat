@@ -46,6 +46,7 @@ test.beforeEach(async ({ page }) => {
 
 async function copyFrom(page: Page, id: string): Promise<string> {
   const button = page.locator(`#${id} > .slimstat-header-buttons button.slimstat-ai-prompt`);
+  await expect(button.locator('svg.slimstat-ai-prompt-icon')).toHaveAttribute('fill', '#FFAC33');
   // With async_load on, a report's rows arrive over AJAX once it scrolls into view.
   await page.locator(`#${id}`).scrollIntoViewIfNeeded();
   await expect(page.locator(`#${id} .inside`)).not.toHaveText(/^\s*$/);

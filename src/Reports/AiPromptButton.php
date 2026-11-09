@@ -8,7 +8,7 @@ use SlimStat\Utils\ProLinks;
 if (!defined('ABSPATH')) { exit; }
 
 /**
- * "✨ Copy AI Prompt" beside a report's Export. admin.js builds the prompt from what is on
+ * "Copy AI Prompt" (gold copy icon) beside a report's Export. admin.js builds the prompt from what is on
  * screen (rows, date picker, filter list) and the site's name, tagline and address; it reaches
  * an AI tool only when the user pastes it there. Free for free reports, a Pro link for Pro
  * reports while Pro is inactive.
@@ -37,7 +37,8 @@ final class AiPromptButton
             return '';
         }
 
-        $label = '<span aria-hidden="true">✨</span> ' . esc_html__('Copy AI Prompt', 'wp-slimstat');
+        // Dashicons "admin-page" (copy) in the gold of the ✨ beside Analyze with AI.
+        $label = '<svg class="slimstat-ai-prompt-icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 20 20" fill="#FFAC33" style="vertical-align:-0.125em"><path d="M6 15V2h10v13H6zm-1 1h8v2H3V5h2v11z"/></svg> ' . esc_html__('Copy AI Prompt', 'wp-slimstat');
         if (!$pro && in_array($reportId, Shortcode::PRO_REPORTS, true)) {
             // No purchase link for someone who cannot buy.
             return current_user_can('manage_options')
