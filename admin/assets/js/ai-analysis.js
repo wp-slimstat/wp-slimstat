@@ -291,7 +291,7 @@
      * @returns {string} Plain text.
      */
     function plain(text, labels) {
-        return named(labels)(String(text).replace(EMPHASIS, (match, both, bold, italic) => both || bold || italic).replace(/^\s*#{1,6}\s+/gm, ''));
+        return named(labels)(String(text).replace(EMPHASIS, (match, both, bold, italic) => both || bold || italic).replace(/^[ \t]*#{1,6}[ \t]+/gm, ''));
     }
     /**
      * Present one result with its original context and the shared clipboard fallback.

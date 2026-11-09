@@ -45,7 +45,14 @@ final class ProLicense
 
 	public static function key(): string
 	{
-		$options = is_network_admin() ? get_site_option('slimstat_options', []) : get_option('slimstat_options', []);
+		$options = get_option('slimstat_options', []);
+		if (is_multisite()) {
+			// Same key Pro's settings use: the network's in the network admin, and on every site once the network controls it.
+			$network = get_site_option('slimstat_options', []);
+			if (is_array($network) && (is_network_admin() || 'on' === ($network['addon_network_settings_slimstat_pro_license_key'] ?? ''))) {
+				$options = $network;
+			}
+		}
 		return is_array($options) ? trim((string) ($options['slimstat_pro_license_key'] ?? '')) : '';
 	}
 

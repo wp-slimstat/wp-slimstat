@@ -320,7 +320,7 @@ test('saved result renders safe emphasis, local labels and a plain copy @compat'
       context: { title: 'Top Outbound Links', from: '2026-10-01', to: '2026-10-31', timezone: 'Europe/Berlin', filters: [] },
       generated: 1793700000, provider: 'Test provider', model: 'Text model',
       labels: { 'Row 1': 'Chef Knife <b>8in</b>', 'Row 12': '<img src=x onerror="window.__unsafe=1">Dutch Oven' },
-      content: '## **Key Insights**\n1. **Row 1 leads** with 9 hits; Row 12 has *4 hits*.\n2. Row 2 has no saved name, 2 * 3 stays literal and **unclosed stays.\n---\n- ***Both*** <script>window.__unsafe=2</script>',
+      content: '## **Key Insights**\n1. **Row 1 leads** with 9 hits; Row 12 has *4 hits*.\n2. Row 2 has no saved name, 2 * 3 stays literal and **unclosed stays.\n---\n- ***Both*** <script>window.__unsafe=2</script>\n\n## Next steps\nAct.',
     },
   } }));
   await page.locator(`${report} .slimstat-ai-analyze`).click();
@@ -338,5 +338,7 @@ test('saved result renders safe emphasis, local labels and a plain copy @compat'
   const copied = await page.evaluate(() => (window as any).__copied);
   expect(copied).toContain('Key Insights\n1. Chef Knife <b>8in</b> leads with 9 hits;');
   expect(copied).toContain('Both <script>');
+  // A blank line before a later heading survives the copy.
+  expect(copied).toContain('</script>\n\nNext steps\nAct.');
   expect(copied).not.toMatch(/\*\*Row|##|\*4 hits\*/);
 });

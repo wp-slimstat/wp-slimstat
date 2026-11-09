@@ -80,6 +80,7 @@ $standalone = [
     'test:notification-delivery-wp' => 'requires a disposable WordPress database and runs in minimum-compatibility CI',
     'test:shortcode-render-wp' => 'requires real WordPress, analytics tables and an administrator; runs via WP-CLI in the Tier 2 CI lane',
     'test:pro-license-wp' => 'requires real WordPress options, hooks and an administrator; runs via WP-CLI in the Tier 2 and minimum-compatibility CI lanes',
+    'test:pro-license-network-wp' => 'requires a multisite network; runs via WP-CLI in the Pro CI Native AI Multisite isolation gate',
     'test:acquisition-network' => 'requires a disposable two-site WordPress network and the private '
         . 'Pro plugin, unavailable in public CI; run with WP-CLI during paired Free/Pro qualification',
     'test:pot-freshness' => 'runs in the dedicated catalog CI job with pinned WP-CLI 2.12.0; '
