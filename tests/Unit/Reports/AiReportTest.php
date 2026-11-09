@@ -44,6 +44,22 @@ class AiReportTest extends WpSlimstatTestCase {
 		self::assertSame( array(), AiReport::minimize( array( 'unstructured', array( 'resource' => '/only-a-label' ), array( 'ip' => 12345 ) ) ) );
 	}
 
+	public function test_local_labels_pair_with_surviving_rows_and_never_enter_the_prompt_rows(): void {
+		Functions\when( 'wp_check_invalid_utf8' )->alias( static function ( $text ) { return mb_convert_encoding( $text, 'UTF-8', 'UTF-8' ); } );
+		$input = array(
+			array( 'outbound_resource' => 'https://example.test/a?token=secret', 'counthits' => 9 ),
+			array( 'outbound_resource' => 'dropped, no numbers' ),
+			array( 'outbound_resource' => '<img src=x onerror=alert(1)>Shop &amp; Co%0A', 'counthits' => 4 ),
+			array( 'outbound_resource' => '', 'counthits' => 1 ),
+		);
+		$kept = AiReport::minimize( $input );
+		self::assertSame( array( 'Row 1', 'Row 3', 'Row 4' ), array_column( $kept, 'label' ) );
+		self::assertStringNotContainsString( 'example.test', json_encode( $kept ) );
+		$labels = AiReport::labels( $input, $kept, 'outbound_resource' );
+		self::assertSame( array( 'Row 1' => 'https://example.test/a?token=secret', 'Row 3' => 'Shop & Co', 'Row 4' => 'Unknown' ), $labels );
+		self::assertSame( 120, mb_strlen( AiReport::labels( array( array( 'page' => str_repeat( 'é', 300 ), 'counthits' => 1 ) ), array( array( 'label' => 'Row 1' ) ), 'page' )['Row 1'] ) );
+	}
+
 	public function test_calendar_validation_rejects_normalized_invalid_dates(): void {
 		$date = new \ReflectionMethod( AiReport::class, 'date' );
 		foreach ( array( '2026-02-30', '2026-13-01', 'today', '2026-01-01 UTC', array(), null ) as $invalid ) {

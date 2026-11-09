@@ -96,6 +96,14 @@ async function assertProBootedIfInstalled(baseURL: string, adminStatePath: strin
     ignoreHTTPSErrors: process.env.PW_IGNORE_HTTPS === '1',
   });
   try {
+    // Free runs Pro only with a verified license. license-fixture-mu-plugin.php answers the check,
+    // so the run never reaches the real license server; specs that need a locked Pro say so.
+    const license = await ctx.post(`${baseURL}/wp-admin/admin-ajax.php`, { form: { action: 'e2e_license', state: 'valid' } });
+    const granted = license.ok() ? (await license.json())?.data?.state : null;
+    if (granted !== 'valid' && granted !== 'no-pro') {
+      throw new Error(`HARNESS LICENSE FIXTURE FAILED: e2e_license returned HTTP ${license.status()} with state ${granted}`);
+    }
+
     const res = await ctx.post(`${baseURL}/wp-admin/admin-ajax.php`, {
       form: { action: 'e2e_get_slimstat_version' },
     });
@@ -121,6 +129,7 @@ async function assertProBootedIfInstalled(baseURL: string, adminStatePath: strin
         'PRO BOOT FAILED — aborting the run before any spec can misattribute it.\n' +
         `  is_plugin_active: ${data.pro_activated}\n` +
         `  report slim_p8_01 registered on slimstat_reports_info: ${data.pro_booted}\n` +
+        `  license (ProLicense::state): ${data.pro_license ?? '(free without ProLicense)'}\n` +
         `  slimstat_degradations pro_* keys: ${degradations}\n` +
         `  free version: ${data.version ?? '(undefined)'}   pro version: ${data.pro_version ?? '(unknown)'}\n\n` +
         'Pro is switched on and dead, or was deactivated by the login request above. Check the ' +

@@ -1253,7 +1253,7 @@ class wp_slimstat
         $defaults = self::init_options();
         $defaults['geolocation_provider'] = 'dbip';
         // Heatmaps start on for new installs only; init_options() keeps upgrades opted out.
-        $defaults['heatmap_capture'] = self::pro_is_installed() ? 'full' : 'off';
+        $defaults['heatmap_capture'] = self::pro_plugin_active() ? 'full' : 'off';
         // The release notice is for updated sites; new installs get Get started instead.
         $defaults['notice_latest_news'] = 'no';
         return $defaults;
@@ -2600,9 +2600,18 @@ class wp_slimstat
     }
 
     /**
-     * Check if slimstat pro plugin is installed
+     * Whether Pro features may run: the Pro plugin is active AND its license is verified for this site.
+     * Activation alone is not entitlement; see \SlimStat\Services\ProLicense.
      */
     public static function pro_is_installed($pluginSlug = 'wp-slimstat-pro/wp-slimstat-pro.php')
+    {
+        return self::pro_plugin_active($pluginSlug) && \SlimStat\Services\ProLicense::active();
+    }
+
+    /**
+     * Whether the Pro plugin is active, licensed or not. Use it only for license and activation UI.
+     */
+    public static function pro_plugin_active($pluginSlug = 'wp-slimstat-pro/wp-slimstat-pro.php')
     {
         include_once(ABSPATH . 'wp-admin/includes/plugin.php');
         return (bool) is_plugin_active($pluginSlug);
@@ -2841,6 +2850,7 @@ if (function_exists('add_action')) {
     add_action('init', ['wp_slimstat', 'load_textdomain'], 1);
 
     // Add the appropriate actions
+    \SlimStat\Services\ProLicense::register();
     add_action('plugins_loaded', ['wp_slimstat', 'init'], 20);
     // Add the action to fetch chart data
     add_action('wp_ajax_slimstat_fetch_chart_data', [\SlimStat\Modules\Chart::class, 'ajaxFetchChartData']);

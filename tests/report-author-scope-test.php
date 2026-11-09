@@ -24,7 +24,7 @@ $GLOBALS['wpdb'] = new class {
     public function get_row($sql) { $this->sql[] = $sql; return (object) []; }
 };
 $main = file_get_contents(dirname(__DIR__) . '/wp-slimstat.php');
-eval('class wp_slimstat { public static $wpdb, $settings = ["restrict_authors_view" => "on"]; public static function now() { return 1760000041; } public static function pro_is_installed() { return true; } public static function report_scope(): array {' . slimstat_function_body($main, 'report_scope') . '} }');
+eval('class wp_slimstat { public static $wpdb, $settings = ["restrict_authors_view" => "on"]; public static function now() { return 1760000041; } public static function pro_is_installed() { return true; } public static function pro_plugin_active() { return true; } public static function report_scope(): array {' . slimstat_function_body($main, 'report_scope') . '} }');
 wp_slimstat::$wpdb = $GLOBALS['wpdb'];
 $admin_source = file_get_contents(dirname(__DIR__) . '/admin/index.php');
 $class = 'class ScopedAdmin {';

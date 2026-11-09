@@ -74,6 +74,7 @@ Love the free plugin? [SlimStat Pro](https://wp-slimstat.com/) is for sites that
 == Please note ==
 * **Optional database downloads:** If an administrator enables or updates browser detection or DB-IP geolocation, SlimStat downloads the Browscap database from GitHub and the DB-IP Lite database from jsDelivr. No analytics data is sent with these requests.
 * **Optional video tutorials:** SlimStat → Videos lists tutorials published on wp-slimstat.com, our website. Nothing is requested until you choose **Show videos**, or turn on the new-video marker, on that screen. Your browser then downloads the list (https://wp-slimstat.com/videos/videos.json) and its thumbnails directly from wp-slimstat.com, with no referrer and no analytics or account data, and the list request without cookies; your WordPress server sends nothing. Like any web request, this shows wp-slimstat.com your IP address and browser, and the list request also names this site's address (the browser's standard Origin header). With the marker on, your browser checks the list at most once a day. Your choices are kept in your browser only, and videos play on wp-slimstat.com in a new tab. See the [wp-slimstat.com privacy policy](https://wp-slimstat.com/privacy-policy/).
+* **SlimStat Pro license check:** Only when SlimStat Pro is active and a license key is saved, SlimStat asks the license server (https://my.wp-slimstat.com) through SlimStat Pro whether the license is valid for this site: about every 12 hours, and at once when an administrator saves License settings. It sends the license key and this site's domain, never analytics data. Without SlimStat Pro, nothing is sent. See the [wp-slimstat.com privacy policy](https://wp-slimstat.com/privacy-policy/).
 * **Your stats survive uninstalling.** Deleting Slimstat Analytics keeps every visit, setting and table in your database, so reinstalling picks up exactly where you left off.
 * If you *want* the data gone — decommissioning a site, or honouring a data-erasure request — turn on **Settings → Maintenance → "Delete Data on Uninstall"** *before* deleting the plugin, then delete it. That is the only one-step option that removes **everything**, archive tables included. Deleting the plugin on its own will not clear the database.
 * **Delete Records** (Settings → Maintenance) clears your live records but **not** the archived ones in `wp_slim_stats_archive` / `wp_slim_events_archive`, which still count as retained data under GDPR. If you are handling an erasure request and want to keep the plugin installed, clear the records *and* empty those archive tables.
@@ -172,6 +173,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 **New**
 
 * Shared AI actions cover every Ecommerce view. Videos gains a Tutorial badge and attribution on the Browse videos link.
+* **SlimStat Pro needs a valid license:** Pro features, in any Pro version, run only with a license that is valid and activated for this site. Otherwise the SlimStat header says why and links the fix; Pro settings and data are kept.
 
 * **AI Analysis:** ✨ Copy AI Prompt beside each report's Export copies the rows on screen, the period, the filters and your site's title, tagline and address as a ready-to-paste prompt for ChatGPT, Claude, Grok or any AI assistant. It only goes to your clipboard. Reports that list individual visitors have no button; Pro reports need Pro. Ecommerce, the Heatmaps page list and individual page heatmaps support it too.
 * A new SlimStat → AI Analysis page explains the workflow. SlimStat Pro adds analysis inside SlimStat through an AI provider connected in WordPress, run only when you ask and without visitor identifiers, URLs or free-text labels.
@@ -193,6 +195,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 * Shared Heatmaps filters survive navigation and reloads. Geolocation checks explain database problems, verify trusted proxies and count only known live countries.
 * Clipboard retries and refreshed Ecommerce actions keep the correct report context, and trend prompts sample the full selected period.
+* Heatmaps keep the report's date range. AI results show formatting and real row names, and failed analyses explain the cause, link the fix and offer Retry only when it can help.
 
 * Migration identifies incomplete visit-counter setup, offers an administrator-only retry, and clears the upgrade warning after recovery. ([#395](https://github.com/wp-slimstat/wp-slimstat/issues/395))
 * Server tracking counts the destination page once after WordPress redirects to its preferred URL, preventing duplicate trailing-slash pageviews. Existing history is unchanged. ([#396](https://github.com/wp-slimstat/wp-slimstat/issues/396))

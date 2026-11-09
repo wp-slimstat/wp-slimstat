@@ -155,6 +155,69 @@ test('native consent, loading, safe results, copy and failed regeneration @compa
   expect(generated).toBe(2);
 });
 
+test('failures explain the cause, Retry recovers once and reopening keeps the result @compat', async ({ page }, info) => {
+  const fail = (code: string, message: string, data: object) => ({ status: 503, json: { code: `slimstat_ai_${code}`, message, data: { status: 503, ...data } } });
+  const analysis = (content: string, generated: number) => ({ context: { title: 'At a Glance', from: '2026-10-01', to: '2026-10-31', timezone: 'UTC', filters: [] }, generated, provider: 'test-provider', model: 'test-model', content });
+  let saved: object | null = null;
+  let release: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  const answers: (() => Promise<object | null>)[] = [
+    async () => fail('upstream', 'The AI provider had a temporary problem. Retry in a moment.', { retryable: true, diagnostic: 'HTTP 502 · ServerException' }),
+    async () => fail('rate', 'The AI provider is limiting requests right now. Wait a moment, then retry.', { retryable: true, retry_after: 2 }),
+    async () => { await pending; saved = analysis('Recovered after one retry.', 1793700000); return { json: { saved: true, analysis: saved } }; },
+    // The site finishes, but the browser loses the response: the saved result is shown instead of paying again.
+    async () => { saved = analysis('Finished while the browser was offline.', 1793700100); return null; },
+    async () => fail('credentials', 'The AI provider denied access. An administrator can check the provider connection and its model permissions.', { retryable: false, diagnostic: 'HTTP 401 · ClientException' }),
+  ];
+  let calls = 0;
+  await page.evaluate(() => Object.assign((window as any).SlimStatAdminParams.ai, { native: true, route: '/slimstat/v1/ai', connectors: '/wp-admin/options-connectors.php' }));
+  await page.route(url => decodeURIComponent(url.href).includes('/slimstat/v1/ai/'), async route => {
+    const url = decodeURIComponent(route.request().url());
+    if (url.includes('/status')) return route.fulfill({ json: { enabled: true, saved, matches: !!saved } });
+    if (url.includes('/connection')) return route.fulfill({ json: { provider: 'test-provider', model: 'test-model', selection: 'opaque', consented: true } });
+    const answer = await answers[calls++]();
+    return answer ? route.fulfill(answer) : route.abort('internetdisconnected');
+  });
+  const trigger = page.locator(`${report} .slimstat-ai-analyze`);
+  const dialog = page.getByRole('dialog');
+  const alert = dialog.getByRole('alert');
+  const retry = alert.getByRole('button', { name: /^Retry/ });
+  await trigger.click();
+  await expect(alert).toContainText('temporary problem');
+  await expect(alert).toContainText('Provider error: HTTP 502 · ServerException');
+  await expect(alert).toContainText('A new attempt may incur another provider charge.');
+  await page.screenshot({ path: info.outputPath('ai-retry.png') });
+  await retry.click();
+  await expect(alert).toContainText('limiting requests');
+  await expect(retry).toHaveText('Retry in 2s');
+  await expect(retry).toBeDisabled();
+  await expect(retry).toHaveText('Retry', { timeout: 5000 });
+  await retry.click({ clickCount: 3 });
+  await expect(dialog).toContainText('Analyzing your report');
+  await trigger.evaluate(node => { (node as HTMLElement).click(); (node as HTMLElement).click(); });
+  await expect(page.locator('#slimstat-ai-toast')).toContainText('Analysis in progress');
+  release!();
+  await expect(dialog).toContainText('Recovered after one retry.');
+  expect(calls, 'rapid clicks send one request').toBe(3);
+  await dialog.getByRole('button', { name: 'Regenerate Analysis' }).click();
+  await expect(dialog).toContainText('Finished while the browser was offline.');
+  await expect(alert).toHaveCount(0);
+  expect(calls).toBe(4);
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await trigger.click();
+  await expect(dialog).toContainText('Finished while the browser was offline.');
+  await expect(dialog.getByRole('button', { name: 'Regenerate Analysis' })).toBeVisible();
+  expect(calls, 'reopening shows the saved result without a new request').toBe(4);
+  await dialog.getByRole('button', { name: 'Regenerate Analysis' }).click();
+  await expect(alert).toContainText('denied access');
+  await expect(alert.getByRole('link', { name: 'AI Connections →' })).toHaveAttribute('href', '/wp-admin/options-connectors.php');
+  await expect(retry).toHaveCount(0);
+  await expect(dialog.getByRole('button', { name: 'Analyze Current Report' })).toBeDisabled();
+  await expect(dialog).toContainText('Finished while the browser was offline.');
+  await page.screenshot({ path: info.outputPath('ai-credentials.png') });
+  expect(calls).toBe(5);
+});
+
 test('cached mismatch is free to view and no-provider state offers a fallback @compat', async ({ page }) => {
   const paths: string[] = [];
   await page.evaluate(() => Object.assign((window as any).SlimStatAdminParams.ai, { native: true, route: '/slimstat/v1/ai', connectors: '/wp-admin/options-connectors.php' }));
@@ -248,4 +311,32 @@ test('saved analysis stays accessible on mobile and clipboard fallback works @co
   await page.setViewportSize({ width: 1440, height: 1100 });
   await page.locator('#slimstat-ai-toast').getByRole('button', { name: 'Dismiss' }).click();
   await page.screenshot({ path: info.outputPath('native-ai-desktop.png') });
+});
+
+test('saved result renders safe emphasis, local labels and a plain copy @compat', async ({ page }) => {
+  await page.evaluate(() => Object.assign((window as any).SlimStatAdminParams.ai, { native: true, route: '/slimstat/v1/ai' }));
+  await page.route(url => decodeURIComponent(url.href).includes('/slimstat/v1/ai/'), route => route.fulfill({ json: {
+    enabled: true, matches: true, saved: {
+      context: { title: 'Top Outbound Links', from: '2026-10-01', to: '2026-10-31', timezone: 'Europe/Berlin', filters: [] },
+      generated: 1793700000, provider: 'Test provider', model: 'Text model',
+      labels: { 'Row 1': 'Chef Knife <b>8in</b>', 'Row 12': '<img src=x onerror="window.__unsafe=1">Dutch Oven' },
+      content: '## **Key Insights**\n1. **Row 1 leads** with 9 hits; Row 12 has *4 hits*.\n2. Row 2 has no saved name, 2 * 3 stays literal and **unclosed stays.\n---\n- ***Both*** <script>window.__unsafe=2</script>',
+    },
+  } }));
+  await page.locator(`${report} .slimstat-ai-analyze`).click();
+  const result = page.getByRole('dialog').locator('.ss-ai-result');
+  await expect(result.locator('h3 strong')).toHaveText('Key Insights');
+  await expect(result.locator('ol > li')).toHaveCount(2);
+  await expect(result.locator('ol > li strong').first()).toHaveText('Chef Knife <b>8in</b> leads');
+  await expect(result.locator('ol > li em')).toHaveText('4 hits');
+  await expect(result.locator('ol > li').first()).toContainText('<img src=x onerror="window.__unsafe=1">Dutch Oven has');
+  await expect(result.locator('ol > li').nth(1)).toHaveText('Row 2 has no saved name, 2 * 3 stays literal and **unclosed stays.');
+  await expect(result.locator('ul strong > em')).toHaveText('Both');
+  await expect(result.locator('img, script, b, a')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).__unsafe)).toBeUndefined();
+  await page.getByRole('dialog').getByRole('button', { name: 'Copy Result' }).click();
+  const copied = await page.evaluate(() => (window as any).__copied);
+  expect(copied).toContain('Key Insights\n1. Chef Knife <b>8in</b> leads with 9 hits;');
+  expect(copied).toContain('Both <script>');
+  expect(copied).not.toMatch(/\*\*Row|##|\*4 hits\*/);
 });

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import { runWordPressFixture } from './helpers/chart';
-import { getProState } from './helpers/pro-state';
+import { getProState, setProLicense } from './helpers/pro-state';
 import { closeDb, snapshotOption, restoreOption, snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions } from './helpers/setup';
 
 const source = readFileSync(new URL('./helpers/ecommerce-data.php', import.meta.url), 'utf8').replace(/^<\?php\s*/, '');
@@ -63,7 +63,19 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     if (!pro.pro_installed) return; // Free CI deliberately omits the private Pro plugin.
 
     runWordPressFixture("<?php $result=activate_plugin('wp-slimstat-pro/wp-slimstat-pro.php'); if(is_wp_error($result)) throw new RuntimeException($result->get_error_message());");
+    // Active without a license: Pro stays locked, and the header sends the administrator to License settings.
     await page.reload();
+    const notice = page.locator('.slimstat-pro-license-notice');
+    await expect(notice).toContainText('its features stay locked until you activate a license for this site');
+    await campaignReport.scrollIntoViewIfNeeded();
+    await campaignReport.locator('.slimstat-acquisition__group > summary').filter({ hasText: campaign }).click();
+    await expect(campaignReport.getByRole('link', { name: 'View sales in Ecommerce' })).toHaveCount(0);
+    await notice.getByRole('link', { name: 'Activate license' }).click();
+    await expect(page).toHaveURL(/tab=8/);
+    await expect(page.getByLabel('License key', { exact: true })).toBeVisible();
+    expect(await setProLicense(page, 'valid')).toBe('valid');
+    await page.goto(`/wp-admin/admin.php?${scope}`);
+    await expect(page.locator('.slimstat-pro-license-notice')).toHaveCount(0);
     await campaignReport.scrollIntoViewIfNeeded();
     const campaignGroup = campaignReport.locator('.slimstat-acquisition__group').filter({ hasText: campaign });
     await campaignGroup.locator(':scope > summary').click();
@@ -98,10 +110,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await dashboard.getByRole('button', { name: 'Open coupons report' }).click();
     await expect(dashboard.getByRole('tabpanel', { name: 'Coupons', exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath('pro-first-insights-mobile.png'), fullPage: true });
-    await dashboard.getByRole('link', { name: 'Check your update license' }).click();
-    await expect(page).toHaveURL(/tab=8/);
-    await expect(page.getByLabel('License key', { exact: true })).toBeVisible();
-    await expect(page.locator('.slimstat-license-saved .slimstat-license-help')).toContainText('Save Changes to activate it');
+    await expect(dashboard.getByRole('link', { name: 'Check your update license' })).toHaveCount(0);
     await page.goto('/wp-admin/admin.php?page=slimpro');
     await expect(page.getByRole('heading', { name: 'What Pro adds to your reports' })).toBeVisible();
     await expect(page.getByText('Pro is active on this site')).toBeVisible();

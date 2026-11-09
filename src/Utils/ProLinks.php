@@ -30,7 +30,7 @@ final class ProLinks
 
     public static function activation(): string
     {
-        if (!\wp_slimstat::pro_is_installed() && current_user_can('activate_plugins') && file_exists(WP_PLUGIN_DIR . '/wp-slimstat-pro/wp-slimstat-pro.php')) {
+        if (!\wp_slimstat::pro_plugin_active() && current_user_can('activate_plugins') && file_exists(WP_PLUGIN_DIR . '/wp-slimstat-pro/wp-slimstat-pro.php')) {
             return admin_url('plugins.php');
         }
         return '';

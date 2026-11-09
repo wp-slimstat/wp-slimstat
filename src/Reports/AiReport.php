@@ -181,6 +181,7 @@ final class AiReport {
 			$public['previous_period'] = gmdate('Y-m-d H:i:s', $data['previous_range'][0]) . ' – ' . gmdate('Y-m-d H:i:s', $data['previous_range'][1]);
 		}
 		$rows = array();
+		$labels = array();
 		$fields = array('net', 'orders', 'matched', 'wc_attributed', 'refund', 'discount', 'tax', 'shipping', 'product_net', 'quantity');
 		if ('summary' === $view) {
 			foreach ($selection['compare'] ? array('current', 'previous') : array('current') as $period) {
@@ -220,17 +221,116 @@ final class AiReport {
 			usort($ranked, static function ($a, $b) use ($selection, $metric) {
 				return ((float) ($a[$metric] ?? 0) <=> (float) ($b[$metric] ?? 0)) * ($selection['ascending'] ? 1 : -1);
 			});
+			// Coupon facts carry only the discount; units exist only on product lines.
+			$kept = 'product' === $view ? array('net', 'orders', 'quantity', 'refund', 'discount', 'matched')
+				: ('coupon' === $view ? array('discount', 'orders', 'matched') : array('net', 'orders', 'refund', 'discount', 'matched'));
 			foreach (array_slice($ranked, 0, self::MAX_ROWS) as $index => $row) {
-				// Product names, coupons, URLs and acquisition labels can contain identifying text.
-				$rows[] = array('rank' => $index + 1) + array_intersect_key($row, array_flip($fields));
+				$name = self::clean(Ecommerce::label($view, $row));
+				// Channel, device and customer names are fixed vocabulary. Product names, coupons,
+				// campaigns, sources and URLs stay on the site; the panel maps the opaque label back.
+				$label = in_array($view, array('channel', 'device', 'customer'), true) ? $name : self::row($index);
+				if ($label !== $name) { $labels[$label] = $name; }
+				$rows[] = array('label' => $label) + array_intersect_key($row, array_flip($kept));
 			}
 			$public['groups_available'] = count($ranked);
 			$public['ascending'] = $selection['ascending'];
 		}
 		$public['rows_included'] = count($rows);
+		$public['definitions'] = array_intersect_key(self::definitions($view, $data['currency']), array_merge(...$rows));
 		$public['limitations'] = __('Net sales is after discounts and refunds, excluding tax and shipping, for processing, completed and refunded orders by creation date. Product amounts use itemized refunds; fees and amount-only refunds are unallocated. Coupon discounts are not incremental revenue; orders can use multiple coupons. Customer segments mean guest or account, not new or returning customers. Purchase rate is buying divided by eligible tracked visits; average order value is net sales divided by included orders. Attribution depends on retained visits or WooCommerce acquisition; landing and device attribution require a retained visit. Traffic filters exclude unlinked orders. Missing data is unknown, not zero.', 'wp-slimstat');
 		$public['limitations'] .= ' ' . __('At most 20 rows or intervals are included. Ranked reports start from at most 1,000 groups and may be limited further by access. These rows are not the entire dataset; do not sum them as a store total. Free-form labels and personal identifiers are withheld. Currency is never combined. Comparisons, partial intervals and provisional or retention-limited data must be qualified.', 'wp-slimstat');
-		return array('prompt' => AiPrompt::build($public, $rows), 'context' => $public);
+		return array('prompt' => AiPrompt::build($public, $rows), 'context' => $public, 'labels' => $labels);
+	}
+
+	/**
+	 * What each Ecommerce field means in this view, so the model never guesses.
+	 *
+	 * @param string $view Selected Ecommerce view.
+	 * @param string $currency Report currency code.
+	 */
+	private static function definitions(string $view, string $currency): array {
+		$product = 'product' === $view;
+		$coupon = 'coupon' === $view;
+		return array(
+			'label' => __('Item name, in ranked order. A label such as "Row 3" stands for a name withheld from this prompt.', 'wp-slimstat'),
+			'period' => __('current is the selected period; previous is the comparison period of equal length.', 'wp-slimstat'),
+			/* translators: %s: currency code. */
+			'net' => sprintf($product ? __('Net product sales in %s: line totals after discounts and itemized refunds, excluding tax and shipping.', 'wp-slimstat') : __('Net sales in %s: order totals after discounts and refunds, excluding tax and shipping.', 'wp-slimstat'), $currency),
+			'orders' => $product ? __('Orders that include this product.', 'wp-slimstat') : ($coupon ? __('Orders that used this coupon.', 'wp-slimstat') : __('Included orders: processing, completed and refunded, by creation date.', 'wp-slimstat')),
+			'matched' => __('Orders linked to a retained SlimStat visit. This is not a count of customers or visits.', 'wp-slimstat'),
+			'wc_attributed' => __('Orders without a retained SlimStat visit that carry WooCommerce order attribution.', 'wp-slimstat'),
+			/* translators: %s: currency code. */
+			'refund' => sprintf($product ? __('Itemized refunds of this product in %s.', 'wp-slimstat') : __('Refunded amount in %s.', 'wp-slimstat'), $currency),
+			/* translators: %s: currency code. */
+			'discount' => sprintf($coupon ? __('Discount given by this coupon in %s. It is not incremental revenue.', 'wp-slimstat') : __('Discounts in %s.', 'wp-slimstat'), $currency),
+			/* translators: %s: currency code. */
+			'tax' => sprintf(__('Tax in %s, net of refunds.', 'wp-slimstat'), $currency),
+			/* translators: %s: currency code. */
+			'shipping' => sprintf(__('Shipping in %s, net of refunds.', 'wp-slimstat'), $currency),
+			/* translators: %s: currency code. */
+			'product_net' => sprintf(__('Net product sales in %s across all line items; fees and amount-only refunds are not allocated.', 'wp-slimstat'), $currency),
+			'quantity' => __('Net units sold after itemized refunds.', 'wp-slimstat'),
+			/* translators: %s: currency code. */
+			'aov' => sprintf(__('Average order value in %s: net divided by orders.', 'wp-slimstat'), $currency),
+			'visits' => __('Eligible tracked visits in the selected period.', 'wp-slimstat'),
+			'products' => __('Eligible visits that viewed a product.', 'wp-slimstat'),
+			'carts' => __('Visits that added to cart after viewing a product.', 'wp-slimstat'),
+			'checkouts' => __('Visits that reached checkout after adding to cart.', 'wp-slimstat'),
+			'buyers' => __('Eligible tracked visits that placed an included order.', 'wp-slimstat'),
+			'completed' => __('Visits that placed an order after reaching checkout.', 'wp-slimstat'),
+			'rate' => __('Purchase rate in percent: buyers divided by visits, times 100.', 'wp-slimstat'),
+			'value' => __('Value of the selected metric (report.metric) for the interval.', 'wp-slimstat'),
+			'partial' => __('The interval is cut short by the start or end of the period.', 'wp-slimstat'),
+			'provisional' => __('Recent data that may still change.', 'wp-slimstat'),
+		);
+	}
+
+	/**
+	 * Opaque, translated row reference shared by the prompt and the local label map.
+	 *
+	 * @param int $index Zero-based row position.
+	 */
+	private static function row(int $index): string {
+		/* translators: %d: ordinal row number; the original label is withheld for privacy. */
+		return sprintf(__('Row %d', 'wp-slimstat'), $index + 1);
+	}
+
+	/**
+	 * Plain, bounded display text; the browser inserts it as text, never as HTML.
+	 *
+	 * @param string $value Report label.
+	 */
+	private static function clean(string $value): string {
+		$value = trim((string) preg_replace('/[\x00-\x1F\x7F]+/', ' ', wp_strip_all_tags(html_entity_decode(wp_check_invalid_utf8($value, true), ENT_QUOTES, 'UTF-8'))));
+		return '' === $value ? __('Unknown', 'wp-slimstat') : mb_substr($value, 0, 120);
+	}
+
+	/**
+	 * Local names for opaque labels that survived minimization: shown in the admin panel, never sent to the provider.
+	 *
+	 * @param array  $rows Report rows before minimization.
+	 * @param array  $kept Minimized rows.
+	 * @param string $column Report column that names each row.
+	 */
+	public static function labels(array $rows, array $kept, string $column): array {
+		$kept = array_flip(array_column($kept, 'label'));
+		$labels = array();
+		foreach (array_slice($rows, 0, self::MAX_ROWS) as $index => $row) {
+			$key = self::row($index);
+			if (!isset($kept[$key]) || !is_array($row)) { continue; }
+			$value = (string) ($row[$column] ?? '');
+			if ('' !== $value && in_array($column, array('country', 'language'), true)) {
+				$value = \wp_slimstat_i18n::get_string(('country' === $column ? 'c-' : 'l-') . $value);
+			} elseif ('' !== $value && 'platform' === $column) {
+				$value = \wp_slimstat_i18n::get_string($value);
+			} elseif ('resource' === $column && class_exists('wp_slimstat_reports')) {
+				$value = \wp_slimstat_reports::get_resource_title($value);
+			} else {
+				$value = urldecode($value);
+			}
+			$labels[$key] = self::clean($value);
+		}
+		return $labels;
 	}
 
 	/**
@@ -379,9 +479,10 @@ final class AiReport {
 				}
 				unset( $row );
 			}
-			$rows = self::minimize( $rows, $summary );
-			if ( ! $rows ) {
+			$kept = self::minimize( $rows, $summary );
+			if ( ! $kept ) {
 				return self::emptyReport(); }
+			$column = trim( explode( ',', (string) ( ( $args['as_column'] ?? '' ) ?: ( ( $args['outer_select_column'] ?? '' ) ?: ( $args['columns'] ?? '' ) ) ) )[0] );
 			$public = $context['public'];
 			if ( isset( $args['chart_data'] ) ) {
 				$length                    = $context['to'] - $context['from'] + DAY_IN_SECONDS;
@@ -391,8 +492,9 @@ final class AiReport {
 			if ( 'slim_p4_22' === $context['id'] ) {
 				$public['limitations'] .= ' ' . __( 'Website inventory is site-wide and independent of the selected date range.', 'wp-slimstat' ); }
 			return array(
-				'prompt'  => AiPrompt::build( $public, $rows ),
+				'prompt'  => AiPrompt::build( $public, $kept ),
 				'context' => $context['public'],
+				'labels'  => $summary ? array() : self::labels( $rows, $kept, 'slimheatmap' === $context['id'] ? 'page' : $column ),
 			);
 		} catch ( \Throwable $exception ) {
 			return self::error( 'data', __( 'This report could not be prepared safely within the analysis limits. Try a shorter range or copy the prompt.', 'wp-slimstat' ), 400 );
@@ -427,8 +529,7 @@ final class AiReport {
 					}
 				}
 			} else {
-				/* translators: %d: ordinal row number; the original label is withheld for privacy. */
-				$clean['label'] = sprintf( __( 'Row %d', 'wp-slimstat' ), $index + 1 );
+				$clean['label'] = self::row( $index );
 				if ( isset( $row['funnel_name'] ) ) {
 					$key             = (string) $row['funnel_name'];
 					$groups[ $key ]  = $groups[ $key ] ?? count( $groups ) + 1;
