@@ -189,7 +189,6 @@ $setup = static function ($label) {
 					<button type="button" class="button" data-open-report="device"><?php esc_html_e('Open devices report', 'wp-slimstat'); ?></button>
 					<button type="button" class="button" data-open-report="coupon"><?php esc_html_e('Open coupons report', 'wp-slimstat'); ?></button>
 				</div>
-				<?php if ($license) : ?><p><?php echo wp_kses_post($license); ?></p><?php endif; ?>
 			<?php else : ?>
 				<h2 id="ss-ec-discover-title"><?php esc_html_e('Update Pro to explore more reports', 'wp-slimstat'); ?></h2>
 				<p><?php esc_html_e('Your installed Pro version has not enabled Ecommerce reports. Update both SlimStat plugins to compatible versions.', 'wp-slimstat'); ?></p>

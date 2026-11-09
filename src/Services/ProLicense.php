@@ -36,7 +36,9 @@ final class ProLicense
 		add_action('plugins_loaded', [self::class, 'verify'], 9);
 		add_action('plugins_loaded', [self::class, 'enforce'], 11);
 		add_action('init', [self::class, 'schedule']);
-		add_action(self::HOOK, [self::class, 'refresh']);
+		add_action(self::HOOK, static function (): void {
+			self::refresh();
+		});
 		// Pro after 3.0.0 reports each definitive answer it gets, so saving License settings unlocks at once.
 		add_action('slimstat_pro_license_checked', [self::class, 'record'], 10, 2);
 	}
