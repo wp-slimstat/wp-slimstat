@@ -15,7 +15,8 @@
 * Reject forged proxy headers. Cloudflare client/location headers require a connecting edge IP; other proxies must restore REMOTE_ADDR or explicitly opt in through the slimstat_trusted_proxy filter.
 
 **SlimStat Pro needs a valid license**
-* SlimStat Pro features run only with a license that is valid and activated for this site, including Pro versions older than this release. Otherwise Pro stays locked, the SlimStat header says why and links the fix, and Pro settings, data and the Custom DB connection are kept. Pro older than 3.0.0 stays locked until it is updated.
+* SlimStat Pro features run only with a license that is valid and activated for this site, including Pro versions older than this release. Otherwise Pro stays locked, and Pro settings, data and the Custom DB connection are kept. Pro older than 3.0.0 stays locked until it is updated.
+* While Pro is locked, one banner on every SlimStat screen, the WordPress Dashboard and Plugins says why and links Activate license (or License settings), Find my license in your SlimStat account and, when a key is missing or no longer valid, View plans. It cannot be dismissed and disappears once the license is valid; other users see a request to ask an administrator on SlimStat screens only. It reads the stored verdict, so no page load contacts the license server.
 * SlimStat checks the license through SlimStat Pro about every 12 hours, and at once when an administrator saves License settings. A confirmed license keeps working through a license-server outage for up to 3 days.
 
 **New: AI Analysis**

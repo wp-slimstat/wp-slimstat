@@ -24,6 +24,8 @@ final class ProLicense
 	public const DUE    = 12 * HOUR_IN_SECONDS;
 	public const RETRY  = 5 * MINUTE_IN_SECONDS;
 	public const CLIENT = 'WpSlimstatPro\Update\NexusClient';
+	/** Where a customer finds the key of a license they already bought. */
+	public const ACCOUNT = 'https://my.wp-slimstat.com/account/';
 
 	private const DEFINITIVE = ['valid', 'invalid', 'domain_not_activated'];
 
@@ -41,6 +43,8 @@ final class ProLicense
 		});
 		// Pro after 3.0.0 reports each definitive answer it gets, so saving License settings unlocks at once.
 		add_action('slimstat_pro_license_checked', [self::class, 'record'], 10, 2);
+		// SlimStat's own screens show the banner in their header; the Dashboard and Plugins screens get it here.
+		add_action('admin_notices', [self::class, 'screen_notice']);
 	}
 
 	public static function key(): string
@@ -142,13 +146,13 @@ final class ProLicense
 		}
 		switch ($state) {
 			case 'none':
-				$text = __('SlimStat Pro is active, but its features stay locked until you activate a license for this site.', 'wp-slimstat');
+				$text = __('SlimStat Pro is active, but its features stay locked until you activate a license for this site. Already purchased? Sign in to your SlimStat account to find your license key. Haven\'t purchased yet? View plans and pricing.', 'wp-slimstat');
 				break;
 			case 'domain_not_activated':
-				$text = __('Your SlimStat Pro license is not activated for this site, so Pro features are locked. Activate it in License settings.', 'wp-slimstat');
+				$text = __('Your SlimStat Pro license is not activated for this site, so Pro features are locked. Activate it in License settings. Need your key? Sign in to your SlimStat account to find it.', 'wp-slimstat');
 				break;
 			case 'invalid':
-				$text = __('Your SlimStat Pro license is expired, revoked or not valid for this site, so Pro features are locked. Renew it, or correct the key in License settings.', 'wp-slimstat');
+				$text = __('Your SlimStat Pro license is expired, revoked or not valid for this site, so Pro features are locked. Correct the key in License settings, find your current key in your SlimStat account, or view plans to renew.', 'wp-slimstat');
 				break;
 			default:
 				$text = __('SlimStat could not verify your Pro license, so Pro features are locked for now. SlimStat retries automatically. To retry now, select Save Changes in License settings.', 'wp-slimstat');
@@ -156,19 +160,70 @@ final class ProLicense
 		return $text . ' ' . $kept;
 	}
 
-	/** Where an administrator fixes the lock, or [] when they cannot fix it from a link. */
+	/** Where an administrator fixes the lock, as [label, url, external], or [] when they cannot fix it from a link. */
 	public static function action(): array
+	{
+		return self::links()[0] ?? [];
+	}
+
+	/**
+	 * The fix first, then where to find or buy a key when that can help, each as [label, url, external].
+	 * [] for anyone who cannot manage the license: they are told to ask an administrator instead.
+	 */
+	public static function links(): array
 	{
 		$state = \wp_slimstat::pro_plugin_active() && current_user_can('manage_options') ? self::state() : 'valid';
 		if ('valid' === $state) {
 			return [];
 		}
 		if (!class_exists(self::CLIENT)) {
-			return [__('Open Plugins', 'wp-slimstat'), admin_url('plugins.php')];
+			return [[__('Open Plugins', 'wp-slimstat'), admin_url('plugins.php'), false]];
 		}
-		$label = in_array($state,['none', 'domain_not_activated'], true) ? __('Activate license', 'wp-slimstat') : __('Open License settings', 'wp-slimstat');
 		$path  = 'admin.php?page=slimconfig&tab=8';
-		return [$label, is_network_admin() ? network_admin_url($path) : admin_url($path)];
+		$links = [[
+			in_array($state, ['none', 'domain_not_activated'], true) ? __('Activate license', 'wp-slimstat') : __('Open License settings', 'wp-slimstat'),
+			is_network_admin() ? network_admin_url($path) : admin_url($path),
+			false,
+		]];
+		// A failed verification is not a missing or wrong key, so it offers only the retry.
+		if ('unverified' !== $state) {
+			$links[] = [__('Find my license', 'wp-slimstat'), self::ACCOUNT, true];
+		}
+		if (in_array($state, ['none', 'invalid'], true)) {
+			$links[] = [__('View plans', 'wp-slimstat'), \SlimStat\Utils\ProLinks::url('license-notice', $state), true];
+		}
+		return $links;
+	}
+
+	/** The locked-Pro banner. It cannot be dismissed, and it disappears once the license is valid. */
+	public static function render(): void
+	{
+		$message = self::message();
+		if ('' === $message) {
+			return;
+		}
+		echo '<div class="notice notice-warning slimstat-notice slimstat-pro-license-notice" role="status"><p>' . esc_html($message) . '</p>';
+		$links = self::links();
+		if ($links) {
+			echo '<p class="slimstat-pro-license-notice__actions">';
+			foreach ($links as $i => [$label, $url, $external]) {
+				echo '<a class="button' . (0 === $i ? ' button-primary' : '') . '" href="' . esc_url($url) . '"' . ($external ? ' target="_blank" rel="noopener noreferrer"' : '') . '>' . esc_html($label);
+				if ($external) {
+					echo '<span class="screen-reader-text"> ' . esc_html__('(opens in a new tab)', 'wp-slimstat') . '</span>';
+				}
+				echo '</a> ';
+			}
+			echo '</p>';
+		}
+		echo '</div>';
+	}
+
+	/** The banner on the Dashboard and the Plugins screen, for administrators. It reads the stored verdict only. */
+	public static function screen_notice(): void
+	{
+		if (in_array($GLOBALS['pagenow'] ?? '', ['index.php', 'plugins.php'], true) && current_user_can('manage_options')) {
+			self::render();
+		}
 	}
 
 	private static function ask($client, string $key): string

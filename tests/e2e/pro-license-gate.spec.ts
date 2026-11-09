@@ -1,28 +1,55 @@
 /**
  * Pro runs only with a verified license (task 4). Activating the Pro plugin is not entitlement:
- * every locked state detaches Pro, says why in the SlimStat header and links the fix; a confirmed
- * license survives a license-server outage for 3 days, not longer; and locking never touches the
- * site's Pro data (goals stay as they were saved).
+ * every locked state detaches Pro and shows one banner that says why and links the fix, on every
+ * SlimStat screen, the Dashboard and Plugins (task 5); a confirmed license survives a
+ * license-server outage for 3 days, not longer; and locking never touches the site's Pro data
+ * (goals stay as they were saved).
  *
  * The license server is answered by license-fixture-mu-plugin.php, so no run reaches the real one.
  */
+import { fileURLToPath } from 'url';
 import { test, expect } from '@playwright/test';
 import type { Page, TestInfo } from '@playwright/test';
 import { getProState, requireProBooted, setProLicense } from './helpers/pro-state';
 import type { LicenseFixtureState } from './helpers/pro-state';
 import { seedGoals } from './helpers/goals-funnels';
-import { closeDb, getOptionValue, restoreOption, restoreSlimstatOptions, setOptionValue, snapshotOption, snapshotSlimstatOptions } from './helpers/setup';
+import { BASE_URL } from './helpers/env';
+import { closeDb, getOptionValue, restoreOption, restoreSlimstatOptions, setOptionValue, setSlimstatSetting, snapshotOption, snapshotSlimstatOptions } from './helpers/setup';
 
 const KEPT = ['slimstat_pro_license_verdict', 'slimstat_e2e_license_state', 'slimstat_goals', 'slimstat_goals_cache_ver'];
-const LOCKED: [LicenseFixtureState, string, string, string][] = [
-  ['invalid', 'invalid', 'expired, revoked or not valid for this site', 'Open License settings'],
-  ['domain_not_activated', 'domain_not_activated', 'not activated for this site', 'Activate license'],
-  ['unreachable', 'unverified', 'could not verify your Pro license', 'Open License settings'],
-  ['none', 'none', 'stay locked until you activate a license for this site', 'Activate license'],
+const SCREENS = ['/wp-admin/admin.php?page=slimview2', '/wp-admin/', '/wp-admin/plugins.php'];
+const HREF: Record<string, RegExp> = {
+  'Activate license': /\/wp-admin\/admin\.php\?page=slimconfig&tab=8$/,
+  'Open License settings': /\/wp-admin\/admin\.php\?page=slimconfig&tab=8$/,
+  'Find my license': /^https:\/\/my\.wp-slimstat\.com\/account\/$/,
+  'View plans': /^https:\/\/wp-slimstat\.com\/pricing\/\?/,
+};
+const LOCKED: [LicenseFixtureState, string, string, string[]][] = [
+  ['invalid', 'invalid', 'expired, revoked or not valid for this site', ['Open License settings', 'Find my license', 'View plans']],
+  ['domain_not_activated', 'domain_not_activated', 'not activated for this site', ['Activate license', 'Find my license']],
+  ['unreachable', 'unverified', 'could not verify your Pro license', ['Open License settings']],
+  ['none', 'none', 'stay locked until you activate a license for this site', ['Activate license', 'Find my license', 'View plans']],
 ];
 
 async function shot(page: Page, testInfo: TestInfo, name: string): Promise<void> {
   await page.screenshot({ path: process.env.E2E_SHOTS_DIR ? `${process.env.E2E_SHOTS_DIR}/${name}.png` : testInfo.outputPath(`${name}.png`) });
+}
+
+/** Exactly one banner on the screen, with the state's text and exactly these links, in order. */
+async function expectBanner(page: Page, text: string, links: string[]): Promise<void> {
+  const notice = page.locator('.slimstat-pro-license-notice');
+  await expect(notice).toHaveCount(1);
+  await expect(notice).toContainText(text);
+  await expect(notice).toContainText('Your Pro settings and data are kept.');
+  await expect(notice.locator('a')).toHaveCount(links.length);
+  for (const [i, label] of links.entries()) {
+    const link = notice.locator('a').nth(i);
+    await expect(link).toContainText(label);
+    await expect(link).toHaveAttribute('href', HREF[label]);
+    // External destinations open in a new tab; License settings opens in place.
+    if (label === 'Find my license' || label === 'View plans') await expect(link).toHaveAttribute('target', '_blank');
+    else await expect(link).not.toHaveAttribute('target');
+  }
 }
 
 test.describe.serial('Pro license gate', () => {
@@ -41,18 +68,22 @@ test.describe.serial('Pro license gate', () => {
     await requireProBooted(page);
   });
 
-  for (const [fixture, state, text, label] of LOCKED) {
-    test(`${fixture} license locks Pro and links the fix`, async ({ page }, testInfo) => {
+  for (const [fixture, state, text, links] of LOCKED) {
+    test(`${fixture} license locks Pro and links the fix on every screen`, async ({ page }, testInfo) => {
       try {
         expect(await setProLicense(page, fixture)).toBe(state);
         expect((await getProState(page)).pro_booted, 'Pro features must be detached').toBe(false);
-        await page.goto('/wp-admin/admin.php?page=slimview2');
-        const notice = page.locator('.slimstat-pro-license-notice');
-        await expect(notice).toContainText(text);
-        await expect(notice).toContainText('Your Pro settings and data are kept.');
-        await expect(page.locator('.slimstat-header__cta-label')).toHaveText(label);
-        await shot(page, testInfo, `license-${fixture}`);
-        await notice.getByRole('link', { name: label }).click();
+        for (const screen of SCREENS) {
+          await page.goto(screen);
+          await expectBanner(page, text, links);
+          if (screen === SCREENS[0]) {
+            await expect(page.locator('.slimstat-header__cta-label')).toHaveText(links[0]);
+            await shot(page, testInfo, `license-${fixture}`);
+          }
+        }
+        await shot(page, testInfo, `license-${fixture}-plugins`);
+        // From a WordPress screen (Plugins, the last one visited), the fix opens the License section.
+        await page.locator('.slimstat-pro-license-notice').getByRole('link', { name: links[0] }).click();
         await expect(page).toHaveURL(/page=slimconfig&tab=8/);
         await expect(page.getByLabel('License key', { exact: true })).toBeVisible();
       } finally {
@@ -62,12 +93,35 @@ test.describe.serial('Pro license gate', () => {
     });
   }
 
-  test('valid license unlocks Pro with no notice', async ({ page }, testInfo) => {
+  test('valid license unlocks Pro with no banner on any screen', async ({ page }, testInfo) => {
     expect(await setProLicense(page, 'valid')).toBe('valid');
     expect((await getProState(page)).pro_booted).toBe(true);
-    await page.goto('/wp-admin/admin.php?page=slimview2');
-    await expect(page.locator('.slimstat-pro-license-notice')).toHaveCount(0);
+    for (const screen of SCREENS) {
+      await page.goto(screen);
+      await expect(page.locator('.slimstat-pro-license-notice')).toHaveCount(0);
+    }
+    await page.goto(SCREENS[0]);
     await shot(page, testInfo, 'license-valid');
+  });
+
+  test('users who cannot manage the license are told to ask an administrator, with no links', async ({ page, browser }) => {
+    const author = await browser.newContext({ storageState: fileURLToPath(new URL('.auth/author.json', import.meta.url)) });
+    try {
+      expect(await setProLicense(page, 'invalid')).toBe('invalid');
+      await setSlimstatSetting('capability_can_view', 'read');
+      const view = await author.newPage();
+      await view.goto(`${BASE_URL}${SCREENS[0]}`);
+      const notice = view.locator('.slimstat-pro-license-notice');
+      await expect(notice).toHaveCount(1);
+      await expect(notice).toContainText('until a site administrator activates the license');
+      await expect(notice.locator('a')).toHaveCount(0);
+      await view.goto(`${BASE_URL}/wp-admin/`);
+      await expect(view.locator('.slimstat-pro-license-notice')).toHaveCount(0);
+    } finally {
+      await author.close();
+      await restoreSlimstatOptions().then(snapshotSlimstatOptions);
+      expect(await setProLicense(page, 'valid')).toBe('valid');
+    }
   });
 
   test('an outage keeps a confirmed license for 3 days, not longer', async ({ page }) => {
@@ -103,6 +157,11 @@ test.describe.serial('Pro license gate', () => {
       await expect(notice).toHaveCount(0);
       expect((await getProState(page)).pro_license).toBe('valid');
       await shot(page, testInfo, 'license-saved-unlocked');
+      // Activation clears every instance, not only the one on the screen that saved it.
+      for (const screen of SCREENS) {
+        await page.goto(screen);
+        await expect(notice).toHaveCount(0);
+      }
     } finally {
       expect(await setProLicense(page, 'valid')).toBe('valid');
     }

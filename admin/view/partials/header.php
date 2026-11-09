@@ -26,9 +26,8 @@ $support_url   = 'https://wp-slimstat.com/contact/?utm_source=plugin&utm_medium=
 $docs_url      = 'https://wp-slimstat.com/resources/?utm_source=plugin&utm_medium=header&utm_campaign=docs';
 $settings_url  = admin_url('admin.php?page=slimconfig');
 $upgrade_url   = \SlimStat\Utils\ProLinks::url('header', 'cta');
-// Pro is active but its license is not verified: say why it is locked, and send administrators to the fix.
-$license_notice = \SlimStat\Services\ProLicense::message();
-$license_action = '' !== $license_notice ? \SlimStat\Services\ProLicense::action() : [];
+// Pro is active but its license is not verified: the header button sends administrators to the fix.
+$license_action = \SlimStat\Services\ProLicense::action();
 $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-logo.png';
 ?>
 
@@ -141,11 +140,7 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
 </div>
 <?php endif; ?>
 
-<?php if ('' !== $license_notice) : ?>
-<div class="notice notice-warning slimstat-notice slimstat-pro-license-notice" role="status">
-    <p><?php echo esc_html($license_notice); ?><?php if ($license_action) : ?> <a href="<?php echo esc_url($license_action[1]); ?>"><?php echo esc_html($license_action[0]); ?></a><?php endif; ?></p>
-</div>
-<?php endif; ?>
+<?php \SlimStat\Services\ProLicense::render(); // Says why Pro is locked; nothing while it is licensed. ?>
 
 <?php
 if ($displayNotifications && class_exists(NotificationFactory::class)) {
