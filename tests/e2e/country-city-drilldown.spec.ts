@@ -117,7 +117,7 @@ test.describe('Country → City drilldown', () => {
       await expect(d).toHaveJSProperty('open', false);
 
       // A. The world map itself.
-      await map.locator('#map_slim_p6_01 path[id$="_de"]').click({ force: true });
+      await map.locator('#map_slim_p6_01 path[data-code="DE"]').click({ force: true });
       d = await loaded(page);
       await expect(d.locator('h2')).toHaveText('Top Cities in Germany');
       await expect(d.locator('tbody tr')).toHaveCount(1);

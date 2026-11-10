@@ -1582,6 +1582,7 @@ class wp_slimstat_admin
 
     // END: update_tables_and_options
 
+    /** Registers the Slimstat reports chosen for the WP Dashboard as widgets, with the assets they need. */
     public static function add_dashboard_widgets()
     {
         if (!self::can_view_stats()) {
@@ -1606,6 +1607,10 @@ class wp_slimstat_admin
                 // registering this specific widget, avoiding cross-request leaks.
                 if (in_array($a_report_id, self::COMPACT_DASHBOARD_REPORTS, true)) {
                     wp_slimstat_reports::$reports[$a_report_id]['callback_args']['is_widget'] = true;
+                }
+                // The widget body arrives over AJAX, too late to enqueue the map library.
+                if ('slim_p6_01' === $a_report_id) {
+                    wp_slimstat_reports::enqueue_world_map_assets();
                 }
                 wp_add_dashboard_widget($a_report_id, wp_slimstat_reports::$reports[$a_report_id]['title'], ['wp_slimstat_reports', 'callback_wrapper']);
             }

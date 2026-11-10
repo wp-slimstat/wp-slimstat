@@ -1659,10 +1659,15 @@ class wp_slimstat_db
         return $clean_outbound_resources;
     }
 
+    /**
+     * Top values of a column with their hit counts, in the selected dates and filters.
+     * Pass an array for the extended form (`columns`, `where`, `more_select`, `order_by`, ...); its `limit` caps the rows (default: Max results).
+     */
     public static function get_top($_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '')
     {
         $_order_by    = 'counthits DESC';
         $_more_select = '';
+        $_limit       = null;
 
         // This function can be passed individual arguments, or an array of arguments
         if (is_array($_column)) {
@@ -1682,6 +1687,7 @@ class wp_slimstat_db
             $_as_column        = empty($_column['as_column']) ? '' : $_column['as_column'];
             $_order_by         = empty($_column['order_by']) ? 'counthits DESC' : $_column['order_by'];
             $_more_select      = empty($_column['more_select']) ? '' : $_column['more_select'];
+            $_limit            = $_column['limit'] ?? null;
             $_column           = $_column['columns'];
         }
 
@@ -1770,7 +1776,7 @@ class wp_slimstat_db
         // LIMIT — no SQL OFFSET for aggregated reports; PHP-side pagination
         // handles page slicing via array_slice in the rendering callbacks.
         // ($merging was resolved above, where the P3 group key needed it.)
-        $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
+        $limit = max(1, intval($_limit ?? self::$filters_normalized['misc']['limit_results']));
 
         // NOT APPLIED TO THE INNER QUERY WHEN MERGING, and this is a correctness fix rather than
         // a tuning choice. `buildQuery()` puts the LIMIT inside every union arm, and Pro's

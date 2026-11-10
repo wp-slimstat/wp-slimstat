@@ -35,7 +35,7 @@ https://www.youtube.com/watch?v=cW3xr-0bMMc
 * **Know your visitors** — Go past pageviews to the people behind them: returning readers, logged-in users, and a full audience breakdown by country, language, browser, OS and screen size. (Pro's User Overview adds per-visitor journeys, time on site and Gravatars.)
 * **Your data, your server** — No third-party cloud, no Google looking over your shoulder. Every byte lives in your WordPress database, and one-way IP hashing lets you count unique visitors without ever storing who they are.
 * **GDPR, sorted** — Anonymize or hash IPs, honor Do Not Track, auto-purge old records on a schedule, and drop in a translatable consent banner that snaps straight into the WP Consent API (WPML and Polylang welcome). Compliance by design, not an afterthought.
-* **Geolocation & world map** — Put a city and country to every visitor, plus their browser and operating system, powered by [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org). Watch your audience light up across the globe, even from your phone (map by [JQVMap](https://github.com/10bestdesign/jqvmap)).
+* **Geolocation & world map** — Put a city and country to every visitor, plus their browser and operating system, powered by [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org). Watch your audience light up across the globe, even from your phone (map by [jsVectorMap](https://github.com/themustafaomar/jsvectormap)).
 * **Shortcodes & Shortcode Playground** — Drop any report, live counter or Ecommerce KPI into a post, page or widget. Browse, preview with your own data and copy the shortcode under SlimStat → Shortcodes.
 * **Admin bar stats** — Keep an eye on the numbers without leaving your work. Online visitors, pageviews and top pages sit one glance away in the WordPress admin bar, on every screen.
 * **Make every report yours** — Rearrange, add or hide widgets across Real-Time, Overview, Audience, Site Analysis and Traffic Sources until each screen shows exactly what you care about.
@@ -193,6 +193,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 **Fixed**
 
+* The Audience Location map shows city dots again, one per city and sized by pageviews for the selected dates and filters, with a legend under the map. ([#402](https://github.com/wp-slimstat/wp-slimstat/issues/402))
 * Shared Heatmaps filters survive navigation and reloads. Geolocation checks explain database problems, verify trusted proxies and count only known live countries.
 * Clipboard retries and refreshed Ecommerce actions keep the correct report context, and trend prompts sample the full selected period.
 * Heatmaps keep the report's date range. AI results show formatting and real row names, and failed analyses explain the cause, link the fix and offer Retry only when it can help.

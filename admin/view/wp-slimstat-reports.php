@@ -943,7 +943,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['extralarge', 'map-wrap'],
                 'locations' => ['slimview1'],
-                'tooltip'   => __('Dots on the map represent the most recent pageviews geolocated by City. This feature is only available by enabling the corresponding precision level in the settings.', 'wp-slimstat'),
+                'tooltip'   => __('Each dot is a city, sized by its pageviews in the selected dates and filters. Dots appear when Geolocation precision is set to City in the settings.', 'wp-slimstat'),
             ],
 
             // Goals & Funnels reports
@@ -2689,27 +2689,80 @@ class wp_slimstat_reports
         }
     }
 
-    public static function show_world_map()
+    /** jsVectorMap (MIT, vendored: no CDN call) draws the Audience Location map. */
+    public static function enqueue_world_map_assets(): void
     {
-        $countries     = wp_slimstat_db::get_top('country') ?: [];
-        $recent_visits = wp_slimstat_db::get_recent('location', '', '', true, '', 'city');
-        $data_points   = [];
+        $plugin = dirname(__FILE__, 2);
+        wp_enqueue_script('slimstat_jsvectormap', plugins_url('/admin/assets/js/jsvectormap/jsvectormap.min.js', $plugin), [], '1.7.0', true);
+        wp_enqueue_script('slimstat_jsvectormap_world', plugins_url('/admin/assets/js/jsvectormap/world.js', $plugin), ['slimstat_jsvectormap'], '1.7.0', true);
+    }
 
-        if (!empty($recent_visits)) {
-            $recent_visits = array_slice($recent_visits, 0, wp_slimstat::$settings['max_dots_on_map']);
-            foreach ($recent_visits as $a_recent_visit) {
-                if (!empty($a_recent_visit['city']) && !empty($a_recent_visit['location'])) {
-                    [$latitude, $longitude] = explode(',', $a_recent_visit['location']);
-                    $clean_city_name        = htmlentities($a_recent_visit['city'], ENT_QUOTES, 'UTF-8');
-                    $date_time              = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $a_recent_visit['dt'], true);
-                    $data_points[]          = sprintf("{zoomLevel:7,type:'circle',title:'%s<br>%s',latitude:%s,longitude:%s}", $clean_city_name, $date_time, $latitude, $longitude);
-                }
-            }
+    /** "123 pageviews · 4.2%": a count and its share of the pageviews in the selected dates and filters. */
+    private static function world_map_label(int $visits): string
+    {
+        $share = wp_slimstat_db::$pageviews > 0 ? 100 * $visits / wp_slimstat_db::$pageviews : 0;
+
+        return sprintf(
+            /* translators: 1: pageview count, e.g. "12 pageviews", 2: share of all pageviews, e.g. "4.2". */
+            __('%1$s · %2$s%%', 'wp-slimstat'),
+            /* translators: %s: pageview count. */
+            sprintf(_n('%s pageview', '%s pageviews', $visits, 'wp-slimstat'), number_format_i18n($visits)),
+            number_format_i18n($share, 1)
+        );
+    }
+
+    /**
+     * One dot per city in the selected dates and filters, sized by its pageviews: the busiest
+     * Map data points cities, biggest first so the small ones are drawn on top and stay hoverable.
+     */
+    private static function world_map_dots(int $max): array
+    {
+        if ($max < 1) {
+            return [];
         }
 
-        $data_areas    = [];
+        $rows = wp_slimstat_db::get_top([
+            'columns'     => 'country, city',
+            'where'       => "location <> '' AND city <> ''",
+            'more_select' => 'MAX(location) AS location',
+            'limit'       => $max,
+        ]) ?: [];
+
+        // A network report keeps one row per blog: fold them into one dot per city.
+        // ponytail: the limit applies to per-blog rows first, so a city split across many blogs can
+        // be undercounted or dropped; merge in SQL if the Network View ever needs exact dots.
+        $cities = [];
+        foreach ($rows as $row) {
+            $key = $row['country'] . '|' . $row['city'];
+            if (isset($cities[$key])) {
+                $cities[$key]['visits'] += (int) $row['counthits'];
+                continue;
+            }
+            $coords = array_map('floatval', explode(',', (string) $row['location']));
+            if (2 === count($coords) && abs($coords[0]) <= 90 && abs($coords[1]) <= 180) {
+                $cities[$key] = ['name' => (string) $row['city'], 'country' => strtoupper((string) $row['country']), 'visits' => (int) $row['counthits'], 'coords' => $coords];
+            }
+        }
+        usort($cities, fn ($a, $b) => $b['visits'] <=> $a['visits']);
+
+        return array_map(
+            fn ($city) => $city + ['label' => self::world_map_label($city['visits'])],
+            array_slice($cities, 0, $max)
+        );
+    }
+
+    /** Audience Location (slim_p6_01): country shading plus one dot per city, in the selected dates and filters. */
+    public static function show_world_map($_args = [])
+    {
+        self::enqueue_world_map_assets();
+        // Async mode loads the map with the report batch; querying here too would run it twice.
+        if ('on' == wp_slimstat::$settings['async_load'] && !wp_doing_ajax() && empty($_args['is_widget'])) {
+            return;
+        }
+
+        $countries     = wp_slimstat_db::get_top('country') ?: [];
         $country_stats = [];
-        $max           = 0;
+        $map_countries = [];
 
         foreach ($countries as $a_country) {
             $code         = strtolower((string)($a_country['country'] ?? ''));
@@ -2717,43 +2770,77 @@ class wp_slimstat_reports
             $percent      = (wp_slimstat_db::$pageviews > 0) ? round((100 * $visits / wp_slimstat_db::$pageviews), 2) : 0;
             $country_name = wp_slimstat_i18n::get_string('c-' . ($a_country['country'] ?? ''));
 
-            $data_areas[$code] = $visits;
-            $country_stats[]   = [
+            $country_stats[] = [
                 'code'    => $code,
                 'name'    => $country_name,
                 'visits'  => $visits,
                 'percent' => $percent,
             ];
-
-            if ($percent > $max) {
-                $max = $percent;
-            }
+            $map_countries[strtoupper($code)] = [
+                'name'   => $country_name,
+                'visits' => $visits,
+                'label'  => self::world_map_label($visits),
+            ];
         }
 
         usort($country_stats, fn ($a, $b) => $b['visits'] <=> $a['visits']);
         $top_countries = array_slice($country_stats, 0, 5);
-
-        $path_slimstat = dirname(__FILE__, 2);
-        wp_enqueue_script('slimstat_jqvmap', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.min.js', $path_slimstat), ['jquery'], '1.5.1', true);
-        wp_enqueue_script('slimstat_jqvmap_world', plugins_url('/admin/assets/js/jqvmap/jquery.vmap.world.min.js', $path_slimstat), ['jquery'], '1.5.1', true);
+        $max_dots      = (int) (wp_slimstat::$settings['max_dots_on_map'] ?? 0);
+        $by_country    = 'on' === (wp_slimstat::$settings['geolocation_country'] ?? 'on');
+        $dots          = $by_country ? [] : self::world_map_dots($max_dots);
+        $provider      = wp_slimstat::resolve_geolocation_provider();
+        /* translators: %s: pageview count. */
+        $no_pageviews = sprintf(_n('%s pageview', '%s pageviews', 0, 'wp-slimstat'), number_format_i18n(0));
+        if (!is_network_admin()) {
+            $settings_url = get_admin_url($GLOBALS['blog_id'], 'admin.php?page=slimconfig&amp;tab=');
+        } else {
+            $settings_url = network_admin_url('admin.php?page=slimconfig&amp;tab=');
+        }
         ?>
 
         <div class="map-container">
-            <div id="map_slim_p6_01"></div>
+            <div class="slimstat-map-area">
+                <div id="map_slim_p6_01" role="img" aria-label="<?php esc_attr_e('World map of pageviews by country and city', 'wp-slimstat'); ?>"></div>
+                <?php if ([] !== $map_countries): ?>
+                    <div class="slimstat-map-legend">
+                        <?php if ([] !== $dots): ?>
+                            <span class="slimstat-map-legend-item">
+                                <span class="slimstat-map-legend-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                                <?php
+                                if (count($dots) >= $max_dots) {
+                                    /* translators: %s: number of cities drawn on the map. */
+                                    echo esc_html(sprintf(_n('Top %s city: bigger dot, more pageviews', 'Top %s cities: bigger dot, more pageviews', $max_dots, 'wp-slimstat'), number_format_i18n($max_dots)));
+                                } else {
+                                    esc_html_e('Cities: bigger dot, more pageviews', 'wp-slimstat');
+                                }
+                                ?>
+                            </span>
+                        <?php endif; ?>
+                        <span class="slimstat-map-legend-item">
+                            <span class="slimstat-map-legend-scale" aria-hidden="true"></span>
+                            <?php esc_html_e('Countries: darker, more pageviews', 'wp-slimstat'); ?>
+                        </span>
+                    </div>
+                    <?php if ([] === $dots && !$by_country && $max_dots > 0): ?>
+                        <p class="slimstat-map-hint"><?php esc_html_e('City dots appear as new visits are recorded.', 'wp-slimstat'); ?></p>
+                    <?php endif; ?>
+                <?php endif; ?>
+                <?php if ($by_country && false !== $provider && current_user_can(wp_slimstat::$settings['capability_can_admin'])): ?>
+                    <p class="slimstat-map-hint">
+                        <?php
+                        /* translators: %s: URL of the Geolocation precision setting. */
+                        echo wp_kses_post(sprintf(__('To see which cities your visitors come from, set Geolocation precision to City in <a href="%s" class="noslimstat">Settings</a>.', 'wp-slimstat'), esc_url($settings_url . '2#geolocation_country')));
+                        ?>
+                    </p>
+                <?php endif; ?>
+            </div>
             <div class="top-countries-wrap">
                 <div class="top-countries">
                     <?php if ([] !== $top_countries): ?>
                         <h4><?php esc_html_e('Top Countries', 'wp-slimstat'); ?></h4>
                     <?php endif; ?>
                     <?php
-                    // Settings URL
-                    if (!is_network_admin()) {
-                        $settings_url = get_admin_url($GLOBALS['blog_id'], 'admin.php?page=slimconfig&amp;tab=');
-                    } else {
-                        $settings_url = network_admin_url('admin.php?page=slimconfig&amp;tab=');
-                    }
                     // Provider-aware GeoIP notice (world map): only for DB providers when DB file is missing
-                    $provider = wp_slimstat::resolve_geolocation_provider();
                     $uses_db  = in_array($provider, \SlimStat\Services\GeoService::DB_PROVIDERS, true);
                     $db_missing = false;
                     if ($uses_db) {
@@ -2794,37 +2881,90 @@ class wp_slimstat_reports
         </div>
 
         <script type="text/javascript">
-            jQuery(function () {
-                jQuery('#map_slim_p6_01').vectorMap({
-                    map: 'world_en',
-                    backgroundColor: '#fff',
-                    hoverOpacity: 0.7,
-                    showTooltip: true,
-                    normalizeFunction: 'polynomial',
-                    values: <?php echo wp_json_encode($data_areas); ?>,
-                    enableZoom: true,
-                    onLabelShow: function (event, label, code) {
-                        const data = <?php echo wp_json_encode($country_stats); ?>;
-                        const country = data.find(c => c.code === code);
-                        const pageviewsLabel = <?php echo wp_json_encode(__('Pageviews', 'wp-slimstat')); ?>;
-                        if (country) {
-                            label.html( '<canvas></canvas><h3>'  + country.name  + '</h3><p>' + country.visits.toLocaleString() + ' ' + pageviewsLabel + '</p>');
-                        } else {
-                            label.html( '<canvas></canvas><h3>'  + label.text()  + '</h3><p>0 ' + pageviewsLabel + '</p>');
-                        }
+            (function () {
+                const countries = <?php echo wp_json_encode((object) $map_countries, JSON_HEX_TAG | JSON_HEX_AMP); ?>;
+                const dots = <?php echo wp_json_encode($dots, JSON_HEX_TAG | JSON_HEX_AMP); ?>;
+                const none = <?php echo wp_json_encode($no_pageviews, JSON_HEX_TAG | JSON_HEX_AMP); ?>;
+                const values = {};
+                // Fifth root, like the polynomial scale of the previous map: one big country does not wash out the rest.
+                Object.keys(countries).forEach(code => { values[code] = Math.pow(countries[code].visits, 0.2); });
+                // Names are stored visitor data: textContent only, never HTML. The class carries the
+                // tooltip's styles, so a jsVectorMap from another plugin keeps its own look.
+                const tip = (tooltip, title, line) => {
+                    const h3 = document.createElement('h3');
+                    const p = document.createElement('p');
+                    h3.textContent = title;
+                    p.textContent = line;
+                    const el = tooltip.getElement();
+                    el.classList.add('slimstat-map-tooltip');
+                    el.replaceChildren(h3, p);
+                };
+                // Dot area follows pageviews: radius 3px to 14px by square root, so twice the pageviews
+                // reads as twice the ink. A lone city gets a middle size rather than the biggest.
+                const most = dots.length ? dots[0].visits : 1;
+                const markers = dots.map(dot => ({
+                    name: dot.name,
+                    coords: dot.coords,
+                    style: { initial: { r: 1 === dots.length ? 8 : 3 + 11 * Math.sqrt(dot.visits / most) } },
+                }));
+                // Opens the city drilldown (admin/assets/js/country-cities.js).
+                const drill = code => {
+                    if (window.SlimStatCountryCities) {
+                        window.SlimStatCountryCities.open(code, countries[code] ? countries[code].name : '');
+                    }
+                };
+                const draw = () => new jsVectorMap({
+                    selector: '#map_slim_p6_01',
+                    map: 'world',
+                    zoomOnScroll: false,
+                    regionStyle: { initial: { fill: '#E6E8EE', stroke: '#ffffff', strokeWidth: 0.5 } },
+                    visualizeData: { scale: ['#C9CEDB', '#7A839E'], values },
+                    markers,
+                    markerStyle: {
+                        initial: { fill: '#E7294B', fillOpacity: 0.7, stroke: '#ffffff', strokeWidth: 1, strokeOpacity: 1 },
+                        hover: { fill: '#E7294B', fillOpacity: 1, cursor: 'pointer' },
                     },
-                    scaleColors: ['#fcd7dc', '#E7294B'],
-                    borderColor: '#ffffff',
-                    color: '#D4D7E2',
-                    // Opens the city drilldown instead of jqvmap's sticky region selection.
-                    onRegionClick: function (event, code, name) {
-                        if (window.SlimStatCountryCities) {
-                            event.preventDefault();
-                            window.SlimStatCountryCities.open(code, name);
-                        }
+                    onRegionTooltipShow: (event, tooltip, code) => {
+                        const country = countries[code];
+                        tip(tooltip, country ? country.name : tooltip.text(), country ? country.label : none);
                     },
+                    onMarkerTooltipShow: (event, tooltip, index) => tip(tooltip, dots[index].name, dots[index].label),
+                    onRegionClick: (event, code) => drill(code),
+                    onMarkerClick: (event, index) => drill(dots[index].country),
                 });
-            });
+                // jsVectorMap measures its box only when drawn or asked, and cannot recover from a 0x0 box,
+                // which is what a refreshed report has while it fades in. Draw once the box has a size, then
+                // follow layout changes; a hidden box (fading out) is left alone.
+                const start = () => {
+                    // A refreshed report replaces the box: stop watching the old one, drop its map and tooltip.
+                    const old = window.SlimStatWorldMap;
+                    if (old) {
+                        old.observer.disconnect();
+                        if (old.map) {
+                            old.map.destroy();
+                        }
+                    }
+                    const box = document.getElementById('map_slim_p6_01');
+                    const state = window.SlimStatWorldMap = { map: null };
+                    state.observer = new ResizeObserver(() => {
+                        if (!box.offsetWidth) {
+                            return;
+                        }
+                        if (state.map) {
+                            state.map.updateSize();
+                        } else {
+                            state.map = draw();
+                        }
+                    });
+                    state.observer.observe(box);
+                };
+                // Footer scripts have run by DOMContentLoaded; an AJAX-loaded report finds them loaded.
+                if ('loading' === document.readyState) {
+                    document.addEventListener('DOMContentLoaded', start);
+                } else {
+                    start();
+                }
+            })();
         </script>
 
         <?php
