@@ -2689,10 +2689,14 @@ class wp_slimstat_reports
         }
     }
 
-    /** jsVectorMap (MIT, vendored: no CDN call) draws the Audience Location map. */
+    /**
+     * jsVectorMap (MIT, vendored: no CDN call) draws the Audience Location map. The report screen,
+     * the Dashboard widget and the shortcode all come through here, so the map's stylesheet does too.
+     */
     public static function enqueue_world_map_assets(): void
     {
         $plugin = dirname(__FILE__, 2);
+        wp_enqueue_style('wp-slimstat-world-map', plugins_url('/admin/assets/css/world-map.css', $plugin), [], SLIMSTAT_ANALYTICS_VERSION);
         wp_enqueue_script('slimstat_jsvectormap', plugins_url('/admin/assets/js/jsvectormap/jsvectormap.min.js', $plugin), [], '1.7.0', true);
         wp_enqueue_script('slimstat_jsvectormap_world', plugins_url('/admin/assets/js/jsvectormap/world.js', $plugin), ['slimstat_jsvectormap'], '1.7.0', true);
     }
@@ -2946,10 +2950,13 @@ class wp_slimstat_reports
                     }
                     const box = document.getElementById('map_slim_p6_01');
                     const state = window.SlimStatWorldMap = { map: null };
+                    let width = 0;
+                    // Width only: the map sets its own height, so reacting to height changes redraws forever.
                     state.observer = new ResizeObserver(() => {
-                        if (!box.offsetWidth) {
+                        if (!box.offsetWidth || box.offsetWidth === width) {
                             return;
                         }
+                        width = box.offsetWidth;
                         if (state.map) {
                             state.map.updateSize();
                         } else {

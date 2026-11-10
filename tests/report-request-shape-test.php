@@ -48,6 +48,12 @@ wp_slimstat_db::init('resource contains news', false, false);
 if ($query_count !== count(wp_slimstat_db::$queries) || 'resource contains news&&&author equals author-fixture' !== wp_slimstat_db::$filters_normalized) {
  throw new RuntimeException('Catalog-only initialization must preserve authorization without querying analytics');
 }
+// Deferred Dashboard widgets post page=dashboard; without the total every share there read 0%.
+foreach (['dashboard' => 7, 'slimview4' => 7, 'slimconfig' => 0] as $page => $expected) {
+ $_GET = $_POST = []; $_REQUEST = ['page' => $page]; wp_slimstat_db::$pageviews = 0;
+ wp_slimstat_db::init();
+ if ($expected !== wp_slimstat_db::$pageviews) { throw new RuntimeException("Pageviews total for page={$page} is " . wp_slimstat_db::$pageviews . ", expected {$expected}"); }
+}
 echo "PASS: malformed request shapes ignored without fatal errors; valid zero, custom, author and explicit filters preserved\n";
 
 // Run the shared date parser too: valid wall-clock dates survive, malformed dates do not become 1970.
