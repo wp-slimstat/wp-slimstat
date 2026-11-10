@@ -505,5 +505,13 @@ async function check(name, fn) { await fn(); passed++; console.log('PASS: ' + na
         assert.equal(menuBadges(tab.dom).length, 0);
     });
 
+    await check('"Show videos" also turns on the menu marker', () => {
+        const page = fs.readFileSync(path.join(root, 'admin/assets/js/videos.js'), 'utf8');
+        const from = page.indexOf("getElementById('ss-videos-show').addEventListener");
+        const handler = page.slice(from, page.indexOf('addEventListener', from + 40)); // up to the next handler
+        assert.ok(handler.includes('setConsent({ load: true, auto: true })'), 'the click must save auto: true');
+        assert.ok(handler.includes('auto.checked = true'), 'the click must tick the checkbox');
+    });
+
     console.log(`video-catalog: ${passed} checks passed`);
 })().catch(error => { console.error(error); process.exit(1); });
