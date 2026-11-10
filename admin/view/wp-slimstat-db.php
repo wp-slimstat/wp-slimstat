@@ -290,8 +290,8 @@ class wp_slimstat_db
         self::$filters_normalized = self::init_filters($filters_raw);
 
         // Retrieve data that will be used by multiple reports
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Read-only page/date/presentation selection; no privileged mutation is performed by this input. Read-only filter parser validates dimensions/operators and binds values; UTM values preserve percent encoding, input dates are cast to integers.
         // Deferred Dashboard widgets post page=dashboard; their shares need the total too.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Read-only page/date/presentation selection; no privileged mutation is performed by this input. Read-only filter parser validates dimensions/operators and binds values; UTM values preserve percent encoding, input dates are cast to integers.
         if ($_load_data && (empty($_REQUEST['page']) || 'dashboard' === $_REQUEST['page'] || (is_string($_REQUEST['page']) && false !== strpos($_REQUEST['page'], 'slimview')))) {
             self::$pageviews = wp_slimstat_db::count_records();
         }

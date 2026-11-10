@@ -61,7 +61,7 @@
     }
   },
   "scripts": {
-    "test:pcp-regressions": "php tests/pcp-core-assets-test.php && php tests/dbip-stream-failure-test.php",
+    "test:pcp-regressions": "php tests/pcp-core-assets-test.php && php tests/dbip-stream-failure-test.php && php tests/phpcs-ignore-placement-test.php",
     "test:front-end-option-budget": "php tests/front-end-option-read-budget-test.php",
     "test:dashboard-widget-queue": "node tests/dashboard-widget-queue.cjs",
     "test:video-catalog": "node tests/video-catalog.cjs",
