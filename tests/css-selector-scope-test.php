@@ -116,6 +116,7 @@ function css_split_selectors(string $sel): array
     return $out;
 }
 
+/** Selectors in $css that carry no Slimstat token (slimstat, slim-, slim_, ss-), so they could restyle other screens. */
 function css_unscoped_selectors(string $css): array
 {
     $token = '/slimstat|slim-|slim_|(?<![\w-])ss-|^:root$/i';

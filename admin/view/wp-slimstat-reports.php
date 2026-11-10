@@ -943,7 +943,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['extralarge', 'map-wrap'],
                 'locations' => ['slimview1'],
-                'tooltip'   => __('Dots on the map represent the most recent pageviews geolocated by City. This feature is only available by enabling the corresponding precision level in the settings.', 'wp-slimstat'),
+                'tooltip'   => __('Each dot is a city, sized by its pageviews in the selected dates and filters. Dots appear when Geolocation precision is set to City in the settings.', 'wp-slimstat'),
             ],
 
             // Goals & Funnels reports
@@ -2751,6 +2751,7 @@ class wp_slimstat_reports
         );
     }
 
+    /** Audience Location (slim_p6_01): country shading plus one dot per city, in the selected dates and filters. */
     public static function show_world_map($_args = [])
     {
         self::enqueue_world_map_assets();

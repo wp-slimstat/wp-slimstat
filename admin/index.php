@@ -1582,6 +1582,7 @@ class wp_slimstat_admin
 
     // END: update_tables_and_options
 
+    /** Registers the Slimstat reports chosen for the WP Dashboard as widgets, with the assets they need. */
     public static function add_dashboard_widgets()
     {
         if (!self::can_view_stats()) {

@@ -1659,6 +1659,10 @@ class wp_slimstat_db
         return $clean_outbound_resources;
     }
 
+    /**
+     * Top values of a column with their hit counts, in the selected dates and filters.
+     * Pass an array for the extended form (`columns`, `where`, `more_select`, `order_by`, ...); its `limit` caps the rows (default: Max results).
+     */
     public static function get_top($_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '')
     {
         $_order_by    = 'counthits DESC';

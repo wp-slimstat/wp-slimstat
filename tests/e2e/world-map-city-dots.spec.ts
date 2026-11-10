@@ -13,6 +13,7 @@ let db: mysql.Pool;
 
 const EVIL = '<img src=x onerror="window.__dotXss=1">';
 
+/** Seeds pageviews dated in site time: repeated, unlocated, country-only and out-of-range rows included. */
 async function seed(): Promise<void> {
   const [options] = await db.query<mysql.RowDataPacket[]>("SELECT option_value FROM wp_options WHERE option_name='gmt_offset'");
   const dt = Math.floor(Date.now() / 1000) + Math.round(Number(options[0]?.option_value ?? 0) * 3600);
@@ -31,6 +32,7 @@ async function seed(): Promise<void> {
   ]);
 }
 
+/** Opens Real-time with an optional query string and waits until the map has drawn its countries. */
 async function openMap(page: Page, query = ''): Promise<Locator> {
   await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1${query}`);
   await page.locator('#slim_p6_01').scrollIntoViewIfNeeded();
@@ -44,6 +46,7 @@ async function centre(l: Locator) {
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 }
 
+/** Whether the dot's centre falls in the country's box; fails if the country has no size. */
 async function inside(dot: Locator, country: Locator): Promise<boolean> {
   const p = await centre(dot);
   const b = (await country.boundingBox())!;
