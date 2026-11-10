@@ -1607,6 +1607,10 @@ class wp_slimstat_admin
                 if (in_array($a_report_id, self::COMPACT_DASHBOARD_REPORTS, true)) {
                     wp_slimstat_reports::$reports[$a_report_id]['callback_args']['is_widget'] = true;
                 }
+                // The widget body arrives over AJAX, too late to enqueue the map library.
+                if ('slim_p6_01' === $a_report_id) {
+                    wp_slimstat_reports::enqueue_world_map_assets();
+                }
                 wp_add_dashboard_widget($a_report_id, wp_slimstat_reports::$reports[$a_report_id]['title'], ['wp_slimstat_reports', 'callback_wrapper']);
             }
         }

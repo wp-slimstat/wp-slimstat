@@ -149,13 +149,8 @@ test.describe('CF-IPCountry stored XSS (#5)', () => {
       .evaluateAll((els) => els.map((e) => e.getAttribute('alt')));
     expect(altValues).toContain(POISON);
 
-    const tooltip = await page.evaluate(() => {
-      const $ = (window as any).jQuery;
-      const label = $('<div>');
-      $('#map_slim_p6_01').trigger('labelShow.jqvmap', [label, 'us', 'United States']);
-      return label.text();
-    });
-    expect(tooltip).toContain('2 Pageviews');
+    await page.locator('#map_slim_p6_01 path[data-code="US"]').dispatchEvent('mouseover');
+    await expect(page.locator('.jvm-tooltip.active')).toContainText('2 pageviews');
 
     // And nothing executed.
     expect(await page.evaluate(() => window.__xss_fired === true)).toBe(false);

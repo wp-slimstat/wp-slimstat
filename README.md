@@ -16,7 +16,7 @@ Real-time WordPress analytics that stay on your own server. Track pageviews and 
 * **Shortcodes** — Drop any report into a widget, post, or page with a single shortcode.
 * **Filters** — Decide who counts. Skip your own team, known bots, whole IP ranges, admin pages, or entire countries so your stats reflect real visitors, not noise.
 * **Geolocation** — Put a city and country to every visitor, plus their browser and operating system, powered by [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org).
-* **World map** — Watch your audience light up across the globe at a glance, even from your phone (map by [JQVMap](https://github.com/10bestdesign/jqvmap)).
+* **World map** — Watch your audience light up across the globe at a glance, even from your phone (map by [jsVectorMap](https://github.com/themustafaomar/jsvectormap)).
 * **Export & email** — Download your reports as CSV files, generate user heatmaps, or get the day's numbers in your inbox each morning (heatmaps and email reports via Pro).
 * **Cache-friendly** — Plays nicely with W3 Total Cache, WP Super Cache, Cloudflare, and most caching plugins.
 

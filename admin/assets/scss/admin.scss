@@ -423,69 +423,154 @@ body.index-php {
   }
 }
 
-body {
-  &.index-php,
-  &.toplevel_page_slimview1,
-  &.slimstat_page_slimview2,
-  &.slimstat_page_slimview3,
-  &.slimstat_page_slimview4,
-  &.slimstat_page_slimview5,
-  &.slimstat_page_slimconfig,
-  &.slimstat_page_slimpro,
-  &.slimstat_page_slimlayout,
-  &.slimstat_page_slimemail,
-  &.slimstat_page_migration {
-    .jqvmap-label {
-      z-index: 999999;
-      position: absolute !important;
-      background-color: #2b2b2b !important;
-      color: #ffffff !important;
-      padding: 10px !important;
-      transform: translateY(-15px) translateX(50%) !important;
-      max-width: 280px !important;
-      min-width: 50px !important;
-      font-size: 1em !important;
-      line-height: 1.5em !important;
-      direction: ltr !important;
-      border-radius: 8px !important;
-      backdrop-filter: blur(34px) !important;
-      box-shadow: 0px 2px 4px 0px #0000000a !important;
+// Audience Location map (jsVectorMap). Every rule is scoped: admin.css also loads on the WP
+// Dashboard, where another plugin may draw its own jsVectorMap.
+#map_slim_p6_01 {
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+}
 
-      & h3 {
-        margin: 0 !important;
-        font-size: 16px !important;
-        line-height: 100% !important;
-        font-weight: bold !important;
-        background-color: #2b2b2b !important;
-        color: #ffffff !important;
-        letter-spacing: 1px !important;
-      }
+#map_slim_p6_01 .jvm-zoom-btn {
+  position: absolute;
+  left: 10px;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  background-color: #2b2b2b;
+  color: #ffffff;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
 
-      & p {
-        font-family: Inter !important;
-        font-weight: 600 !important;
-        font-size: 12px !important;
-        line-height: 100% !important;
-        letter-spacing: 1px !important;
-        background-color: #2b2b2b !important;
-        color: #ffffff !important;
-      }
+  &.jvm-zoomin {
+    top: 10px;
+  }
 
-      & canvas {
-        position: absolute;
-        color: #2b2b2b !important;
-        background: #2b2b2b !important;
-        border: 0 dashed transparent;
-        background-color: #2b2b2b !important;
-        width: 12px !important;
-        height: 12px !important;
-        transform: rotate(135deg) translateX(0px) translateY(1px);
-        line-height: unset !important;
-        border-top-right-radius: 4px;
-        display: inline-block;
-        bottom: -5px;
-        left: calc(50% - 6px);
-      }
+  &.jvm-zoomout {
+    top: 34px;
+  }
+}
+
+// The tooltip is appended to <body>; the map script tags it with this class when it first shows.
+.slimstat-map-tooltip {
+  display: none;
+  position: absolute;
+  z-index: 999999;
+  max-width: 280px;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: #2b2b2b;
+  box-shadow: 0px 2px 4px 0px #0000000a;
+  color: #ffffff;
+  font-size: 1em;
+  line-height: 1.5em;
+  white-space: nowrap;
+  pointer-events: none;
+
+  &.active {
+    display: block;
+  }
+
+  h3 {
+    margin: 0 0 6px;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 100%;
+    letter-spacing: 1px;
+  }
+
+  p {
+    margin: 0;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 100%;
+    letter-spacing: 1px;
+  }
+}
+
+// The map column: map on top, legend and hint underneath, inside the fixed-height report body.
+.slimstat-map-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.slimstat-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin-top: 8px;
+  color: #50575e;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.slimstat-map-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// Swatches mirror the map: translucent brand dots in three sizes, the country shading as a ramp.
+.slimstat-map-legend-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+
+  i {
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: rgba(#e7294b, 0.7); // the marker fill and opacity
+
+    + i {
+      width: 10px;
+      height: 10px;
+    }
+
+    + i + i {
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+.slimstat-map-legend-scale {
+  display: block;
+  width: 48px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #c9cedb, #7a839e);
+
+  [dir="rtl"] & {
+    background: linear-gradient(to left, #c9cedb, #7a839e);
+  }
+}
+
+// Anchored to the map's id to beat the report body's `.wrap-slimstat .inside p { padding: 10px 25px }`.
+#map_slim_p6_01 ~ .slimstat-map-hint {
+  margin: 6px 0 0;
+  padding: 0;
+  color: #50575e;
+  font-size: 12px;
+}
+
+@media (min-width: 782px) {
+  // The report body is a fixed 370px: the map takes what the legend leaves. The container
+  // wraps, so its line is as tall as its tallest item and stretch alone would not cap the column.
+  .wrap-slimstat .slimstat-map-area {
+    height: 100%;
+
+    #map_slim_p6_01 {
+      height: auto;
+      min-height: 0;
     }
   }
 }

@@ -163,7 +163,7 @@ function css_unscoped_selectors(string $css): array
 
 // ponytail: count cap for the two files with pre-existing legacy selectors;
 // a swap (one removed, one added) slips past — tighten to 0 once they are cleaned.
-$legacyCap = ['admin.css' => 90, 'live-analytics.css' => 95];
+$legacyCap = ['admin.css' => 82, 'live-analytics.css' => 95];
 foreach (glob(dirname(__DIR__) . '/admin/assets/css/*.css') as $file) {
     $name = basename($file);
     $bad = css_unscoped_selectors((string) file_get_contents($file));
