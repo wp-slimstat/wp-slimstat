@@ -23,9 +23,6 @@ parameters:
         - wp-slimstat.php
         - admin
         - src
-    excludePaths:
-        analyse:
-            - vendor-prefixed/*    # Discover vendor symbols without analyzing third-party code.
     scanDirectories:
         - vendor-prefixed      # known to the analyzer, but not analyzed
     scanFiles:
