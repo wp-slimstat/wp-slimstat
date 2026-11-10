@@ -7,14 +7,14 @@
  * constructs; dynamic-property writes (8.2) and partial-callable strings are
  * left to PHPStan (Phase 4B), which detects them far more reliably than a regex.
  *
- * Scope: wp-slimstat.php, admin/, src/ — excludes src/Dependencies/.
+ * Scope: wp-slimstat.php, admin/, src/ — excludes vendor-prefixed/.
  * Allow-marker: /​* php-forward: ok *​/ on the comment line above a site.
  */
 
 declare(strict_types=1);
 
 $plugin_root  = dirname(__DIR__);
-$deps_prefix  = $plugin_root . '/src/Dependencies';
+$deps_prefix  = $plugin_root . '/vendor-prefixed';
 $allow_marker = 'php-forward: ok';
 $paths        = [$plugin_root . '/wp-slimstat.php', $plugin_root . '/admin', $plugin_root . '/src'];
 

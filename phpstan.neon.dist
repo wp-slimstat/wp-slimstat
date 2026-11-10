@@ -1,7 +1,7 @@
 # PHPStan — wp-slimstat (free)
 #
 # Static analysis focused on the PHP 8.x null/type class, complementing the
-# source-level scanners. Analyzes own code only; src/Dependencies (WP Scoper-scoped
+# source-level scanners. Analyzes own code only; vendor-prefixed (WP Scoper-scoped
 # Symfony polyfill) is scanned for symbols but not analyzed. Legacy findings are
 # parked in phpstan-baseline.neon (a migration tool — ratchet down over time,
 # never baseline newly introduced errors).
@@ -15,7 +15,7 @@ parameters:
     level: 5
     phpVersion: 70400          # analyze against the 7.4 floor
     # The baseline is a ceiling, not an exact set: CI's real composer autoloader
-    # resolves scoped src/Dependencies classes that are "unknown" in a local
+    # resolves scoped vendor-prefixed classes that are "unknown" in a local
     # throwaway analysis, so some baseline entries legitimately don't recur in
     # CI. Tolerate those (don't fail on unmatched ignores); still fail on NEW errors.
     reportUnmatchedIgnoredErrors: false
@@ -25,9 +25,9 @@ parameters:
         - src
     excludePaths:
         analyse:
-            - src/Dependencies/*    # Discover vendor symbols without analyzing third-party code.
+            - vendor-prefixed/*    # Discover vendor symbols without analyzing third-party code.
     scanDirectories:
-        - src/Dependencies      # known to the analyzer, but not analyzed
+        - vendor-prefixed      # known to the analyzer, but not analyzed
     scanFiles:
         - languages/index.php
         - tests/phpstan/woocommerce.php

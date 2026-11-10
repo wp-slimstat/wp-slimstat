@@ -6,14 +6,14 @@
  * _deprecated_function notice.
  *
  * BASELINE (zero findings expected). Covers the WP-version axis of the audit.
- * Scope: wp-slimstat.php, admin/, src/ — excludes src/Dependencies/.
+ * Scope: wp-slimstat.php, admin/, src/ — excludes vendor-prefixed/.
  * Allow-marker: /​* wp-core-fn: ok *​/ on the comment line above a site.
  */
 
 declare(strict_types=1);
 
 $plugin_root  = dirname(__DIR__);
-$deps_prefix  = $plugin_root . '/src/Dependencies';
+$deps_prefix  = $plugin_root . '/vendor-prefixed';
 $allow_marker = 'wp-core-fn: ok';
 $paths        = [$plugin_root . '/wp-slimstat.php', $plugin_root . '/admin', $plugin_root . '/src'];
 

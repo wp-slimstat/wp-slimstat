@@ -23,7 +23,7 @@
  * assertions in this suite have passed by matching a name that appeared in a comment
  * or docblock. `token_get_all()` sees neither.
  *
- * Scope: wp-slimstat.php, uninstall.php, admin/, src/ — excluding src/Dependencies/.
+ * Scope: wp-slimstat.php, uninstall.php, admin/, src/ — excluding vendor-prefixed/.
  */
 
 declare(strict_types=1);
@@ -57,7 +57,7 @@ $files = slimstat_own_php_files(
         $plugin_root . '/admin',
         $plugin_root . '/src',
     ],
-    $plugin_root . '/src/Dependencies'
+    $plugin_root . '/vendor-prefixed'
 );
 
 if ([] === $files) {

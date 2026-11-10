@@ -19,7 +19,7 @@ spl_autoload_register(function ($class) {
 // PSR-4 autoload (host project)
 spl_autoload_register(function ($class) {
     static $psr4Map = [
-        'SlimStat\\' => __DIR__ . '/../../src',
+        'SlimStat\\' => __DIR__ . '/../src',
     ];
 
     foreach ($psr4Map as $prefix => $baseDir) {

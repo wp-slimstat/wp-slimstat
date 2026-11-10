@@ -64,7 +64,7 @@ Use sparingly — most violations should be fixed, not exempted.
    — must run on 7.4 lane).
 2. Use `exit(1)` on failure, print a clear actionable error to stderr.
 3. Mirror the file-walker pattern from `tests/php-implicit-nullable-test.php`
-   (uses `RecursiveDirectoryIterator` + prunes `src/Dependencies/`).
+   (uses `RecursiveDirectoryIterator` + prunes `vendor-prefixed/`).
 4. Register the script in `composer.json` under `scripts` as
    `test:your-name`.
 5. Add it to the `test:source-level` aggregator, and `test:all` will
@@ -151,7 +151,7 @@ developers.
 
 ## Static analysis — the PHPStan baseline, disclosed
 
-`composer phpstan` runs PHPStan at level 5 over own code (`src/Dependencies` is excluded — it
+`composer phpstan` runs PHPStan at level 5 over own code (`vendor-prefixed` is excluded — it
 is vendored, WP-Scoper output). Errors that predate the analysis are parked in
 `phpstan-baseline.neon`, and that file is a **migration tool, not a permission**: it holds
 **160 entries suppressing 311 errors**, and `tests/phpstan-baseline-ratchet-test.php` fails the

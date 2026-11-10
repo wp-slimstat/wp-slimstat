@@ -97,7 +97,7 @@ if (!$controls_ok) {
 // ── Corpus: every function defined in the plugin's own source ───────────────
 $files = work_slimstat_own_php_files(
     [$plugin_root . '/wp-slimstat.php', $plugin_root . '/admin', $plugin_root . '/src', $plugin_root . '/uninstall.php'],
-    $plugin_root . '/src/Dependencies'
+    $plugin_root . '/vendor-prefixed'
 );
 
 $rows        = [];
