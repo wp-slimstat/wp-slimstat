@@ -258,6 +258,8 @@ test.describe('Video tutorials', () => {
     const r = await remote(context);
     await showVideos(page, true);
     await ageCache(page);
+    // Leave the Videos page first: its lazy thumbnails can still be loading and would count as front-end requests.
+    await page.goto('about:blank');
     const before = r.requests.length;
     await page.goto('/');
     await page.waitForLoadState('load');
