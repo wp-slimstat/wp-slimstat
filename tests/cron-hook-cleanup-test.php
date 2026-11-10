@@ -43,7 +43,7 @@ foreach ($directory as $file) {
         continue;
     }
     // Skip third-party, build and test trees.
-    foreach (['/vendor/', '/node_modules/', '/src/Dependencies/', '/tests/', '/packages/'] as $skip) {
+    foreach (['/vendor/', '/node_modules/', '/vendor-prefixed/', '/tests/', '/packages/'] as $skip) {
         if (strpos($path, $skip) !== false) {
             continue 2;
         }

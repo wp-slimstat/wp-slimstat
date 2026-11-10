@@ -15,7 +15,7 @@ $assert = static function ($condition, $message) use ($fail) {
         $fail($message);
     }
 };
-$target = $root . '/src/Dependencies';
+$target = $root . '/vendor-prefixed';
 $package = $target . '/veronalabs/browscap-php/src';
 $autoload = $target . '/autoload.php';
 $mapFile = $target . '/autoload-classmap.php';
@@ -112,7 +112,7 @@ unlink($fixtureFile);
 rmdir($fixture);
 
 $negative = sys_get_temp_dir() . '/slimstat-classmap-' . uniqid('', true);
-$negativeTarget = $negative . '/src/Dependencies';
+$negativeTarget = $negative . '/vendor-prefixed';
 $assert(mkdir($negativeTarget, 0777, true), 'cannot create staged classmap fixture');
 $badMap = $map;
 unset($badMap[$required[0]]);
@@ -129,7 +129,6 @@ unlink($negativeTarget . '/autoload.php');
 unlink($negativeTarget . '/veronalabs');
 unlink($badMapFile);
 rmdir($negativeTarget);
-rmdir($negative . '/src');
 rmdir($negative);
 
 echo "SLIMSTAT-SCOPED-RUNTIME-COMPLETE\n";

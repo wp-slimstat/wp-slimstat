@@ -31,6 +31,7 @@ $browse = static function (): void {
         <section class="ss-videos-panel" data-show="consent" aria-labelledby="ss-videos-consent-title" hidden>
             <h2 id="ss-videos-consent-title"><?php esc_html_e('Load the video list from wp-slimstat.com?', 'wp-slimstat'); ?></h2>
             <p><?php esc_html_e('The tutorials are published on wp-slimstat.com. To list them here, your browser downloads the list and its thumbnails from wp-slimstat.com. Like any web request, this shows wp-slimstat.com your IP address, your browser and the address of this site. SlimStat adds no analytics, cookies or account information.', 'wp-slimstat'); ?></p>
+            <p><?php esc_html_e('Showing the videos also marks the SlimStat menu with ▶ when new videos are published. You can turn this off below.', 'wp-slimstat'); ?></p>
             <p class="ss-videos-actions">
                 <button type="button" class="button button-primary" id="ss-videos-show"><?php esc_html_e('Show videos', 'wp-slimstat'); ?></button>
                 <?php $browse(); ?>

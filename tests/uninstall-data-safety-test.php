@@ -815,7 +815,7 @@ $plugin_root    = dirname(__DIR__);
 $minted_options = [];
 foreach (slimstat_own_php_files(
     [$plugin_root . '/src', $plugin_root . '/admin', $plugin_root . '/wp-slimstat.php'],
-    $plugin_root . '/src/Dependencies'
+    $plugin_root . '/vendor-prefixed'
 ) as $path) {
     $body = slimstat_blank_comments((string) file_get_contents($path));
     // Both spellings are in use: OPTION_NAME (prefix) and SALT_OPTION (suffix).

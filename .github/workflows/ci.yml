@@ -99,8 +99,8 @@ jobs:
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: |
           composer run build:autoload
-          git diff --exit-code -- src/Dependencies
-          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies)"
+          git diff --exit-code -- vendor-prefixed
+          test -z "$(git ls-files --others --exclude-standard -- vendor-prefixed)"
           php tests/autoloader-production-test.php
           php tests/classmap-completeness-test.php
           composer dump-autoload
@@ -127,12 +127,12 @@ jobs:
         run: composer test:assertion-floor
 
       - name: PHP syntax lint (src/)
-        # Lint plugin source only — skip src/Dependencies/ which contains
-        # WP-Scoper vendor files that may use PHP 8.0+ syntax.
+        # Lint plugin source only. The WP-Scoper output lives in vendor-prefixed/,
+        # outside src/, and may use PHP 8.0+ syntax.
         # Print only files with errors; grep exits 1 when nothing matches (no
         # errors), so we invert: fail only when errors ARE found.
         run: |
-          ERRORS=$(find src/ -not -path "src/Dependencies/*" -name "*.php" -exec php -l {} \; 2>&1 | grep -v "No syntax errors" || true)
+          ERRORS=$(find src/ -name "*.php" -exec php -l {} \; 2>&1 | grep -v "No syntax errors" || true)
           if [ -n "$ERRORS" ]; then
             echo "$ERRORS"
             exit 1
@@ -247,12 +247,12 @@ jobs:
       - name: Verify generated dependencies, then enable the dev autoloader
         run: |
           composer run build:autoload
-          git diff --exit-code -- src/Dependencies
-          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies)"
+          git diff --exit-code -- vendor-prefixed
+          test -z "$(git ls-files --others --exclude-standard -- vendor-prefixed)"
           composer dump-autoload
 
       - name: Run PHPStan (level 5, target 7.4, baseline-gated)
-        # phpstan.neon.dist analyzes own code (src/Dependencies excluded); legacy
+        # phpstan.neon.dist analyzes own code (vendor-prefixed excluded); legacy
         # findings are parked in phpstan-baseline.neon — this lane fails only on
         # NEW errors. Ratchet the baseline down over time; never grow it.
         run: composer phpstan
@@ -943,8 +943,8 @@ jobs:
       - name: Verify generated dependencies, then enable the dev autoloader
         run: |
           composer run build:autoload
-          git diff --exit-code -- src/Dependencies
-          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies)"
+          git diff --exit-code -- vendor-prefixed
+          test -z "$(git ls-files --others --exclude-standard -- vendor-prefixed)"
           composer dump-autoload
 
       - name: Run full PHPUnit suite

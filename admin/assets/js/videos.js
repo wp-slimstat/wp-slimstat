@@ -112,8 +112,10 @@
         });
     }
 
+    // Showing the videos also turns on the ▶ menu marker; the checkbox below turns it off.
     document.getElementById('ss-videos-show').addEventListener('click', () => {
-        api.setConsent({ load: true });
+        api.setConsent({ load: true, auto: true });
+        auto.checked = true;
         start(false, true);
     });
     document.getElementById('ss-videos-retry').addEventListener('click', () => start(true, true));

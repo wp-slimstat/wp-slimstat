@@ -27,7 +27,6 @@
       "SlimStat\\": "src/"
     },
     "exclude-from-classmap": [
-      "/src/Dependencies/",
       "/vendor/veronalabs/browscap-php/src/"
     ]
   },
@@ -54,7 +53,7 @@
       "class_prefix": "SlimStat_",
       "constant_prefix": "SLIMSTAT_DEPENDENCIES_",
       "packages": ["veronalabs/browscap-php"],
-      "target_directory": "src/Dependencies",
+      "target_directory": "vendor-prefixed",
       "update_call_sites": false,
       "delete_vendor_packages": false,
       "php_compat": true,
@@ -69,7 +68,7 @@
     "test:admin-i18n-labels": "php tests/admin-i18n-labels-test.php",
     "post-install-cmd": "@scoper:ext-constants",
     "post-update-cmd": "@scoper:ext-constants",
-    "scoper:ext-constants": "php build/scoper-ext-constants.php src/Dependencies",
+    "scoper:ext-constants": "php build/scoper-ext-constants.php vendor-prefixed",
     "build:autoload": "composer dump-autoload --no-dev -o",
     "i18n:pot": "wp i18n make-pot . languages/wp-slimstat.pot --domain=wp-slimstat --skip-plugins --skip-themes --exclude=tests,build",
     "i18n:json": "wp i18n make-json languages/ --no-purge --pretty-print",

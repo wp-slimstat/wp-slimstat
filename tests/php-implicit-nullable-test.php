@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 $plugin_root = dirname(__DIR__);
 $allow_marker = 'php-implicit-nullable: ok';
-$deps_prefix  = $plugin_root . '/src/Dependencies';
+$deps_prefix  = $plugin_root . '/vendor-prefixed';
 
 $paths = [
     $plugin_root . '/admin',

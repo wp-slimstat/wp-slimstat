@@ -8,14 +8,14 @@
  * PHP 8, silently changing the rendered value. This scanner is RED before the
  * fix (empty()/strict form) and green after; it then guards re-introduction.
  *
- * Scope: wp-slimstat.php, admin/, src/ — excludes src/Dependencies/.
+ * Scope: wp-slimstat.php, admin/, src/ — excludes vendor-prefixed/.
  * Allow-marker: /​* php-loose-compare: ok *​/ on the comment line above a site.
  */
 
 declare(strict_types=1);
 
 $plugin_root  = dirname(__DIR__);
-$deps_prefix  = $plugin_root . '/src/Dependencies';
+$deps_prefix  = $plugin_root . '/vendor-prefixed';
 $allow_marker = 'php-loose-compare: ok';
 
 $paths = [

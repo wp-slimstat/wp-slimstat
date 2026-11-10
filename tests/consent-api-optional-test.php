@@ -60,7 +60,7 @@ $consent_api = ['wp_has_consent', 'wp_set_consent', 'wp_get_consent_type'];
 
 $files = slimstat_own_php_files(
     [$plugin_root . '/src', $plugin_root . '/admin', $plugin_root . '/wp-slimstat.php'],
-    $plugin_root . '/src/Dependencies'
+    $plugin_root . '/vendor-prefixed'
 );
 
 $call_sites = 0;
