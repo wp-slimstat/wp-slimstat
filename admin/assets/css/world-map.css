@@ -185,7 +185,7 @@
     align-items: center;
     gap: 6px 10px;
     margin-bottom: 16px;
-    color: #202224;
+    color: var(--ss-text-body, #202224);
 }
 
 #slim_p6_01 .country-flag-container {
@@ -226,7 +226,6 @@
 
 #slim_p6_01 .country-bar > span {
     grid-area: share;
-    float: none;
     margin: 0;
     font-size: 12px;
     font-weight: 800;

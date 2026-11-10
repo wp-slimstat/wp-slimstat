@@ -1672,8 +1672,11 @@ class wp_slimstat_admin
         wp_enqueue_style('wp-slimstat-acquisition', plugins_url('/admin/assets/css/acquisition.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
         // Country rows can sit on any report screen, like the dialogs above.
         wp_enqueue_style('wp-slimstat-country-cities', plugins_url('/admin/assets/css/country-cities.css', __DIR__), ['wp-slimstat-acquisition'], SLIMSTAT_ANALYTICS_VERSION);
-        // In the head, so the map report does not reflow when its late-enqueued copy would print in the footer.
-        wp_enqueue_style('wp-slimstat-world-map', plugins_url('/admin/assets/css/world-map.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
+        // In the head on the screen that holds the map, so it does not reflow when its late-enqueued copy prints in the footer.
+        // The Dashboard enqueues it in add_dashboard_widgets(), which runs before this hook.
+        if (class_exists('wp_slimstat_reports', false) && in_array('slim_p6_01', (array) (wp_slimstat_reports::$user_reports[self::$current_screen] ?? []), true)) {
+            wp_enqueue_style('wp-slimstat-world-map', plugins_url('/admin/assets/css/world-map.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
+        }
         if ('slimheatmap' === self::$current_screen) {
             wp_enqueue_style('wp-slimstat-heatmaps', plugins_url('/admin/assets/css/heatmaps.css', __DIR__), ['wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
             wp_enqueue_script('slimstat-heatmaps', plugins_url('/admin/assets/js/heatmaps.js', __DIR__), ['wp-i18n', 'wp-api-fetch'], SLIMSTAT_ANALYTICS_VERSION, true);
