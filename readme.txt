@@ -194,6 +194,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 **Fixed**
 
 * The Audience Location map shows city dots again, one per city and sized by pageviews for the selected dates and filters, with a legend under the map. ([#402](https://github.com/wp-slimstat/wp-slimstat/issues/402))
+* The Audience Location map is bigger, with the country list on its right wherever there is room (report pages, wide shortcode areas) and under it in Dashboard columns and on phones. Its styles no longer affect other Dashboard widgets or themes.
 * Shared Heatmaps filters survive navigation and reloads. Geolocation checks explain database problems, verify trusted proxies and count only known live countries.
 * Clipboard retries and refreshed Ecommerce actions keep the correct report context, and trend prompts sample the full selected period.
 * Heatmaps keep the report's date range. AI results show formatting and real row names, and failed analyses explain the cause, link the fix and offer Retry only when it can help.
