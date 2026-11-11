@@ -81,8 +81,8 @@ if (in_array($mode, ['setup', 'setup-zero'], true)) {
     $before = $wpdb->num_queries;
     $id = \SlimStat\Tracker\VisitIdGenerator::generateNextVisitId();
     if ($failMax) {
-        $counterRows = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->options}");
-        if (0 !== $id || ('failed-max' === $mode && 0 !== $counterRows) || ('failed-max-legacy' === $mode && '3' !== $wpdb->get_var("SELECT option_value FROM {$wpdb->options}"))) throw new RuntimeException('Failed MAX seeded or issued an unverified ID.');
+        $counterRows = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name='slimstat_visit_id_counter'");
+        if (0 !== $id || ('failed-max' === $mode && 0 !== $counterRows) || ('failed-max-legacy' === $mode && '3' !== $wpdb->get_var("SELECT option_value FROM {$wpdb->options} WHERE option_name='slimstat_visit_id_counter'"))) throw new RuntimeException('Failed MAX seeded or issued an unverified ID.');
         echo json_encode(['refused_id' => $id, 'counter_rows' => $counterRows]), "\n";
         exit(0);
     }

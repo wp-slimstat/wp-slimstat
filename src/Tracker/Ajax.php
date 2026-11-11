@@ -206,6 +206,12 @@ class Ajax
             return Utils::logError(204);
         }
 
+        // Let the browser's existing queue retry before any visit or event is processed.
+        if (\wp_slimstat::$wpdb !== $GLOBALS['wpdb'] && empty(\wp_slimstat::$wpdb->dbh)) {
+            status_header(503);
+            return -503;
+        }
+
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
         $remote_ip = $_SERVER['REMOTE_ADDR'] ?? '';
         $remote_ip = is_string($remote_ip) ? sanitize_text_field(wp_unslash($remote_ip)) : '';

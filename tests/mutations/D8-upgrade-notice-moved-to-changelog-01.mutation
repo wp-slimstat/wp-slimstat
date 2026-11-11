@@ -6,21 +6,14 @@ rationale: Deletes the current Upgrade Notice entry and leaves a dateless change
 ---
 --- a/readme.txt
 +++ b/readme.txt
-@@ -159,16 +159,13 @@
- 
- == Upgrade Notice ==
+@@ -161,5 +161,2 @@
  
 -= 6.1.0 =
 -Older versions keep working, added columns stay, and it removes no rows. Adds Copy Prompt, AI Analysis, city drilldown and video tutorials. SlimStat Pro now needs a valid, activated license. Fixes privacy exports, tracking, filters and geolocation. Back up first; repairs wait for your click.
 -
  = 6.0.0 =
- SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster reports. Back up first. The update adds columns and indexes and removes no rows; older versions keep working and the added columns stay. Database steps wait for your click. Some totals change on purpose: see changelog.
- 
- 
- == Changelog ==
+@@ -170,3 +167,3 @@
  
 -= 6.1.0 - 2026-11-08 =
 += 6.1.0 =
  
- **Custom databases and upgrade notices**
- * Updates from the retired Custom DB addon keep recording visits in the same external database, including connections with no table prefix. Switching databases safely reseeds the visit counter above existing IDs.
