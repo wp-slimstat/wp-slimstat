@@ -80,3 +80,46 @@
     scan();
     new MutationObserver(scan).observe(document.body, {childList: true, subtree: true});
 }());
+/* Black Friday 2026 banner: delete after 2026-12-01. Bound to its own root; the only request is the dismissal, stored on the user. */
+(function () {
+    'use strict';
+    var root = document.getElementById('slimstat-bf-2026');
+    if (!root) return;
+    var copy = root.querySelector('.slimstat-bf26__copybtn');
+    var code = root.querySelector('.slimstat-bf26__code');
+    var status = root.querySelector('[role="status"]');
+    var label = copy.textContent;
+    var dismissing = false;
+    function say(text) { copy.textContent = text; status.textContent = text; }
+    function select() {
+        var range = document.createRange();
+        var selection = document.getSelection();
+        range.selectNodeContents(code);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        say(copy.getAttribute('data-slimstat-bf26-selected'));
+    }
+    root.addEventListener('click', function (event) {
+        if (event.target.closest('.slimstat-bf26__copybtn')) {
+            // No clipboard API on plain-HTTP admin: select the code for Ctrl+C instead.
+            try {
+                navigator.clipboard.writeText(code.textContent).then(function () { say(copy.getAttribute('data-slimstat-bf26-copied')); }, select);
+            } catch (e) { select(); }
+        }
+        if (event.target.closest('.slimstat-bf26__dismiss') && !dismissing) {
+            // Removed only once saved, so a strip that is gone stays gone on every browser. One request at a time,
+            // so a double click cannot send two or move focus twice.
+            dismissing = true;
+            fetch(root.getAttribute('data-slimstat-bf26-ajax'), {method: 'POST', credentials: 'same-origin', body: new URLSearchParams({
+                action: 'slimstat_bf2026_dismiss', security: root.getAttribute('data-slimstat-bf26-nonce')
+            })}).then(function (response) { return response.ok ? response.json() : {}; }).then(function (result) {
+                if (!result.success) throw new Error();
+                var heading = document.querySelector('#wpbody-content h1');
+                root.remove();
+                if (heading) { heading.setAttribute('tabindex', '-1'); heading.focus(); }
+            }).catch(function () { dismissing = false; status.textContent = root.getAttribute('data-slimstat-bf26-error'); });
+        }
+    });
+    copy.addEventListener('blur', function () { copy.textContent = label; status.textContent = ''; });
+}());
+/* End Black Friday 2026 banner */

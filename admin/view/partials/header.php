@@ -131,7 +131,7 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
     </div>
 </div>
 
-<?php wp_slimstat_admin::show_latest_news(null, null, null, 'bar'); ?>
+<?php if (!\SlimStat\Services\BlackFriday2026::render()) { wp_slimstat_admin::show_latest_news(null, null, null, 'bar'); } ?>
 
 <?php if (!empty($title)) : // One page heading on every screen, directly under the brand bar (audit A6). ?>
 <div class="slimstat-pageintro">

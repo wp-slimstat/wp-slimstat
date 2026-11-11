@@ -311,6 +311,10 @@ class wp_slimstat_admin
         if ('on' === (wp_slimstat::$settings['notice_latest_news'] ?? 'no') && in_array($GLOBALS['pagenow'] ?? '', ['index.php', 'plugins.php'], true) && current_user_can('manage_options')) {
             add_action('admin_notices', [self::class, 'show_latest_news'], 10, 0);
         }
+        // Black Friday 2026: the main Dashboard only; the class decides who sees it and when.
+        if ('index.php' === ($GLOBALS['pagenow'] ?? '')) {
+            add_action('admin_notices', [\SlimStat\Services\BlackFriday2026::class, 'dashboard_notice'], 9, 0);
+        }
 
         // Remove spammers from the database
         if ('on' == wp_slimstat::$settings['ignore_spammers']) {
@@ -428,6 +432,7 @@ class wp_slimstat_admin
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
             }
             add_action('wp_ajax_slimstat_country_cities', [\SlimStat\Reports\CountryCities::class, 'ajax']);
+            add_action('wp_ajax_' . \SlimStat\Services\BlackFriday2026::ACTION, [\SlimStat\Services\BlackFriday2026::class, 'dismiss']);
 
             // Live Analytics AJAX handler is registered via init_hooks() in Bootstrap
             // No need to call it separately here - it's already registered
