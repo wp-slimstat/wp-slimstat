@@ -35,7 +35,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await expect(checkout).toHaveAttribute('rel', /noopener/);
     expect(new URL(await checkout.getAttribute('href') || '').searchParams.get('utm_content')).toBe('ecommerce-channel');
     const features = page.locator('.ss-pro-feature h3');
-    await expect(features).toHaveCount(12);
+    await expect(features).toHaveCount(14);
     await expect(features.first()).toHaveText('Ecommerce Pro');
     await expect(page.locator('#ss-pro-live .ss-pro-lede')).toHaveText(/right now|next visitor arrives/);
     const footer = new URL(await footerCta.getAttribute('href') || '');
