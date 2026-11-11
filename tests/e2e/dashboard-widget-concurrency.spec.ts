@@ -1,20 +1,45 @@
 import { test, expect, Request } from '@playwright/test';
 
+// Free list reports load in one slimstat_load_reports request (report_ids[]); the rest load one by one (report_id).
+function reportIds(body: string): string[] {
+  const params = new URLSearchParams(body);
+  if (params.get('action') === 'slimstat_load_reports') return params.getAll('report_ids[]');
+  if (params.get('action') === 'slimstat_load_report') return [params.get('report_id')!];
+  return [];
+}
+
+// The single-route request a batched report would have sent on its own.
+function singleBody(body: string, id: string): string {
+  const params = new URLSearchParams(body);
+  if (params.get('action') === 'slimstat_load_report') return body;
+  const single = new URLSearchParams();
+  for (const [key, value] of params) {
+    if (key !== 'action' && key !== 'report_ids[]' && !key.startsWith('granularities[')) single.append(key, value);
+  }
+  single.set('action', 'slimstat_load_report');
+  single.set('report_id', id);
+  single.set('granularity', params.get(`granularities[${id}]`) || '');
+  return single.toString();
+}
+
 test('Dashboard loads nearby reports in three slots and preserves report HTML', async ({ page }) => {
   test.setTimeout(120_000);
   const inFlight = new Set<Request>();
   const requests = new Map<string, string>();
+  const batches: string[][] = [];
   let maximum = 0;
   page.on('request', request => {
     const body = request.postData() || '';
-    if (!body.includes('action=slimstat_load_report')) return;
+    const ids = reportIds(body);
+    if (!ids.length) return;
     inFlight.add(request);
     maximum = Math.max(maximum, inFlight.size);
-    requests.set(new URLSearchParams(body).get('report_id')!, body);
+    if (new URLSearchParams(body).get('action') === 'slimstat_load_reports') batches.push(ids);
+    for (const id of ids) requests.set(id, singleBody(body, id));
   });
   page.on('requestfinished', request => inFlight.delete(request));
   page.on('requestfailed', request => inFlight.delete(request));
-  // Keep the first requests open long enough to distinguish three slots from the old serial chain.
+  // Keep the first requests open long enough to tell bounded slots from an unbounded burst.
   await page.route('**/admin-ajax.php', async route => {
     if ((route.request().postData() || '').includes('action=slimstat_load_report')) {
       await new Promise(resolve => setTimeout(resolve, 150));
@@ -35,8 +60,13 @@ test('Dashboard loads nearby reports in three slots and preserves report HTML', 
     }, id), { timeout: 30_000 }).toBe(true);
   }
   await expect.poll(() => inFlight.size).toBe(0);
-  expect(maximum, 'nearby reports must overlap instead of loading serially').toBeGreaterThan(1);
+  expect(batches.some(ids => ids.length > 1), 'nearby Dashboard widgets must share a request (#408)').toBe(true);
   expect(maximum, 'initial report requests must stay within three slots').toBeLessThanOrEqual(3);
+
+  // The batch keeps page=dashboard, so Goals and Funnels stay compact instead of rendering the admin card.
+  for (const id of ['slim_p9_01', 'slim_p9_02'].filter(id => widgets.includes(id))) {
+    await expect(page.locator(`#${id} .slimstat-gf-card`)).toHaveCount(0);
+  }
 
   // Static list widgets avoid live counters and charts that deliberately mutate their DOM.
   const samples = widgets.filter(id => /^slim_p[2345]_/.test(id) && requests.has(id)).slice(0, 3);

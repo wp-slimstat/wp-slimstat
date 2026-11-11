@@ -715,7 +715,7 @@ jQuery(function () {
                 if (jQuery("#" + reportId).data("slimstat-refresh")) continue;
                 var batchIds = [];
                 var freeIds = SlimStatAdminParams.batch_report_ids || [];
-                if (!jQuery('body').hasClass('index-php') && freeIds.indexOf(reportId) !== -1) {
+                if (freeIds.indexOf(reportId) !== -1) {
                     batchIds.push(reportId);
                     pendingReports = pendingReports.filter(function (id) {
                         if (jQuery('#' + id).data('slimstat-refresh')) return false;
