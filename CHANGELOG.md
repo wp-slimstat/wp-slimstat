@@ -1,110 +1,68 @@
 = 6.1.0 - 2026-11-08 =
 
-**Report actions, filters and geolocation**
-* Heatmaps opened from a report tab keep that report's date range, such as Last 6 months or a custom range, in the picker and in every Heatmaps request.
-* AI Analysis, Email Reports, Shortcodes and Settings pass the selected date range and filters on to the next report, including Ecommerce, and filter suggestions use the date range the reports show.
-* Copy AI Prompt shows a gold copy icon, so it reads apart from Analyze with AI.
-* The SlimStat 6 announcement leads with AI Analysis: a highlighted block with a Try AI Analysis button on the Dashboard and Plugins, and a highlighted first link on SlimStat screens. It says what Free and Pro each do, and still carries no purchase links outside SlimStat screens. On SlimStat screens its title sits on its own line above the feature links.
-* AI results show bold, italic, headings and numbered lists, and name report rows by their own labels instead of "Row 3". Prompts define each metric, with its currency and period, and tell the provider not to group or guess rows.
-* AI analysis failures say what went wrong (connection, timeout, rate limit, quota, access or model) with a safe diagnostic, link the settings that fix configuration problems, and offer Retry only when a retry can help, after any wait the provider asks for. A response lost on the way back is recovered from the saved result instead of a new paid request, and the last saved result is kept.
-* Recover clipboard feedback after retries and report refreshes, omit unavailable AI action spacing, preserve existing non-Ecommerce analysis cache identities, and sample Ecommerce trends across the full selected period.
-* Add shared AI prompt and analysis actions to every Ecommerce report, with the selected view, currency, metric, comparison, filters and privacy limits.
-* Keep shared report filters through Heatmaps navigation and apply supported filters to clicks, scroll data and pageview counts. Explain retained filters that Heatmaps cannot apply.
-* Improve AI modal spacing, wrapped actions and keyboard focus on narrow and RTL screens.
-* Add a permanent, translated Tutorial badge to Videos and placement-specific attribution to its Browse videos link.
-* Check geolocation database health independently of the visiting IP and explain download/filesystem failures. Align Countries live with the live visitor activity window and exclude unknown locations.
-* Reject forged proxy headers. Cloudflare client/location headers require a connecting edge IP; other proxies must restore REMOTE_ADDR or explicitly opt in through the slimstat_trusted_proxy filter.
-* The Audience Location map shows city dots again: one dot per city for the selected dates and filters, bigger where there are more pageviews, for the busiest cities up to the Map data points setting. Hover a dot or a country for its pageviews and share; click a dot to see the cities in its country. A legend under the map explains the dots and the country shading, and at Country precision the map points to the setting that turns city dots on. The map now uses jsVectorMap, a maintained library that ships inside SlimStat (no outside requests); a few small island countries are no longer shaded on it but stay in the country list and still get dots. With background report loading the map queries run once instead of twice, and the Dashboard Audience Location widget draws its map. ([#402](https://github.com/wp-slimstat/wp-slimstat/issues/402))
-* The Audience Location map is bigger, with the country list beside it on the right wherever the report is at least 720px wide, including a shortcode in a wide content area; in narrower spaces, such as WordPress Dashboard columns and phones, the list sits under the map. Its styles now apply only to that report, so they no longer change other Dashboard widgets or your theme.
+**SlimStat 6.1: turn any report into plain-language findings with AI, follow a country down to its cities, and learn SlimStat from video tutorials.** Your settings and data carry over, database repairs wait for your click, and older versions keep working if you ever go back.
 
-**SlimStat Pro needs a valid license**
-* SlimStat Pro features run only with a license that is valid and activated for this site, including Pro versions older than this release. Otherwise Pro stays locked, and Pro settings, data and the Custom DB connection are kept. Pro older than 3.0.0 stays locked until it is updated.
-* While Pro is locked, one banner on every SlimStat screen, the WordPress Dashboard and Plugins says why and links Activate license (or License settings), Find my license in your SlimStat account and, when a key is missing or no longer valid, View plans. It cannot be dismissed and disappears once the license is valid; other users see a request to ask an administrator on SlimStat screens only. It is red when the key is wrong or not activated for this site, and amber when no key is entered yet, the check could not run, or Pro needs an update. The banner itself reads the stored verdict; only an administrator opening a SlimStat screen can wait once for a due license check.
-* SlimStat checks the license through SlimStat Pro about every 12 hours, and at once when an administrator saves License settings. A confirmed license keeps working through a license-server outage for up to 3 days.
-
-**New: AI Analysis**
-* A new SlimStat → AI Analysis page explains how to turn a report into plain-language findings. Copy AI Prompt stays unlimited in Free; SlimStat Pro adds analysis inside SlimStat through an AI provider connected in WordPress, plus a private library of saved results.
-* Report titles sit on their own row with Export and Copy AI Prompt beneath them, and a successful copy confirms that the prompt is on your clipboard.
-* Analysis inside SlimStat runs only when you ask for it, only on reports you may view, and withholds visitor identifiers, URLs and free-text labels. Results are displayed as plain text.
-
-**New: Copy AI Prompt**
-* Each report has a ✨ Copy AI Prompt button beside Export. It copies a ready-to-paste prompt with the report's rows, period and filters plus your site's title, tagline and address, for any AI assistant to turn into plain-language findings and next steps. Nothing is sent anywhere; the prompt only goes to your clipboard. Reports that list individual visitors, and views filtered to one visitor, have no button. Pro reports need Pro. Ecommerce, the Heatmaps page list and individual page heatmaps also support copying their displayed metrics. Hover over Copy AI Prompt for instructions on pasting it into ChatGPT, Claude, Grok or another AI tool.
+**New: Copy Prompt and AI Analysis**
+* Copy Prompt, below each report's title, copies the report's rows, period and filters with your site's title, tagline and address as a ready-to-paste prompt for ChatGPT, Claude, Grok or any AI assistant. It only goes to your clipboard, is unlimited in Free and covers Ecommerce reports and Heatmaps too; reports that list individual visitors have no button.
+* With SlimStat Pro, ✨ AI Analysis reads the report for you inside SlimStat through an AI provider connected in WordPress, only when you ask and without visitor identifiers, URLs or free-text labels, and keeps a private library of saved results.
+* A new SlimStat → AI Analysis page explains both, and SlimStat → Pro now presents AI Analysis and City-Level Insights.
+* AI results show formatting and real row names. A failed analysis says why, links the fix and offers Retry only when it can help.
 
 **New: Country to city drilldown**
-* Click a country on the Audience Location map, in its country list or in Top Countries to see that country's top cities, for the same dates and filters. Shares are of the country you clicked, and its pageviews without a city are counted in a note rather than hidden.
-* Free shows the country's top city with its real numbers. Pro lists every city, a page at a time. The limit is applied on the server, so other cities are never sent to the browser.
-* Cities need Geolocation precision set to City (Settings → Tracker). While it is set to Country, the drilldown explains how to switch, and that cities are recorded only from then on. The country link still filters every report: hold a modifier key, or use the link inside the drilldown.
+* Click a country on the Audience Location map, its country list or Top Countries to see that country's top cities for the same dates and filters. Free shows the top city; Pro lists every city.
+* Cities need Geolocation precision set to City (Settings → Tracker); until then the drilldown explains how to switch. Hold a modifier key to filter every report by the country instead.
 
-**New: Video tutorials**
-* SlimStat → Videos lists video tutorials from wp-slimstat.com in one row per category, with thumbnails and titles. Each video opens on wp-slimstat.com in a new tab. Nothing is requested until you choose to load the list or turn on the new-video marker; your browser then fetches a static list from wp-slimstat.com without cookies, a referrer or analytics data, keeps it for a day, and falls back to the saved copy when the site cannot be reached. Like any web request, this shows wp-slimstat.com your IP address, your browser and the address of this site. Your WordPress server makes no requests and stores nothing for this feature.
-* An optional marker (▶ before SlimStat in the admin menu) tells you when new videos are published. Choosing Show videos turns it on, and its checkbox on the Videos page turns it off. It checks at most once a day from your browser, ignores the videos that existed when you turned it on and edits to existing ones, and clears once the Videos page has shown the new videos.
+**Audience Location map, rebuilt**
+* City dots are back, one per city and sized by pageviews, with a legend under a bigger map and the country list beside it where there is room. The map ships inside SlimStat with no outside requests, and its styles no longer affect other Dashboard widgets or your theme. ([#402](https://github.com/wp-slimstat/wp-slimstat/issues/402))
+
+**Also new**
+* **Video tutorials:** SlimStat → Videos lists tutorials from wp-slimstat.com, fetched by your browser only when you choose to load them, with an optional menu marker for new videos.
+* **SlimStat Pro needs a valid license:** Pro features, in any Pro version, run only with a license that is valid and activated for this site. Otherwise one banner on SlimStat screens, the Dashboard and Plugins says why and links the fix; Pro settings and data are kept.
 
 **Faster**
-* Ordinary page loads no longer query absent Ecommerce and permalink-update options. Privacy exports and erasure still work after WooCommerce is deactivated.
-* Nearby asynchronous report widgets load in up to three concurrent requests, with offscreen widgets loaded as you scroll.
-* Column-addition migrations try metadata-only INSTANT DDL before the existing online and compatibility fallbacks.
-* The WordPress Dashboard loads quickly again on upgraded sites. SlimStat widgets load through the existing authenticated AJAX path even when Async mode is off, and their charts and Funnel tabs start once loaded. Saved settings, SlimStat's own report screens, tracking and report numbers are unchanged. ([#361](https://github.com/wp-slimstat/wp-slimstat/issues/361))
-* Historical reports reuse cached wildcard-query results across requests instead of building a new cache key for every request.
-* Pageviews are sent as soon as the page is ready, with a bounded idle delay. Consent checks and confirmed pageview creation work as before. ([#365](https://github.com/wp-slimstat/wp-slimstat/issues/365))
-* Customize layout placeholders no longer fetch report data or display pagination over their controls.
-* Visible Free report widgets share a request and fall back to individual requests when needed. Manual refresh and pagination keep individual requests, and async lists retain their pagination controls.
-* Unfiltered pageview totals reuse cached history while reading today's count live, after a 30-minute midnight safety window. Filtered totals, sums and distinct counts retain fresh full-range queries.
-* Acquisition widgets share their schema check within a request and recheck after a migration or database change.
+* The WordPress Dashboard loads quickly again on upgraded sites. ([#361](https://github.com/wp-slimstat/wp-slimstat/issues/361))
+* Pageviews are sent as soon as the page is ready. ([#365](https://github.com/wp-slimstat/wp-slimstat/issues/365))
+* Nearby report widgets load up to three at a time, offscreen widgets load as you scroll, and historical reports reuse cached results.
+* Column migrations try the database's instant, metadata-only change first.
 
-**Numbers you can trust**
-* Server tracking records the rendered page after WordPress canonical redirects, preventing duplicate trailing-slash pageviews. ([#396](https://github.com/wp-slimstat/wp-slimstat/issues/396))
-* Server-only tracking assigns visit IDs, and Online Users excludes bots while retaining human and legacy unclassified visits. ([#257](https://github.com/wp-slimstat/wp-slimstat/issues/257), [#272](https://github.com/wp-slimstat/wp-slimstat/issues/272))
-* Opt-in URL normalization removes configured parameters after campaign attribution is extracted, so page totals combine without losing acquisition data. Chart refreshes retain submitted filters and the comparison setting. ([#276](https://github.com/wp-slimstat/wp-slimstat/issues/276), [#158](https://github.com/wp-slimstat/wp-slimstat/issues/158))
-* HeadlessChrome, PhantomJS and Lighthouse clients that identify themselves now count as bots, so the existing Bots exclusion filters them in both tracking modes. ([#364](https://github.com/wp-slimstat/wp-slimstat/issues/364))
-* WooCommerce orders from social and messaging apps are attributed correctly when WooCommerce supplies synthetic referral tags. Explicit campaign tags and revenue are unchanged. ([#368](https://github.com/wp-slimstat/wp-slimstat/issues/368))
-* Cached historical reports stay separate when you switch analytics databases or hosts.
-* The Traffic Sources chart labels distinct referring URLs accurately; its counts are unchanged.
-* Duration buckets label visits, country-map tooltips label pageviews, and geolocation notices distinguish unavailable new locations from retained history.
-* Pageviews charts include visits whose IP address is unavailable, matching pageview totals. Unique-IP counts retain their distinct-address meaning.
-* Cached single-row queries keep their object format. Scalar, row, column and row-list queries use separate cache entries even when their SQL is identical.
-* Real-time charts retain their history after returning to the page, and manual refresh updates the header visitor count and chart from the same response.
-* Amount-only full WooCommerce refunds leave zero net sales, shipping, tax and product quantities. Existing reporting copies can be refreshed using Rebuild reports.
-* Repeated date filters keep their SQL intersection, and thrown query failures use the full-range fallback.
-* Database query failures no longer become cached empty reports. Removing analytics rows invalidates cached historical reports, including partial deletions from Maintenance.
-* Reports that span midnight keep grouped counts, averages, distinct counts and top-list rankings exact. Some top lists now show corrected counts and ordering.
+**Dates and filters follow you**
+* Heatmaps keep the report's date range and apply shared filters to clicks and scroll data, and say which filters they cannot apply. AI Analysis, Email Reports, Shortcodes and Settings pass your dates and filters on to the next report.
 
-**Heatmaps**
-* Page titles show decoded, sampling spreads across pageviews, activity from before consent is discarded, and backdated full-capture clicks count once. ([#369](https://github.com/wp-slimstat/wp-slimstat/issues/369), [#372](https://github.com/wp-slimstat/wp-slimstat/issues/372), [#373](https://github.com/wp-slimstat/wp-slimstat/issues/373), [#374](https://github.com/wp-slimstat/wp-slimstat/issues/374))
-* Restored pageviews stay visible when stale heatmap rows reuse their IDs for another page or time. Pages still serving an older cached tracker keep working.
+**Numbers you can trust** (some change on purpose, to their true value)
+* Server tracking no longer counts trailing-slash duplicates twice. ([#396](https://github.com/wp-slimstat/wp-slimstat/issues/396))
+* Server-only tracking assigns visit IDs, and Online Users leaves out bots. ([#257](https://github.com/wp-slimstat/wp-slimstat/issues/257), [#272](https://github.com/wp-slimstat/wp-slimstat/issues/272))
+* Opt-in URL normalization keeps campaign attribution, and chart refreshes keep your filters and comparison setting. ([#276](https://github.com/wp-slimstat/wp-slimstat/issues/276), [#158](https://github.com/wp-slimstat/wp-slimstat/issues/158))
+* Self-identifying headless browsers (HeadlessChrome, PhantomJS) and Lighthouse count as bots. ([#364](https://github.com/wp-slimstat/wp-slimstat/issues/364))
+* WooCommerce orders from social and messaging apps are attributed correctly. ([#368](https://github.com/wp-slimstat/wp-slimstat/issues/368))
+* Fully refunded WooCommerce orders show zero net sales, shipping and tax.
+* Heatmaps show page titles correctly, sample across pageviews, discard activity from before consent and count backdated clicks once. ([#369](https://github.com/wp-slimstat/wp-slimstat/issues/369), [#372](https://github.com/wp-slimstat/wp-slimstat/issues/372), [#373](https://github.com/wp-slimstat/wp-slimstat/issues/373), [#374](https://github.com/wp-slimstat/wp-slimstat/issues/374))
+* Reports that span midnight keep counts and top-list rankings exact, Pageviews charts include visits whose IP address is unavailable, and database errors no longer become cached empty reports.
 
 **Upgrade with confidence**
-* Migration identifies incomplete visit-counter initialization, offers an administrator-only retry, and clears the upgrade warning after recovery. ([#395](https://github.com/wp-slimstat/wp-slimstat/issues/395))
-* First pageviews keep recording on older database schemas while the visitor-identity migration step is still waiting. Identity bytes are encoded in SQL, so recovery from a missing column or table can run.
-* The optional online repair for legacy column drift now covers email and fingerprint column widths and missing legacy archive fields. Migration shows schema state it cannot resolve or read, keeps its warnings when inspection fails, and no longer reports completion just because a notice was dismissed. Recorded values are preserved; there is no automatic table rebuild or blocking fallback. ([#360](https://github.com/wp-slimstat/wp-slimstat/issues/360))
-* Optional charset conversion restores lock settings and preserves stricter host timeouts.
-* Column and index migrations limit metadata-lock waits to five seconds and leave unsupported online changes pending instead of copying tables. Connection settings are restored after success or failure.
+* Migration spots an incomplete visit-counter setup and offers a retry. ([#395](https://github.com/wp-slimstat/wp-slimstat/issues/395))
+* First pageviews keep recording on older database schemas while the visitor-identity step waits in Migration.
+* The optional online repair covers more legacy column differences without changing recorded values. ([#360](https://github.com/wp-slimstat/wp-slimstat/issues/360))
+* Migrations wait at most five seconds for table locks and leave unsupported online changes pending instead of copying tables.
 
 **Rock-solid reliability**
-* Asynchronous report refreshes ignore responses for charts that have been replaced, avoiding redraw errors.
-* Report pagination no longer jumps back to page 1 when a delayed initial load finishes.
-* Trackers loaded in the page head initialize safely and capture clicks, form submissions and heatmap clicks after DOM readiness. Interactions before that point remain outside capture. ([#120](https://github.com/wp-slimstat/wp-slimstat/issues/120))
-* Restored the tracker's deprecated checksum helper and the geolocation service's deprecated MaxMind getter and setter. ([#227](https://github.com/wp-slimstat/wp-slimstat/issues/227))
-* Offline tracking data survives a failed reconnect followed by a page reload. The tab replaying stored visits keeps them until the server confirms or explicitly rejects them.
-* Missing browser-detection (Browscap) data you opted into is recovered through throttled background updates. If an update fails, the installed data stays, the error says what to fix, and you can retry by hand. ([#363](https://github.com/wp-slimstat/wp-slimstat/issues/363))
-* Report SQL diagnostics work for query-builder, cached and network reads. SQL and database errors are shown escaped, and results do not change. ([#362](https://github.com/wp-slimstat/wp-slimstat/issues/362))
-* Notification dismissals and manual refreshes wait for a running background check instead of being ignored.
-* The date picker's highlighted preset matches the selected range when preset dates overlap.
-* Removed the unused legacy add-on catalog and manual-download callback for the retired update service. Stored add-on license settings are kept.
-* The Dashboard Access Log widget no longer shows a Pro promotion, including right after the release announcement is dismissed. Its log and refresh work as before. ([#388](https://github.com/wp-slimstat/wp-slimstat/issues/388))
+* Trackers loaded in the page head capture clicks and form submissions once the page is ready. ([#120](https://github.com/wp-slimstat/wp-slimstat/issues/120))
+* Missing Browscap data you opted into recovers in the background, with a manual retry, and geolocation database problems say what went wrong. ([#363](https://github.com/wp-slimstat/wp-slimstat/issues/363))
+* Report SQL diagnostics cover cached and network reports and show errors safely. ([#362](https://github.com/wp-slimstat/wp-slimstat/issues/362))
+* The Dashboard Access Log widget no longer shows a Pro promotion. ([#388](https://github.com/wp-slimstat/wp-slimstat/issues/388))
+* Deprecated tracker and geolocation helpers are back for code that still calls them. ([#227](https://github.com/wp-slimstat/wp-slimstat/issues/227))
+* Offline tracking survives a failed reconnect and page reload, pagination no longer jumps back to page 1, and Real-time charts keep their history.
 
 **Security and privacy**
-* Hidden consent banners no longer intercept form controls or keyboard focus, and visible banners use a lower stacking level. ([#181](https://github.com/wp-slimstat/wp-slimstat/issues/181))
-* Saved filters validate registered columns and supported operators. Unknown or malformed saved entries remain stored and deletable, but cannot apply a partial or unfiltered report. Valid acquisition and extension filters retain their values. ([#351](https://github.com/wp-slimstat/wp-slimstat/pull/351))
-* The consent banner works in server tracking mode, and the first pageview is recorded only after the visitor accepts.
-* Consent-withdrawal requests work again, and saving Tracker settings with GDPR off keeps the consent settings you did not change. ([#366](https://github.com/wp-slimstat/wp-slimstat/issues/366), [#367](https://github.com/wp-slimstat/wp-slimstat/issues/367))
-* WooCommerce attribution follows SlimStat banner consent before writing its first cookie, on cached pages too, and on acceptance and withdrawal. A WooCommerce tracking denial from another consent integration still applies across SlimStat banner events. ([#375](https://github.com/wp-slimstat/wp-slimstat/issues/375))
-* WordPress personal-data downloads no longer fail in the pageview exporter. Exports read fresh live and archived analytics data, preserve separate event and archive IDs, support legacy tables without email columns and stop on database errors.
-* Privacy erasure uses the external analytics database when configured. IP anonymization includes archives, supports older integer IP columns and stops on database errors.
-* Report-access allowlists match complete usernames. Partial usernames no longer grant access, including names containing spaces.
-* Retention cleanup verifies archived values before deleting bounded batches and resumes large backlogs. Truncated or incomplete archives, reused keys and concurrent updates retain their source rows. Missing archive fields or custom live columns pause cleanup with a diagnostic instead of silently losing those fields.
-* Personal-data erasure drains every live and archive batch, including visitors with more than 500 events, without touching another visitor whose archive ID was reused. A database error stops erasure for a safe retry.
+* Forged proxy headers are rejected: Cloudflare headers count only from Cloudflare's network, and other proxies must be trusted explicitly.
+* Consent withdrawal works again, and saving Tracker settings keeps the consent options you did not change. ([#366](https://github.com/wp-slimstat/wp-slimstat/issues/366), [#367](https://github.com/wp-slimstat/wp-slimstat/issues/367))
+* The consent banner works in server tracking mode, and WooCommerce attribution waits for banner consent before writing its first cookie. ([#375](https://github.com/wp-slimstat/wp-slimstat/issues/375))
+* Hidden consent banners no longer block clicks or keyboard focus on form controls. ([#181](https://github.com/wp-slimstat/wp-slimstat/issues/181))
+* Personal-data exports and erasure cover live and archived data, erasure uses the external analytics database when one is set up, and both stop on database errors. IP anonymization includes archives.
+* Retention cleanup checks archived values before deleting old records and pauses instead of losing fields it cannot archive.
+* Report-access allowlists match complete usernames; a partial username no longer grants access.
+* Unknown or malformed saved filters cannot apply a partial or unfiltered report, and they stay available for deletion. ([#351](https://github.com/wp-slimstat/wp-slimstat/pull/351))
 
-**Translators:** new strings need translation.
+**Translators:** new and reworded strings need translation; a few labels show in English until then.
 
 = 6.0.0 - 2026-10-24 =
 

@@ -1123,10 +1123,17 @@ class wp_slimstat_reports
             $header_buttons = apply_filters('slimstat_report_header_buttons', $header_buttons, $_report_id);
             $header_buttons = '<div class="slimstat-header-buttons">' . $header_buttons . '</div>';
 
-            $widget_title = self::header_title(self::$reports[$_report_id]['title'], $header_tooltip);
+            // Title row: the title on one side, Export and Refresh on the other.
+            $widget_title = '<div class="slimstat-report-head">' . self::header_title(self::$reports[$_report_id]['title'], $header_tooltip) . $header_buttons . '</div>';
 
-            // Allow third-party code to inject content directly under the <h3> (e.g. a subtitle).
+            // Allow third-party code to inject content directly under the title (e.g. a subtitle).
             $widget_title .= apply_filters('slimstat_report_header_after_title', '', $_report_id);
+
+            // Second row: Copy Prompt and AI Analysis, below the title.
+            $ai_actions = \SlimStat\Reports\AiPromptButton::html((string) $_report_id, self::$reports[$_report_id], wp_slimstat_db::$filters_normalized['columns'] ?? [], wp_slimstat::pro_is_installed());
+            if ('' !== $ai_actions) {
+                $widget_title .= '<div class="slimstat-ai-actions">' . $ai_actions . '</div>';
+            }
         }
 
         $bar_color = (empty(self::$reports[$_report_id]['color'])) ? '#EFF6FF' : self::$reports[$_report_id]['color'];
@@ -1139,7 +1146,7 @@ class wp_slimstat_reports
 
         // Header hooks intentionally accept developer HTML/SVG; built-in attributes and tooltip data are escaped above.
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Preserve slimstat_report_header_buttons/after_title HTML contracts.
-        echo "<div class='postbox " . esc_attr($header_classes) . "' style='" . esc_attr($style_attrs) . "' id='" . esc_attr($_report_id) . sprintf("'>%s %s <div class='inside'>", $widget_title, $header_buttons);
+        echo "<div class='postbox " . esc_attr($header_classes) . "' style='" . esc_attr($style_attrs) . "' id='" . esc_attr($_report_id) . sprintf("'>%s <div class='inside'>", $widget_title);
         return null;
     }
 

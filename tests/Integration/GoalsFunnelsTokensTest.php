@@ -7,12 +7,13 @@ namespace WpSlimstat\Tests\Integration;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Guards that legacy --slimstat-* and --gdpr-* CSS custom properties are
- * preserved verbatim in tokens.css.
+ * Guards that legacy --slimstat-* CSS custom properties are preserved verbatim in tokens.css,
+ * and that tokens.css declares no unprefixed property: it also loads on the WordPress Dashboard
+ * and Plugins screens, where a generic name such as --gdpr-border would reach other plugins.
  *
  * Rationale: the datepicker (admin/assets/css/daterangepicker/slimstat-datepicker-styles.css)
- * and GDPR banner (assets/css/gdpr-banner.css) consume these aliases. Any value
- * drift here → visible regression on those surfaces.
+ * consumes these aliases; the front-end GDPR banner declares its own --gdpr-* in
+ * assets/css/gdpr-banner.css. Any value drift → visible regression on those surfaces.
  *
  * See the 5.5.0 redesign notes for the legacy-alias preservation contract.
  */
@@ -25,7 +26,6 @@ class GoalsFunnelsTokensTest extends TestCase
         '--slimstat-background'    => '#fff',
         '--slimstat-text'          => '#333',
         '--slimstat-light-bg'      => '#f8f8f8',
-        '--gdpr-border'            => '#dee2e6',
     ];
 
     public function test_tokens_css_exists(): void
@@ -45,6 +45,19 @@ class GoalsFunnelsTokensTest extends TestCase
                 "Legacy alias {$var} must be declared with value {$value} in tokens.css"
             );
         }
+    }
+
+    public function test_tokens_css_declares_only_slimstat_prefixed_properties(): void
+    {
+        preg_match_all('/(--[\w-]+)\s*:/', (string) file_get_contents($this->tokensPath()), $declared);
+        $this->assertNotEmpty($declared[1]);
+        $this->assertSame([], array_values(array_unique(preg_grep('/^--(ss|slimstat)-/', $declared[1], PREG_GREP_INVERT))), 'tokens.css loads outside SlimStat screens; prefix every custom property');
+    }
+
+    public function test_gdpr_banner_keeps_its_own_border_value(): void
+    {
+        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/assets/css/gdpr-banner.css');
+        $this->assertMatchesRegularExpression('/--gdpr-border\s*:\s*#dee2e6\s*;/', $css);
     }
 
     public function test_tokens_css_declares_brand_ramp(): void

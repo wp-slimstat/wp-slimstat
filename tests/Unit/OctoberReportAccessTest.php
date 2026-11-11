@@ -59,6 +59,8 @@ class OctoberReportAccessTest extends WpSlimstatTestCase
             'wp_unslash' => static function ($v) { return stripslashes($v); },
         ]);
         $this->assertStringEndsWith('utm_campaign=export&utm_content=slim_p1_12#ss-pro-share', ProLinks::url('export', 'slim_p1_12', true, 'ss-pro-share'));
+        $this->assertSame('https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=export&utm_content=slim_p1_12', ProLinks::url('export', 'slim_p1_12'));
+        $this->assertSame('https://my.wp-slimstat.com/account/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=license-activation&utm_content=license-banner-find-license', ProLinks::tag('https://my.wp-slimstat.com/account/', 'License-Activation', 'license-banner-find-license'));
         $saved = $_GET;
         try {
             $_GET = ['utm_campaign' => 'export', 'utm_content' => 'slim_p1_12', 'url' => 'https://evil.test', 'utm_source' => 'evil'];

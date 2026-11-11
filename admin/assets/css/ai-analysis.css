@@ -1,7 +1,9 @@
 /* Native report dialog and existing SlimStat tokens; no UI dependency. */
 .slimstat-ai-analyze { border: 0; background: transparent; color: var(--ss-info-fg); cursor: pointer; font: inherit; padding: 4px 8px; }
 .slimstat-ai-prompt, .slimstat-ai-analyze { white-space: nowrap; }
-.slimstat-header-buttons .slimstat-ai-analyze { font-size: 12px; font-weight: 600; }
+.slimstat-ai-actions .slimstat-ai-analyze { font-size: 12px; font-weight: 600; line-height: 1.4; }
+/* A paid feature, whatever this site's license; inline-block keeps it off the hover underline and attached when the row wraps. */
+.slimstat-ai-pro-badge { display: inline-block; margin-inline-start: 2px; padding: 0 6px; border: 1px solid currentColor; border-radius: var(--ss-radius-pill, 999px); font-size: 10px; font-weight: 600; line-height: 15px; vertical-align: 1px; }
 .slimstat-ai-analyze:hover { text-decoration: underline; }
 .slimstat-ai-analyze:focus-visible { outline: 2px solid var(--ss-info-fg); outline-offset: 2px; }
 .ss-ai-dialog { box-sizing: border-box; width: min(740px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; border: 1px solid var(--ss-border); border-radius: 8px; color: var(--ss-text-body); background: var(--ss-surface); }
@@ -27,8 +29,14 @@
 .ss-ai-toast { position: fixed; z-index: 100100; inset-inline-end: 24px; bottom: 24px; width: min(380px, calc(100vw - 48px)); box-sizing: border-box; padding: 20px; border: 1px solid var(--ss-border); border-radius: 8px; background: var(--ss-surface); color: var(--ss-text-body); box-shadow: 0 8px 24px var(--ss-overlay-scrim); animation: ss-ai-enter 160ms ease-out; }
 .ss-ai-toast strong { display: block; font-size: 14px; line-height: 1.5; }
 .ss-ai-toast p { font-size: 13px; line-height: 1.6; margin: 8px 0 12px; }
+/* The paste instruction is the one thing to act on: heavier and darker than the copy around it. */
+.ss-ai-toast [role="status"] > strong { font-size: var(--ss-text-lg, 16px); font-weight: 700; color: var(--ss-text-primary); }
+.ss-ai-toast .ss-ai-toast-lead { font-size: 14px; font-weight: 600; line-height: 1.5; color: var(--ss-text-primary); margin-bottom: 0; }
 .ss-ai-toast-offer { border-top: 1px solid var(--ss-border); padding-top: 12px; margin-top: 12px; }
-.ss-ai-toast > .button { margin-top: 12px; }
+.ss-ai-toast-offer p { margin-bottom: 0; }
+/* Explore Pro AI, then Close beside it; they wrap only when a translation leaves no room. */
+.ss-ai-toast-actions { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin-top: 16px; }
+.ss-ai-toast-actions .button { max-width: 100%; height: auto; margin: 0; padding-block: 5px; line-height: 1.4; white-space: normal; overflow-wrap: anywhere; }
 @keyframes ss-ai-pulse { to { opacity: .4; } }
 @keyframes ss-ai-enter { from { opacity: 0; transform: translateY(8px); } }
 @media (prefers-reduced-motion: reduce) { .ss-ai-toast, .ss-ai-skeleton { animation: none; } }
@@ -47,7 +55,27 @@
 .ss-ai-eyebrow { color: var(--ss-text-muted); font-weight: 600; margin: 0 0 12px; }
 .ss-ai-steps { margin: 24px 0; padding-inline-start: 24px; }
 .ss-ai-steps li { padding-inline-start: 4px; margin-block: 12px; }
-.ss-ai-pro-intro { border-top: 1px solid var(--ss-border); padding-top: 24px; }
+/* Pro: the card's tinted half, flush to its edges, so it reads as one focal region and not a card in a card.
+   The warm tint and the ✨ are the AI Analysis accent the release notice already uses. */
+.ss-ai-pro-intro { margin: 0 -24px -24px; padding: 24px; background: oklch(97.5% .025 85); border-top: 1px solid oklch(87% .07 78); border-end-start-radius: 7px; border-end-end-radius: 7px; }
+.ss-ai-pro-eyebrow { display: flex; align-items: center; gap: 6px; color: var(--ss-text-primary); }
+.ss-ai-pro-eyebrow .slimstat-ai-spark { font-size: 18px; }
+.ss-ai-pro-intro:hover .slimstat-ai-spark { transform: rotate(15deg) scale(1.08); }
+.ss-ai-page-content .ss-ai-pro-intro h2 { font-size: 1.5rem; font-weight: 700; line-height: 1.3; letter-spacing: -.01em; text-wrap: balance; }
+.ss-ai-page-content .ss-ai-pro-lead { font-size: 1rem; line-height: 1.6; color: var(--ss-text-primary); margin: 0 0 20px; }
+.ss-ai-benefits { display: grid; gap: 14px; margin: 0 0 24px; padding: 0; list-style: none; }
+.ss-ai-page-content .ss-ai-benefits li { margin: 0; }
+.ss-ai-benefits strong { display: block; color: var(--ss-text-primary); }
+.ss-ai-pro-actions { margin: 0 0 12px; }
+.ss-ai-page .ss-ai-pro-cta { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; height: auto; padding: 6px 18px; font-size: 14px; font-weight: 600; line-height: 1.4; white-space: normal; }
+.ss-ai-pro-arrow { display: inline-block; transition: transform .2s cubic-bezier(.22, 1, .36, 1); }
+.ss-ai-pro-cta:hover .ss-ai-pro-arrow, .ss-ai-pro-cta:focus-visible .ss-ai-pro-arrow { transform: translateX(3px); }
+[dir="rtl"] .ss-ai-pro-arrow { transform: scaleX(-1); }
+[dir="rtl"] .ss-ai-pro-cta:hover .ss-ai-pro-arrow, [dir="rtl"] .ss-ai-pro-cta:focus-visible .ss-ai-pro-arrow { transform: translateX(-3px) scaleX(-1); }
+.ss-ai-page-content h3.ss-ai-pro-needs-title { margin: 24px 0 4px; font-size: 13px; font-weight: 600; }
+.ss-ai-pro-needs { margin: 0; padding-inline-start: 18px; list-style: disc; }
+.ss-ai-page-content .ss-ai-pro-needs li { margin: 2px 0; font-size: 13px; color: var(--ss-text-body); }
+@media (prefers-reduced-motion: reduce) { .ss-ai-pro-arrow { transition: none; } }
 .ss-ai-explainer { margin: 24px 0; color: var(--ss-text-muted); }
 .ss-ai-section-heading { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
 .ss-ai-section-heading p { margin-bottom: 0; }
@@ -74,7 +102,7 @@
 }
 @media (min-width: 960px) {
     .ss-ai-intro { grid-template-columns: 1.3fr 1fr; gap: 48px; padding: 32px; }
-    .ss-ai-pro-intro { border-top: 0; border-inline-start: 1px solid var(--ss-border); padding-top: 0; padding-inline-start: 32px; }
+    .ss-ai-pro-intro { margin-block: -32px; margin-inline: 0 -32px; padding: 32px; border-top: 0; border-inline-start: 1px solid oklch(87% .07 78); border-end-start-radius: 0; border-start-end-radius: 7px; }
     .ss-ai-entry summary { position: relative; display: grid; grid-template-columns: minmax(160px, 1fr) minmax(200px, 1fr) auto; align-items: center; gap: 16px; padding-inline-start: 36px; }
     .ss-ai-entry summary::before { content: '+'; position: absolute; inset-inline-start: 16px; color: var(--ss-text-muted); }
     .ss-ai-entry[open] summary::before { content: '−'; }
