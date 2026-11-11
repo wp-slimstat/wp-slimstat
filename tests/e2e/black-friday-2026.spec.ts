@@ -262,6 +262,15 @@ test.describe('Black Friday 2026 strip', () => {
           const range = document.createRange(); range.selectNodeContents(el);
           for (const t of range.getClientRects()) if (t.right > x.left && t.left < x.right && t.bottom > x.top && t.top < x.bottom) out.push(`${el.className} runs under the dismiss button`);
         }
+        // The code is dir="ltr" inside a page that may be RTL: its text keeps clear of the stub edges and of the perforation on its row.
+        const stub = root.querySelector('.slimstat-bf26__stub')!.getBoundingClientRect();
+        const btn = root.querySelector('.slimstat-bf26__copybtn')!.getBoundingClientRect();
+        const codeText = document.createRange();
+        codeText.selectNodeContents(root.querySelector('.slimstat-bf26__code')!);
+        const c = codeText.getBoundingClientRect();
+        const sameRow = btn.top < c.bottom && btn.bottom > c.top;
+        const clearance = Math.min(c.left - stub.left, stub.right - c.right, sameRow ? Math.max(btn.left - c.right, c.left - btn.right) : Infinity);
+        if (clearance < 8) out.push(`code text is ${Math.round(clearance)}px from the stub edge or perforation`);
         return out;
       });
       expect(problems, label).toEqual([]);
@@ -278,6 +287,19 @@ test.describe('Black Friday 2026 strip', () => {
     await page.goto(SLIMSTAT[0]);
     for (const selector of ['.slimstat-bf26__copybtn', '.slimstat-bf26__cta', '.slimstat-bf26__dismiss']) {
       expect((await strip(page).locator(selector).boundingBox())!.height, `${selector} touch target`).toBeGreaterThanOrEqual(44);
+    }
+    for (const width of [390, 320]) {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto(SLIMSTAT[0]);
+      const labelLines = await strip(page).evaluate(root => {
+        root.querySelector('.slimstat-bf26__label')!.firstChild!.textContent = 'Gutscheincode';
+        root.querySelector('.slimstat-bf26__copybtn')!.firstChild!.textContent = 'Gutscheincode kopieren';
+        const range = document.createRange();
+        range.selectNodeContents(root.querySelector('.slimstat-bf26__label')!);
+        return range.getClientRects().length;
+      });
+      expect(labelLines, `a one-word code label stays whole @${width}`).toBe(1);
+      await fits(`German stub @${width}`);
     }
     for (const width of [1024, 320]) {
       await page.setViewportSize({ width, height: 800 });
