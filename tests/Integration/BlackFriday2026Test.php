@@ -26,6 +26,7 @@ class BlackFriday2026Test extends IntegrationTestCase
         Functions\when('get_current_screen')->alias(fn() => (object) ['id' => $this->screen]);
         Functions\when('get_user_meta')->alias(fn($id, $key) => $this->meta[$key] ?? '');
         Functions\when('update_user_meta')->alias(function ($id, $key, $value) { $this->meta[$key] = $value; return true; });
+        Functions\when('_x')->alias(fn($text) => $text);
         Functions\when('add_user_meta')->alias(function ($id, $key, $value) { $this->meta[$key] = $value; return true; });
     }
     protected function tearDown(): void
@@ -113,7 +114,7 @@ class BlackFriday2026Test extends IntegrationTestCase
     }
     public function test_translations_are_escaped(): void
     {
-        Functions\when('__')->alias(fn($text) => 'Code' === $text ? '<script>x</script>' : $text);
+        Functions\when('_x')->alias(fn($text, $context) => 'discount code label' === $context ? '<script>x</script>' : $text);
         Functions\when('esc_html')->alias(fn($v) => htmlspecialchars((string) $v, ENT_QUOTES));
         Functions\when('esc_attr')->alias(fn($v) => htmlspecialchars((string) $v, ENT_QUOTES));
         $html = $this->render();

@@ -60,7 +60,7 @@ final class BlackFriday2026
 		<p class="slimstat-bf26__value"><?php echo esc_html(sprintf(/* translators: %s: last day of the offer, e.g. November 30 */ __('Pro adds funnels, heatmaps for every page, email reports and data export. The discount covers your first year. Ends %s.', 'wp-slimstat'), $last_day)); ?></p>
 	</div>
 	<div class="slimstat-bf26__stub">
-		<span class="slimstat-bf26__label"><?php echo esc_html(__('Code', 'wp-slimstat')); ?></span>
+		<span class="slimstat-bf26__label"><?php echo esc_html(_x('Code', 'discount code label', 'wp-slimstat')); ?></span>
 		<code class="slimstat-bf26__code" dir="ltr"><?php echo esc_html(self::CODE); ?></code>
 		<button type="button" class="slimstat-bf26__copybtn" data-slimstat-bf26-copied="<?php echo esc_attr(__('Copied', 'wp-slimstat')); ?>" data-slimstat-bf26-selected="<?php echo esc_attr(__('Code selected', 'wp-slimstat')); ?>"><?php echo esc_html(__('Copy code', 'wp-slimstat')); ?></button>
 		<span class="screen-reader-text" role="status"></span>
