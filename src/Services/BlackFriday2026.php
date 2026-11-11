@@ -92,7 +92,6 @@ final class BlackFriday2026
 	{
 		if (!check_ajax_referer(self::ACTION, 'security', false) || !current_user_can('manage_options')) {
 			wp_send_json_error(null, 403);
-			return;
 		}
 		update_user_meta(get_current_user_id(), self::DISMISSED, 1);
 		wp_send_json_success();
