@@ -373,7 +373,8 @@ jobs:
         # When only apt is down (2026-11-11: the runners' Ubuntu mirrors stopped
         # resolving for an hour while Playwright's CDN worked), fall back to the
         # browser alone: the runner image ships Chrome and the libraries it links.
-        # A missing library still fails loudly when the E2E step launches it.
+        # The fallback must launch Chromium here: install only warns about a missing
+        # library, and E2E is soft on most lanes, so a dead browser would pass there.
         run: |
           n=0
           until [ "$n" -ge 3 ]; do
@@ -386,7 +387,7 @@ jobs:
               sleep $((n * 15))
             fi
           done
-          if npx playwright install chromium; then
+          if npx playwright install chromium && node -e "require('@playwright/test').chromium.launch().then(b => b.close())"; then
             echo "::warning::system deps could not be installed (apt unreachable); running with the runner image's libraries"
             exit 0
           fi
