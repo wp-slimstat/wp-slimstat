@@ -775,9 +775,8 @@ class wp_slimstat
     }
 
     /**
-     * Currently-true degradations, newest first. Records past DEGRADATION_TTL are
-     * filtered out here so a healed failure stops being reported immediately, even
-     * before reconcile_degradations() prunes the stored option.
+     * Currently-true degradations. Pending tracking schema recovery survives the
+     * notice TTL until reconciliation verifies it; other old failures expire.
      *
      * @return array<string,array>
      */
@@ -789,11 +788,13 @@ class wp_slimstat
         }
 
         $cutoff  = time() - self::DEGRADATION_TTL;
-        $current = array_filter($stored, static function ($record) use ($cutoff) {
-            return isset($record['time']) && (int) $record['time'] >= $cutoff;
-        });
+        $current = array_filter($stored, static function ($record, $step) use ($cutoff) {
+            $pending_schema = ($record['severity'] ?? '') === self::DEGRADATION_TRACKING
+                && in_array($step, ['activation', 'schema upgrade'], true);
+            return isset($record['time']) && ($pending_schema || (int) $record['time'] >= $cutoff);
+        }, ARRAY_FILTER_USE_BOTH);
 
-        // C34 — synthesised, not stored. Every recorded degradation expires after
+        // C34 — synthesised, not stored. Operational degradations expire after
         // DEGRADATION_TTL (3 h) while the purge runs twicedaily (12 h), so a purge failing on
         // every run was visible for 3 hours and invisible for 9. Deriving this from the
         // last-success stamp makes the durable fact — "it has not succeeded" — the one that

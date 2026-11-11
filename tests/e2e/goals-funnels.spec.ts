@@ -109,6 +109,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slim_p9_01 .slimstat-gf-empty .slimstat-gf-cta')).toHaveCount(1);
 
         // Funnels: locked preview, brand CTA, no Add button.
+        await page.locator('#slim_p9_02').scrollIntoViewIfNeeded();
         await expect(page.locator('.slimstat-gf-funnels--locked')).toBeVisible();
         const funnelCtas = page.locator('.slimstat-gf-funnels .slimstat-upgrade-action');
         await expect(funnelCtas).toHaveCount(1);
@@ -138,6 +139,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slim_p9_01 .slimstat-gf-upsell')).toBeVisible();
 
         // Locked funnel preview still present.
+        await page.locator('#slim_p9_02').scrollIntoViewIfNeeded();
         await expect(page.locator('.slimstat-gf-funnels--locked')).toBeVisible();
     });
 

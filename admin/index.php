@@ -2727,7 +2727,10 @@ class wp_slimstat_admin
                 self::update_tables_and_options();
             }
             if (!\SlimStat\Tracker\VisitIdGenerator::isInitialized()) {
-                \SlimStat\Tracker\VisitIdGenerator::initializeCounter();
+                if (\SlimStat\Tracker\VisitIdGenerator::initializeCounter() < 0
+                    && 'on' === (wp_slimstat::$settings['is_tracking'] ?? '')) {
+                    wp_slimstat::record_degradation('visit counter initialization', 'Visit counter initialization did not complete.', wp_slimstat::DEGRADATION_TRACKING);
+                }
             }
             if (\SlimStat\Tracker\VisitIdGenerator::isInitialized()) {
                 wp_slimstat::clear_degradation('visit counter initialization');

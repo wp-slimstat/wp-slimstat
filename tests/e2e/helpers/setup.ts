@@ -75,6 +75,8 @@ export function removeWpConfigLine(line: string): void {
  */
 export function deployMuPlugin(src: string, dest: string): void {
   fs.mkdirSync(path.dirname(dest), { recursive: true });
+  // Keep an unchanged fixture present while WordPress enumerates MU-plugins.
+  if (fs.existsSync(dest) && fs.readFileSync(dest).equals(fs.readFileSync(src))) return;
   fs.rmSync(dest, { force: true });
   fs.copyFileSync(src, dest);
 }
