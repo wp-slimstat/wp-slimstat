@@ -80,3 +80,40 @@
     scan();
     new MutationObserver(scan).observe(document.body, {childList: true, subtree: true});
 }());
+/* Black Friday 2026 banner: delete after 2026-12-01. Bound to its own root; dismissal is a cookie, nothing is sent. */
+(function () {
+    'use strict';
+    var root = document.getElementById('slimstat-bf-2026');
+    if (!root) return;
+    var copy = root.querySelector('.slimstat-bf26__copybtn');
+    var code = root.querySelector('.slimstat-bf26__code');
+    var status = root.querySelector('[role="status"]');
+    var label = copy.textContent;
+    function say(text) { copy.textContent = text; status.textContent = text; }
+    function select() {
+        var range = document.createRange();
+        var selection = document.getSelection();
+        range.selectNodeContents(code);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        say(copy.getAttribute('data-slimstat-bf26-selected'));
+    }
+    root.addEventListener('click', function (event) {
+        if (event.target.closest('.slimstat-bf26__copybtn')) {
+            // No clipboard API on plain-HTTP admin: select the code for Ctrl+C instead.
+            try {
+                navigator.clipboard.writeText(code.textContent).then(function () { say(copy.getAttribute('data-slimstat-bf26-copied')); }, select);
+            } catch (e) { select(); }
+        }
+        if (event.target.closest('.slimstat-bf26__dismiss')) {
+            try {
+                document.cookie = root.getAttribute('data-slimstat-bf26-cookie') + '=1; path=' + root.getAttribute('data-slimstat-bf26-path') + '; max-age=2592000; SameSite=Lax' + ('https:' === location.protocol ? '; Secure' : '');
+            } catch (e) { /* Blocked storage: hidden for this page view only. */ }
+            var heading = document.querySelector('#wpbody-content h1');
+            root.remove();
+            if (heading) { heading.setAttribute('tabindex', '-1'); heading.focus(); }
+        }
+    });
+    copy.addEventListener('blur', function () { copy.textContent = label; status.textContent = ''; });
+}());
+/* End Black Friday 2026 banner */

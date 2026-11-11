@@ -61,3 +61,25 @@
 @media (max-width: 782px) {
     .slimstat-menu-fit.wp-responsive-open #adminmenuwrap, .slimstat-menu-fit.wp-responsive-open #adminmenu { width: max(190px, var(--slimstat-menu-width, 190px)); }
 }
+/* Black Friday 2026 banner: delete after 2026-12-01 */
+#slimstat-bf-2026{--bf26-surface:#faf6f6;--bf26-line:#e2d6d7;--bf26-text:#2a2123;--bf26-muted:#5e5355;--bf26-ink:#2d2224;--bf26-ink-hover:#3f3134;--bf26-ink-text:#f8f3f3;--bf26-ink-muted:#c9bcbe;--bf26-perf:#857376;--bf26-red:#bc2442;--bf26-red-hover:#98203a;--bf26-red-text:#fff7f9;--bf26-focus:#2271b1;position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:12px 20px;margin:12px 0;padding-block:12px;padding-inline:16px 52px;border:1px solid var(--bf26-line);border-radius:8px;background:var(--bf26-surface);color:var(--bf26-text);box-shadow:none;font-size:13px;line-height:1.5}
+@supports (color:oklch(0% 0 0)){#slimstat-bf-2026{--bf26-surface:oklch(97.6% .005 15);--bf26-line:oklch(88.5% .014 15);--bf26-text:oklch(25% .012 15);--bf26-muted:oklch(46% .016 15);--bf26-ink:oklch(26% .016 15);--bf26-ink-hover:oklch(33% .02 15);--bf26-ink-text:oklch(96.8% .005 15);--bf26-ink-muted:oklch(81% .014 15);--bf26-perf:oklch(58% .022 15)}}
+#slimstat-bf-2026.notice{margin:12px 0 16px}
+#slimstat-bf-2026 .slimstat-bf26__copy{flex:1 1 320px;min-width:0;overflow-wrap:anywhere}
+#slimstat-bf-2026 .slimstat-bf26__title{margin:0;padding:0;font-size:14px;font-weight:600;line-height:1.4}
+#slimstat-bf-2026 .slimstat-bf26__value{margin:2px 0 0;padding:0;max-width:72ch;color:var(--bf26-muted);font-size:13px}
+#slimstat-bf-2026 .slimstat-bf26__stub{display:inline-flex;align-items:stretch;flex:0 1 auto;min-width:0;max-width:100%;overflow-wrap:anywhere;border-radius:6px;background:var(--bf26-ink);color:var(--bf26-ink-text)}
+#slimstat-bf-2026 .slimstat-bf26__label{align-self:center;padding-inline:12px 8px;color:var(--bf26-ink-muted);font-size:12px}
+#slimstat-bf-2026 .slimstat-bf26__code{align-self:center;overflow-wrap:normal;white-space:nowrap;padding:0 12px 0 0;background:none;color:inherit;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;font-weight:600;letter-spacing:.04em;user-select:all}
+#slimstat-bf-2026 .slimstat-bf26__copybtn{min-height:36px;margin:0;padding:0 12px;border:0;border-inline-start:1px dashed var(--bf26-perf);border-radius:0;background:none;color:inherit;font:inherit;font-weight:600;cursor:pointer}
+#slimstat-bf-2026 .slimstat-bf26__copybtn:hover{background:var(--bf26-ink-hover)}
+#slimstat-bf-2026 .slimstat-bf26__cta{display:inline-flex;align-items:center;justify-content:center;flex:0 1 auto;max-width:100%;min-height:36px;padding:0 14px;border:1px solid var(--bf26-red);border-radius:4px;background:var(--bf26-red);color:var(--bf26-red-text);font-weight:600;text-align:center;text-decoration:none}
+#slimstat-bf-2026 .slimstat-bf26__cta:hover{border-color:var(--bf26-red-hover);background:var(--bf26-red-hover)}
+#slimstat-bf-2026 .slimstat-bf26__dismiss{position:absolute;inset-inline-end:4px;top:4px;width:36px;height:36px;margin:0;padding:0;border:0;border-radius:4px;background:none;color:var(--bf26-muted);font-size:24px;line-height:1;cursor:pointer}
+#slimstat-bf-2026 .slimstat-bf26__dismiss:hover{color:var(--bf26-text)}
+#slimstat-bf-2026 .slimstat-bf26__copybtn:focus-visible,#slimstat-bf-2026 .slimstat-bf26__cta:focus-visible,#slimstat-bf-2026 .slimstat-bf26__dismiss:focus-visible{outline:2px solid var(--bf26-surface);outline-offset:0;box-shadow:0 0 0 4px var(--bf26-focus)}
+@media (max-width:1024px){#slimstat-bf-2026 .slimstat-bf26__copy{flex-basis:100%}}
+@media (max-width:480px){#slimstat-bf-2026{padding-inline:16px}#slimstat-bf-2026 .slimstat-bf26__copy{padding-inline-end:36px}#slimstat-bf-2026 .slimstat-bf26__stub,#slimstat-bf-2026 .slimstat-bf26__cta{flex:1 1 100%}#slimstat-bf-2026 .slimstat-bf26__code{flex:1}#slimstat-bf-2026 .slimstat-bf26__copybtn,#slimstat-bf-2026 .slimstat-bf26__cta{min-height:44px}#slimstat-bf-2026 .slimstat-bf26__dismiss{inset-inline-end:2px;top:2px;width:44px;height:44px}}
+@media (forced-colors:active){#slimstat-bf-2026,#slimstat-bf-2026 .slimstat-bf26__stub,#slimstat-bf-2026 .slimstat-bf26__cta{border:1px solid CanvasText}#slimstat-bf-2026 .slimstat-bf26__copybtn:focus-visible,#slimstat-bf-2026 .slimstat-bf26__cta:focus-visible,#slimstat-bf-2026 .slimstat-bf26__dismiss:focus-visible{outline:2px solid Highlight}}
+@media print{#slimstat-bf-2026{display:none}}
+/* End Black Friday 2026 banner */
