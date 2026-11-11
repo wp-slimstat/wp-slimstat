@@ -137,3 +137,16 @@ test('Dashboard widgets show their data without a fade (#408)', async ({ page })
   console.log(JSON.stringify({ dataToVisibleMs: delays }));
   for (const [id, ms] of Object.entries(delays)) expect(ms, `${id}: data to visible`).toBeLessThan(300);
 });
+
+test('CodeMirror loads on the Settings screen only', async ({ page }) => {
+  // load-scripts.php concatenates wp-codemirror when SCRIPT_DEBUG is off, so test the globals, not a script id.
+  for (const [path, expected] of [
+    ['/wp-admin/index.php', false],
+    ['/wp-admin/admin.php?page=slimview2', false],
+    ['/wp-admin/admin.php?page=slimconfig', true],
+  ] as const) {
+    await page.goto(path);
+    const loaded = await page.evaluate(() => { const wp = (window as any).wp; return !!(wp && (wp.CodeMirror || wp.codeEditor)); });
+    expect(loaded, path).toBe(expected);
+  }
+});
