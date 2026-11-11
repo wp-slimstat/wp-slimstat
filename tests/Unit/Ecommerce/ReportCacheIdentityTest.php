@@ -26,6 +26,7 @@ class ReportCacheIdentityTest extends WpSlimstatTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        \Brain\Monkey\Functions\when('get_option')->justReturn('0'); // Query::cacheHash() reads slimstat_data_ver
         $this->wpdb = $GLOBALS['wpdb'] ?? null;
         // Same fake as tests/query-placeholder-cache-test.php: each request gets its own marker.
         $GLOBALS['wpdb'] = new class {

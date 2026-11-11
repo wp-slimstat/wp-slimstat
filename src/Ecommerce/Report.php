@@ -4,6 +4,7 @@ namespace SlimStat\Ecommerce;
 
 use SlimStat\Tracker\Acquisition;
 use SlimStat\Utils\NetworkMerge;
+use SlimStat\Utils\Query;
 
 /** One metric/query contract for Free, Pro, HTML and exports. */
 final class Report
@@ -24,10 +25,10 @@ final class Report
 			&& (current_user_can('view_woocommerce_reports') || current_user_can('manage_options'));
 	}
 
-	/** One key per question: a range that runs to now is open-ended (the 60 s TTL bounds staleness), and the scope drops wpdb's per-request LIKE marker (PITFALLS 257). */
+	/** One key per question: a range that runs to now is open-ended (the 60 s TTL bounds staleness), and the scope is hashed without wpdb's per-request LIKE marker (PITFALLS 257). */
 	private static function cacheIdentity(array $range, int $now, string $scope): array
 	{
-		return [$range[0], $range[1] >= $now - MINUTE_IN_SECONDS ? 'now' : $range[1], $GLOBALS['wpdb']->remove_placeholder_escape($scope)];
+		return [$range[0], $range[1] >= $now - MINUTE_IN_SECONDS ? 'now' : $range[1], Query::cacheHash($GLOBALS['wpdb'], $scope)];
 	}
 
 	/** @return never */
