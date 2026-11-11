@@ -126,10 +126,14 @@ test('Dashboard widgets show their data without a fade (#408)', async ({ page })
   await page.goto('/wp-admin/index.php', { waitUntil: 'domcontentloaded' });
   // Ecommerce refreshes through its own module, so it is outside this swap.
   const ids = await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('div[id^="slim_p"]'))
-    .filter(el => el.id !== 'slim_p10_01' && !el.querySelector('.chart-placeholder, .refresh-timer') && el.getClientRects().length > 0 && el.getBoundingClientRect().top < innerHeight)
+    .filter(el => el.id !== 'slim_p10_01' && !el.querySelector('.chart-placeholder, .refresh-timer') && el.getClientRects().length > 0)
     .map(el => el.id));
-  expect(ids.length, 'fixture must show at least two list widgets above the fold').toBeGreaterThan(1);
-  await expect.poll(() => page.evaluate(ids => ids.every(id => (window as any).__swap[id]?.shown != null), ids), { timeout: 30_000 }).toBe(true);
+  expect(ids.length, 'fixture must expose at least two list widgets').toBeGreaterThan(1);
+  // Widgets load when they scroll into view; a fresh install's core widgets push them below the fold.
+  for (const id of ids) {
+    await page.locator('#' + id).scrollIntoViewIfNeeded();
+    await expect.poll(() => page.evaluate(id => (window as any).__swap[id]?.shown != null, id), { timeout: 30_000 }).toBe(true);
+  }
   const delays: Record<string, number> = await page.evaluate(ids => Object.fromEntries(ids.map(id => {
     const entry = (window as any).__swap[id];
     return [id, Math.round(entry.shown - entry.data)];
