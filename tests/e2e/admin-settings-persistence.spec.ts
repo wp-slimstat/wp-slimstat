@@ -114,7 +114,7 @@ test.describe('Admin Settings Persistence', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // Verify save confirmation message appeared
-    const notice = page.locator('.slimstat-notice.notice-info');
+    const notice = page.locator('.slimstat-notice.notice-info').filter({ hasText: 'Your new settings have been saved' });
     await expect(notice).toBeVisible();
     const noticeText = await notice.innerText();
     expect(noticeText).toContain('saved');
