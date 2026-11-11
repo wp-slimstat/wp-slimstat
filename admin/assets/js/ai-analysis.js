@@ -38,35 +38,45 @@
         return node;
     }
     /**
-     * Use the server-provided contextual upgrade URL.
+     * Use a server-provided contextual upgrade URL.
      *
+     * @param {string} href config.upgrade (report surfaces) or config.explore (copy toast).
      * @returns {HTMLAnchorElement} The Pro invitation link.
      */
-    function upgrade() {
-        return el('a', __('Explore Pro AI →', 'wp-slimstat'), { href: config.upgrade, class: 'button button-primary' });
+    function upgrade(href = config.upgrade) {
+        return el('a', __('Explore Pro AI →', 'wp-slimstat'), { href, class: 'button button-primary' });
     }
     /**
      * Confirm a completed copy without interrupting keyboard or pointer interaction.
      *
      * @param {string} title Localized status heading.
      * @param {string} description Localized supporting text.
-     * @param {boolean} offer Allow the once-per-page administrator Pro invitation.
+     * @param {Object} options offer: the once-per-page administrator Pro invitation;
+     *                         explore: lead the action row with Explore Pro AI;
+     *                         trigger: the control that gets focus back on Close.
      */
-    function toast(title, description, offer = false) {
+    function toast(title, description, { offer = false, explore = false, trigger = null } = {}) {
         clearTimeout(toastTimer);
         document.getElementById('slimstat-ai-toast')?.remove();
         const node = el('aside', '', { id: 'slimstat-ai-toast', class: 'ss-ai-toast', 'aria-label': __('AI prompt', 'wp-slimstat') });
         const status = el('div', '', { role: 'status' });
-        status.append(el('strong', title), el('p', description));
+        status.append(el('strong', title), el('p', description, { class: 'ss-ai-toast-lead' }));
         node.append(status);
         if (offer && config.can_manage && !promoted) {
             promoted = true;
             const more = el('div', '', { class: 'ss-ai-toast-offer' });
             more.append(el('strong', __('Want AI insights without leaving WordPress?', 'wp-slimstat')),
-                el('p', __('With SlimStat Pro, connect your AI provider and analyze reports in one click.', 'wp-slimstat')), upgrade());
+                el('p', __('With SlimStat Pro, connect your AI provider and analyze reports in one click.', 'wp-slimstat')));
             node.append(more);
         }
-        node.append(action(__('Dismiss', 'wp-slimstat'), () => node.remove()));
+        // Close hides this message only; it is not an opt-out.
+        const actions = el('div', '', { class: 'ss-ai-toast-actions' });
+        if (explore) actions.append(upgrade(config.explore));
+        const close = action(__('Close', 'wp-slimstat'), () => { node.remove(); if (trigger?.isConnected) trigger.focus(); });
+        // Unique beside the analysis dialog's own Close, and still starting with the visible label.
+        close.setAttribute('aria-label', __('Close message', 'wp-slimstat'));
+        actions.append(close);
+        node.append(actions);
         (dialog?.open ? dialog : document.body).append(node);
         const expire = () => { toastTimer = setTimeout(() => { if (!node.contains(document.activeElement)) node.remove(); }, 12000); };
         node.addEventListener('mouseenter', () => clearTimeout(toastTimer));
@@ -78,7 +88,8 @@
     document.addEventListener('slimstat:ai-copy', event => {
         if (!event.detail?.copied) return;
         toast(__('✓ AI Prompt Copied!', 'wp-slimstat'),
-            __('Paste it into ChatGPT, Claude, Gemini, Grok, or your favorite AI to analyze your report.', 'wp-slimstat'), !config.native);
+            __('Paste it into ChatGPT, Claude, Gemini, Grok, or your favorite AI to analyze your report.', 'wp-slimstat'),
+            { offer: !config.native, explore: true, trigger: event.detail.trigger });
     });
 
     /**

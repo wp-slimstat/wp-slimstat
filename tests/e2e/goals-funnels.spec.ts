@@ -96,9 +96,9 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await forceLimits(1, 0, WP_CONTENT);
         await gotoSlimview6(page);
 
-        // Goals hero + empty teach card. Title is the postbox <h3>; usage pill
-        // and CTA were moved into the postbox header (.slimstat-header-buttons).
-        await expect(page.locator('#slim_p9_01 > h3')).toContainText('Goals');
+        // Goals hero + empty teach card. Title is the <h3> in the title row; usage pill
+        // and CTA sit beside it in the header (.slimstat-header-buttons).
+        await expect(page.locator('#slim_p9_01 > .slimstat-report-head > h3')).toContainText('Goals');
         await expect(page.locator('#slim_p9_01 [data-role="usage"]')).toContainText('0 of 1');
         await expect(page.locator('[data-role="goals-empty"]')).toBeVisible();
 

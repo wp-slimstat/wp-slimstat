@@ -17,7 +17,7 @@
 [dir=rtl] .slimstat-whats-new a::after{content:"\2190";content:"\2190"/""}[dir=rtl] .slimstat-whats-new li:hover a::after{transform:translateX(-3px)}
 @media (min-width:1280px){.slimstat-whats-new{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}}
 @media (max-width:782px){.slimstat-whats-new{grid-template-columns:minmax(0,1fr)}.slimstat-whats-new__why{display:none}}
-/* AI Analysis leads both placements with the ✨ of "Analyze with AI": a warm tint with a full border, a sparkle that settles in once and turns on hover. */
+/* AI Analysis leads both placements with the ✨ of "AI Analysis": a warm tint with a full border, a sparkle that settles in once and turns on hover. */
 .slimstat-release-notice .slimstat-ai-spotlight,.slimstat-release-bar a.slimstat-release-bar__ai{border:1px solid oklch(87% .07 78);background:oklch(97.5% .025 85)}
 .slimstat-release-notice .slimstat-ai-spotlight{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:12px 0 4px;padding:12px 14px;border-radius:8px}
 .slimstat-release-notice .slimstat-ai-spotlight p{flex:1 1 12em;margin:0;padding:0}.slimstat-ai-spotlight strong{margin-inline-end:4px;font-size:14px}.slimstat-ai-spotlight__how{color:#50575e}.slimstat-ai-spotlight .slimstat-ai-spark{align-self:start}

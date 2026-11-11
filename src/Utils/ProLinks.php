@@ -7,12 +7,16 @@ final class ProLinks
 {
     public static function url(string $campaign, string $content, bool $internal = false, string $anchor = ''): string
     {
-        $args = ['utm_campaign' => sanitize_key($campaign), 'utm_content' => sanitize_key($content)];
-        if (!$internal) {
-            $args = ['utm_source' => 'wp-slimstat', 'utm_medium' => 'link'] + $args;
-        }
-        $url = add_query_arg($args, $internal ? admin_url('admin.php?page=slimpro') : 'https://wp-slimstat.com/pricing/');
+        $url = $internal
+            ? add_query_arg(['utm_campaign' => sanitize_key($campaign), 'utm_content' => sanitize_key($content)], admin_url('admin.php?page=slimpro'))
+            : self::tag('https://wp-slimstat.com/pricing/', $campaign, $content);
         return $url . ('' !== $anchor ? '#' . sanitize_key($anchor) : '');
+    }
+
+    /** Attribution for a fixed SlimStat destination; add_query_arg() replaces any of these already on $url, so each appears once. */
+    public static function tag(string $url, string $campaign, string $content): string
+    {
+        return add_query_arg(['utm_source' => 'wp-slimstat', 'utm_medium' => 'link', 'utm_campaign' => sanitize_key($campaign), 'utm_content' => sanitize_key($content)], $url);
     }
 
     /** Only the Pro information page forwards an origin supplied by an internal link. */

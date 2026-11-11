@@ -2922,28 +2922,6 @@ body.slimstat-admin-page {
           }
         }
 
-        .slimstat-ai-prompt {
-          padding: 5px;
-          border: 0;
-          background: none;
-          font-family: inherit;
-          font-weight: 700;
-          font-size: 12px;
-          line-height: 100%;
-          color: rgb(103, 110, 116);
-          text-decoration: none;
-          transition: 0.3s all ease-out;
-          cursor: pointer;
-
-          &:hover:not(:disabled) {
-            color: #202224;
-          }
-
-          &:disabled {
-            cursor: default;
-          }
-        }
-
         [dir="rtl"] & {
           float: left;
 
@@ -2954,17 +2932,62 @@ body.slimstat-admin-page {
         }
       }
 
-      // The report title keeps the first row; actions wrap below without displacing it.
-      h3 ~ .slimstat-header-buttons {
-        float: none;
+      // Title row: title and info icon on one side, Export then Refresh on the other.
+      // A long title wraps beside the controls; a narrow card moves them to their own line.
+      .slimstat-report-head {
+        display: flex;
         flex-wrap: wrap;
-        gap: 6px 0;
-        width: 100%;
-        box-sizing: border-box;
-        padding: 0 10px 12px;
+        align-items: center;
 
-        [dir="rtl"] & {
+        h3 {
+          flex: 1 1 10em;
+          min-width: 0;
+          overflow-wrap: anywhere;
+        }
+
+        .slimstat-header-buttons {
           float: none;
+          flex: 0 0 auto;
+          gap: 8px;
+          margin-inline-start: auto;
+          padding: 0 10px;
+        }
+      }
+
+      // Second row: Copy Prompt and AI Analysis, on the title's start edge.
+      .slimstat-ai-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 16px;
+        margin-top: -10px;
+        padding: 0 15px 12px;
+
+        .slimstat-ai-prompt,
+        .slimstat-ai-analyze {
+          padding: 4px 0;
+        }
+
+        .slimstat-ai-prompt {
+          border: 0;
+          background: none;
+          font-family: inherit;
+          font-weight: 700;
+          font-size: 12px;
+          line-height: 1.4;
+          color: rgb(103, 110, 116);
+          text-decoration: none;
+          transition: 0.3s all ease-out;
+          cursor: pointer;
+
+          &:hover:not(:disabled):not([aria-disabled="true"]) {
+            color: #202224;
+          }
+
+          &:disabled,
+          &[aria-disabled="true"] {
+            cursor: default;
+          }
         }
       }
 
