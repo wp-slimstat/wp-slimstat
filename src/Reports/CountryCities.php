@@ -199,6 +199,16 @@ class CountryCities
         echo '</div>';
     }
 
+    /** The Settings field that turns city tracking on, or null when cities are already recorded. */
+    public static function setupUrl(): ?string
+    {
+        $provider = \wp_slimstat::resolve_geolocation_provider();
+        if ('city' === \wp_slimstat::get_geolocation_precision() && false !== $provider) {
+            return null;
+        }
+        return admin_url('admin.php?page=slimconfig&tab=2') . (false === $provider ? '#wp-slimstat-third-party-libraries' : '#geolocation_country-label');
+    }
+
     /** @param string|false $provider */
     private static function cityTrackingOff($provider): void
     {
@@ -214,8 +224,7 @@ class CountryCities
         }
         echo '<p class="ss-cc__note">' . esc_html($hint) . '</p>';
         if (current_user_can(\wp_slimstat::$settings['capability_can_admin'])) {
-            $anchor = false === $provider ? '#wp-slimstat-third-party-libraries' : '#geolocation_country-label';
-            echo '<a class="button button-primary noslimstat" href="' . esc_url(admin_url('admin.php?page=slimconfig&tab=2') . $anchor) . '">' . esc_html__('Enable City Tracking', 'wp-slimstat') . '</a>';
+            echo '<a class="button button-primary noslimstat" href="' . esc_url((string) self::setupUrl()) . '">' . esc_html__('Enable City Tracking', 'wp-slimstat') . '</a>';
         } else {
             echo '<p>' . esc_html__('Ask a SlimStat administrator to set Geolocation precision to City in Settings.', 'wp-slimstat') . '</p>';
         }

@@ -114,7 +114,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await page.goto('/wp-admin/admin.php?page=slimpro');
     await expect(page.getByRole('heading', { name: 'What Pro adds to your reports' })).toBeVisible();
     await expect(page.getByText('Pro is active on this site')).toBeVisible();
-    await expect(page.locator('.ss-pro-feature h3')).toHaveCount(12);
+    await expect(page.locator('.ss-pro-feature h3')).toHaveCount(14);
     await expect(page.getByRole('link', { name: 'Upgrade to Pro' })).toHaveCount(0);
     await expect(page.getByText('Will I lose my existing reports or settings?')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Upload Pro in WordPress' })).toHaveCount(0);

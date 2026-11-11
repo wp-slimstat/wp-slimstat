@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { BASE_URL } from './helpers/env';
-import { seedPageviews, getPool, clearStatsCaches, closeDb } from './helpers/setup';
+import { seedPageviews, getPool, clearStatsCaches, closeDb, snapshotOption, restoreOption, snapshotSlimstatOptions, restoreSlimstatOptions } from './helpers/setup';
+import { getProState, setProLicense } from './helpers/pro-state';
 
 const prefix = '/e2e-native-ai-';
 const report = '#slim_p1_03';
@@ -30,14 +31,112 @@ test('copy success has an accessible, non-repeating Free invitation @compat', as
   await button.click();
   const toast = page.locator('#slimstat-ai-toast');
   await expect(toast.getByRole('status')).toContainText('AI Prompt Copied!');
-  await expect(toast).toContainText('ChatGPT, Claude, Gemini, Grok');
-  await expect(toast.getByRole('link', { name: 'Explore Pro AI' })).toBeVisible();
+  await expect(toast.locator('.ss-ai-toast-lead')).toHaveText('Paste it into ChatGPT, Claude, Gemini, Grok, or your favorite AI to analyze your report.');
+  await expect(toast).toContainText('Want AI insights without leaving WordPress?');
   await page.screenshot({ path: info.outputPath('free-ai-toast.png') });
-  await toast.getByRole('button', { name: 'Dismiss' }).click();
+  await toast.getByRole('button', { name: 'Close' }).click();
+  await expect(toast).toHaveCount(0);
+  await expect(button).toBeFocused();
   await expect(button).toBeEnabled();
+  // The second copy is the compact message: no invitation, the same action row.
   await button.click();
   await expect(toast.getByRole('status')).toContainText('AI Prompt Copied!');
-  await expect(toast.getByRole('link')).toHaveCount(0);
+  await expect(toast).not.toContainText('Want AI insights');
+  await expect(toast.getByRole('link', { name: 'Explore Pro AI' })).toBeVisible();
+});
+
+for (const native of [false, true]) {
+  test(`both Prompt Copied messages lead with Explore Pro AI, then Close (${native ? 'Pro' : 'Free'}) @compat`, async ({ page }, info) => {
+    // Attribution on the current URL must not reach the internal link.
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&utm_source=elsewhere&utm_campaign=leak`);
+    await page.locator(report).scrollIntoViewIfNeeded();
+    await expect(page.locator(`${report} .inside`)).not.toHaveText(/^\s*$/);
+    await page.evaluate(n => { (window as any).SlimStatAdminParams.ai.native = n; }, native);
+    const button = page.locator(`${report} .slimstat-ai-prompt`);
+    const toast = page.locator('#slimstat-ai-toast');
+    for (const variant of native ? ['compact'] : ['expanded', 'compact']) {
+      await button.click();
+      await expect(toast.locator('.ss-ai-toast-offer')).toHaveCount(variant === 'expanded' ? 1 : 0);
+      const explore = toast.locator('.ss-ai-toast-actions > a.button-primary');
+      await expect(explore).toHaveText('Explore Pro AI →');
+      const href = new URL((await explore.getAttribute('href'))!, BASE_URL);
+      expect(href.pathname + href.search).toBe('/wp-admin/admin.php?page=slimai');
+      // Bolder than the paragraph that invites to Pro, and the darkest text in the message.
+      expect(Number(await toast.locator('.ss-ai-toast-lead').evaluate(n => getComputedStyle(n).fontWeight))).toBeGreaterThanOrEqual(600);
+      for (const [width, dir] of [[1440, 'ltr'], [390, 'ltr'], [390, 'rtl']] as const) {
+        await page.setViewportSize({ width, height: 900 });
+        const row = await toast.evaluate((node, d) => {
+          document.documentElement.dir = d;
+          const [a, b] = Array.from(node.querySelectorAll('.ss-ai-toast-actions > *')).map(n => n.getBoundingClientRect());
+          const box = node.getBoundingClientRect();
+          return {
+            order: Array.from(node.querySelectorAll('.ss-ai-toast-actions > *'), n => n.textContent),
+            sameRow: Math.abs(a.top - b.top) < 1 && Math.abs(a.height - b.height) < 1,
+            closeAfter: d === 'rtl' ? b.right <= a.left - 4 : b.left >= a.right + 4,
+            inside: box.left >= 0 && box.right <= window.innerWidth && node.scrollWidth <= node.clientWidth,
+          };
+        }, dir);
+        expect(row, `${variant} ${width} ${dir}`).toEqual({ order: ['Explore Pro AI →', 'Close'], sameRow: true, closeAfter: true, inside: true });
+      }
+      await page.evaluate(() => { document.documentElement.dir = 'ltr'; });
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await toast.screenshot({ path: info.outputPath(`toast-${native ? 'pro' : 'free'}-${variant}.png`) });
+      // Keyboard: Tab reaches Explore before Close, and Close hands focus back.
+      await explore.focus();
+      await page.keyboard.press('Tab');
+      await expect(toast.getByRole('button', { name: 'Close' })).toBeFocused();
+      await page.keyboard.press('Enter');
+      await expect(toast).toHaveCount(0);
+      await expect(button).toBeFocused();
+      await expect(button).toBeEnabled({ timeout: 5000 });
+    }
+  });
+}
+
+test('Copy Prompt leads to the AI Analysis page, then to Pro features with its attribution @compat', async ({ page, context }) => {
+  // The non-native journey: Free, or a Pro awaiting activation where Pro is installed. wp-slimstat.com is stubbed.
+  const panelCta = 'https://wp-slimstat.com/pro-features/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=ai-analysis&utm_content=slimai-pro-panel';
+  const kept = ['slimstat_pro_license_verdict', 'slimstat_e2e_license_state'];
+  const pro = (await getProState(page)).pro_installed;
+  if (pro) {
+    await snapshotSlimstatOptions();
+    for (const name of kept) await snapshotOption(name);
+    expect(await setProLicense(page, 'none')).toBe('none');
+  }
+  try {
+    const external: string[] = [];
+    await context.route('https://wp-slimstat.com/**', route => { external.push(route.request().url()); return route.fulfill({ status: 200, contentType: 'text/html', body: '<title>stub</title>' }); });
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`);
+    await page.locator(`${report} .slimstat-ai-prompt`).click();
+    await page.locator('#slimstat-ai-toast').getByRole('link', { name: 'Explore Pro AI' }).click();
+    await expect(page).toHaveURL(/\/wp-admin\/admin\.php\?page=slimai$/);
+    await expect(page.getByRole('heading', { name: 'Get insights right here in WordPress' })).toBeVisible();
+    const [popup] = await Promise.all([page.waitForEvent('popup'), page.locator('.ss-ai-pro-cta').click()]);
+    await popup.waitForLoadState();
+    expect(popup.url()).toBe(panelCta);
+    expect(external).toEqual([panelCta]);
+  } finally {
+    if (pro) {
+      expect(await setProLicense(page, 'valid')).toBe('valid');
+      for (const name of kept) await restoreOption(name);
+      await restoreSlimstatOptions();
+    }
+  }
+});
+
+test('a long translation wraps the action row instead of clipping it @compat', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => (window as any).wp.i18n.setLocaleData({
+    'Explore Pro AI →': ['Entdecken Sie die KI-Analyse von SlimStat Pro →'],
+    'Close': ['Schließen und später erneut anzeigen'],
+  }, 'wp-slimstat'));
+  await page.locator(`${report} .slimstat-ai-prompt`).click();
+  const toast = page.locator('#slimstat-ai-toast');
+  const fit = await toast.evaluate(node => Array.from(node.querySelectorAll('.ss-ai-toast-actions > *')).every(n => {
+    const r = n.getBoundingClientRect(); const box = node.getBoundingClientRect();
+    return r.left >= box.left && r.right <= box.right && n.scrollWidth <= n.clientWidth + 1;
+  }));
+  expect(fit).toBe(true);
 });
 
 test('clipboard failure never announces success @compat', async ({ page }) => {
@@ -309,7 +408,7 @@ test('saved analysis stays accessible on mobile and clipboard fallback works @co
   await expect(page.locator('#slimstat-ai-toast')).toContainText('Analysis copied');
   await page.screenshot({ path: info.outputPath('native-ai-mobile.png') });
   await page.setViewportSize({ width: 1440, height: 1100 });
-  await page.locator('#slimstat-ai-toast').getByRole('button', { name: 'Dismiss' }).click();
+  await page.locator('#slimstat-ai-toast').getByRole('button', { name: 'Close' }).click();
   await page.screenshot({ path: info.outputPath('native-ai-desktop.png') });
 });
 

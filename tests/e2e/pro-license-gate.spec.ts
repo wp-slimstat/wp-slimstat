@@ -21,7 +21,7 @@ const SCREENS = ['/wp-admin/admin.php?page=slimview2', '/wp-admin/', '/wp-admin/
 const HREF: Record<string, RegExp> = {
   'Activate license': /\/wp-admin\/admin\.php\?page=slimconfig&tab=8$/,
   'Open License settings': /\/wp-admin\/admin\.php\?page=slimconfig&tab=8$/,
-  'Find my license': /^https:\/\/my\.wp-slimstat\.com\/account\/$/,
+  'Find my license': /^https:\/\/my\.wp-slimstat\.com\/account\/\?utm_source=wp-slimstat&utm_medium=link&utm_campaign=license-activation&utm_content=license-banner-find-license$/,
   'View plans': /^https:\/\/wp-slimstat\.com\/pricing\/\?/,
 };
 const LOCKED: [LicenseFixtureState, string, string, string[]][] = [
@@ -35,21 +35,51 @@ async function shot(page: Page, testInfo: TestInfo, name: string): Promise<void>
   await page.screenshot({ path: process.env.E2E_SHOTS_DIR ? `${process.env.E2E_SHOTS_DIR}/${name}.png` : testInfo.outputPath(`${name}.png`) });
 }
 
-/** Exactly one banner on the screen, with the state's text and exactly these links, in order. */
+/** The SlimStat button roles (tokens.css), the same on SlimStat screens, the Dashboard and Plugins. */
+const PRIMARY = { background: 'rgb(220, 50, 50)', border: 'rgb(220, 50, 50)', color: 'rgb(255, 255, 255)' };
+const SECONDARY = { background: 'rgb(255, 255, 255)', border: 'rgb(140, 143, 148)', color: 'rgb(32, 34, 36)' };
+const colors = (link: ReturnType<Page['locator']>) => link.evaluate(node => {
+  const style = getComputedStyle(node);
+  return { background: style.backgroundColor, border: style.borderTopColor, color: style.color };
+});
+
+/** Exactly one banner on the screen, with the state's text and exactly these actions, in order. */
 async function expectBanner(page: Page, text: string, links: string[]): Promise<void> {
   const notice = page.locator('.slimstat-pro-license-notice');
   await expect(notice).toHaveCount(1);
   await expect(notice).toContainText(text);
   await expect(notice).toContainText('Your Pro settings and data are kept.');
-  await expect(notice.locator('a')).toHaveCount(links.length);
+  // "SlimStat Pro" in the text opens the Pro overview in place; only the missing-key text bolds where to find the key.
+  const message = notice.locator('p').first();
+  const named = message.getByRole('link', { name: 'SlimStat Pro', exact: true });
+  await expect(named).toHaveCount(text.includes('could not verify') ? 0 : 1);
+  if (await named.count()) {
+    await expect(named).toHaveAttribute('href', /\/wp-admin\/admin\.php\?page=slimpro$/);
+    await expect(named).not.toHaveAttribute('target');
+  }
+  await expect(message.locator('strong')).toHaveText(text.includes('until you activate') ? ['find your license key'] : []);
+  const actions = notice.locator('.slimstat-pro-license-notice__actions a');
+  await expect(actions).toHaveCount(links.length);
   for (const [i, label] of links.entries()) {
-    const link = notice.locator('a').nth(i);
+    const link = actions.nth(i);
+    expect(await colors(link), `${label} colours on ${page.url()}`).toEqual(i ? SECONDARY : PRIMARY);
     await expect(link).toContainText(label);
     await expect(link).toHaveAttribute('href', HREF[label]);
     // External destinations open in a new tab; License settings opens in place.
     if (label === 'Find my license' || label === 'View plans') await expect(link).toHaveAttribute('target', '_blank');
     else await expect(link).not.toHaveAttribute('target');
   }
+  // Hover darkens the fill or the outline and keeps the text readable; keyboard focus shows WordPress's focus ring.
+  await actions.first().hover();
+  await expect.poll(() => colors(actions.first())).toMatchObject({ background: 'rgb(179, 16, 51)', color: 'rgb(255, 255, 255)' });
+  if (links.length > 1) {
+    await actions.nth(1).hover();
+    await expect.poll(() => colors(actions.nth(1))).toMatchObject({ background: 'rgb(246, 247, 247)', color: 'rgb(17, 24, 39)' });
+  }
+  await page.mouse.move(0, 0);
+  await actions.first().focus();
+  expect(await actions.first().evaluate(node => getComputedStyle(node).boxShadow)).not.toBe('none');
+  await actions.first().blur();
 }
 
 test.describe.serial('Pro license gate', () => {

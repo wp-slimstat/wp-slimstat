@@ -163,7 +163,7 @@ function SlimStatReportRows(body) {
     return rows.length ? rows : body.innerText.split("\n").map((line) => line.trim()).filter(Boolean);
 }
 
-// ✨ Copy AI Prompt: the report's rows plus the site's name, tagline and address. It goes to the
+// ✨ Copy Prompt: the report's rows plus the site's name, tagline and address. It goes to the
 // clipboard only; the user decides which AI tool, if any, receives it. Period and filters are
 // read from the picker and filter list on screen, so the prompt describes the rows it carries.
 jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
@@ -174,22 +174,24 @@ jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
     const body = box.matches(".postbox") ? SlimStatReportBody(box.id)[0] : box;
     const rows = SlimStatReportRows(body);
     const label = button.innerHTML;
+    // Busy, not disabled: a disabled button drops keyboard focus, and the toast's Close returns it here.
+    if (button.getAttribute("aria-disabled") === "true") return;
     const show = (text) => {
-        button.disabled = true;
+        button.setAttribute("aria-disabled", "true");
         button.textContent = text;
-        setTimeout(() => { button.innerHTML = label; button.disabled = false; }, 2500);
+        setTimeout(() => { button.innerHTML = label; button.removeAttribute("aria-disabled"); }, 2500);
     };
     if (button.dataset.report === 'slim_p10_01') {
         const feedback = box.querySelector('.ss-ec-copy-feedback');
         if (feedback) { feedback.textContent = ''; feedback.hidden = true; }
         try {
             const selection = window.SlimStatAiContext(button);
-            button.disabled = true;
+            button.setAttribute("aria-disabled", "true");
             const data = await wp.apiFetch({ path: '/slimstat/v1/ai/prompt', method: 'POST', data: selection });
             if (JSON.stringify(window.SlimStatAiContext(button)) !== JSON.stringify(selection)) throw new Error(__('The report selection changed. Try copying again.', 'wp-slimstat'));
             const copied = await window.SlimStatCopyText(data.prompt);
             show(copied ? '✓ ' + __('Copied', 'wp-slimstat') : __('Copy failed', 'wp-slimstat'));
-            document.dispatchEvent(new CustomEvent('slimstat:ai-copy', { detail: { copied } }));
+            document.dispatchEvent(new CustomEvent('slimstat:ai-copy', { detail: { copied, trigger: button } }));
         } catch (error) {
             show(__('Copy failed', 'wp-slimstat'));
             if (feedback) { feedback.textContent = error?.message || __('The report could not be prepared. Try again.', 'wp-slimstat'); feedback.hidden = false; }
@@ -250,7 +252,7 @@ jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
 
     const copied = await window.SlimStatCopyText(prompt);
     show(copied ? "✓ " + __("Copied", "wp-slimstat") : __("Copy failed", "wp-slimstat"));
-    document.dispatchEvent(new CustomEvent('slimstat:ai-copy', { detail: { copied } }));
+    document.dispatchEvent(new CustomEvent('slimstat:ai-copy', { detail: { copied, trigger: button } }));
 });
 
 /**

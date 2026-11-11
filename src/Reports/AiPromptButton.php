@@ -8,7 +8,7 @@ use SlimStat\Utils\ProLinks;
 if (!defined('ABSPATH')) { exit; }
 
 /**
- * "Copy AI Prompt" (gold copy icon) beside a report's Export. admin.js builds the prompt from what is on
+ * "Copy Prompt" (gold copy icon) and "AI Analysis" on the row below a report's title. admin.js builds the prompt from what is on
  * screen (rows, date picker, filter list) and the site's name, tagline and address; it reaches
  * an AI tool only when the user pastes it there. Free for free reports, a Pro link for Pro
  * reports while Pro is inactive.
@@ -37,12 +37,12 @@ final class AiPromptButton
             return '';
         }
 
-        // Dashicons "admin-page" (copy) in the gold of the ✨ beside Analyze with AI.
-        $label = '<svg class="slimstat-ai-prompt-icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 20 20" fill="#FFAC33" style="vertical-align:-0.125em"><path d="M6 15V2h10v13H6zm-1 1h8v2H3V5h2v11z"/></svg> ' . esc_html__('Copy AI Prompt', 'wp-slimstat');
+        // Dashicons "admin-page" (copy) in the gold of the ✨ beside AI Analysis.
+        $label = '<svg class="slimstat-ai-prompt-icon" aria-hidden="true" focusable="false" width="1em" height="1em" viewBox="0 0 20 20" fill="#FFAC33" style="vertical-align:-0.125em"><path d="M6 15V2h10v13H6zm-1 1h8v2H3V5h2v11z"/></svg> ' . esc_html__('Copy Prompt', 'wp-slimstat');
         if (!$pro && in_array($reportId, Shortcode::PRO_REPORTS, true)) {
             // No purchase link for someone who cannot buy.
             return current_user_can('manage_options')
-                ? '<a class="slimstat-ai-prompt slimstat-ai-prompt-locked noslimstat" href="' . esc_url(ProLinks::url('ai-prompt', $reportId, true)) . '" title="' . esc_attr__('Copy AI Prompt with Pro', 'wp-slimstat') . '">' . $label . '</a>'
+                ? '<a class="slimstat-ai-prompt slimstat-ai-prompt-locked noslimstat" href="' . esc_url(ProLinks::url('ai-prompt', $reportId, true)) . '" title="' . esc_attr__('Copy Prompt with Pro', 'wp-slimstat') . '">' . $label . '</a>'
                 : '';
         }
 
@@ -52,8 +52,10 @@ final class AiPromptButton
         $standalone = in_array($reportId, ['slim_p10_01', 'slimheatmap'], true) ? ' button' : '';
         $privacy = 'slimheatmap' === $reportId ? ' data-personal-filters="' . esc_attr(implode(',', self::ONE_VISITOR_FILTERS)) . '"' : '';
         $native = (bool) apply_filters('slimstat_native_ai_available', false);
+        // The badge marks a paid feature, so it stays whether or not this site is licensed.
+        $analyze = esc_attr__('Analyze this report with AI', 'wp-slimstat');
         $analysis = $native || current_user_can('manage_options')
-            ? '<button type="button" class="slimstat-ai-analyze noslimstat' . $standalone . '" data-report="' . esc_attr($reportId) . '"><span aria-hidden="true">✨</span> ' . esc_html($native ? __('Analyze with AI', 'wp-slimstat') : __('Analyze with AI (Pro)', 'wp-slimstat')) . '</button>'
+            ? '<button type="button" class="slimstat-ai-analyze noslimstat' . $standalone . '" title="' . $analyze . '" aria-description="' . $analyze . '" data-report="' . esc_attr($reportId) . '"><span aria-hidden="true">✨</span> ' . esc_html__('AI Analysis', 'wp-slimstat') . ' <span class="slimstat-ai-pro-badge">' . esc_html__('Pro', 'wp-slimstat') . '</span></button>'
             : '';
         return '<button type="button" class="slimstat-ai-prompt noslimstat' . $standalone . '" title="' . $help . '" aria-description="' . $help . '" data-report="' . esc_attr($reportId) . '" data-title="' . esc_attr(wp_strip_all_tags($report['title'] ?? '')) . '" data-about="' . esc_attr($about) . '"' . $privacy . '>' . $label . '</button>' . $analysis;
     }

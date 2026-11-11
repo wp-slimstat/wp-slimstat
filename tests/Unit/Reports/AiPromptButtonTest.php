@@ -26,7 +26,9 @@ class AiPromptButtonTest extends WpSlimstatTestCase
         $report = ['title' => 'Top <b>Pages</b>', 'tooltip' => 'Pages <strong>"people"</strong> read.<br>Bots excluded.', 'callback_args' => ['columns' => 'resource', 'raw' => 'x']];
         $html = AiPromptButton::html('slim_p1_08', $report, ['browser' => ['equals', 'Firefox']], false);
         self::assertStringStartsWith('<button type="button" class="slimstat-ai-prompt noslimstat"', $html);
-        self::assertStringContainsString('Copy AI Prompt', $html);
+        self::assertStringContainsString('</svg> Copy Prompt</button>', $html);
+        self::assertStringContainsString('AI Analysis <span class="slimstat-ai-pro-badge">Pro</span></button>', $html, 'an admin sees AI Analysis with its Pro badge');
+        self::assertStringContainsString('class="slimstat-ai-analyze noslimstat" title="Analyze this report with AI" aria-description="Analyze this report with AI"', $html);
         self::assertStringContainsString('title="Click to copy this report as an AI prompt, then paste it into ChatGPT, Claude, Grok, or any AI tool you use."', $html);
         self::assertStringContainsString('aria-description="Click to copy', $html);
         self::assertStringContainsString('data-title="Top Pages"', $html);

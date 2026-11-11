@@ -90,6 +90,7 @@ try {
 
     // Locked notice and its links, per state: the fix first, then the account and plans when a key is missing or wrong.
     $hasClient = class_exists(ProLicense::CLIENT);
+    $find = 'https://my.wp-slimstat.com/account/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=license-activation&utm_content=license-banner-find-license';
     $admin = get_users(['role' => 'administrator', 'number' => 1])[0]->ID;
     $states = [
         'none'                 => ['activate a license', ['Activate license', 'Find my license', 'View plans']],
@@ -108,12 +109,16 @@ try {
         $check($links[0] === ProLicense::action(), 'The header button is the banner\'s first link for ' . $state);
         ob_start();
         ProLicense::render();
+        $html = (string) ob_get_clean();
         $tone = $hasClient && in_array($state, ['invalid', 'domain_not_activated'], true) ? 'notice-error' : 'notice-warning';
-        $check(false !== strpos((string) ob_get_clean(), 'class="notice ' . $tone . ' '), 'A wrong key is an error, anything else a warning, for ' . $state);
+        $check(false !== strpos($html, 'class="notice ' . $tone . ' '), 'A wrong key is an error, anything else a warning, for ' . $state);
+        // "SlimStat Pro" in the text opens the Pro overview; only the missing-key text bolds where the key is found.
+        $named = $hasClient && 'unreachable' !== $state;
+        $check($named === (1 === substr_count($html, '<a href="' . esc_url(admin_url('admin.php?page=slimpro')) . '">SlimStat Pro</a>')), 'SlimStat Pro links the Pro overview for ' . $state . ': ' . $html);
+        $check(($hasClient && 'none' === $state) === (false !== strpos($html, 'to <strong>find your license key</strong>.')), 'find your license key is bold for ' . $state);
         $check(!$hasClient || false !== strpos($links[0][1], 'page=slimconfig&tab=8') && false === $links[0][2], 'The fix opens License settings for ' . $state);
         foreach (array_slice($links, 1) as [$label, $url, $external]) {
-            $expected = 'Find my license' === $label ? ProLicense::ACCOUNT : 'https://wp-slimstat.com/pricing/?';
-            $check($external && 0 === strpos($url, $expected), $label . ' leads to ' . $expected . ' for ' . $state . ': ' . $url);
+            $check($external && ('Find my license' === $label ? $find === $url : 0 === strpos($url, 'https://wp-slimstat.com/pricing/?')), $label . ' leads to its destination for ' . $state . ': ' . $url);
         }
     }
 
@@ -126,7 +131,7 @@ try {
     foreach (['index.php', 'plugins.php'] as $page) {
         $html = $screen($page);
         $check(1 === substr_count($html, 'slimstat-pro-license-notice" role="status"') && 1 === substr_count($html, 'button-primary') && false === strpos($html, 'is-dismissible'), 'One banner that cannot be dismissed on ' . $page);
-        $check(!$hasClient || false !== strpos($html, 'href="' . ProLicense::ACCOUNT . '" target="_blank" rel="noopener noreferrer"'), 'Find my license opens the account in a new tab on ' . $page);
+        $check(!$hasClient || false !== strpos($html, 'href="' . esc_url($find) . '" target="_blank" rel="noopener noreferrer"'), 'Find my license opens the account in a new tab on ' . $page);
     }
     $check('' === $screen('edit.php') && '' === $screen('admin.php'), 'No banner on other WordPress screens');
     wp_set_current_user(0);

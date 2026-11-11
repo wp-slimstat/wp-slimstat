@@ -542,9 +542,6 @@ class wp_slimstat_admin
         // Add lock export button in report header
         add_filter('slimstat_report_header_buttons', fn ($_header_buttons, $_report_id) => self::add_lock_export_button($_header_buttons, $_report_id), 10, 2);
 
-        // ✨ Copy AI Prompt, left of Export (which prepends at 10)
-        add_filter('slimstat_report_header_buttons', fn ($_header_buttons, $_report_id) => \SlimStat\Reports\AiPromptButton::html((string) $_report_id, \wp_slimstat_reports::$reports[$_report_id] ?? [], wp_slimstat_db::$filters_normalized['columns'] ?? [], wp_slimstat::pro_is_installed()) . ' ' . $_header_buttons, 15, 2);
-
         self::register_goals_funnels_header_hooks();
 
         // Sync index options with actual DB state — one SHOW INDEX for all of them, and none at
@@ -1928,7 +1925,7 @@ class wp_slimstat_admin
             'clear_cache_nonce' => wp_create_nonce('slimstat_clear_cache'),
             'goals_nonce'       => wp_create_nonce('slimstat_goals_nonce'),
             'ajax_url'          => admin_url('admin-ajax.php'),
-            // Website context for Copy AI Prompt (wp_localize_script decodes the stored entities).
+            // Website context for Copy Prompt (wp_localize_script decodes the stored entities).
             'site_name'         => get_bloginfo('name'),
             'site_description'  => get_bloginfo('description'),
             'site_url'          => home_url('/'),
@@ -1937,6 +1934,8 @@ class wp_slimstat_admin
                 'native' => false,
                 'can_manage' => current_user_can('manage_options'),
                 'upgrade' => \SlimStat\Utils\ProLinks::url('ai-analysis', 'reports', true),
+                // The copy toast's Explore Pro AI: the AI Analysis page itself, with no attribution.
+                'explore' => admin_url('admin.php?page=slimai'),
             ]),
             // Shared with the filter form-builder so value-less operators (is_empty/
             // is_not_empty) are never treated as a "remove filter" signal. See #305.
@@ -2619,6 +2618,10 @@ class wp_slimstat_admin
     {
         if (!self::can_view_stats()) { return; }
         wp_enqueue_style('slimstat-promotions', plugins_url('admin/assets/css/promotions.css', SLIMSTAT_FILE), [], SLIMSTAT_ANALYTICS_VERSION);
+        // The locked-Pro banner's buttons use SlimStat's button roles there too, not WordPress blue.
+        if (\SlimStat\Services\ProLicense::on_screen()) {
+            wp_enqueue_style('wp-slimstat-tokens', plugins_url('admin/assets/css/tokens.css', SLIMSTAT_FILE), [], SLIMSTAT_ANALYTICS_VERSION);
+        }
         wp_enqueue_script('slimstat-promotions', plugins_url('admin/assets/js/promotions.js', SLIMSTAT_FILE), [], SLIMSTAT_ANALYTICS_VERSION, true);
         wp_localize_script('slimstat-promotions', 'SlimStatPromotions', [
             'scope' => current_user_can('manage_options') ? get_current_blog_id() . ':' . get_current_user_id() : '',
@@ -2674,7 +2677,7 @@ class wp_slimstat_admin
                 . '<p><strong class="slimstat-release-notice__title">' . esc_html__('SlimStat 6 is here.', 'wp-slimstat') . '</strong> '
                 . esc_html__('Reports are faster, and your settings and data carry over. Includes important security hardening.', 'wp-slimstat')
                 . ($is_pro ? ' ' . esc_html__('SlimStat Pro 3.0.0 adds heatmap page previews and Ecommerce email reports.', 'wp-slimstat') : '') . '</p>'
-                // AI Analysis leads as its own block, with the ✨ of "Analyze with AI" and one primary action.
+                // AI Analysis leads as its own block, with the ✨ of "AI Analysis" and one primary action.
                 . '<div class="slimstat-ai-spotlight"><span class="slimstat-ai-spark" aria-hidden="true">✨</span><p><strong>' . esc_html__('AI Analysis', 'wp-slimstat') . '</strong> '
                 . esc_html__('Turn any report into plain-language findings.', 'wp-slimstat') . ' <span class="slimstat-ai-spotlight__how">'
                 . esc_html($is_pro ? __('Analyze reports inside WordPress 7.0 or newer; results stay in a private, searchable library.', 'wp-slimstat') : __('Free copies a ready-made prompt for ChatGPT, Claude or Gemini; Pro runs the analysis inside WordPress.', 'wp-slimstat'))

@@ -29,7 +29,7 @@ test('Channels and UTM Campaigns share a row at half width', async ({ page }) =>
 test('the campaign link builder sits in the header left of Export, and the bottom help link is gone', async ({ page }) => {
   await page.goto(PAGE);
   for (const id of ['#slim_p3_03', '#slim_p3_04']) {
-    const header = page.locator(`${id} > .slimstat-header-buttons`);
+    const header = page.locator(`${id} > .slimstat-report-head > .slimstat-header-buttons`);
     expect((await header.locator('a').allTextContents()).map((t) => t.trim()).slice(0, 2)).toEqual(['Build campaign link', 'Export']);
     await expect(header.locator('.slimstat-utm-builder-link')).toHaveCSS('border-top-width', '0px');
     await expect(page.locator(id).getByRole('button', { name: 'How to read this report' })).toHaveCount(0);

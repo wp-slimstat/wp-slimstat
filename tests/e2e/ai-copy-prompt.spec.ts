@@ -1,5 +1,5 @@
 /**
- * ✨ Copy AI Prompt sits left of each report's Export. It copies the rows on screen plus
+ * ✨ Copy Prompt opens the row below each report's title. It copies the rows on screen plus
  * the site's name, tagline and address, and sends nothing anywhere. Reports about
  * individual visitors get no button; a Pro report without Pro gets a link to the Pro page.
  *
@@ -45,7 +45,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function copyFrom(page: Page, id: string): Promise<string> {
-  const button = page.locator(`#${id} > .slimstat-header-buttons button.slimstat-ai-prompt`);
+  const button = page.locator(`#${id} > .slimstat-ai-actions button.slimstat-ai-prompt`);
   await expect(button.locator('svg.slimstat-ai-prompt-icon')).toHaveAttribute('fill', '#FFAC33');
   // With async_load on, a report's rows arrive over AJAX once it scrolls into view.
   await page.locator(`#${id}`).scrollIntoViewIfNeeded();
@@ -69,8 +69,8 @@ test('a free report copies its rows with the site name, tagline and address', as
   const site = JSON.parse(runWordPressFixture("<?php echo wp_json_encode([get_bloginfo('name'), get_bloginfo('description'), home_url('/')]);"));
   await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`);
 
-  // Left of Export.
-  const buttons = page.locator('#slim_p1_03 > .slimstat-header-buttons > *');
+  // First on the row below the title.
+  const buttons = page.locator('#slim_p1_03 > .slimstat-ai-actions > *');
   await expect(buttons.first()).toHaveClass(/slimstat-ai-prompt/);
   await expect(buttons.first()).toHaveAttribute('title', 'Click to copy this report as an AI prompt, then paste it into ChatGPT, Claude, Grok, or any AI tool you use.');
   await expect(buttons.first()).toHaveAttribute('aria-description', await buttons.first().getAttribute('title') || '');
@@ -259,7 +259,7 @@ test('visitor text cannot close the data section', async ({ page }) => {
 
 test('a view narrowed to one visitor has no button', async ({ page }) => {
   await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&fs[visit_id]=equals+1`);
-  await expect(page.locator('#slim_p1_08 > .slimstat-header-buttons')).toBeAttached();
+  await expect(page.locator('#slim_p1_08 > .slimstat-report-head')).toBeAttached();
   await expect(page.locator('.slimstat-ai-prompt')).toHaveCount(0);
 });
 
@@ -277,7 +277,7 @@ test('without Pro, a Pro report links to the Pro page instead of copying', async
   try {
     runWordPressFixture("<?php deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php', true);");
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview6`);
-    const link = page.locator('#slim_p9_02 > .slimstat-header-buttons a.slimstat-ai-prompt-locked');
+    const link = page.locator('#slim_p9_02 > .slimstat-ai-actions a.slimstat-ai-prompt-locked');
     const url = new URL((await link.getAttribute('href'))!);
     expect(url.searchParams.get('page')).toBe('slimpro');
     expect(url.searchParams.get('utm_campaign')).toBe('ai-prompt');
