@@ -10,7 +10,6 @@ final class Report
 {
 	public const CURRENCY_FILTER = 'addon_ecommerce_currency';
 	private array $range;
-	private array $requestedRange;
 	private string $currency;
 	private string $scope;
 	private string $join;
@@ -25,6 +24,12 @@ final class Report
 			&& (current_user_can('view_woocommerce_reports') || current_user_can('manage_options'));
 	}
 
+	/** One key per question: a range that runs to now is open-ended (the 60 s TTL bounds staleness), and the scope drops wpdb's per-request LIKE marker (PITFALLS 257). */
+	private static function cacheIdentity(array $range, int $now, string $scope): array
+	{
+		return [$range[0], $range[1] >= $now - MINUTE_IN_SECONDS ? 'now' : $range[1], $GLOBALS['wpdb']->remove_placeholder_escape($scope)];
+	}
+
 	/** @return never */
 	private static function fail(string $message)
 	{
@@ -35,10 +40,6 @@ final class Report
 	public function __construct()
 	{
 		$this->range = \wp_slimstat_db::$filters_normalized['utime'];
-		$this->requestedRange = [(int) $this->range['start'], (int) $this->range['end']];
-		if (abs((int) $this->range['end'] - \wp_slimstat::now()) < MINUTE_IN_SECONDS) {
-			$this->requestedRange[1] = (int) ceil($this->range['end'] / MINUTE_IN_SECONDS) * MINUTE_IN_SECONDS;
-		}
 		$this->range['end'] = min((int) $this->range['end'], \wp_slimstat::now());
 		$this->currency = (string) (\wp_slimstat_db::$filters_normalized['columns'][self::CURRENCY_FILTER][1] ?? get_woocommerce_currency());
 		if (!preg_match('/\A[A-Z0-9]{3,8}\z/', $this->currency)
@@ -308,7 +309,7 @@ final class Report
 		if ($days > 366 && 'daily' === $interval) { $interval = 'weekly'; }
 		if ($days > 2562) { $interval = 'monthly'; }
 		$key = 'slimstat_ec_' . md5(wp_json_encode([
-			$this->requestedRange, $this->currency, $this->scope, $extra, $this->acquisition, get_current_blog_id(), Acquisition::readinessKey(), $details, 4,
+			self::cacheIdentity([(int) $this->range['start'], (int) $this->range['end']], \wp_slimstat::now(), $this->scope), $this->currency, $extra, $this->acquisition, get_current_blog_id(), Acquisition::readinessKey(), $details, 4,
 		]));
 		$signature = [get_option('slimstat_ecommerce_generation', ''), $state, \wp_slimstat::$settings['auto_purge'] ?? 420];
 		$cached = get_transient($key);
