@@ -80,7 +80,7 @@
     scan();
     new MutationObserver(scan).observe(document.body, {childList: true, subtree: true});
 }());
-/* Black Friday 2026 banner: delete after 2026-12-01. Bound to its own root; dismissal is a cookie, nothing is sent. */
+/* Black Friday 2026 banner: delete after 2026-12-01. Bound to its own root; the only request is the dismissal, stored on the user. */
 (function () {
     'use strict';
     var root = document.getElementById('slimstat-bf-2026');
@@ -106,12 +106,15 @@
             } catch (e) { select(); }
         }
         if (event.target.closest('.slimstat-bf26__dismiss')) {
-            try {
-                document.cookie = root.getAttribute('data-slimstat-bf26-cookie') + '=1; path=' + root.getAttribute('data-slimstat-bf26-path') + '; max-age=2592000; SameSite=Lax' + ('https:' === location.protocol ? '; Secure' : '');
-            } catch (e) { /* Blocked storage: hidden for this page view only. */ }
-            var heading = document.querySelector('#wpbody-content h1');
-            root.remove();
-            if (heading) { heading.setAttribute('tabindex', '-1'); heading.focus(); }
+            // Removed only once saved, so a strip that is gone stays gone on every browser; repeat clicks are harmless.
+            fetch(root.getAttribute('data-slimstat-bf26-ajax'), {method: 'POST', credentials: 'same-origin', body: new URLSearchParams({
+                action: 'slimstat_bf2026_dismiss', security: root.getAttribute('data-slimstat-bf26-nonce')
+            })}).then(function (response) { return response.ok ? response.json() : {}; }).then(function (result) {
+                if (!result.success) throw new Error();
+                var heading = document.querySelector('#wpbody-content h1');
+                root.remove();
+                if (heading) { heading.setAttribute('tabindex', '-1'); heading.focus(); }
+            }).catch(function () { status.textContent = root.getAttribute('data-slimstat-bf26-error'); });
         }
     });
     copy.addEventListener('blur', function () { copy.textContent = label; status.textContent = ''; });

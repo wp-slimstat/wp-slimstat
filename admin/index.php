@@ -432,6 +432,7 @@ class wp_slimstat_admin
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
             }
             add_action('wp_ajax_slimstat_country_cities', [\SlimStat\Reports\CountryCities::class, 'ajax']);
+            add_action('wp_ajax_' . \SlimStat\Services\BlackFriday2026::ACTION, [\SlimStat\Services\BlackFriday2026::class, 'dismiss']);
 
             // Live Analytics AJAX handler is registered via init_hooks() in Bootstrap
             // No need to call it separately here - it's already registered

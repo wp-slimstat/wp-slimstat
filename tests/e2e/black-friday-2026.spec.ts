@@ -1,4 +1,4 @@
-/** Black Friday 2026 strip: where it shows, what it never sends, dismissal, copy, keyboard, layout and scope. */
+/** Black Friday 2026 strip: where it shows, what it sends, dismissal, copy, keyboard, layout and scope. */
 import { test, expect, Page, Browser } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,6 +12,8 @@ const SWITCH = 'slimstat_e2e_bf2026';
 const PROBE = ['_transient_slimstat_migration_probe', '_transient_timeout_slimstat_migration_probe'];
 const ANCHOR = 'slimstat_release_60_since';
 const DISMISSED = 'slimstat_release_60_dismissed';
+const BF_DISMISSED = 'slimstat_bf2026_dismissed';
+const isDismissal = (r: any) => r.method() === 'POST' && /\/admin-ajax\.php$/.test(new URL(r.url()).pathname) && /(?:^|&)action=slimstat_bf2026_dismiss(?:&|$)/.test(r.postData() ?? '');
 const DASHBOARD = '/wp-admin/index.php';
 const SLIMSTAT = ['slimview1', 'slimview3', 'slimconfig', 'slimheatmap', 'slimpro'].map(slug => `/wp-admin/admin.php?page=${slug}`);
 const ELSEWHERE = ['/wp-admin/plugins.php', '/wp-admin/edit.php', '/wp-admin/options-general.php', '/wp-admin/index.php?page=slimstat-e2e-bf26'];
@@ -59,9 +61,8 @@ async function load(page: Page, url: string): Promise<{ requests: string[]; quer
   const html = (await response!.text());
   return { requests: requests.sort(), queries: Number(/slimstat-e2e-queries:(\d+)/.exec(html)?.[1] ?? NaN) };
 }
-async function freshContext(browser: Browser, auth: string, dropCookie?: string) {
+async function freshContext(browser: Browser, auth: string) {
   const state = JSON.parse(fs.readFileSync(path.join(here, '.auth', auth), 'utf8'));
-  if (dropCookie) state.cookies = state.cookies.filter((c: any) => c.name !== dropCookie);
   return browser.newContext({ storageState: state, baseURL: BASE_URL, ignoreHTTPSErrors: process.env.PW_IGNORE_HTTPS === '1' });
 }
 
@@ -73,7 +74,7 @@ test.describe('Black Friday 2026 strip', () => {
     await snapshotSlimstatOptions();
     const [users] = await getPool().execute('SELECT ID FROM wp_users WHERE user_login=?', [ADMIN_USER]) as any;
     admin = users[0].ID;
-    [savedMeta] = await getPool().execute('SELECT meta_key,meta_value FROM wp_usermeta WHERE user_id=? AND meta_key IN (?,?)', [admin, ANCHOR, DISMISSED]) as any;
+    [savedMeta] = await getPool().execute('SELECT meta_key,meta_value FROM wp_usermeta WHERE user_id=? AND meta_key IN (?,?,?)', [admin, ANCHOR, DISMISSED, BF_DISMISSED]) as any;
     // A finished migration, and the 6.0 release bar due (one day into its window), so stacking is observable.
     await setOptionValue(PROBE[0], 'clean');
     await setOptionValue(PROBE[1], String(Math.floor(Date.now() / 1000) + 86400));
@@ -87,7 +88,7 @@ test.describe('Black Friday 2026 strip', () => {
     await on(true);
   });
   test.afterAll(async () => {
-    for (const key of [ANCHOR, DISMISSED]) await meta(key, null);
+    for (const key of [ANCHOR, DISMISSED, BF_DISMISSED]) await meta(key, null);
     for (const row of savedMeta) await meta(row.meta_key, row.meta_value);
     await restoreSlimstatOptions();
     for (const option of [SWITCH, ...PROBE]) await restoreOption(option);
@@ -97,6 +98,7 @@ test.describe('Black Friday 2026 strip', () => {
     await on(true);
     await meta(ANCHOR, String(Math.floor(Date.now() / 1000) - 86400));
     await meta(DISMISSED, null);
+    await meta(BF_DISMISSED, null);
   });
 
   test('shows on SlimStat screens and the Dashboard only, and never stacks with the release notice', async ({ page }) => {
@@ -126,10 +128,10 @@ test.describe('Black Friday 2026 strip', () => {
     await expect(releaseNotice(page)).toHaveCount(1);
   });
 
-  test('adds no request and no query, and sends nothing on copy or dismiss', async ({ page, context }) => {
+  test('adds no request and no query; copy sends nothing and dismiss sends one same-origin request', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     const external: string[] = [];
-    page.on('request', r => { if (/wp-slimstat\.com/.test(r.url()) || /admin-ajax\.php/.test(r.url()) && /bf2026|bf-2026|bf26/.test(r.postData() ?? '')) external.push(r.url()); });
+    page.on('request', r => { if (/wp-slimstat\.com/.test(r.url())) external.push(r.url()); });
     for (const url of [SLIMSTAT[0], DASHBOARD]) {
       // Each state is measured on its second load: the first load after an option write runs
       // ~17 extra queries (seen with the strip off and on alike), which would swamp a difference of 1.
@@ -143,62 +145,66 @@ test.describe('Black Friday 2026 strip', () => {
       expect(shown.requests, `${url}: same requests with the strip`).toEqual(off.requests);
       expect(shown.queries, `${url}: no added queries`).toBeLessThanOrEqual(off.queries);
       test.info().annotations.push({ type: 'queries', description: `${url}: off ${off.queries}, on ${shown.queries}` });
-      const during: string[] = [];
-      const listener = (r: any) => { if (!background(r)) during.push(`${r.method()} ${r.url()} ${r.postData() ?? ''}`); };
+      const during: any[] = [];
+      const listener = (r: any) => { if (!background(r)) during.push(r); };
       page.on('request', listener);
       await strip(page).getByRole('button', { name: 'Copy code' }).click();
+      await page.waitForTimeout(300);
+      expect(during.map(r => r.url()), 'copy sends nothing').toEqual([]);
       await strip(page).getByRole('button', { name: 'Dismiss Black Friday offer' }).click();
+      await expect(strip(page)).toHaveCount(0);
       await page.waitForTimeout(300);
       page.off('request', listener);
-      expect(during, 'copy and dismiss send nothing').toEqual([]);
-      await context.clearCookies({ name: `slimstat_bf2026_dismissed_${admin}` });
+      expect(during.length, 'dismiss sends exactly one request').toBe(1);
+      expect(isDismissal(during[0]), `${during[0].method()} ${during[0].url()} is the dismissal`).toBe(true);
+      expect(new URL(during[0].url()).origin, 'to this site').toBe(new URL(page.url()).origin);
+      await meta(BF_DISMISSED, null);
     }
     expect(external).toEqual([]);
   });
 
-  test('dismissal moves focus, persists on both surfaces, and is per browser', async ({ page, context, browser }) => {
-    const name = `slimstat_bf2026_dismissed_${admin}`;
+  test('dismissal moves focus and holds for this admin on both surfaces and in every browser', async ({ page, context, browser }) => {
     await page.goto(DASHBOARD);
     await strip(page).getByRole('button', { name: 'Dismiss Black Friday offer' }).click();
     await expect(strip(page)).toHaveCount(0);
     await expect(page.locator('#wpbody-content h1').first()).toBeFocused();
-    const cookie = (await context.cookies()).find(c => c.name === name);
-    expect(cookie, 'the dismissal cookie').toBeTruthy();
-    expect(cookie!.path).toBe('/wp-admin/');
-    expect(cookie!.sameSite).toBe('Lax');
-    expect(cookie!.expires - Date.now() / 1000).toBeGreaterThan(29 * 86400);
+    const [rows] = await getPool().execute('SELECT meta_value FROM wp_usermeta WHERE user_id=? AND meta_key=?', [admin, BF_DISMISSED]) as any;
+    expect(rows.map((row: any) => row.meta_value), 'stored once, on this admin').toEqual(['1']);
+    expect((await context.cookies()).filter(c => /bf2026|bf26/.test(c.name)), 'no cookie').toEqual([]);
     await page.reload();
     await expect(strip(page)).toHaveCount(0);
     // The release notice waits only while the strip shows (its 14-day clock never started), so it takes the slot now.
     await expect(releaseNotice(page), 'the release notice gets its slot back, alone').toHaveCount(1);
     await page.goto(SLIMSTAT[0]);
     await expect(strip(page)).toHaveCount(0);
-    await page.goto('/');
-    expect((await context.cookies(BASE_URL + '/')).some(c => c.name === name), 'the cookie stays in the admin path').toBe(false);
-    const other = await freshContext(browser, 'admin.json', name);
+    const other = await freshContext(browser, 'admin.json');
     const second = await other.newPage();
-    await second.goto(SLIMSTAT[0]);
-    await expect(strip(second), 'another browser still sees it').toBeVisible();
+    for (const url of [SLIMSTAT[0], DASHBOARD]) {
+      await second.goto(url);
+      await expect(second.locator('#wpbody-content h1').first(), url).toBeVisible();
+      await expect(strip(second), `${url}: another browser does not see it either`).toHaveCount(0);
+    }
     await other.close();
   });
 
-  test('a blocked cookie write still hides the strip for this page view, without an error', async ({ page }) => {
+  test('a refused dismissal keeps the strip, says so, and a retry works', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', e => errors.push(e.message));
-    await page.addInitScript(() => {
-      const native = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie')!;
-      Object.defineProperty(Document.prototype, 'cookie', {
-        configurable: true,
-        get() { return native.get!.call(this); },
-        set(value: string) { if (String(value).startsWith('slimstat_bf2026_')) throw new DOMException('blocked', 'SecurityError'); native.set!.call(this, value); },
-      });
-    });
     await page.goto(SLIMSTAT[0]);
+    const forged = await page.request.post('/wp-admin/admin-ajax.php', { form: { action: 'slimstat_bf2026_dismiss', security: 'expired' } });
+    expect(forged.status(), 'a bad nonce is refused').toBe(403);
+    const ajax = (u: URL) => u.pathname.endsWith('/admin-ajax.php');
+    await page.route(ajax, route => isDismissal(route.request()) ? route.fulfill({ status: 500, body: '' }) : route.continue());
+    await strip(page).getByRole('button', { name: 'Dismiss Black Friday offer' }).click();
+    await expect(strip(page).locator('[role="status"]')).toHaveText('Could not save dismissal. Try again.');
+    await expect(strip(page)).toBeVisible();
+    await page.unroute(ajax);
+    await page.reload();
     await strip(page).getByRole('button', { name: 'Dismiss Black Friday offer' }).click();
     await expect(strip(page)).toHaveCount(0);
     expect(errors).toEqual([]);
-    await page.reload();
-    await expect(strip(page), 'nothing was stored, so it is back').toBeVisible();
+    const [rows] = await getPool().execute('SELECT meta_value FROM wp_usermeta WHERE user_id=? AND meta_key=?', [admin, BF_DISMISSED]) as any;
+    expect(rows.length, 'only the accepted request stored it').toBe(1);
   });
 
   test('copy writes the code, or selects it when the clipboard is unavailable or refused', async ({ page, context }) => {
