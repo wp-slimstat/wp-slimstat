@@ -25,10 +25,14 @@ final class Report
 			&& (current_user_can('view_woocommerce_reports') || current_user_can('manage_options'));
 	}
 
-	/** One key per question: a range that runs to now is open-ended (the 60 s TTL bounds staleness), and the scope is hashed without wpdb's per-request LIKE marker (PITFALLS 257). */
+	/**
+	 * One key per question. A range still running in the current minute is open-ended and keyed 'now' (the 60 s TTL bounds staleness);
+	 * a closed range ends on an :59 boundary before that minute, so "Yesterday" at 00:00:30 keeps its own key. The scope is hashed
+	 * without wpdb's per-request LIKE marker (PITFALLS 257).
+	 */
 	private static function cacheIdentity(array $range, int $now, string $scope): array
 	{
-		return [$range[0], $range[1] >= $now - MINUTE_IN_SECONDS ? 'now' : $range[1], Query::cacheHash($GLOBALS['wpdb'], $scope)];
+		return [$range[0], $range[1] >= $now - $now % MINUTE_IN_SECONDS ? 'now' : $range[1], Query::cacheHash($GLOBALS['wpdb'], $scope)];
 	}
 
 	/** @return never */

@@ -41,21 +41,31 @@ class ReportCacheIdentityTest extends WpSlimstatTestCase
         parent::tearDown();
     }
 
-    private static function identity(int $start, int $end, string $scope = ''): array
+    private static function identity(int $start, int $end, string $scope = '', int $now = self::NOW): array
     {
         $ref = new \ReflectionMethod(Report::class, 'cacheIdentity');
         if (\PHP_VERSION_ID < 80100) {
             $ref->setAccessible(true);
         }
-        return $ref->invoke(null, [$start, $end], self::NOW, $scope);
+        return $ref->invoke(null, [$start, $end], $now, $scope);
     }
 
     public function test_page_prompt_and_a_later_page_share_one_identity(): void
     {
         $today = self::NOW - self::NOW % DAY_IN_SECONDS;
-        $page = self::identity($today, self::NOW);
-        self::assertSame($page, self::identity($today, $today + DAY_IN_SECONDS - 1), 'Copy Prompt keys the end of the day');
-        self::assertSame($page, self::identity($today, self::NOW - 30), 'a page rendered 30 s earlier');
+        $page = self::identity($today, self::NOW + 5, '', self::NOW + 6); // the clock ticked between normalization and the key
+        self::assertSame($page, self::identity($today, $today + DAY_IN_SECONDS - 1, '', self::NOW + 20), 'Copy Prompt keys the end of the day');
+        self::assertSame($page, self::identity($today, self::NOW + 35, '', self::NOW + 35), 'the page rendered again 30 s later');
+    }
+
+    /** CodeRabbit on #411: "Yesterday" at 00:00:30 must not read the "This week" entry, which holds today's first orders. */
+    public function test_a_range_that_closed_in_the_last_minute_keeps_its_end(): void
+    {
+        $today = self::NOW - self::NOW % DAY_IN_SECONDS;
+        $yesterday = self::identity($today - DAY_IN_SECONDS, $today - 1, '', $today + 30);
+        self::assertSame($today - 1, $yesterday[1]);
+        self::assertNotSame($yesterday, self::identity($today - DAY_IN_SECONDS, $today + 30, '', $today + 30));
+        self::assertSame(self::NOW - 1, self::identity(self::NOW - HOUR_IN_SECONDS, self::NOW - 1, '', self::NOW + 30)[1], 'last hour, 30 s after it closed');
     }
 
     public function test_past_ranges_keep_their_end(): void
