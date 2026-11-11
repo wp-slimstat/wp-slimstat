@@ -107,7 +107,8 @@ test('Copy Prompt leads to the AI Analysis page, then to Pro features with its a
     const external: string[] = [];
     await context.route('https://wp-slimstat.com/**', route => { external.push(route.request().url()); return route.fulfill({ status: 200, contentType: 'text/html', body: '<title>stub</title>' }); });
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`);
-    // Before the report loads, Copy Prompt says "No data to copy" and shows no toast.
+    // Before the report loads, Copy Prompt says "No data to copy" and shows no toast; it loads once scrolled into view.
+    await page.locator(report).scrollIntoViewIfNeeded();
     await expect(page.locator(`${report} .inside`)).not.toHaveText(/^\s*$/);
     await page.locator(`${report} .slimstat-ai-prompt`).click();
     await page.locator('#slimstat-ai-toast').getByRole('link', { name: 'Explore Pro AI' }).click();
