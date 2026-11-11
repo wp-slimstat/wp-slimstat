@@ -60,6 +60,28 @@
         }
     });
     document.addEventListener('click', function (event) {
+        var button = event.target.closest('.slimstat-custom-db-notice .notice-dismiss');
+        if (!button) return;
+        // Core removes notices immediately; retain this one until its dismissal is saved.
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        var notice = button.closest('.slimstat-custom-db-notice');
+        button.disabled = true;
+        fetch(notice.dataset.ajaxUrl, {method: 'POST', credentials: 'same-origin', body: new URLSearchParams({
+            action: 'slimstat_dismiss_notice', key: notice.dataset.noticeKey,
+            stamp: notice.dataset.noticeStamp, snooze: notice.dataset.noticeSnooze,
+            nonce: notice.dataset.noticeNonce
+        })}).then(function (response) { if (!response.ok) throw new Error(); return response.json(); }).then(function (result) {
+            if (!result.success) throw new Error();
+            notice.remove();
+        }).catch(function () {
+            button.disabled = false;
+            var status = notice.querySelector('.slimstat-notice-dismiss-status');
+            status.classList.remove('screen-reader-text');
+            status.textContent = config.dismissError || '';
+        });
+    }, true);
+    document.addEventListener('click', function (event) {
         var dismiss = event.target.closest('.slimstat-release-dismiss');
         if (dismiss) {
             var bar = dismiss.closest('#slimstat-notice-latest-news');

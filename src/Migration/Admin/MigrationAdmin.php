@@ -25,7 +25,6 @@ class MigrationAdmin
 		add_action('admin_menu', [$this, 'registerPage'], 20);
 		add_action('admin_notices', [$this, 'maybeShowNotice']);
 		add_action('wp_ajax_slimstat_run_migrations', [$this, 'ajaxRunMigrations']);
-		add_action('wp_ajax_slimstat_migration_dismiss', [$this, 'ajaxDismiss']);
 		add_action('wp_ajax_slimstat_migration_reset', [$this, 'ajaxResetDismissal']);
 	}
 
@@ -282,36 +281,13 @@ class MigrationAdmin
 			return;
 		}
 
-		$url = esc_url(admin_url('admin.php?page=slimstat_migration'));
-		$nonce = wp_create_nonce('slimstat_migration_dismiss');
-		$extra_class = 'slimstat-migration-notice-show'; // Always show if checks pass
-        $diag = $this->getRequiredDiagnostics();
-
-        echo '<div class="notice slimstat-notice notice-info notice-alt slimstat-migration-notice ' . esc_attr($extra_class) . '" data-nonce="' . esc_attr($nonce) . '" role="region" aria-label="' . esc_attr__('SlimStat Database Migration', 'wp-slimstat') . '">';
-        echo '<h2>' . esc_html__('SlimStat database migration required', 'wp-slimstat') . '</h2>';
-        echo '<p>' . esc_html__('SlimStat requires a database update. Reports that depend on the pending schema remain unavailable until it completes. Back up your database first.', 'wp-slimstat') . '</p>';
-
-        if ($diag !== []) {
-            echo '<details>';
-            echo '<summary>' . esc_html__('Technical details', 'wp-slimstat') . '</summary>';
-            echo '<ul>';
-            foreach ($diag as $row) {
-                $icon = $row['exists'] ? 'yes' : 'warning';
-                echo '<li>';
-                echo '<span class="dashicons dashicons-' . esc_attr($icon) . '"></span>';
-                echo '<code>' . esc_html($row['key']) . '</code>';
-                echo '<span class="details-col-desc">(' . esc_html($row['columns']) . ')</span>';
-                echo '</li>';
-            }
-
-            echo '</ul>';
-            echo '</details>';
-        }
-
-        echo '<p class="wp-core-ui">';
-        echo '<a href="' . esc_url($url) . '" class="button button-primary">' . esc_html__('Start Migration', 'wp-slimstat') . '</a>';
-        echo '</p>';
-        echo '</div>';
+        \wp_slimstat_admin::show_dismissible_notice(
+            'migration', hash('sha256', $this->manager->migrationSetFingerprint()),
+            '<strong>' . esc_html__('SlimStat database migration required', 'wp-slimstat') . '</strong> ' .
+            esc_html__('SlimStat requires a database update. Reports that depend on the pending schema remain unavailable until it completes. Back up your database first.', 'wp-slimstat'),
+            [[__('Start Migration', 'wp-slimstat'), admin_url('admin.php?page=slimstat_migration'), false]],
+            'info'
+        );
 	}
 
 	public function ajaxRunMigrations(): void
@@ -430,16 +406,6 @@ class MigrationAdmin
 		]);
 	}
 
-	public function ajaxDismiss(): void
-	{
-		check_ajax_referer('slimstat_migration_dismiss');
-		if (!current_user_can('manage_options')) {
-			wp_send_json_error(__('Permission denied', 'wp-slimstat'));
-		}
-
-		$this->manager->dismissNotice();
-		wp_send_json_success();
-	}
 
 	/**
 	 * Reset migration dismissal for testing purposes.

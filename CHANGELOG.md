@@ -1,5 +1,11 @@
 = 6.1.0 - 2026-11-08 =
 
+**Custom databases and upgrade notices**
+* Updates from the retired Custom DB addon keep recording visits in the same external database, including connections with no table prefix. Switching databases safely reseeds the visit counter above existing IDs.
+* Database warnings distinguish interrupted tracking from maintenance problems. Notices can be dismissed separately by each administrator; an ongoing tracking interruption returns after 24 hours.
+* Guidance explains how to move the retired Custom DB addon to Pro, and warns when disabling the database provider sends new visits to WordPress's database. Existing history is never moved.
+
+
 **SlimStat 6.1: turn any report into plain-language findings with AI, follow a country down to its cities, and learn SlimStat from video tutorials.** Your settings and data carry over, database repairs wait for your click, and older versions keep working if you ever go back.
 
 **New: Copy Prompt and AI Analysis**

@@ -545,6 +545,8 @@ function slimstat_uninstall($_wpdb = '')
     // pair of near-identical names is why this one survived every hand-audit of this list.
     delete_option('slimstat_visit_id_counter');
     delete_option('slimstat_visit_id_repair_marker');
+    delete_option('slimstat_custom_db_changed_since');
+    delete_metadata('user', 0, 'slimstat_notice_dismissals_' . get_current_blog_id(), '', true);
     // Minted with bare literals rather than constants, so no convention-based scan can
     // see them; they are here because the gate's own residual gap was written down.
     delete_option('wp_slimstat_notifications');

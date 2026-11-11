@@ -22,5 +22,5 @@ rationale: Deletes the current Upgrade Notice entry and leaves a dateless change
 -= 6.1.0 - 2026-11-08 =
 += 6.1.0 =
  
- **New**
- 
+ **Custom databases and upgrade notices**
+ * Updates from the retired Custom DB addon keep recording visits in the same external database, including connections with no table prefix. Switching databases safely reseeds the visit counter above existing IDs.

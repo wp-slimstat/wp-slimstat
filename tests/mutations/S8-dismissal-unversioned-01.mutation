@@ -6,12 +6,11 @@ rationale: Restores the unversioned dismissal flag. needsMigration() short-circu
 ---
 --- a/src/Migration/MigrationManager.php
 +++ b/src/Migration/MigrationManager.php
-@@ -164,7 +164,7 @@ class MigrationManager
- 
-     public function dismissNotice(): void
-     {
--        update_option(self::OPTION_DISMISSED, $this->migrationSetFingerprint(), false);
-+        update_option(self::OPTION_DISMISSED, 'yes', false);
+@@ -296,6 +296,6 @@ class MigrationManager
+         $records = get_user_meta(get_current_user_id(), $key, true);
+         $records = is_array($records) ? $records : [];
+-        $records['migration'] = ['stamp' => hash('sha256', $this->migrationSetFingerprint()), 'until' => 0];
++        $records['migration'] = ['stamp' => 'yes', 'until' => 0];
+         update_user_meta(get_current_user_id(), $key, $records);
          $this->forgetProbe();
      }
- 

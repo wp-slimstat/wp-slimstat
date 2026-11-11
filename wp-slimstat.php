@@ -695,6 +695,8 @@ class wp_slimstat
 
     const DEGRADATION_OPERATIONAL = 'operational';
 
+    const DEGRADATION_TRACKING = 'tracking';
+
     /**
      * Record a fail-soft degradation so it is visible WITHOUT WP_DEBUG.
      *
@@ -722,7 +724,6 @@ class wp_slimstat
     public static function record_degradation($step, $e, $severity = self::DEGRADATION_LOAD)
     {
         $message = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
-        self::log(sprintf('SlimStat: %s failed: %s', $step, $message), 'error');
 
         $message = substr($message, 0, 200);
         $now     = time();
@@ -731,12 +732,15 @@ class wp_slimstat
         // Same failure, recorded recently → nothing new to say, skip the write.
         if (isset($stored[$step]['message'], $stored[$step]['time'])
             && $stored[$step]['message'] === $message
+            && ($stored[$step]['severity'] ?? self::DEGRADATION_LOAD) === $severity
             && ($now - (int) $stored[$step]['time']) < self::DEGRADATION_REFRESH
         ) {
             return;
         }
 
-        $stored[$step] = ['message' => $message, 'time' => $now, 'severity' => $severity];
+        self::log(sprintf('SlimStat: %s failed: %s', $step, $message), 'error');
+        $since = $stored[$step]['since'] ?? $stored[$step]['time'] ?? $now;
+        $stored[$step] = ['message' => $message, 'time' => $now, 'since' => $since, 'severity' => $severity];
         // autoload=false, and it is not cosmetic (C34). Without the third argument this
         // option joins the `alloptions` blob and is fetched on EVERY request — on exactly
         // the sites already unhealthy enough to be recording degradations. It is read only
@@ -805,6 +809,7 @@ class wp_slimstat
                     gmdate('Y-m-d H:i', $last_ok) . ' UTC'
                 ),
                 'time'     => time(),
+                'since'    => $last_ok,
                 'severity' => self::DEGRADATION_OPERATIONAL,
             ];
         }
