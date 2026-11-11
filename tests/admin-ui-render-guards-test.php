@@ -182,6 +182,51 @@ check(false !== strpos($migrationAdmin, 'Schema::tableEngine('), 'Migration page
 check((bool) preg_match("/\['slim_stats', 'slim_events'\]/", $migrationAdmin), 'Migration page: the MyISAM probe covers slim_stats and slim_events');
 check(false === strpos($ecommerce, 'wp-slimstat.com/pricing') && false === strpos(read_or_die('src/Reports/AcquisitionReport.php'), 'wp-slimstat.com/pricing'), 'Ecommerce and Channels: no pricing link for users who cannot buy');
 
+// Black Friday 2026 strip (delete with the feature after 2026-12-01). It replaces the release bar for that request
+// and is isolated: no queries or outside transport, its one write is the dismissal the admin asks for (user meta, so it
+// holds on every browser), and its CSS/JS reach nothing outside #slimstat-bf-2026.
+check(false !== strpos(read_or_die('admin/view/partials/header.php'), "<?php if (!\\SlimStat\\Services\\BlackFriday2026::render()) { wp_slimstat_admin::show_latest_news(null, null, null, 'bar'); } ?>"), 'Black Friday: the header renders the strip first and the release bar only when it did not print');
+$bfAdmin = read_or_die('admin/index.php');
+check(3 === substr_count($bfAdmin, 'BlackFriday2026') && (bool) preg_match("/if \('index\.php' === \(\\\$GLOBALS\['pagenow'\] \?\? ''\)\) \{\s+add_action\('admin_notices', \[\\\\SlimStat\\\\Services\\\\BlackFriday2026::class, 'dashboard_notice'\], 9, 0\);/", $bfAdmin), 'Black Friday: init() hooks dashboard_notice at priority 9, only when pagenow is index.php');
+check(false !== strpos($bfAdmin, "add_action('wp_ajax_' . \\SlimStat\\Services\\BlackFriday2026::ACTION, [\\SlimStat\\Services\\BlackFriday2026::class, 'dismiss']);") && false === strpos($bfAdmin, 'wp_ajax_nopriv_slimstat_bf2026'), 'Black Friday: the dismissal is a logged-in AJAX action only');
+$bfClass = read_or_die('src/Services/BlackFriday2026.php');
+foreach (['wp_remote_', '$wpdb', 'wp_schedule_', 'set_transient', 'update_option', 'setcookie', '$_COOKIE'] as $banned) {
+    check(false === strpos($bfClass, $banned), "Black Friday: the class never calls {$banned}");
+}
+$bfWrite = strpos($bfClass, 'update_user_meta(');
+$bfGate = strpos($bfClass, "if (!check_ajax_referer(self::ACTION, 'security', false) || !current_user_can('manage_options')) {");
+check(1 === substr_count($bfClass, 'update_user_meta(') && false !== $bfWrite && false !== $bfGate && $bfGate < $bfWrite, 'Black Friday: the one write is the dismissal, after its nonce and capability check');
+preg_match_all("/__\('((?:[^'\\\\]|\\\\.)*)', 'wp-slimstat'\)/", $bfClass, $bfMsgids);
+check(count($bfMsgids[1]) >= 9, 'Black Friday: the msgid scan found the strip strings');
+foreach ($bfMsgids[1] as $msgid) {
+    check(false === strpos(preg_replace('/%(%|s|\d+\$s)/', '', $msgid), '%'), "Black Friday: no bare % in msgid \"{$msgid}\"");
+}
+$bfFence = static function (string $file): string {
+    $source = read_or_die($file);
+    $start = strpos($source, '/* Black Friday 2026 banner: delete after 2026-12-01');
+    $end = strpos($source, '/* End Black Friday 2026 banner */');
+    check(false !== $start && false !== $end && $start < $end, "Black Friday: {$file} has one fenced block");
+    return false !== $start && false !== $end ? substr($source, $start, $end - $start) : '';
+};
+$bfJs = $bfFence('admin/assets/js/promotions.js');
+foreach (['XMLHttpRequest', 'sendBeacon', 'document.cookie', 'document.addEventListener', 'window.', 'document.body', 'localStorage', 'sessionStorage'] as $banned) {
+    check(false === strpos($bfJs, $banned), "Black Friday: the JS block never uses {$banned}");
+}
+check(1 === substr_count($bfJs, 'fetch(') && false !== strpos($bfJs, "action: 'slimstat_bf2026_dismiss', security: root.getAttribute('data-slimstat-bf26-nonce')"), 'Black Friday: the JS block sends one request, the nonce-protected dismissal');
+check(false !== strpos($bfJs, "document.getElementById('slimstat-bf-2026')") && false !== strpos($bfJs, "root.addEventListener('click'"), 'Black Friday: the JS block listens on its own root');
+$bfCss = preg_replace('#/\*.*?\*/#s', '', $bfFence('admin/assets/css/promotions.css'));
+check(false === strpos($bfCss, '!important') && false === strpos($bfCss, ':root'), 'Black Friday: the CSS block has no !important or :root');
+preg_match_all('/([^{}]+)\{/', $bfCss, $bfPreludes);
+$bfSelectors = 0;
+foreach ($bfPreludes[1] as $prelude) {
+    if ('@' === trim($prelude)[0]) { continue; }
+    foreach (explode(',', $prelude) as $selector) {
+        $bfSelectors++;
+        check(0 === strpos(trim($selector), '#slimstat-bf-2026'), 'Black Friday: CSS selector "' . trim($selector) . '" is scoped to #slimstat-bf-2026');
+    }
+}
+check($bfSelectors >= 20, 'Black Friday: the selector scan found the strip rules');
+
 if ($failures > 0) {
     fwrite(STDERR, "{$failures} check(s) failed in admin-ui-render-guards-test.php\n");
     exit(1);
