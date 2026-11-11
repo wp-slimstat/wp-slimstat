@@ -17,6 +17,8 @@ final class Report
 	private string $table;
 	private string $stats;
 	private bool $acquisition;
+	/** One clock read per report, for the end clamp and the cache key (CodeRabbit on #411). */
+	private int $now;
 
 	/** Commerce permissions are additional to the native analytics permission. */
 	public static function canView(): bool
@@ -44,8 +46,9 @@ final class Report
 
 	public function __construct()
 	{
+		$this->now = \wp_slimstat::now();
 		$this->range = \wp_slimstat_db::$filters_normalized['utime'];
-		$this->range['end'] = min((int) $this->range['end'], \wp_slimstat::now());
+		$this->range['end'] = min((int) $this->range['end'], $this->now);
 		$this->currency = (string) (\wp_slimstat_db::$filters_normalized['columns'][self::CURRENCY_FILTER][1] ?? get_woocommerce_currency());
 		if (!preg_match('/\A[A-Z0-9]{3,8}\z/', $this->currency)
 			|| 'equals' !== (\wp_slimstat_db::$filters_normalized['columns'][self::CURRENCY_FILTER][0] ?? 'equals')) {
@@ -314,7 +317,7 @@ final class Report
 		if ($days > 366 && 'daily' === $interval) { $interval = 'weekly'; }
 		if ($days > 2562) { $interval = 'monthly'; }
 		$key = 'slimstat_ec_' . md5(wp_json_encode([
-			self::cacheIdentity([(int) $this->range['start'], (int) $this->range['end']], \wp_slimstat::now(), $this->scope), $this->currency, $extra, $this->acquisition, get_current_blog_id(), Acquisition::readinessKey(), $details, 4,
+			self::cacheIdentity([(int) $this->range['start'], (int) $this->range['end']], $this->now, $this->scope), $this->currency, $extra, $this->acquisition, get_current_blog_id(), Acquisition::readinessKey(), $details, 4,
 		]));
 		$signature = [get_option('slimstat_ecommerce_generation', ''), $state, \wp_slimstat::$settings['auto_purge'] ?? 420];
 		$cached = get_transient($key);

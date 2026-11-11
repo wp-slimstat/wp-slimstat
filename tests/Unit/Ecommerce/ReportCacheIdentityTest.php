@@ -82,4 +82,20 @@ class ReportCacheIdentityTest extends WpSlimstatTestCase
         self::assertSame($first, self::identity(1000, self::NOW, "AND t1.resource LIKE '{marker-b}page{marker-b}'"));
         self::assertNotSame($first, self::identity(1000, self::NOW, "AND t1.resource LIKE '{marker-b}other{marker-b}'"));
     }
+
+    /**
+     * CodeRabbit on #411: the constructor capped a live end at 11:00:59 and the key read the clock again at 11:01:00,
+     * so the page keyed the exact end and the next Copy Prompt ('now') missed. Classified with the clamp's own clock,
+     * the end stays open; a second clock read in the report would bring the miss back.
+     */
+    public function test_a_live_end_clamped_before_a_minute_boundary_stays_open(): void
+    {
+        $today = self::NOW - self::NOW % DAY_IN_SECONDS;
+        $clamp = self::NOW + 59;
+        $page = self::identity($today, $clamp, '', $clamp);
+        self::assertSame('now', $page[1]);
+        self::assertSame($page, self::identity($today, $clamp + 1, '', $clamp + 1), 'Copy Prompt a second later, in the next minute');
+        $source = (string) file_get_contents(dirname(__DIR__, 3) . '/src/Ecommerce/Report.php');
+        self::assertSame(1, substr_count($source, '\wp_slimstat::now()'), 'the report reads the clock once, for the clamp and the key');
+    }
 }
