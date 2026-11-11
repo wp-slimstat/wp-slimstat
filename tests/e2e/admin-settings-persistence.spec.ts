@@ -168,7 +168,7 @@ test.describe('Admin Settings Persistence', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // Verify save confirmation
-    await expect(page.locator('.slimstat-notice.notice-info')).toBeVisible();
+    await expect(page.locator('.slimstat-notice.notice-info').filter({ hasText: 'Your new settings have been saved' })).toBeVisible();
 
     // Verify ALL three values in the DB
     const opts = await getSlimstatOptionsFromDb();
@@ -211,7 +211,7 @@ test.describe('Admin Settings Persistence', () => {
     // Submit and wait for confirmation
     await page.locator('input.slimstat-settings-button[type="submit"]').click();
     await page.waitForLoadState('domcontentloaded');
-    await expect(page.locator('.slimstat-notice.notice-info')).toBeVisible();
+    await expect(page.locator('.slimstat-notice.notice-info').filter({ hasText: 'Your new settings have been saved' })).toBeVisible();
 
     // Navigate away to the WP Dashboard
     await page.goto(`${BASE_URL}/wp-admin/`, { waitUntil: 'domcontentloaded' });

@@ -2715,6 +2715,12 @@ class wp_slimstat_admin
             }
         } else {
             wp_slimstat::clear_degradation('analytics database unavailable');
+            $failures = wp_slimstat::get_degradations();
+            if (($failures['activation']['severity'] ?? '') === wp_slimstat::DEGRADATION_TRACKING
+                || ($failures['schema upgrade']['severity'] ?? '') === wp_slimstat::DEGRADATION_TRACKING) {
+                // Reuse the bounded, locked schema path before clearing its outage warning.
+                self::update_tables_and_options();
+            }
             if (!\SlimStat\Tracker\VisitIdGenerator::isInitialized()) {
                 \SlimStat\Tracker\VisitIdGenerator::initializeCounter();
             }
