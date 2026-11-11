@@ -2173,19 +2173,9 @@ var SlimStatAdmin = {
                             SlimStatAdmin._resetAutoRefreshSchedule();
                         }
                     } else {
-                        SlimStatReportBody(id).fadeOut(500, function () {
-                            if (report.data("slimstat-refresh") !== defer) return;
-                            jQuery(this).html(filteredResponse.html()).fadeIn(500, function () {
-                                if (report.data("slimstat-refresh") !== defer) return;
-                                // #156 — for non-Access-Log reports, reset
-                                // scrollTop AFTER fadeIn completes so the
-                                // pagination "next page" lands at the top
-                                // without a visible mid-AJAX jump.
-                                if (opts.scrollToTop) {
-                                    jQuery(this).scrollTop(0);
-                                }
-                            });
-                        });
+                        // Direct swap like the chart branch: a fade held every widget ~1 s after its data arrived (#408).
+                        var body = SlimStatReportBody(id).html(filteredResponse.html());
+                        if (opts.scrollToTop) body.scrollTop(0); // #156: pagination lands at the top
                     }
                 })
                 .always(function () {

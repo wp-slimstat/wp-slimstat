@@ -57,3 +57,53 @@ test('Dashboard loads nearby reports in three slots and preserves report HTML', 
     expect(comparison.actual, id).toBe(comparison.expected);
   }
 });
+
+test('Dashboard widgets show their data without a fade (#408)', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1440, height: 1200 });
+  // Hold report responses so the probe below is watching before any data lands.
+  await page.route('**/admin-ajax.php', async route => {
+    if ((route.request().postData() || '').includes('action=slimstat_load_report')) {
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    await route.continue();
+  });
+  // Per report: when its response completed, then the first frame its body shows content at full opacity.
+  await page.addInitScript(() => {
+    const w = window as any;
+    const seen: Record<string, { data?: number; shown?: number }> = (w.__swap = {});
+    const tick = () => {
+      if (w.jQuery && !w.__swapHooked) {
+        w.__swapHooked = true;
+        w.jQuery(document).ajaxComplete((_e: unknown, _xhr: unknown, settings: { data?: unknown }) => {
+          for (const m of String(settings.data || '').matchAll(/report_ids?(?:%5B%5D|\[\])?=([^&]+)/g)) {
+            seen[m[1]] = seen[m[1]] || {};
+            if (seen[m[1]].data == null) seen[m[1]].data = performance.now();
+          }
+        });
+      }
+      for (const [id, entry] of Object.entries(seen)) {
+        if (entry.data == null || entry.shown != null) continue;
+        const body = w.SlimStatReportBody && w.SlimStatReportBody(id)[0];
+        if (body && !body.querySelector('.loading') && body.offsetParent !== null && getComputedStyle(body).opacity === '1') {
+          entry.shown = performance.now();
+        }
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+  await page.goto('/wp-admin/index.php', { waitUntil: 'domcontentloaded' });
+  // Ecommerce refreshes through its own module, so it is outside this swap.
+  const ids = await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('div[id^="slim_p"]'))
+    .filter(el => el.id !== 'slim_p10_01' && !el.querySelector('.chart-placeholder, .refresh-timer') && el.getClientRects().length > 0 && el.getBoundingClientRect().top < innerHeight)
+    .map(el => el.id));
+  expect(ids.length, 'fixture must show at least two list widgets above the fold').toBeGreaterThan(1);
+  await expect.poll(() => page.evaluate(ids => ids.every(id => (window as any).__swap[id]?.shown != null), ids), { timeout: 30_000 }).toBe(true);
+  const delays: Record<string, number> = await page.evaluate(ids => Object.fromEntries(ids.map(id => {
+    const entry = (window as any).__swap[id];
+    return [id, Math.round(entry.shown - entry.data)];
+  })), ids);
+  console.log(JSON.stringify({ dataToVisibleMs: delays }));
+  for (const [id, ms] of Object.entries(delays)) expect(ms, `${id}: data to visible`).toBeLessThan(300);
+});
