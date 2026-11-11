@@ -2655,11 +2655,11 @@ class wp_slimstat_admin
         if (!current_user_can('manage_options')) {
             wp_send_json_error(__('Permission denied', 'wp-slimstat'), 403);
         }
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- The nonce below is bound to all three validated values.
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Exact key/hash/duration whitelists below reject invalid values before verifying their bound nonce.
         $key = isset($_POST['key']) && is_string($_POST['key']) ? wp_unslash($_POST['key']) : '';
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Validated before building the bound nonce action.
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Exact whitelist validation below preserves the nonce-bound value without lossy sanitization.
         $stamp = isset($_POST['stamp']) && is_string($_POST['stamp']) ? wp_unslash($_POST['stamp']) : '';
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Validated before building the bound nonce action.
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Exact whitelist validation below preserves the nonce-bound value without lossy sanitization.
         $snooze = isset($_POST['snooze']) && is_string($_POST['snooze']) ? wp_unslash($_POST['snooze']) : '';
         if (!preg_match('/^[a-z0-9_-]{1,80}$/D', $key) || !preg_match('/^[a-f0-9]{64}$/D', $stamp) || !in_array($snooze, ['0', '86400'], true)) {
             wp_send_json_error(__('Invalid notice.', 'wp-slimstat'), 400);
