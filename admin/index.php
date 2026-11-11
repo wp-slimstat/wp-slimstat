@@ -843,9 +843,12 @@ class wp_slimstat_admin
 
         // Initialize atomic visit ID counter (fix for issue #155 - performance regression)
         if (\SlimStat\Tracker\VisitIdGenerator::initializeCounter() < 0) {
-            wp_slimstat::record_degradation('activation', 'Visit counter initialization did not complete.', wp_slimstat::DEGRADATION_TRACKING);
+            wp_slimstat::record_degradation('visit counter initialization', 'Visit counter initialization did not complete.', wp_slimstat::DEGRADATION_TRACKING);
             return false;
         }
+
+        wp_slimstat::clear_degradation('activation');
+        wp_slimstat::clear_degradation('visit counter initialization');
 
         // Hard-flush rewrite rules so the adblock bypass rewrite is written to .htaccess.
         // Caching plugins (WP Rocket, W3TC) route requests via .htaccess before WordPress
@@ -1167,6 +1170,8 @@ class wp_slimstat_admin
             $complete = self::run_schema_upgrade();
             if ($complete) {
                 wp_slimstat::clear_degradation('schema upgrade');
+                wp_slimstat::clear_degradation('activation');
+                wp_slimstat::clear_degradation('visit counter initialization');
             }
             return $complete;
         } catch (\Throwable $e) {
@@ -2704,14 +2709,17 @@ class wp_slimstat_admin
         if (!current_user_can('manage_options') || wp_doing_ajax()) {
             return;
         }
-        if (!empty(wp_slimstat::$wpdb->dbh) && !\SlimStat\Tracker\VisitIdGenerator::isInitialized()) {
-            \SlimStat\Tracker\VisitIdGenerator::initializeCounter();
-        }
-        if (\SlimStat\Tracker\VisitIdGenerator::isInitialized()) {
-            foreach (wp_slimstat::get_degradations() as $key => $record) {
-                if (in_array($key, ['activation', 'schema upgrade'], true) && ($record['severity'] ?? '') === wp_slimstat::DEGRADATION_TRACKING) {
-                    wp_slimstat::clear_degradation($key);
-                }
+        if (wp_slimstat::$wpdb !== $GLOBALS['wpdb'] && empty(wp_slimstat::$wpdb->dbh)) {
+            if ('on' === (wp_slimstat::$settings['is_tracking'] ?? '')) {
+                wp_slimstat::record_degradation('analytics database unavailable', 'The analytics database connection is unavailable.', wp_slimstat::DEGRADATION_TRACKING);
+            }
+        } else {
+            wp_slimstat::clear_degradation('analytics database unavailable');
+            if (!\SlimStat\Tracker\VisitIdGenerator::isInitialized()) {
+                \SlimStat\Tracker\VisitIdGenerator::initializeCounter();
+            }
+            if (\SlimStat\Tracker\VisitIdGenerator::isInitialized()) {
+                wp_slimstat::clear_degradation('visit counter initialization');
             }
         }
         $changed = !has_filter('slimstat_custom_wpdb') && self::custom_db_is_external()
@@ -2727,7 +2735,7 @@ class wp_slimstat_admin
     public static function show_custom_db_notice(): void
     {
         $screen = get_current_screen();
-        if (!current_user_can('activate_plugins') || !$screen
+        if (!current_user_can('manage_options') || !current_user_can('activate_plugins') || !$screen
             || (!in_array($screen->base, ['dashboard', 'plugins'], true) && false === strpos($screen->id, 'slim'))) {
             return;
         }
@@ -5100,6 +5108,8 @@ class wp_slimstat_admin
             // Operational steps. Everything below kept working; none of it is a load failure,
             // and none of it is fixed by reinstalling.
             'schema column drift'  => __('Database columns differ from this version', 'wp-slimstat'),
+            'visit counter initialization' => __('Visit counter initialization', 'wp-slimstat'),
+            'analytics database unavailable' => __('Analytics database connection', 'wp-slimstat'),
             'schema upgrade'       => __('Database schema upgrade', 'wp-slimstat'),
             'schema repair from the tracking path' => __('Database repair during tracking', 'wp-slimstat'),
             'notes format migration' => __('Notes format migration', 'wp-slimstat'),

@@ -1,4 +1,7 @@
 <?php
+namespace SlimStat\Tracker {
+    class VisitIdGenerator { public static $initialized = true; public static function isInitialized() { return self::$initialized; } public static function initializeCounter() {} }
+}
 namespace SlimStat\Utils {
     class ProLinks { public static function activation() { return $GLOBALS['installed'] ? '/plugins' : ''; } public static function url(...$args) { return 'https://example.test/pro'; } }
 }
@@ -7,16 +10,19 @@ if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') { http_response_code(403); exit
 require __DIR__ . '/lib/source-scan.php';
 $source = file_get_contents(dirname(__DIR__) . '/admin/index.php');
 $code = '';
-foreach (['legacy_custom_db_plugin', 'custom_db_is_external', 'show_custom_db_notice'] as $method) {
+foreach (['legacy_custom_db_plugin', 'custom_db_is_external', 'show_custom_db_notice', 'reconcile_custom_db_notices'] as $method) {
     $code .= 'public static function ' . $method . '() {' . slimstat_function_body($source, $method) . '}';
 }
 eval('class CustomDbNoticeProbe { public static $notices = []; public static function show_dismissible_notice(...$args) { self::$notices[] = $args; } ' . $code . '}');
-class wp_slimstat { public static $settings = [], $pro = false; public static function pro_plugin_active() { return self::$pro; } }
+class wp_slimstat { const DEGRADATION_TRACKING = 'tracking'; public static $settings = [], $pro = false, $wpdb, $degradations = []; public static function clear_degradation($key) { unset(self::$degradations[$key]); } public static function record_degradation($key, $message, $severity) { self::$degradations[$key] = $severity; } public static function pro_plugin_active() { return self::$pro; } }
 define('DB_NAME', 'wordpress'); define('DB_HOST', 'localhost');
-function current_user_can($cap) { return $GLOBALS['allowed']; }
+function current_user_can($cap) { return $GLOBALS['allowed'] && !in_array($cap, $GLOBALS['denied_caps'] ?? [], true); }
 function get_current_screen() { return (object) ['base' => $GLOBALS['screen'], 'id' => $GLOBALS['screen']]; }
 function get_option($key, $default = false) { return $GLOBALS['options'][$key] ?? $default; }
 function get_site_option($key, $default = false) { return $GLOBALS['network'][$key] ?? $default; }
+function wp_doing_ajax() { return false; }
+function has_filter($key) { return true; }
+function delete_option($key) { unset($GLOBALS['options'][$key]); }
 function is_multisite() { return true; }
 function admin_url($v) { return '/wp-admin/' . $v; }
 function __($v, $domain) { return $v; }
@@ -32,11 +38,22 @@ wp_slimstat::$pro = true; check(notice() === [], 'Active unlicensed Pro still pi
 wp_slimstat::$settings['addon_custom_db_dbname'] = 'wordpress'; $unused = notice();
 check(strpos($unused[2], 'does nothing') !== false && $unused[3][0][0] === 'Open Plugins' && $unused[1] !== $n[1], 'Unused addon pitched or variant reused');
 $GLOBALS['allowed'] = false; check(notice() === [], 'Notice leaked to unauthorized user'); $GLOBALS['allowed'] = true;
+foreach (['manage_options', 'activate_plugins'] as $cap) { $GLOBALS['denied_caps'] = [$cap]; check(notice() === [], 'A guide must require both management and activation permissions'); } $GLOBALS['denied_caps'] = [];
 $GLOBALS['screen'] = 'edit-post'; check(notice() === [], 'Notice on unrelated screen'); $GLOBALS['screen'] = 'plugins';
 $GLOBALS['options']['active_plugins'] = []; check(notice() === [], 'Inactive addon pitched');
 $GLOBALS['network']['active_sitewide_plugins'] = ['wp-slimstat-custom-db/network.php' => 1]; check(notice() !== [], 'Network addon undetected');
 $GLOBALS['options']['slimstat_custom_db_changed_since'] = 123;
 $n = notice(); check($n[0] === 'custom-db-changed' && strpos($n[2], 'New visits are now saved to your WordPress database') !== false, 'Database change hidden');
 $GLOBALS['options']['slimstat_custom_db_changed_since'] = 124; check(notice()[1] !== $n[1], 'New database-change occurrence reused');
+$GLOBALS['wpdb'] = (object) ['dbh' => true]; wp_slimstat::$wpdb = (object) ['dbh' => null];
+wp_slimstat::$settings['is_tracking'] = 'on';
+wp_slimstat::$degradations = ['activation' => 'tracking', 'schema upgrade' => 'tracking', 'visit counter initialization' => 'tracking'];
+CustomDbNoticeProbe::reconcile_custom_db_notices();
+check(isset(wp_slimstat::$degradations['analytics database unavailable']), 'An initialized counter must not hide a disconnected provider');
+wp_slimstat::$wpdb->dbh = true;
+CustomDbNoticeProbe::reconcile_custom_db_notices();
+check(wp_slimstat::$degradations === ['activation' => 'tracking', 'schema upgrade' => 'tracking'], 'Connection/counter recovery must retain unrelated schema failures');
+$upgrade = slimstat_function_body($source, 'update_tables_and_options');
+check(strpos($upgrade, "clear_degradation('activation')") > strpos($upgrade, 'if ($complete)'), 'Only completed schema reconciliation can clear an activation failure');
 echo "PASS: legacy guide variants, Pro presence, capability, screen, network activation, and database-change occurrence\n";
 }

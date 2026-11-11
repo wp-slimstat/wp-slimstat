@@ -208,6 +208,7 @@ class Ajax
 
         // Let the browser's existing queue retry before any visit or event is processed.
         if (\wp_slimstat::$wpdb !== $GLOBALS['wpdb'] && empty(\wp_slimstat::$wpdb->dbh)) {
+            \wp_slimstat::record_degradation('analytics database unavailable', 'The analytics database connection is unavailable.', \wp_slimstat::DEGRADATION_TRACKING);
             status_header(503);
             return -503;
         }
