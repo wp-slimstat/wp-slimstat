@@ -370,6 +370,10 @@ jobs:
         # Browser binaries + apt deps are fetched over the network; a transient
         # blip must not fail the job. Retry up to 3x with backoff. Loop is set -e
         # safe (attempt guarded by `if`; final failure exits 1).
+        # When only apt is down (2026-11-11: the runners' Ubuntu mirrors stopped
+        # resolving for an hour while Playwright's CDN worked), fall back to the
+        # browser alone: the runner image ships Chrome and the libraries it links.
+        # A missing library still fails loudly when the E2E step launches it.
         run: |
           n=0
           until [ "$n" -ge 3 ]; do
@@ -382,6 +386,10 @@ jobs:
               sleep $((n * 15))
             fi
           done
+          if npx playwright install chromium; then
+            echo "::warning::system deps could not be installed (apt unreachable); running with the runner image's libraries"
+            exit 0
+          fi
           echo "::error::playwright install failed after 3 attempts"
           exit 1
 
