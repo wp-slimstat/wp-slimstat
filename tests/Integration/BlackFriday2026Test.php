@@ -10,6 +10,7 @@ class BlackFriday2026Test extends IntegrationTestCase
 {
     private array $caps = ['manage_options' => true, 'read' => true];
     private array $meta = [];
+    private bool $writeFails = false;
     private string $now = '2026-11-27 12:00:00';
     private string $screen = 'dashboard';
     protected function setUp(): void
@@ -26,7 +27,7 @@ class BlackFriday2026Test extends IntegrationTestCase
         Functions\when('check_ajax_referer')->alias(fn($action, $arg, $die) => !$die && $this->nonceValid && 'slimstat_bf2026_dismiss' === $action && 'security' === $arg ? 1 : false);
         Functions\when('get_current_screen')->alias(fn() => (object) ['id' => $this->screen]);
         Functions\when('get_user_meta')->alias(fn($id, $key) => $this->meta["$id:$key"] ?? '');
-        Functions\when('update_user_meta')->alias(function ($id, $key, $value) { $this->meta["$id:$key"] = $value; return true; });
+        Functions\when('update_user_meta')->alias(function ($id, $key, $value) { if ($this->writeFails) { return false; } $this->meta["$id:$key"] = $value; return true; });
         Functions\when('_x')->alias(fn($text) => $text);
         Functions\when('add_user_meta')->alias(function ($id, $key, $value) { $this->meta["$id:$key"] = $value; return true; });
     }
@@ -153,6 +154,14 @@ class BlackFriday2026Test extends IntegrationTestCase
         $arrange($this);
         $this->assertSame('error', $this->dismiss());
         $this->assertSame([], $this->meta);
+    }
+    public function test_a_failed_save_is_an_error_but_an_unchanged_one_is_not(): void
+    {
+        $this->writeFails = true;
+        $this->assertSame('error', $this->dismiss(), 'nothing stored, so the strip stays for a retry');
+        $this->assertSame([], $this->meta);
+        $this->meta['7:slimstat_bf2026_dismissed'] = '1';
+        $this->assertSame('success', $this->dismiss(), 'update_user_meta() is false for an unchanged value: dismissed in another tab');
     }
     public function test_dismiss_is_registered_for_logged_in_admin_ajax_only(): void
     {

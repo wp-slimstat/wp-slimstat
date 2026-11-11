@@ -151,11 +151,12 @@ test.describe('Black Friday 2026 strip', () => {
       await strip(page).getByRole('button', { name: 'Copy code' }).click();
       await page.waitForTimeout(300);
       expect(during.map(r => r.url()), 'copy sends nothing').toEqual([]);
-      await strip(page).getByRole('button', { name: 'Dismiss Black Friday offer' }).click();
+      // A double click: the second click lands while the first save is still in flight.
+      await strip(page).getByRole('button', { name: 'Dismiss Black Friday offer' }).dblclick();
       await expect(strip(page)).toHaveCount(0);
       await page.waitForTimeout(300);
       page.off('request', listener);
-      expect(during.length, 'dismiss sends exactly one request').toBe(1);
+      expect(during.length, 'a double click on dismiss sends exactly one request').toBe(1);
       expect(isDismissal(during[0]), `${during[0].method()} ${during[0].url()} is the dismissal`).toBe(true);
       expect(new URL(during[0].url()).origin, 'to this site').toBe(new URL(page.url()).origin);
       await meta(BF_DISMISSED, null);

@@ -89,6 +89,7 @@
     var code = root.querySelector('.slimstat-bf26__code');
     var status = root.querySelector('[role="status"]');
     var label = copy.textContent;
+    var dismissing = false;
     function say(text) { copy.textContent = text; status.textContent = text; }
     function select() {
         var range = document.createRange();
@@ -105,8 +106,10 @@
                 navigator.clipboard.writeText(code.textContent).then(function () { say(copy.getAttribute('data-slimstat-bf26-copied')); }, select);
             } catch (e) { select(); }
         }
-        if (event.target.closest('.slimstat-bf26__dismiss')) {
-            // Removed only once saved, so a strip that is gone stays gone on every browser; repeat clicks are harmless.
+        if (event.target.closest('.slimstat-bf26__dismiss') && !dismissing) {
+            // Removed only once saved, so a strip that is gone stays gone on every browser. One request at a time,
+            // so a double click cannot send two or move focus twice.
+            dismissing = true;
             fetch(root.getAttribute('data-slimstat-bf26-ajax'), {method: 'POST', credentials: 'same-origin', body: new URLSearchParams({
                 action: 'slimstat_bf2026_dismiss', security: root.getAttribute('data-slimstat-bf26-nonce')
             })}).then(function (response) { return response.ok ? response.json() : {}; }).then(function (result) {
@@ -114,7 +117,7 @@
                 var heading = document.querySelector('#wpbody-content h1');
                 root.remove();
                 if (heading) { heading.setAttribute('tabindex', '-1'); heading.focus(); }
-            }).catch(function () { status.textContent = root.getAttribute('data-slimstat-bf26-error'); });
+            }).catch(function () { dismissing = false; status.textContent = root.getAttribute('data-slimstat-bf26-error'); });
         }
     });
     copy.addEventListener('blur', function () { copy.textContent = label; status.textContent = ''; });
