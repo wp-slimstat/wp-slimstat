@@ -529,6 +529,7 @@
     "test:date-i18n-filter-suspension-wp": "wp eval-file tests/date-i18n-filter-suspension-wp-test.php",
     "test:horizon-campaign-wp": "wp eval-file tests/horizon-campaign-wp-test.php",
     "test:notification-delivery-wp": "wp eval-file tests/notification-delivery-wp-test.php",
+    "test:notification-targeting-wp": "wp eval-file tests/notification-targeting-wp-test.php",
     "test:acquisition-network": "wp eval-file tests/acquisition-network-test.php",
     "test:report-summary-counts-wp": "wp eval-file tests/report-summary-counts-db-test.php"
   },

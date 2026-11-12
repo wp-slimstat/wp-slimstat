@@ -1,19 +1,19 @@
 target:    readme.txt
 gate:      composer test:db-floor-metadata
 kind:      restore-defect
-expect:    has no `= 6.1.0 =` entry under `== Upgrade Notice ==`
+expect:    has no `= 6.1.1 =` entry under `== Upgrade Notice ==`
 rationale: Deletes the current Upgrade Notice entry and leaves a dateless changelog heading; only section-scoped extraction rejects it.
 ---
 --- a/readme.txt
 +++ b/readme.txt
 @@ -161,5 +161,2 @@
  
--= 6.1.0 =
--Older versions keep working, added columns stay, and it removes no rows. Adds Copy Prompt, AI Analysis, city drilldown and video tutorials. SlimStat Pro now needs a valid, activated license. Fixes privacy exports, tracking, filters and geolocation. Back up first; repairs wait for your click.
+-= 6.1.1 =
+-Older versions keep working, added columns stay, and it removes no rows. Shows scheduled offers and notices that match your Pro license. Improves Persian and English layouts and report scrolling. Back up first; database repairs wait for your click.
 -
- = 6.0.0 =
-@@ -170,3 +167,3 @@
+ = 6.1.0 =
+@@ -173,3 +170,3 @@
  
--= 6.1.0 - 2026-11-08 =
-+= 6.1.0 =
+-= Unreleased =
++= 6.1.1 =
  

@@ -18,10 +18,13 @@ class NotificationProcessor
 					unset($notifications[$key]);
 					continue;
 				}
+				if (isset($notification['tags']) && (!is_array($notification['tags']) || count(array_filter($notification['tags'], 'is_string')) !== count($notification['tags']))) {
+					unset($notifications[$key]);
+					continue;
+				}
 				if (!empty($dismissed[$notification['id'] ?? 0])) $notifications[$key]['dismiss'] = true;
 				if (!empty($notification['tags']) && is_array($notification['tags'])) {
-					// Enforce version gating for license-related tags
-					if (self::requiresVersionGate($notification['tags']) && !self::hasValidVersionGate($notification['tags'])) {
+					if (!self::hasValidVersionGate($notification['tags'])) {
 						unset($notifications[$key]);
 						continue;
 					}
@@ -49,29 +52,21 @@ class NotificationProcessor
 	}
 
 	/**
-	 * Check if a notification's tags include any version-gated tag.
-	 *
-	 * @param array $tags
-	 * @return bool
-	 */
-	private static function requiresVersionGate(array $tags)
-	{
-		return !empty(\array_intersect($tags, ConditionTagEvaluator::getVersionGatedTags()));
-	}
-
-	/**
 	 * Check if a notification includes a valid is-version-* tag at or above the minimum floor.
 	 *
 	 * Validates:
 	 * 1. At least one is-version-* tag is present
 	 * 2. The version string is well-formed (digits and dots only)
-	 * 3. The version is >= LICENSE_TAGS_MIN_VERSION
+	 * 3. The version is >= the introduction version of every targeting tag used
 	 *
 	 * @param array $tags
 	 * @return bool
 	 */
 	private static function hasValidVersionGate(array $tags)
 	{
+		$minimum = ConditionTagEvaluator::requiredVersion($tags);
+		if (null === $minimum) return true;
+
 		foreach ($tags as $tag) {
 			if (\strpos($tag, 'is-version-') !== 0) {
 				continue;
@@ -83,7 +78,7 @@ class NotificationProcessor
 				continue;
 			}
 
-			if (\version_compare($version, ConditionTagEvaluator::LICENSE_TAGS_MIN_VERSION, '>=')) {
+			if (\version_compare($version, $minimum, '>=')) {
 				return true;
 			}
 		}
