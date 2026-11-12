@@ -11,17 +11,19 @@ import { BASE_URL } from './helpers/env';
 
 const PAGE = `${BASE_URL}/wp-admin/admin.php?page=slimview5`;
 const top = (page: Page, id: string) => page.locator(id).evaluate((e) => Math.round(e.getBoundingClientRect().top));
+// Reports above load one by one and change height, so poll until the two tops settle level.
+const sameRow = (page: Page, a: string, b: string) => expect.poll(async () => (await top(page, a)) - (await top(page, b))).toBe(0);
 
 test.use({ viewport: { width: 1440, height: 900 } });
 
 test('Top Countries and Traffic Summary share a row', async ({ page }) => {
   await page.goto(PAGE);
-  expect(await top(page, '#slim_p3_02')).toBe(await top(page, '#slim_p1_13'));
+  await sameRow(page, '#slim_p3_02', '#slim_p1_13');
 });
 
 test('Channels and UTM Campaigns share a row at half width', async ({ page }) => {
   await page.goto(PAGE);
-  expect(await top(page, '#slim_p3_04')).toBe(await top(page, '#slim_p3_03'));
+  await sameRow(page, '#slim_p3_04', '#slim_p3_03');
   const share = await page.locator('#slim_p3_03').evaluate((e) => e.getBoundingClientRect().width / e.parentElement!.getBoundingClientRect().width);
   expect(share).toBeGreaterThan(0.45); expect(share).toBeLessThan(0.52);
 });
