@@ -227,7 +227,7 @@ class TrackingRestController implements RestControllerInterface
         \SlimStat\Tracker\Utils::sendTrackingHeaders('rest', $result);
 
         if (is_numeric($result)) {
-            self::output_tracking_response((string) $result);
+            self::output_tracking_response((string) $result, -503 === (int) $result ? 503 : 200);
         }
 
         if (is_string($result) && preg_match('/^(\d+)\.[0-9a-fA-F]+$/', $result, $matches) && 0 < (int) $matches[1]) {

@@ -288,6 +288,7 @@ if ($case !== false && $case !== '') {
     // str_replace is a no-op and the artifact assertions are unchanged.
     function is_main_network() { return true; }
     function is_main_site() { return true; }
+    function delete_metadata($type, $id, $key, $value = '', $all = false) { $GLOBALS['__deleted'][] = $key; return true; }
     function get_current_blog_id() { return (int) ($GLOBALS['__current_blog'] ?? 1); }
     function switch_to_blog($blog_id)
     {

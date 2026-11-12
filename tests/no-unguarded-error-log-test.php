@@ -90,7 +90,7 @@ foreach ($sources as $file) {
     }
 }
 
-$expected_sites = 5;
+$expected_sites = 4;
 
 if (count($sites) !== $expected_sites) {
     $failures[] = sprintf(

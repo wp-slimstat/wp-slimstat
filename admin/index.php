@@ -95,6 +95,9 @@ class wp_slimstat_admin
     public static function init()
     {
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_promotions']);
+        add_action('wp_ajax_slimstat_dismiss_notice', [self::class, 'dismiss_notice']);
+        add_action('admin_init', [self::class, 'reconcile_custom_db_notices'], 100);
+        add_action('admin_notices', [self::class, 'show_custom_db_notice']);
 
         // Action for reset layout
         add_action('admin_post_slimstat_reset_layout', ['wp_slimstat_admin', 'handle_reset_layout']);
@@ -839,15 +842,18 @@ class wp_slimstat_admin
         // `SHOW INDEX` round trip and its own unconditional "yes" stamp.
         $report = self::init_tables($my_wpdb);
         if (!empty($report['failed'])) {
-            wp_slimstat::record_degradation('activation', 'Analytics schema setup did not complete.', wp_slimstat::DEGRADATION_OPERATIONAL);
+            wp_slimstat::record_degradation('activation', 'Analytics schema setup did not complete.', \SlimStat\Tracker\VisitIdGenerator::isInitialized() ? wp_slimstat::DEGRADATION_OPERATIONAL : wp_slimstat::DEGRADATION_TRACKING);
             return false;
         }
 
         // Initialize atomic visit ID counter (fix for issue #155 - performance regression)
         if (\SlimStat\Tracker\VisitIdGenerator::initializeCounter() < 0) {
-            wp_slimstat::record_degradation('activation', 'Visit counter initialization did not complete.', wp_slimstat::DEGRADATION_OPERATIONAL);
+            wp_slimstat::record_degradation('visit counter initialization', 'Visit counter initialization did not complete.', wp_slimstat::DEGRADATION_TRACKING);
             return false;
         }
+
+        wp_slimstat::clear_degradation('activation');
+        wp_slimstat::clear_degradation('visit counter initialization');
 
         // Hard-flush rewrite rules so the adblock bypass rewrite is written to .htaccess.
         // Caching plugins (WP Rocket, W3TC) route requests via .htaccess before WordPress
@@ -1169,10 +1175,12 @@ class wp_slimstat_admin
             $complete = self::run_schema_upgrade();
             if ($complete) {
                 wp_slimstat::clear_degradation('schema upgrade');
+                wp_slimstat::clear_degradation('activation');
+                wp_slimstat::clear_degradation('visit counter initialization');
             }
             return $complete;
         } catch (\Throwable $e) {
-            wp_slimstat::record_degradation('schema upgrade', $e, wp_slimstat::DEGRADATION_OPERATIONAL);
+            wp_slimstat::record_degradation('schema upgrade', $e, \SlimStat\Tracker\VisitIdGenerator::isInitialized() ? wp_slimstat::DEGRADATION_OPERATIONAL : wp_slimstat::DEGRADATION_TRACKING);
 
             return false;
         } finally {
@@ -2619,12 +2627,161 @@ class wp_slimstat_admin
 
     // END: show_message
 
+    /** Dismissals belong to one administrator and site, and only to this occurrence. */
+    public static function notice_is_dismissed($key, $stamp): bool
+    {
+        $records = get_user_meta(get_current_user_id(), 'slimstat_notice_dismissals_' . get_current_blog_id(), true);
+        $record = is_array($records) ? ($records[$key] ?? []) : [];
+        return ($record['stamp'] ?? '') === $stamp
+            && (0 === ($record['until'] ?? -1) || (int) ($record['until'] ?? 0) > time());
+    }
+
+    /** Shared license-banner styling, with occurrence-bound dismissal and optional snooze. */
+    public static function show_dismissible_notice($key, $stamp, $message, $buttons = [], $tone = 'warning', $snooze = 0): void
+    {
+        if (self::notice_is_dismissed($key, $stamp)) {
+            return;
+        }
+        $tone = in_array($tone, ['error', 'warning', 'info', 'success'], true) ? $tone : 'warning';
+        $snooze = max(0, (int) $snooze);
+        $nonce = wp_create_nonce('slimstat_dismiss_notice|' . $key . '|' . $stamp . '|' . $snooze);
+        echo '<div class="notice notice-' . esc_attr($tone) . ' slimstat-notice slimstat-pro-license-notice slimstat-custom-db-notice' . ('migration' === $key ? ' slimstat-migration-notice slimstat-migration-notice-show' : '') . ' is-dismissible" role="status" data-notice-key="' . esc_attr($key) . '" data-notice-stamp="' . esc_attr($stamp) . '" data-notice-snooze="' . esc_attr((string) $snooze) . '" data-notice-nonce="' . esc_attr($nonce) . '" data-ajax-url="' . esc_url(admin_url('admin-ajax.php')) . '">' . wp_kses_post(wpautop($message));
+        if ($buttons) {
+            echo '<p class="slimstat-pro-license-notice__actions">';
+            foreach ($buttons as $i => [$label, $url, $external]) {
+                echo '<a class="button' . (0 === $i ? ' button-primary' : '') . '" href="' . esc_url($url) . '"' . ($external ? ' target="_blank" rel="noopener noreferrer"' : '') . '>' . esc_html($label);
+                if ($external) {
+                    echo '<span class="screen-reader-text"> ' . esc_html__('(opens in a new tab)', 'wp-slimstat') . '</span>';
+                }
+                echo '</a> ';
+            }
+            echo '</p>';
+        }
+        echo '<span class="screen-reader-text slimstat-notice-dismiss-status" role="status"></span></div>';
+    }
+
+    public static function dismiss_notice(): void
+    {
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission denied', 'wp-slimstat'), 403);
+        }
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Exact key/hash/duration whitelists below reject invalid values before verifying their bound nonce.
+        $key = isset($_POST['key']) && is_string($_POST['key']) ? wp_unslash($_POST['key']) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Exact whitelist validation below preserves the nonce-bound value without lossy sanitization.
+        $stamp = isset($_POST['stamp']) && is_string($_POST['stamp']) ? wp_unslash($_POST['stamp']) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Exact whitelist validation below preserves the nonce-bound value without lossy sanitization.
+        $snooze = isset($_POST['snooze']) && is_string($_POST['snooze']) ? wp_unslash($_POST['snooze']) : '';
+        if (!preg_match('/^[a-z0-9_-]{1,80}$/D', $key) || !preg_match('/^[a-f0-9]{64}$/D', $stamp) || !in_array($snooze, ['0', '86400'], true)) {
+            wp_send_json_error(__('Invalid notice.', 'wp-slimstat'), 400);
+        }
+        check_ajax_referer('slimstat_dismiss_notice|' . $key . '|' . $stamp . '|' . $snooze, 'nonce');
+        $meta_key = 'slimstat_notice_dismissals_' . get_current_blog_id();
+        $records = get_user_meta(get_current_user_id(), $meta_key, true);
+        $records = is_array($records) ? $records : [];
+        $records[$key] = ['stamp' => $stamp, 'until' => (int) $snooze ? time() + (int) $snooze : 0];
+        update_user_meta(get_current_user_id(), $meta_key, $records);
+        if (!self::notice_is_dismissed($key, $stamp)) {
+            wp_send_json_error(__('Could not save dismissal. Try again.', 'wp-slimstat'), 500);
+        }
+        wp_send_json_success();
+    }
+
+    /** Detection reads the active plugin lists already loaded by WordPress. */
+    public static function legacy_custom_db_plugin(): string
+    {
+        $plugins = (array) get_option('active_plugins', []);
+        if (is_multisite()) {
+            $plugins = array_merge($plugins, array_keys((array) get_site_option('active_sitewide_plugins', [])));
+        }
+        foreach ($plugins as $plugin) {
+            if (0 === strpos($plugin, 'wp-slimstat-custom-db/')) {
+                return $plugin;
+            }
+        }
+        return '';
+    }
+
+    public static function custom_db_is_external(): bool
+    {
+        $name = (string) (wp_slimstat::$settings['addon_custom_db_dbname'] ?? '');
+        $host = (string) (wp_slimstat::$settings['addon_custom_db_dbhost'] ?? '');
+        return '' !== $name && ($name !== constant('DB_NAME') || ('' !== $host && $host !== constant('DB_HOST')));
+    }
+
+    /** Admin-only recovery and occurrence tracking; no pageview work. */
+    public static function reconcile_custom_db_notices(): void
+    {
+        if (!current_user_can('manage_options') || wp_doing_ajax()) {
+            return;
+        }
+        if (wp_slimstat::$wpdb !== $GLOBALS['wpdb'] && empty(wp_slimstat::$wpdb->dbh)) {
+            if ('on' === (wp_slimstat::$settings['is_tracking'] ?? '')) {
+                wp_slimstat::record_degradation('analytics database unavailable', 'The analytics database connection is unavailable.', wp_slimstat::DEGRADATION_TRACKING);
+            }
+        } else {
+            wp_slimstat::clear_degradation('analytics database unavailable');
+            $failures = wp_slimstat::get_degradations();
+            if (($failures['activation']['severity'] ?? '') === wp_slimstat::DEGRADATION_TRACKING
+                || ($failures['schema upgrade']['severity'] ?? '') === wp_slimstat::DEGRADATION_TRACKING) {
+                // Reuse the bounded, locked schema path before clearing its outage warning.
+                self::update_tables_and_options();
+            }
+            if (!\SlimStat\Tracker\VisitIdGenerator::isInitialized()) {
+                if (\SlimStat\Tracker\VisitIdGenerator::initializeCounter() < 0
+                    && 'on' === (wp_slimstat::$settings['is_tracking'] ?? '')) {
+                    wp_slimstat::record_degradation('visit counter initialization', 'Visit counter initialization did not complete.', wp_slimstat::DEGRADATION_TRACKING);
+                }
+            }
+            if (\SlimStat\Tracker\VisitIdGenerator::isInitialized()) {
+                wp_slimstat::clear_degradation('visit counter initialization');
+            }
+        }
+        $changed = !has_filter('slimstat_custom_wpdb') && self::custom_db_is_external()
+            && ('on' === (wp_slimstat::$settings['addon_custom_db_enable'] ?? '')
+                || ('' === self::legacy_custom_db_plugin() && !wp_slimstat::pro_plugin_active()));
+        if ($changed) {
+            add_option('slimstat_custom_db_changed_since', time(), '', false);
+        } else {
+            delete_option('slimstat_custom_db_changed_since');
+        }
+    }
+
+    public static function show_custom_db_notice(): void
+    {
+        $screen = get_current_screen();
+        if (!current_user_can('manage_options') || !current_user_can('activate_plugins') || !$screen
+            || (!in_array($screen->base, ['dashboard', 'plugins'], true) && false === strpos($screen->id, 'slim'))) {
+            return;
+        }
+        $plugins = [[__('Open Plugins', 'wp-slimstat'), admin_url('plugins.php'), false]];
+        $since = get_option('slimstat_custom_db_changed_since', 0);
+        if ($since) {
+            self::show_dismissible_notice('custom-db-changed', hash('sha256', (string) $since),
+                '<strong>' . esc_html__('Analytics database changed.', 'wp-slimstat') . '</strong> ' .
+                esc_html__('New visits are now saved to your WordPress database. Older visits remain in your external database. Reactivate the Custom DB addon or activate SlimStat Pro to reconnect. No data is moved or merged.', 'wp-slimstat'), $plugins);
+            return;
+        }
+        if ('' === self::legacy_custom_db_plugin() || wp_slimstat::pro_plugin_active()) {
+            return;
+        }
+        $external = self::custom_db_is_external();
+        if ($external) {
+            $message = '<strong>' . esc_html__('Custom Database is now part of SlimStat Pro.', 'wp-slimstat') . '</strong> ' .
+                esc_html__('Your external database is provided by the retired "SlimStat Analytics - Custom DB" addon, which no longer receives updates or fixes. SlimStat 6 moved Custom Database into SlimStat Pro. Activate Pro to verify the connection and take over the same database automatically. Your data stays where it is; there is nothing to copy or set up.', 'wp-slimstat');
+            $activation = \SlimStat\Utils\ProLinks::activation();
+            $plugins = [[$activation ? __('Activate SlimStat Pro', 'wp-slimstat') : __('Get SlimStat Pro', 'wp-slimstat'), $activation ?: \SlimStat\Utils\ProLinks::url('custom-db-notice', 'legacy-addon'), !$activation]];
+        } else {
+            $message = esc_html__('The "SlimStat Analytics - Custom DB" addon is active but uses your WordPress database, so it does nothing. You can deactivate it. Your data stays where it is.', 'wp-slimstat');
+        }
+        self::show_dismissible_notice('custom-db-guide', hash('sha256', $external ? 'external' : 'unused'), $message, $plugins);
+    }
+
     public static function enqueue_promotions(): void
     {
-        if (!self::can_view_stats()) { return; }
+        if (!self::can_view_stats() && !current_user_can('manage_options')) { return; }
         wp_enqueue_style('slimstat-promotions', plugins_url('admin/assets/css/promotions.css', SLIMSTAT_FILE), [], SLIMSTAT_ANALYTICS_VERSION);
         // The locked-Pro banner's buttons use SlimStat's button roles there too, not WordPress blue.
-        if (\SlimStat\Services\ProLicense::on_screen()) {
+        if (\SlimStat\Services\ProLicense::on_screen() || current_user_can('manage_options')) {
             wp_enqueue_style('wp-slimstat-tokens', plugins_url('admin/assets/css/tokens.css', SLIMSTAT_FILE), [], SLIMSTAT_ANALYTICS_VERSION);
         }
         wp_enqueue_script('slimstat-promotions', plugins_url('admin/assets/js/promotions.js', SLIMSTAT_FILE), [], SLIMSTAT_ANALYTICS_VERSION, true);
@@ -4965,6 +5122,8 @@ class wp_slimstat_admin
             // Operational steps. Everything below kept working; none of it is a load failure,
             // and none of it is fixed by reinstalling.
             'schema column drift'  => __('Database columns differ from this version', 'wp-slimstat'),
+            'visit counter initialization' => __('Visit counter initialization', 'wp-slimstat'),
+            'analytics database unavailable' => __('Analytics database connection', 'wp-slimstat'),
             'schema upgrade'       => __('Database schema upgrade', 'wp-slimstat'),
             'schema repair from the tracking path' => __('Database repair during tracking', 'wp-slimstat'),
             'notes format migration' => __('Notes format migration', 'wp-slimstat'),
@@ -4991,6 +5150,8 @@ class wp_slimstat_admin
             'purge (no successful run)'   => __('Retention has not completed recently', 'wp-slimstat'),
         ];
 
+        $tracking_items    = '';
+        $occurrences       = [];
         $load_items        = '';
         $operational_items = '';
 
@@ -5015,11 +5176,24 @@ class wp_slimstat_admin
             // which is what they all were; they age out within DEGRADATION_TTL anyway.
             $severity = isset($record['severity']) ? (string) $record['severity'] : wp_slimstat::DEGRADATION_LOAD;
 
-            if (wp_slimstat::DEGRADATION_OPERATIONAL === $severity) {
+            $occurrences[$severity][$step] = $record['since'] ?? $record['time'] ?? 0;
+            if (wp_slimstat::DEGRADATION_TRACKING === $severity) {
+                $tracking_items .= $item;
+            } elseif (wp_slimstat::DEGRADATION_OPERATIONAL === $severity) {
                 $operational_items .= $item;
             } else {
                 $load_items .= $item;
             }
+        }
+
+        foreach ($occurrences as &$occurrence) { ksort($occurrence); }
+        unset($occurrence);
+
+        if ('' !== $tracking_items) {
+            self::show_dismissible_notice('degradation-tracking', hash('sha256', serialize($occurrences[wp_slimstat::DEGRADATION_TRACKING])),
+                '<strong>' . esc_html__('New visits are not being recorded.', 'wp-slimstat') . '</strong> ' .
+                esc_html__('SlimStat could not initialize tracking on your analytics database. Check the database connection and SlimStat > Migration. This notice returns after 24 hours if the problem remains.', 'wp-slimstat') .
+                '<ul class="ul-disc">' . $tracking_items . '</ul>', [], 'error', DAY_IN_SECONDS);
         }
 
         // TWO NOTICES, TWO SEVERITIES, because one sentence cannot be true of both.
@@ -5031,20 +5205,20 @@ class wp_slimstat_admin
         // comment records rejecting this channel for that reason. So the copy stays where it is
         // true and the rest gets copy that is.
         if ('' !== $load_items) {
-            self::show_message(
+            self::show_dismissible_notice('degradation-load', hash('sha256', serialize($occurrences[wp_slimstat::DEGRADATION_LOAD])),
                 '<strong>' . esc_html__('SlimStat Analytics is running with reduced functionality.', 'wp-slimstat') . '</strong><br>' .
                 esc_html__('These features failed to load and were disabled so the rest of your site keeps working. This usually means an interrupted update or a stale server cache. Reinstalling the plugin and flushing your PHP opcache normally clears it.', 'wp-slimstat') .
                 '<ul class="ul-disc">' . $load_items . '</ul>',
-                'error'
+                [], 'error'
             );
         }
 
         if ('' !== $operational_items) {
-            self::show_message(
+            self::show_dismissible_notice('degradation-operational', hash('sha256', serialize($occurrences[wp_slimstat::DEGRADATION_OPERATIONAL])),
                 '<strong>' . esc_html__('SlimStat reported a problem while running.', 'wp-slimstat') . '</strong><br>' .
                 esc_html__('Tracking and reports kept working. These are maintenance tasks that did not complete, so some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check SlimStat > Migration and Settings > Maintenance.', 'wp-slimstat') .
                 '<ul class="ul-disc">' . $operational_items . '</ul>',
-                'warning'
+                [], 'warning'
             );
         }
     }

@@ -170,6 +170,13 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 = 6.1.0 - 2026-11-08 =
 
+**Custom databases and upgrade notices**
+* JavaScript tracking retries short external-database outages using the existing browser queue. Queued hits expire after 30 minutes; delivery still depends on the visitor returning and is not guaranteed. Server-side tracking has no outage queue.
+* Updates from the retired Custom DB addon keep recording visits in the same external database, including connections with no table prefix. Switching databases safely reseeds the visit counter above existing IDs.
+* Database warnings distinguish interrupted tracking from maintenance problems. Notices can be dismissed separately by each administrator; an ongoing tracking interruption returns after 24 hours.
+* Guidance explains how to move the retired Custom DB addon to Pro, and warns when disabling the database provider sends new visits to WordPress's database. Existing history is never moved.
+
+
 **New**
 
 * **AI Analysis:** Copy Prompt, below each report's title, copies the report's rows, period and filters with your site's title, tagline and address as a ready-to-paste prompt for ChatGPT, Claude, Grok or any AI assistant. It only goes to your clipboard. It is unlimited in Free and covers Ecommerce reports and Heatmaps too; reports that list individual visitors have no button.

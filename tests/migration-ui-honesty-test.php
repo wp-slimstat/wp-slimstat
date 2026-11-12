@@ -96,9 +96,8 @@ if (false === strpos($dismiss, 'migrationSetFingerprint')) {
 
 $needs = slimstat_function_body($manager, 'needsMigration');
 
-if (false === strpos($needs, 'migrationSetFingerprint')) {
-    $failures[] = 'needsMigration() does not compare the stored dismissal against the current '
-        . 'migration set, so dismissal outlives the set it was for';
+if (false !== strpos($needs, 'OPTION_DISMISSED') || false === strpos($dismiss, 'update_user_meta')) {
+    $failures[] = 'migration dismissal must be per administrator and must not hide pending migrations';
 }
 
 $fingerprint = (string) slimstat_find_function_body($manager, 'migrationSetFingerprint');
