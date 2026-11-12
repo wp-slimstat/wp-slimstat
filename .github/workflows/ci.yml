@@ -294,10 +294,10 @@ jobs:
           - { wp: "6.6", php: "8.2" }
           - { wp: "6.9", php: "8.2" }
           - { wp: "7.0", php: "8.2" }
-          # 7.1.2 is current. Added with the metadata bump in readme.txt/README.md, so
+          # 7.1.4 is current. Added with the metadata bump in readme.txt/README.md, so
           # "Tested up to" and the lane that tests it move together — which is the whole
           # property tests/wp70-tested-up-to-test.php exists to hold.
-          - { wp: "7.1.2", php: "8.3" }
+          - { wp: "7.1.4", php: "8.3" }
 
     env:
       TEST_BASE_URL: http://localhost:8889
@@ -314,13 +314,13 @@ jobs:
       # Named once, read by three steps (override, active-plugin check, E2E grep) so
       # they cannot drift into "installed here, run there".
       #
-      # 7.1.2, not 6.9, for two reasons. WooCommerce 10.6.2 declares `Requires at
-      # least: 6.8`, so the 6.4 full-suite lane cannot host it -- and 7.1.2 is the only
+      # 7.1.4, not 6.9, for two reasons. WooCommerce 10.6.2 declares `Requires at
+      # least: 6.8`, so the 6.4 full-suite lane cannot host it -- and 7.1.4 is the only
       # lane at or above that floor whose E2E step BLOCKS (continue-on-error is false
       # for the baseline and the newest lane only). On a soft lane a WooCommerce
       # regression would fail the step and leave the job green, which is the exact
       # shape of self-skipping this workstream exists to end.
-      WOO_E2E_LANE: "7.1.2"
+      WOO_E2E_LANE: "7.1.4"
 
     steps:
       - name: Checkout
@@ -515,7 +515,7 @@ jobs:
         # because that file set varies by WP version. 6.4 already runs the full E2E suite; the
         # NEWEST lane is where that surface is most likely to move under it again — so this
         # condition names the newest WordPress in the matrix, and widens with it. It said
-        # `6.4 || 7.0` while 7.1.2 was added, which would have quietly stopped covering the
+        # `6.4 || 7.0` while 7.1.4 was added, which would have quietly stopped covering the
         # version the readme claims to be tested against. §8 of
         # tests/perf-gate-integrity-test.php asserts the condition names every blocking
         # version rather than a fixed pair.
@@ -528,7 +528,7 @@ jobs:
         #
         # Blocking, unlike the E2E step below. On these lanes it is the first step that can
         # fail this job, which is the point of adding it.
-        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.4' }}
         run: npx wp-env run tests-cli -- php wp-content/plugins/wp-slimstat/tests/reports-output-escaping-test.php
 
       - name: Activate plugin and create database tables
@@ -551,7 +551,7 @@ jobs:
           npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
 
       - name: Acquisition schema, attribution and report database checks
-        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.4' }}
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/acquisition-reports-db-test.php
 
       - name: Native SQL top list accuracy
@@ -574,14 +574,14 @@ jobs:
           npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/privacy-external-mysql.php
 
       - name: Summary accuracy, query budgets and cache isolation
-        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.4' }}
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/report-summary-counts-db-test.php
 
       - name: Legacy column repair preserves historical data
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/docker/probe-legacy-column-repair.php
 
       - name: Shortcode rendering and privacy
-        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.4' }}
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/shortcode-render-wp-test.php
 
       - name: Pro license gate
@@ -833,14 +833,14 @@ jobs:
         # matrix lanes run only the @compat-tagged compat specs via --grep, so
         # PRs stay within budget (the lane is the CI job, not the filename).
         #
-        # BLOCKING on 6.4 and 7.1.2; soft everywhere else. continue-on-error is the
+        # BLOCKING on 6.4 and 7.1.4; soft everywhere else. continue-on-error is the
         # setting being excused, and the expression is FALSE — the lane can fail
         # the job — for exactly two versions: the committed baseline that
         # .wp-env.json boots, and the newest WordPress in the matrix above.
         #
-        # Read "blocking on 7.1.2" literally. The branch below runs the full suite
+        # Read "blocking on 7.1.4" literally. The branch below runs the full suite
         # only when WP_VERSION is the baseline; every other lane runs
-        # --grep "@compat". So 7.1.2 blocking gates the @compat subset, and the real
+        # --grep "@compat". So 7.1.4 blocking gates the @compat subset, and the real
         # target of this flip is 6.4/PHP 7.4 running all 748 tests. The interior
         # lanes stay soft on purpose: they are version-drift signal, not a merge
         # gate, and making them blocking would fail the job on host-environment
@@ -852,7 +852,7 @@ jobs:
         # everything, dropping either version, or reverting to a bare `true` all
         # fail that gate. §7 used to match only the literal `continue-on-error:
         # true`, so before this commit it would have matched nothing here.
-        continue-on-error: ${{ !contains(fromJSON('["6.4","7.1.2"]'), matrix.wp) }}
+        continue-on-error: ${{ !contains(fromJSON('["6.4","7.1.4"]'), matrix.wp) }}
         env:
           # wp-env creates a fresh WordPress with default admin credentials.
           # Override WP_ADMIN_USER / WP_ADMIN_PASS in global-setup.ts.

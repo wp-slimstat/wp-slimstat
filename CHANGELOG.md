@@ -1,6 +1,7 @@
 = 6.1.0 - 2026-11-08 =
 
 **Custom databases and upgrade notices**
+* Compatibility checks cover WordPress 7.1.4.
 * Recognize the original Custom DB 1.5 ZIP directory so its migration guidance appears after installation.
 * JavaScript tracking retries short external-database outages using the existing browser queue. Queued hits expire after 30 minutes; delivery still depends on the visitor returning and is not guaranteed. Server-side tracking has no outage queue.
 * Updates from the retired Custom DB addon keep recording visits in the same external database, including connections with no table prefix. Switching databases safely reseeds the visit counter above existing IDs.
