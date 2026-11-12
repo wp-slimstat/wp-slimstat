@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-12T06:07:56+00:00\n"
+"POT-Creation-Date: 2026-11-12T08:39:40+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -1898,8 +1898,8 @@ msgid "Visits that arrived without a source, such as typed addresses and bookmar
 msgstr ""
 
 #: admin/index.php:4700
-#: src/Ecommerce/Report.php:459
-#: src/Ecommerce/Report.php:473
+#: src/Ecommerce/Report.php:468
+#: src/Ecommerce/Report.php:482
 #: src/Reports/AcquisitionReport.php:108
 #: src/Reports/AcquisitionReport.php:110
 #: src/Reports/AcquisitionReport.php:297
@@ -2977,19 +2977,19 @@ msgid "All devices"
 msgstr ""
 
 #: admin/view/heatmaps.php:130
-#: src/Ecommerce/Report.php:465
+#: src/Ecommerce/Report.php:474
 #: admin/assets/js/heatmaps.js:106
 msgid "Desktop"
 msgstr ""
 
 #: admin/view/heatmaps.php:131
-#: src/Ecommerce/Report.php:466
+#: src/Ecommerce/Report.php:475
 #: admin/assets/js/heatmaps.js:106
 msgid "Tablet"
 msgstr ""
 
 #: admin/view/heatmaps.php:132
-#: src/Ecommerce/Report.php:465
+#: src/Ecommerce/Report.php:474
 #: admin/assets/js/heatmaps.js:106
 msgid "Mobile"
 msgstr ""
@@ -3216,8 +3216,8 @@ msgstr ""
 #: admin/view/partials/ecommerce.php:119
 #: admin/view/partials/ecommerce.php:148
 #: admin/view/partials/ecommerce.php:153
-#: src/Ecommerce/Report.php:374
-#: src/Ecommerce/Report.php:384
+#: src/Ecommerce/Report.php:383
+#: src/Ecommerce/Report.php:393
 #: admin/assets/js/ecommerce.js:54
 msgid "Net sales"
 msgstr ""
@@ -3228,7 +3228,7 @@ msgstr ""
 
 #: admin/view/partials/ecommerce.php:70
 #: admin/view/partials/ecommerce.php:148
-#: src/Ecommerce/Report.php:384
+#: src/Ecommerce/Report.php:393
 msgid "Orders"
 msgstr ""
 
@@ -3238,7 +3238,7 @@ msgstr ""
 
 #: admin/view/partials/ecommerce.php:71
 #: admin/view/partials/ecommerce.php:218
-#: src/Ecommerce/Report.php:385
+#: src/Ecommerce/Report.php:394
 msgid "Average order value"
 msgstr ""
 
@@ -3248,7 +3248,7 @@ msgstr ""
 
 #: admin/view/partials/ecommerce.php:72
 #: admin/view/partials/ecommerce.php:219
-#: src/Ecommerce/Report.php:386
+#: src/Ecommerce/Report.php:395
 msgid "Purchase rate (tracked visits)"
 msgstr ""
 
@@ -3836,9 +3836,9 @@ msgid "What this period suggests checking, most important first."
 msgstr ""
 
 #: admin/view/partials/ecommerce.php:208
-#: src/Ecommerce/Report.php:364
-#: src/Ecommerce/Report.php:383
-#: src/Ecommerce/Report.php:396
+#: src/Ecommerce/Report.php:373
+#: src/Ecommerce/Report.php:392
+#: src/Ecommerce/Report.php:405
 msgid "Data quality"
 msgstr ""
 
@@ -8959,121 +8959,121 @@ msgstr ""
 msgid "Your SlimStat analytics table uses the MyISAM storage engine, and Ecommerce needs InnoDB. Ask your host to convert the table to InnoDB, then set up Ecommerce again."
 msgstr ""
 
-#: src/Ecommerce/Report.php:46
+#: src/Ecommerce/Report.php:55
 msgid "Choose a valid order currency."
 msgstr ""
 
-#: src/Ecommerce/Report.php:50
+#: src/Ecommerce/Report.php:59
 msgid "This addon filter cannot be applied to Ecommerce. Remove it to load this report."
 msgstr ""
 
-#: src/Ecommerce/Report.php:54
+#: src/Ecommerce/Report.php:63
 msgid "Ecommerce reports use one store at a time. Open the store dashboard to review its revenue."
 msgstr ""
 
-#: src/Ecommerce/Report.php:88
-#: src/Ecommerce/Report.php:425
+#: src/Ecommerce/Report.php:97
+#: src/Ecommerce/Report.php:434
 msgid "Ecommerce data could not be loaded. Check reporting setup and the database connection, then retry."
 msgstr ""
 
-#: src/Ecommerce/Report.php:239
+#: src/Ecommerce/Report.php:248
 msgid "Choose a shorter period to explore Ecommerce trends (up to 366 monthly points)."
 msgstr ""
 
-#: src/Ecommerce/Report.php:277
+#: src/Ecommerce/Report.php:286
 msgid "Set up Ecommerce for the current analytics database before loading reports."
 msgstr ""
 
-#: src/Ecommerce/Report.php:280
+#: src/Ecommerce/Report.php:289
 msgid "SlimStat was deactivated and may have missed order changes. Rebuild Ecommerce reports to reconcile with WooCommerce."
 msgstr ""
 
-#: src/Ecommerce/Report.php:283
+#: src/Ecommerce/Report.php:292
 msgid "The store timezone changed. Rebuild Ecommerce reports to align order dates with the date picker."
 msgstr ""
 
-#: src/Ecommerce/Report.php:286
+#: src/Ecommerce/Report.php:295
 msgid "This date range is in the future. Choose a period with observed activity."
 msgstr ""
 
-#: src/Ecommerce/Report.php:364
+#: src/Ecommerce/Report.php:373
 msgid "Ecommerce is unavailable. Activate WooCommerce and set up reporting."
 msgstr ""
 
-#: src/Ecommerce/Report.php:373
-#: src/Ecommerce/Report.php:383
+#: src/Ecommerce/Report.php:382
+#: src/Ecommerce/Report.php:392
 msgid "Currency"
 msgstr ""
 
-#: src/Ecommerce/Report.php:379
+#: src/Ecommerce/Report.php:388
 msgid "Provisional: synchronization is incomplete."
 msgstr ""
 
-#: src/Ecommerce/Report.php:379
+#: src/Ecommerce/Report.php:388
 msgid "Some orders could not be imported, so totals may miss them."
 msgstr ""
 
-#: src/Ecommerce/Report.php:379
+#: src/Ecommerce/Report.php:388
 msgid "WooCommerce totals; attribution covers retained tracked visits only."
 msgstr ""
 
-#: src/Ecommerce/Report.php:380
+#: src/Ecommerce/Report.php:389
 msgid "Part of this period is outside analytics retention."
 msgstr ""
 
-#: src/Ecommerce/Report.php:382
+#: src/Ecommerce/Report.php:391
 msgid "Reporting period"
 msgstr ""
 
-#: src/Ecommerce/Report.php:387
+#: src/Ecommerce/Report.php:396
 msgid "Tracked buying / eligible visits"
 msgstr ""
 
-#: src/Ecommerce/Report.php:388
+#: src/Ecommerce/Report.php:397
 msgid "Linked / included orders"
 msgstr ""
 
-#: src/Ecommerce/Report.php:389
+#: src/Ecommerce/Report.php:398
 msgid "Scope"
 msgstr ""
 
-#: src/Ecommerce/Report.php:389
+#: src/Ecommerce/Report.php:398
 msgid "Selected traffic filters; unlinked orders excluded."
 msgstr ""
 
-#: src/Ecommerce/Report.php:389
+#: src/Ecommerce/Report.php:398
 msgid "All included orders in this currency and period."
 msgstr ""
 
-#: src/Ecommerce/Report.php:390
+#: src/Ecommerce/Report.php:399
 msgid "Basis"
 msgstr ""
 
-#: src/Ecommerce/Report.php:390
+#: src/Ecommerce/Report.php:399
 msgid "Order-created cohort; refunds revise original orders; net sales exclude tax and shipping."
 msgstr ""
 
-#: src/Ecommerce/Report.php:396
+#: src/Ecommerce/Report.php:405
 msgid "Ecommerce could not be loaded. Review its reporting setup and selected filters."
 msgstr ""
 
-#: src/Ecommerce/Report.php:406
+#: src/Ecommerce/Report.php:415
 msgid "Store reporting permission is required to view Ecommerce."
 msgstr ""
 
-#: src/Ecommerce/Report.php:462
+#: src/Ecommerce/Report.php:471
 msgid "Deleted product"
 msgstr ""
 
-#: src/Ecommerce/Report.php:466
+#: src/Ecommerce/Report.php:475
 msgid "Guest checkout"
 msgstr ""
 
-#: src/Ecommerce/Report.php:467
+#: src/Ecommerce/Report.php:476
 msgid "Registered account"
 msgstr ""
 
-#: src/Ecommerce/Report.php:471
+#: src/Ecommerce/Report.php:480
 msgid "No campaign"
 msgstr ""
 
