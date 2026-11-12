@@ -22,7 +22,11 @@ class MarketingCampaignDecorator
 
     public function getTitle(): string { return $this->text('title'); }
     public function getTooltip(): string { return $this->text('tooltip'); }
-    public function getUrl(): string { return \esc_url_raw(str_replace('{baseUrl}', \home_url(), $this->text('url')), ['https', 'http']); }
+    public function getUrl(): string
+    {
+        $url = str_replace('{baseUrl}', \home_url(), $this->text('url'));
+        return \esc_url_raw(\SlimStat\Utils\ProLinks::tag($url, 'horizon', 'header-banner-' . (int) ($this->campaign['id'] ?? 0), true), ['https', 'http']);
+    }
     public function getIcon(): string
     {
         $icon = json_decode($this->text('icon'));
@@ -43,7 +47,7 @@ class MarketingCampaignDecorator
 
     public function getTextColor(): string
     {
-        $default = 'warning' === $this->text('background_color') ? '#202224' : '#ffffff';
+        $default = '#f9cb65' === strtolower($this->getBackgroundColor()) ? '#202224' : '#ffffff';
         $colors = ['dark' => '#202224', 'light' => '#ffffff', 'inherit' => $default];
         return \sanitize_hex_color($this->text('text_color')) ?: ($colors[$this->text('text_color')] ?? $default);
     }

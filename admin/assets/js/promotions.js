@@ -41,12 +41,28 @@
         }}));
     }
     var observed = new WeakSet();
+    function attributeLinks() {
+        // Also covers translated help text and links inserted by AJAX. No tracking request is sent.
+        document.querySelectorAll('.wrap-slimstat a[href*="wp-slimstat.com"]').forEach(function (link) {
+            var url;
+            try { url = new URL(link.href); } catch (e) { return; }
+            if (!/^https?:$/.test(url.protocol) || url.username || url.password ||
+                ['wp-slimstat.com', 'www.wp-slimstat.com', 'my.wp-slimstat.com'].indexOf(url.hostname) === -1) return;
+            var params = {utm_source: 'wp-slimstat', utm_medium: 'link', utm_campaign: config.page || 'plugin', utm_content: 'content-link'};
+            var changed = false;
+            Object.keys(params).forEach(function (key) {
+                if (!(url.searchParams.get(key) || '').trim()) { url.searchParams.set(key, params[key]); changed = true; }
+            });
+            if (changed) link.href = url.href;
+        });
+    }
     var observer = typeof IntersectionObserver === 'function' ? new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
             if (entry.isIntersecting && entry.intersectionRatio >= 0.5) record(entry.target, 'impression');
         });
     }, {threshold: 0.5}) : null;
     function scan() {
+        attributeLinks();
         if (!observer || !config.scope) return;
         document.querySelectorAll('a[href*="utm_campaign="][href*="utm_content="]').forEach(function (link) {
             if (!observed.has(link)) { observed.add(link); observer.observe(link); }

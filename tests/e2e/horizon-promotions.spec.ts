@@ -23,6 +23,43 @@ test.afterEach(async () => {
 });
 test.afterAll(closeDb);
 
+test('website links carry attribution while feed campaigns and other destinations stay intact', async ({page}) => {
+  runWordPressFixture(`<?php
+  $feed=get_option('wp_slimstat_marketing_campaigns');
+  $feed['data'][0]['data']['url']='https://wp-slimstat.com/pricing/?coupon=BFCM2026&utm_campaign=bfcm2026#plans';
+  update_option('wp_slimstat_marketing_campaigns',$feed,false);
+  $feed=get_option('wp_slimstat_notifications');
+  $feed['data'][0]['primary_button']['url']='https://wp-slimstat.com/pricing/';
+  update_option('wp_slimstat_notifications',$feed,false);
+  `);
+  await page.goto('/wp-admin/admin.php?page=slimview1');
+  const banner=page.locator('.slimstat-header__promo');
+  if (await banner.count()) {
+    const url=new URL((await banner.getAttribute('href'))!);
+    expect(Object.fromEntries(url.searchParams)).toMatchObject({coupon:'BFCM2026',utm_campaign:'bfcm2026',utm_source:'wp-slimstat',utm_medium:'link',utm_content:'header-banner-902604'});
+    expect(url.hash).toBe('#plans');
+  }
+  const notification=new URL((await page.locator('#tab-1 .slimstat-notification-sidebar__button').getAttribute('href'))!);
+  expect(Object.fromEntries(notification.searchParams)).toMatchObject({utm_source:'wp-slimstat',utm_medium:'link',utm_campaign:'notifications',utm_content:'primary-902601'});
+  await page.evaluate(()=>{
+    const root=document.querySelector('.wrap-slimstat')!;
+    for (const [id,href] of Object.entries({docs:'https://wp-slimstat.com/resources/?q=report#help',existing:'https://wp-slimstat.com/videos/?utm_source=horizon&utm_medium=email&utm_campaign=existing&utm_content=video#watch',other:'https://wp-slimstat.com.example.test/',local:'/wp-admin/admin.php?page=slimconfig'})) {
+      const a=document.createElement('a');a.id='utm-test-'+id;a.href=href;a.textContent=id;root.append(a);
+    }
+  });
+  await expect(page.locator('#utm-test-docs')).toHaveAttribute('href',/utm_content=content-link/);
+  const docs=new URL((await page.locator('#utm-test-docs').getAttribute('href'))!);
+  expect(docs.searchParams.get('q')).toBe('report');expect(docs.hash).toBe('#help');
+  await expect(page.locator('#utm-test-existing')).toHaveAttribute('href','https://wp-slimstat.com/videos/?utm_source=horizon&utm_medium=email&utm_campaign=existing&utm_content=video#watch');
+  await expect(page.locator('#utm-test-other')).toHaveAttribute('href','https://wp-slimstat.com.example.test/');
+  await expect(page.locator('#utm-test-local')).toHaveAttribute('href','/wp-admin/admin.php?page=slimconfig');
+  const missing=await page.locator('.wrap-slimstat a[href]').evaluateAll(links=>links.filter(link=>{
+    const url=new URL((link as HTMLAnchorElement).href);
+    return ['wp-slimstat.com','www.wp-slimstat.com','my.wp-slimstat.com'].includes(url.hostname) && ['utm_source','utm_medium','utm_campaign','utm_content'].some(key=>!url.searchParams.get(key));
+  }).map(link=>(link as HTMLAnchorElement).href));
+  expect(missing).toEqual([]);
+});
+
 test('promo renders one CTA, keeps full panel width in light, dark, mobile and RTL, and copies the coupon', async ({page}, info) => {
   await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', {configurable:true,value:{writeText: async (value: string) => { (window as any).copiedCoupon = value; }}}));
   await page.goto('/wp-admin/admin.php?page=slimview1');

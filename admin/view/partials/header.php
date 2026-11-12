@@ -27,8 +27,8 @@ if ($displayNotifications && class_exists(NotificationFactory::class)) {
 $online_visitors = class_exists('wp_slimstat_db') ? wp_slimstat_admin::online_count() : 0;
 $formatted_online_visitors = number_format_i18n($online_visitors);
 
-$support_url   = 'https://wp-slimstat.com/contact/?utm_source=plugin&utm_medium=header&utm_campaign=support';
-$docs_url      = 'https://wp-slimstat.com/resources/?utm_source=plugin&utm_medium=header&utm_campaign=docs';
+$support_url   = \SlimStat\Utils\ProLinks::tag('https://wp-slimstat.com/contact/', 'header', 'support');
+$docs_url      = \SlimStat\Utils\ProLinks::tag('https://wp-slimstat.com/resources/', 'header', 'docs');
 $settings_url  = admin_url('admin.php?page=slimconfig');
 $upgrade_url   = \SlimStat\Utils\ProLinks::url('header', 'cta');
 // Pro is active but its license is not verified: the header button sends administrators to the fix.
@@ -98,7 +98,7 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
             </a>
         <?php endif; ?>
         <?php if (!\wp_slimstat::pro_plugin_active() && current_user_can('manage_options')): ?>
-            <a class="slimstat-header__license-link" dir="auto" href="<?php echo esc_url(\SlimStat\Services\ProLicense::ACCOUNT); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Have a license?', 'wp-slimstat'); ?></a>
+            <a class="slimstat-header__license-link" dir="auto" href="<?php echo esc_url(\SlimStat\Utils\ProLinks::tag(\SlimStat\Services\ProLicense::ACCOUNT, 'header', 'find-license')); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Have a license?', 'wp-slimstat'); ?></a>
         <?php endif; ?>
         </div>
     </div>

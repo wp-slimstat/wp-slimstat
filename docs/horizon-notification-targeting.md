@@ -33,3 +33,9 @@ SlimStat 6.1.1 hides notices with unknown or malformed tags instead of showing t
 Horizon must accept and expose these exact tag strings before publishing. In particular, add `is-license-invalid` to its tag catalog if the catalog restricts selectable values. The addon forms are the documented Horizon dynamic-tag format. This PR changes the plugin consumer; it does not publish or change Horizon records.
 
 Notification targeting applies to the bell and its cards. Header marketing campaigns still preserve the Pro license-repair action and are hidden whenever the Pro plugin is active, even if a campaign's tags would match.
+
+## Link attribution
+
+New links to the SlimStat website default to `utm_source=wp-slimstat` and `utm_medium=link`; contextual help retains its existing `help` medium. Header controls use `utm_campaign=header` and a placement such as `cta`, `docs`, `support` or `find-license`. Horizon banners default to `utm_campaign=horizon` and `utm_content=header-banner-<id>`; notification buttons use `utm_campaign=notifications` and `utm_content=primary-<id>` or `secondary-<id>`.
+
+For the sale, Horizon can publish `https://wp-slimstat.com/pricing/?utm_campaign=bfcm2026`. Existing UTM values, other query parameters and anchors are preserved. Remaining website links in SlimStat screens receive the screen ID as their campaign and `content-link` as their placement, including links inserted later. This adds URL parameters only; it sends no tracking request and includes no site URL, user information or report filters. Links to the local site and other domains are unchanged.

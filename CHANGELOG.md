@@ -1,5 +1,6 @@
-= Unreleased =
+= 6.1.1 =
 
+* Website links include campaign and placement attribution, while preserving existing campaign parameters and coupon codes.
 * Notification audiences follow the verified Pro license, including network keys and outage grace. New version-gated tags distinguish plugin activation and invalid licenses, and unsupported tags no longer show targeted messages to everyone.
 * Report scrolling continues onto the page at either boundary. Persian and English layouts now keep arrows, dates, live metrics, notices and report controls aligned on desktop and mobile. Ecommerce chart dates follow the current admin language.
 * Scheduled sale notifications and header offers now follow their UTC start and end times, with a coupon copy action and an expiry countdown.

@@ -63,12 +63,27 @@ try {
     $same('BFCM2026', NotificationFactory::getAllNotifications()[0]->getCode(), 'Coupon exposed');
     $same('🏷️', MarketingCampaign::banner()->getIcon(), 'Icon decoded once');
     $same('#991b1b', MarketingCampaign::banner()->getBackgroundColor(), 'Opaque semantic color');
-    foreach (['', 'inherit', 'invalid;color'] as $textColor) {
-        $warning = new \SlimStat\Decorators\MarketingCampaignDecorator(['background_color' => 'warning', 'text_color' => $textColor]);
-        $same('#202224', $warning->getTextColor(), 'Warning defaults to dark text');
+    foreach (['warning', '#f9cb65', '#F9CB65'] as $background) {
+        foreach (['', 'inherit', 'invalid;color'] as $textColor) {
+            $warning = new \SlimStat\Decorators\MarketingCampaignDecorator(['background_color' => $background, 'text_color' => $textColor]);
+            $same('#202224', $warning->getTextColor(), 'Warning name and hex default to dark text');
+        }
     }
     $explicit = new \SlimStat\Decorators\MarketingCampaignDecorator(['background_color' => 'warning', 'text_color' => '#123456']);
     $same('#123456', $explicit->getTextColor(), 'Explicit valid text color is preserved');
+    $destination = 'https://wp-slimstat.com/pricing/?coupon=BFCM2026&utm_campaign=bfcm2026#plans';
+    $link = new \SlimStat\Decorators\MarketingCampaignDecorator(['id' => 12, 'url' => $destination]);
+    wp_parse_str(wp_parse_url($link->getUrl(), PHP_URL_QUERY), $attribution);
+    $same(['coupon' => 'BFCM2026', 'utm_campaign' => 'bfcm2026', 'utm_source' => 'wp-slimstat', 'utm_medium' => 'link', 'utm_content' => 'header-banner-12'], $attribution, 'Header attribution preserves campaign and coupon');
+    $same('plans', wp_parse_url($link->getUrl(), PHP_URL_FRAGMENT), 'Attribution preserves fragments');
+    $same($link->getUrl(), \SlimStat\Utils\ProLinks::tag($link->getUrl(), 'other', 'other', true), 'Repeated attribution is idempotent');
+    foreach (['https://example.test/', 'https://wp-slimstat.com.example.test/', 'https://wp-slimstat.com@example.test/', '/wp-admin/admin.php', 'mailto:reviewer@example.test'] as $other) {
+        $same($other, \SlimStat\Utils\ProLinks::tag($other, 'notifications', 'test', true), 'Only the actual SlimStat website receives attribution');
+    }
+    $taggedNotice = new \SlimStat\Decorators\NotificationDecorator((object) ['id' => 13, 'primary_button' => ['url' => $destination], 'secondary_button' => ['url' => '{baseUrl}/wp-admin/']]);
+    wp_parse_str(wp_parse_url($taggedNotice->primaryButtonUrl(), PHP_URL_QUERY), $attribution);
+    $same('primary-13', $attribution['utm_content'], 'Notification primary link identifies placement');
+    $same(home_url() . '/wp-admin/', $taggedNotice->secondaryButtonUrl(), 'Local notification actions are unchanged');
     $same($count, count($requests), 'Render performs no HTTP requests');
     $same(true, $marketing->fetch(), 'Warm marketing cache');
     $same($count, count($requests), 'Warm marketing cache avoids request');

@@ -2743,7 +2743,7 @@ class slimstat_widget extends WP_Widget
 
         <p>
             <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>"><?php esc_html_e('Optional filters', 'wp-slimstat'); ?></label>
-            <a href="https://wp-slimstat.com/resources/what-is-the-syntax-of-a-slimstat-shortcode-#slimstat-operators" target="_blank">[?]</a>
+            <a href="<?php echo esc_url(\SlimStat\Utils\ProLinks::tag('https://wp-slimstat.com/resources/what-is-the-syntax-of-a-slimstat-shortcode-#slimstat-operators', 'shortcodes', 'operators-help')); ?>" target="_blank" rel="noopener noreferrer">[?]</a>
             <textarea class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_filters')); ?>"><?php echo esc_textarea(trim(wp_strip_all_tags($slimstat_widget_filters))) ?></textarea>
         </p>
         <?php

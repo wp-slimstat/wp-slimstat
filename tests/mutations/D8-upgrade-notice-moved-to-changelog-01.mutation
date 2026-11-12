@@ -12,8 +12,3 @@ rationale: Deletes the current Upgrade Notice entry and leaves a dateless change
 -Older versions keep working, added columns stay, and it removes no rows. Shows scheduled offers and notices that match your Pro license. Improves Persian and English layouts and report scrolling. Back up first; database repairs wait for your click.
 -
  = 6.1.0 =
-@@ -173,3 +170,3 @@
- 
--= Unreleased =
-+= 6.1.1 =
- 

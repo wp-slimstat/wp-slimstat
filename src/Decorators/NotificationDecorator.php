@@ -88,7 +88,7 @@ class NotificationDecorator
             ? \str_replace('{baseUrl}', $homeUrl, $this->notification->primary_button['url'])
             : null;
 
-        return $url;
+        return is_string($url) ? \SlimStat\Utils\ProLinks::tag($url, 'notifications', 'primary-' . (int) $this->getID(), true) : $url;
     }
 
     /**
@@ -112,7 +112,7 @@ class NotificationDecorator
         $url     = isset($this->notification->secondary_button['url'])
             ? \str_replace('{baseUrl}', $homeUrl, $this->notification->secondary_button['url'])
             : null;
-        return $url;
+        return is_string($url) ? \SlimStat\Utils\ProLinks::tag($url, 'notifications', 'secondary-' . (int) $this->getID(), true) : $url;
     }
 
     /**

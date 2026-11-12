@@ -114,6 +114,11 @@
     font-weight: normal;
     color: var(--ss-text-secondary);
     line-height: 1.4;
+    text-align: start;
+}
+
+.postbox .slimstat-gf-postbox-subtitle > span[dir] {
+    float: none;
 }
 
 /* The empty state already says what a goal is; the subtitle above it repeated the same sentence. */

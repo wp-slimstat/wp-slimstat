@@ -65,6 +65,7 @@ class BlackFriday2026Test extends IntegrationTestCase
     {
         Functions\when('home_url')->justReturn('https://example.test');
         Functions\when('esc_url_raw')->alias(fn($url) => $url);
+        Functions\when('wp_parse_url')->alias('parse_url');
         $this->optionStore['wp_slimstat_marketing_campaigns'] = ['data' => [[
             'id' => 42, 'type' => 'promo_banner', 'title' => 'Sale', 'url' => 'https://example.test/pricing/',
         ]]];

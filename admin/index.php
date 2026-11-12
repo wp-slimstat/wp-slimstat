@@ -4673,7 +4673,7 @@ class wp_slimstat_admin
 
         $doc = static function (string $path, string $campaign, string $text): string {
             $url = 'pricing/' === $path ? \SlimStat\Utils\ProLinks::url($campaign, 'help-panel')
-                : 'https://wp-slimstat.com/' . $path . '?utm_source=wp-slimstat&utm_medium=help&utm_campaign=' . $campaign;
+                : 'https://wp-slimstat.com/' . $path . '?utm_source=wp-slimstat&utm_medium=help&utm_campaign=' . $campaign . '&utm_content=help-panel';
             return '<a href="' . esc_url($url) . '" target="_blank" rel="noopener">' . esc_html($text) . '</a>';
         };
         $p    = static fn(string ...$lines): string => '<p>' . implode('</p><p>', $lines) . '</p>';
@@ -4942,10 +4942,10 @@ class wp_slimstat_admin
     public static function inject_goals_funnels_header_subtitle($_html = '', $_report_id = '')
     {
         if ('slim_p9_01' === $_report_id) {
-            return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('A goal is one question you ask of your traffic.', 'wp-slimstat') . '</p>';
+            return '<p class="slimstat-gf-postbox-subtitle"><span dir="auto">' . esc_html__('A goal is one question you ask of your traffic.', 'wp-slimstat') . '</span></p>';
         }
         if ('slim_p9_02' === $_report_id) {
-            return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('String 2 to 5 steps into a journey. A funnel shows the conversion rate and exact drop-off at each stage.', 'wp-slimstat') . '</p>';
+            return '<p class="slimstat-gf-postbox-subtitle"><span dir="auto">' . esc_html__('String 2 to 5 steps into a journey. A funnel shows the conversion rate and exact drop-off at each stage.', 'wp-slimstat') . '</span></p>';
         }
         return $_html;
     }
