@@ -42,8 +42,8 @@
     }
     var observed = new WeakSet();
     function attributeLinks() {
-        // Also covers translated help text and links inserted by AJAX. No tracking request is sent.
-        document.querySelectorAll('.wrap-slimstat a[href*="wp-slimstat.com"]').forEach(function (link) {
+        // Include plugin metadata and AJAX links; only our exact website hosts qualify below.
+        document.querySelectorAll('a[href*="wp-slimstat.com"]').forEach(function (link) {
             var url;
             try { url = new URL(link.href); } catch (e) { return; }
             if (!/^https?:$/.test(url.protocol) || url.username || url.password ||

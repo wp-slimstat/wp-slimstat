@@ -60,6 +60,11 @@ test('website links carry attribution while feed campaigns and other destination
     return ['wp-slimstat.com','www.wp-slimstat.com','my.wp-slimstat.com'].includes(url.hostname) && ['utm_source','utm_medium','utm_campaign','utm_content'].some(key=>!url.searchParams.get(key));
   }).map(link=>(link as HTMLAnchorElement).href));
   expect(missing).toEqual([]);
+  await page.goto('/wp-admin/plugins.php');
+  const website = page.locator('tr[data-plugin="wp-slimstat/wp-slimstat.php"] .plugin-version-author-uri a[href*="wp-slimstat.com"]').first();
+  await expect(website).toHaveAttribute('href', /utm_campaign=plugins/);
+  const metadataUrl = new URL((await website.getAttribute('href'))!);
+  expect(Object.fromEntries(metadataUrl.searchParams)).toMatchObject({utm_source:'wp-slimstat',utm_medium:'link',utm_content:'content-link'});
 });
 
 test('promo renders one CTA, keeps full panel width in light, dark, mobile and RTL, and copies the coupon', async ({page}, info) => {
