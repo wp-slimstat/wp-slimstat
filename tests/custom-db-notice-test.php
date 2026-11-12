@@ -32,6 +32,21 @@ function check($ok, $msg) { if (!$ok) throw new RuntimeException($msg); }
 function notice() { CustomDbNoticeProbe::$notices = []; CustomDbNoticeProbe::show_custom_db_notice(); return CustomDbNoticeProbe::$notices[0] ?? []; }
 $GLOBALS['allowed'] = true; $GLOBALS['installed'] = false; $GLOBALS['screen'] = 'dashboard';
 $GLOBALS['options'] = ['active_plugins' => ['wp-slimstat-custom-db/custom.php']]; $GLOBALS['network'] = [];
+// The distributed 1.5 ZIP retains its version in the plugin directory.
+foreach (['wp-slimstat-custom-db/index.php', 'wp-slimstat-custom-db-1.5/index.php'] as $plugin) {
+    $GLOBALS['options']['active_plugins'] = [$plugin];
+    check(CustomDbNoticeProbe::legacy_custom_db_plugin() === $plugin, 'Distributed addon path undetected: ' . $plugin);
+    $GLOBALS['options']['active_plugins'] = [];
+    $GLOBALS['network']['active_sitewide_plugins'] = [$plugin => 1];
+    check(CustomDbNoticeProbe::legacy_custom_db_plugin() === $plugin, 'Network distributed addon path undetected: ' . $plugin);
+    $GLOBALS['network'] = [];
+}
+foreach (['wp-slimstat-custom-db-backup/index.php', 'other-wp-slimstat-custom-db/index.php', 'wp-slimstat-custom-db-1.5-other/index.php'] as $plugin) {
+    $GLOBALS['options']['active_plugins'] = [$plugin];
+    check(CustomDbNoticeProbe::legacy_custom_db_plugin() === '', 'Unrelated plugin mistaken for retired addon');
+}
+
+$GLOBALS['options'] = ['active_plugins' => ['wp-slimstat-custom-db/custom.php']]; $GLOBALS['network'] = [];
 wp_slimstat::$settings = ['addon_custom_db_dbname' => 'external', 'addon_custom_db_dbhost' => 'localhost'];
 $n = notice(); check($n && strpos($n[2], 'retired') !== false && $n[3][0][0] === 'Get SlimStat Pro' && $n[3][0][2], 'Configured guide or purchase link missing');
 $GLOBALS['installed'] = true; check(notice()[3][0][0] === 'Activate SlimStat Pro', 'Installed Pro not offered');

@@ -2694,7 +2694,8 @@ class wp_slimstat_admin
             $plugins = array_merge($plugins, array_keys((array) get_site_option('active_sitewide_plugins', [])));
         }
         foreach ($plugins as $plugin) {
-            if (0 === strpos($plugin, 'wp-slimstat-custom-db/')) {
+            // The original addon ZIP includes its numeric version in the directory name.
+            if (preg_match('~^wp-slimstat-custom-db(?:-[0-9]+(?:\.[0-9]+)*)?/~', $plugin)) {
                 return $plugin;
             }
         }

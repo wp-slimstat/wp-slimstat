@@ -164,3 +164,7 @@ Why the disclosure lives here and not only in the config: `phpstan.neon.dist` se
 the throwaway analysis one, so some entries legitimately do not recur), and the consequence is
 that a fixed error leaves a dead entry behind with nothing to say so. The two numbers above are
 the literal values the gate checks, so this paragraph goes stale visibly rather than silently.
+
+## Plugin Check review
+
+Run Plugin Check against the built ZIP and retain the unfiltered report. The `trademarked_term` finding on `wp-slimstat.php` concerns the existing `wp-slimstat` directory slug (https://wordpress.org/plugins/wp-slimstat/). Keep this installed identity and text domain so existing sites retain updates and translations. Do not rename the plugin to satisfy the new-submission slug check. Review every additional finding independently; this explanation is not a blanket exclusion.
