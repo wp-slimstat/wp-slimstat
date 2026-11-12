@@ -44,16 +44,31 @@ try {
     $same(true, $fetcher->fetchNotification(), 'Fetch promo notification');
     $same(true, $marketing->fetch(), 'Fetch promo banner');
     $same(3600, get_option(NotificationFetcher::STATE)['next_attempt'] - time(), 'Hourly notification freshness');
-    $same(86400, get_option(MarketingCampaign::STATE)['next_attempt'] - time(), 'Daily banner freshness');
+    $same(3600, get_option(MarketingCampaign::STATE)['next_attempt'] - time(), 'Hourly banner freshness');
     update_option(NotificationFetcher::STATE, ['last_success' => time() - 7200, 'next_attempt' => time() + 79200, 'failures' => 0], false);
     $beforeUpgrade = count($requests);
     $same(true, $fetcher->fetchNotification(), 'An old daily cache adopts hourly freshness');
     $same($beforeUpgrade + 1, count($requests), 'Old daily deadline does not delay the first hourly fetch');
+    update_option(MarketingCampaign::STATE, ['last_success' => time() - 7200, 'next_attempt' => time() + 79200, 'failures' => 0], false);
+    $same(true, $marketing->fetch(), 'An old daily campaign cache adopts hourly freshness');
+    $same($beforeUpgrade + 2, count($requests), 'Old campaign deadline does not delay hourly freshness');
+    foreach ([NotificationFetcher::STATE, MarketingCampaign::STATE] as $stateKey) {
+        update_option($stateKey, ['last_success' => time() - 3601, 'next_attempt' => time() - 1, 'failures' => 0], false);
+    }
+    $beforeHourly = count($requests);
+    do_action('slimstat_notifications_cron_hook');
+    $same(['notifications', 'marketing-campaigns'], array_slice($requests, $beforeHourly), 'Hourly cron refreshes both feeds');
     $count = count($requests);
     $same('🔥 -30%', NotificationFactory::getBadge()['label'], 'Badge is exposed');
     $same('BFCM2026', NotificationFactory::getAllNotifications()[0]->getCode(), 'Coupon exposed');
     $same('🏷️', MarketingCampaign::banner()->getIcon(), 'Icon decoded once');
     $same('#991b1b', MarketingCampaign::banner()->getBackgroundColor(), 'Opaque semantic color');
+    foreach (['', 'inherit', 'invalid;color'] as $textColor) {
+        $warning = new \SlimStat\Decorators\MarketingCampaignDecorator(['background_color' => 'warning', 'text_color' => $textColor]);
+        $same('#202224', $warning->getTextColor(), 'Warning defaults to dark text');
+    }
+    $explicit = new \SlimStat\Decorators\MarketingCampaignDecorator(['background_color' => 'warning', 'text_color' => '#123456']);
+    $same('#123456', $explicit->getTextColor(), 'Explicit valid text color is preserved');
     $same($count, count($requests), 'Render performs no HTTP requests');
     $same(true, $marketing->fetch(), 'Warm marketing cache');
     $same($count, count($requests), 'Warm marketing cache avoids request');

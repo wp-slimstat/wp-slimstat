@@ -133,7 +133,11 @@ test.describe('Native scroll on report panels — #156', () => {
     const panel=page.locator('#slim_p7_02 .inside');
     for(const dir of ['ltr','rtl']) {
       await page.evaluate(dir=>{document.documentElement.dir=dir;document.body.classList.toggle('rtl',dir==='rtl');},dir);
-      await panel.evaluate(el=>window.scrollTo(0,el.getBoundingClientRect().top+scrollY-180));
+      await panel.evaluate(el=>{
+        // Empty Free reports make the page shorter. Leave room below the viewport to test handoff.
+        const maxScroll=document.documentElement.scrollHeight-innerHeight;
+        window.scrollTo(0,Math.min(el.getBoundingClientRect().top+scrollY-180,maxScroll-150));
+      });
       expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
       const box=(await panel.boundingBox())!;
       await page.mouse.move(box.x+box.width/2,box.y+50);

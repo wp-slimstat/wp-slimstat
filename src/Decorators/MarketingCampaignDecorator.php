@@ -43,7 +43,8 @@ class MarketingCampaignDecorator
 
     public function getTextColor(): string
     {
-        $colors = ['dark' => '#202224', 'light' => '#ffffff', 'inherit' => '#ffffff'];
-        return \sanitize_hex_color($this->text('text_color')) ?: ($colors[$this->text('text_color')] ?? '#ffffff');
+        $default = 'warning' === $this->text('background_color') ? '#202224' : '#ffffff';
+        $colors = ['dark' => '#202224', 'light' => '#ffffff', 'inherit' => $default];
+        return \sanitize_hex_color($this->text('text_color')) ?: ($colors[$this->text('text_color')] ?? $default);
     }
 }

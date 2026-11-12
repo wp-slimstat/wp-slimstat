@@ -11,6 +11,7 @@ class MarketingCampaign extends HorizonFetcher
     protected const LOCK = 'slimstat_marketing_campaign_execution_lock';
     protected const OPTION = 'wp_slimstat_marketing_campaigns';
     protected const ENDPOINT = 'marketing-campaigns';
+    protected const INTERVAL = HOUR_IN_SECONDS;
     protected const RETRY_HOOK = 'slimstat_initial_marketing_campaign_fetch';
     protected const TYPE = 'promo_banner';
 

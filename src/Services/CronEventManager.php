@@ -12,6 +12,7 @@ class CronEventManager
 	{
 		Event::schedule('slimstat_daily_cron_hook', time(), 'daily', [$this, 'handleDailyTasks']);
 		Event::schedule('slimstat_notifications_cron_hook', time(), 'hourly', [$this, 'handleInitialFetch']);
+		\add_action('slimstat_notifications_cron_hook', [$this, 'fetchMarketingCampaign']);
 
 		// Register handler for initial fetch event
 		\add_action('slimstat_initial_notification_fetch', [$this, 'handleInitialFetch']);
@@ -29,7 +30,7 @@ class CronEventManager
 	}
 
 	/**
-	 * Bootstrap once, including a successful empty feed. The daily job refreshes thereafter.
+	 * Bootstrap once, including a successful empty feed. The hourly job refreshes thereafter.
 	 * Uses a transient lock to prevent repeated scheduling and avoid race conditions.
 	 * This defers the HTTP request to avoid blocking the current page load.
 	 */
