@@ -5,6 +5,12 @@
 .notice.slimstat-notice.notice-error:not(.slimstat-pro-license-notice){border-color:#e9b4ae;background:#fcebea}
 .notice.slimstat-notice.notice-success:not(.slimstat-pro-license-notice){border-color:#a7cdb5;background:#f0f8f3}
 .slimstat-notice p{unicode-bidi:plaintext}
+/* Report notices share the cards' edges instead of WordPress's default 15px inset. */
+.wrap-slimstat>.notice.slimstat-notice{margin:16px 0 20px}
+.wrap-slimstat>.notice.slimstat-notice>p{margin:0;padding:0}
+.wrap-slimstat>.notice.slimstat-notice>p+p{margin-top:8px}
+.rtl .wrap-slimstat>.notice.slimstat-notice>p{text-align:right}
+.wrap-slimstat>.notice.slimstat-notice .notice-dismiss{inset-inline:auto 2px;top:2px;width:44px;height:44px;padding:12px}
 .slimstat-release-bar{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:8px 18px;margin:12px 0;padding-block:12px;padding-inline:16px 48px;border:1px solid #c5d9ed;border-radius:8px;background:#f0f6fc;color:#1d2327;box-shadow:none;font-size:13px;line-height:1.5}
 .slimstat-release-bar>strong{flex-basis:100%;font-size:14px}.slimstat-release-bar nav{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;flex:1}
 .slimstat-release-bar a{color:#2271b1;text-decoration:underline;text-underline-offset:3px}.slimstat-release-bar a:hover{color:#135e96}.slimstat-release-bar__pro{font-weight:600}
