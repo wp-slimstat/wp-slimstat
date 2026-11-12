@@ -501,6 +501,20 @@ body.index-php {
   float: none;
 }
 
+/* Mixed-language labels choose their own direction, independently of the admin page. */
+.wrap-slimstat .postbox .slimstat-filter-link > [dir="auto"] {
+  .slimstat-flag-icon,
+  .slimstat-browser-icon,
+  span.slimstat-flag-container {
+    float: none !important;
+    display: inline-block;
+    margin: 0 !important;
+    margin-inline-end: 10px !important;
+    vertical-align: middle;
+    transform: none;
+  }
+}
+
 [id^="slim_"] p span.slimstat-pagination-range,
 [id^="slim_"] p span.refresh-countdown {
   float: none;

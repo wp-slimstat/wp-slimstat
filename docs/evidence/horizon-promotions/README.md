@@ -21,3 +21,5 @@ The audit covered the seven report pages, Heatmaps, AI Analysis, Email Report, S
 `browscap-ltr-*` and `browscap-rtl-*` show the real Browscap installation notice on Overview. It aligns with the report cards, keeps 16 px above and 20 px below, and has a 44 px dismiss target. Spacing and keyboard dismissal were checked at 1440, 768, 390 and 320 px in both locales.
 
 `goals-ltr-*` and `goals-rtl-*` show the corrected Goals subtitle alignment, isolated English punctuation and clear spacing above Copy Prompt/AI Analysis. The goal and its traffic are local fixtures. Website-link attribution was checked on all 22 SlimStat screens in both languages.
+
+`report-icons-ltr.png` and `report-icons-rtl.png` show mixed-language country labels after the final spacing correction. Icons follow the label's own `dir="auto"`, with an equal gap beside English and Persian text regardless of the page direction. These captures use the real sale dates: before November 20, the normal header is visible and no Black Friday offer or sale link is rendered.

@@ -114,3 +114,38 @@ test('long alert copy and actions stay visible in both directions and on phones'
     }
   }
 });
+
+test('report icons keep their spacing beside English and Persian labels in either page direction', async ({ page }) => {
+  await page.goto('/wp-admin/admin.php?page=slimview2');
+  await page.locator('.postbox .inside').first().evaluate(el => {
+    for (const icon of ['slimstat-flag-icon', 'slimstat-browser-icon']) {
+      for (const label of ['Germany', 'ایران']) {
+        const row = document.createElement('p');
+        row.className = 'slimstat-tooltip-trigger';
+        row.innerHTML = `<a class="slimstat-filter-link"><span dir="auto"><img class="${icon}" src="../wp-content/plugins/wp-slimstat/admin/assets/images/flags/de.svg" alt="">${label}</span></a>`;
+        row.dataset.spacingProbe = 'true';
+        el.append(row);
+      }
+    }
+  });
+  for (const width of [1440, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const direction of ['ltr', 'rtl']) {
+      await page.evaluate(dir => {
+        document.documentElement.dir = dir;
+        document.body.classList.toggle('rtl', dir === 'rtl');
+      }, direction);
+      const gaps = await page.locator('[data-spacing-probe] span[dir="auto"]').evaluateAll(labels => labels.map(label => {
+        const image = label.querySelector('img')!.getBoundingClientRect();
+        const range = document.createRange();
+        range.selectNodeContents(label.lastChild!);
+        const text = range.getBoundingClientRect();
+        return getComputedStyle(label).direction === 'rtl' ? image.left - text.right : text.left - image.right;
+      }));
+      for (const gap of gaps) {
+        expect(gap, `${direction} at ${width}px`).toBeGreaterThanOrEqual(6);
+        expect(gap, `${direction} at ${width}px`).toBeLessThanOrEqual(12);
+      }
+    }
+  }
+});
