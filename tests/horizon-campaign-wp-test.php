@@ -71,7 +71,7 @@ try {
     }
     $explicit = new \SlimStat\Decorators\MarketingCampaignDecorator(['background_color' => 'warning', 'text_color' => '#123456']);
     $same('#123456', $explicit->getTextColor(), 'Explicit valid text color is preserved');
-    $destination = 'https://wp-slimstat.com/pricing/?coupon=BFCM2026&utm_campaign=bfcm2026#plans';
+    $destination = 'https://wp-slimstat.com/black-friday/?coupon=BFCM2026&utm_campaign=bfcm2026#plans';
     $link = new \SlimStat\Decorators\MarketingCampaignDecorator(['id' => 12, 'url' => $destination]);
     wp_parse_str(wp_parse_url($link->getUrl(), PHP_URL_QUERY), $attribution);
     $same(['coupon' => 'BFCM2026', 'utm_campaign' => 'bfcm2026', 'utm_source' => 'wp-slimstat', 'utm_medium' => 'link', 'utm_content' => 'header-banner-12'], $attribution, 'Header attribution preserves campaign and coupon');

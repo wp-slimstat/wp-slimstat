@@ -44,7 +44,7 @@ class BlackFriday2026Test extends IntegrationTestCase
         foreach (['role="region"', 'aria-label="Black Friday offer"', 'Black Friday: 30% off SlimStat Pro', '<code class="slimstat-bf26__code" dir="ltr">BFCM2026</code>', 'Copy code', 'aria-label="Dismiss Black Friday offer"', 'role="status"', 'Ends December 1 at 23:59 UTC.', 'target="_blank"', 'rel="noopener"', '(opens in a new tab)', 'data-slimstat-bf26-ajax="https://example.test/wp-admin/admin-ajax.php"', 'data-slimstat-bf26-nonce="nonce:slimstat_bf2026_dismiss"', 'data-slimstat-bf26-error="Could not save dismissal. Try again."'] as $value) {
             $this->assertStringContainsString($value, $html);
         }
-        $this->assertStringContainsString('href="https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=bf-2026&utm_content=banner"', $html);
+        $this->assertStringContainsString('href="https://wp-slimstat.com/black-friday/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=bfcm2026&utm_content=banner"', $html);
         $this->assertStringNotContainsString('class="notice', $html, 'the SlimStat-screen strip is not a core notice, so common.js leaves it in place');
         $this->assertStringNotContainsString('$', $html, 'no dollar prices');
         $this->assertStringNotContainsString('—', $html, 'no em dashes');

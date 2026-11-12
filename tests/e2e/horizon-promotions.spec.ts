@@ -26,10 +26,10 @@ test.afterAll(closeDb);
 test('website links carry attribution while feed campaigns and other destinations stay intact', async ({page}) => {
   runWordPressFixture(`<?php
   $feed=get_option('wp_slimstat_marketing_campaigns');
-  $feed['data'][0]['data']['url']='https://wp-slimstat.com/pricing/?coupon=BFCM2026&utm_campaign=bfcm2026#plans';
+  $feed['data'][0]['data']['url']='https://wp-slimstat.com/black-friday/?coupon=BFCM2026&utm_campaign=bfcm2026#plans';
   update_option('wp_slimstat_marketing_campaigns',$feed,false);
   $feed=get_option('wp_slimstat_notifications');
-  $feed['data'][0]['primary_button']['url']='https://wp-slimstat.com/pricing/';
+  $feed['data'][0]['primary_button']['url']='https://wp-slimstat.com/black-friday/?utm_campaign=bfcm2026';
   update_option('wp_slimstat_notifications',$feed,false);
   `);
   await page.goto('/wp-admin/admin.php?page=slimview1');
@@ -37,10 +37,12 @@ test('website links carry attribution while feed campaigns and other destination
   if (await banner.count()) {
     const url=new URL((await banner.getAttribute('href'))!);
     expect(Object.fromEntries(url.searchParams)).toMatchObject({coupon:'BFCM2026',utm_campaign:'bfcm2026',utm_source:'wp-slimstat',utm_medium:'link',utm_content:'header-banner-902604'});
+    expect(url.pathname).toBe('/black-friday/');
     expect(url.hash).toBe('#plans');
   }
   const notification=new URL((await page.locator('#tab-1 .slimstat-notification-sidebar__button').getAttribute('href'))!);
-  expect(Object.fromEntries(notification.searchParams)).toMatchObject({utm_source:'wp-slimstat',utm_medium:'link',utm_campaign:'notifications',utm_content:'primary-902601'});
+  expect(Object.fromEntries(notification.searchParams)).toMatchObject({utm_source:'wp-slimstat',utm_medium:'link',utm_campaign:'bfcm2026',utm_content:'primary-902601'});
+  expect(notification.pathname).toBe('/black-friday/');
   await page.evaluate(()=>{
     const root=document.querySelector('.wrap-slimstat')!;
     for (const [id,href] of Object.entries({docs:'https://wp-slimstat.com/resources/?q=report#help',existing:'https://wp-slimstat.com/videos/?utm_source=horizon&utm_medium=email&utm_campaign=existing&utm_content=video#watch',other:'https://wp-slimstat.com.example.test/',local:'/wp-admin/admin.php?page=slimconfig'})) {

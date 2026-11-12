@@ -131,6 +131,11 @@ test.describe('Native scroll on report panels — #156', () => {
     await page.setViewportSize({width:390,height:900});
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`);
     const panel=page.locator('#slim_p7_02 .inside');
+    // Deferred reports shrink after their empty states load. Settle them before measuring page bounds.
+    for (const report of await page.locator('[id^="slim_p"] .inside:visible').all()) {
+      await report.scrollIntoViewIfNeeded();
+      await expect(report.locator('.loading')).toHaveCount(0);
+    }
     for(const dir of ['ltr','rtl']) {
       await page.evaluate(dir=>{document.documentElement.dir=dir;document.body.classList.toggle('rtl',dir==='rtl');},dir);
       await panel.evaluate(el=>{
@@ -140,7 +145,7 @@ test.describe('Native scroll on report panels — #156', () => {
       });
       expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
       const box=(await panel.boundingBox())!;
-      await page.mouse.move(box.x+box.width/2,box.y+50);
+      await page.mouse.move(box.x+box.width/2,box.y+Math.min(50,box.height/2));
       const start=await page.evaluate(()=>scrollY);
       await expect.poll(async()=>{await page.mouse.wheel(0,100);return page.evaluate(()=>scrollY);}).toBeGreaterThan(start+20);
       const down=await page.evaluate(()=>scrollY);

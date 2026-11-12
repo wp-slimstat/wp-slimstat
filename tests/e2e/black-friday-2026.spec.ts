@@ -108,7 +108,7 @@ test.describe('Black Friday 2026 strip', () => {
       await page.goto(url);
       await expect(strip(page), url).toBeVisible();
       await expect(releaseNotice(page), `${url}: the strip takes the release bar's slot`).toHaveCount(0);
-      await expect(strip(page).getByRole('link', { name: /See Black Friday pricing/ })).toHaveAttribute('href', 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=bf-2026&utm_content=banner');
+      await expect(strip(page).getByRole('link', { name: /See Black Friday pricing/ })).toHaveAttribute('href', 'https://wp-slimstat.com/black-friday/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=bfcm2026&utm_content=banner');
     }
     await page.goto(DASHBOARD);
     await expect(strip(page)).toBeVisible();

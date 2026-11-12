@@ -63,7 +63,7 @@ final class BlackFriday2026
 		<button type="button" class="slimstat-bf26__copybtn" data-slimstat-bf26-copied="<?php echo esc_attr(__('Copied', 'wp-slimstat')); ?>" data-slimstat-bf26-selected="<?php echo esc_attr(__('Code selected', 'wp-slimstat')); ?>"><?php echo esc_html(__('Copy code', 'wp-slimstat')); ?></button>
 		<span class="screen-reader-text" role="status"></span>
 	</div>
-	<a class="slimstat-bf26__cta" href="<?php echo esc_url(ProLinks::url('bf-2026', $dashboard ? 'dashboard' : 'banner')); ?>" target="_blank" rel="noopener"><?php echo esc_html(__('See Black Friday pricing', 'wp-slimstat')); ?><span class="screen-reader-text"> <?php echo esc_html(__('(opens in a new tab)', 'wp-slimstat')); ?></span></a>
+	<a class="slimstat-bf26__cta" href="<?php echo esc_url(ProLinks::tag('https://wp-slimstat.com/black-friday/', 'bfcm2026', $dashboard ? 'dashboard' : 'banner')); ?>" target="_blank" rel="noopener"><?php echo esc_html(__('See Black Friday pricing', 'wp-slimstat')); ?><span class="screen-reader-text"> <?php echo esc_html(__('(opens in a new tab)', 'wp-slimstat')); ?></span></a>
 	<button type="button" class="slimstat-bf26__dismiss" aria-label="<?php echo esc_attr(__('Dismiss Black Friday offer', 'wp-slimstat')); ?>"><span aria-hidden="true">&times;</span></button>
 </div>
 		<?php
