@@ -6,6 +6,7 @@ import FingerprintJS from "@fingerprintjs/fingerprintjs";
  * NOTE: Legacy browsers still supported via simple polyfills below.
  */
 // eslint-disable-next-line no-var
+var OFFLINE_MAX_AGE = 30 * 60 * 1000;
 var SlimStat = (function () {
     var BASE64_KEY_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-";
     var fingerprintHash = "";
@@ -1720,11 +1721,11 @@ var SlimStat = (function () {
     // No internal banner or consent UI is provided
 
     // -------------------------- Offline Data Handling -------------------------- //
-    function storeOffline(payload) {
+    function storeOffline(payload, recordedAt) {
         try {
             var offline = loadOfflineQueue();
             if (!offline.some(function (item) { return item.p === payload; })) {
-                offline.push({ p: payload, t: Date.now() });
+                offline.push({ p: payload, t: recordedAt === undefined ? Date.now() : recordedAt });
                 saveOfflineQueue(offline);
             }
         } catch (e) {
@@ -1734,12 +1735,17 @@ var SlimStat = (function () {
 
     function offlineReplays() {
         var pending = loadSessionState(OFFLINE_REPLAY_KEY, []);
-        return Array.isArray(pending) ? pending : [];
+        if (!Array.isArray(pending)) return [];
+        var recent = pending.filter(function (entry) { return entry && typeof entry.t === "number" && Date.now() - entry.t <= OFFLINE_MAX_AGE; });
+        if (recent.length !== pending.length) saveSessionState(OFFLINE_REPLAY_KEY, recent);
+        return recent;
     }
 
     function settleOfflineReplay(original, retry) {
         if (retry) {
-            storeOffline(original);
+            var entry = offlineReplays().filter(function (item) { return item.p === original; })[0];
+            if (!entry) return;
+            storeOffline(original, entry.t);
             if (!loadOfflineQueue().some(function (entry) { return entry && entry.p === original; })) return;
         }
         saveSessionState(OFFLINE_REPLAY_KEY, offlineReplays().filter(function (entry) { return entry && entry.p !== original; }));
@@ -1778,9 +1784,9 @@ var SlimStat = (function () {
 
                     // A tab-owned durable copy survives reload without another tab replaying it.
                     // shortcut: cross-tab crash recovery and exactly-once delivery need server idempotency.
-                    (function (original, replay) {
+                    (function (original, replay, recordedAt) {
                         var pending = offlineReplays();
-                        pending.push({ p: replay });
+                        pending.push({ p: replay, t: recordedAt });
                         if (!saveSessionState(OFFLINE_REPLAY_KEY, pending)) return;
                         saveOfflineQueue(loadOfflineQueue().filter(function (entry) { return !entry || entry.p !== original; }));
                         if (loadOfflineQueue().some(function (entry) { return entry && entry.p === original; })) {
@@ -1798,7 +1804,7 @@ var SlimStat = (function () {
                             onComplete: complete,
                         });
                         if (!queued) complete(false, false);
-                    })(item.p, payload);
+                    })(item.p, payload, item.t);
                     sent++;
                 }
             }
@@ -1932,7 +1938,12 @@ if (!window.requestIdleCallback) {
             var raw = localStorage.getItem(OFFLINE_KEY);
             if (!raw) return [];
             var arr = JSON.parse(raw);
-            return Array.isArray(arr) ? arr : [];
+            if (!Array.isArray(arr)) return [];
+            var recent = arr.filter(function (entry) {
+                return entry && typeof entry.p === "string" && typeof entry.t === "number" && Date.now() - entry.t <= OFFLINE_MAX_AGE;
+            });
+            if (recent.length !== arr.length) saveOfflineQueue(recent);
+            return recent;
         } catch (e) {
             return [];
         }

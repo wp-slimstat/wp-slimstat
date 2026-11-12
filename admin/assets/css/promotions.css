@@ -37,6 +37,9 @@
 .slimstat-pro-license-notice__actions{display:flex;flex-wrap:wrap;gap:8px}
 /* SlimStat screens have no .wrap, so WordPress's 15px notice inset would misalign it with the reports. */
 .wrap-slimstat .slimstat-pro-license-notice{margin:0 0 20px}
+.notice.slimstat-custom-db-notice{padding-inline-end:40px}
+.slimstat-custom-db-notice>p:first-child::before{content:"\f17e";content:"\f17e"/""}
+.notice-info.slimstat-custom-db-notice,.notice-success.slimstat-custom-db-notice{--slimstat-tone:oklch(49% .08 235);border-color:oklch(84% .035 235);background:oklch(97.6% .012 235)}
 .slimstat-pro-adds .slimstat-upgrade-action,.wrap-slimstat .slimstat-upgrade-action{background:#bc2442;border-color:#bc2442;color:#fff7f9;white-space:normal;text-align:center}
 .slimstat-pro-adds .slimstat-upgrade-action:hover,.wrap-slimstat .slimstat-upgrade-action:hover{background:#98203a;border-color:#98203a;color:#fff7f9}
 .slimstat-preview{position:relative;overflow:hidden;width:100%;box-sizing:border-box;min-height:140px}

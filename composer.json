@@ -277,7 +277,13 @@
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:geolocation-diagnostics": "php tests/geolocation-diagnostics-test.php",
+    "test:tracker-unavailable": "php tests/tracker-unavailable-test.php",
+    "test:dismissible-notice": "php tests/dismissible-notice-test.php",
+    "test:custom-db-notice": "php tests/custom-db-notice-test.php",
     "test:source-level": [
+      "@test:tracker-unavailable",
+      "@test:dismissible-notice",
+      "@test:custom-db-notice",
       "@test:geolocation-diagnostics",
       "@test:front-end-option-budget",
       "@test:dashboard-widget-queue",

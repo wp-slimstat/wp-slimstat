@@ -139,7 +139,8 @@ check(['index.php', 'plugins.php'] === $pages[1] && false === strpos($gate, 'sli
 $dismiss = read_or_die('admin/assets/js/promotions.js');
 check(false !== strpos($dismiss, "action: 'slimstat_notice_latest_news'") && false !== strpos($dismiss, 'security: bar.dataset.dismissNonce'), 'Release notice: dismissal posts the shared nonce-protected AJAX action');
 check(false !== strpos($admin, "wp_create_nonce('meta-box-order')") && false !== strpos($admin, 'self::enqueue_promotions();'), 'Release notice: rendered bar has its dismiss nonce and shared script');
-check(false !== strpos($dismiss, "closest('.slimstat-release-dismiss')") && false === strpos($dismiss, 'notice-dismiss'), 'Release notice: its dedicated button cannot trigger core notice handlers');
+preg_match('/<button[^>]*class="[^"]*slimstat-release-dismiss[^"]*"/', $admin, $release_button);
+check(false !== strpos($dismiss, "closest('.slimstat-release-dismiss')") && !empty($release_button) && false === strpos($release_button[0], 'notice-dismiss'), 'Release notice: its dedicated button cannot trigger core notice handlers');
 check(false !== strpos(read_or_die('admin/view/partials/header.php'), "show_latest_news(null, null, null, 'bar')"), 'Release bar: shared header renders it across SlimStat pages');
 check(false !== strpos(read_or_die('src/Migration/MigrationService.php'), 'public static function manager(): ?MigrationManager'), 'Release notice: MigrationService exposes the manager so the notice can wait for migrations');
 // Plugin Check (WordPress.Security.EscapeOutput) flags `echo $var` even when $var holds escaped

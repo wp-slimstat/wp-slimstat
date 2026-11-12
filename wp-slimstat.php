@@ -695,6 +695,8 @@ class wp_slimstat
 
     const DEGRADATION_OPERATIONAL = 'operational';
 
+    const DEGRADATION_TRACKING = 'tracking';
+
     /**
      * Record a fail-soft degradation so it is visible WITHOUT WP_DEBUG.
      *
@@ -722,7 +724,6 @@ class wp_slimstat
     public static function record_degradation($step, $e, $severity = self::DEGRADATION_LOAD)
     {
         $message = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
-        self::log(sprintf('SlimStat: %s failed: %s', $step, $message), 'error');
 
         $message = substr($message, 0, 200);
         $now     = time();
@@ -731,12 +732,15 @@ class wp_slimstat
         // Same failure, recorded recently → nothing new to say, skip the write.
         if (isset($stored[$step]['message'], $stored[$step]['time'])
             && $stored[$step]['message'] === $message
+            && ($stored[$step]['severity'] ?? self::DEGRADATION_LOAD) === $severity
             && ($now - (int) $stored[$step]['time']) < self::DEGRADATION_REFRESH
         ) {
             return;
         }
 
-        $stored[$step] = ['message' => $message, 'time' => $now, 'severity' => $severity];
+        self::log(sprintf('SlimStat: %s failed: %s', $step, $message), 'error');
+        $since = $stored[$step]['since'] ?? $stored[$step]['time'] ?? $now;
+        $stored[$step] = ['message' => $message, 'time' => $now, 'since' => $since, 'severity' => $severity];
         // autoload=false, and it is not cosmetic (C34). Without the third argument this
         // option joins the `alloptions` blob and is fetched on EVERY request — on exactly
         // the sites already unhealthy enough to be recording degradations. It is read only
@@ -771,9 +775,8 @@ class wp_slimstat
     }
 
     /**
-     * Currently-true degradations, newest first. Records past DEGRADATION_TTL are
-     * filtered out here so a healed failure stops being reported immediately, even
-     * before reconcile_degradations() prunes the stored option.
+     * Currently-true degradations. Pending tracking schema recovery survives the
+     * notice TTL until reconciliation verifies it; other old failures expire.
      *
      * @return array<string,array>
      */
@@ -785,11 +788,13 @@ class wp_slimstat
         }
 
         $cutoff  = time() - self::DEGRADATION_TTL;
-        $current = array_filter($stored, static function ($record) use ($cutoff) {
-            return isset($record['time']) && (int) $record['time'] >= $cutoff;
-        });
+        $current = array_filter($stored, static function ($record, $step) use ($cutoff) {
+            $pending_schema = ($record['severity'] ?? '') === self::DEGRADATION_TRACKING
+                && in_array($step, ['activation', 'schema upgrade'], true);
+            return isset($record['time']) && ($pending_schema || (int) $record['time'] >= $cutoff);
+        }, ARRAY_FILTER_USE_BOTH);
 
-        // C34 — synthesised, not stored. Every recorded degradation expires after
+        // C34 — synthesised, not stored. Operational degradations expire after
         // DEGRADATION_TTL (3 h) while the purge runs twicedaily (12 h), so a purge failing on
         // every run was visible for 3 hours and invisible for 9. Deriving this from the
         // last-success stamp makes the durable fact — "it has not succeeded" — the one that
@@ -805,6 +810,7 @@ class wp_slimstat
                     gmdate('Y-m-d H:i', $last_ok) . ' UTC'
                 ),
                 'time'     => time(),
+                'since'    => $last_ok,
                 'severity' => self::DEGRADATION_OPERATIONAL,
             ];
         }

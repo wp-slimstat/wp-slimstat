@@ -71,6 +71,16 @@ foreach ($files as $file) {
     $tokens = token_get_all(slimstat_blank_comments($source, true));
     $count  = count($tokens);
 
+    // Table identifiers always come from WordPress, including legacy empty-prefix handles.
+    $code = slimstat_blank_comments($source, true);
+    $code = preg_replace('/\$GLOBALS\[\s*[\'"]wpdb[\'"]\s*\]\s*->\s*prefix/', '', $code);
+    $code = preg_replace('/(?<!::)\$wpdb\s*->\s*prefix/', '', $code);
+    $code = preg_replace('/\$this->coreWpdb\s*->\s*prefix/', '', $code);
+    if (preg_match('/->\s*prefix\b/', $code)) {
+        $failures[] = $rel . ': analytics handles must not supply table prefixes';
+    }
+
+
     $query_entry_types = slimstat_name_token_types();
 
     for ($i = 0; $i < $count; $i++) {

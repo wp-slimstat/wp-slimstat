@@ -8,6 +8,7 @@ namespace {
     define('SLIMSTAT_ANALYTICS_VERSION', '6.0.0');
     class wp_slimstat {
         public static $settings = [], $degraded = [], $saved = [], $persist = true;
+        const DEGRADATION_TRACKING = 'tracking';
         const DEGRADATION_OPERATIONAL = 'operational';
         public static function record_degradation($key, ...$args) { self::$degraded[$key] = $args; }
         public static function clear_degradation($key) { unset(self::$degraded[$key]); }
@@ -42,6 +43,9 @@ namespace {
             if (AdminCounterProbe::$method() !== ($result >= 0)) { throw new \RuntimeException('Counter failure was accepted'); }
             if ($result < 0 && (wp_slimstat::$settings['version'] !== '5.5.0' || wp_slimstat::$saved || !wp_slimstat::$degraded || $GLOBALS['flushed'])) {
                 throw new \RuntimeException('Failed counter stamped completion or lost degradation');
+            }
+            if ($result < 0 && end(wp_slimstat::$degraded)[1] !== 'tracking') {
+                throw new \RuntimeException('Counter failure must say tracking stopped');
             }
             if ($method === 'update_tables_and_options' && $GLOBALS['released'] !== ['schema-lock']) { throw new \RuntimeException('Upgrade claim was not released'); }
             if ($result >= 0 && $method === 'update_tables_and_options' && wp_slimstat::$settings['version'] !== '6.0.0') { throw new \RuntimeException('Successful upgrade never completes'); }
