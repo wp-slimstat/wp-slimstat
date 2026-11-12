@@ -219,4 +219,33 @@ class PagesTest extends WpSlimstatTestCase
 		Query::cachedPages(1, 999, 'mobile');
 		self::assertGreaterThan($count, count($this->queries), 'device is part of the key');
 	}
+
+	public function test_a_like_filter_hits_the_cache_in_the_next_request(): void
+	{
+		// PITFALLS 257: wpdb wraps every prepared LIKE value in a per-request marker.
+		$store = [];
+		Functions\when('get_current_blog_id')->justReturn(1);
+		Functions\when('wp_json_encode')->alias('json_encode');
+		Functions\when('get_transient')->alias(static function ($key) use (&$store) {
+			return $store[$key] ?? false;
+		});
+		Functions\when('set_transient')->alias(static function ($key, $value) use (&$store) {
+			$store[$key] = $value;
+			return true;
+		});
+		// Queries run on wp_slimstat::$wpdb; the global handle prepares LIKEs and supplies the prefix.
+		$GLOBALS['wpdb'] = new class {
+			public $prefix = 'wp_';
+			public $marker = '{a}';
+			public function remove_placeholder_escape($sql) { return str_replace($this->marker, '%', $sql); }
+		};
+
+		Query::cachedPages(1, 999, '', false, "t1.resource LIKE '{a}about{a}'");
+		$count = count($this->queries);
+		$GLOBALS['wpdb']->marker = '{b}';
+		Query::cachedPages(1, 999, '', false, "t1.resource LIKE '{b}about{b}'");
+		self::assertCount($count, $this->queries, 'the same filter under a new marker is a hit');
+		Query::cachedPages(1, 999, '', false, "t1.resource LIKE '{b}pricing{b}'");
+		self::assertGreaterThan($count, count($this->queries), 'a different filter misses');
+	}
 }

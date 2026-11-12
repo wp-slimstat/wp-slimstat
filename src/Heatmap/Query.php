@@ -142,7 +142,7 @@ final class Query
 	/**
 	 * The Heatmaps page list, cached until heatmap data changes, retention changes or
 	 * one minute passes. Legacy clicks keep arriving without a generation bump, so the page
-	 * offers Refresh.
+	 * offers Refresh. The scope is hashed without wpdb's per-request LIKE marker (PITFALLS 257).
 	 *
 	 * @param int $start Inclusive dt bound, in the dt column's local-time seconds.
 	 * @param int $end   Inclusive dt bound.
@@ -150,7 +150,7 @@ final class Query
 	 */
 	public static function cachedPages(int $start, int $end, string $device = '', bool $refresh = false, string $scope = '1=1'): array
 	{
-		$key       = 'slimstat_hm_pages_' . md5((string) wp_json_encode([get_current_blog_id(), $start, $end, $device, $scope, \wp_slimstat::report_scope()['cache']]));
+		$key       = 'slimstat_hm_pages_' . md5((string) wp_json_encode([get_current_blog_id(), $start, $end, $device, \SlimStat\Utils\Query::cacheHash($GLOBALS['wpdb'], $scope), \wp_slimstat::report_scope()['cache']]));
 		$signature = [2, (string) get_option(Store::GENERATION, ''), \wp_slimstat::$settings['auto_purge'] ?? 0, Store::ready()];
 		$cached    = $refresh ? null : get_transient($key);
 		if (is_array($cached) && ($cached['signature'] ?? null) === $signature && time() - (int) ($cached['data']['updated'] ?? 0) < MINUTE_IN_SECONDS) {

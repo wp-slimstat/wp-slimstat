@@ -27,10 +27,11 @@
 * **SlimStat Pro needs a valid license:** Pro features, in any Pro version, run only with a license that is valid and activated for this site. Otherwise one banner on SlimStat screens, the Dashboard and Plugins says why and links the fix; Pro settings and data are kept.
 
 **Faster**
-* The WordPress Dashboard loads quickly again on upgraded sites. ([#361](https://github.com/wp-slimstat/wp-slimstat/issues/361))
+* The WordPress Dashboard loads quickly again on upgraded sites, and SlimStat widgets appear as soon as their data arrives. ([#361](https://github.com/wp-slimstat/wp-slimstat/issues/361), [#408](https://github.com/wp-slimstat/wp-slimstat/issues/408))
 * Pageviews are sent as soon as the page is ready. ([#365](https://github.com/wp-slimstat/wp-slimstat/issues/365))
 * Nearby report widgets load up to three at a time, offscreen widgets load as you scroll, and historical reports reuse cached results.
 * Column migrations try the database's instant, metadata-only change first.
+* Report pages and the Dashboard no longer load the Settings code editor.
 
 **Dates and filters follow you**
 * Heatmaps keep the report's date range and apply shared filters to clicks and scroll data, and say which filters they cannot apply. AI Analysis, Email Reports, Shortcodes and Settings pass your dates and filters on to the next report.
@@ -44,6 +45,7 @@
 * Fully refunded WooCommerce orders show zero net sales, shipping and tax.
 * Heatmaps show page titles correctly, sample across pageviews, discard activity from before consent and count backdated clicks once. ([#369](https://github.com/wp-slimstat/wp-slimstat/issues/369), [#372](https://github.com/wp-slimstat/wp-slimstat/issues/372), [#373](https://github.com/wp-slimstat/wp-slimstat/issues/373), [#374](https://github.com/wp-slimstat/wp-slimstat/issues/374))
 * Reports that span midnight keep counts and top-list rankings exact, Pageviews charts include visits whose IP address is unavailable, and database errors no longer become cached empty reports.
+* Goal conversion rates for ranges that include today stay current and never pass 100%.
 
 **Upgrade with confidence**
 * Migration spots an incomplete visit-counter setup and offers a retry. ([#395](https://github.com/wp-slimstat/wp-slimstat/issues/395))

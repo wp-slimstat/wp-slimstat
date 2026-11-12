@@ -83,6 +83,11 @@ for (const stored of ['no', 'on']) {
       if (params.get('action') === 'slimstat_load_report') {
         responses.set(params.get('report_id')!, await response.text());
       }
+      // Free list widgets share one request; an id missing from it falls back to the single route above.
+      if (params.get('action') === 'slimstat_load_reports') {
+        const payload = await response.json().catch(() => null);
+        for (const [id, html] of Object.entries(payload?.data || {})) responses.set(id, html as string);
+      }
     });
     const response = await page.goto('/wp-admin/index.php');
     expect(await response!.text()).toContain('issue361-ledger:{"queries":0}');

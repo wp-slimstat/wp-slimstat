@@ -374,7 +374,8 @@ $wpdb->query('SET FOREIGN_KEY_CHECKS=1');
 echo $wpdb->get_var($wpdb->prepare('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', $t));`);
   const foreignKeys = () => runWordPressFixture(`<?php global $wpdb; echo $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME = %s', $wpdb->prefix . 'slim_stats'));`);
   const keysBefore = foreignKeys();
-  runWordPressFixture("<?php update_option('slimstat_ec_myisam_test_backup', get_option('slimstat_ecommerce_state', []), false); delete_option('slimstat_ecommerce_state');");
+  // Same guard as engine(): on a live DB the finally's engine() throws before the restore, and the next run backs up [] over the real state.
+  runWordPressFixture("<?php if (DB_NAME !== 'tests-wordpress') throw new RuntimeException('Disposable database required'); update_option('slimstat_ec_myisam_test_backup', get_option('slimstat_ecommerce_state', []), false); delete_option('slimstat_ecommerce_state');");
   try {
     // A conversion that silently did nothing would make this test pass for the wrong reason.
     expect(engine('MyISAM')).toBe('MyISAM');
