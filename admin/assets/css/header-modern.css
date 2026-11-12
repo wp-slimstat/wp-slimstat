@@ -322,7 +322,7 @@
 .slimstat-header__promo:focus { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-radius: 999px; background: var(--slimstat-promo-bg, #b91c32); color: var(--slimstat-promo-text, #ffffff); text-decoration: none; font-weight: 600; font-size: 13px; line-height: 20px; overflow-wrap: anywhere; }
 .slimstat-header__promo:focus-visible { outline: 2px solid #292d32; outline-offset: 3px; box-shadow: 0 0 0 2px #ffffff; }
 .slimstat-header__promo > span { min-width: 0; }
-.slimstat-header__promo > [aria-hidden] { flex-shrink: 0; }
+.slimstat-header__promo > [aria-hidden] { flex-shrink: 0; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
 @media (max-width: 600px) {
     .slimstat-header__actions { flex-wrap: wrap; }
     .slimstat-header__promo { max-width: 100%; box-sizing: border-box; }

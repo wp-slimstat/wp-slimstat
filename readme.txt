@@ -168,6 +168,11 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 == Changelog ==
 
+= Unreleased =
+
+* Scheduled sale notifications and header offers now follow their UTC start and end times, with a coupon copy action and an expiry countdown.
+* The header groups license and upgrade controls beside the logo, keeps offers next to notifications, and adapts to narrow screens and right-to-left languages.
+
 = 6.1.0 - 2026-11-08 =
 
 **Custom databases and upgrade notices**

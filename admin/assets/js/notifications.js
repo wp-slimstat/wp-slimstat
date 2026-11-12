@@ -171,8 +171,8 @@ jQuery(function ($) {
             }
         }
         if (cardId && !focused.isConnected) {
-            const replacement = sidebar.querySelector('[data-notification-id="' + CSS.escape(cardId) + '"] ' + control);
-            (replacement || sidebar.querySelector('.slimstat-notification-sidebar__close'))?.focus();
+            const replacement = sidebar.querySelector('.slimstat-notification-sidebar__tab-pane--active [data-notification-id="' + CSS.escape(cardId) + '"] ' + control);
+            (replacement && replacement.offsetParent !== null ? replacement : sidebar.querySelector('.slimstat-notification-sidebar__close'))?.focus();
         }
         updatePromotions();
     }

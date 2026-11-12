@@ -172,6 +172,21 @@ test('an initially empty inbox exposes dismiss all when a notice becomes visible
   await expect(page.locator('#tab-1')).toContainText('No notifications in your inbox.');
 });
 
+test('a dismissal from another tab returns focus to a visible control', async ({page}) => {
+  await page.clock.install();
+  await page.goto('/wp-admin/admin.php?page=slimview1');
+  await page.locator('.js-slimstat-open-notification').click();
+  const copy = page.locator('#tab-1 .slimstat-notification-sidebar__copy');
+  await copy.focus();
+  await page.clock.fastForward(61000);
+  await expect(copy).toBeFocused();
+  runWordPressFixture('<?php update_option("slimstat_notification_dismissed", [902601 => true], false);');
+  await page.clock.fastForward(61000);
+  await expect(copy).toHaveCount(0);
+  await expect(page.locator('#tab-2 .slimstat-notification-sidebar__copy')).toHaveCount(1);
+  await expect(page.locator('.slimstat-notification-sidebar__close')).toBeFocused();
+});
+
 test('a failed dismissal preserves the offer, explains the failure and allows a retry', async ({page}) => {
   await page.goto('/wp-admin/admin.php?page=slimview1');
   await page.locator('.js-slimstat-open-notification').click();

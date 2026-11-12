@@ -15,6 +15,7 @@ body.admin-bar .slimstat-notification-sidebar{top:32px;height:calc(100% - 32px)}
     border-bottom: 1px solid #424554;
 }
 .slimstat-notification-sidebar__promo .slimstat-notification-sidebar__card-icon { font-size: 32px; line-height: 1.2; margin: 0; }
+.slimstat-notification-sidebar__promo .slimstat-notification-sidebar__card-icon span { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
 .slimstat-notification-sidebar__promo .slimstat-notification-sidebar__card-body { width: 100%; min-width: 0; padding: 0; }
 .slimstat-notification-sidebar__promo .slimstat-notification-sidebar__card-title { color: #ffffff; font-size: 22px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
 .slimstat-notification-sidebar__promo .slimstat-notification-sidebar__card-content,
