@@ -1,3 +1,10 @@
+/* Shared SlimStat alerts retain their WordPress severity and dismiss controls. */
+.notice.slimstat-notice:not(.slimstat-pro-license-notice):not(.slimstat-release-notice){border:1px solid var(--ss-border,#e2e4e7);border-radius:8px;padding:12px 16px;box-shadow:none}
+.notice.slimstat-notice.is-dismissible:not(.slimstat-pro-license-notice):not(.slimstat-release-notice){padding-inline-end:48px}
+.notice.slimstat-notice.notice-warning:not(.slimstat-pro-license-notice){border-color:#e2c785;background:#fff8e5}
+.notice.slimstat-notice.notice-error:not(.slimstat-pro-license-notice){border-color:#e9b4ae;background:#fcebea}
+.notice.slimstat-notice.notice-success:not(.slimstat-pro-license-notice){border-color:#a7cdb5;background:#f0f8f3}
+.slimstat-notice p{unicode-bidi:plaintext}
 .slimstat-release-bar{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:8px 18px;margin:12px 0;padding-block:12px;padding-inline:16px 48px;border:1px solid #c5d9ed;border-radius:8px;background:#f0f6fc;color:#1d2327;box-shadow:none;font-size:13px;line-height:1.5}
 .slimstat-release-bar>strong{flex-basis:100%;font-size:14px}.slimstat-release-bar nav{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;flex:1}
 .slimstat-release-bar a{color:#2271b1;text-decoration:underline;text-underline-offset:3px}.slimstat-release-bar a:hover{color:#135e96}.slimstat-release-bar__pro{font-weight:600}
@@ -31,14 +38,23 @@
    Message and actions share a row when they fit; on a wrapped row the actions start under the text. */
 .notice.slimstat-pro-license-notice{--slimstat-tone:oklch(60% .13 70);position:relative;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding-block:12px;padding-inline:52px 16px;border:1px solid oklch(86% .09 82);border-radius:8px;background:oklch(97.6% .03 88)}
 .notice-error.slimstat-pro-license-notice{--slimstat-tone:oklch(53% .19 27);border-color:oklch(84% .08 22);background:oklch(97.4% .017 22)}
-.slimstat-pro-license-notice>p{margin:0;padding:0}.slimstat-pro-license-notice>p:first-child{flex:1 1 32em;max-inline-size:75ch}
-/* No block offset: the lock keeps the static position of the message's first line however the row wraps. */
-.slimstat-pro-license-notice>p:first-child::before{content:"\f160";content:"\f160"/"";position:absolute;inset-inline-start:17px;color:var(--slimstat-tone);font:20px/1 dashicons}
+.slimstat-pro-license-notice>p{margin:0;padding:0}
+.slimstat-alert-content{flex:1 1 32em;min-width:0;max-inline-size:75ch;text-align:inherit;overflow-wrap:anywhere}
+.rtl .slimstat-alert-content{text-align:right}
+.rtl .slimstat-alert-content ul{direction:rtl}
+.slimstat-alert-content p{margin:0;padding:0;max-inline-size:75ch}
+.slimstat-alert-content ul{margin-block:12px 0;margin-inline:1.25em 0}
+.slimstat-alert-content li:last-child{margin-bottom:0}
+.slimstat-alert-content code{direction:ltr;unicode-bidi:isolate;overflow-wrap:anywhere}
+/* Keep the leading icon anchored to the first line, including long diagnostic lists. */
+.slimstat-pro-license-notice::before{content:"\f160";content:"\f160"/"";position:absolute;inset-inline-start:17px;top:16px;color:var(--slimstat-tone);font:20px/1 dashicons}
 .slimstat-pro-license-notice__actions{display:flex;flex-wrap:wrap;gap:8px}
 /* SlimStat screens have no .wrap, so WordPress's 15px notice inset would misalign it with the reports. */
 .wrap-slimstat .slimstat-pro-license-notice{margin:0 0 20px}
-.notice.slimstat-custom-db-notice{padding-inline-end:40px}
-.slimstat-custom-db-notice>p:first-child::before{content:"\f17e";content:"\f17e"/""}
+.notice.slimstat-custom-db-notice{padding-inline-end:48px}
+.slimstat-pro-license-notice .notice-dismiss{inset-inline-end:2px;top:2px;width:40px;height:40px;padding:10px}
+@media(max-width:600px){.notice.slimstat-pro-license-notice{padding-inline-start:44px;gap:12px}.slimstat-pro-license-notice::before{inset-inline-start:12px}.slimstat-pro-license-notice__actions{flex-basis:100%}.slimstat-pro-license-notice__actions .button{min-height:44px;white-space:normal;text-align:center}.slimstat-pro-license-notice .notice-dismiss{width:44px;height:44px}}
+.slimstat-custom-db-notice::before{content:"\f17e";content:"\f17e"/""}
 .notice-info.slimstat-custom-db-notice,.notice-success.slimstat-custom-db-notice{--slimstat-tone:oklch(49% .08 235);border-color:oklch(84% .035 235);background:oklch(97.6% .012 235)}
 .slimstat-pro-adds .slimstat-upgrade-action,.wrap-slimstat .slimstat-upgrade-action{background:#bc2442;border-color:#bc2442;color:#fff7f9;white-space:normal;text-align:center}
 .slimstat-pro-adds .slimstat-upgrade-action:hover,.wrap-slimstat .slimstat-upgrade-action:hover{background:#98203a;border-color:#98203a;color:#fff7f9}

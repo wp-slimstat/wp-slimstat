@@ -209,7 +209,7 @@ final class ProLicense
 		$links = self::links();
 		// A wrong key, or one not activated here, is an error; a missing key, an outage or an outdated Pro is a warning.
 		$tone = $links && class_exists(self::CLIENT) && in_array(self::state(), ['invalid', 'domain_not_activated'], true) ? 'error' : 'warning';
-		echo '<div class="notice notice-' . esc_attr($tone) . ' slimstat-notice slimstat-pro-license-notice" role="status"><p>' . wp_kses($message, ['a' => ['href' => true], 'strong' => []]) . '</p>';
+		echo '<div class="notice notice-' . esc_attr($tone) . ' slimstat-notice slimstat-pro-license-notice" role="status"><div class="slimstat-alert-content" dir="auto"><p>' . wp_kses($message, ['a' => ['href' => true], 'strong' => []]) . '</p></div>';
 		if ($links) {
 			echo '<p class="slimstat-pro-license-notice__actions">';
 			foreach ($links as $i => [$label, $url, $external]) {

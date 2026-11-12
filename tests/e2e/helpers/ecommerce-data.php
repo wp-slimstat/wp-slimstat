@@ -152,6 +152,26 @@ $same(20.0, array_sum(array_column($data['series']['previous'], 'net')), 'Chart 
 $same(120, array_sum(array_column($data['series']['current'], 'visits')), 'Chart eligible visit denominator');
 $same(1, array_sum(array_column($data['series']['current'], 'buyers')), 'Chart counts buying visits once');
 $same(['visits' => 120, 'products' => 120, 'carts' => 1, 'checkouts' => 1, 'buyers' => 1, 'completed' => 1], $data['journey'], 'Ordered journey and distinct converting visits');
+// Localized chart labels must not be reused by an administrator in another locale.
+$labelLocale = 'en_US';
+$localeFilter = static function () use (&$labelLocale) { return $labelLocale; };
+$dateFilter = static function ($date) use (&$labelLocale) { return $labelLocale . ':' . $date; };
+add_filter('determine_locale', $localeFilter);
+add_filter('wp_date', $dateFilter);
+Integration::invalidate();
+try {
+    $english = $reportData();
+    $same(true, strpos($english['series']['current'][0]['short'], 'en_US:') === 0, 'English chart labels');
+    $labelLocale = 'fa_IR';
+    $persian = $reportData();
+    $same(true, strpos($persian['series']['current'][0]['short'], 'fa_IR:') === 0, 'Chart cache follows the current locale');
+    $labelLocale = 'en_US';
+    $same($english['series'], $reportData()['series'], 'English chart cache remains reusable');
+} finally {
+    remove_filter('determine_locale', $localeFilter);
+    remove_filter('wp_date', $dateFilter);
+    Integration::invalidate();
+}
 $same(115000000, array_sum(array_map(static function ($row) { return Money::units($row['net']); }, $data['groups']['channel'])), 'Channel reconciliation');
 wp_slimstat_db::$filters_normalized['columns']['utm_source'] = ['equals', 'google'];
 $filtered = $reportData();

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-12T09:26:22+00:00\n"
+"POT-Creation-Date: 2026-11-12T10:48:37+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -6257,6 +6257,22 @@ msgstr ""
 #: admin/view/wp-slimstat-reports.php:992
 #: admin/assets/js/country-cities.js:135
 msgid "Top Cities"
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1189
+msgid "Last page"
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1193
+msgid "Next page"
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1197
+msgid "Previous page"
+msgstr ""
+
+#: admin/view/wp-slimstat-reports.php:1200
+msgid "First page"
 msgstr ""
 
 #. translators: 1: first displayed row, 2: last displayed row, 3: total row count.

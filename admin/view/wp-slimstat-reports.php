@@ -1186,22 +1186,22 @@ class wp_slimstat_reports
             if ($startpoint == $_count_all_results) {
                 $startpoint -= $_results_per_page;
             }
-            $pagination_buttons .= '<a class="refresh slimstat-font-angle-double-' . $direction_next . '" href="' . wp_slimstat_reports::fs_url('start_from equals ' . $startpoint) . '"></a> ';
+            $pagination_buttons .= '<a aria-label="' . esc_attr__('Last page', 'wp-slimstat') . '" class="refresh slimstat-font-angle-double-' . $direction_next . '" href="' . wp_slimstat_reports::fs_url('start_from equals ' . $startpoint) . '"></a> ';
         }
         if ($endpoint < $_count_all_results && $_count_page_results > 0) {
             $startpoint = $effective_start + $_results_per_page;
-            $pagination_buttons .= '<a class="refresh slimstat-font-angle-' . $direction_next . '" href="' . wp_slimstat_reports::fs_url('start_from equals ' . $startpoint) . '"></a> ';
+            $pagination_buttons .= '<a aria-label="' . esc_attr__('Next page', 'wp-slimstat') . '" class="refresh slimstat-font-angle-' . $direction_next . '" href="' . wp_slimstat_reports::fs_url('start_from equals ' . $startpoint) . '"></a> ';
         }
         if ($effective_start > 0) {
             $startpoint = ($effective_start > $_results_per_page) ? $effective_start - $_results_per_page : 0;
-            $pagination_buttons .= '<a class="refresh slimstat-font-angle-' . $direction_prev . '" href="' . wp_slimstat_reports::fs_url('start_from equals ' . $startpoint) . '"></a> ';
+            $pagination_buttons .= '<a aria-label="' . esc_attr__('Previous page', 'wp-slimstat') . '" class="refresh slimstat-font-angle-' . $direction_prev . '" href="' . wp_slimstat_reports::fs_url('start_from equals ' . $startpoint) . '"></a> ';
         }
         if ($effective_start - $_results_per_page > 0) {
-            $pagination_buttons .= '<a class="refresh slimstat-font-angle-double-' . $direction_prev . '" href="' . wp_slimstat_reports::fs_url('start_from equals 0') . '"></a> ';
+            $pagination_buttons .= '<a aria-label="' . esc_attr__('First page', 'wp-slimstat') . '" class="refresh slimstat-font-angle-double-' . $direction_prev . '" href="' . wp_slimstat_reports::fs_url('start_from equals 0') . '"></a> ';
         }
 
-        $pagination = '<p class="pagination">' . sprintf(/* translators: 1: first displayed row, 2: last displayed row, 3: total row count. */
-                __('%1$s–%2$s of %3$s', 'wp-slimstat'), number_format_i18n($effective_start + 1), number_format_i18n($endpoint), number_format_i18n($_count_all_results) . (($_count_all_results == wp_slimstat::$settings['limit_results']) ? '+' : ''));
+        $pagination = '<p class="pagination"><span class="slimstat-pagination-range" dir="auto">' . sprintf(/* translators: 1: first displayed row, 2: last displayed row, 3: total row count. */
+                __('%1$s–%2$s of %3$s', 'wp-slimstat'), number_format_i18n($effective_start + 1), number_format_i18n($endpoint), number_format_i18n($_count_all_results) . (($_count_all_results == wp_slimstat::$settings['limit_results']) ? '+' : '')) . '</span>';
 
         if ($_show_refresh_countdown && wp_slimstat::$settings['refresh_interval'] > 0 && wp_slimstat_db::$filters_normalized['utime']['end'] >= date_i18n('U') - 300) {
             $pagination .= ' <span class="refresh-countdown">' . __('Refresh in', 'wp-slimstat') . ' <i class="refresh-timer"></i></span>';
@@ -1763,7 +1763,7 @@ class wp_slimstat_reports
                 if (is_admin()) {
                     $column_value         = is_array($results[$i]) && isset($results[$i][$_args['columns']]) ? (string) $results[$i][$_args['columns']] : '';
                     $encoded_column_value = rawurlencode($column_value);
-                    $element_value        = "<a class='slimstat-filter-link' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . $encoded_column_value) . sprintf("'>%s</a>", $element_value);
+                    $element_value        = "<a class='slimstat-filter-link' dir='auto' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . $encoded_column_value) . sprintf("'>%s</a>", $element_value);
                 }
 
                 // Show last-seen timestamp when dt is available in the result
@@ -1773,7 +1773,7 @@ class wp_slimstat_reports
                     // A recent list is a log: without a visible time, five searches for one term read as a duplicate row.
                     if (!empty($_args['type']) && 'recent' == $_args['type']) {
                         /* translators: %s: human-readable time difference, e.g. 5 mins */
-                        $percentage = ' <span class="slimstat-count-pct slimstat-row-time">' . esc_html(sprintf(__('%s ago', 'wp-slimstat'), human_time_diff((int) $results[$i]['dt'], wp_slimstat::now()))) . '</span>';
+                        $percentage = ' <span class="slimstat-count-pct slimstat-row-time" dir="auto">' . esc_html(sprintf(__('%s ago', 'wp-slimstat'), human_time_diff((int) $results[$i]['dt'], wp_slimstat::now()))) . '</span>';
                     }
                 }
 
@@ -1788,7 +1788,7 @@ class wp_slimstat_reports
                     $counthits          = number_format_i18n($results[$i]['counthits']);
                     $percentage_value   = number_format_i18n($percentage_rounded, 2);
 
-                    $percentage = ' <span class="slimstat-count-pct">' . $counthits . '<span class="slimstat-pct">(' . $percentage_value . '%)</span></span>';
+                    $percentage = ' <span class="slimstat-count-pct" dir="ltr">' . $counthits . '<span class="slimstat-pct">(' . $percentage_value . '%)</span></span>';
                 }
 
                 // Some columns require a special post-treatment
@@ -2112,7 +2112,7 @@ class wp_slimstat_reports
      */
     private static function render_pill_and_cta(int $used, int $max, string $cta_action, string $cta_label, bool $show_cta, string $secondary_html = ''): string
     {
-        $html  = '<span class="slimstat-gf-pill" data-role="usage"';
+        $html  = '<span class="slimstat-gf-pill" dir="auto" data-role="usage"';
         $html .= ' data-active="' . esc_attr((string) $used) . '"';
         $html .= ' data-max="' . esc_attr((string) $max) . '">';
         $html .= esc_html(sprintf(
@@ -2595,7 +2595,7 @@ class wp_slimstat_reports
                 $base_url = $parsed['scheme'] . '://' . $parsed['host'];
             }
 
-            $a_result['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . esc_attr(__('Open this URL in a new window', 'wp-slimstat')) . "' href='" . esc_url($base_url . $a_result['resource']) . "'></a> " . esc_html($base_url) . "<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('resource equals ' . $a_result['resource']) . "'>" . self::get_resource_title($a_result['resource']) . '</a>';
+            $a_result['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . esc_attr(__('Open this URL in a new window', 'wp-slimstat')) . "' href='" . esc_url($base_url . $a_result['resource']) . "'></a> " . esc_html($base_url) . "<a class='slimstat-filter-link' dir='auto' href='" . wp_slimstat_reports::fs_url('resource equals ' . $a_result['resource']) . "'>" . self::get_resource_title($a_result['resource']) . '</a>';
 
             $group_markup = [];
             if (!empty($a_result['column_group'])) {

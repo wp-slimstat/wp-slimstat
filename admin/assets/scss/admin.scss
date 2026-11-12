@@ -215,7 +215,7 @@ body.index-php {
 }
 
 #slimstat-date-filters {
-  padding: 4px 10px 6px 20px;
+  padding: 4px 12px;
   position: absolute;
   right: 5px;
   top: 5px;
@@ -419,8 +419,8 @@ body.index-php {
   margin: 0 !important;
   overflow: auto;
 
-  // #156 — native scroll: contain wheel chaining and reserve scrollbar gutter
-  overscroll-behavior: contain;
+  // Keep sideways scrolling local; vertical gestures continue onto the page at either boundary.
+  overscroll-behavior: contain auto;
   scrollbar-gutter: stable;
   padding: 0 !important;
   margin-bottom: 45px !important;
@@ -493,6 +493,11 @@ body.index-php {
   margin-inline-start: auto;
 }
 
+[id^="slim_"] p .slimstat-count-pct .slimstat-pct {
+  float: none;
+}
+
+[id^="slim_"] p span.slimstat-pagination-range,
 [id^="slim_"] p span.refresh-countdown {
   float: none;
 }
@@ -939,6 +944,7 @@ body.slimstat-admin-page {
   float: left;
 }
 
+.rtl [id^="slim_"] p span.slimstat-pagination-range,
 .rtl [id^="slim_"] p span.refresh-countdown {
   float: none;
 }
@@ -1388,9 +1394,8 @@ body.slimstat-admin-page.rtl .ui-datepicker-multi .ui-datepicker-group {
   /* Real-Time Access Log Responsive Improvements */
   [id^="slim_"] p {
     padding: 8px 10px;
-    word-break: break-all;
-    overflow-wrap: break-word;
-    hyphens: auto;
+    word-break: normal;
+    overflow-wrap: anywhere;
   }
 
   [id^="slim_"] p .slimstat-filter-link {
@@ -1520,11 +1525,12 @@ body.slimstat-admin-page.rtl .ui-datepicker-multi .ui-datepicker-group {
     margin-left: 3px;
   }
 
-  /* Stack header elements vertically on very small screens */
+  /* Keep visitor icons together and let long identifiers wrap naturally. */
   [id^="slim_"] p.header {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
   }
 
   [id^="slim_"] p.header .inline-icon {
@@ -3579,4 +3585,49 @@ body.slimstat-admin-page {
 .rtl .slimstat-select-text .slimstat-option-icon {
   margin-right: 0;
   margin-left: 5px;
+}
+
+// Keep prose and fallback English punctuation readable in an RTL admin.
+.wrap-slimstat .slimstat-pro-adds p,
+.wrap-slimstat .slimstat-preview-caption,
+.wrap-slimstat .slimstat-gf-postbox-subtitle,
+.wrap-slimstat .slimstat-gf-empty p,
+.wrap-slimstat .slimstat-map-hint,
+.wrap-slimstat .ss-ai-intro p,
+.wrap-slimstat .ss-ai-intro li { unicode-bidi: plaintext; }
+
+// Access Log details are inline content, not independent floating controls.
+.wrap-slimstat #slim_p7_02 p .details {
+  display: block;
+  float: none !important;
+  margin-top: 8px;
+  padding: 0;
+  line-height: 1.8;
+  unicode-bidi: plaintext;
+  > * { position: static !important; float: none !important; }
+  .spaced { margin-inline: 8px 4px; }
+  .slimstat-delete-entry { margin-inline-start: 8px; }
+}
+
+@media (max-width: 600px) {
+  .wrap-slimstat [id^="slim_"] p.pagination {
+    display: flow-root;
+    min-height: 64px;
+  }
+  .wrap-slimstat [id^="slim_"] .pagination a.refresh {
+    width: 44px;
+    height: 44px;
+    line-height: 42px;
+    margin: 0;
+    margin-inline-start: 4px;
+  }
+  .wrap-slimstat [id^="slim_"]:has(> p.pagination) .inside { margin-bottom: 108px !important; }
+}
+
+.rtl .wrap-slimstat #slim_p7_02 p .details { text-align: right; }
+
+// Counts isolate Latin digits without changing which edge receives the auto margin.
+.rtl [id^="slim_"] p span.slimstat-count-pct {
+  margin-right: auto;
+  margin-left: 0;
 }

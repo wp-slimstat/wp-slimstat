@@ -22,11 +22,11 @@ $unreachable_count = (int) ($summary['unreachable_count'] ?? 0);
 $is_healthy_100    = ($total_cr !== null && (float) $total_cr === 100.0 && $unreachable_count === 0 && $step_count > 1);
 ?>
 <?php if ($total_cr === null) : ?>
-    <span class="slimstat-gf-summary slimstat-gf-summary--empty">
+    <span class="slimstat-gf-summary slimstat-gf-summary--empty" dir="auto">
         <?php esc_html_e('No visitors matched in this date range', 'wp-slimstat'); ?>
     </span>
 <?php elseif ($is_healthy_100) : ?>
-    <span class="slimstat-gf-summary slimstat-gf-summary--success">
+    <span class="slimstat-gf-summary slimstat-gf-summary--success" dir="auto">
         <span class="slimstat-gf-summary__glyph" aria-hidden="true">✓</span>
         <?php echo esc_html(sprintf(
             /* translators: %d is the step count */
@@ -38,7 +38,7 @@ $is_healthy_100    = ($total_cr !== null && (float) $total_cr === 100.0 && $unre
     <?php /* A step has no data yet, so the overall rate isn't a real measurement —
              say "pending" instead of a misleading "0.0%". The warn chip below
              explains why. */ ?>
-    <span class="slimstat-gf-summary">
+    <span class="slimstat-gf-summary" dir="auto">
         <?php echo esc_html(sprintf(
             /* translators: %d is the step count */
             __('%d-step funnel · Conversion rate pending', 'wp-slimstat'),
@@ -46,7 +46,7 @@ $is_healthy_100    = ($total_cr !== null && (float) $total_cr === 100.0 && $unre
         )); ?>
     </span>
 <?php else : ?>
-    <span class="slimstat-gf-summary">
+    <span class="slimstat-gf-summary" dir="auto">
         <?php echo esc_html(sprintf(
             /* translators: 1: step count, 2: conversion rate */
             __('%1$d-step funnel · %2$s%% conversion rate', 'wp-slimstat'),
@@ -56,7 +56,7 @@ $is_healthy_100    = ($total_cr !== null && (float) $total_cr === 100.0 && $unre
     </span>
 <?php endif; ?>
 <?php if ($unreachable_count > 0) : ?>
-    <span class="slimstat-gf-summary slimstat-gf-summary--warn">
+    <span class="slimstat-gf-summary slimstat-gf-summary--warn" dir="auto">
         <?php echo esc_html(sprintf(
             /* translators: %d is the number of steps with no visitors in range */
             _n('%d step had no visitors in range', '%d steps had no visitors in range', $unreachable_count, 'wp-slimstat'),

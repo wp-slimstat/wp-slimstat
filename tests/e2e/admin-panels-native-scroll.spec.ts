@@ -8,11 +8,10 @@
  *   - Used wheelStep:10 (~6px per wheel notch instead of 50+)
  *   - Only listened to legacy DOMMouseScroll/mousewheel events, breaking
  *     trackpad and Magic Mouse momentum scrolling
- *   - Allowed scroll chaining to the page when content reached the boundary
  *
  * After the fix:
  *   - SlimScroll init + 167-line bundled library are deleted from admin.js
- *   - .inside uses overflow:auto + overscroll-behavior:contain natively
+ *   - .inside uses overflow:auto + vertical scroll chaining natively
  *   - A visible 10px scrollbar is styled via ::-webkit-scrollbar +
  *     scrollbar-color (Firefox)
  *
@@ -60,7 +59,7 @@ test.describe('Native scroll on report panels — #156', () => {
     expect(barCount, '.slimScrollBar element should not exist').toBe(0);
   });
 
-  test('.inside has native overflow:auto and overscroll-behavior:contain', async ({ page }) => {
+  test('.inside keeps native scrolling and permits vertical page handoff', async ({ page }) => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'domcontentloaded',
     });
@@ -70,26 +69,17 @@ test.describe('Native scroll on report panels — #156', () => {
       const cs = window.getComputedStyle(el);
       return {
         overflowY: cs.overflowY,
-        overscrollBehavior: cs.overscrollBehavior,
+        overscrollBehaviorY: cs.overscrollBehaviorY,
+        overscrollBehaviorX: cs.overscrollBehaviorX,
       };
     });
 
     expect(styles.overflowY).toBe('auto');
-    expect(styles.overscrollBehavior).toContain('contain');
+    expect(styles.overscrollBehaviorY).toBe('auto');
+    expect(styles.overscrollBehaviorX).toBe('contain');
   });
 
-  test('overscroll-behavior:contain CSS is applied across all report panels', async ({ page }) => {
-    // The chaining behavior of `overscroll-behavior: contain` is enforced by
-    // the browser's compositor for real OS-driven wheel/touch events. We
-    // verified manually on macOS with Magic Mouse + trackpad that the page
-    // does NOT scroll along with .inside (see PR Human QA checklist § 5).
-    //
-    // Headless Chromium's synthetic `page.mouse.wheel()` does NOT respect
-    // overscroll-behavior containment for chaining purposes — that path
-    // bypasses the compositor's gesture pipeline. So we cannot meaningfully
-    // assert window.scrollY behavior in CI; we instead assert the CSS
-    // contract is in place across every report panel that ships a .inside
-    // scroll container, since CSS is what the compositor reads at runtime.
+  test('all report panels permit vertical chaining without restoring SlimScroll', async ({ page }) => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'domcontentloaded',
     });
@@ -119,8 +109,8 @@ test.describe('Native scroll on report panels — #156', () => {
     for (const panel of scrollPanels) {
       expect(
         panel.overscrollBehaviorY,
-        `${panel.parentId} .inside must have overscroll-behavior-y:contain`,
-      ).toBe('contain');
+        `${panel.parentId} .inside must allow vertical scroll chaining`,
+      ).toBe('auto');
     }
 
     // Cross-check the boundary scrollTop API behavior: setting scrollTop
@@ -135,4 +125,61 @@ test.describe('Native scroll on report panels — #156', () => {
       'programmatic scrollTop overflow must NOT scroll the window',
     ).toBeLessThanOrEqual(2);
   });
+
+  test('an empty report lets the page scroll in either direction', async ({page}) => {
+    await clearStatsTable();
+    await page.setViewportSize({width:390,height:900});
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`);
+    const panel=page.locator('#slim_p7_02 .inside');
+    for(const dir of ['ltr','rtl']) {
+      await page.evaluate(dir=>{document.documentElement.dir=dir;document.body.classList.toggle('rtl',dir==='rtl');},dir);
+      await panel.evaluate(el=>window.scrollTo(0,el.getBoundingClientRect().top+scrollY-180));
+      expect(await panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+      const box=(await panel.boundingBox())!;
+      await page.mouse.move(box.x+box.width/2,box.y+50);
+      const start=await page.evaluate(()=>scrollY);
+      await expect.poll(async()=>{await page.mouse.wheel(0,100);return page.evaluate(()=>scrollY);}).toBeGreaterThan(start+20);
+      const down=await page.evaluate(()=>scrollY);
+      await expect.poll(async()=>{await page.mouse.wheel(0,-100);return page.evaluate(()=>scrollY);}).toBeLessThan(down-20);
+    }
+  });
+
+  for (const width of [1440, 390]) {
+    for (const direction of ['ltr', 'rtl']) {
+      test(`wheel scroll hands off at both panel boundaries, ${direction}, ${width}px`, async ({ page }) => {
+        await page.setViewportSize({width, height:900});
+        await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`);
+        await page.evaluate(dir => { document.documentElement.dir=dir; document.body.classList.toggle('rtl',dir==='rtl'); }, direction);
+        const panel=page.locator('#slim_p7_02 .inside');
+        await panel.scrollIntoViewIfNeeded();
+        await expect.poll(()=>panel.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeGreaterThan(50);
+        const position=async (bottom: boolean) => {
+          await panel.evaluate((el,bottom)=>{
+            window.scrollTo(0,el.getBoundingClientRect().top+window.scrollY-180);
+            el.scrollTop=bottom ? el.scrollHeight : 0;
+          },bottom);
+          const box=(await panel.boundingBox())!;
+          await page.mouse.move(box.x+box.width/2,box.y+Math.min(100,box.height/2));
+        };
+        await position(false);
+        const initialY=await page.evaluate(()=>window.scrollY);
+        await page.mouse.wheel(0,100);
+        await expect.poll(()=>panel.evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
+        expect(await page.evaluate(()=>window.scrollY)).toBe(initialY);
+        await position(true);
+        const bottomY=await page.evaluate(()=>window.scrollY);
+        // A fractional bottom offset can consume the first wheel event in Chromium.
+        await expect.poll(async () => {
+          await page.mouse.wheel(0,150);
+          return page.evaluate(()=>window.scrollY);
+        }).toBeGreaterThan(bottomY+20);
+        await position(false);
+        const topY=await page.evaluate(()=>window.scrollY);
+        await expect.poll(async () => {
+          await page.mouse.wheel(0,-100);
+          return page.evaluate(()=>window.scrollY);
+        }).toBeLessThan(topY-20);
+      });
+    }
+  }
 });

@@ -119,7 +119,7 @@ $show_upsell = $at_max && !$is_pro;
                             <span class="slimstat-gf-metric__label" title="<?php esc_attr_e('Conversion rate: unique visitors who matched this goal, divided by all unique visitors in this date range.', 'wp-slimstat'); ?>"><?php esc_html_e('CR', 'wp-slimstat'); ?></span>
                             <span class="slimstat-gf-metric__value"><?php echo esc_html(number_format_i18n((float) $cr, ((float) $cr == (int) $cr) ? 0 : 1)); ?>%</span>
                             <?php if ($total_visitors > 0) : ?>
-                                <span class="slimstat-gf-metric__sub">
+                                <span class="slimstat-gf-metric__sub" dir="auto">
                                     <?php echo esc_html(sprintf(
                                         /* translators: 1: unique visitors who matched the goal, 2: all unique visitors in the date range */
                                         __('%1$s of %2$s uniques', 'wp-slimstat'),
@@ -179,6 +179,6 @@ $show_upsell = $at_max && !$is_pro;
     <?php endif; ?>
 
     <?php if (!empty($consent_notice)) : ?>
-        <p class="slimstat-gf-consent"><em><?php echo esc_html($consent_notice); ?></em></p>
+        <p class="slimstat-gf-consent" dir="auto"><em><?php echo esc_html($consent_notice); ?></em></p>
     <?php endif; ?>
 </section>

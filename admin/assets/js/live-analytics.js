@@ -1028,6 +1028,7 @@
                 item.classList.add("disabled");
             }
             item.classList.remove("active");
+            item.setAttribute("aria-pressed", item.dataset.metric === metric ? "true" : "false");
             if (item.dataset.metric === metric) {
                 item.classList.add("active");
             }

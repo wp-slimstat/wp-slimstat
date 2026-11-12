@@ -194,6 +194,10 @@
     display: block;
 }
 
+[dir="rtl"] .slimstat-header__cta-arrow svg {
+    transform: scaleX(-1);
+}
+
 .slimstat-header__cta-label {
     line-height: 1;
     color: inherit;

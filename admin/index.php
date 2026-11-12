@@ -2651,7 +2651,7 @@ class wp_slimstat_admin
         $tone = in_array($tone, ['error', 'warning', 'info', 'success'], true) ? $tone : 'warning';
         $snooze = max(0, (int) $snooze);
         $nonce = wp_create_nonce('slimstat_dismiss_notice|' . $key . '|' . $stamp . '|' . $snooze);
-        echo '<div class="notice notice-' . esc_attr($tone) . ' slimstat-notice slimstat-pro-license-notice slimstat-custom-db-notice' . ('migration' === $key ? ' slimstat-migration-notice slimstat-migration-notice-show' : '') . ' is-dismissible" role="status" data-notice-key="' . esc_attr($key) . '" data-notice-stamp="' . esc_attr($stamp) . '" data-notice-snooze="' . esc_attr((string) $snooze) . '" data-notice-nonce="' . esc_attr($nonce) . '" data-ajax-url="' . esc_url(admin_url('admin-ajax.php')) . '">' . wp_kses_post(wpautop($message));
+        echo '<div class="notice notice-' . esc_attr($tone) . ' slimstat-notice slimstat-pro-license-notice slimstat-custom-db-notice' . ('migration' === $key ? ' slimstat-migration-notice slimstat-migration-notice-show' : '') . ' is-dismissible" role="status" data-notice-key="' . esc_attr($key) . '" data-notice-stamp="' . esc_attr($stamp) . '" data-notice-snooze="' . esc_attr((string) $snooze) . '" data-notice-nonce="' . esc_attr($nonce) . '" data-ajax-url="' . esc_url(admin_url('admin-ajax.php')) . '"><div class="slimstat-alert-content" dir="auto">' . wp_kses_post(wpautop($message)) . '</div>';
         if ($buttons) {
             echo '<p class="slimstat-pro-license-notice__actions">';
             foreach ($buttons as $i => [$label, $url, $external]) {

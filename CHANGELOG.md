@@ -1,5 +1,6 @@
 = Unreleased =
 
+* Report scrolling continues onto the page at either boundary. Persian and English layouts now keep arrows, dates, live metrics, notices and report controls aligned on desktop and mobile. Ecommerce chart dates follow the current admin language.
 * Scheduled sale notifications and header offers now follow their UTC start and end times, with a coupon copy action and an expiry countdown.
 * The header groups license and upgrade controls beside the logo, keeps offers next to notifications, and adapts to narrow screens and right-to-left languages.
 

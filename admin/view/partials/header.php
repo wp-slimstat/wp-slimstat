@@ -98,7 +98,7 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
             </a>
         <?php endif; ?>
         <?php if (!\wp_slimstat::pro_plugin_active() && current_user_can('manage_options')): ?>
-            <a class="slimstat-header__license-link" href="<?php echo esc_url(\SlimStat\Services\ProLicense::ACCOUNT); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Have a license?', 'wp-slimstat'); ?></a>
+            <a class="slimstat-header__license-link" dir="auto" href="<?php echo esc_url(\SlimStat\Services\ProLicense::ACCOUNT); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Have a license?', 'wp-slimstat'); ?></a>
         <?php endif; ?>
         </div>
     </div>
@@ -154,7 +154,7 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
 <?php if (!empty($title)) : // One page heading on every screen, directly under the brand bar (audit A6). ?>
 <div class="slimstat-pageintro">
     <h1 class="slimstat-pageintro__title"><?php echo esc_html($title); ?></h1>
-    <?php if (!empty($lead)) : ?><p class="slimstat-pageintro__lead"><?php echo esc_html($lead); ?></p><?php endif; ?>
+    <?php if (!empty($lead)) : ?><p class="slimstat-pageintro__lead" dir="auto"><?php echo esc_html($lead); ?></p><?php endif; ?>
 </div>
 <?php endif; ?>
 

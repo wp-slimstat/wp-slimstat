@@ -52,6 +52,7 @@ function dismiss($html, $expected) {
 $stamp = hash('sha256', 'occurrence-one');
 $html = render($stamp, 86400);
 check(strpos($html, 'is-dismissible') !== false && strpos($html, 'slimstat-custom-db-notice') !== false && strpos($html, 'button-primary') !== false, 'Shared accessible banner missing');
+check(strpos($html, 'class="slimstat-alert-content" dir="auto"') !== false, 'Notice copy needs its own directional content block');
 dismiss($html, 'saved');
 check(render($stamp, 86400) === '', 'Dismissal not persisted');
 $GLOBALS['user'] = 2;
