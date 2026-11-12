@@ -1187,3 +1187,4 @@ jobs:
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/pro-license-wp-test.php" --path="$WP_DIR"
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/heatmap-author-scope-wp-test.php" --path="$WP_DIR"
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/notification-delivery-wp-test.php" --path="$WP_DIR"
+          wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/horizon-campaign-wp-test.php" --path="$WP_DIR"

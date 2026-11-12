@@ -4,31 +4,22 @@ namespace SlimStat\Services;
 
 use SlimStat\Utils\ProLinks;
 
-/**
- * Black Friday 2026 strip for Free admins, Nov 23 to Nov 30 in the site timezone, never before BFCM2026 opens.
- * Delete after 2026-12-01 with its fenced blocks in promotions.css and promotions.js,
- * the header.php and init() call sites, its tests, and the slimstat_bf2026_dismissed user meta.
- */
+/** Black Friday fallback for sites without a Horizon header campaign. Remove after the sale. */
 final class BlackFriday2026
 {
 	const CODE     = 'BFCM2026';
 	const DISCOUNT = 30;
-	const START    = '2026-11-23 00:00:00';
-	const END      = '2026-12-01 00:00:00';
-	// Nexus opens BFCM2026 at this instant: up to 8 hours after midnight Nov 23 east of UTC+6. The latest
-	// zone a site can pick (UTC-12) ends at Dec 1 12:00 UTC, which is when the coupon closes.
-	const COUPON_OPENS = '2026-11-22 18:00:00 UTC';
+	const START    = '2026-11-20T00:00:00Z';
+	const END      = '2026-12-01T23:59:00Z';
 	const DISMISSED    = 'slimstat_bf2026_dismissed';
 	const ACTION       = 'slimstat_bf2026_dismiss';
 
 	private static $rendered = false;
 
-	/** Start and end are read in $now's own zone, named or a fixed offset; the coupon's opening is one instant. */
+	/** The offer opens and closes at the same UTC instant for every site. */
 	public static function in_window(\DateTimeImmutable $now): bool
 	{
-		$zone = $now->getTimezone();
-		return new \DateTimeImmutable(self::START, $zone) <= $now && new \DateTimeImmutable(self::COUPON_OPENS) <= $now
-			&& $now < new \DateTimeImmutable(self::END, $zone);
+		return new \DateTimeImmutable(self::START) <= $now && $now < new \DateTimeImmutable(self::END);
 	}
 
 	/** Cheapest gate first; every input is already in memory, so no queries are added. */
@@ -52,18 +43,19 @@ final class BlackFriday2026
 	/** Prints the strip at most once per request; true when it printed. */
 	public static function render(string $placement = 'bar', ?bool $pro = null, ?bool $migration_owed = null): bool
 	{
-		if (self::$rendered || !self::visible($pro, $migration_owed)) {
+		if (self::$rendered || !self::visible($pro, $migration_owed)
+			|| ('dashboard' !== $placement && \SlimStat\Services\Admin\MarketingCampaign::banner())) {
 			return false;
 		}
 		self::$rendered = true;
 		$dashboard      = 'dashboard' === $placement;
 		$discount       = number_format_i18n(self::DISCOUNT) . '%';
-		$last_day       = wp_date(/* translators: date format for the offer's last day, see https://www.php.net/manual/datetime.format.php */ __('F j', 'wp-slimstat'), (new \DateTimeImmutable(self::END, wp_timezone()))->getTimestamp() - 1, wp_timezone());
+		$last_day       = wp_date(/* translators: date format for the offer's last day, see https://www.php.net/manual/datetime.format.php */ __('F j', 'wp-slimstat'), (new \DateTimeImmutable(self::END))->getTimestamp(), new \DateTimeZone('UTC'));
 		?>
 <div id="slimstat-bf-2026"<?php echo $dashboard ? ' class="notice"' : ''; ?> role="region" aria-label="<?php echo esc_attr(__('Black Friday offer', 'wp-slimstat')); ?>" data-slimstat-bf26-ajax="<?php echo esc_url(admin_url('admin-ajax.php')); ?>" data-slimstat-bf26-nonce="<?php echo esc_attr(wp_create_nonce(self::ACTION)); ?>" data-slimstat-bf26-error="<?php echo esc_attr(__('Could not save dismissal. Try again.', 'wp-slimstat')); ?>">
 	<div class="slimstat-bf26__copy">
 		<p class="slimstat-bf26__title"><?php echo esc_html(sprintf(/* translators: %s: discount with its percent sign, e.g. 30% */ __('Black Friday: %s off SlimStat Pro', 'wp-slimstat'), $discount)); ?></p>
-		<p class="slimstat-bf26__value"><?php echo esc_html(sprintf(/* translators: %s: last day of the offer, e.g. November 30 */ __('Pro adds funnels, heatmaps for every page, email reports and data export. The discount covers your first year. Ends %s.', 'wp-slimstat'), $last_day)); ?></p>
+		<p class="slimstat-bf26__value"><?php echo esc_html(sprintf(/* translators: %s: last day of the offer, e.g. December 1 */ __('Pro adds funnels, heatmaps for every page, email reports and data export. The discount covers your first payment. Ends %s at 23:59 UTC.', 'wp-slimstat'), $last_day)); ?></p>
 	</div>
 	<div class="slimstat-bf26__stub">
 		<span class="slimstat-bf26__label"><?php echo esc_html(_x('Code', 'discount code label', 'wp-slimstat')); ?></span>

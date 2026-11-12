@@ -142,18 +142,20 @@
 .slimstat-header__badge {
     position: absolute;
     top: 0px;
-    left: 0px;
+    right: -2px;
     min-width: 19px;
     height: 19px;
     border-radius: 999px;
-    background-color: #E72929;
+    background-color: #c5233d;
     color: #ffffff;
     font-size: 12px;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0 6px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    animation: none;
 }
 
 .slimstat-header__cta {
@@ -248,8 +250,8 @@
     }
 
     .slimstat-header__actions {
-        width: 100%;
-        justify-content: space-between;
+        width: auto;
+        justify-content: flex-end;
         order: 2;
     }
 }
@@ -260,7 +262,7 @@
     }
 
     .slimstat-header__brand {
-        width: 100%;
+        width: auto;
     }
 
     .slimstat-header__meta {
@@ -313,4 +315,65 @@
 .slimstat-tracker-message.is-note + .slimstat-font-cancel:before {
     filter: grayscale(1);
     opacity: .6;
+}
+
+.slimstat-header__promo,
+.slimstat-header__promo:hover,
+.slimstat-header__promo:focus { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-radius: 999px; background: var(--slimstat-promo-bg, #b91c32); color: var(--slimstat-promo-text, #ffffff); text-decoration: none; font-weight: 600; font-size: 13px; line-height: 20px; overflow-wrap: anywhere; }
+.slimstat-header__promo:focus-visible { outline: 2px solid #292d32; outline-offset: 3px; box-shadow: 0 0 0 2px #ffffff; }
+.slimstat-header__promo > span { min-width: 0; }
+.slimstat-header__promo > [aria-hidden] { flex-shrink: 0; }
+@media (max-width: 600px) {
+    .slimstat-header__actions { flex-wrap: wrap; }
+    .slimstat-header__promo { max-width: 100%; box-sizing: border-box; }
+}
+@media (pointer: coarse), (max-width: 600px) {
+    .slimstat-header__icon { min-width: 44px; min-height: 44px; height: auto; }
+    .slimstat-header__promo { min-height: 44px; font-size: 14px; }
+}
+@media (forced-colors: active) {
+    .slimstat-header__promo:focus-visible { outline-color: Highlight; }
+}
+
+/* Account actions lead; offers and notification controls stay together. */
+.slimstat-header--modern { gap: 16px; }
+[dir="rtl"] .slimstat-header--modern { margin-inline: 0; }
+.slimstat-header__brand { flex-wrap: wrap; min-width: 0; }
+.slimstat-header__account { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-width: 0; padding-inline-start: 16px; border-inline-start: 1px solid #dadce0; }
+.slimstat-header__account .slimstat-header__cta { padding: 8px 12px; border-radius: 6px; background: #f1f2f4; gap: 8px; font-size: 13px; line-height: 20px; max-width: 100%; box-sizing: border-box; }
+.slimstat-header__account .slimstat-header__cta-label { line-height: 1.4; overflow-wrap: anywhere; }
+.slimstat-header__license-link { color: #565759; font-size: 12px; max-width: 100%; overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 3px; }
+.slimstat-header__license-link:hover { color: #202224; }
+.slimstat-header__actions { margin-inline-start: auto; gap: 12px; flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+.slimstat-header__online { flex-wrap: wrap; font-weight: 400; }
+.slimstat-header__online-label { font-size: 12px; color: #565759; }
+.slimstat-header__online-label--compact { display: none; }
+.slimstat-header__online-value { padding: 0; height: auto; background: none; }
+.slimstat-header__account a:focus-visible { outline: 2px solid #292d32; outline-offset: 3px; }
+.slimstat-header__badge--urgent { background: #991b1b; }
+[dir="rtl"] .slimstat-header__badge { right: auto; left: -2px; }
+@media (max-width: 1200px) {
+    .slimstat-header__meta { flex-basis: 100%; order: 3; }
+}
+@media (max-width: 640px) {
+    .slimstat-header__brand { flex: 1 1 100%; flex-wrap: nowrap; align-items: flex-start; }
+    .slimstat-header__brand-copy { width: 30px; flex: 0 0 30px; overflow: hidden; direction: ltr; padding-top: 7px; }
+    .slimstat-header__brand-copy svg { flex-shrink: 0; }
+    .slimstat-header__account { flex: 1; padding-inline-start: 12px; }
+    .slimstat-header__account .slimstat-header__cta { min-height: 44px; flex-shrink: 1; }
+    .slimstat-header__account .slimstat-header__cta-icon,
+    .slimstat-header__account .slimstat-header__cta-arrow { display: none; }
+    .slimstat-header__license-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
+    .slimstat-header__meta { flex: 1 1 0; order: 2; min-width: 0; }
+    .slimstat-header__online-label--full { display: none; }
+    .slimstat-header__online-label--compact { display: inline; }
+    .slimstat-header__actions { width: auto; flex: 0 1 auto; order: 3; justify-content: flex-end; }
+    .slimstat-header__icon-bar { gap: 4px; }
+    .slimstat-header__promo--in-panel { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .slimstat-header__icon, .slimstat-header__cta { transition: none; }
+}
+@media (forced-colors: active) {
+    .slimstat-header__account a:focus-visible { outline-color: Highlight; }
 }

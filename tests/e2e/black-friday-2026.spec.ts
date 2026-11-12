@@ -70,7 +70,8 @@ test.describe('Black Friday 2026 strip', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.beforeAll(async ({ browser }) => {
-    for (const option of [SWITCH, ...PROBE]) await snapshotOption(option);
+    for (const option of [SWITCH, ...PROBE, 'wp_slimstat_marketing_campaigns']) await snapshotOption(option);
+    await setOptionValue('wp_slimstat_marketing_campaigns', null);
     await snapshotSlimstatOptions();
     const [users] = await getPool().execute('SELECT ID FROM wp_users WHERE user_login=?', [ADMIN_USER]) as any;
     admin = users[0].ID;
@@ -91,7 +92,7 @@ test.describe('Black Friday 2026 strip', () => {
     for (const key of [ANCHOR, DISMISSED, BF_DISMISSED]) await meta(key, null);
     for (const row of savedMeta) await meta(row.meta_key, row.meta_value);
     await restoreSlimstatOptions();
-    for (const option of [SWITCH, ...PROBE]) await restoreOption(option);
+    for (const option of [SWITCH, ...PROBE, 'wp_slimstat_marketing_campaigns']) await restoreOption(option);
     await closeDb();
   });
   test.beforeEach(async () => {
@@ -142,7 +143,16 @@ test.describe('Black Friday 2026 strip', () => {
       await load(page, url);
       const shown = await load(page, url);
       await expect(strip(page)).toBeVisible();
-      expect(shown.requests, `${url}: same requests with the strip`).toEqual(off.requests);
+      // Replacing the release notice can remove its emoji image request. Count each request
+      // so duplicate new requests still fail, while a request saved by the strip is allowed.
+      const remaining = [...off.requests];
+      const added = shown.requests.filter(request => {
+        const index = remaining.indexOf(request);
+        if (index < 0) return true;
+        remaining.splice(index, 1);
+        return false;
+      });
+      expect(added, `${url}: no added requests with the strip`).toEqual([]);
       expect(shown.queries, `${url}: no added queries`).toBeLessThanOrEqual(off.queries);
       test.info().annotations.push({ type: 'queries', description: `${url}: off ${off.queries}, on ${shown.queries}` });
       const during: any[] = [];
@@ -337,7 +347,7 @@ test.describe('Black Friday 2026 strip', () => {
     const PROPS = ['color', 'background-color', 'font-family', 'font-size', 'font-weight', 'line-height', 'margin', 'padding', 'border', 'border-radius', 'display', 'box-shadow', 'outline'];
     const SAMPLES: Record<string, string[]> = {
       [SLIMSTAT[0]]: ['.slimstat-header__cta', '.slimstat-pageintro__title', '.postbox', '#wpadminbar', '#adminmenu a', 'button, .button'],
-      [DASHBOARD]: ['#wpbody-content h1', '#dashboard-widgets .postbox', '#dashboard-widgets .hndle', '.notice:not(#slimstat-bf-2026)', '#wpadminbar', 'button, .button'],
+      [DASHBOARD]: ['#wpbody-content h1', '#dashboard-widgets .postbox', '#dashboard-widgets .hndle', '.notice:not(#slimstat-bf-2026):not(#slimstat-notice-latest-news)', '#wpadminbar', 'button, .button'],
     };
     const styles = (url: string) => page.evaluate(([samples, props]) => Object.fromEntries(samples.map(selector => {
       const el = [...document.querySelectorAll(selector)].find(e => !e.closest('#slimstat-bf-2026'));

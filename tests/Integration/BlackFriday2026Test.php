@@ -41,7 +41,7 @@ class BlackFriday2026Test extends IntegrationTestCase
     {
         $html = $this->render();
         $this->assertSame(1, substr_count($html, 'id="slimstat-bf-2026"'));
-        foreach (['role="region"', 'aria-label="Black Friday offer"', 'Black Friday: 30% off SlimStat Pro', '<code class="slimstat-bf26__code" dir="ltr">BFCM2026</code>', 'Copy code', 'aria-label="Dismiss Black Friday offer"', 'role="status"', 'Ends November 30.', 'target="_blank"', 'rel="noopener"', '(opens in a new tab)', 'data-slimstat-bf26-ajax="https://example.test/wp-admin/admin-ajax.php"', 'data-slimstat-bf26-nonce="nonce:slimstat_bf2026_dismiss"', 'data-slimstat-bf26-error="Could not save dismissal. Try again."'] as $value) {
+        foreach (['role="region"', 'aria-label="Black Friday offer"', 'Black Friday: 30% off SlimStat Pro', '<code class="slimstat-bf26__code" dir="ltr">BFCM2026</code>', 'Copy code', 'aria-label="Dismiss Black Friday offer"', 'role="status"', 'Ends December 1 at 23:59 UTC.', 'target="_blank"', 'rel="noopener"', '(opens in a new tab)', 'data-slimstat-bf26-ajax="https://example.test/wp-admin/admin-ajax.php"', 'data-slimstat-bf26-nonce="nonce:slimstat_bf2026_dismiss"', 'data-slimstat-bf26-error="Could not save dismissal. Try again."'] as $value) {
             $this->assertStringContainsString($value, $html);
         }
         $this->assertStringContainsString('href="https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=bf-2026&utm_content=banner"', $html);
@@ -61,6 +61,17 @@ class BlackFriday2026Test extends IntegrationTestCase
         $this->assertStringContainsString('utm_content=dashboard', $html);
         $this->assertStringNotContainsString('is-dismissible', $html, 'core would add a second dismiss button');
     }
+    public function test_a_header_campaign_replaces_the_fallback_strip_but_not_the_dashboard_notice(): void
+    {
+        Functions\when('home_url')->justReturn('https://example.test');
+        Functions\when('esc_url_raw')->alias(fn($url) => $url);
+        $this->optionStore['wp_slimstat_marketing_campaigns'] = ['data' => [[
+            'id' => 42, 'type' => 'promo_banner', 'title' => 'Sale', 'url' => 'https://example.test/pricing/',
+        ]]];
+        $this->assertSame('', $this->render());
+        $this->assertNotSame('', $this->render('dashboard'));
+    }
+
     public function test_it_renders_once_per_request(): void
     {
         $this->assertNotSame('', $this->render());
@@ -71,8 +82,8 @@ class BlackFriday2026Test extends IntegrationTestCase
     public static function hiddenStates(): array
     {
         return [
-            'before the window' => [fn(self $t) => $t->now = '2026-11-22 23:59:59'],
-            'after the window' => [fn(self $t) => $t->now = '2026-12-01 00:00:00'],
+            'before the window' => [fn(self $t) => $t->now = '2026-11-20 03:29:59'],
+            'after the window' => [fn(self $t) => $t->now = '2026-12-02 03:29:00'],
             'filter returns false' => [fn(self $t) => $t->filterValues['slimstat_black_friday_2026_banner'] = false],
             'dismissed by this user' => [fn(self $t) => $t->meta['7:slimstat_bf2026_dismissed'] = '1'],
             'notifications off' => [fn() => \wp_slimstat::$settings['display_notifications'] = 'no'],

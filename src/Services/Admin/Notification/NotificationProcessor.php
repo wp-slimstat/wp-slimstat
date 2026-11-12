@@ -5,6 +5,7 @@ namespace SlimStat\Services\Admin\Notification;
 use SlimStat\Decorators\NotificationDecorator;
 use SlimStat\Utils\OptionClaim;
 use SlimStat\Services\Admin\ConditionTagEvaluator;
+use SlimStat\Services\Admin\FeedWindow;
 
 class NotificationProcessor
 {
@@ -13,9 +14,7 @@ class NotificationProcessor
 		$dismissed = \get_option('slimstat_notification_dismissed', []);
 		if (!empty($notifications) && is_array($notifications)) {
 			foreach ($notifications as $key => $notification) {
-				$active = !empty($notification['activated_at']) ? strtotime($notification['activated_at']) : 0;
-				$expiry = $notification['expires_at'] ?? $notification['expired_at'] ?? '';
-				if ($active > time() || ($expiry && strtotime($expiry) <= time())) {
+				if (!is_array($notification) || !FeedWindow::contains($notification)) {
 					unset($notifications[$key]);
 					continue;
 				}
@@ -113,7 +112,8 @@ class NotificationProcessor
 	public static function dismissAllNotifications()
 	{
 		$notifications = NotificationFactory::getRawNotificationsData();
-		return self::rememberDismissed(array_column($notifications['data'] ?? [], 'id'));
+		// Upcoming or differently targeted items have not been shown to this administrator yet.
+		return self::rememberDismissed(array_column(self::filterNotificationsByTags($notifications['data'] ?? []), 'id'));
 	}
 
 	/** Keep site-wide dismissals even when a feed temporarily omits an item. */

@@ -74,6 +74,14 @@ namespace {
 	}
 }
 
+namespace SlimStat\Services\Admin {
+    class MarketingCampaign
+    {
+        public static $fetchCalls = 0;
+        public function fetch() { self::$fetchCalls++; }
+    }
+}
+
 namespace SlimStat\Services\Admin\Notification {
 	class NotificationFetcher
 	{
@@ -88,6 +96,7 @@ namespace SlimStat\Services\Admin\Notification {
 
 namespace {
 	require_once __DIR__ . '/../src/Services/Admin/ConditionTagEvaluator.php';
+	require_once __DIR__ . '/../src/Services/Admin/FeedWindow.php';
 	require_once __DIR__ . '/../src/Services/Admin/Notification/NotificationProcessor.php';
 	require_once __DIR__ . '/../src/Services/CronEventManager.php';
 
@@ -173,6 +182,7 @@ namespace {
 
 	assert_true(in_array('slimstat_daily_license_check', $GLOBALS['slimstat_test_actions'], true), 'daily license hook must fire even when notifications are off');
 	assert_true(NotificationFetcher::$fetchCalls === 0, 'daily notification fetch must not run when notifications are off');
+	assert_true(\SlimStat\Services\Admin\MarketingCampaign::$fetchCalls === 0, 'campaign fetch respects opt-out');
 
 	$GLOBALS['slimstat_test_actions'] = [];
 	NotificationFetcher::$fetchCalls = 0;
@@ -182,6 +192,7 @@ namespace {
 
 	assert_true(in_array('slimstat_daily_license_check', $GLOBALS['slimstat_test_actions'], true), 'daily license hook must fire when notifications are on');
 	assert_true(NotificationFetcher::$fetchCalls === 1, 'daily notification fetch should run when notifications are on');
+	assert_true(\SlimStat\Services\Admin\MarketingCampaign::$fetchCalls === 1, 'campaign fetch runs daily');
 
 	global $assertions;
 	echo "All {$assertions} assertions passed in license-tag-gating-test.php\n";

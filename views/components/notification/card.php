@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 ?>
-<div class="slimstat-notification-sidebar__card <?php echo esc_attr($notification->backgroundColor()); ?> slimstat-notification-<?php echo esc_attr($notification->getID()) ?>">
+<div class="slimstat-notification-sidebar__card <?php echo esc_attr($notification->backgroundColor()); ?> slimstat-notification-<?php echo esc_attr($notification->getID()) ?>" data-ends-at="<?php echo esc_attr($notification->getEndsAt()); ?>" data-badge="<?php echo esc_attr($notification->getBadge()); ?>" data-notification-id="<?php echo esc_attr($notification->getID()); ?>">
     <?php if ($notification->getIcon()): ?>
         <div class="slimstat-notification-sidebar__card-icon">
             <span><?php echo esc_html($notification->getIcon()); ?></span>
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
             <?php if ($notification->getTitle()): ?>
                 <div><?php echo esc_html($notification->getTitle()) ?></div>
             <?php endif; ?>
-            <?php if ($notification->activatedAt()): ?>
+            <?php if (!$notification->isPromo() && $notification->activatedAt()): ?>
                 <div class="slimstat-notification-sidebar__card-date"><?php echo esc_html($notification->activatedAt()) ?></div>
             <?php endif; ?>
         </div>
@@ -23,14 +23,24 @@ if (!defined('ABSPATH')) {
                 <?php echo wp_kses_post($notification->getDescription()) ?>
             </div>
         <?php endif; ?>
+        <?php if ($notification->isPromo() && $notification->getCode()): ?>
+            <div class="slimstat-notification-sidebar__code-row">
+                <code dir="ltr"><?php echo esc_html($notification->getCode()); ?></code>
+                <button type="button" class="slimstat-notification-sidebar__copy"><?php esc_html_e('Copy', 'wp-slimstat'); ?></button>
+                <span class="screen-reader-text" role="status"></span>
+            </div>
+        <?php endif; ?>
+        <?php if ($notification->isPromo() && $notification->getEndsAt()): ?>
+            <p class="slimstat-notification-sidebar__countdown"></p>
+        <?php endif; ?>
         <div class="slimstat-notification-sidebar__card-actions">
             <?php if ($notification->primaryButtonTitle() && $notification->primaryButtonUrl()): ?>
-                <a href="<?php echo esc_url($notification->primaryButtonUrl()); ?>" class="slimstat-notification-sidebar__button" target="_blank">
+                <a href="<?php echo esc_url($notification->primaryButtonUrl()); ?>" class="slimstat-notification-sidebar__button" target="_blank" rel="noopener noreferrer">
                     <?php echo esc_html($notification->primaryButtonTitle()); ?>
                 </a>
             <?php endif; ?>
-            <?php if ($notification->secondaryButtonTitle() && $notification->secondaryButtonUrl()): ?>
-                <a href="<?php echo esc_url($notification->secondaryButtonUrl()); ?>" class="slimstat-notification-sidebar__button" target="_blank">
+            <?php if (!$notification->isPromo() && $notification->secondaryButtonTitle() && $notification->secondaryButtonUrl()): ?>
+                <a href="<?php echo esc_url($notification->secondaryButtonUrl()); ?>" class="slimstat-notification-sidebar__button" target="_blank" rel="noopener noreferrer">
                     <?php echo esc_html($notification->secondaryButtonTitle()); ?>
                 </a>
             <?php endif; ?>

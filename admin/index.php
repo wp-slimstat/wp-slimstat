@@ -84,6 +84,12 @@ class wp_slimstat_admin
                 'empty_title' => __('You are up to date!', 'wp-slimstat'),
                 'empty_inbox' => __('No notifications in your inbox.', 'wp-slimstat'),
                 'empty_dismissed' => __('No dismissed notifications.', 'wp-slimstat'),
+                'copy' => __('Copy', 'wp-slimstat'),
+                'copied' => __('Copied', 'wp-slimstat'),
+                'copy_failed' => __('Could not copy. Select the code and copy it manually.', 'wp-slimstat'),
+                'notification_error' => __('Could not update notifications. Please try again.', 'wp-slimstat'),
+                /* translators: %1$s: days, %2$s: hours, %3$s: minutes remaining in the offer. */
+                'ends_in' => __('Ends in %1$sd %2$sh %3$sm', 'wp-slimstat'),
             ];
             wp_localize_script('slimstat_notifications', 'slimstat_admin', $notification_params);
         }
