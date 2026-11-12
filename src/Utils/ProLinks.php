@@ -31,6 +31,14 @@ final class ProLinks
         return add_query_arg($params, $url);
     }
 
+    /** Only an explicit publisher campaign associates independently numbered Horizon feeds. */
+    public static function campaign(string $url): string
+    {
+        wp_parse_str((string) wp_parse_url($url, PHP_URL_QUERY), $query);
+        $campaign = $query['utm_campaign'] ?? '';
+        return is_string($campaign) && strlen($campaign) <= 160 ? trim($campaign) : '';
+    }
+
     /** Only the Pro information page forwards an origin supplied by an internal link. */
     public static function fromRequest(bool $checkout = false, string $placement = 'purchase'): string
     {

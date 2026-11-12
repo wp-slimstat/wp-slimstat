@@ -178,6 +178,7 @@ class NotificationDecorator
         return is_array($extra) && is_string($extra[$key] ?? null) ? $extra[$key] : '';
     }
 
+    public function getCampaign(): string { return \SlimStat\Utils\ProLinks::campaign((string) ($this->notification->primary_button['url'] ?? '')); }
     public function getBadge(): string { return $this->extraText('badge'); }
     public function getCode(): string { return $this->extraText('code'); }
     public function getEndsAt(): string

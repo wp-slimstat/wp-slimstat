@@ -5,9 +5,9 @@ import { closeDb, snapshotOption, restoreOption, snapshotSlimstatOptions, restor
 const keys = ['wp_slimstat_notifications', 'wp_slimstat_marketing_campaigns', 'slimstat_notification_dismissed'];
 const seed = () => runWordPressFixture(`<?php
 $now = time();
-$item = ['id'=>902601,'title'=>'Black Friday: 30% off SlimStat Pro','icon'=>'"🏷️"','description'=>'"<p>Save 30% on your first payment.</p>"','background_color'=>'promo','extra_data'=>['badge'=>'🔥 -30%','code'=>'BFCM2026'],'primary_button'=>['title'=>'Get the deal','url'=>'https://example.test/pricing/'],'secondary_button'=>['title'=>'Must stay hidden','url'=>'https://example.test/'],'tags'=>['is-admin'],'starts_at'=>gmdate('Y-m-d\\TH:i:s\\Z',$now-3600),'ends_at'=>gmdate('Y-m-d\\TH:i:s\\Z',$now+3600)];
+$item = ['id'=>902601,'title'=>'Black Friday: 30% off SlimStat Pro','icon'=>'"🏷️"','description'=>'"<p>Save 30% on your first payment.</p>"','background_color'=>'promo','extra_data'=>['badge'=>'🔥 -30%','code'=>'BFCM2026'],'primary_button'=>['title'=>'Get the deal','url'=>'https://example.test/pricing/?utm_campaign=bfcm2026'],'secondary_button'=>['title'=>'Must stay hidden','url'=>'https://example.test/'],'tags'=>['is-admin'],'starts_at'=>gmdate('Y-m-d\\TH:i:s\\Z',$now-3600),'ends_at'=>gmdate('Y-m-d\\TH:i:s\\Z',$now+3600)];
 update_option('wp_slimstat_notifications',['data'=>[$item,array_merge($item,['id'=>902602,'title'=>'Upcoming hidden','starts_at'=>gmdate('Y-m-d\\TH:i:s\\Z',$now+86400)]),array_merge($item,['id'=>902603,'title'=>'Expired hidden','ends_at'=>gmdate('Y-m-d\\TH:i:s\\Z',$now-1)])]],false);
-update_option('wp_slimstat_marketing_campaigns',['data'=>[['id'=>902604,'type'=>'promo_banner','starts_at'=>$item['starts_at'],'ends_at'=>$item['ends_at'],'tags'=>['is-admin'],'data'=>['title'=>'Black Friday: 30% off','url'=>'https://example.test/pricing/','icon'=>'"🏷️"','tooltip'=>'30% off the first payment','background_color'=>'danger','text_color'=>'light']]]],false);
+update_option('wp_slimstat_marketing_campaigns',['data'=>[['id'=>902604,'type'=>'promo_banner','starts_at'=>$item['starts_at'],'ends_at'=>$item['ends_at'],'tags'=>['is-admin'],'data'=>['title'=>'Black Friday: 30% off','url'=>'https://example.test/pricing/?utm_campaign=bfcm2026','icon'=>'"🏷️"','tooltip'=>'30% off the first payment','background_color'=>'danger','text_color'=>'light']]]],false);
 delete_option('slimstat_notification_dismissed');
 `);
 
@@ -277,4 +277,28 @@ test('header follows the reference hierarchy and keeps campaign-only offers visi
   if (!proActive) await expect(pill).toBeVisible();
   await expect(page.locator('.slimstat-header__badge')).toHaveCount(0);
   expect(await page.locator('.slimstat-header').evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+});
+
+
+test('an unrelated or unidentified promo cannot hide a mobile header campaign', async ({page}) => {
+  const proActive=runWordPressFixture('<?php echo wp_slimstat::pro_plugin_active() ? "yes" : "no";').trim() === 'yes';
+  await page.setViewportSize({width:320,height:900});
+  for (const campaign of ['different-offer','']) {
+    seed();
+    runWordPressFixture(`<?php $feed=get_option('wp_slimstat_notifications');$feed['data'][0]['primary_button']['url']='https://example.test/offer/?utm_campaign=${campaign}';update_option('wp_slimstat_notifications',$feed,false);`);
+    await page.goto('/wp-admin/admin.php?page=slimview1');
+    const pill=page.locator('.slimstat-header__promo');
+    for (const dir of ['ltr','rtl']) {
+      await page.evaluate(dir=>{document.documentElement.dir=dir;document.body.classList.toggle('rtl',dir==='rtl');},dir);
+      if (proActive) await expect(pill).toHaveCount(0);
+      else await expect(pill).toBeVisible();
+      expect(await page.locator('.slimstat-header').evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+    }
+    await page.locator('.js-slimstat-open-notification').click();
+    await page.locator('.slimstat-notification-sidebar__dismiss-all').click();
+    await expect(page.locator('#tab-1 .slimstat-notification-sidebar__promo')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    if (proActive) await expect(pill).toHaveCount(0);
+    else await expect(pill, 'AJAX refresh must preserve unrelated campaigns').toBeVisible();
+  }
 });

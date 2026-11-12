@@ -21,6 +21,7 @@ class MarketingCampaignDecorator
     }
 
     public function getTitle(): string { return $this->text('title'); }
+    public function getCampaign(): string { return \SlimStat\Utils\ProLinks::campaign($this->text('url')); }
     public function getTooltip(): string { return $this->text('tooltip'); }
     public function getUrl(): string
     {

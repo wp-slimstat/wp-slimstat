@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 ?>
-<div class="slimstat-notification-sidebar__card <?php echo esc_attr($notification->backgroundColor()); ?> slimstat-notification-<?php echo esc_attr($notification->getID()) ?>" data-ends-at="<?php echo esc_attr($notification->getEndsAt()); ?>" data-badge="<?php echo esc_attr($notification->getBadge()); ?>" data-notification-id="<?php echo esc_attr($notification->getID()); ?>">
+<div class="slimstat-notification-sidebar__card <?php echo esc_attr($notification->backgroundColor()); ?> slimstat-notification-<?php echo esc_attr($notification->getID()) ?>" data-campaign="<?php echo esc_attr($notification->getCampaign()); ?>" data-ends-at="<?php echo esc_attr($notification->getEndsAt()); ?>" data-badge="<?php echo esc_attr($notification->getBadge()); ?>" data-notification-id="<?php echo esc_attr($notification->getID()); ?>">
     <?php if ($notification->getIcon()): ?>
         <div class="slimstat-notification-sidebar__card-icon">
             <span><?php echo esc_html($notification->getIcon()); ?></span>

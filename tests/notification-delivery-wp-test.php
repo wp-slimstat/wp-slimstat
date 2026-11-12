@@ -11,7 +11,7 @@ function time() { return $GLOBALS['notification_test_now'] ?? \time(); }
 use SlimStat\Services\CronEventManager;
 use SlimStat\Utils\OptionClaim;
 
-if (!defined('WP_CLI') || !WP_CLI || (!preg_match('/^(test_|tests-)/', DB_NAME) && DB_NAME !== 'wordpress')) {
+if (!defined('WP_CLI') || !WP_CLI || !preg_match('/^(test_|tests-)/', DB_NAME)) {
     throw new \RuntimeException('Notification fixtures require a disposable database.');
 }
 $same = static function ($expected, $actual, $label) {

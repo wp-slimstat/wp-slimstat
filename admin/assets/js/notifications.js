@@ -155,8 +155,10 @@ jQuery(function ($) {
             $('<span class="plugin-count">').text(label).appendTo(badge);
             $('#adminmenu .wp-menu-name > .slimstat-menu-title').parent().append(badge);
         }
-        document.querySelector('.slimstat-header__promo')?.classList.toggle('slimstat-header__promo--in-panel',
-            !!sidebar.querySelector('.slimstat-notification-sidebar__promo'));
+        const headerPromo = document.querySelector('.slimstat-header__promo');
+        const campaign = headerPromo?.dataset.campaign;
+        headerPromo?.classList.toggle('slimstat-header__promo--in-panel',
+            !!campaign && [...sidebar.querySelectorAll('.slimstat-notification-sidebar__promo')].some(card => card.dataset.campaign === campaign));
     }
     function apply(data) {
         const focused = document.activeElement;

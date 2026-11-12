@@ -4,10 +4,11 @@ namespace SlimStat\Services\Admin\Notification;
 
 class NotificationFactory
 {
-	public static function hasPromoNotification(): bool
+	public static function hasPromoNotification(string $campaign): bool
 	{
+		if ('' === $campaign) return false;
 		foreach (self::getAllNotifications() as $notification) {
-			if ($notification->isPromo()) return true;
+			if ($notification->isPromo() && $notification->getCampaign() === $campaign) return true;
 		}
 		return false;
 	}

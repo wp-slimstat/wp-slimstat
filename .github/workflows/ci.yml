@@ -1148,7 +1148,7 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: wordpress
+          MYSQL_DATABASE: test_slimstat_minimum
         ports: ["3306:3306"]
         options: >-
           --health-cmd="mysqladmin ping -h localhost -ppassword"
@@ -1176,7 +1176,7 @@ jobs:
           set -euo pipefail
           WP_DIR="$RUNNER_TEMP/slimstat-minimum"
           wp core download --version=5.6 --path="$WP_DIR"
-          wp config create --path="$WP_DIR" --dbname=wordpress --dbuser=root --dbpass=password --dbhost=127.0.0.1
+          wp config create --path="$WP_DIR" --dbname=test_slimstat_minimum --dbuser=root --dbpass=password --dbhost=127.0.0.1
           wp core install --path="$WP_DIR" --url=http://localhost --title=Compatibility --admin_user=admin --admin_password=password --admin_email=qa@example.com --skip-email
           for plugin in wp-slimstat; do
             ln -s "$GITHUB_WORKSPACE/$plugin" "$WP_DIR/wp-content/plugins/$plugin"

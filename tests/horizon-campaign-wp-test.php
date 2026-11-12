@@ -9,7 +9,7 @@ use SlimStat\Components\View;
 
 function time() { return $GLOBALS['horizon_test_now'] ?? \time(); }
 
-if (!defined('WP_CLI') || !WP_CLI || (!preg_match('/^(test_|tests-)/', DB_NAME) && DB_NAME !== 'wordpress')) {
+if (!defined('WP_CLI') || !WP_CLI || !preg_match('/^(test_|tests-)/', DB_NAME)) {
     throw new \RuntimeException('Horizon fixtures require a disposable database.');
 }
 $same = static function ($expected, $actual, $label) {
@@ -76,6 +76,13 @@ try {
     wp_parse_str(wp_parse_url($link->getUrl(), PHP_URL_QUERY), $attribution);
     $same(['coupon' => 'BFCM2026', 'utm_campaign' => 'bfcm2026', 'utm_source' => 'wp-slimstat', 'utm_medium' => 'link', 'utm_content' => 'header-banner-12'], $attribution, 'Header attribution preserves campaign and coupon');
     $same('plans', wp_parse_url($link->getUrl(), PHP_URL_FRAGMENT), 'Attribution preserves fragments');
+    $same('bfcm2026', $link->getCampaign(), 'Publisher campaign identifies the banner');
+    foreach (['https://wp-slimstat.com/', 'https://wp-slimstat.com/?utm_campaign=', 'https://wp-slimstat.com/?utm_campaign[]=invalid'] as $unidentified) {
+        $same('', (new \SlimStat\Decorators\MarketingCampaignDecorator(['url' => $unidentified]))->getCampaign(), 'Missing or malformed campaigns never use generated attribution as identity');
+    }
+    $same(false, NotificationFactory::hasPromoNotification(''), 'Unidentified offers remain visible');
+    $same(false, NotificationFactory::hasPromoNotification('different-offer'), 'Unrelated offers remain visible');
+
     $same($link->getUrl(), \SlimStat\Utils\ProLinks::tag($link->getUrl(), 'other', 'other', true), 'Repeated attribution is idempotent');
     foreach (['https://example.test/', 'https://wp-slimstat.com.example.test/', 'https://wp-slimstat.com@example.test/', '/wp-admin/admin.php', 'mailto:reviewer@example.test'] as $other) {
         $same($other, \SlimStat\Utils\ProLinks::tag($other, 'notifications', 'test', true), 'Only the actual SlimStat website receives attribution');

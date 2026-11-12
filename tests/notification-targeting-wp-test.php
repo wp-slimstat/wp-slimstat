@@ -5,7 +5,7 @@ use SlimStat\Services\Admin\ConditionTagEvaluator;
 use SlimStat\Services\Admin\Notification\NotificationFactory;
 use SlimStat\Services\Admin\Notification\NotificationProcessor;
 
-if (!defined('WP_CLI') || !WP_CLI || (!preg_match('/^(test_|tests-)/', DB_NAME) && DB_NAME !== 'wordpress')) {
+if (!defined('WP_CLI') || !WP_CLI || !preg_match('/^(test_|tests-)/', DB_NAME)) {
     throw new RuntimeException('Notification targeting tests require a disposable database.');
 }
 $assertions = 0;

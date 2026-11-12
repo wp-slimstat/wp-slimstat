@@ -19,7 +19,7 @@ if ($displayNotifications && class_exists(NotificationFactory::class)) {
     $hasUpdatedNotifications = NotificationFactory::hasUpdatedNotifications();
     $newNotificationCount    = NotificationFactory::getNewNotificationCount();
     $notificationBadge       = NotificationFactory::getBadge();
-    $hasPromoNotification    = NotificationFactory::hasPromoNotification();
+    $hasPromoNotification    = NotificationFactory::hasPromoNotification($promoBanner ? $promoBanner->getCampaign() : '');
 }
 
 
@@ -119,7 +119,7 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
 
     <div class="slimstat-header__actions">
         <?php if ($promoBanner): ?>
-            <a class="slimstat-header__promo<?php echo $hasPromoNotification ? ' slimstat-header__promo--in-panel' : ''; ?>" href="<?php echo esc_url($promoBanner->getUrl()); ?>" title="<?php echo esc_attr($promoBanner->getTooltip()); ?>" style="--slimstat-promo-bg:<?php echo esc_attr($promoBanner->getBackgroundColor()); ?>;--slimstat-promo-text:<?php echo esc_attr($promoBanner->getTextColor()); ?>" data-ends-at="<?php echo esc_attr($promoBanner->getEndsAt()); ?>" target="_blank" rel="noopener noreferrer">
+            <a class="slimstat-header__promo<?php echo $hasPromoNotification ? ' slimstat-header__promo--in-panel' : ''; ?>" href="<?php echo esc_url($promoBanner->getUrl()); ?>" title="<?php echo esc_attr($promoBanner->getTooltip()); ?>" style="--slimstat-promo-bg:<?php echo esc_attr($promoBanner->getBackgroundColor()); ?>;--slimstat-promo-text:<?php echo esc_attr($promoBanner->getTextColor()); ?>" data-campaign="<?php echo esc_attr($promoBanner->getCampaign()); ?>" data-ends-at="<?php echo esc_attr($promoBanner->getEndsAt()); ?>" target="_blank" rel="noopener noreferrer">
                 <?php if ($promoBanner->getIcon()): ?><span aria-hidden="true"><?php echo esc_html($promoBanner->getIcon()); ?></span><?php endif; ?>
                 <span><?php echo esc_html($promoBanner->getTitle()); ?></span>
             </a>
