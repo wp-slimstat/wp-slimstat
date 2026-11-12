@@ -110,8 +110,13 @@ test.describe('Video tutorials', () => {
     const cards = page.locator('.ss-videos-card');
     await expect(cards).toHaveCount(example.videos.length);
     for (const video of example.videos) {
-      const card = page.locator(`.ss-videos-card[href="${ORIGIN}/videos/${video.slug}/"]`);
+      const card = page.locator(`.ss-videos-card[href^="${ORIGIN}/videos/${video.slug}/?"]`);
       await expect(card).toHaveCount(1);
+      const destination = new URL((await card.getAttribute('href'))!);
+      expect(destination.pathname).toBe(`/videos/${video.slug}/`);
+      expect(Object.fromEntries(destination.searchParams)).toMatchObject({utm_source:'wp-slimstat',utm_medium:'link',utm_content:'content-link'});
+      expect(destination.searchParams.get('utm_campaign')).toContain('slimvideos');
+      expect([...destination.searchParams]).toHaveLength(4);
       await expect(card).toHaveAttribute('target', '_blank');
       await expect(card).toHaveAttribute('rel', 'noopener noreferrer');
       await expect(card.locator('.ss-videos-title')).toHaveText(video.title);
@@ -135,9 +140,11 @@ test.describe('Video tutorials', () => {
 
     // The watch page opens in a new tab, cut off from this one.
     const first = example.videos[0];
-    const [popup] = await Promise.all([context.waitForEvent('page'), page.locator(`.ss-videos-card[href="${ORIGIN}/videos/${first.slug}/"]`).click()]);
+    const firstCard = page.locator(`.ss-videos-card[href^="${ORIGIN}/videos/${first.slug}/?"]`);
+    const destination = await firstCard.getAttribute('href');
+    const [popup] = await Promise.all([context.waitForEvent('page'), firstCard.click()]);
     await popup.waitForLoadState();
-    expect(popup.url()).toBe(`${ORIGIN}/videos/${first.slug}/`);
+    expect(popup.url()).toBe(destination);
     expect(await popup.evaluate(() => window.opener)).toBeNull();
     await popup.close();
 

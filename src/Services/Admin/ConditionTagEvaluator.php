@@ -2,11 +2,13 @@
 
 namespace SlimStat\Services\Admin;
 
+use SlimStat\Services\ProLicense;
+
 class ConditionTagEvaluator
 {
 	/**
-	 * Minimum plugin version that supports license-related tags.
-	 * Notifications using license tags must include is-version-{x} >= this value.
+	 * Historical minimum for the original three license tags.
+	 * New targeting tags have their own introduction version below.
 	 */
 	public const LICENSE_TAGS_MIN_VERSION = '5.4.0';
 
@@ -15,12 +17,17 @@ class ConditionTagEvaluator
 	 * Old plugin versions evaluate unknown tags as true (fail-open),
 	 * so these tags must be paired with is-version-* to prevent mis-targeting.
 	 *
-	 * @var array
+	 * @var array<string, string>
 	 */
 	private static $versionGatedTags = [
-		'is-license-active',
-		'is-license-inactive',
-		'no-license',
+		'is-license-active' => '5.4.0',
+		'is-license-inactive' => '5.4.0',
+		'no-license' => '5.4.0',
+		'is-license-invalid' => '6.1.1',
+		'is-free' => '6.1.1',
+		'has-addon' => '6.1.1',
+		'has-addon-wp-slimstat-pro' => '6.1.1',
+		'no-addon-wp-slimstat-pro' => '6.1.1',
 	];
 
 	/**
@@ -32,8 +39,13 @@ class ConditionTagEvaluator
 		'is-admin'            => 'isAdminUser',
 		'is-premium'          => 'isPremiumUser',
 		'no-premium'          => 'noPremiumUser',
+		'is-free'             => 'noPremiumUser',
+		'has-addon'           => 'hasProPlugin',
+		'has-addon-wp-slimstat-pro' => 'hasProPlugin',
+		'no-addon-wp-slimstat-pro' => 'hasNoProPlugin',
 		'is-license-active'   => 'isLicenseActive',
 		'is-license-inactive' => 'isLicenseInactive',
+		'is-license-invalid'  => 'isLicenseInvalid',
 		'no-license'          => 'hasNoLicense',
 	];
 
@@ -44,7 +56,7 @@ class ConditionTagEvaluator
 	 */
 	public static function isAdminUser()
 	{
-		return \current_user_can('administrator');
+		return \current_user_can('manage_options');
 	}
 
 	/**
@@ -68,64 +80,55 @@ class ConditionTagEvaluator
 	}
 
 	/**
-	 * Check if the user has an active (validated) premium license.
-	 *
-	 * Requires: Pro plugin installed, a license key entered, and license status true.
-	 * Pro installation is checked because deactivating Pro does not clear stored status,
-	 * which would cause stale status=true to misclassify lapsed users as active.
+	 * Match the same verified entitlement that unlocks Pro, including outage grace.
 	 *
 	 * @return bool
 	 */
 	public static function isLicenseActive()
 	{
-		if (!\wp_slimstat::pro_is_installed()) {
-			return false;
-		}
-
-		$key    = \wp_slimstat::$settings['slimstat_pro_license_key'] ?? '';
-		$status = (bool) (\wp_slimstat::$settings['slimstat_pro_license_status'] ?? false);
-
-		return !empty($key) && $status;
+		return \wp_slimstat::pro_is_installed();
 	}
 
 	/**
 	 * Check if the user has an inactive license.
 	 *
 	 * True when a license key exists but is not currently validated:
-	 * Pro not installed (lapsed customer), status is false/null, or never validated.
+	 * Pro is inactive, the verdict is negative, or verification has not succeeded.
 	 *
 	 * @return bool
 	 */
 	public static function isLicenseInactive()
 	{
-		$key = \wp_slimstat::$settings['slimstat_pro_license_key'] ?? '';
-
-		if (empty($key)) {
-			return false;
-		}
-
-		if (!\wp_slimstat::pro_is_installed()) {
-			return true;
-		}
-
-		$status = (bool) (\wp_slimstat::$settings['slimstat_pro_license_status'] ?? false);
-
-		return !$status;
+		return '' !== ProLicense::key() && !self::isLicenseActive();
 	}
 
 	/**
 	 * Check if the user has no license at all.
 	 *
-	 * True when no license key has ever been entered.
-	 * Uses key presence as the durable signal for "ever purchased."
+	 * A missing key does not imply that the site owner has never purchased Pro.
 	 *
 	 * @return bool
 	 */
 	public static function hasNoLicense()
 	{
-		$key = \wp_slimstat::$settings['slimstat_pro_license_key'] ?? '';
+		return '' === ProLicense::key();
+	}
 
-		return empty($key);
+	/** A definitive negative verdict, never an outage or a site awaiting activation. */
+	public static function isLicenseInvalid(): bool
+	{
+		return 'invalid' === ProLicense::state();
+	}
+
+	/** Addon tags describe plugin activation, independently of license entitlement. */
+	public static function hasProPlugin(): bool
+	{
+		return \wp_slimstat::pro_plugin_active();
+	}
+
+	public static function hasNoProPlugin(): bool
+	{
+		return !self::hasProPlugin();
 	}
 
 	/**
@@ -135,7 +138,21 @@ class ConditionTagEvaluator
 	 */
 	public static function getVersionGatedTags()
 	{
-		return self::$versionGatedTags;
+		return array_keys(self::$versionGatedTags);
+	}
+
+	/**
+	 * The newest targeting capability required by an AND-combined tag list.
+	 * @param string[] $tags
+	 */
+	public static function requiredVersion(array $tags): ?string
+	{
+		$minimum = null;
+		foreach ($tags as $tag) {
+			$version = self::$versionGatedTags[$tag] ?? null;
+			if ($version && (!$minimum || version_compare($version, $minimum, '>'))) $minimum = $version;
+		}
+		return $minimum;
 	}
 
 	/**
@@ -251,11 +268,11 @@ class ConditionTagEvaluator
 	 */
 	public static function checkConditions($tag, ?string $version = null)
 	{
+		if (!is_string($tag) || '' === $tag) return false;
+
 		if (\strpos($tag, 'is-version-') === 0) {
 			$versionNumber = \substr($tag, \strlen('is-version-'));
-			if ($versionNumber) {
-				return self::isVersionOrHigher($versionNumber);
-			}
+			return (bool) preg_match('/^\d+\.\d+(\.\d+)?$/', $versionNumber) && self::isVersionOrHigher($versionNumber);
 		}
 
 		if (\strpos($tag, 'is-locale-') === 0) {
@@ -284,19 +301,11 @@ class ConditionTagEvaluator
 			return self::$method();
 		}
 
-		/**
-		 * Unknown tags return true (fail-open) to prevent filtering out notifications.
-		 * This is intentional: the tag system is used only for notification display filtering,
-		 * not for authorization or feature gating. Unknown tags from the remote API should
-		 * not suppress notifications. If this system is ever extended for access control,
-		 * this default should be reconsidered.
-		 *
-		 * @since 5.3
-		 */
+		// An unsupported audience must not send a targeted notice to every customer.
 		if (\defined('WP_DEBUG') && WP_DEBUG) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Diagnostic logging is guarded by WP_DEBUG; normal production requests do not log here.
-			\error_log(\sprintf('SlimStat: Unknown condition tag "%s" — defaulting to true.', $tag));
+			\error_log(\sprintf('SlimStat: Unknown condition tag "%s", notification hidden.', $tag));
 		}
-		return true;
+		return false;
 	}
 }

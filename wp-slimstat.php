@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 6.1.0
+ * Version: 6.1.1
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -57,7 +57,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php') || !file_exists(__DIR__ . '/v
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '6.1.0');
+define('SLIMSTAT_ANALYTICS_VERSION', '6.1.1');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -2743,7 +2743,7 @@ class slimstat_widget extends WP_Widget
 
         <p>
             <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>"><?php esc_html_e('Optional filters', 'wp-slimstat'); ?></label>
-            <a href="https://wp-slimstat.com/resources/what-is-the-syntax-of-a-slimstat-shortcode-#slimstat-operators" target="_blank">[?]</a>
+            <a href="<?php echo esc_url(\SlimStat\Utils\ProLinks::tag('https://wp-slimstat.com/resources/what-is-the-syntax-of-a-slimstat-shortcode-#slimstat-operators', 'shortcodes', 'operators-help')); ?>" target="_blank" rel="noopener noreferrer">[?]</a>
             <textarea class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_filters')); ?>"><?php echo esc_textarea(trim(wp_strip_all_tags($slimstat_widget_filters))) ?></textarea>
         </p>
         <?php

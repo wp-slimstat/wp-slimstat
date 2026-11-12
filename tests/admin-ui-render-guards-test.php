@@ -209,8 +209,15 @@ $bfFence = static function (string $file): string {
     return false !== $start && false !== $end ? substr($source, $start, $end - $start) : '';
 };
 $bfJs = $bfFence('admin/assets/js/promotions.js');
+// Page lifecycle listeners may only expire this strip; other global handlers remain forbidden.
+$bfLocalJs = str_replace([
+    "document.addEventListener('visibilitychange', expire);",
+    "document.removeEventListener('visibilitychange', expire);",
+    "window.addEventListener('pageshow', expire);",
+    "window.removeEventListener('pageshow', expire);",
+], '', $bfJs);
 foreach (['XMLHttpRequest', 'sendBeacon', 'document.cookie', 'document.addEventListener', 'window.', 'document.body', 'localStorage', 'sessionStorage'] as $banned) {
-    check(false === strpos($bfJs, $banned), "Black Friday: the JS block never uses {$banned}");
+    check(false === strpos($bfLocalJs, $banned), "Black Friday: the JS block never uses {$banned} outside its expiry lifecycle");
 }
 check(1 === substr_count($bfJs, 'fetch(') && false !== strpos($bfJs, "action: 'slimstat_bf2026_dismiss', security: root.getAttribute('data-slimstat-bf26-nonce')"), 'Black Friday: the JS block sends one request, the nonce-protected dismissal');
 check(false !== strpos($bfJs, "document.getElementById('slimstat-bf-2026')") && false !== strpos($bfJs, "root.addEventListener('click'"), 'Black Friday: the JS block listens on its own root');

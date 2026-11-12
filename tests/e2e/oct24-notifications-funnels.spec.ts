@@ -124,6 +124,7 @@ test('goals box keeps inner margins, a flat upsell and no footer gap on desktop,
           return {
             insets:blocks.map(inset),
             subtitleOffset:rtl?title.right-sub.right:sub.left-title.left,
+            actionGap:box.querySelector('.slimstat-ai-actions').getBoundingClientRect().top-sub.bottom,
             // From the card's lowest child, not the upsell: with WP Consent API active
             // (CI) a consent note follows the upsell; hidden children report bottom 0.
             footerGap:box.getBoundingClientRect().bottom-Math.max(...[...box.querySelector('.slimstat-gf-goals').children].map(e=>e.getBoundingClientRect().bottom)),
@@ -133,6 +134,7 @@ test('goals box keeps inner margins, a flat upsell and no footer gap on desktop,
         },dir==='rtl');
         for(const b of m.insets){expect(b.left).toBeGreaterThanOrEqual(15);expect(b.right).toBeGreaterThanOrEqual(15);}
         expect(Math.abs(m.subtitleOffset)).toBeLessThanOrEqual(2);
+        expect(m.actionGap).toBeGreaterThanOrEqual(4);
         expect(m.footerGap).toBeLessThanOrEqual(24);
         expect(m.nestedCard).toBe(false);
         expect(m.overflow).toBe(false);

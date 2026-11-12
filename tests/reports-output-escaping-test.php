@@ -401,6 +401,7 @@ foreach (['username', 'author'] as $column) {
 $html = render_column('fingerprint', 'abc123def456');
 assert_contains('abc123def456', $html, 'Clean fingerprint must appear in rendered output');
 assert_contains('slimstat-filter-link', $html, 'Filter link must be rendered');
+assert_contains('<span dir="auto">abc123def456</span>', str_replace("'", '"', $html), 'Filter direction survives KSES on supported WordPress versions');
 assert_contains('fingerprint', $html, 'href must reference fingerprint column');
 
 // Test 2: Script tag in fingerprint is escaped via esc_html() in the default case.

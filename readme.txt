@@ -6,7 +6,7 @@ Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
 Tested up to: 7.1
-Stable tag: 6.1.0
+Stable tag: 6.1.1
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -159,6 +159,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Upgrade Notice ==
 
+= 6.1.1 =
+Older versions keep working, added columns stay, and it removes no rows. Shows scheduled offers and notices that match your Pro license. Improves Persian and English layouts and report scrolling. Back up first; database repairs wait for your click.
+
 = 6.1.0 =
 Older versions keep working, added columns stay, and it removes no rows. Adds Copy Prompt, AI Analysis, city drilldown and video tutorials. SlimStat Pro now needs a valid, activated license. Fixes privacy exports, tracking, filters and geolocation. Back up first; repairs wait for your click.
 
@@ -167,6 +170,14 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 
 == Changelog ==
+
+= 6.1.1 - 2026-11-12 =
+
+* Website links include campaign and placement attribution, while preserving existing campaign parameters and coupon codes.
+* Notification audiences follow the verified Pro license, including network keys and outage grace. New version-gated tags distinguish plugin activation and invalid licenses, and unsupported tags no longer show targeted messages to everyone.
+* Report scrolling continues onto the page at either boundary. Persian and English layouts now keep arrows, dates, live metrics, notices and report controls aligned on desktop and mobile. Ecommerce chart dates follow the current admin language.
+* Scheduled sale notifications and header offers now follow their UTC start and end times, with a coupon copy action and an expiry countdown. Open or restored admin pages remove expired offers and block expired purchase links.
+* The header groups license and upgrade controls beside the logo, keeps offers next to notifications, and adapts to narrow screens and right-to-left languages.
 
 = 6.1.0 - 2026-11-08 =
 

@@ -30,7 +30,7 @@ test(`URL preset agrees with its highlighted range on day ${day}: ${preset}`, as
   await page.goto(`${OVERVIEW}&from=${range.from}&to=${range.to}`);
   await page.waitForFunction(() => Boolean((window as any).jQuery?.('.slimstat-date-range-input').data('daterangepicker')));
   const label = page.locator('.slimstat-date-range-btn .date-label');
-  await expect(label).toHaveText(range.label);
+  await expect.poll(async () => (await label.textContent())?.replace(/[\u2068\u2069]/g, '')).toBe(range.label);
   await expect(label).not.toHaveText(/\d{2}\/\d{2}\/\d{4}/);
 
   await page.locator('.slimstat-date-range-btn').click();

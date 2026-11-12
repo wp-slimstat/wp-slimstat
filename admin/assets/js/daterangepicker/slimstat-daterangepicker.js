@@ -168,10 +168,10 @@ jQuery(document).ready(function($) {
         const end = moment(endDate).format(CONFIG.DATE_FORMAT);
 
         if (start === end) {
-            return `${label} ${start}`;
+            return `${label} \u2068${start}\u2069`;
         }
 
-        return `${label} ${start} – ${end}`;
+        return `${label} \u2068${start}\u2069 – \u2068${end}\u2069`;
     }
 
     /**

@@ -683,7 +683,7 @@
 
     function renderFunnelSummary(summary) {
         if (!summary || summary.total_cr === null || summary.total_cr === undefined) {
-            return '<span class="slimstat-gf-summary slimstat-gf-summary--empty">' +
+            return '<span class="slimstat-gf-summary slimstat-gf-summary--empty" dir="auto">' +
                 escHtml(__('No visitors matched in this date range', 'wp-slimstat')) + '</span>';
         }
         var cr = Number(summary.total_cr);
@@ -695,25 +695,25 @@
         var mainHtml;
         if (isHealthy100) {
             /* translators: %d is the step count */
-            mainHtml = '<span class="slimstat-gf-summary slimstat-gf-summary--success">' +
+            mainHtml = '<span class="slimstat-gf-summary slimstat-gf-summary--success" dir="auto">' +
                 '<span class="slimstat-gf-summary__glyph" aria-hidden="true">✓</span> ' +
                 escHtml(sprintf(__('Healthy pass-through · %d-step funnel', 'wp-slimstat'), stepCount)) + '</span>';
         } else if (unreachable > 0) {
             /* A step has no data yet — the overall rate isn't a real measurement.
                Mirror funnel-summary.php: say "pending", not a misleading 0.0%. */
             /* translators: %d is the step count */
-            mainHtml = '<span class="slimstat-gf-summary">' +
+            mainHtml = '<span class="slimstat-gf-summary" dir="auto">' +
                 escHtml(sprintf(__('%d-step funnel · Conversion rate pending', 'wp-slimstat'), stepCount)) + '</span>';
         } else {
             /* translators: 1: step count, 2: conversion rate */
-            mainHtml = '<span class="slimstat-gf-summary">' +
+            mainHtml = '<span class="slimstat-gf-summary" dir="auto">' +
                 escHtml(sprintf(__('%1$d-step funnel · %2$s%% conversion rate', 'wp-slimstat'), stepCount, crLabel)) + '</span>';
         }
 
         if (unreachable > 0) {
             /* translators: %d is the number of steps with no visitors in range */
             var label = sprintf(_n('%d step had no visitors in range', '%d steps had no visitors in range', unreachable, 'wp-slimstat'), unreachable);
-            mainHtml += '<span class="slimstat-gf-summary slimstat-gf-summary--warn">' + escHtml(label) + '</span>';
+            mainHtml += '<span class="slimstat-gf-summary slimstat-gf-summary--warn" dir="auto">' + escHtml(label) + '</span>';
         }
         return mainHtml;
     }

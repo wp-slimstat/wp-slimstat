@@ -551,6 +551,9 @@ function slimstat_uninstall($_wpdb = '')
     // see them; they are here because the gate's own residual gap was written down.
     delete_option('wp_slimstat_notifications');
     delete_option('slimstat_notification_fetch_state');
+    delete_option('wp_slimstat_marketing_campaigns');
+    delete_option('slimstat_marketing_campaign_fetch_state');
+    delete_option('slimstat_marketing_campaign_execution_lock');
     delete_option('slimstat_notification_execution_lock');
     delete_option('slimstat_notification_dismissed');
     delete_option('slimstat_purge_optimized_at');

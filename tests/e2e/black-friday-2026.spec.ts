@@ -70,7 +70,8 @@ test.describe('Black Friday 2026 strip', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.beforeAll(async ({ browser }) => {
-    for (const option of [SWITCH, ...PROBE]) await snapshotOption(option);
+    for (const option of [SWITCH, ...PROBE, 'wp_slimstat_marketing_campaigns']) await snapshotOption(option);
+    await setOptionValue('wp_slimstat_marketing_campaigns', null);
     await snapshotSlimstatOptions();
     const [users] = await getPool().execute('SELECT ID FROM wp_users WHERE user_login=?', [ADMIN_USER]) as any;
     admin = users[0].ID;
@@ -91,15 +92,49 @@ test.describe('Black Friday 2026 strip', () => {
     for (const key of [ANCHOR, DISMISSED, BF_DISMISSED]) await meta(key, null);
     for (const row of savedMeta) await meta(row.meta_key, row.meta_value);
     await restoreSlimstatOptions();
-    for (const option of [SWITCH, ...PROBE]) await restoreOption(option);
+    for (const option of [SWITCH, ...PROBE, 'wp_slimstat_marketing_campaigns']) await restoreOption(option);
     await closeDb();
   });
-  test.beforeEach(async () => {
+  test.beforeEach(async ({ page }) => {
+    // The server fixture opts into the sale; keep the browser inside its window after 2026 too.
+    await page.clock.install({ time: new Date('2026-11-27T12:00:00Z') });
     await on(true);
     await meta(ANCHOR, String(Math.floor(Date.now() / 1000) - 86400));
     await meta(DISMISSED, null);
     await meta(BF_DISMISSED, null);
   });
+
+  for (const url of [SLIMSTAT[0], DASHBOARD]) {
+    test(`expires the open strip at the UTC boundary and on restored pages: ${url}`, async ({ page }) => {
+      const end = new Date('2026-12-01T23:59:00Z');
+      await page.goto(url);
+      await expect(strip(page)).toBeVisible();
+      await page.clock.pauseAt(new Date(end.getTime() - 1000));
+      await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+      await strip(page).locator('.slimstat-bf26__cta').focus();
+      await page.clock.runFor(999);
+      await expect(strip(page)).toBeVisible();
+      await page.clock.runFor(1);
+      await expect(strip(page), 'expiry removes the coupon and all sale buttons without reloading').toHaveCount(0);
+      await expect(page.locator('#wpbody-content h1').first()).toBeFocused();
+
+      for (const resume of ['pageshow', 'click']) {
+        await page.clock.setSystemTime(new Date('2026-11-27T12:00:00Z'));
+        await page.goto(url);
+        await expect(strip(page)).toBeVisible();
+        await page.clock.setSystemTime(end); // A suspended tab's timers have not run yet.
+        const canceled = await page.evaluate(mode => {
+          if (mode === 'pageshow') window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+          else return !document.querySelector('.slimstat-bf26__cta')!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        }, resume);
+        if (resume === 'click') expect(canceled, 'expired navigation is canceled').toBe(true);
+        await expect(strip(page), `${resume} cannot revive an expired offer`).toHaveCount(0);
+        expect(new URL(page.url()).origin).toBe(new URL(BASE_URL).origin);
+      }
+      const [rows] = await getPool().execute('SELECT meta_value FROM wp_usermeta WHERE user_id=? AND meta_key=?', [admin, BF_DISMISSED]) as any;
+      expect(rows, 'expiry does not record a user dismissal').toEqual([]);
+    });
+  }
 
   test('shows on SlimStat screens and the Dashboard only, and never stacks with the release notice', async ({ page }) => {
     const since = await anchor();
@@ -107,7 +142,7 @@ test.describe('Black Friday 2026 strip', () => {
       await page.goto(url);
       await expect(strip(page), url).toBeVisible();
       await expect(releaseNotice(page), `${url}: the strip takes the release bar's slot`).toHaveCount(0);
-      await expect(strip(page).getByRole('link', { name: /See Black Friday pricing/ })).toHaveAttribute('href', 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=bf-2026&utm_content=banner');
+      await expect(strip(page).getByRole('link', { name: /See Black Friday pricing/ })).toHaveAttribute('href', 'https://wp-slimstat.com/black-friday/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=bfcm2026&utm_content=banner');
     }
     await page.goto(DASHBOARD);
     await expect(strip(page)).toBeVisible();
@@ -142,7 +177,16 @@ test.describe('Black Friday 2026 strip', () => {
       await load(page, url);
       const shown = await load(page, url);
       await expect(strip(page)).toBeVisible();
-      expect(shown.requests, `${url}: same requests with the strip`).toEqual(off.requests);
+      // Replacing the release notice can remove its emoji image request. Count each request
+      // so duplicate new requests still fail, while a request saved by the strip is allowed.
+      const remaining = [...off.requests];
+      const added = shown.requests.filter(request => {
+        const index = remaining.indexOf(request);
+        if (index < 0) return true;
+        remaining.splice(index, 1);
+        return false;
+      });
+      expect(added, `${url}: no added requests with the strip`).toEqual([]);
       expect(shown.queries, `${url}: no added queries`).toBeLessThanOrEqual(off.queries);
       test.info().annotations.push({ type: 'queries', description: `${url}: off ${off.queries}, on ${shown.queries}` });
       const during: any[] = [];
@@ -180,6 +224,7 @@ test.describe('Black Friday 2026 strip', () => {
     await expect(strip(page)).toHaveCount(0);
     const other = await freshContext(browser, 'admin.json');
     const second = await other.newPage();
+    await second.clock.install({ time: new Date('2026-11-27T12:00:00Z') });
     for (const url of [SLIMSTAT[0], DASHBOARD]) {
       await second.goto(url);
       await expect(second.locator('#wpbody-content h1').first(), url).toBeVisible();
@@ -337,7 +382,7 @@ test.describe('Black Friday 2026 strip', () => {
     const PROPS = ['color', 'background-color', 'font-family', 'font-size', 'font-weight', 'line-height', 'margin', 'padding', 'border', 'border-radius', 'display', 'box-shadow', 'outline'];
     const SAMPLES: Record<string, string[]> = {
       [SLIMSTAT[0]]: ['.slimstat-header__cta', '.slimstat-pageintro__title', '.postbox', '#wpadminbar', '#adminmenu a', 'button, .button'],
-      [DASHBOARD]: ['#wpbody-content h1', '#dashboard-widgets .postbox', '#dashboard-widgets .hndle', '.notice:not(#slimstat-bf-2026)', '#wpadminbar', 'button, .button'],
+      [DASHBOARD]: ['#wpbody-content h1', '#dashboard-widgets .postbox', '#dashboard-widgets .hndle', '.notice:not(#slimstat-bf-2026):not(#slimstat-notice-latest-news)', '#wpadminbar', 'button, .button'],
     };
     const styles = (url: string) => page.evaluate(([samples, props]) => Object.fromEntries(samples.map(selector => {
       const el = [...document.querySelectorAll(selector)].find(e => !e.closest('#slimstat-bf-2026'));

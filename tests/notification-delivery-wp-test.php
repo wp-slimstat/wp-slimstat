@@ -1,13 +1,17 @@
 <?php
 /** Run with wp eval-file on a disposable test_* database; never changes a real site's feed. */
-namespace SlimStat\Services\Admin\Notification;
+namespace SlimStat\Services\Admin;
+
+use SlimStat\Services\Admin\Notification\NotificationFetcher;
+use SlimStat\Services\Admin\Notification\NotificationFactory;
+use SlimStat\Services\Admin\Notification\NotificationProcessor;
 
 function time() { return $GLOBALS['notification_test_now'] ?? \time(); }
 
 use SlimStat\Services\CronEventManager;
 use SlimStat\Utils\OptionClaim;
 
-if (!defined('WP_CLI') || !WP_CLI || (!preg_match('/^(test_|tests-)/', DB_NAME) && DB_NAME !== 'wordpress')) {
+if (!defined('WP_CLI') || !WP_CLI || !preg_match('/^(test_|tests-)/', DB_NAME)) {
     throw new \RuntimeException('Notification fixtures require a disposable database.');
 }
 $same = static function ($expected, $actual, $label) {
@@ -28,7 +32,11 @@ $responseCode = 200;
 $duringFetch = null;
 $headers = [];
 $http = static function ($pre, $args, $url) use (&$requests, &$payload, &$responseCode, &$duringFetch, &$headers, $same) {
+    if (strpos($url, 'connect.wp-slimstat.com/api/v1/marketing-campaigns') !== false) return ['response' => ['code' => 200], 'body' => '{"data":[]}', 'headers' => []];
     if (strpos($url, 'connect.wp-slimstat.com/api/v1/notifications') === false) return $pre;
+    parse_str(parse_url($url, PHP_URL_QUERY), $query);
+    $same('wp-slimstat', $query['plugin_slug'], 'Stable Horizon slug');
+    $same('1', $query['include_upcoming'], 'Upcoming items requested');
     $requests++;
     $headers = $args['headers'];
     $same(true, $args['timeout'] <= 10, 'Bounded timeout');
@@ -130,8 +138,8 @@ try {
     $GLOBALS['notification_test_now'] += DAY_IN_SECONDS;
     update_option('slimstat_notification_execution_lock', '1:abandoned', false);
     $same(true, $fetcher->fetchNotification(true), 'Expired claim recovers');
-    $valid['data'][] = ['id' => 987656, 'title' => 'Expired', 'expires_at' => '2020-01-01'];
-    $valid['data'][] = ['id' => 987657, 'title' => 'Future', 'activated_at' => '2099-01-01'];
+    $valid['data'][] = ['id' => 987656, 'title' => 'Expired', 'ends_at' => '2020-01-01T00:00:00Z'];
+    $valid['data'][] = ['id' => 987657, 'title' => 'Future', 'starts_at' => '2099-01-01T00:00:00Z'];
     update_option('wp_slimstat_notifications', $valid);
     $same(1, NotificationFactory::getNewNotificationCount(), 'Expiry and activation re-evaluated from cached data');
     \wp_slimstat::$settings['display_notifications'] = 'off';

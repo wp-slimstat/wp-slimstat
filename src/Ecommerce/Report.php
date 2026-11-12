@@ -354,7 +354,8 @@ final class Report
 		if (!$details) { return $data; }
 		// Interval changes reuse summaries/rankings and query only their own trend.
 		$this->range['start'] = $data['range'][0]; $this->range['end'] = $data['range'][1];
-		$seriesKey = $key . '_' . $interval . '_' . (int) get_option('start_of_week', 1);
+		$locale = is_locale_switched() ? get_locale() : determine_locale();
+		$seriesKey = $key . '_' . $interval . '_' . (int) get_option('start_of_week', 1) . '_' . $locale;
 		$cachedSeries = get_transient($seriesKey);
 		if (is_array($cachedSeries) && ($cachedSeries['signature'] ?? []) === $signature && ($cachedSeries['range'] ?? []) === $data['range']) {
 			$data['series'] = $cachedSeries['data'];

@@ -84,6 +84,12 @@ class wp_slimstat_admin
                 'empty_title' => __('You are up to date!', 'wp-slimstat'),
                 'empty_inbox' => __('No notifications in your inbox.', 'wp-slimstat'),
                 'empty_dismissed' => __('No dismissed notifications.', 'wp-slimstat'),
+                'copy' => __('Copy', 'wp-slimstat'),
+                'copied' => __('Copied', 'wp-slimstat'),
+                'copy_failed' => __('Could not copy. Select the code and copy it manually.', 'wp-slimstat'),
+                'notification_error' => __('Could not update notifications. Please try again.', 'wp-slimstat'),
+                /* translators: %1$s: days, %2$s: hours, %3$s: minutes remaining in the offer. */
+                'ends_in' => __('Ends in %1$sd %2$sh %3$sm', 'wp-slimstat'),
             ];
             wp_localize_script('slimstat_notifications', 'slimstat_admin', $notification_params);
         }
@@ -2645,7 +2651,7 @@ class wp_slimstat_admin
         $tone = in_array($tone, ['error', 'warning', 'info', 'success'], true) ? $tone : 'warning';
         $snooze = max(0, (int) $snooze);
         $nonce = wp_create_nonce('slimstat_dismiss_notice|' . $key . '|' . $stamp . '|' . $snooze);
-        echo '<div class="notice notice-' . esc_attr($tone) . ' slimstat-notice slimstat-pro-license-notice slimstat-custom-db-notice' . ('migration' === $key ? ' slimstat-migration-notice slimstat-migration-notice-show' : '') . ' is-dismissible" role="status" data-notice-key="' . esc_attr($key) . '" data-notice-stamp="' . esc_attr($stamp) . '" data-notice-snooze="' . esc_attr((string) $snooze) . '" data-notice-nonce="' . esc_attr($nonce) . '" data-ajax-url="' . esc_url(admin_url('admin-ajax.php')) . '">' . wp_kses_post(wpautop($message));
+        echo '<div class="notice notice-' . esc_attr($tone) . ' slimstat-notice slimstat-pro-license-notice slimstat-custom-db-notice' . ('migration' === $key ? ' slimstat-migration-notice slimstat-migration-notice-show' : '') . ' is-dismissible" role="status" data-notice-key="' . esc_attr($key) . '" data-notice-stamp="' . esc_attr($stamp) . '" data-notice-snooze="' . esc_attr((string) $snooze) . '" data-notice-nonce="' . esc_attr($nonce) . '" data-ajax-url="' . esc_url(admin_url('admin-ajax.php')) . '"><div class="slimstat-alert-content" dir="auto">' . wp_kses_post(wpautop($message)) . '</div>';
         if ($buttons) {
             echo '<p class="slimstat-pro-license-notice__actions">';
             foreach ($buttons as $i => [$label, $url, $external]) {
@@ -4667,7 +4673,7 @@ class wp_slimstat_admin
 
         $doc = static function (string $path, string $campaign, string $text): string {
             $url = 'pricing/' === $path ? \SlimStat\Utils\ProLinks::url($campaign, 'help-panel')
-                : 'https://wp-slimstat.com/' . $path . '?utm_source=wp-slimstat&utm_medium=help&utm_campaign=' . $campaign;
+                : 'https://wp-slimstat.com/' . $path . '?utm_source=wp-slimstat&utm_medium=help&utm_campaign=' . $campaign . '&utm_content=help-panel';
             return '<a href="' . esc_url($url) . '" target="_blank" rel="noopener">' . esc_html($text) . '</a>';
         };
         $p    = static fn(string ...$lines): string => '<p>' . implode('</p><p>', $lines) . '</p>';
@@ -4936,10 +4942,10 @@ class wp_slimstat_admin
     public static function inject_goals_funnels_header_subtitle($_html = '', $_report_id = '')
     {
         if ('slim_p9_01' === $_report_id) {
-            return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('A goal is one question you ask of your traffic.', 'wp-slimstat') . '</p>';
+            return '<p class="slimstat-gf-postbox-subtitle"><span dir="auto">' . esc_html__('A goal is one question you ask of your traffic.', 'wp-slimstat') . '</span></p>';
         }
         if ('slim_p9_02' === $_report_id) {
-            return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('String 2 to 5 steps into a journey. A funnel shows the conversion rate and exact drop-off at each stage.', 'wp-slimstat') . '</p>';
+            return '<p class="slimstat-gf-postbox-subtitle"><span dir="auto">' . esc_html__('String 2 to 5 steps into a journey. A funnel shows the conversion rate and exact drop-off at each stage.', 'wp-slimstat') . '</span></p>';
         }
         return $_html;
     }

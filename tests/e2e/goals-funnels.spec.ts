@@ -272,6 +272,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slim_p9_02 [data-role="usage"]')).toContainText('2 of 3');
 
         // Pill-segmented tab bar appears with 2 tabs.
+        await page.locator('#slim_p9_02').scrollIntoViewIfNeeded();
         await expect(page.locator('.slimstat-gf-tabs')).toBeVisible();
         await expect(page.locator('.slimstat-gf-tab')).toHaveCount(2);
         await expect(page.locator('.slimstat-gf-tab.is-active')).toHaveCount(1);
