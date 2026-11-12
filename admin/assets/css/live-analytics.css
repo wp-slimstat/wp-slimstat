@@ -15,7 +15,8 @@
     align-items: flex-start;
     padding: 16px;
     width: 100%;
-    height: 321px;
+    min-height: 321px;
+    height: auto;
     background: #ffffff;
     border-radius: 8px;
     position: relative;
@@ -33,7 +34,8 @@
     padding: 0px;
     gap: 24px;
     width: 100%;
-    height: 289px;
+    min-height: 289px;
+    height: auto;
     flex: none;
     order: 0;
     align-self: stretch;
@@ -53,7 +55,7 @@
     padding: 0px;
     width: 249px;
     min-width: 249px;
-    height: 289px;
+    height: auto;
     border-inline-end: 1px dashed #dadce0;
     border-radius: 0px;
     flex: none;
@@ -706,19 +708,19 @@
 @media (max-width: 1280px) {
     .live-analytics-container {
         max-width: 100%;
-        height: 321px; /* Match desktop height */
+        min-height: 321px;
     }
 
     .live-analytics-grid {
         flex-direction: row; /* Keep horizontal */
-        height: 100%;
+        height: auto;
         gap: 16px; /* Reduce gap */
     }
 
     .live-analytics-metrics {
         width: 180px; /* Smaller metrics panel */
         min-width: 180px;
-        height: 100%;
+        height: auto;
         border-inline-end: 1px dashed #dadce0;
         border-bottom: none;
         padding-bottom: 0;
@@ -728,13 +730,13 @@
 
     .live-metric-item {
         width: 100%;
-        height: 96px;
+        height: auto;
         padding: 12px;
     }
 
     .live-analytics-chart {
         width: 100%;
-        height: 100%;
+        height: 289px;
         order: 1;
         flex-grow: 1;
         min-width: 0;
@@ -753,11 +755,12 @@
 @media (max-width: 768px) {
     .live-analytics-container {
         padding: 10px;
-        height: 260px; /* Adjusted height */
+        min-height: 260px;
     }
 
     .live-analytics-grid {
         gap: 12px;
+        min-height: 240px;
     }
 
     .live-analytics-metrics {
@@ -794,7 +797,7 @@
     }
 
     .live-analytics-chart {
-        height: 100%;
+        height: 240px;
     }
 
     .chart-container {
@@ -843,7 +846,7 @@
 @media (max-width: 480px) {
     .live-analytics-container {
         padding: 6px;
-        height: 200px; /* Scaled down */
+        min-height: 200px;
     }
 
     .live-analytics-grid {
@@ -1066,9 +1069,10 @@
     border: 0;
 }
 
+#slim_live_analytics.postbox { height: auto !important; }
+
 /* Give translated live metrics room on phones instead of shrinking labels to 10px. */
 @media (max-width: 600px) {
-    #slim_live_analytics.postbox { height: auto !important; }
     #slim_live_analytics .live-analytics-container { height: auto; padding: 12px; }
     #slim_live_analytics .live-analytics-grid { flex-direction: column; height: auto; gap: 16px; }
     #slim_live_analytics .live-analytics-metrics { width: 100%; min-width: 0; height: auto; border-inline-end: 0; border-bottom: 1px dashed var(--ss-border, #e2e4e7); }

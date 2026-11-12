@@ -497,6 +497,10 @@ body.index-php {
   float: none;
 }
 
+[id^="slim_"] p a.slimstat-filter-link > span {
+  float: none;
+}
+
 [id^="slim_"] p span.slimstat-pagination-range,
 [id^="slim_"] p span.refresh-countdown {
   float: none;

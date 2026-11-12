@@ -155,9 +155,17 @@ $same(['visits' => 120, 'products' => 120, 'carts' => 1, 'checkouts' => 1, 'buye
 // Localized chart labels must not be reused by an administrator in another locale.
 $labelLocale = 'en_US';
 $localeFilter = static function () use (&$labelLocale) { return $labelLocale; };
-$dateFilter = static function ($date) use (&$labelLocale) { return $labelLocale . ':' . $date; };
-add_filter('determine_locale', $localeFilter);
+$dateFilter = static function ($date) use (&$labelLocale) { return (is_locale_switched() ? get_locale() : $labelLocale) . ':' . $date; };
+// WordPress 5.6 keeps an explicit admin locale in determine_locale() during a switch.
+add_filter('determine_locale', $localeFilter, PHP_INT_MAX);
 add_filter('wp_date', $dateFilter);
+$originalSwitcher = $GLOBALS['wp_locale_switcher'];
+$availableLocales = static function ($locales) { return array_unique(array_merge($locales, ['fa_IR'])); };
+add_filter('get_available_languages', $availableLocales);
+$switcher = new \WP_Locale_Switcher();
+remove_filter('get_available_languages', $availableLocales);
+$GLOBALS['wp_locale_switcher'] = $switcher;
+$switcher->init();
 Integration::invalidate();
 try {
     $english = $reportData();
@@ -167,8 +175,18 @@ try {
     $same(true, strpos($persian['series']['current'][0]['short'], 'fa_IR:') === 0, 'Chart cache follows the current locale');
     $labelLocale = 'en_US';
     $same($english['series'], $reportData()['series'], 'English chart cache remains reusable');
+    $same(true, switch_to_locale('fa_IR'), 'Switch to Persian');
+    $same('en_US', determine_locale(), 'Explicit English admin locale models WordPress 5.6');
+    $switched = $reportData();
+    $same(true, strpos($switched['series']['current'][0]['short'], 'fa_IR:') === 0, 'Chart cache follows the active switched locale');
+    restore_previous_locale();
+    $same($english['series'], $reportData()['series'], 'Restoring the locale restores English chart labels');
 } finally {
-    remove_filter('determine_locale', $localeFilter);
+    $switcher->restore_current_locale();
+    remove_filter('locale', [$switcher, 'filter_locale']);
+    remove_filter('determine_locale', [$switcher, 'filter_locale']);
+    $GLOBALS['wp_locale_switcher'] = $originalSwitcher;
+    remove_filter('determine_locale', $localeFilter, PHP_INT_MAX);
     remove_filter('wp_date', $dateFilter);
     Integration::invalidate();
 }

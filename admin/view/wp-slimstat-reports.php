@@ -1763,7 +1763,7 @@ class wp_slimstat_reports
                 if (is_admin()) {
                     $column_value         = is_array($results[$i]) && isset($results[$i][$_args['columns']]) ? (string) $results[$i][$_args['columns']] : '';
                     $encoded_column_value = rawurlencode($column_value);
-                    $element_value        = "<a class='slimstat-filter-link' dir='auto' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . $encoded_column_value) . sprintf("'>%s</a>", $element_value);
+                    $element_value        = "<a class='slimstat-filter-link' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . $encoded_column_value) . sprintf("'><span dir='auto'>%s</span></a>", $element_value);
                 }
 
                 // Show last-seen timestamp when dt is available in the result
@@ -2595,7 +2595,7 @@ class wp_slimstat_reports
                 $base_url = $parsed['scheme'] . '://' . $parsed['host'];
             }
 
-            $a_result['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . esc_attr(__('Open this URL in a new window', 'wp-slimstat')) . "' href='" . esc_url($base_url . $a_result['resource']) . "'></a> " . esc_html($base_url) . "<a class='slimstat-filter-link' dir='auto' href='" . wp_slimstat_reports::fs_url('resource equals ' . $a_result['resource']) . "'>" . self::get_resource_title($a_result['resource']) . '</a>';
+            $a_result['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . esc_attr(__('Open this URL in a new window', 'wp-slimstat')) . "' href='" . esc_url($base_url . $a_result['resource']) . "'></a> " . esc_html($base_url) . "<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('resource equals ' . $a_result['resource']) . "'><span dir='auto'>" . self::get_resource_title($a_result['resource']) . '</span></a>';
 
             $group_markup = [];
             if (!empty($a_result['column_group'])) {

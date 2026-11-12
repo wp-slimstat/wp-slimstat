@@ -1,6 +1,38 @@
 import { test, expect } from '@playwright/test';
 import { runWordPressFixture } from './helpers/chart';
 
+test('long translated live metric labels fit above the phone breakpoint', async ({page}) => {
+  await page.goto('/wp-admin/admin.php?page=slimview1');
+  const live=page.locator('#slim_live_analytics');
+  for(const width of [601,768,1024,1440]) {
+    await page.setViewportSize({width,height:900});
+    for(const dir of ['ltr','rtl']) {
+      await page.evaluate(dir=>{
+        document.documentElement.dir=dir;document.body.classList.toggle('rtl',dir==='rtl');
+        for(const label of document.querySelectorAll('.metric-label')) {
+          for(const node of [...label.childNodes]) if(node.nodeType===Node.TEXT_NODE) node.textContent='';
+          label.append(document.createTextNode(dir==='rtl'?'بازدیدکنندگان آنلاین در همه صفحه‌های سایت':'Visitors currently online across all site pages'));
+        }
+      },dir);
+      const measurements=await live.evaluate(el=>{
+        const container=el.querySelector('.live-analytics-container')!.getBoundingClientRect();
+        const metrics=el.querySelector('.live-analytics-metrics')!.getBoundingClientRect();
+        return {overflow:el.scrollHeight-el.clientHeight,rows:[...el.querySelectorAll('.live-metric-item')].map(row=>{
+          const r=row.getBoundingClientRect(),value=row.querySelector('.metric-value')!.getBoundingClientRect();
+          return {overflow:row.scrollHeight-row.clientHeight,bottom:r.bottom,contentBottom:value.bottom,containerBottom:container.bottom,panelBottom:metrics.bottom};
+        })};
+      });
+      expect(measurements.overflow,`${dir} ${width}px outer panel`).toBeLessThanOrEqual(2);
+      for(const row of measurements.rows) {
+        expect(row.overflow,`${dir} ${width}px metric row`).toBeLessThanOrEqual(1);
+        expect(row.contentBottom).toBeLessThanOrEqual(row.bottom);
+        expect(row.bottom).toBeLessThanOrEqual(row.containerBottom);
+        expect(row.bottom).toBeLessThanOrEqual(row.panelBottom);
+      }
+    }
+  }
+});
+
 for (const direction of ['ltr', 'rtl']) {
   for (const width of [1440, 390, 320]) {
     test(`shared report controls align in ${direction} at ${width}px`, async ({ page }) => {
