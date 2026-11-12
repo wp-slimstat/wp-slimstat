@@ -1859,9 +1859,9 @@ class wp_slimstat_admin
             wp_enqueue_script('jquery-ui-sortable');
         }
 
-        // Enqueue the built-in code editor to use on the Settings
-        if ($current_screen) {
-            wp_enqueue_code_editor(['type' => 'text/html']);
+        // The Settings CSS field is the only code editor.
+        if ('slimconfig' === self::$current_screen) {
+            wp_enqueue_code_editor(['type' => 'text/css']);
         }
 
         // Enqueue date range picker assets for report pages

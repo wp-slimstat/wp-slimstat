@@ -2520,7 +2520,7 @@ class wp_slimstat_db
 
     /**
      * Get total unique visitors in the current date range.
-     * Cached as transient (15 min TTL) + in-request static var.
+     * Cached as transient (15 min TTL, historical windows only) + in-request static var.
      *
      * @return int
      */
@@ -2544,7 +2544,11 @@ class wp_slimstat_db
         // The memo token IS the transient's scope token — one digest, computed once, so
         // the two layers cannot disagree about what a scope is.
         $cache_key = self::results_cache_key('uv', '' === $extra_where ? '' : $memo_key, $cache_ver);
-        $cached    = get_transient($cache_key);
+        // A window reaching today is counted fresh: a goal recomputed at 10:06 divided by a
+        // total cached at 10:00 could pass 100% (PITFALLS 277 class). Historical windows keep
+        // the transient.
+        $cacheable = self::window_is_cacheable();
+        $cached    = $cacheable ? get_transient($cache_key) : false;
 
         if (false !== $cached) {
             $request_cache[$memo_key] = intval($cached);
@@ -2559,7 +2563,9 @@ class wp_slimstat_db
             self::and_extra_where(self::get_combined_where('', '*', true, 't1'), $extra_where)
         );
 
-        set_transient($cache_key, $total, 15 * MINUTE_IN_SECONDS);
+        if ($cacheable) {
+            set_transient($cache_key, $total, 15 * MINUTE_IN_SECONDS);
+        }
         $request_cache[$memo_key] = $total;
         return $total;
     }
