@@ -95,12 +95,46 @@ test.describe('Black Friday 2026 strip', () => {
     for (const option of [SWITCH, ...PROBE, 'wp_slimstat_marketing_campaigns']) await restoreOption(option);
     await closeDb();
   });
-  test.beforeEach(async () => {
+  test.beforeEach(async ({ page }) => {
+    // The server fixture opts into the sale; keep the browser inside its window after 2026 too.
+    await page.clock.install({ time: new Date('2026-11-27T12:00:00Z') });
     await on(true);
     await meta(ANCHOR, String(Math.floor(Date.now() / 1000) - 86400));
     await meta(DISMISSED, null);
     await meta(BF_DISMISSED, null);
   });
+
+  for (const url of [SLIMSTAT[0], DASHBOARD]) {
+    test(`expires the open strip at the UTC boundary and on restored pages: ${url}`, async ({ page }) => {
+      const end = new Date('2026-12-01T23:59:00Z');
+      await page.goto(url);
+      await expect(strip(page)).toBeVisible();
+      await page.clock.pauseAt(new Date(end.getTime() - 1000));
+      await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+      await strip(page).locator('.slimstat-bf26__cta').focus();
+      await page.clock.runFor(999);
+      await expect(strip(page)).toBeVisible();
+      await page.clock.runFor(1);
+      await expect(strip(page), 'expiry removes the coupon and all sale buttons without reloading').toHaveCount(0);
+      await expect(page.locator('#wpbody-content h1').first()).toBeFocused();
+
+      for (const resume of ['pageshow', 'click']) {
+        await page.clock.setSystemTime(new Date('2026-11-27T12:00:00Z'));
+        await page.goto(url);
+        await expect(strip(page)).toBeVisible();
+        await page.clock.setSystemTime(end); // A suspended tab's timers have not run yet.
+        const canceled = await page.evaluate(mode => {
+          if (mode === 'pageshow') window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+          else return !document.querySelector('.slimstat-bf26__cta')!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        }, resume);
+        if (resume === 'click') expect(canceled, 'expired navigation is canceled').toBe(true);
+        await expect(strip(page), `${resume} cannot revive an expired offer`).toHaveCount(0);
+        expect(new URL(page.url()).origin).toBe(new URL(BASE_URL).origin);
+      }
+      const [rows] = await getPool().execute('SELECT meta_value FROM wp_usermeta WHERE user_id=? AND meta_key=?', [admin, BF_DISMISSED]) as any;
+      expect(rows, 'expiry does not record a user dismissal').toEqual([]);
+    });
+  }
 
   test('shows on SlimStat screens and the Dashboard only, and never stacks with the release notice', async ({ page }) => {
     const since = await anchor();
@@ -190,6 +224,7 @@ test.describe('Black Friday 2026 strip', () => {
     await expect(strip(page)).toHaveCount(0);
     const other = await freshContext(browser, 'admin.json');
     const second = await other.newPage();
+    await second.clock.install({ time: new Date('2026-11-27T12:00:00Z') });
     for (const url of [SLIMSTAT[0], DASHBOARD]) {
       await second.goto(url);
       await expect(second.locator('#wpbody-content h1').first(), url).toBeVisible();

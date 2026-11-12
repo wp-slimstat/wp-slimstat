@@ -45,6 +45,7 @@ class BlackFriday2026Test extends IntegrationTestCase
             $this->assertStringContainsString($value, $html);
         }
         $this->assertStringContainsString('href="https://wp-slimstat.com/black-friday/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=bfcm2026&utm_content=banner"', $html);
+        $this->assertStringContainsString('data-ends-at="2026-12-01T23:59:00Z"', $html);
         $this->assertStringNotContainsString('class="notice', $html, 'the SlimStat-screen strip is not a core notice, so common.js leaves it in place');
         $this->assertStringNotContainsString('$', $html, 'no dollar prices');
         $this->assertStringNotContainsString('—', $html, 'no em dashes');

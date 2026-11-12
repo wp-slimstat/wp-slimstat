@@ -128,6 +128,27 @@
     var status = root.querySelector('[role="status"]');
     var label = copy.textContent;
     var dismissing = false;
+    var end = Date.parse(root.dataset.endsAt);
+    var expiryTimer;
+    function remove() {
+        clearTimeout(expiryTimer);
+        document.removeEventListener('visibilitychange', expire);
+        window.removeEventListener('pageshow', expire);
+        var focused = root.contains(document.activeElement);
+        root.remove();
+        var heading = document.querySelector('#wpbody-content h1');
+        if (focused && heading) { heading.setAttribute('tabindex', '-1'); heading.focus(); }
+    }
+    function expire() {
+        clearTimeout(expiryTimer);
+        if (!Number.isFinite(end)) return;
+        var remaining = end - Date.now();
+        if (remaining <= 0) { remove(); return; }
+        expiryTimer = setTimeout(expire, Math.min(remaining, 2147483647));
+    }
+    document.addEventListener('visibilitychange', expire);
+    window.addEventListener('pageshow', expire);
+    expire();
     function say(text) { copy.textContent = text; status.textContent = text; }
     function select() {
         var range = document.createRange();
@@ -138,6 +159,8 @@
         say(copy.getAttribute('data-slimstat-bf26-selected'));
     }
     root.addEventListener('click', function (event) {
+        // Suspended tabs can delay timers; never follow an expired purchase link.
+        if (Date.now() >= end) { event.preventDefault(); remove(); return; }
         if (event.target.closest('.slimstat-bf26__copybtn')) {
             // No clipboard API on plain-HTTP admin: select the code for Ctrl+C instead.
             try {
@@ -152,9 +175,7 @@
                 action: 'slimstat_bf2026_dismiss', security: root.getAttribute('data-slimstat-bf26-nonce')
             })}).then(function (response) { return response.ok ? response.json() : {}; }).then(function (result) {
                 if (!result.success) throw new Error();
-                var heading = document.querySelector('#wpbody-content h1');
-                root.remove();
-                if (heading) { heading.setAttribute('tabindex', '-1'); heading.focus(); }
+                remove();
             }).catch(function () { dismissing = false; status.textContent = root.getAttribute('data-slimstat-bf26-error'); });
         }
     });

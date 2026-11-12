@@ -150,6 +150,30 @@ test('expiry removes the offer and counts while open, and preserves keyboard foc
   await expect(page.locator('#tab-1')).toContainText('No notifications in your inbox.');
 });
 
+test('restored pages and delayed timers cannot revive expired campaign links', async ({page}) => {
+  const now = new Date();
+  await page.clock.install({ time: now });
+  for (const mode of ['pageshow', 'header', 'notification']) {
+    await page.clock.setSystemTime(now);
+    await page.goto('/wp-admin/admin.php?page=slimview1');
+    const card = page.locator('#tab-1 .slimstat-notification-sidebar__promo');
+    const banner = page.locator('.slimstat-header__promo');
+    if (mode === 'header' && !await banner.count()) continue; // Active Pro has no header offer.
+    await expect(card).toHaveCount(1);
+    const end = await card.getAttribute('data-ends-at');
+    await page.clock.setSystemTime(new Date(end!));
+    if (mode === 'pageshow') {
+      await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })));
+    } else {
+      const link = mode === 'header' ? banner : card.locator('.slimstat-notification-sidebar__button');
+      expect(await link.evaluate(el => !el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))), 'expired navigation is canceled').toBe(true);
+    }
+    await expect(card).toHaveCount(0);
+    await expect(banner).toHaveCount(0);
+    await expect(page.locator('.slimstat-header__badge')).toHaveCount(0);
+  }
+});
+
 test('dismiss all leaves future offers available and keyboard tabs work', async ({page}) => {
   await page.goto('/wp-admin/admin.php?page=slimview1');
   await page.locator('.js-slimstat-open-notification').click();

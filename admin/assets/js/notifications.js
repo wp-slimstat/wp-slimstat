@@ -217,6 +217,15 @@ jQuery(function ($) {
         refresh('dismiss_notification', { notification_id: this.classList.contains('slimstat-notification-sidebar__dismiss-all') ? 'all' : this.dataset.notificationId });
     });
     document.addEventListener('visibilitychange', () => { schedule(); updatePromotions(); });
+    window.addEventListener('pageshow', updatePromotions);
+    document.addEventListener('click', event => {
+        const offer = event.target.closest('.slimstat-notification-sidebar__card[data-ends-at], .slimstat-header__promo');
+        if (offer && Date.parse(offer.dataset.endsAt) <= Date.now()) {
+            event.preventDefault();
+            event.stopPropagation();
+            updatePromotions();
+        }
+    }, true);
     updateSidebarState();
     updatePromotions();
     schedule();
