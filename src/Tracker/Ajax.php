@@ -288,7 +288,13 @@ class Ajax
                 }
             }
 
-            $data_js['id'] = Utils::getValueWithoutChecksum($data_js['id']);
+            $raw_id = $data_js['id'];
+            $data_js['id'] = Utils::getValueWithoutChecksum($raw_id, 'pageview');
+            // Legacy pageview tokens are indistinguishable from visit cookies. Retire
+            // their follow-ups until navigation, without replaying an already counted view.
+            if (false === $data_js['id'] && false !== Utils::getValueWithoutChecksum($raw_id)) {
+                return Utils::logError(104);
+            }
             if (false === $data_js['id']) {
                 return Utils::logError(101);
             }
@@ -296,7 +302,7 @@ class Ajax
             $stat['id'] = intval($data_js['id']);
             if ($stat['id'] < 0) {
                 do_action('slimstat_track_exit_' . abs($stat['id']));
-                return Utils::getValueWithChecksum($stat['id']);
+                return Utils::getValueWithChecksum($stat['id'], 'pageview');
             }
 
             if ($isConsentUpgrade && empty($data_js['pos']) && 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off')) {
@@ -312,13 +318,19 @@ class Ajax
                 // below is what an upgrade of one known, already-identified row
                 // means: re-process the IP under the new consent, collect the PII
                 // consent now permits, and leave the resource alone.
+                $existing = \SlimStat\Utils\Query::select('resource, referer, content_type, content_id, category, author')
+                    ->from($GLOBALS['wpdb']->prefix . 'slim_stats')->where('id', '=', $stat['id'])->getRow();
+                if (!$existing) { return Utils::logError(101); }
+                // Follow-ups contain an ID rather than a new resource. Preserve the
+                // verified page context instead of treating admin-ajax.php as the page.
+                $stat = array_merge($stat, (array) $existing);
                 \wp_slimstat::set_stat(Utils::getClientInfo($data_js, $stat));
                 $id = Processor::process();
                 if (empty($id) || $id < 0) {
                     return $id ?: 0;
                 }
                 do_action('slimstat_track_success');
-                return Utils::getValueWithChecksum($id);
+                return Utils::getValueWithChecksum($id, 'pageview');
             }
 
             // Process IP according to consent status (cookie set only by consent upgrade handler)
@@ -571,6 +583,6 @@ class Ajax
         }
 
         do_action('slimstat_track_success');
-        return Utils::getValueWithChecksum($id);
+        return Utils::getValueWithChecksum($id, 'pageview');
     }
 }

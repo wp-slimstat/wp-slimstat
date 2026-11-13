@@ -2304,15 +2304,11 @@ if (!window.requestIdleCallback) {
                 if (typeof window.wp_has_consent === "function") {
                     if (window.wp_has_consent(selectedCategory)) {
                         window[retryKey] = true;
-                        SlimStat._send_pageview({
-                            consentUpgrade: true,
-                        });
+                        requestConsentUpgrade();
                     }
                 } else {
                     window[retryKey] = true;
-                    SlimStat._send_pageview({
-                        consentUpgrade: true,
-                    });
+                    requestConsentUpgrade();
                 }
             }
         } catch (e) {

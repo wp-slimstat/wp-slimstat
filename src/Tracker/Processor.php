@@ -808,7 +808,7 @@ class Processor
     /** Only a signed current pageview can be upgraded; session identities are insufficient. */
     private static function upgradePageviewId(array $data): int
     {
-        $id = Utils::getValueWithoutChecksum($data['id'] ?? '');
+        $id = Utils::getValueWithoutChecksum($data['id'] ?? '', 'pageview');
         return false !== $id && ctype_digit((string) $id) ? max(0, (int) $id) : 0;
     }
 }

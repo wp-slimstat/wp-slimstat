@@ -1599,7 +1599,7 @@ class wp_slimstat
             if (empty(self::$stat['id']) || intval(self::$stat['id']) < 0) {
                 return false;
             }
-            $params['id'] = \SlimStat\Tracker\Utils::getValueWithChecksum(intval(self::$stat['id']));
+            $params['id'] = \SlimStat\Tracker\Utils::getValueWithChecksum(intval(self::$stat['id']), 'pageview');
         } else {
             $params['ci'] = \SlimStat\Tracker\Utils::getValueWithChecksum(\SlimStat\Tracker\Utils::base64UrlEncode(wp_json_encode(\SlimStat\Tracker\Utils::getContentInfo())));
         }

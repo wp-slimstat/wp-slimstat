@@ -177,7 +177,7 @@ test.describe('PR #170 Review Fixes', () => {
 
     // Create a checksum with HMAC-SHA256 (the new format)
     const testValue = '12345';
-    const hmacHash = crypto.createHmac('sha256', secret).update(testValue).digest('hex');
+    const hmacHash = crypto.createHmac('sha256', secret).update('pageview|' + testValue).digest('hex');
     const hmacChecksum = `${testValue}.${hmacHash}`;
 
     const res = await postHit(page, {
@@ -188,7 +188,7 @@ test.describe('PR #170 Review Fixes', () => {
     expect(res.status).toBeLessThan(500);
   });
 
-  test('AC-2: POST with legacy MD5 id param is accepted via fallback', async ({ page }) => {
+  test('AC-2: legacy MD5 pageview token stops follow-ups without replay', async ({ page }) => {
     const secret = await getSlimstatSecret();
     if (!secret) {
       test.skip(true, 'No slimstat secret configured');
@@ -204,8 +204,8 @@ test.describe('PR #170 Review Fixes', () => {
       res: `/?e2e=md5-legacy-${Date.now()}`,
       id: md5Checksum,
     });
-    // Should not error — the legacy MD5 checksum is accepted via fallback
-    expect(res.status).toBeLessThan(500);
+    // Legacy cookies remain supported, but cannot authorize pageview updates.
+    expect(res.body.replace(/^"|"$/g, '')).toBe('-104');
   });
 
   test('AC-2: POST with tampered checksum is rejected', async ({ page }) => {

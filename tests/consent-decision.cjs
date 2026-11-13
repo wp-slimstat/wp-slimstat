@@ -76,6 +76,20 @@ scope.resetPageviewFlags();
 assert.equal(sent, 1, 'completion must deliver exactly one queued grant');
 assert.equal(scope.pendingConsentUpgrade, null);
 console.log('PASS: consent granted during an in-flight pageview is delivered once after completion');
+// Exercise the real late-CMP listener while the initial anonymous preparation is locked.
+const lateStart = source.indexOf('    document.addEventListener("wp_consent_type_defined"');
+const lateEnd = source.indexOf('\n    });', lateStart) + '\n    });'.length;
+let lateGrant;
+scope.document = {addEventListener: (name, fn) => { lateGrant = fn; }};
+scope.window = {sendingSlimStatPageview: true, wp_has_consent: () => true};
+scope.pendingConsentUpgrade = null;
+vm.runInContext(source.slice(lateStart, lateEnd), scope);
+const sentBeforeLateGrant = sent;
+lateGrant();
+assert.notEqual(scope.pendingConsentUpgrade, null, 'late CMP grant must survive the initial preparation lock');
+scope.resetPageviewFlags();
+assert.equal(sent, sentBeforeLateGrant + 1, 'late CMP grant delivers a replacement after the anonymous preparation ends');
+
 
 const beaconDeclaration = source.match(/var useBeacon = ([^;]+); \/\/ creation and consent upgrades/);
 assert(beaconDeclaration, 'pageview beacon decision must be present');

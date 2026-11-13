@@ -158,9 +158,6 @@ final class Shortcode
         if (is_wp_error($atts)) { return self::comment($atts->get_error_message()); }
         // Public aggregate columns must not expose a named visitor's history through filters.
         $content = html_entity_decode((string) $content, ENT_QUOTES, 'UTF-8');
-        if ((!self::canView() || \SlimStat\Reports\ReportPrivacy::enabled()) && preg_match('/(?:^|&&&)\s*(' . implode('|', array_merge(\SlimStat\Reports\ReportPrivacy::PERSONAL, ['id', 'visit_id'])) . ')\s+/i', $content)) {
-            return '';
-        }
         require_once dirname(__DIR__, 2) . '/admin/view/wp-slimstat-db.php';
         // Catalog initialization and report callbacks both mutate shared report state.
         $filters = wp_slimstat_db::$filters_normalized;
@@ -169,6 +166,10 @@ final class Shortcode
         $agentTooltip = wp_slimstat::$settings['show_complete_user_agent_tooltip'] ?? 'off';
         wp_slimstat::$settings['show_complete_user_agent_tooltip'] = 'off';
         try {
+            wp_slimstat_db::init($content, false, false);
+            if ((!self::canView() || \SlimStat\Reports\ReportPrivacy::enabled()) && array_intersect(array_keys(wp_slimstat_db::$filters_normalized['columns'] ?? []), array_merge(\SlimStat\Reports\ReportPrivacy::PERSONAL, ['id', 'visit_id']))) {
+                return '';
+            }
             $catalog = self::catalog();
             foreach ($atts['columns'] as $column) {
                 if (!isset($catalog[$column])) { return self::comment(__('Invalid shortcode attribute: w.', 'wp-slimstat')); }

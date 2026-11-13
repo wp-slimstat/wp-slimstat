@@ -304,12 +304,12 @@ class Utils
 		return $secret;
 	}
 
-	public static function getValueWithChecksum($value = 0)
+	public static function getValueWithChecksum($value = 0, string $purpose = '')
 	{
-		return $value . '.' . hash_hmac('sha256', (string) $value, self::resolveSecret());
+		return $value . '.' . hash_hmac('sha256', ('' === $purpose ? '' : $purpose . '|') . (string) $value, self::resolveSecret());
 	}
 
-	public static function getValueWithoutChecksum($valueWithChecksum = '')
+	public static function getValueWithoutChecksum($valueWithChecksum = '', string $purpose = '')
 	{
 		if (!is_scalar($valueWithChecksum)) {
 			return false;
@@ -323,7 +323,7 @@ class Utils
 		[$value, $checksum] = $parts;
 		$secret = self::resolveSecret();
 
-		if (hash_equals($checksum, hash_hmac('sha256', (string) $value, $secret))) {
+		if (hash_equals($checksum, hash_hmac('sha256', ('' === $purpose ? '' : $purpose . '|') . (string) $value, $secret))) {
 			return $value;
 		}
 
@@ -332,7 +332,7 @@ class Utils
 		// Tracker::_* surface, so retiring it is not simply a matter of waiting out an
 		// upgrade window — and the two E2E specs that claim to cover it assert only
 		// `status < 500`, so they pass with it deleted. Sunset tracked as W7.
-		if (hash_equals($checksum, md5($value . $secret))) {
+		if ('' === $purpose && hash_equals($checksum, md5($value . $secret))) {
 			return $value;
 		}
 

@@ -67,8 +67,8 @@ class ConsentHandler
 		add_action('wp_ajax_slimstat_consent_revoked', [self::class, 'handleConsentRevoked']);
 		add_action('wp_ajax_nopriv_slimstat_consent_revoked', [self::class, 'handleConsentRevoked']);
 
-		add_action('wp_ajax_slimstat_gdpr_consent', [self::class, 'handleBannerConsent']);
-		add_action('wp_ajax_nopriv_slimstat_gdpr_consent', [self::class, 'handleBannerConsent']);
+		add_action('wp_ajax_slimstat_gdpr_consent', [self::class, 'handleBannerConsent'], 10, 0);
+		add_action('wp_ajax_nopriv_slimstat_gdpr_consent', [self::class, 'handleBannerConsent'], 10, 0);
 	}
 
 	/**
@@ -149,7 +149,7 @@ class ConsentHandler
 		// If consent granted via banner, upgrade current pageview from anonymous to PII
 		if ('accepted' === $consent && \SlimStat\Utils\Consent::piiAllowed()) {
 			if (!empty($pageview_id_raw)) {
-				$pageview_id = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw);
+				$pageview_id = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw, 'pageview');
 				if (false !== $pageview_id && $pageview_id > 0) {
 					$pageview_id = intval($pageview_id);
 
@@ -162,7 +162,12 @@ class ConsentHandler
 					}
 
 					$visit_id = Session::upgradePageview($pageview_id, $stat);
-					if ($visit_id <= 0) { return false; }
+					if ($visit_id <= 0) {
+						if ($return_json) {
+							wp_send_json_success(['success' => true, 'consent' => $consent, 'upgraded' => false, 'message' => __('Consent granted.', 'wp-slimstat')]);
+						}
+						return false;
+					}
 					$stat['visit_id'] = $visit_id;
 					\wp_slimstat::set_stat($stat);
 					Session::setTrackingCookie($visit_id, 'visit');

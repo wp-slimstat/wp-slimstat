@@ -33,7 +33,7 @@ try {
     $check((bool) $db->insert($prefix . 'slim_stats', ['resource' => $probe_resource, 'notes' => 'private', 'location' => 'private', 'dt' => wp_slimstat::now()]), 'seed public count probe');
     $probe_id = $db->insert_id;
     try {
-        foreach (['notes', 'location'] as $personal) {
+        foreach (['notes', 'location', 'n%6ftes', 'loc%61tion'] as $personal) {
             $check('' === do_shortcode('[slimstat f="count" w="id"]' . $personal . ' equals private[/slimstat]'), 'public count cannot probe ' . $personal);
         }
         $check('1' === do_shortcode('[slimstat f="count" w="id"]resource equals ' . $probe_resource . '[/slimstat]'), 'valid public aggregate returns its exact count');
@@ -186,7 +186,7 @@ try {
                 $prior_id = $db->insert_id;
                 $check((bool) $db->insert($prefix . 'slim_stats', $anonymous), 'insert current anonymous pageview');
                 $current_id = $db->insert_id;
-                $signed = $current_id . '.' . hash_hmac('sha256', (string) $current_id, wp_slimstat::$settings['secret']);
+                $signed = \SlimStat\Tracker\Utils::getValueWithChecksum($current_id, 'pageview');
                 $grant = static function () use ($route, $signed, $check) {
                     wp_slimstat::set_stat([]);
                     if ('banner' === $route) {
@@ -214,13 +214,13 @@ try {
                     $check((int) $db->get_var($db->prepare("SELECT visit_id FROM {$prefix}slim_stats WHERE id=%d", $current_id)) === (int) $current['visit_id'], $route . ' repeated grant keeps session stable');
 
                     // Interleave a second grant between the first grant's read and write.
-                    $db->update($prefix . 'slim_stats', array_merge(['visit_id' => 991234, 'notes' => null], 'missing' !== $schema ? ['vid_hash' => $anonymous['vid_hash']] : []), ['id' => $current_id]);
+                    $db->update($prefix . 'slim_stats', array_merge(['visit_id' => 991234, 'notes' => null, 'username' => null, 'email' => null], 'missing' !== $schema ? ['vid_hash' => $anonymous['vid_hash']] : []), ['id' => $current_id]);
                     $winner = 0;
                     $race = null;
                     $race = static function ($sql) use (&$race, $db, $prefix, $current_id, &$winner, $schema) {
                         if (strpos($sql, "UPDATE `{$prefix}slim_stats` SET") === 0) {
                             remove_filter('query', $race);
-                            $winner = \SlimStat\Tracker\Session::upgradePageview($current_id, []);
+                            $winner = \SlimStat\Tracker\Session::upgradePageview($current_id, ['notes' => '[winner:yes]']);
                         }
                         return $sql;
                     };
@@ -229,6 +229,9 @@ try {
                     $current['visit_id'] = $winner;
                     $check((int) $db->get_var($db->prepare("SELECT visit_id FROM {$prefix}slim_stats WHERE id=%d", $current_id)) === $winner, $route . ' concurrent grant keeps the winner session');
                     $check((int) wp_slimstat::get_stat()['visit_id'] === $winner, $route . ' concurrent response uses the stored session');
+                    $enriched = $db->get_row($db->prepare("SELECT username,email,notes FROM {$prefix}slim_stats WHERE id=%d", $current_id), ARRAY_A);
+                    $check($admin->user_login === $enriched['username'] && $admin->user_email === $enriched['email'], $route . ' losing acknowledgement persists its enrichment');
+                    $check(strpos($enriched['notes'], '[winner:yes]') !== false && strpos($enriched['notes'], '[user:' . $admin->ID . ']') !== false, $route . ' concurrent annotations survive');
                     $_COOKIE['slimstat_tracking_code'] = $current['visit_id'] . '.' . hash_hmac('sha256', (string) $current['visit_id'], wp_slimstat::$settings['secret']);
                     wp_slimstat::set_stat(['dt' => wp_slimstat::now(), 'resource' => '/next-consented-page', 'notes' => []]);
                     wp_slimstat::set_data_js([]);
@@ -260,6 +263,9 @@ try {
     $check((bool) $db->insert($prefix . 'slim_heatmap_elements', ['sel' => $orphan, 'selector' => '#orphan', 'label' => 'Expired label']), 'insert orphan label');
     $check((bool) $db->insert($prefix . 'slim_heatmap', ['id' => $live, 'page' => random_bytes(8), 'sel' => $selector, 'dt' => wp_slimstat::now()]), 'insert heatmap click');
     wp_slimstat::$settings['auto_purge'] = 30;
+    \SlimStat\Heatmap\Store::purge();
+    $check('Expired label' === $db->get_var($db->prepare("SELECT label FROM {$prefix}slim_heatmap_elements WHERE sel=%s", $orphan)), 'legacy retention defers unindexed label cleanup');
+    \SlimStat\Heatmap\Store::setup();
     \SlimStat\Heatmap\Store::purge();
     $check(!$db->get_var($db->prepare("SELECT label FROM {$prefix}slim_heatmap_elements WHERE sel=%s", $orphan)), 'retention removes orphaned labels');
     $check('Personal label' === $db->get_var($db->prepare("SELECT label FROM {$prefix}slim_heatmap_elements WHERE sel=%s", $selector)), 'retention keeps referenced labels');

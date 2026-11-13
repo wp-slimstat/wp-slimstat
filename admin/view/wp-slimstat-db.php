@@ -429,10 +429,12 @@ class wp_slimstat_db
     /**
      * Translates user-friendly operators into SQL conditions
      */
-    public static function get_single_where_clause($_dimension = 'id', $_operator = 'equals', $_value = '', $_slim_stats_table_alias = '')
+    public static function get_single_where_clause($_dimension = 'id', $_operator = 'equals', $_value = '', $_slim_stats_table_alias = '', bool $_stored_rule = false)
     {
+        // Selected filters (including charts) cannot probe identity. Saved goal/funnel
+        // criteria are server-owned aggregate definitions, not viewer-supplied filters.
+        if (!$_stored_rule && 'on' === (wp_slimstat::$settings['mask_personal_data'] ?? 'off') && \SlimStat\Reports\ReportPrivacy::enabled() && in_array($_dimension, \SlimStat\Reports\ReportPrivacy::PERSONAL, true)) { return '1=0'; }
         // Preserve the selected filter for display/serialization; deny personal probes in SQL.
-        if ('on' === (wp_slimstat::$settings['mask_personal_data'] ?? 'off') && \SlimStat\Reports\ReportPrivacy::enabled() && in_array($_dimension, \SlimStat\Reports\ReportPrivacy::PERSONAL, true)) { return '1=0'; }
         // Keep extension columns (including Pro's user_login), but reject SQL syntax.
         if (!is_string($_dimension) || !preg_match('/\A[a-zA-Z_][a-zA-Z0-9_]*\z/', $_dimension)
             || !is_string($_slim_stats_table_alias) || ('' !== $_slim_stats_table_alias && !preg_match('/\A[a-zA-Z_][a-zA-Z0-9_]*\z/', $_slim_stats_table_alias))) {
@@ -2298,7 +2300,7 @@ class wp_slimstat_db
             }
         }
 
-        return self::get_single_where_clause($dimension, $operator, $value, $alias);
+        return self::get_single_where_clause($dimension, $operator, $value, $alias, true);
     }
 
     /**
@@ -2716,7 +2718,7 @@ class wp_slimstat_db
         $range = $start . ':' . (int) floor($end / self::CACHE_RANGE_BUCKET_SECONDS);
 
         return 'slimstat_' . $prefix . '_' . ('' === $scope ? '' : $scope . '_')
-            . md5($range . '|' . self::filters_signature() . '|' . $cache_ver);
+            . md5($range . '|' . self::filters_signature() . '|' . $cache_ver . '|masked=' . (int) ('on' === (wp_slimstat::$settings['mask_personal_data'] ?? 'off') && \SlimStat\Reports\ReportPrivacy::enabled()));
     }
 
     /**

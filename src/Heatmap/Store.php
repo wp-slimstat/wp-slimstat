@@ -285,12 +285,16 @@ final class Store
 
 		if ($elements) {
 			$args = [];
+			$selects = [];
 			foreach ($elements as $hex => [$selector, $label]) {
-				array_push($args, $hex, $selector, $label);
+				// A privacy erasure can remove the clicks while this batch is paused.
+				// Only a still-referenced label may be inserted after that point.
+				$selects[] = "SELECT UNHEX(%s), %s, %s FROM DUAL WHERE EXISTS (SELECT 1 FROM {$table} WHERE id = %d AND sel = UNHEX(%s))";
+				array_push($args, $hex, $selector, $label, $id, $hex);
 			}
 			$elementsTable = self::table('slim_heatmap_elements');
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery -- Table from the manifest; values prepared.
-			if (false === $db->query($db->prepare("INSERT IGNORE INTO {$elementsTable} (sel, selector, label) VALUES " . implode(', ', array_fill(0, count($elements), '(UNHEX(%s), %s, %s)')), $args))) {
+			if (false === $db->query($db->prepare("INSERT IGNORE INTO {$elementsTable} (sel, selector, label) " . implode(' UNION ALL ', $selects), $args))) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; the caller records them as a degradation, which escapes on display.
 				throw new \RuntimeException($db->last_error);
 			}
@@ -325,7 +329,7 @@ final class Store
 			if ($deleted) {
 				self::invalidate();
 			}
-			$labels = self::purgeOrphanedElements();
+			$labels = self::SCHEMA === (int) (get_option(self::STATE, [])['schema'] ?? 0) ? self::purgeOrphanedElements() : 0;
 			$pending = 50000 === $deleted || 500 === $labels;
 			update_option(self::PURGE_PENDING, $pending, false);
 			if ($pending && !wp_next_scheduled(self::PURGE_HOOK)) {
@@ -370,7 +374,9 @@ final class Store
 		if ($deleted) {
 			self::invalidate();
 		}
-		return ['items_removed' => $deleted > 0, 'items_retained' => false, 'messages' => [], 'done' => true];
+		// A concurrent batch may have inserted its label between the two deletes.
+		$labels = self::purgeOrphanedElements();
+		return ['items_removed' => $deleted > 0 || $labels > 0, 'items_retained' => false, 'messages' => [], 'done' => $labels < 500];
 	}
 
 	/** Bounded cleanup, using the selector index even on sites with millions of clicks. */

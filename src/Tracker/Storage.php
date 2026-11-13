@@ -235,6 +235,14 @@ class Storage
 		$query = Query::update($table_name)->ignore()->where('id', '=', $id);
 		$hasUpdates = false;
 
+		// Ordinary follow-ups may fill an unassigned session, never rebind an existing
+		// one. The SQL condition also protects against a consent upgrade racing this write.
+		if (isset($data['visit_id'])) {
+			$query->setRaw('visit_id', 'IF(visit_id IS NULL OR visit_id = 0, %d, visit_id)', [(int) $data['visit_id']]);
+			unset($data['visit_id']);
+			$hasUpdates = true;
+		}
+
 		if (!empty($data['notes']) && is_array($data['notes'])) {
 			$notes_to_append = '[' . implode('][', $data['notes']) . ']';
 			$query->setRaw('notes', "CONCAT(IFNULL(notes, ''), %s)", [$notes_to_append]);

@@ -23,6 +23,37 @@ test.describe('privacy audit: real visitor consent boundaries', () => {
     expect(result).toContain('PASS: complete export');
   });
 
+  test('reviewed races preserve goal counts, masking and erasure', () => {
+    expect(runWordPressFixture("<?php require WP_PLUGIN_DIR . '/wp-slimstat/tests/privacy-review-wp-test.php';")).toContain('PASS: exact masked goal/funnel totals');
+  });
+
+  test('visit tokens cannot update pageviews and deleted pageviews retain a JSON consent result', async ({ browser }) => {
+    await setSlimstatOptions({ anonymous_tracking: 'on' });
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      const page = await context.newPage();
+      await page.goto(`${BASE_URL}/?privacy_audit=token-purpose`);
+      await expect.poll(() => page.evaluate(() => (window as any).SlimStatParams?.id || '')).toMatch(/^\d+\./);
+      const params = await page.evaluate(() => (window as any).SlimStatParams);
+      const id = parseInt(params.id, 10);
+      const visitToken = runWordPressFixture(`<?php echo \\SlimStat\\Tracker\\Utils::getValueWithChecksum(${id});`).trim();
+      await context.addCookies([{ name: 'slimstat_gdpr_consent', value: 'accepted', url: BASE_URL }]);
+      const [before]: any = await getPool().query('SELECT * FROM wp_slim_stats WHERE id=?', [id]);
+      for (const upgrade of ['', '1']) {
+        const response = await context.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, { form: { action: 'slimtrack', id: visitToken, consent_upgrade: upgrade, fh: 'forged-identity' } });
+        expect((await response.text()).replace(/^"|"$/g, '')).toBe('-104');
+      }
+      const [after]: any = await getPool().query('SELECT * FROM wp_slim_stats WHERE id=?', [id]);
+      expect(after).toEqual(before);
+      const valid = await context.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, { form: { action: 'slimtrack', id: params.id, consent_upgrade: '1', res: Buffer.from(page.url()).toString('base64') } });
+      expect(parseInt((await valid.text()).replace(/^"|"$/g, ''), 10)).toBe(id);
+      await getPool().execute('DELETE FROM wp_slim_stats WHERE id=?', [id]);
+      const deleted = await context.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, { form: { action: 'slimstat_gdpr_consent', pageview_id: params.id, consent: 'accepted', nonce: params.wp_rest_nonce } });
+      expect(await deleted.json()).toMatchObject({ success: true, data: { consent: 'accepted', upgraded: false } });
+      expect((await context.cookies()).find(cookie => cookie.name === 'slimstat_gdpr_consent')?.value).toBe('accepted');
+    } finally { await context.close(); }
+  });
+
   test('fresh defaults count without identity, fingerprinting or device storage', async ({ browser }) => {
     const defaults = JSON.parse(runWordPressFixture('<?php echo wp_json_encode(wp_slimstat::get_fresh_defaults());'));
     await setSlimstatOptions({ ...defaults, ignore_bots: 'off', geolocation_provider: 'disabled' });
@@ -207,8 +238,10 @@ test.describe('privacy audit: real visitor consent boundaries', () => {
       const [current]: any = await getPool().query('SELECT ip,visit_id,vid_hash FROM wp_slim_stats WHERE id=?', [currentId]);
       expect(Number(current[0].visit_id)).not.toBe(Number(before[0].visit_id));
       expect(current[0].vid_hash).toBeNull();
-      const trackerCookie = (await context.cookies()).find(cookie => cookie.name === 'slimstat_tracking_code');
-      expect(parseInt(trackerCookie?.value || '', 10)).toBe(Number(current[0].visit_id));
+      await expect.poll(async () => {
+        const trackerCookie = (await context.cookies()).find(cookie => cookie.name === 'slimstat_tracking_code');
+        return parseInt(trackerCookie?.value || '', 10);
+      }).toBe(Number(current[0].visit_id));
       await page.goto(`${BASE_URL}/?privacy_audit=history-c`);
       await expect.poll(() => page.evaluate(() => (window as any).SlimStatParams?.id || '')).toMatch(/^\d+\./);
       const nextId = await page.evaluate(() => parseInt((window as any).SlimStatParams.id, 10));

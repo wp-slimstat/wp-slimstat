@@ -295,7 +295,7 @@ class StoreTest extends WpSlimstatTestCase
 			. ' ON DUPLICATE KEY UPDATE y = GREATEST(y, VALUES(y)), dh = GREATEST(dh, VALUES(dh))',
 			$insert
 		);
-		self::assertSame("INSERT IGNORE INTO wp_slim_heatmap_elements (sel, selector, label) VALUES (UNHEX('$sel'), 'div.cta > a#buy', 'Buy now')", $elements);
+		self::assertSame("INSERT IGNORE INTO wp_slim_heatmap_elements (sel, selector, label) SELECT UNHEX('$sel'), 'div.cta > a#buy', 'Buy now' FROM DUAL WHERE EXISTS (SELECT 1 FROM wp_slim_heatmap WHERE id = 42 AND sel = UNHEX('$sel'))", $elements);
 	}
 
 	/** Main level keeps clicks on interactive elements only, no scroll, no labels from plain text. */
@@ -313,7 +313,7 @@ class StoreTest extends WpSlimstatTestCase
 		$this->readyToIngest('full');
 		$this->queries = [];
 		self::assertSame(3, Store::ingest(42, $raw));
-		self::assertStringContainsString("'p', '')", $this->heatmapQueries()[1]);
+		self::assertStringContainsString("'p', '' FROM DUAL", $this->heatmapQueries()[1]);
 	}
 
 	public function test_each_click_keeps_its_viewport_after_a_resize(): void
