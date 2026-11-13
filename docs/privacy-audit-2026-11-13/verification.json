@@ -6,7 +6,7 @@
     "data": "Disposable databases and synthetic visitors; outbound email and fake license calls intercepted locally."
   },
   "verified_source": {
-    "free": "302aa591",
+    "free": "cf872d47",
     "pro": "3dad28b"
   },
   "free": {
@@ -27,7 +27,7 @@
     },
     "mutations": {
       "full_suite_killed": 319,
-      "latest_changed_targets_killed": 61,
+      "latest_changed_targets_killed": 8,
       "survived": 0,
       "invalid": 0
     },
@@ -255,6 +255,14 @@
     },
     "comparison": "Repeated original development/current fixture after the review fixes; before.json and after.json match exactly.",
     "coderabbit_pro": "The private Pro repository plan supplies summaries but refuses code review; the bot response is recorded on PR #70. No paid plan change was made.",
-    "concurrent_consent": "A controlled interleaving reproduces lost session/cookie agreement on 302aa591. Conditional updates now keep the winning consented visit; the current native fixture, all 11 privacy browser scenarios, 718 unit tests, 229 integration tests and PHPStan pass."
+    "concurrent_consent": "A controlled interleaving reproduces lost session/cookie agreement on 302aa591. Conditional updates now keep the winning consented visit; the current native fixture, all 11 privacy browser scenarios, 718 unit tests, 229 integration tests and PHPStan pass.",
+    "legacy_consent": {
+      "source": "cf872d47",
+      "behavior": "Shared consent upgrade detaches historical null-hash rows and stays idempotent when vid_hash is absent. A server-authenticated, pageview/visit-bound marker prevents visitor note text from authorizing reuse. Conditional writes retain the concurrent winning visit; reports hide the internal proof.",
+      "native_regression": "Both real direct endpoints pass hashed, historical-null and missing-column schemas, repeated grants, controlled concurrent grants, forged markers, earlier-row isolation, exact cookie/session continuity and proof hiding. The missing-column fixture uses a connection-local temporary table.",
+      "required_red_controls": "a4bb5ca5 fails historical-null detachment and missing-column repeat stability; 7ef505d7 fails the valid personal-filter shortcode probe.",
+      "shortcode": "Valid w=id personal probes reach the privacy guard; a seeded non-personal resource query returns exactly 1.",
+      "validation": "Full test:all passes: 718 unit / 2817 assertions, 229 integration / 965 assertions, source suite and 85 escaping assertions. All 8 affected mutations killed; zero survivors/invalid. PHPStan and i18n pass. 20 affected browser scenarios passed, then all 11 privacy scenarios rerun after final marker authentication. Free and Pro real database fixtures pass. Before/after snapshots match. PCP retains only the registered Free slug warning."
+    }
   }
 }
