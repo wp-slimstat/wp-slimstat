@@ -6,13 +6,13 @@
     "data": "Disposable databases and synthetic visitors; outbound email and fake license calls intercepted locally."
   },
   "verified_source": {
-    "free": "cf872d47",
+    "free": "92300d63",
     "pro": "3dad28b"
   },
   "free": {
     "unit": {
       "tests": 718,
-      "assertions": 2817
+      "assertions": 2819
     },
     "integration": {
       "tests": 229,
@@ -27,31 +27,253 @@
     },
     "mutations": {
       "full_suite_killed": 319,
-      "latest_changed_targets_killed": 8,
+      "latest_changed_targets_killed": 9,
       "survived": 0,
       "invalid": 0
     },
     "browser": {
-      "collected": 1071,
-      "initial_passes": 904,
-      "followup_passes": 165,
+      "collected": 1076,
+      "initial_passes": 1052,
+      "followup_passes": 22,
+      "initial_failures": 5,
+      "initial_declared_skips": 4,
+      "initial_blocked_by_serial_precondition": 15,
       "remaining_skips": [
         {
           "file": "i18n-catalog-sync.spec.ts",
-          "scenario": "es_ES locale renders without PHP errors on Settings page",
-          "initial_status": [
-            "skipped"
-          ]
+          "scenario": "es_ES locale renders without PHP errors on Settings page"
         },
         {
           "file": "live-analytics-timezone-customdb.spec.ts",
-          "scenario": "Live counters work with Custom DB simulator (Tokyo timezone)",
-          "initial_status": [
-            "skipped"
-          ]
+          "scenario": "Live counters work with Custom DB simulator (Tokyo timezone)"
         }
       ],
-      "interpretation": "Census plus focused reruns, not one uninterrupted green run. All initial failures and unfinished cases accounted for; affected cases rerun after their fixes. CookieYes, standalone WP Consent API, debug-off and Free-only checks were also run with their required environment."
+      "interpretation": "Full zero-retry census plus verified follow-ups, not one uninterrupted green run. All failures and blocked cases are accounted for. Free-only, debug-off and download-budget variants were run explicitly; corrected deferred-report/CSV fixtures pass in both Free-only and Pro installs.",
+      "followups": [
+        {
+          "status": "\u2718",
+          "ordinal": 7,
+          "project": "admin",
+          "file": "access-log-date-pagination.spec.ts",
+          "title": "refresh_report() without forceRecent preserves date filters in AJAX",
+          "passed_in": [
+            "review2-ci-fixtures-free-after.log",
+            "review2-ci-fixtures-pro-after.log"
+          ]
+        },
+        {
+          "status": "\u2718",
+          "ordinal": 8,
+          "project": "admin",
+          "file": "access-log-date-pagination.spec.ts",
+          "title": "pagination next-page click preserves the custom date range",
+          "passed_in": [
+            "review2-ci-fixtures-free-after.log",
+            "review2-ci-fixtures-pro-after.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 59,
+          "project": "admin",
+          "file": "adminbar-chart-consistency.spec.ts",
+          "title": "free users see an honest decorative chart preview and Pro badges",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "\u2718",
+          "ordinal": 119,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "expires the open strip at the UTC boundary and on restored pages: /wp-admin/admin.php?page=slimview1",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 120,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "expires the open strip at the UTC boundary and on restored pages: /wp-admin/index.php",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 121,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "shows on SlimStat screens and the Dashboard only, and never stacks with the release notice",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 122,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "adds no request and no query; copy sends nothing and dismiss sends one same-origin request",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 123,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "dismissal moves focus and holds for this admin on both surfaces and in every browser",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 124,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "a refused dismissal keeps the strip, says so, and a retry works",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 125,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "copy writes the code, or selects it when the clipboard is unavailable or refused",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 126,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "keyboard order runs copy, pricing, dismiss, each with a visible focus ring",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 127,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "fits every width, RTL and long translations, forced colors, and is hidden in print",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 128,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "leaves the rest of the admin, the front end and other roles untouched",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "\u2718",
+          "ordinal": 583,
+          "project": "admin",
+          "file": "issue-14843-browscap-toggle-revert.spec.ts",
+          "title": "toggle reverts to OFF when unzip_file() fails",
+          "passed_in": [
+            "review2-browscap-budget-rerun.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 584,
+          "project": "admin",
+          "file": "issue-14843-browscap-toggle-revert.spec.ts",
+          "title": "error message includes WP_Error diagnostic details @after-fix",
+          "passed_in": [
+            "review2-browscap-budget-rerun.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 585,
+          "project": "admin",
+          "file": "issue-14843-browscap-toggle-revert.spec.ts",
+          "title": "toggle stays ON when browscap download and unzip succeed",
+          "passed_in": [
+            "review2-browscap-budget-rerun.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 586,
+          "project": "admin",
+          "file": "issue-14843-browscap-toggle-revert.spec.ts",
+          "title": "corrupt zip file produces an error and toggle reverts",
+          "passed_in": [
+            "review2-browscap-budget-rerun.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 587,
+          "project": "admin",
+          "file": "issue-14843-browscap-toggle-revert.spec.ts",
+          "title": "toggle OFF removes browscap cache and persists",
+          "passed_in": [
+            "review2-browscap-budget-rerun.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 588,
+          "project": "admin",
+          "file": "issue-14843-browscap-toggle-revert.spec.ts",
+          "title": "other settings save correctly even when browscap toggle fails",
+          "passed_in": [
+            "review2-browscap-budget-rerun.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 589,
+          "project": "admin",
+          "file": "issue-14843-browscap-toggle-revert.spec.ts",
+          "title": "toggle shows filesystem error when WP_Filesystem fails",
+          "passed_in": [
+            "review2-browscap-budget-rerun.log"
+          ]
+        },
+        {
+          "status": "\u2718",
+          "ordinal": 929,
+          "project": "admin",
+          "file": "ticket-14684-regression.spec.ts",
+          "title": "Chart.php and DataBuckets.php timezone offsets produce consistent results",
+          "passed_in": [
+            "review2-ci-fixtures-free-after.log",
+            "review2-ci-fixtures-pro-after.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 942,
+          "project": "admin",
+          "file": "tracker-observability.spec.ts",
+          "title": "JS __slimstatDebug is absent when debug is off",
+          "passed_in": [
+            "review2-debug-off.log"
+          ]
+        }
+      ]
     }
   },
   "pro": {
@@ -71,8 +293,8 @@
     },
     "browser": {
       "tests": 50,
-      "status": "pass across final full run and one corrected-credential rerun",
-      "detail": "49 passed in final full run; ecommerce CSV/access-control scenario passed after supplying the local author credentials."
+      "status": "pass",
+      "detail": "50/50 passed without retries with final Free production code d83e3fde (pro-latest-free-browser run)."
     },
     "release_runtime_php": [
       "7.4",
@@ -233,7 +455,16 @@
   "ci_followups": {
     "fresh_install_retention": "Reproduced the delete-only fixture failure with archive_retention_days=420, explicitly isolated archive expiration in that fixture, and passed both InnoDB/MyISAM matrices. Independent real archive-expiration fixture remains green.",
     "active_cookieyes": "48 consent/GDPR scenarios exercised with CookieYes active: 47 passed initially; the one stale acceptance fixture was corrected to make a real provider choice, then its full six-scenario file passed.",
-    "portable_visitor_ip": "GitHub Docker traffic does not necessarily use 127.0.0.1. Browser assertions now require a 39-character anonymous hash, then an actual IP after consent and the identical IP/visit on the next navigation. All 11 privacy scenarios passed three consecutive local runs (33 passes, no retries)."
+    "portable_visitor_ip": "GitHub Docker traffic does not necessarily use 127.0.0.1. Browser assertions now require a 39-character anonymous hash, then an actual IP after consent and the identical IP/visit on the next navigation. All 11 privacy scenarios passed three consecutive local runs (33 passes, no retries).",
+    "edition_and_deferred_reports": {
+      "source": "92300d63",
+      "cause": "The Free-only CI job tried to click a Pro-only CSV link, and a synchronous chart assertion depended on async loading. Historical Access Log fixtures also waited for deferred rows below the viewport.",
+      "validation": "Reproduced all three fixture defects. Corrected fixtures retain exact totals and personal-data assertions: Free-only 15 passed/one declared Pro-only skip; Pro 16 passed. Short viewport was retained in the controlled reproductions. Free-only promotion/preview run: 24 passed/two Pro-only skips. The long-running census retained the pre-fix transformed fixture; its five observed failures are all covered by these follow-ups."
+    },
+    "local_download_budget": {
+      "cause": "The local PHP web server hit its 30-second execution limit while streaming the real Browscap archive, before the intended unzip assertion. Debug-off reproduced the same timeout.",
+      "validation": "All seven success/failure/diagnostic/cleanup cases passed with debug on, GitHub download hosts allowed and a 120-second test-only PHP execution budget. No plugin behavior or assertion was weakened."
+    }
   },
   "review_followups": {
     "review": "Free PR #414 review 5895459386: 16 inline findings, one outside-diff finding and one test-strengthening comment addressed.",
@@ -264,6 +495,35 @@
       "required_red_controls": "a4bb5ca5 fails historical-null detachment and missing-column repeat stability; 7ef505d7 fails the valid personal-filter shortcode probe.",
       "shortcode": "Valid w=id personal probes reach the privacy guard; a seeded non-personal resource query returns exactly 1.",
       "validation": "Full test:all passes: 718 unit / 2817 assertions, 229 integration / 965 assertions, source suite and 85 escaping assertions. All 8 affected mutations killed; zero survivors/invalid. PHPStan and i18n pass. 20 affected browser scenarios passed, then all 11 privacy scenarios rerun after final marker authentication. Free and Pro real database fixtures pass. Before/after snapshots match. PCP retains only the registered Free slug warning."
+    },
+    "second_review": {
+      "review": "Free PR #414 review 5896309886: eight inline findings and three outside-diff findings addressed, plus the follow-up export-proof comment.",
+      "source": [
+        "27c389e6",
+        "d83e3fde"
+      ],
+      "consent": "Purpose-bound pageview tokens reject visit cookies and legacy generic signatures without replaying old pages. Both direct endpoints preserve consent success independently of pageview upgrade. Actual AJAX upgrades retain the visited page context. Conditional session updates preserve the winning visit, concurrent annotations and pending enrichment; ordinary late updates cannot reattach the row. Late CMP grants remain queued during preparation.",
+      "reports": "Stored goal and funnel criteria retain their aggregate meaning while public personal filters remain blocked after URL decoding. Shared aggregate cache keys include the effective masking decision. Privacy exports hide internal consent proofs while retaining the verified subject\u2019s own data.",
+      "heatmap": "Scheduled orphan cleanup waits for the indexed schema. Erasure drains orphan labels without relying on retention. Conditional dictionary insertion prevents a paused ingestion from restoring labels after their clicks are erased. Failed orphan cleanup cannot report complete erasure.",
+      "migration": "Purpose-bound pageview tokens require clearing full-page/CDN caches; already-open old pages stop follow-ups until navigation, without replaying recorded pageviews. Documented in readme.",
+      "required_red_controls": [
+        "Old goal/cache/session/heatmap code fails eight real database assertions.",
+        "Old normalized-filter guard permits encoded notes probes.",
+        "Old late CMP handler loses an in-flight grant.",
+        "Old generic signatures accept a visit cookie as a pageview token.",
+        "A cleanup-only heatmap fix permits a late label insertion.",
+        "Old privacy exports include the internal consent proof."
+      ],
+      "validation": {
+        "test_all": "pass: 718 unit / 2819 assertions, 229 integration / 965 assertions, full source suite and 85 escaping assertions",
+        "phpstan": "pass, 158 files",
+        "changed_mutations": "50 plus 9 killed across the two review commits; no survivors or invalid mutations",
+        "browser": "All 1076 Free scenarios accounted for: 1052 initial passes plus 22 passing follow-ups, with two existing unavailable-environment skips. All 13 privacy scenarios pass in the full census. Latest complete Pro run: 50/50 passed against d83e3fde production code.",
+        "i18n": "POT regenerated; freshness passes",
+        "plugin_check": "Only the documented existing slug/commercial updater findings remain",
+        "comparison": "Final d83e3fde comparison exactly matches committed before.json and after.json.",
+        "erased_parent": "Additional real-database interleaving confirms the supported heatmap foreign key rejects an insert paused across parent erasure; no clicks or personal label survive."
+      }
     }
   }
 }
