@@ -26,6 +26,9 @@ import { BASE_URL } from './helpers/env';
 /** Settings page URL — tab 1 (General) */
 const SETTINGS_URL = `${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=1`;
 
+/** Tracking tab: tracking mode, transport and admin tracking live here since the settings redesign. */
+const TRACKING_URL = `${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=2`;
+
 // ─── Helpers ──────────────────────────────────────────────────────────
 
 /** Read the full slimstat_options from the DB and return as a parsed object. */
@@ -80,8 +83,6 @@ test.describe('Admin Settings Persistence', () => {
 
     // Key form elements on tab 1 (General) should exist
     await expect(page.locator('#is_tracking')).toBeAttached();
-    await expect(page.locator('#javascript_mode')).toBeAttached();
-    await expect(page.locator('#tracking_request_method')).toBeAttached();
     await expect(page.locator('#add_dashboard_widgets')).toBeAttached();
 
     // Submit button should be present
@@ -97,7 +98,7 @@ test.describe('Admin Settings Persistence', () => {
 
   test('toggle javascript_mode persists after save and reload', async ({ page }) => {
     // Load the settings page and read the current checkbox state
-    await page.goto(SETTINGS_URL, { waitUntil: 'domcontentloaded' });
+    await page.goto(TRACKING_URL, { waitUntil: 'domcontentloaded' });
 
     const checkbox = page.locator('#javascript_mode');
     const wasChecked = await checkbox.isChecked();
@@ -120,7 +121,7 @@ test.describe('Admin Settings Persistence', () => {
     expect(noticeText).toContain('saved');
 
     // Reload the page to verify the value sticks
-    await page.goto(SETTINGS_URL, { waitUntil: 'domcontentloaded' });
+    await page.goto(TRACKING_URL, { waitUntil: 'domcontentloaded' });
     const isNowChecked = await page.locator('#javascript_mode').isChecked();
     expect(isNowChecked, 'UI toggle should reflect the saved state after reload').toBe(
       !wasChecked,
@@ -138,20 +139,20 @@ test.describe('Admin Settings Persistence', () => {
   // ═══════════════════════════════════════════════════════════════════
   // Test 3: Multiple settings save atomically
   //   Change javascript_mode toggle, tracking_request_method select,
-  //   and add_dashboard_widgets toggle in one form submit. Verify all
+  //   and track_admin_pages toggle in one form submit. Verify all
   //   three persisted in the DB — not just the last one.
   // ═══════════════════════════════════════════════════════════════════
 
   test('multiple settings save atomically in one form submit', async ({ page }) => {
-    await page.goto(SETTINGS_URL, { waitUntil: 'domcontentloaded' });
+    await page.goto(TRACKING_URL, { waitUntil: 'domcontentloaded' });
 
     // Read current states
     const jsModeCheckbox = page.locator('#javascript_mode');
-    const dashWidgetsCheckbox = page.locator('#add_dashboard_widgets');
+    const adminPagesCheckbox = page.locator('#track_admin_pages');
     const requestMethodSelect = page.locator('#tracking_request_method');
 
     const jsWasChecked = await jsModeCheckbox.isChecked();
-    const dashWasChecked = await dashWidgetsCheckbox.isChecked();
+    const adminWasChecked = await adminPagesCheckbox.isChecked();
     const currentMethod = await requestMethodSelect.inputValue();
 
     // Pick a different tracking request method
@@ -161,7 +162,7 @@ test.describe('Admin Settings Persistence', () => {
     if (!jsWasChecked) await setSettingsToggle(jsModeCheckbox, true);
     await requestMethodSelect.selectOption(newMethod);
     if (jsWasChecked) await setSettingsToggle(jsModeCheckbox, false);
-    await setSettingsToggle(dashWidgetsCheckbox, !dashWasChecked);
+    await setSettingsToggle(adminPagesCheckbox, !adminWasChecked);
 
     // Submit
     await page.locator('input.slimstat-settings-button[type="submit"]').click();
@@ -174,15 +175,15 @@ test.describe('Admin Settings Persistence', () => {
     const opts = await getSlimstatOptionsFromDb();
 
     const expectedJs = !jsWasChecked ? 'on' : 'no';
-    const expectedDash = !dashWasChecked ? 'on' : 'no';
+    const expectedAdmin = !adminWasChecked ? 'on' : 'no';
 
     expect(opts['javascript_mode'], 'javascript_mode should match the flipped value').toBe(
       expectedJs,
     );
     expect(
-      opts['add_dashboard_widgets'],
-      'add_dashboard_widgets should match the flipped value',
-    ).toBe(expectedDash);
+      opts['track_admin_pages'],
+      'track_admin_pages should match the flipped value',
+    ).toBe(expectedAdmin);
     expect(
       opts['tracking_request_method'],
       'tracking_request_method should match the new selection',

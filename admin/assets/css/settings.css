@@ -1,0 +1,244 @@
+/* Settings screen: search, status panels, deep-link highlight and the sticky save bar.
+   Loaded only on slimconfig. Logical properties keep RTL working without overrides. */
+
+/* admin.css clips .wrap-slimstat, which disables position: sticky. clip keeps the
+   horizontal guard without creating a scroll container; old browsers ignore it. */
+.wrap-slimstat.slimstat-config {
+    overflow-x: clip !important;
+    overflow-y: visible;
+}
+
+html:has(.slimstat-save-bar) {
+    scroll-padding-block: 48px 96px;
+}
+
+.slimstat-config .nav-tabs .nav-tab a:focus-visible {
+    outline: 2px solid var(--ss-focus);
+    outline-offset: -2px;
+}
+
+/* Search */
+.slimstat-settings-search {
+    position: relative;
+    max-inline-size: 360px;
+    margin-block: var(--ss-space-4) 0;
+    margin-inline-start: auto;
+}
+
+.slimstat-settings-search[hidden] {
+    display: none;
+}
+
+.slimstat-settings-search input[type=search] {
+    inline-size: 100%;
+    min-block-size: 36px;
+    padding-inline: var(--ss-space-3);
+    border: 1px solid var(--ss-border-control);
+    border-radius: var(--ss-radius-xs);
+    background: var(--ss-surface);
+    font-size: var(--ss-text-md);
+}
+
+.slimstat-settings-search input[type=search]:focus {
+    border-color: var(--ss-focus);
+    box-shadow: 0 0 0 1px var(--ss-focus);
+    outline: none;
+}
+
+.slimstat-settings-search__results {
+    position: absolute;
+    z-index: 100;
+    inset-inline: 0;
+    inset-block-start: calc(100% + var(--ss-space-1));
+    max-block-size: 360px;
+    margin: 0;
+    padding: var(--ss-space-1);
+    overflow-y: auto;
+    list-style: none;
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-sm);
+    background: var(--ss-surface-raised);
+    box-shadow: var(--ss-shadow-raised);
+}
+
+.slimstat-settings-search__results[hidden] {
+    display: none;
+}
+
+.slimstat-settings-search__results li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: var(--ss-space-2) var(--ss-space-3);
+    border-radius: var(--ss-radius-xs);
+    cursor: pointer;
+}
+
+.slimstat-settings-search__results li:hover,
+.slimstat-settings-search__results li[aria-selected=true] {
+    background: var(--ss-hover-soft);
+}
+
+.slimstat-settings-search__label {
+    color: var(--ss-text-primary);
+    font-size: var(--ss-text-md);
+}
+
+.slimstat-settings-search__where,
+.slimstat-settings-search__results .slimstat-settings-search__empty {
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-sm);
+    cursor: default;
+}
+
+/* Status panels (Setup status on General, privacy summary on Privacy & GDPR) */
+.slimstat-settings-status {
+    margin-block-start: var(--ss-space-6);
+    padding: var(--ss-space-5);
+    border-radius: 10px;
+    background: var(--ss-surface);
+}
+
+.wrap-slimstat .slimstat-settings-status h2 {
+    margin: 0 0 var(--ss-space-1);
+    color: var(--ss-text-primary);
+    font-size: var(--ss-text-lg);
+    font-weight: 600;
+}
+
+.slimstat-settings-status__intro {
+    max-inline-size: 70ch;
+    margin: 0 0 var(--ss-space-2);
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-base);
+}
+
+.slimstat-settings-status__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0 var(--ss-space-6);
+    margin: 0;
+}
+
+.slimstat-settings-status__row {
+    padding-block: var(--ss-space-3);
+    border-block-end: 1px solid var(--ss-border-soft);
+}
+
+.slimstat-settings-status__row dt {
+    margin-block-end: 2px;
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-sm);
+}
+
+.slimstat-settings-status__row dd {
+    display: flex;
+    align-items: baseline;
+    gap: var(--ss-space-2);
+    margin: 0;
+    font-size: var(--ss-text-md);
+}
+
+.slimstat-settings-status__row dd::before {
+    content: "";
+    flex: none;
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 50%;
+    background: var(--ss-border-control);
+    transform: translateY(-1px);
+}
+
+.slimstat-settings-status__row.is-ok dd::before {
+    background: var(--ss-success-fg);
+}
+
+.slimstat-settings-status__row.is-attention dd::before {
+    background: var(--ss-warning-fg);
+}
+
+.slimstat-settings-status__row dd a {
+    color: var(--ss-text-primary);
+    text-decoration: none;
+}
+
+.slimstat-settings-status__row.is-attention dd a {
+    font-weight: 600;
+}
+
+.slimstat-settings-status__row dd a:hover,
+.slimstat-settings-status__row dd a:focus-visible {
+    color: var(--ss-info-fg);
+    text-decoration: underline;
+}
+
+.slimstat-settings-status__task {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ss-space-2) var(--ss-space-4);
+    margin: var(--ss-space-4) 0 0;
+    color: var(--ss-text-secondary);
+}
+
+.slimstat-settings-status__task p {
+    flex: 1 1 320px;
+    margin: 0;
+}
+
+/* Rows: tighter rhythm, and a clear mark on the setting a link or search opened. */
+.slimstat-config .form-table tr th {
+    padding-block: var(--ss-space-4);
+}
+
+.slimstat-config .form-table tr:target,
+.slimstat-config .form-table tr:has(:target) {
+    background-color: var(--ss-surface-tint);
+    box-shadow: inset 0 0 0 2px var(--ss-focus);
+}
+
+/* Save bar: stays in reach while the form scrolls. */
+.slimstat-config .slimstat-save-bar {
+    position: sticky;
+    z-index: 20;
+    inset-block-end: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ss-space-2) var(--ss-space-4);
+    margin-block-start: var(--ss-space-4);
+    padding: var(--ss-space-3) var(--ss-space-5);
+    border-block-start: 1px solid var(--ss-border);
+    background: var(--ss-surface);
+}
+
+.slimstat-save-bar__status:not(:empty) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ss-space-2);
+    color: var(--ss-text-primary);
+    font-size: var(--ss-text-base);
+}
+
+.slimstat-save-bar__status:not(:empty)::before {
+    content: "";
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 50%;
+    background: var(--ss-warning-fg);
+}
+
+@media (max-width: 782px) {
+    .slimstat-settings-search {
+        max-inline-size: none;
+    }
+
+    .slimstat-settings-status {
+        padding: var(--ss-space-4);
+    }
+
+    .slimstat-config .slimstat-save-bar {
+        padding-inline: var(--ss-space-4);
+    }
+}

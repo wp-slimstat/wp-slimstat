@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace WpSlimstat\Tests\Integration;
 use Brain\Monkey\Functions;
 
-/** The core-screen card and the report bar share per-user dismissal and first exposure. */
+/** The SlimStat header bar: per-user dismissal, one first exposure, a 14-day window. */
 class ReleaseNoticeTest extends IntegrationTestCase
 {
     private array $meta = [];
@@ -33,45 +33,29 @@ class ReleaseNoticeTest extends IntegrationTestCase
         unset(\wp_slimstat::$settings['notice_latest_news']);
         parent::tearDown();
     }
-    private function render(bool $pro = false, ?bool $migration = false, bool $commerce = true, string $placement = 'notice'): string
+    private function render(bool $pro = false, ?bool $migration = false, bool $commerce = true): string
     {
         ob_start();
-        try { \wp_slimstat_admin::show_latest_news($pro, $migration, $commerce, $placement); return (string) ob_get_contents(); }
+        try { \wp_slimstat_admin::show_latest_news($pro, $migration, $commerce); return (string) ob_get_contents(); }
         finally { ob_end_clean(); }
     }
-    public function test_core_card_and_report_bar_are_accessible_and_attributed(): void
+    public function test_report_bar_is_accessible_and_attributed(): void
     {
-        $html = $this->render();
-        foreach (['SlimStat 6 is here.', 'page=slimai', 'Turn any report into plain-language findings.', 'slimview5', 'slimview7', 'slimheatmap', 'slimshortcodes', 'slimstat_migration', 'aria-label="Dismiss SlimStat 6 announcement"', 'data-dismiss-nonce="n0nce"', 'role="status"'] as $value) { $this->assertStringContainsString($value, $html); }
-        // Core screens: a div.notice that common.js moves below the title, clear of Screen Options.
-        $this->assertSame(1, substr_count($html, '<div id="slimstat-notice-latest-news" class="notice notice-info slimstat-release-notice" role="region"'));
-        $this->assertStringNotContainsString('<aside', $html);
-        $this->assertSame(6, substr_count($html, '<a '));
-        $this->assertLessThan(strpos($html, 'slimview5'), strpos($html, 'page=slimai'), 'AI Analysis leads the feature rows');
-        $this->assertStringContainsString('class="slimstat-ai-spotlight"', $html);
-        $this->assertStringContainsString('Free copies a ready-made prompt for ChatGPT, Claude or Gemini; Pro runs the analysis inside WordPress.', $html);
-        $this->assertStringContainsString('>Try AI Analysis</a>', $html);
-        $pro = $this->render(true);
-        $this->assertStringContainsString('results stay in a private, searchable library.', $pro);
-        $this->assertStringNotContainsString('Free copies', $pro);
-        $this->assertStringNotContainsString('page=slimpro', $html, 'the Dashboard and Plugins card has no purchase links');
-        $bar = $this->render(false, false, true, 'bar');
+        $bar = $this->render();
         $this->assertSame(1, substr_count($bar, '<aside id="slimstat-notice-latest-news" class="slimstat-release-bar"'));
         $this->assertStringEndsWith('</aside>', $bar);
-        foreach (['New in SlimStat 6', 'page=slimai', 'AI Analysis: prompts in Free, analysis in Pro', 'page=slimpro', 'utm_campaign=banner', 'utm_content=header-strip', 'aria-label="Dismiss SlimStat 6 announcement"'] as $value) { $this->assertStringContainsString($value, $bar); }
+        foreach (['New in SlimStat 6', 'page=slimai', 'slimview5', 'slimview7', 'slimheatmap', 'slimshortcodes', 'AI Analysis: prompts in Free, analysis in Pro', 'page=slimpro', 'utm_campaign=banner', 'utm_content=header-strip', 'aria-label="Dismiss SlimStat 6 announcement"', 'data-dismiss-nonce="n0nce"', 'role="status"'] as $value) { $this->assertStringContainsString($value, $bar); }
+        $this->assertStringNotContainsString('class="notice', $bar, 'not a core notice: common.js leaves it in the header');
         $this->assertSame(6, substr_count($bar, '<a '));
         $this->assertSame(1, substr_count($bar, 'class="slimstat-release-bar__ai"'));
         $this->assertLessThan(strpos($bar, 'slimview5'), strpos($bar, 'slimstat-release-bar__ai'), 'the AI pill leads the bar');
         $this->assertContains('slimstat-promotions', $this->scripts);
-        $this->assertStringNotContainsString('wp-slimstat.com/pricing', $html . $bar, 'the release bar is a secondary internal action');
+        $this->assertStringNotContainsString('wp-slimstat.com/pricing', $bar, 'the release bar is a secondary internal action');
     }
     public function test_woocommerce_and_pro_states_have_appropriate_destinations(): void
     {
         $this->assertStringNotContainsString('slimview7', $this->render(false, false, false));
-        $this->assertStringNotContainsString('slimview7', $this->render(false, false, false, 'bar'));
-        $this->assertStringNotContainsString('SlimStat Pro 3.0.0', $this->render());
-        $this->assertStringContainsString('SlimStat Pro 3.0.0 adds', $this->render(true));
-        $pro = $this->render(true, false, true, 'bar');
+        $pro = $this->render(true);
         $this->assertStringContainsString('Open AI Analysis', $pro);
         $this->assertStringContainsString('Open Heatmaps', $pro);
         $this->assertStringContainsString('Open Ecommerce', $pro);
@@ -85,26 +69,24 @@ class ReleaseNoticeTest extends IntegrationTestCase
         $this->render();
         $since = $this->meta[1]['slimstat_release_60_since'];
         $this->assertEqualsWithDelta(time(), $since, 2);
-        $this->assertStringContainsString('utm_campaign=banner', $this->render(false, false, true, 'bar'));
+        $this->assertStringContainsString('utm_campaign=banner', $this->render());
         $this->assertSame($since, $this->meta[1]['slimstat_release_60_since']);
     }
     public function test_expires_after_fourteen_days_without_resetting(): void
     {
         $this->meta[1]['slimstat_release_60_since'] = time() - 13 * DAY_IN_SECONDS;
-        $this->assertStringContainsString('slimstat-release-notice', $this->render());
+        $this->assertStringContainsString('slimstat-release-bar', $this->render());
         $expired = time() - 14 * DAY_IN_SECONDS;
         $this->meta[1]['slimstat_release_60_since'] = $expired;
         $this->assertSame('', $this->render());
-        $this->assertSame('', $this->render(false, false, true, 'bar'));
         $this->assertSame($expired, $this->meta[1]['slimstat_release_60_since']);
     }
-    public function test_dismissal_is_per_user_and_shared_between_placements(): void
+    public function test_dismissal_is_per_user(): void
     {
         $this->meta[1]['slimstat_release_60_dismissed'] = 1;
         $this->assertSame('', $this->render());
-        $this->assertSame('', $this->render(false, false, true, 'bar'));
         $this->user = 2;
-        $this->assertStringContainsString('slimstat-release-notice', $this->render());
+        $this->assertStringContainsString('slimstat-release-bar', $this->render());
         $this->assertArrayHasKey('slimstat_release_60_since', $this->meta[2]);
         $this->assertArrayNotHasKey('slimstat_release_60_since', $this->meta[1]);
     }
@@ -122,7 +104,7 @@ class ReleaseNoticeTest extends IntegrationTestCase
     public function test_no_migration_manager_does_not_hide_the_release(): void
     {
         $this->assertNull(\SlimStat\Migration\MigrationService::manager());
-        $this->assertStringContainsString('slimstat-release-notice', $this->render(false, null));
+        $this->assertStringContainsString('slimstat-release-bar', $this->render(false, null));
     }
     public function test_badges_keep_their_independent_existing_window(): void
     {

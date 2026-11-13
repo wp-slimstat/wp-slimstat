@@ -314,12 +314,8 @@ class wp_slimstat_admin
             add_action('in_plugin_update_message-' . plugin_basename(SLIMSTAT_FILE), [self::class, 'show_update_message'], 10, 2);
         }
 
-        // 6.0 release notice: the Dashboard and the Plugins screen only, never SlimStat's own, for
-        // whoever can dismiss it (notices_handler() checks the same capability). The 7-day
-        // window is checked when it renders, so the anchor starts only once it shows.
-        if ('on' === (wp_slimstat::$settings['notice_latest_news'] ?? 'no') && in_array($GLOBALS['pagenow'] ?? '', ['index.php', 'plugins.php'], true) && current_user_can('manage_options')) {
-            add_action('admin_notices', [self::class, 'show_latest_news'], 10, 0);
-        }
+        // The 6.0 release notice lives in the SlimStat header only (header.php); the Dashboard and
+        // Plugins screens no longer repeat it as a card.
         // Black Friday 2026: the main Dashboard only; the class decides who sees it and when.
         if ('index.php' === ($GLOBALS['pagenow'] ?? '')) {
             add_action('admin_notices', [\SlimStat\Services\BlackFriday2026::class, 'dashboard_notice'], 9, 0);
@@ -1709,6 +1705,12 @@ class wp_slimstat_admin
         if ('slimpro' === self::$current_screen) {
             wp_enqueue_style('wp-slimstat-pro-overview', plugins_url('/admin/assets/css/pro.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
         }
+        if ('slimconfig' === self::$current_screen) {
+            // Settings search, status panels and the save bar; nothing else loads it.
+            wp_enqueue_style('wp-slimstat-settings', plugins_url('/admin/assets/css/settings.css', __DIR__), ['wp-slimstat', 'wp-slimstat-tokens'], SLIMSTAT_ANALYTICS_VERSION);
+            wp_enqueue_script('slimstat-settings', plugins_url('/admin/assets/js/settings.js', __DIR__), ['slimstat-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
+            self::set_slimstat_script_translations('slimstat-settings');
+        }
         if (VideoTutorials::SCREEN === self::$current_screen) {
             VideoTutorials::enqueue_page();
         }
@@ -2677,7 +2679,7 @@ class wp_slimstat_admin
         $stamp = isset($_POST['stamp']) && is_string($_POST['stamp']) ? wp_unslash($_POST['stamp']) : '';
         // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Exact whitelist validation below preserves the nonce-bound value without lossy sanitization.
         $snooze = isset($_POST['snooze']) && is_string($_POST['snooze']) ? wp_unslash($_POST['snooze']) : '';
-        if (!preg_match('/^[a-z0-9_-]{1,80}$/D', $key) || !preg_match('/^[a-f0-9]{64}$/D', $stamp) || !in_array($snooze, ['0', '86400'], true)) {
+        if (!preg_match('/^[a-z0-9_-]{1,80}$/D', $key) || !preg_match('/^[a-f0-9]{64}$/D', $stamp) || !in_array($snooze, ['0', '86400', '604800'], true)) {
             wp_send_json_error(__('Invalid notice.', 'wp-slimstat'), 400);
         }
         check_ajax_referer('slimstat_dismiss_notice|' . $key . '|' . $stamp . '|' . $snooze, 'nonce');
@@ -2816,7 +2818,7 @@ class wp_slimstat_admin
         return $since > 0 && time() - $since < 14 * DAY_IN_SECONDS;
     }
 
-    public static function show_latest_news($is_pro = null, $migration_owed = null, $commerce = null, $placement = 'notice')
+    public static function show_latest_news($is_pro = null, $migration_owed = null, $commerce = null)
     {
         $migration_owed = $migration_owed ?? (($manager = \SlimStat\Migration\MigrationService::manager()) && $manager->needsMigration());
         if ($migration_owed || !self::can_view_stats() || !self::release_notice_visible()) {
@@ -2827,38 +2829,6 @@ class wp_slimstat_admin
         self::enqueue_promotions();
         $attributes = ' aria-label="' . esc_attr__('New in SlimStat 6', 'wp-slimstat') . '" data-dismiss-nonce="' . esc_attr(wp_create_nonce('meta-box-order')) . '" data-ajax-url="' . esc_url(admin_url('admin-ajax.php')) . '">';
         $dismiss    = '<button type="button" class="slimstat-release-dismiss" aria-label="' . esc_attr__('Dismiss SlimStat 6 announcement', 'wp-slimstat') . '">×</button><span role="status" class="screen-reader-text"></span>';
-
-        if ('notice' === $placement) {
-            // Dashboard and Plugins: one row per new feature, no purchase links. A div.notice lets
-            // common.js move it below the page title, clear of Screen Options.
-            $link = static function ($page, $text) {
-                return '<a href="' . esc_url(admin_url('admin.php?page=' . $page)) . '">' . esc_html($text) . '</a>';
-            };
-            $rows = [
-                ['admin-links', __('Channels and UTM Campaigns', 'wp-slimstat'), __('Side by side, in one report.', 'wp-slimstat'), 'slimview5', __('Open Traffic Sources', 'wp-slimstat')],
-            ];
-            if ($commerce) {
-                $rows[] = ['cart', __('Ecommerce', 'wp-slimstat'), __('Net sales, orders and top products.', 'wp-slimstat'), 'slimview7', __('Open Ecommerce', 'wp-slimstat')];
-            }
-            $rows[] = ['welcome-view-site', __('Heatmaps', 'wp-slimstat'), __('Every page with clicks.', 'wp-slimstat'), 'slimheatmap', __('Open Heatmaps', 'wp-slimstat')];
-            $rows[] = ['editor-code', __('Shortcode Playground', 'wp-slimstat'), __('Preview a report, then copy its shortcode.', 'wp-slimstat'), 'slimshortcodes', __('Open Shortcodes', 'wp-slimstat')];
-            $html = '<div id="slimstat-notice-latest-news" class="notice notice-info slimstat-release-notice" role="region"' . $attributes
-                . '<p><strong class="slimstat-release-notice__title">' . esc_html__('SlimStat 6 is here.', 'wp-slimstat') . '</strong> '
-                . esc_html__('Reports are faster, and your settings and data carry over. Includes important security hardening.', 'wp-slimstat')
-                . ($is_pro ? ' ' . esc_html__('SlimStat Pro 3.0.0 adds heatmap page previews and Ecommerce email reports.', 'wp-slimstat') : '') . '</p>'
-                // AI Analysis leads as its own block, with the ✨ of "AI Analysis" and one primary action.
-                . '<div class="slimstat-ai-spotlight"><span class="slimstat-ai-spark" aria-hidden="true">✨</span><p><strong>' . esc_html__('AI Analysis', 'wp-slimstat') . '</strong> '
-                . esc_html__('Turn any report into plain-language findings.', 'wp-slimstat') . ' <span class="slimstat-ai-spotlight__how">'
-                . esc_html($is_pro ? __('Analyze reports inside WordPress 7.0 or newer; results stay in a private, searchable library.', 'wp-slimstat') : __('Free copies a ready-made prompt for ChatGPT, Claude or Gemini; Pro runs the analysis inside WordPress.', 'wp-slimstat'))
-                . '</span></p><a class="button button-primary" href="' . esc_url(admin_url('admin.php?page=slimai')) . '">' . esc_html__('Try AI Analysis', 'wp-slimstat') . '</a></div><ul class="slimstat-whats-new">';
-            foreach ($rows as [$icon, $name, $why, $page, $open]) {
-                $html .= '<li><span class="dashicons dashicons-' . esc_attr($icon) . '" aria-hidden="true"></span><strong>' . esc_html($name) . '</strong><span class="slimstat-whats-new__why">' . esc_html($why) . '</span>' . $link($page, $open) . '</li>';
-            }
-            /* translators: %s: "Review migration" link to the Migration screen. */
-            $html .= '</ul><p>' . sprintf(esc_html__('%s: optional database steps, nothing runs until you choose.', 'wp-slimstat'), $link('slimstat_migration', __('Review migration', 'wp-slimstat'))) . '</p>' . $dismiss . '</div>';
-            echo wp_kses_post($html);
-            return;
-        }
 
         $links = ['slimview5' => __('Channels / UTM Campaigns', 'wp-slimstat')];
         if ($commerce) {

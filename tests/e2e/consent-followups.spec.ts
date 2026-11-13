@@ -34,9 +34,9 @@ test.describe('consent wire and unchanged settings (#366/#367)', () => {
       } finally { await context.close(); await getPool().query('DELETE FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]); }
     });
   }
-  test('saving Tracker with GDPR off preserves an unchosen consent integration', async ({ page }) => {
+  test('saving Privacy & GDPR with GDPR off preserves an unchosen consent integration', async ({ page }) => {
     await setSlimstatOptions({ gdpr_enabled: 'off', consent_integration: '', use_slimstat_banner: 'off' });
-    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=2`);
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=9`);
     const select = page.locator('select[name="options[consent_integration]"]');
     await expect(select).toHaveValue('');
     await page.getByRole('button', { name: /save changes/i }).click();

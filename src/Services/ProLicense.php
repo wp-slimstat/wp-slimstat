@@ -199,16 +199,40 @@ final class ProLicense
 		return $links;
 	}
 
-	/** The locked-Pro banner. It cannot be dismissed, and it disappears once the license is valid. */
-	public static function render(): void
+	/** One line for screens other than License settings: why Pro is locked. '' while it is licensed. */
+	public static function summary(): string
 	{
 		$message = self::message();
+		if ('' === $message || !current_user_can('manage_options') || !class_exists(self::CLIENT)) {
+			return $message;
+		}
+		$short = [
+			'none'                 => __('SlimStat Pro features are locked: no license is activated for this site.', 'wp-slimstat'),
+			'domain_not_activated' => __('SlimStat Pro features are locked: the license is not activated for this site.', 'wp-slimstat'),
+			'invalid'              => __('SlimStat Pro features are locked: the license is expired or not valid for this site.', 'wp-slimstat'),
+		];
+		$line = $short[self::state()] ?? __('SlimStat Pro features are locked: the license could not be verified. SlimStat retries automatically.', 'wp-slimstat');
+		return $line . ' ' . __('Your Pro settings and data are kept.', 'wp-slimstat');
+	}
+
+	/** A wrong key, or one not activated here, is an error; a missing key, an outage or an outdated Pro is a warning. */
+	private static function tone(array $links): string
+	{
+		return $links && class_exists(self::CLIENT) && in_array(self::state(), ['invalid', 'domain_not_activated'], true) ? 'error' : 'warning';
+	}
+
+	/**
+	 * The locked-Pro banner on SlimStat screens. It cannot be dismissed there, and it disappears once the
+	 * license is valid. Full detail in License settings and Pro options; one line and the fix elsewhere.
+	 */
+	public static function render(bool $compact = false): void
+	{
+		$message = $compact ? self::summary() : self::message();
 		if ('' === $message) {
 			return;
 		}
-		$links = self::links();
-		// A wrong key, or one not activated here, is an error; a missing key, an outage or an outdated Pro is a warning.
-		$tone = $links && class_exists(self::CLIENT) && in_array(self::state(), ['invalid', 'domain_not_activated'], true) ? 'error' : 'warning';
+		$links = $compact ? array_slice(self::links(), 0, 1) : self::links();
+		$tone  = self::tone($links);
 		echo '<div class="notice notice-' . esc_attr($tone) . ' slimstat-notice slimstat-pro-license-notice" role="status"><div class="slimstat-alert-content" dir="auto"><p>' . wp_kses($message, ['a' => ['href' => true], 'strong' => []]) . '</p></div>';
 		if ($links) {
 			echo '<p class="slimstat-pro-license-notice__actions">';
@@ -230,11 +254,12 @@ final class ProLicense
 		return in_array($GLOBALS['pagenow'] ?? '', ['index.php', 'plugins.php'], true) && current_user_can('manage_options') && '' !== self::message();
 	}
 
-	/** The banner on the Dashboard and the Plugins screen. */
+	/** The Dashboard and Plugins line: the fix only, snoozed for 7 days per license state. */
 	public static function screen_notice(): void
 	{
-		if (self::on_screen()) {
-			self::render();
+		if (self::on_screen() && class_exists('wp_slimstat_admin')) {
+			$links = array_slice(self::links(), 0, 1);
+			\wp_slimstat_admin::show_dismissible_notice('pro-license', hash('sha256', 'pro-license-' . self::state()), self::summary(), $links, self::tone($links), 7 * DAY_IN_SECONDS);
 		}
 	}
 
