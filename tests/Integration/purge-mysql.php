@@ -43,6 +43,8 @@ try {
     wp_slimstat::$wpdb = $wpdb;
     wp_slimstat::$settings['auto_purge'] = '30';
     wp_slimstat::$settings['auto_purge_optimize'] = 'no';
+    // Isolate live-data retention from the independently tested archive expiration job.
+    wp_slimstat::$settings['archive_retention_days'] = 0;
     foreach (['InnoDB', 'MyISAM'] as $engine) {
         foreach (['complete', 'delete-only', 'partial-archive', 'missing-copy', 'truncated-copy', 'missing-column', 'custom-column', 'case-collision', 'many-events', 'late-event', 'late-edit', 'budget-resume'] as $case) {
             try {

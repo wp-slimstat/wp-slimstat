@@ -229,5 +229,9 @@
     },
     "decision": "Keep registered slugs and commercial update delivery. No other findings remain. Raw Plugin Check output is not zero."
   },
-  "pr_status": "CI and CodeRabbit results are recorded on the PRs; no merge authorized."
+  "pr_status": "CI and CodeRabbit results are recorded on the PRs; no merge authorized.",
+  "ci_followups": {
+    "fresh_install_retention": "Reproduced the delete-only fixture failure with archive_retention_days=420, explicitly isolated archive expiration in that fixture, and passed both InnoDB/MyISAM matrices. Independent real archive-expiration fixture remains green.",
+    "active_cookieyes": "48 consent/GDPR scenarios exercised with CookieYes active: 47 passed initially; the one stale acceptance fixture was corrected to make a real provider choice, then its full six-scenario file passed."
+  }
 }
