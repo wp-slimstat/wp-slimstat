@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { isIP } from 'node:net';
 import { runWordPressFixture } from './helpers/chart';
 import { BASE_URL } from './helpers/env';
 import { snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions, getPool, closeDb, snapshotOption, restoreAllOptions,
@@ -34,7 +35,7 @@ test.describe('privacy audit: real visitor consent boundaries', () => {
       await expect.poll(() => page.evaluate(() => (window as any).SlimStatParams?.id || '')).toMatch(/^\d+\./);
       const id = await page.evaluate(() => parseInt((window as any).SlimStatParams.id, 10));
       const [rows]: any = await getPool().query('SELECT ip,email,username,fingerprint,visit_id,vid_hash FROM wp_slim_stats WHERE id=?', [id]);
-      expect(rows[0].ip).not.toBe('127.0.0.1');
+      expect(rows[0].ip).toMatch(/^[0-9a-f]{39}$/);
       for (const key of ['email', 'username', 'fingerprint']) expect(rows[0][key] || '').toBe('');
       expect((await context.cookies()).some(c => c.name === 'slimstat_tracking_code')).toBe(false);
       expect(requests.some(url => url.includes('openfpcdn'))).toBe(false);
@@ -75,7 +76,7 @@ test.describe('privacy audit: real visitor consent boundaries', () => {
       });
       expect(response.ok()).toBe(true);
       const [rows]: any = await getPool().query('SELECT ip,email,username,fingerprint,visit_id,vid_hash FROM wp_slim_stats WHERE id=?', [parseInt(signedId, 10)]);
-      expect(rows[0].ip).not.toBe('127.0.0.1');
+      expect(rows[0].ip).toMatch(/^[0-9a-f]{39}$/);
       for (const key of ['email', 'username', 'fingerprint']) expect(rows[0][key] || '').toBe('');
       expect((await context.cookies()).some(c => c.name === 'slimstat_tracking_code')).toBe(false);
     } finally { await context.close(); }
@@ -197,14 +198,23 @@ test.describe('privacy audit: real visitor consent boundaries', () => {
       await expect.poll(() => page.evaluate(() => (window as any).SlimStatParams?.id || '')).toMatch(/^\d+\./);
       const currentId = await page.evaluate(() => parseInt((window as any).SlimStatParams.id, 10));
       await page.locator('[data-consent="accepted"]').click();
-      await expect.poll(async () => { const [rows]: any = await getPool().query('SELECT ip FROM wp_slim_stats WHERE id=?', [currentId]); return rows[0]?.ip; }).toBe('127.0.0.1');
+      await expect.poll(async () => {
+        const [rows]: any = await getPool().query('SELECT ip FROM wp_slim_stats WHERE id=?', [currentId]);
+        return isIP(String(rows[0]?.ip || ''));
+      }).toBeGreaterThan(0);
       const [after]: any = await getPool().query('SELECT ip,email,username,fingerprint,visit_id,vid_hash FROM wp_slim_stats WHERE id=?', [firstId]);
       expect(after).toEqual(before);
-      const [current]: any = await getPool().query('SELECT visit_id,vid_hash FROM wp_slim_stats WHERE id=?', [currentId]);
+      const [current]: any = await getPool().query('SELECT ip,visit_id,vid_hash FROM wp_slim_stats WHERE id=?', [currentId]);
       expect(Number(current[0].visit_id)).not.toBe(Number(before[0].visit_id));
       expect(current[0].vid_hash).toBeNull();
       const trackerCookie = (await context.cookies()).find(cookie => cookie.name === 'slimstat_tracking_code');
       expect(parseInt(trackerCookie?.value || '', 10)).toBe(Number(current[0].visit_id));
+      await page.goto(`${BASE_URL}/?privacy_audit=history-c`);
+      await expect.poll(() => page.evaluate(() => (window as any).SlimStatParams?.id || '')).toMatch(/^\d+\./);
+      const nextId = await page.evaluate(() => parseInt((window as any).SlimStatParams.id, 10));
+      const [next]: any = await getPool().query('SELECT ip,visit_id FROM wp_slim_stats WHERE id=?', [nextId]);
+      expect(next[0].ip).toBe(current[0].ip);
+      expect(Number(next[0].visit_id)).toBe(Number(current[0].visit_id));
     } finally { await context.close(); }
   });
 });

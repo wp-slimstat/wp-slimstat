@@ -232,7 +232,8 @@
   "pr_status": "CI and CodeRabbit results are recorded on the PRs; no merge authorized.",
   "ci_followups": {
     "fresh_install_retention": "Reproduced the delete-only fixture failure with archive_retention_days=420, explicitly isolated archive expiration in that fixture, and passed both InnoDB/MyISAM matrices. Independent real archive-expiration fixture remains green.",
-    "active_cookieyes": "48 consent/GDPR scenarios exercised with CookieYes active: 47 passed initially; the one stale acceptance fixture was corrected to make a real provider choice, then its full six-scenario file passed."
+    "active_cookieyes": "48 consent/GDPR scenarios exercised with CookieYes active: 47 passed initially; the one stale acceptance fixture was corrected to make a real provider choice, then its full six-scenario file passed.",
+    "portable_visitor_ip": "GitHub Docker traffic does not necessarily use 127.0.0.1. Browser assertions now require a 39-character anonymous hash, then an actual IP after consent and the identical IP/visit on the next navigation. All 11 privacy scenarios passed three consecutive local runs (33 passes, no retries)."
   },
   "review_followups": {
     "review": "Free PR #414 review 5895459386: 16 inline findings, one outside-diff finding and one test-strengthening comment addressed.",
