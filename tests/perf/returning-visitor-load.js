@@ -33,6 +33,7 @@ const cookieSetRate = new Rate('cookie_set_rate');
 const sessionErrors = new Counter('session_errors');
 
 export const options = {
+  noCookiesReset: true, // Only the explicit new-visitor branch clears a session.
   scenarios: {
     // Scenario 1: Steady-state returning visitor traffic
     returning_visitors: {

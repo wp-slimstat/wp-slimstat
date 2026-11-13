@@ -121,6 +121,33 @@ if ('' === $sh) {
     }
 }
 
+// Exercise duration classification with both released INSERT shapes. No SQL values
+// should reach the duration-only ledger, including a lookalike archive table.
+define('ABSPATH', __DIR__ . '/');
+define('SLIMSTAT_BENCH', true);
+define('SLIMSTAT_BENCH_DIR', sys_get_temp_dir() . '/slimstat-timer-test-' . bin2hex(random_bytes(6)));
+$_SERVER['HTTP_X_SLIMSTAT_BENCH'] = 'timer-contract';
+$_SERVER['HTTP_X_SLIMSTAT_BENCH_TIMING'] = '1';
+$GLOBALS['wpdb'] = (object) ['prefix' => 'wp_'];
+function add_filter(...$args) {}
+function add_action(...$args) {}
+require $root . '/tests/bench/mu/slimstat-bench-qlog.php';
+try {
+    SlimStat_Bench_QLog::timeQuery([], 'INSERT IGNORE INTO wp_slim_stats (resource) VALUES ("private")', .002);
+    SlimStat_Bench_QLog::timeQuery([], 'INSERT INTO `wp_slim_stats` (resource) VALUES ("private")', .003);
+    SlimStat_Bench_QLog::timeQuery([], 'INSERT INTO wp_slim_stats_archive (resource) VALUES ("private")', .004);
+    SlimStat_Bench_QLog::flush();
+    $logged = file_get_contents(SLIMSTAT_BENCH_DIR . '/qlog.jsonl');
+    $row = json_decode($logged, true);
+    if (!defined('SAVEQUERIES') || !SAVEQUERIES || [2, 3] !== $row['query_ms']['stats_insert']
+        || [2, 3, 4] !== $row['query_ms']['all'] || false !== strpos($logged, 'private')) {
+        $failures[] = 'duration classification or value redaction failed';
+    }
+} finally {
+    @unlink(SLIMSTAT_BENCH_DIR . '/qlog.jsonl');
+    @rmdir(SLIMSTAT_BENCH_DIR);
+}
+
 if ($failures) {
     fwrite(STDERR, 'FAIL: bench instrument safety (' . count($failures) . " problem(s))\n");
     foreach ($failures as $failure) {

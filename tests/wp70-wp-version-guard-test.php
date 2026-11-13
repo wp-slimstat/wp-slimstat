@@ -9,14 +9,14 @@
  * RED before the dead branch is removed and green after; it then guards
  * re-introduction of a raw $wp_version read.
  *
- * Scope: wp-slimstat.php, admin/, src/ — excludes src/Dependencies/.
+ * Scope: wp-slimstat.php, admin/, src/ — excludes vendor-prefixed/.
  * Allow-marker: /​* wp-version-read: ok *​/ on the comment line above a site.
  */
 
 declare(strict_types=1);
 
 $plugin_root  = dirname(__DIR__);
-$deps_prefix  = $plugin_root . '/src/Dependencies';
+$deps_prefix  = $plugin_root . '/vendor-prefixed';
 $allow_marker = 'wp-version-read: ok';
 
 $paths = [

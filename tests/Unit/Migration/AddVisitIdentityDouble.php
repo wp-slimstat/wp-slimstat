@@ -38,6 +38,11 @@ trait AddVisitIdentityDouble
         $wpdb             = Mockery::mock(\wpdb::class);
         $wpdb->prefix     = 'wp_';
         $wpdb->last_error = '';
+        $wpdb->shouldReceive('get_var')->with('SELECT @@SESSION.lock_wait_timeout')->andReturnUsing(static function () use ($wpdb) {
+            $wpdb->last_error = '';
+            return '600';
+        });
+        $wpdb->shouldReceive('query')->with(\Mockery::pattern('/^SET SESSION lock_wait_timeout/'))->andReturn(0)->byDefault();
 
         $present = static fn (string $sql): array => $columnPresent instanceof \Closure
             ? ($columnPresent($sql)

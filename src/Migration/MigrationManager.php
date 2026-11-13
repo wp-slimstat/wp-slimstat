@@ -218,16 +218,7 @@ class MigrationManager
             return $this->needsMemo;
         }
 
-        // S8 — dismissal is keyed to the SET that was dismissed, not to the literal 'yes'.
-        // needsMigration() short-circuits here, so a bare flag meant any migration added in
-        // v6.1 never announced itself on a site that completed v6.0's — a
-        // forward-compatibility hole in the exact mechanism the star-schema programme rides
-        // on. A changed set produces a different fingerprint and re-arms the notice by
-        // construction, with no upgrade step to remember.
-        if ($this->migrationSetFingerprint() === get_option(self::OPTION_DISMISSED)) {
-            return $this->needsMemo = false;
-        }
-
+        // Dismissal hides one administrator's notice, never the pending migration itself.
         $cached = get_transient(self::TRANSIENT_PROBE);
         if ('clean' === $cached || 'dirty' === $cached) {
             return $this->needsMemo = ('dirty' === $cached);
@@ -291,7 +282,7 @@ class MigrationManager
      * records the same defect in the per-migration checkpoints). Sorted so registration
      * order cannot change the answer.
      */
-    private function migrationSetFingerprint(): string
+    public function migrationSetFingerprint(): string
     {
         $ids = [];
         foreach ($this->migrations as $migration) {
@@ -305,12 +296,22 @@ class MigrationManager
 
     public function dismissNotice(): void
     {
-        update_option(self::OPTION_DISMISSED, $this->migrationSetFingerprint(), false);
+        $key = 'slimstat_notice_dismissals_' . get_current_blog_id();
+        $records = get_user_meta(get_current_user_id(), $key, true);
+        $records = is_array($records) ? $records : [];
+        $records['migration'] = ['stamp' => hash('sha256', $this->migrationSetFingerprint()), 'until' => 0];
+        update_user_meta(get_current_user_id(), $key, $records);
         $this->forgetProbe();
     }
 
     public function resetDismissal(): void
     {
+        $key = 'slimstat_notice_dismissals_' . get_current_blog_id();
+        $records = get_user_meta(get_current_user_id(), $key, true);
+        if (is_array($records)) {
+            unset($records['migration']);
+            update_user_meta(get_current_user_id(), $key, $records);
+        }
         delete_option(self::OPTION_DISMISSED);
         $this->forgetProbe();
     }
@@ -549,10 +550,6 @@ class MigrationManager
             // Re-probe against the database we just changed, not against the answer cached
             // before we changed it.
             $this->forgetProbe(in_array(true, $results, true));
-
-            if (!$this->needsMigration()) {
-                $this->dismissNotice();
-            }
 
             return $results;
         } finally {

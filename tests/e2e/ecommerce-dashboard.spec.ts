@@ -11,6 +11,10 @@ function fixture(mode: string): any {
 
 test('Ecommerce reconciles known WC data, shared filters, refresh and responsive reports @woocommerce', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
+  await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText: async (text: string) => { (window as any).__copied = text; } },
+  }));
   await snapshotSlimstatOptions();
   await snapshotOption('slimstat_filters');
   fixture('cleanup');
@@ -20,15 +24,40 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     await testInfo.attach('commerce-reconciliation', { body: JSON.stringify(evidence), contentType: 'application/json' });
     expect(evidence.result).toBe('pass');
     expect(fixture('chart').result).toBe('pass');
+    const native = JSON.parse(runWordPressFixture(`<?php
+      wp_set_current_user(get_user_by('login', 'admin')->ID);
+      require_once dirname(SLIMSTAT_FILE) . '/admin/index.php';
+      $context = \\SlimStat\\Reports\\AiReport::context(['report' => 'slim_p10_01', 'from' => gmdate('Y-m-d', ${seed.start}), 'to' => gmdate('Y-m-d', ${seed.start}), 'filters' => ['addon_ecommerce_currency' => 'equals USD']]);
+      $result = is_wp_error($context) ? $context : \\SlimStat\\Reports\\AiReport::build($context);
+      echo wp_json_encode(is_wp_error($result) ? ['error' => $result->get_error_message()] : $result);
+    `));
+    expect(native.error).toBeUndefined();
+    expect(native.prompt).toContain('115.00');
+    expect(native.prompt).toContain('USD');
+
     await setSlimstatOptions({ async_load: 'on' });
     const day = new Date(seed.start * 1000);
     const params = new URLSearchParams({ page: 'slimview7', type: 'custom',
       from: day.toISOString().slice(0, 10), to: day.toISOString().slice(0, 10),
       'fs[addon_ecommerce_currency]': 'equals USD' });
     await page.goto(`/wp-admin/admin.php?${params}`);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     const dashboard = page.locator('[data-ecommerce]');
     const full = (await getProState(page)).pro_activated;
     await expect(dashboard.locator('[data-metric=net]')).toContainText('115.00', { timeout: 30_000 });
+    const copy = dashboard.locator('[data-ec-view=summary] button.slimstat-ai-prompt');
+    await expect(copy).toBeVisible();
+    await copy.click();
+    await expect(copy).toContainText('Copied');
+    let prompt = await page.evaluate(() => (window as any).__copied as string);
+    expect(prompt).toContain('Ecommerce');
+    expect(prompt).toContain('"currency":"USD"');
+    expect(prompt).toContain('115.00');
+    expect(prompt).toContain('20.00');
+    expect(prompt).toContain('previous_period');
+    expect(prompt).toContain('Store summary');
+    expect(prompt).not.toContain('Which sources contribute orders and revenue?');
+    expect(prompt).not.toMatch(/••••|Illustrative report preview|Unlock Ecommerce/);
     if (full) {
     await expect(dashboard.locator('[data-metric=orders]')).toHaveText('4');
     await expect(dashboard.locator('[data-metric=aov]')).toContainText('28.75');
@@ -82,31 +111,47 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     }
     await page.getByLabel('Compare previous period').uncheck();
     await expect(dashboard.locator('[data-chart-table] tr').first().locator('td')).toHaveCount(1);
+    await copy.click();
+    await expect(copy).toContainText('Copied');
+    prompt = await page.evaluate(() => (window as any).__copied as string);
+    expect(prompt).not.toContain('previous_period');
+    expect(prompt).not.toContain('Which channels contribute the most net sales?');
+    expect(prompt).toContain('Store summary');
     await page.getByLabel('Compare previous period').check();
     await dashboard.getByLabel('Chart interval').selectOption('monthly');
     await expect(dashboard.getByLabel('Chart interval')).toHaveValue('monthly');
     await expect(dashboard.locator('[data-series]')).toHaveAttribute('data-series', /"interval":"monthly"/);
     await expect(dashboard.locator('[data-chart-title]')).toHaveText(full ? 'Orders' : 'Net sales');
     await dashboard.locator('[data-chart-metric=net]').click();
+    const previousDashboard = await dashboard.elementHandle();
     await dashboard.getByRole('link', { name: 'Refresh Ecommerce reports' }).click();
+    await expect.poll(() => previousDashboard!.evaluate(el => !el.isConnected)).toBe(true);
+    await previousDashboard!.dispose();
     await expect.poll(() => page.evaluate(() => !(window as any).jQuery('#slim_p10_01 .inside').is(':animated'))).toBe(true);
     await expect(dashboard.locator('[data-metric=net]')).toContainText('115.00');
     await page.screenshot({ path: testInfo.outputPath('ecommerce-desktop.png'), fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(dashboard.locator('[data-metric=net]')).toBeVisible();
-    expect(await dashboard.locator('.ss-ec-chart-description').evaluate(el => getComputedStyle(el).wordBreak)).toBe('normal');
+    await expect(dashboard.locator('.ss-ec-chart-description')).toHaveCSS('word-break', 'normal');
     expect(await dashboard.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath('ecommerce-mobile.png'), fullPage: true });
     params.set('fs[utm_source]', 'equals google');
     await page.goto(`/wp-admin/admin.php?${params}`);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('65.00');
     await expect(dashboard.locator('[data-metric=orders]')).toHaveText(full ? '2' : '••••Available with Pro');
     await page.locator('#slimstat-save-filter').click();
     await expect(page.locator('#slimstat-save-filter')).toHaveText(/Saved|Already saved/);
     const unfiltered = new URLSearchParams(params); unfiltered.delete('fs[utm_source]');
     await page.goto(`/wp-admin/admin.php?${unfiltered}`);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await page.locator('#slimstat-load-saved-filters').click();
-    await page.locator('#slim_filters_overlay a.slimstat-filter-link').filter({ hasText: 'google' }).click();
+    await Promise.all([
+      // The filter navigation removes query parameters after transferring them into the form.
+      page.waitForEvent('domcontentloaded'),
+      page.locator('#slim_filters_overlay a.slimstat-filter-link').filter({ hasText: 'google' }).click(),
+    ]);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('65.00');
     const savedDates = await page.evaluate(() => {
       const picker = (window as any).jQuery('.slimstat-date-range-input').data('daterangepicker');
@@ -114,20 +159,26 @@ test('Ecommerce reconciles known WC data, shared filters, refresh and responsive
     });
     expect(savedDates).toEqual([day.toISOString().slice(0, 10), day.toISOString().slice(0, 10)]);
     await page.locator('.slimstat-date-range-btn').click();
-    await page.evaluate(() => {
-      const picker = (window as any).jQuery('.slimstat-date-range-input').data('daterangepicker');
-      picker.setEndDate(picker.endDate.clone().add(1, 'day')); picker.chosenLabel = 'Custom range'; picker.clickApply();
-    });
+    await Promise.all([
+      page.waitForEvent('domcontentloaded'),
+      page.evaluate(() => {
+        const picker = (window as any).jQuery('.slimstat-date-range-input').data('daterangepicker');
+        picker.setEndDate(picker.endDate.clone().add(1, 'day')); picker.chosenLabel = 'Custom range'; picker.clickApply();
+      }),
+    ]);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('65.00');
     await expect(page.locator('#slimstat-current-filters')).toContainText('google');
     await expect(dashboard).toContainText('Traffic filters are active');
     params.delete('fs[utm_source]');
     params.set('fs[addon_ecommerce_currency]', 'equals EUR');
     await page.goto(`/wp-admin/admin.php?${params}`);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.locator('[data-metric=net]')).toContainText('200.00');
     await expect(dashboard.locator('[data-metric=orders]')).toHaveText(full ? '1' : '••••Available with Pro');
     params.set('fs[addon_unsupported]', 'equals test');
     await page.goto(`/wp-admin/admin.php?${params}`);
+    await page.locator('#slim_p10_01').scrollIntoViewIfNeeded();
     await expect(dashboard.getByRole('alert')).toContainText('cannot be applied to Ecommerce');
     expect(fixture('safety').checks).toBeGreaterThanOrEqual(53);
     expect(fixture('edges').checks).toBeGreaterThanOrEqual(35);
@@ -228,6 +279,10 @@ test('Ecommerce explains incomplete, empty and loading states and keeps the newe
 
 test('Ecommerce Free is useful alone and WooCommerce deactivation is safe @woocommerce', async ({ page }) => {
   test.setTimeout(90_000);
+  await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText: async (text: string) => { (window as any).__copied = text; } },
+  }));
   const proWasActive = runWordPressFixture("<?php echo is_plugin_active('wp-slimstat-pro/wp-slimstat-pro.php') ? 'yes' : 'no';") === 'yes';
   fixture('cleanup');
   try {
@@ -236,6 +291,12 @@ test('Ecommerce Free is useful alone and WooCommerce deactivation is safe @wooco
     runWordPressFixture("<?php deactivate_plugins('wp-slimstat-pro/wp-slimstat-pro.php');");
     await page.goto(`/wp-admin/admin.php?${new URLSearchParams({ page: 'slimview7', type: 'custom', from: day, to: day })}`);
     await expect(page.locator('.ss-ec-report')).toHaveCount(3, { timeout: 30_000 });
+    await page.locator('[data-ec-view=summary] button.slimstat-ai-prompt').click();
+    await expect(page.locator('[data-ec-view=summary] button.slimstat-ai-prompt')).toContainText('Copied');
+    const prompt = await page.evaluate(() => (window as any).__copied as string);
+    const rows = JSON.parse(prompt.match(/<data>\n([\s\S]*?)\n<\/data>/)![1]);
+    expect(Number(rows[0].net)).toBe(115);
+    expect(prompt).not.toMatch(/"orders":|"aov":|••••|Illustrative preview/);
     await expect(page.locator('[data-ecommerce]').getByRole('link', { name: 'Export CSV', exact: true })).toHaveCount(0);
     // Each tab still shows Export, and it opens the Pro page instead of downloading.
     const upsells = page.locator('[data-ecommerce] [data-ec-export]');
@@ -313,7 +374,8 @@ $wpdb->query('SET FOREIGN_KEY_CHECKS=1');
 echo $wpdb->get_var($wpdb->prepare('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', $t));`);
   const foreignKeys = () => runWordPressFixture(`<?php global $wpdb; echo $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME = %s', $wpdb->prefix . 'slim_stats'));`);
   const keysBefore = foreignKeys();
-  runWordPressFixture("<?php update_option('slimstat_ec_myisam_test_backup', get_option('slimstat_ecommerce_state', []), false); delete_option('slimstat_ecommerce_state');");
+  // Same guard as engine(): on a live DB the finally's engine() throws before the restore, and the next run backs up [] over the real state.
+  runWordPressFixture("<?php if (DB_NAME !== 'tests-wordpress') throw new RuntimeException('Disposable database required'); update_option('slimstat_ec_myisam_test_backup', get_option('slimstat_ecommerce_state', []), false); delete_option('slimstat_ecommerce_state');");
   try {
     // A conversion that silently did nothing would make this test pass for the wrong reason.
     expect(engine('MyISAM')).toBe('MyISAM');
@@ -388,4 +450,112 @@ test('Ecommerce uses the native date control and preserves filters through keybo
     await page.screenshot({path:testInfo.outputPath(`native-datepicker-${width}.png`),fullPage:true});
     await page.locator('[data-ecommerce] h2').first().click();
   }
+});
+
+test('every Ecommerce AI action copies its own authorized context @woocommerce', async ({ page }, info) => {
+  test.setTimeout(120_000);
+  await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', {
+    configurable: true, value: { writeText: async (text: string) => { (window as any).__copied = text; } },
+  }));
+  fixture('cleanup');
+  try {
+    const seed = fixture('seed');
+    const day = new Date(seed.start * 1000).toISOString().slice(0, 10);
+    await page.goto('/wp-admin/admin.php?' + new URLSearchParams({ page: 'slimview7', type: 'custom', from: day, to: day, 'fs[addon_ecommerce_currency]': 'equals USD' }));
+    const full = (await getProState(page)).pro_activated;
+    const views = ['summary', 'trend', 'channel', 'source', 'product', ...(full ? ['campaign', 'coupon', 'device', 'customer', 'landing', 'journey'] : [])];
+    const tabs: Record<string, string> = { channel: 'Channels', source: 'Sources', campaign: 'Campaigns', product: 'Products', coupon: 'Coupons', device: 'Devices', customer: 'Customer segments', landing: 'Landing pages' };
+    await expect(page.locator('[data-ec-view]')).toHaveCount(views.length);
+    let previous = '';
+    for (const view of views) {
+      if (tabs[view] && view !== 'landing' && (full || view !== 'product')) await page.getByRole('tab', { name: tabs[view], exact: true }).click();
+      const actions = page.locator(`[data-ec-view=${view}]`);
+      const copy = actions.locator('.slimstat-ai-prompt');
+      const response = page.waitForResponse(r => decodeURIComponent(r.url()).includes('/slimstat/v1/ai/prompt'));
+      await copy.click();
+      const result = await (await response).json();
+      expect(result.code, JSON.stringify(result)).toBeUndefined();
+      await expect(copy).toContainText('Copied');
+      const prompt = await page.evaluate(() => (window as any).__copied as string);
+      expect(prompt).toBe(result.prompt);
+      expect(prompt).toContain('"currency":"USD"');
+      expect(prompt).not.toBe(previous);
+      expect(prompt).not.toMatch(/@example|customer_email|billing_email/);
+      expect(result.context.title).toContain(tabs[view] || ({ summary: 'Store summary', trend: 'Store performance', journey: 'Purchase journey' } as Record<string, string>)[view]);
+      expect(result.context.rows_included).toBeLessThanOrEqual(20);
+      previous = prompt;
+      // The native action passes the identical context to its shared modal.
+      const copiedContext = await copy.evaluate(node => (window as any).SlimStatAiContext(node));
+      const nativeContext = await actions.locator('.slimstat-ai-analyze').evaluate(node => (window as any).SlimStatAiContext(node));
+      expect(nativeContext).toEqual(copiedContext);
+      expect(nativeContext.ecommerce.view).toBe(view);
+    }
+    await page.screenshot({ path: info.outputPath('ecommerce-ai-actions.png'), fullPage: true });
+  } finally { fixture('cleanup'); await closeDb(); }
+});
+
+test('Ecommerce copy retries preserve other feedback, sample full trends and omit private actions @woocommerce', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', {
+    configurable: true, value: { writeText: async (text: string) => { (window as any).__copied = text; } },
+  }));
+  fixture('cleanup');
+  try {
+    const seed = fixture('seed');
+    const from = new Date((seed.start - 29 * 86400) * 1000).toISOString().slice(0, 10);
+    const to = new Date(seed.start * 1000).toISOString().slice(0, 10);
+    const params = new URLSearchParams({ page: 'slimview7', type: 'custom', from, to, 'fs[addon_ecommerce_currency]': 'equals USD' });
+    await page.goto('/wp-admin/admin.php?' + params);
+    const contextKeys = JSON.parse(runWordPressFixture(`<?php
+      wp_set_current_user(get_user_by('login', 'admin')->ID);
+      require_once dirname(SLIMSTAT_FILE) . '/admin/index.php';
+      $context = \\SlimStat\\Reports\\AiReport::context(['report'=>'slim_p1_03','from'=>'${from}','to'=>'${to}']);
+      if (is_wp_error($context)) throw new RuntimeException($context->get_error_message());
+      echo wp_json_encode(array_keys($context));
+    `));
+    expect(contextKeys).not.toContain('ecommerce');
+    let failCopy = true;
+    await page.route(url => decodeURIComponent(url.href).includes('/slimstat/v1/ai/prompt'), route => failCopy
+      ? route.fulfill({ status: 503, json: { code: 'test_copy_failure', message: 'Synthetic copy preparation failure' } })
+      : route.continue());
+    const copy = page.locator('[data-ec-view=trend] .slimstat-ai-prompt');
+    await copy.click();
+    const feedback = page.locator('.ss-ec-copy-feedback');
+    await expect(feedback).toHaveText('Synthetic copy preparation failure');
+    await page.locator('.ss-ec-feedback').evaluate(node => { node.textContent = 'Unrelated report status'; node.classList.remove('screen-reader-text'); });
+    failCopy = false;
+    const response = page.waitForResponse(r => decodeURIComponent(r.url()).includes('/slimstat/v1/ai/prompt'));
+    await copy.click();
+    const result = await (await response).json();
+    expect(result.code, JSON.stringify(result)).toBeUndefined();
+    await expect(copy).toContainText('Copied');
+    await expect(feedback).toBeHidden();
+    await expect(feedback).toHaveText('');
+    await expect(page.locator('.ss-ec-feedback')).toHaveText('Unrelated report status');
+    const rows = JSON.parse(result.prompt.split('<data>\n')[1].split('\n</data>')[0]);
+    const current = rows.filter((row: any) => row.period === 'current');
+    expect(rows.length).toBeLessThanOrEqual(20);
+    expect(current[0].from.slice(0, 10)).toBe(from);
+    expect(current[current.length - 1].from.slice(0, 10)).toBe(to);
+    expect(result.context.sampling).toContain('sampled evenly');
+    const previous = rows.filter((row: any) => row.period === 'previous');
+    if (previous.length) {
+      expect(previous.length).toBe(current.length);
+      const timestamp = (value: string) => Date.parse(value.replace(' ', 'T') + 'Z');
+      expect(previous.map((row: any, i: number) => timestamp(current[i].from) - timestamp(row.from))).toEqual(Array(current.length).fill(30 * 86400 * 1000));
+    }
+    await expect(copy).toBeEnabled();
+    await page.evaluate(() => Object.assign((window as any).SlimStatAdminParams.ai, { native: true, route: '/slimstat/v1/ai' }));
+    await page.route(url => decodeURIComponent(url.href).includes('/slimstat/v1/ai/status'), route => route.fulfill({ json: { enabled: false, saved: null } }));
+    await page.locator('[data-ec-view=trend] .slimstat-ai-analyze').click();
+    await expect(page.getByRole('dialog')).toContainText('AI analysis is disabled');
+    await page.locator('[data-ec-view=trend]').evaluate(node => node.replaceWith(node.cloneNode(true)));
+    const fallbackResponse = page.waitForResponse(r => decodeURIComponent(r.url()).includes('/slimstat/v1/ai/prompt'));
+    await page.getByRole('dialog').getByRole('button', { name: 'Copy Prompt Instead' }).click();
+    expect((await (await fallbackResponse).json()).context.title).toContain('Store performance');
+    params.set('fs[ip]', 'equals 8.8.8.8');
+    await page.goto('/wp-admin/admin.php?' + params);
+    await expect(page.locator('[data-ecommerce]')).toBeVisible();
+    await expect(page.locator('.ss-ec-ai')).toHaveCount(0);
+  } finally { fixture('cleanup'); await closeDb(); }
 });

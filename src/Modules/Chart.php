@@ -56,6 +56,13 @@ class Chart
         $this->renderChart();
     }
 
+    /** Read the same chart dataset without enqueuing assets or rendering HTML. */
+    public function reportData(array $args): array
+    {
+        $this->init($args);
+        return ['data' => $this->data, 'labels' => $this->chartLabels];
+    }
+
     public static function ajaxFetchChartData()
     {
         check_ajax_referer('slimstat_chart_nonce', 'nonce');
@@ -136,20 +143,10 @@ class Chart
             $chart               = new self();
             $args['granularity'] = $granularity;
             $chart->init($args);
-            $totals = [
-                'current' => [
-                    'v1' => (int) ($chart->data['totals'][0]->v1 ?? 0),
-                    'v2' => (int) ($chart->data['totals'][0]->v2 ?? 0),
-                ],
-                'previous' => [
-                    'v1' => (int) ($chart->data['totals'][1]->v1 ?? 0),
-                    'v2' => (int) ($chart->data['totals'][1]->v2 ?? 0),
-                ],
-            ];
             wp_send_json_success([
                 'args'         => $chart->args,
                 'data'         => $chart->data,
-                'totals'       => $totals,
+                'totals'       => self::summarizeTotals($chart->data['totals'] ?? []),
                 'prev_data'    => $chart->prevData,
                 'chart_labels' => $chart->chartLabels,
                 'translations' => $chart->translations,
@@ -207,7 +204,7 @@ class Chart
         // Ensure chart_data is present with defaults
         if (!isset($args['chart_data'])) {
             $args['chart_data'] = [
-                'data1' => 'COUNT( ip )',
+                'data1' => 'COUNT( id )',
                 'data2' => 'COUNT( DISTINCT ip )',
             ];
         }
@@ -217,6 +214,9 @@ class Chart
 
     private function detectGranularity(array $args): string
     {
+        if (isset($args['granularity']) && in_array($args['granularity'], self::GRANULARITIES, true)) {
+            return $args['granularity'];
+        }
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
         if (!empty($_REQUEST['granularity']) && in_array($_REQUEST['granularity'], self::GRANULARITIES, true)) {
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page/date/presentation selection; no privileged mutation is performed by this input.
@@ -306,7 +306,7 @@ class Chart
             $results[] = $row;
         }
 
-        return $this->processResults(
+        $data = $this->processResults(
             $results,
             $totals,
             $sqlInfo['params'],
@@ -315,6 +315,12 @@ class Chart
             $prevArgs['start'],
             $prevArgs['end']
         );
+        if (!self::comparisonEnabled()) {
+            $data['datasets_prev'] = [];
+            $data['prev_labels'] = [];
+            $data['totals'] = array_slice($data['totals'], 0, 1);
+        }
+        return $data;
     }
 
     private function calculatePreviousArgs(array $args): array
@@ -455,8 +461,12 @@ class Chart
         // AND filters are applied to the whole time expression instead of
         // binding tighter to only the latter OR clause.
         $rowsQuery = Query::select($fields)
-            ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
-            ->whereRaw('((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))', [$prevStart, $prevEnd, $start, $end]);
+            ->from($GLOBALS['wpdb']->prefix . 'slim_stats');
+        if (self::comparisonEnabled()) {
+            $rowsQuery->whereRaw('((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))', [$prevStart, $prevEnd, $start, $end]);
+        } else {
+            $rowsQuery->whereRaw('(dt BETWEEN %d AND %d)', [$start, $end]);
+        }
 
         // Apply additional filters if any
         if (!empty($filterWhere)) {
@@ -680,6 +690,21 @@ class Chart
     private static function rowField($row, string $key)
     {
         return is_object($row) ? ($row->{$key} ?? null) : ($row[$key] ?? null);
+    }
+
+    /** Current/previous totals shared by the initial render and the AJAX refresh; previous only when its row exists. */
+    public static function summarizeTotals(array $rows): array
+    {
+        $totals = ['current' => ['v1' => (int) ($rows[0]->v1 ?? 0), 'v2' => (int) ($rows[0]->v2 ?? 0)]];
+        if (isset($rows[1])) {
+            $totals['previous'] = ['v1' => (int) ($rows[1]->v1 ?? 0), 'v2' => (int) ($rows[1]->v2 ?? 0)];
+        }
+        return $totals;
+    }
+
+    private static function comparisonEnabled(): bool
+    {
+        return 'on' === (\wp_slimstat::$settings['comparison_chart'] ?? 'on');
     }
 
     private function processResults(array $rows, array $totals, array $params, int $start, int $end, int $prevStart, int $prevEnd): array

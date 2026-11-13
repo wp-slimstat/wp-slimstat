@@ -1,0 +1,17 @@
+target: src/Utils/Query.php
+gate: php tests/query-split-scalar-test.php
+kind: guard-removal
+expect: historical cache entries in the grace window
+rationale: Cache freshness and exact integer arithmetic are required before returning a split total.
+---
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -931,7 +931,7 @@
+         if ($this->extractDateRangesFromWhere()) {
+             $now = self::$processingTimestamp ?? \wp_slimstat::now();
+             $graceRemaining = $this->getTodayDate() + 1800 - $now;
+-            if ($graceRemaining > 0) {
++            if (false) {
+                 $expiration = min($expiration, $graceRemaining);
+             }
+         }

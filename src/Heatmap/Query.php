@@ -142,21 +142,21 @@ final class Query
 	/**
 	 * The Heatmaps page list, cached until heatmap data changes, retention changes or
 	 * one minute passes. Legacy clicks keep arriving without a generation bump, so the page
-	 * offers Refresh.
+	 * offers Refresh. The scope is hashed without wpdb's per-request LIKE marker (PITFALLS 257).
 	 *
 	 * @param int $start Inclusive dt bound, in the dt column's local-time seconds.
 	 * @param int $end   Inclusive dt bound.
 	 * @return array{rows:array<int,array<string,mixed>>,updated:int}
 	 */
-	public static function cachedPages(int $start, int $end, string $device = '', bool $refresh = false): array
+	public static function cachedPages(int $start, int $end, string $device = '', bool $refresh = false, string $scope = '1=1'): array
 	{
-		$key       = 'slimstat_hm_pages_' . md5((string) wp_json_encode([get_current_blog_id(), $start, $end, $device, \wp_slimstat::report_scope()['cache']]));
-		$signature = [(string) get_option(Store::GENERATION, ''), \wp_slimstat::$settings['auto_purge'] ?? 0, Store::ready()];
+		$key       = 'slimstat_hm_pages_' . md5((string) wp_json_encode([get_current_blog_id(), $start, $end, $device, \SlimStat\Utils\Query::cacheHash($GLOBALS['wpdb'], $scope), \wp_slimstat::report_scope()['cache']]));
+		$signature = [2, (string) get_option(Store::GENERATION, ''), \wp_slimstat::$settings['auto_purge'] ?? 0, Store::ready()];
 		$cached    = $refresh ? null : get_transient($key);
 		if (is_array($cached) && ($cached['signature'] ?? null) === $signature && time() - (int) ($cached['data']['updated'] ?? 0) < MINUTE_IN_SECONDS) {
 			return $cached['data'];
 		}
-		$data = ['rows' => self::pages($start, $end, $device), 'updated' => time()];
+		$data = ['rows' => self::pages($start, $end, $device, $scope), 'updated' => time()];
 		set_transient($key, ['signature' => $signature, 'data' => $data], MINUTE_IN_SECONDS);
 		return $data;
 	}
@@ -168,12 +168,12 @@ final class Query
 	 *
 	 * @return array<int,array{page:string,clicks:int,desktop:int,tablet:int,mobile:int,dead:?int,rage:?int,scroll:?int,last:int,full:bool,pageviews:int,content_id:int}>
 	 */
-	public static function pages(int $start, int $end, string $device = ''): array
+	public static function pages(int $start, int $end, string $device = '', string $scope = '1=1'): array
 	{
 		$db     = self::db();
 		$prefix = $GLOBALS['wpdb']->prefix;
 		$ready  = Store::ready();
-		$probe  = self::legacyProbe() . ' AND ' . self::authorScope('t1.id');
+		$probe  = self::legacyProbe() . ' AND ' . self::authorScope('t1.id') . " AND ({$scope})";
 
 		$pages = [];
 		$add   = static function (string $page, array $row) use (&$pages): void {
@@ -207,6 +207,9 @@ final class Query
 			$code   = self::DEVICE_CODES[$device] ?? 0;
 			$on     = $code ? $db->prepare(' AND device = %d', $code) : '';
 			$on    .= ' AND ' . self::authorScope($table . '.id');
+			if ('1=1' !== $scope) {
+				$on .= " AND EXISTS (SELECT 1 FROM {$prefix}slim_stats t1 WHERE t1.id = {$table}.id AND ({$scope}))";
+			}
 			$clicks = self::rows($db->prepare("SELECT HEX(page) page, MIN(id) id, COUNT(*) clicks, SUM(device = 1) desktop, SUM(device = 2) tablet, SUM(device = 3) mobile,
 				SUM(flags & 2 > 0) dead, SUM(flags & 4 > 0) rage, MAX(dt) last
 				FROM {$table} WHERE kind = 0 AND dt BETWEEN %d AND %d{$on} GROUP BY page ORDER BY clicks DESC LIMIT " . self::MAX_PAGES, $start, $end));
@@ -267,7 +270,7 @@ final class Query
 			return '(' . self::pageWhere($page) . ')';
 		}, array_keys($pages)));
 		$views = self::rows('SELECT ' . self::pageKeySql('t1.resource') . " page, COUNT(*) n, MAX(t1.content_id) content_id FROM {$prefix}slim_stats t1
-			WHERE " . $db->prepare('t1.dt BETWEEN %d AND %d', $start, $end) . ' AND ' . self::deviceWhere($device) . ' AND ' . self::authorScope('t1.id') . " AND ({$match}) GROUP BY page");
+			WHERE " . $db->prepare('t1.dt BETWEEN %d AND %d', $start, $end) . ' AND ' . self::deviceWhere($device) . ' AND ' . self::authorScope('t1.id') . " AND ({$scope}) AND ({$match}) GROUP BY page");
 		foreach ($views as $row) {
 			if (isset($pages[$row['page']])) {
 				$pages[$row['page']]['pageviews']  = (int) $row['n'];
@@ -394,7 +397,8 @@ final class Query
 		$scope = '(' . $scope . ') AND ' . self::authorScope('t1.id');
 		$db    = self::db();
 		$since = Store::ready() ? (int) (get_option(Store::STATE, [])['since'] ?? 0) : PHP_INT_MAX;
-		$row   = self::rows($db->prepare('SELECT COUNT(*) views, ' . self::deviceSplit() . ', SUM(t1.dt < %d) older, MAX(t1.content_id) content_id
+		$uncovered = self::legacyProbe('t1.id');
+		$row   = self::rows($db->prepare('SELECT COUNT(*) views, ' . self::deviceSplit() . ', SUM(t1.dt < %d' . $uncovered . ') older, MAX(t1.content_id) content_id
 			FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats t1
 			WHERE t1.dt BETWEEN %d AND %d AND ', $since, $start, $end) . self::pageWhere($pageKey) . " AND ({$scope})")[0] ?? [];
 
@@ -423,15 +427,16 @@ final class Query
 	}
 
 	/**
-	 * Each pageview is read by one layer: once capture began, a pageview with heatmap rows
-	 * is not legacy. History before capture skips the probe; after it, it is a primary-key seek.
+	 * Each pageview is read by one layer, including imported or backdated full capture.
 	 */
-	private static function legacyProbe(): string
+	private static function legacyProbe(string $id = 'te.id'): string
 	{
 		if (!Store::ready()) {
 			return '';
 		}
-		return self::db()->prepare(' AND (te.dt < %d OR NOT EXISTS (SELECT 1 FROM ' . Store::table() . ' h WHERE h.id = te.id))', (int) (get_option(Store::STATE, [])['since'] ?? 0));
+		// A restore can reuse IDs; a row for another page or timestamp does not cover this pageview.
+		return ' AND NOT EXISTS (SELECT 1 FROM ' . Store::table() . ' h WHERE h.id = ' . $id
+			. ' AND h.dt = t1.dt AND h.page = UNHEX(LEFT(MD5(' . self::pageKeySql('t1.resource') . '), 16)))';
 	}
 
 	/** SUM columns counting t1 pageviews per device bucket. */

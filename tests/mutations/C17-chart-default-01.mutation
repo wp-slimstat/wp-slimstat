@@ -1,0 +1,17 @@
+target: src/Modules/Chart.php
+gate: composer test:chart-query-budget
+kind: restore-defect
+expect: default Pageviews must count rows even when their IP is NULL
+rationale: Addressless pageviews must be counted by both the registered and default chart.
+---
+--- a/src/Modules/Chart.php
++++ b/src/Modules/Chart.php
+@@ -197,7 +197,7 @@
+         // Ensure chart_data is present with defaults
+         if (!isset($args['chart_data'])) {
+             $args['chart_data'] = [
+-                'data1' => 'COUNT( id )',
++                'data1' => 'COUNT( ip )',
+                 'data2' => 'COUNT( DISTINCT ip )',
+             ];
+         }

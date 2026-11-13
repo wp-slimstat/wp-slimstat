@@ -5,6 +5,7 @@ namespace SlimStat\Services\Admin\Notification;
 use SlimStat\Decorators\NotificationDecorator;
 use SlimStat\Utils\OptionClaim;
 use SlimStat\Services\Admin\ConditionTagEvaluator;
+use SlimStat\Services\Admin\FeedWindow;
 
 class NotificationProcessor
 {
@@ -13,16 +14,17 @@ class NotificationProcessor
 		$dismissed = \get_option('slimstat_notification_dismissed', []);
 		if (!empty($notifications) && is_array($notifications)) {
 			foreach ($notifications as $key => $notification) {
-				$active = !empty($notification['activated_at']) ? strtotime($notification['activated_at']) : 0;
-				$expiry = $notification['expires_at'] ?? $notification['expired_at'] ?? '';
-				if ($active > time() || ($expiry && strtotime($expiry) <= time())) {
+				if (!is_array($notification) || !FeedWindow::contains($notification)) {
+					unset($notifications[$key]);
+					continue;
+				}
+				if (isset($notification['tags']) && (!is_array($notification['tags']) || count(array_filter($notification['tags'], 'is_string')) !== count($notification['tags']))) {
 					unset($notifications[$key]);
 					continue;
 				}
 				if (!empty($dismissed[$notification['id'] ?? 0])) $notifications[$key]['dismiss'] = true;
 				if (!empty($notification['tags']) && is_array($notification['tags'])) {
-					// Enforce version gating for license-related tags
-					if (self::requiresVersionGate($notification['tags']) && !self::hasValidVersionGate($notification['tags'])) {
+					if (!self::hasValidVersionGate($notification['tags'])) {
 						unset($notifications[$key]);
 						continue;
 					}
@@ -50,29 +52,21 @@ class NotificationProcessor
 	}
 
 	/**
-	 * Check if a notification's tags include any version-gated tag.
-	 *
-	 * @param array $tags
-	 * @return bool
-	 */
-	private static function requiresVersionGate(array $tags)
-	{
-		return !empty(\array_intersect($tags, ConditionTagEvaluator::getVersionGatedTags()));
-	}
-
-	/**
 	 * Check if a notification includes a valid is-version-* tag at or above the minimum floor.
 	 *
 	 * Validates:
 	 * 1. At least one is-version-* tag is present
 	 * 2. The version string is well-formed (digits and dots only)
-	 * 3. The version is >= LICENSE_TAGS_MIN_VERSION
+	 * 3. The version is >= the introduction version of every targeting tag used
 	 *
 	 * @param array $tags
 	 * @return bool
 	 */
 	private static function hasValidVersionGate(array $tags)
 	{
+		$minimum = ConditionTagEvaluator::requiredVersion($tags);
+		if (null === $minimum) return true;
+
 		foreach ($tags as $tag) {
 			if (\strpos($tag, 'is-version-') !== 0) {
 				continue;
@@ -84,7 +78,7 @@ class NotificationProcessor
 				continue;
 			}
 
-			if (\version_compare($version, ConditionTagEvaluator::LICENSE_TAGS_MIN_VERSION, '>=')) {
+			if (\version_compare($version, $minimum, '>=')) {
 				return true;
 			}
 		}
@@ -113,7 +107,8 @@ class NotificationProcessor
 	public static function dismissAllNotifications()
 	{
 		$notifications = NotificationFactory::getRawNotificationsData();
-		return self::rememberDismissed(array_column($notifications['data'] ?? [], 'id'));
+		// Upcoming or differently targeted items have not been shown to this administrator yet.
+		return self::rememberDismissed(array_column(self::filterNotificationsByTags($notifications['data'] ?? []), 'id'));
 	}
 
 	/** Keep site-wide dismissals even when a feed temporarily omits an item. */
@@ -125,11 +120,13 @@ class NotificationProcessor
 			$old = \get_option($key, false);
 			$new = (is_array($old) ? $old : []) + array_fill_keys($ids, true);
 			if ($old === $new) return true;
+			// Older installations may have an autoloaded dismissal option.
 			$won = false === $old ? OptionClaim::insert($key, serialize($new))
-				: OptionClaim::compareAndSwap($key, serialize($old), serialize($new));
+				: OptionClaim::compareAndSwap($key, serialize($old), serialize($new), 'yes');
 			if ($won) return true;
 			\wp_cache_delete($key, 'options');
 			\wp_cache_delete('notoptions', 'options');
+			\wp_cache_delete('alloptions', 'options');
 		}
 		return false;
 	}

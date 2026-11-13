@@ -2,7 +2,7 @@
     "preset": "psr12",
     "exclude": [
         "phpstan-cache",
-        "src/Dependencies",
+        "vendor-prefixed",
         "node_modules"
     ],
     "rules": {

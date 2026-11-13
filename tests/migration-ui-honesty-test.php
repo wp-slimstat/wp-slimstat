@@ -96,9 +96,8 @@ if (false === strpos($dismiss, 'migrationSetFingerprint')) {
 
 $needs = slimstat_function_body($manager, 'needsMigration');
 
-if (false === strpos($needs, 'migrationSetFingerprint')) {
-    $failures[] = 'needsMigration() does not compare the stored dismissal against the current '
-        . 'migration set, so dismissal outlives the set it was for';
+if (false !== strpos($needs, 'OPTION_DISMISSED') || false === strpos($dismiss, 'update_user_meta')) {
+    $failures[] = 'migration dismissal must be per administrator and must not hide pending migrations';
 }
 
 $fingerprint = (string) slimstat_find_function_body($manager, 'migrationSetFingerprint');
@@ -116,6 +115,19 @@ if ('' === trim($fingerprint)) {
 // six labels migration.js has read since it was written and MigrationAdmin never supplied, so
 // every locale silently got the English fallback.
 $adminSrc = (string) file_get_contents($plugin_root . '/src/Migration/Admin/MigrationAdmin.php');
+$render = slimstat_function_body(slimstat_strip_comments_and_strings($adminSrc), 'renderPage');
+if (false === strpos($render, 'probeUnavailable')) {
+    $failures[] = 'failed required-index inspections must not render a healthy Migration screen';
+}
+$runAll = slimstat_function_body(slimstat_strip_comments_and_strings($adminSrc), 'ajaxRunMigrations');
+if (false !== strpos($runAll, 'needsMigration')) {
+    $failures[] = 'AJAX completion must not depend on notice dismissal or cached notice policy';
+}
+$template = slimstat_blank_comments((string) file_get_contents($plugin_root . '/src/view/migration-page.php'));
+if (false === strpos($template, '$column_drift') || false === strpos($template, 'notice-warning')) {
+    $failures[] = 'migration page must distinguish unresolved or unreadable schema drift from healthy';
+}
+
 
 foreach (['notComplete', 'timedOut', 'requestFailed'] as $label) {
     if (false === strpos($js, 'labels.' . $label)) {

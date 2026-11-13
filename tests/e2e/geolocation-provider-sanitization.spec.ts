@@ -53,6 +53,7 @@ test.describe('AC-GEO-002/008: Provider Sanitization & Allowlisting', () => {
     await setSlimstatSetting('geolocation_provider', 'bogus_provider');
 
     setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-sanitize-bogus',
       'CF-Connecting-IP': '8.8.8.8',
     });
@@ -108,6 +109,7 @@ test.describe('AC-GEO-002/008: Provider Sanitization & Allowlisting', () => {
     await setSlimstatSetting('geolocation_provider', '');
 
     setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-sanitize-empty',
       'CF-Connecting-IP': '8.8.8.8',
     });
@@ -133,6 +135,7 @@ test.describe('AC-GEO-002/008: Provider Sanitization & Allowlisting', () => {
     await setSlimstatOption(page, 'ignore_wp_users', 'no');
 
     setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-sanitize-restore',
       'CF-Connecting-IP': '8.8.8.8',
     });

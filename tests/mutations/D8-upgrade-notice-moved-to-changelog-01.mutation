@@ -1,23 +1,14 @@
 target:    readme.txt
 gate:      composer test:db-floor-metadata
 kind:      restore-defect
-expect:    has no `= 6.0.0 =` entry under `== Upgrade Notice ==`
-rationale: Deletes the Upgrade Notice entry and makes the changelog heading `= 6.0.0 =` (dateless) so a whole-file regex finds it first; only the section-scoped extraction distinguishes the two.
+expect:    has no `= 6.1.1 =` entry under `== Upgrade Notice ==`
+rationale: Deletes the current Upgrade Notice entry and leaves a dateless changelog heading; only section-scoped extraction rejects it.
 ---
 --- a/readme.txt
 +++ b/readme.txt
-@@ -125,13 +125,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
+@@ -161,5 +161,2 @@
  
- == Upgrade Notice ==
- 
--= 6.0.0 =
--SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster reports. Back up first. The update adds columns and indexes and removes no rows; older versions keep working and the added columns stay. Database steps wait for your click. Some totals change on purpose: see changelog.
+-= 6.1.1 =
+-Older versions keep working, added columns stay, and it removes no rows. Shows scheduled offers and notices that match your Pro license. Improves Persian and English layouts and report scrolling. Back up first; database repairs wait for your click.
 -
--
- == Changelog ==
- 
--= 6.0.0 - 2026-10-24 =
-+= 6.0.0 =
- 
- **SlimStat 6: see where visitors click, which campaigns bring sales, and trust every number.** Your settings and data carry over, migration steps wait for your click, and older versions keep working if you ever go back.
- 
+ = 6.1.0 =

@@ -28,7 +28,7 @@ if (!defined('ABSPATH')) {
                         </g>
                     </g>
                 </svg>
-                <span class="date-label"><?php echo esc_html($label); ?></span>
+                <span class="date-label" dir="auto"><?php echo esc_html($label); ?></span>
             </div>
             <div class="datepicker-badge-elements">
                 <span class="caret"></span>

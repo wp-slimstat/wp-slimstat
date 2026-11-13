@@ -31,6 +31,23 @@ export interface ProState {
   /** Pro's own behaviour: report slim_p8_01 registered, and no `pro_` degradation. */
   pro_booted: boolean;
   pro_degradations: string[];
+  /** \SlimStat\Services\ProLicense::state(): none, valid, invalid, domain_not_activated or unverified. */
+  pro_license: string | null;
+}
+
+export type LicenseFixtureState = 'valid' | 'invalid' | 'domain_not_activated' | 'unreachable' | 'none';
+
+/**
+ * Drive license-fixture-mu-plugin.php: answer Pro's license checks with `state` and refresh the
+ * verdict. `keep` keeps the stored verdict (an outage after a confirmed license); `age` backdates
+ * it first. Returns the resulting ProLicense state, or 'no-pro'.
+ */
+export async function setProLicense(page: Page, state: LicenseFixtureState, opts: { keep?: boolean; age?: number } = {}): Promise<string> {
+  const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
+    form: { action: 'e2e_license', state, keep: opts.keep ? '1' : '', age: String(opts.age ?? 0) },
+  });
+  expect(res.ok(), 'license fixture mu-plugin AJAX endpoint should respond OK').toBeTruthy();
+  return (await res.json()).data.state as string;
 }
 
 export async function getProState(page: Page): Promise<ProState> {

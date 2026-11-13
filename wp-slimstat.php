@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 6.0.0
+ * Version: 6.1.1
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -52,23 +52,23 @@ if (PHP_VERSION_ID < 70400) {
 }
 
 // Both first-party and scoped dependency autoloaders are required.
-if (!file_exists(__DIR__ . '/vendor/autoload.php') || !file_exists(__DIR__ . '/src/Dependencies/autoload.php')) {
+if (!file_exists(__DIR__ . '/vendor/autoload.php') || !file_exists(__DIR__ . '/vendor-prefixed/autoload.php')) {
     return;
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '6.0.0');
+define('SLIMSTAT_ANALYTICS_VERSION', '6.1.1');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
 
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/src/Dependencies/autoload.php';
+require_once __DIR__ . '/vendor-prefixed/autoload.php';
 
 // Load the scoped polyfill bootstraps in dependency order. Each short-circuits
 // when the native extension/runtime already provides its functions.
-$slimstat_dependency_root = __DIR__ . '/src/Dependencies/veronalabs/browscap-php/src/Symfony/Polyfill/';
+$slimstat_dependency_root = __DIR__ . '/vendor-prefixed/veronalabs/browscap-php/src/Symfony/Polyfill/';
 require_once $slimstat_dependency_root . 'Ctype/bootstrap.php';
 require_once $slimstat_dependency_root . 'Mbstring/bootstrap.php';
 require_once $slimstat_dependency_root . 'Intl/Normalizer/bootstrap.php';
@@ -418,7 +418,8 @@ class wp_slimstat
 
             // Is server-side tracking active?
             if ('on' != self::$settings['javascript_mode']) {
-                add_action(is_admin() ? 'admin_init' : 'wp', [\SlimStat\Tracker\Tracker::class, 'slimtrack'], 5);
+                // Canonical redirects run at template_redirect priority 10, before a page is rendered.
+                add_action(is_admin() ? 'admin_init' : 'template_redirect', [\SlimStat\Tracker\Tracker::class, 'slimtrack'], is_admin() ? 5 : 20);
 
                 if ('on' != self::$settings['ignore_wp_users']) {
                     add_action('login_init', [\SlimStat\Tracker\Tracker::class, 'slimtrack'], 10);
@@ -437,6 +438,9 @@ class wp_slimstat
 		$banner_enabled = ('on' === (self::$settings['gdpr_enabled'] ?? 'off'))
 			&& ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
 		if ($banner_enabled) {
+			if ('slimstat_banner' === (self::$settings['consent_integration'] ?? '')) {
+				add_action('wp_enqueue_scripts', [\SlimStat\Services\GDPRService::class, 'enqueueWooCommerceConsent'], 100);
+			}
 			add_action('wp_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
 			add_action('login_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
 			add_action('wp_footer', [self::class, 'render_gdpr_banner'], 5);
@@ -499,6 +503,8 @@ class wp_slimstat
         // Hook a GeoIP database update routine to the daily cronjob
         add_action('wp_slimstat_update_geoip_database', [self::class, 'wp_slimstat_update_geoip_database']);
 
+        add_action('wp_slimstat_update_browscap', [\SlimStat\Services\Browscap::class, 'update_browscap_database']);
+
         // Allow external domains on CORS requests
         add_filter('allowed_http_origins', [self::class, 'open_cors_admin_ajax']);
 
@@ -513,9 +519,7 @@ class wp_slimstat
         // Init the plugin functionality
         add_action('init', [self::class, 'init_plugin']);
 
-        if (class_exists('WooCommerce') || \SlimStat\Ecommerce\Integration::ready()) {
-            \SlimStat\Ecommerce\Integration::boot();
-        }
+        \SlimStat\Ecommerce\Integration::boot();
 
         \SlimStat\Heatmap\Store::boot();
 
@@ -691,6 +695,8 @@ class wp_slimstat
 
     const DEGRADATION_OPERATIONAL = 'operational';
 
+    const DEGRADATION_TRACKING = 'tracking';
+
     /**
      * Record a fail-soft degradation so it is visible WITHOUT WP_DEBUG.
      *
@@ -718,7 +724,6 @@ class wp_slimstat
     public static function record_degradation($step, $e, $severity = self::DEGRADATION_LOAD)
     {
         $message = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
-        self::log(sprintf('SlimStat: %s failed: %s', $step, $message), 'error');
 
         $message = substr($message, 0, 200);
         $now     = time();
@@ -727,12 +732,15 @@ class wp_slimstat
         // Same failure, recorded recently → nothing new to say, skip the write.
         if (isset($stored[$step]['message'], $stored[$step]['time'])
             && $stored[$step]['message'] === $message
+            && ($stored[$step]['severity'] ?? self::DEGRADATION_LOAD) === $severity
             && ($now - (int) $stored[$step]['time']) < self::DEGRADATION_REFRESH
         ) {
             return;
         }
 
-        $stored[$step] = ['message' => $message, 'time' => $now, 'severity' => $severity];
+        self::log(sprintf('SlimStat: %s failed: %s', $step, $message), 'error');
+        $since = $stored[$step]['since'] ?? $stored[$step]['time'] ?? $now;
+        $stored[$step] = ['message' => $message, 'time' => $now, 'since' => $since, 'severity' => $severity];
         // autoload=false, and it is not cosmetic (C34). Without the third argument this
         // option joins the `alloptions` blob and is fetched on EVERY request — on exactly
         // the sites already unhealthy enough to be recording degradations. It is read only
@@ -767,9 +775,8 @@ class wp_slimstat
     }
 
     /**
-     * Currently-true degradations, newest first. Records past DEGRADATION_TTL are
-     * filtered out here so a healed failure stops being reported immediately, even
-     * before reconcile_degradations() prunes the stored option.
+     * Currently-true degradations. Pending tracking schema recovery survives the
+     * notice TTL until reconciliation verifies it; other old failures expire.
      *
      * @return array<string,array>
      */
@@ -781,11 +788,13 @@ class wp_slimstat
         }
 
         $cutoff  = time() - self::DEGRADATION_TTL;
-        $current = array_filter($stored, static function ($record) use ($cutoff) {
-            return isset($record['time']) && (int) $record['time'] >= $cutoff;
-        });
+        $current = array_filter($stored, static function ($record, $step) use ($cutoff) {
+            $pending_schema = ($record['severity'] ?? '') === self::DEGRADATION_TRACKING
+                && in_array($step, ['activation', 'schema upgrade'], true);
+            return isset($record['time']) && ($pending_schema || (int) $record['time'] >= $cutoff);
+        }, ARRAY_FILTER_USE_BOTH);
 
-        // C34 — synthesised, not stored. Every recorded degradation expires after
+        // C34 — synthesised, not stored. Operational degradations expire after
         // DEGRADATION_TTL (3 h) while the purge runs twicedaily (12 h), so a purge failing on
         // every run was visible for 3 hours and invisible for 9. Deriving this from the
         // last-success stamp makes the durable fact — "it has not succeeded" — the one that
@@ -801,6 +810,7 @@ class wp_slimstat
                     gmdate('Y-m-d H:i', $last_ok) . ' UTC'
                 ),
                 'time'     => time(),
+                'since'    => $last_ok,
                 'severity' => self::DEGRADATION_OPERATIONAL,
             ];
         }
@@ -1249,7 +1259,7 @@ class wp_slimstat
         $defaults = self::init_options();
         $defaults['geolocation_provider'] = 'dbip';
         // Heatmaps start on for new installs only; init_options() keeps upgrades opted out.
-        $defaults['heatmap_capture'] = self::pro_is_installed() ? 'full' : 'off';
+        $defaults['heatmap_capture'] = self::pro_plugin_active() ? 'full' : 'off';
         // The release notice is for updated sites; new installs get Get started instead.
         $defaults['notice_latest_news'] = 'no';
         return $defaults;
@@ -1292,6 +1302,7 @@ class wp_slimstat
             // General - Database
             'auto_purge'        => 420,
             'auto_purge_delete' => 'on',
+            'auto_purge_optimize' => 'no',
 
             // Heatmaps (6.1.0): off | main | full; rate in 1/10,000 of pageviews; pages is a
             // wildcard list like the permalink exclusions, empty for all pages.
@@ -1401,6 +1412,7 @@ class wp_slimstat
 
             // Exclusions - Page Properties
             'ignore_resources'     => '',
+            'ignore_resource_parameters' => '',
             'ignore_referers'      => '',
             'ignore_content_types' => '',
 
@@ -1548,7 +1560,11 @@ class wp_slimstat
 
 		// Internal GDPR banner is optionally available alongside CMP integrations.
 
-        if ('on' != self::$settings['javascript_mode']) {
+        // A consent-blocked server visit has no row yet; load the client so consent can start it.
+        $consent_blocked = 'on' !== self::$settings['javascript_mode']
+            && 'on' === (self::$settings['gdpr_enabled'] ?? 'off')
+            && !\SlimStat\Utils\Consent::canTrack();
+        if ('on' != self::$settings['javascript_mode'] && !$consent_blocked) {
             if (empty(self::$stat['id']) || intval(self::$stat['id']) < 0) {
                 return false;
             }
@@ -1775,6 +1791,14 @@ class wp_slimstat
      * Removes old entries from the main table and performs other daily tasks
      */
     // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Retention uses core-prefix tables, manifest-intersected columns and bound cutoffs; archive/delete operations require fresh state.
+    public static function bump_data_version(): void
+    {
+        $version = sprintf('%.6F', microtime(true));
+        update_option('slimstat_data_ver', $version, true);
+        // Goal and unique-visitor caches also contain answers derived from erased rows.
+        update_option('slimstat_goals_cache_ver', $version, false);
+    }
+
     public static function wp_slimstat_purge()
     {
         $autopurge_interval = intval(self::$settings['auto_purge']);
@@ -1783,6 +1807,7 @@ class wp_slimstat
             return;
         }
 
+        $db = self::$wpdb;
         $days_ago             = self::now() - ( $autopurge_interval * DAY_IN_SECONDS );
         $table_stats          = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $table_stats_archive  = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
@@ -1791,13 +1816,23 @@ class wp_slimstat
 
         // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
         // Nothing to purge is the overwhelmingly common case: retention defaults to 420
-        // days and this runs every 12 hours. Two indexed probes, then stop — the tick used
-        // to continue into four full InnoDB table rebuilds regardless. (D1)
-        $has_work = self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table_stats} WHERE dt < %d LIMIT 1", $days_ago))
-            || self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table_events} WHERE dt < %d LIMIT 1", $days_ago));
+        // days and this runs every 12 hours. Probe both tables before writing so either
+        // read error stops the job; if both are empty, stop without any rebuild. (D1)
+        $has_work = false;
+        foreach ([$table_stats, $table_events] as $table) {
+            $found = $db->get_var($db->prepare("SELECT 1 FROM {$table} WHERE dt < %d LIMIT 1", $days_ago));
+            // Check immediately: the next successful query clears last_error.
+            $query_error = (string) $db->last_error;
+            if ('' !== $query_error) {
+                self::record_degradation('purge (checking retention)', $query_error, self::DEGRADATION_OPERATIONAL);
+                return;
+            }
+            $has_work = $has_work || !empty($found);
+        }
         // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         if (!$has_work) {
+            self::update_option(self::LAST_PURGE_OK_OPTION, self::now(), false);
             return;
         }
 
@@ -1822,11 +1857,19 @@ class wp_slimstat
 
         if ($archive) {
             $prefix     = $GLOBALS['wpdb']->prefix;
-            $event_plan = \SlimStat\Utils\PurgeArchive::copyableColumns(self::$wpdb, $prefix, 'slim_events');
-            $stats_plan = \SlimStat\Utils\PurgeArchive::copyableColumns(self::$wpdb, $prefix, 'slim_stats');
+            $event_plan = \SlimStat\Utils\PurgeArchive::copyableColumns($db, $prefix, 'slim_events');
+            $stats_plan = \SlimStat\Utils\PurgeArchive::copyableColumns($db, $prefix, 'slim_stats');
 
             $event_columns = $event_plan['copy'];
             $stats_columns = $stats_plan['copy'];
+
+            if ($event_plan['lost'] || $stats_plan['lost']) {
+                self::record_degradation('purge (archive schema)',
+                    'Retention paused to prevent data loss. Repair the archive schema, or choose deletion without archiving in Maintenance. Unverified fields: '
+                        . implode(', ', array_unique(array_merge($event_plan['lost'], $stats_plan['lost']))),
+                    self::DEGRADATION_OPERATIONAL);
+                return;
+            }
 
             // No key, no statement. Refusing here is the same refusal probeForCollision()
             // makes: never DELETE through a question that could not be asked.
@@ -1841,189 +1884,86 @@ class wp_slimstat
 
                 return;
             }
-
-            // Columns the LIVE table has and the archive does not are real fidelity loss, and
-            // they are NOT reported here. Archive drift is permanent -- the archive gains no
-            // columns, ever -- and the degradation channel heals by forgetting: DEGRADATION_TTL
-            // is 3 hours while this cron runs twicedaily, so the warning would be visible for 3
-            // hours in every 12 and look healthy the rest of the time. That is C34's shape
-            // exactly, and admin/index.php's record_column_drift() docblock rejects this channel
-            // for that reason in so many words. Schema::columnDrift() now observes archive
-            // tables, so the loss surfaces durably in the schema-drift notice instead.
         }
 
-        // ── Events first. This ordering is the whole defect. ────────────────────────
-        //
-        // {prefix}slim_events.id is a FOREIGN KEY into {prefix}slim_stats(id) ON DELETE
-        // CASCADE, created by this plugin. Deleting the parent pageviews first destroyed
-        // the event rows before the archive INSERT below could copy them — measured at
-        // 102,573 of 102,573 events lost at a 30-day cutoff, because an event is stamped
-        // with its parent's id when the pageview is recorded and so is never older than
-        // its parent.
-        //
-        // Selection keys off the PARENT's dt as well as the event's own, because the
-        // cascade keys off the parent: an event still inside the retention window whose
-        // parent has aged out was being destroyed without ever being eligible to archive.
-        $event_where = 'e.dt < %d OR s.dt < %d';
-
-        if ($archive) {
-            // Before trusting INSERT IGNORE, make sure nothing is standing on our keys.
-            //
-            // IGNORE cannot tell "this row is already archived" (the replay case, which is
-            // exactly what it is here for) from "a DIFFERENT row already owns this primary
-            // key" — and it reports the second as a silent no-op. Deleting afterwards would
-            // then destroy live rows that were never archived: data loss where the old code
-            // merely stopped working, which is the one direction a data-safety fix must not
-            // move.
-            //
-            // Reachable in the wild. DELETE does not reset AUTO_INCREMENT, but MariaDB and
-            // MySQL 5.7 re-derive it as MAX(id)+1 on restart, so an admin who uses "Delete
-            // Records" and later reboots gets fresh rows numbered from 1, colliding with
-            // whatever is already archived.
-            //
-            // The comparison covers every column the INSERT below copies. Anything narrower
-            // has false negatives, and a false negative here is worse than the bug being
-            // fixed: the row is dropped by IGNORE and then deleted, with nothing recorded.
-            $events_are_replays = \SlimStat\Utils\PurgeArchive::sameRow($event_columns, 'event_id', 'e');
-
-            // Tri-state: null means the probe itself could not run. On a half-converted
-            // install the cross-table comparison raises ER_CANT_AGGREGATE_2COLLATIONS,
-            // and reading that as "clean" is what let the DELETE through (C25).
-            $event_collision = \SlimStat\Utils\PurgeArchive::probeForCollision(
-                self::$wpdb,
-                "SELECT 1 FROM {$table_events} e
-                 INNER JOIN {$table_events_archive} a ON a.event_id = e.event_id
-                 LEFT JOIN {$table_stats} s ON s.id = e.id
-                 WHERE ({$event_where})
-                   AND NOT ({$events_are_replays})
-                 LIMIT 1",
-                [$days_ago, $days_ago]
-            );
-
-            if (null === $event_collision) {
-                self::record_degradation(
-                    'purge (archiving events)',
-                    'could not check the event archive for key collisions, so nothing was deleted: '
-                        . self::$wpdb->last_error
-                        . '. An "Illegal mix of collations" here means the utf8mb4 conversion ran on '
-                        . 'some tables and not others - finish it before the purge can run again.',
-                    self::DEGRADATION_OPERATIONAL
-                );
-                return;
-            }
-
-            if ($event_collision) {
-                self::record_degradation(
-                    'purge (archiving events)',
-                    'the events archive already holds different rows under the primary keys about to be '
-                        . 'archived, so nothing was deleted. This usually means AUTO_INCREMENT was reset '
-                        . 'after records were cleared.',
-                    self::DEGRADATION_OPERATIONAL
-                );
-                return;
-            }
-
-            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
-            // INSERT IGNORE, with event_id carried explicitly, so a run interrupted between
-            // archiving and deleting is replayable: the next run re-copies the same rows
-            // and MySQL ignores the ones already there. Without event_id there is no key to
-            // dedupe on and the retry would duplicate every archived event instead.
-            if (false === self::$wpdb->query(self::$wpdb->prepare(
-                "INSERT IGNORE INTO {$table_events_archive} (" . implode(', ', $event_columns) . ")
-                 SELECT e." . implode(', e.', $event_columns) . "
-                 FROM {$table_events} e LEFT JOIN {$table_stats} s ON s.id = e.id
-                 WHERE {$event_where}",
-                $days_ago,
-                $days_ago
-            ))) {
-                // Fail closed. If the events could not be archived — missing table, schema
-                // drift, anything — do not touch the pageviews, because deleting them
-                // cascades the events away with no copy anywhere.
-                self::record_degradation(
-                    'purge (archiving events)',
-                    self::$wpdb->last_error,
-                    self::DEGRADATION_OPERATIONAL
-                );
-            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
-                return;
-            }
-        }
-
-        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
-        // Delete the events explicitly rather than leaning on the cascade, so the set
-        // removed is exactly the set archived, and so the behaviour is the same on an
-        // install whose tables are MyISAM and silently ignore the foreign key.
-        if (false === self::$wpdb->query(self::$wpdb->prepare(
-            "DELETE e FROM {$table_events} e LEFT JOIN {$table_stats} s ON s.id = e.id WHERE {$event_where}",
-            $days_ago,
-            $days_ago
-        ))) {
-            self::record_degradation('purge (deleting events)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);
-        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
+        $limit = (int) ini_get('max_execution_time');
+        $budget = $limit > 0 ? min(20.0, $limit / 2) : 20.0;
+        $deadline = microtime(true) + $budget;
+        $width = DAY_IN_SECONDS;
+        $rows_removed = 0;
+        $error = '';
+        $old_timeouts = $db->get_row('SELECT @@SESSION.lock_wait_timeout AS metadata_wait, @@SESSION.innodb_lock_wait_timeout AS row_wait', ARRAY_A);
+        $query_error = (string) $db->last_error;
+        if ('' !== $query_error || !is_array($old_timeouts)
+            || !ctype_digit((string) ($old_timeouts['metadata_wait'] ?? ''))
+            || !ctype_digit((string) ($old_timeouts['row_wait'] ?? ''))) {
+            self::record_degradation('purge (lock limits)', 'Could not read safe retention lock limits; no rows were removed.', self::DEGRADATION_OPERATIONAL);
             return;
         }
-
-        // ── Then the pageviews ──────────────────────────────────────────────────────
-        if ($archive) {
-            // Same collision guard as for events, on the pageviews' own primary key, and
-            // over the same 33 columns the INSERT below copies.
-            $stats_are_replays = \SlimStat\Utils\PurgeArchive::sameRow($stats_columns, 'id', 's');
-
-            // Same tri-state as the events probe above.
-            $stats_collision = \SlimStat\Utils\PurgeArchive::probeForCollision(
-                self::$wpdb,
-                "SELECT 1 FROM {$table_stats} s
-                 INNER JOIN {$table_stats_archive} a ON a.id = s.id
-                 WHERE s.dt < %d
-                   AND NOT ({$stats_are_replays})
-                 LIMIT 1",
-                [$days_ago]
-            );
-
-            if (null === $stats_collision) {
-                self::record_degradation(
-                    'purge (archiving pageviews)',
-                    'could not check the pageview archive for key collisions, so nothing was deleted: '
-                        . self::$wpdb->last_error
-                        . '. An "Illegal mix of collations" here means the utf8mb4 conversion ran on '
-                        . 'some tables and not others - finish it before the purge can run again.',
-                    self::DEGRADATION_OPERATIONAL
-                );
-                return;
+        // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix tables; validated integer session limits and prepared retention dates.
+        try {
+            $wait = max(1, min(5, (int) ceil($budget)));
+            if (false === $db->query('SET SESSION lock_wait_timeout = ' . min($wait, (int) $old_timeouts['metadata_wait'])
+                . ', innodb_lock_wait_timeout = ' . min($wait, (int) $old_timeouts['row_wait']))) {
+                $error = 'Could not establish safe retention lock limits: ' . $db->last_error;
+            } else {
+                $oldest = [];
+                foreach ([$table_stats, $table_events] as $table) {
+                    $value = $db->get_var($db->prepare("SELECT MIN(dt) FROM {$table} WHERE dt < %d", $days_ago));
+                    $query_error = (string) $db->last_error;
+                    if ('' !== $query_error) { throw new \RuntimeException($query_error); }
+                    if (null !== $value) { $oldest[] = (int) $value; }
+                }
+                $from = $oldest ? min($oldest) : $days_ago;
+                while ($from < $days_ago && microtime(true) < $deadline) {
+                    $to = min($days_ago, $from + $width);
+                    $started = microtime(true);
+                    $batch = \SlimStat\Utils\PurgeArchive::purgeBatch($db, $GLOBALS['wpdb']->prefix,
+                        $from, $to, $archive, $event_columns, $stats_columns);
+                    $rows_removed += $batch['stats'];
+                    if ($batch['stats'] > 0 || $batch['events'] > 0) { self::bump_data_version(); }
+                    $error = $batch['error'];
+                    if ('' !== $error) {
+                        if ($width > HOUR_IN_SECONDS && preg_match('/lock wait timeout|deadlock/i', $error)) {
+                            $width = max(HOUR_IN_SECONDS, (int) floor($width / 2));
+                            $error = '';
+                            continue;
+                        }
+                        break;
+                    }
+                    // Drain exact-key batches before advancing, including new events on an old parent.
+                    if (0 === $batch['stats'] && 0 === $batch['events']) { $from = $to; }
+                    if (microtime(true) - $started > 1 && $width > HOUR_IN_SECONDS) {
+                        $width = max(HOUR_IN_SECONDS, (int) floor($width / 2));
+                    }
+                }
             }
-
-            if ($stats_collision) {
-                self::record_degradation(
-                    'purge (archiving pageviews)',
-                    'the pageview archive already holds different rows under the primary keys about to '
-                        . 'be archived, so nothing was deleted. This usually means AUTO_INCREMENT was '
-                        . 'reset after records were cleared.',
-                    self::DEGRADATION_OPERATIONAL
-                );
-                return;
+        } catch (\Throwable $failure) {
+            $error = $failure->getMessage();
+        } finally {
+            if (false === $db->query('SET SESSION lock_wait_timeout = ' . (int) $old_timeouts['metadata_wait']
+                . ', innodb_lock_wait_timeout = ' . (int) $old_timeouts['row_wait'])) {
+                $error .= ' Could not restore retention lock limits: ' . $db->last_error;
             }
-
-            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
-            if (false === self::$wpdb->query(self::$wpdb->prepare(
-                "INSERT IGNORE INTO {$table_stats_archive} (" . implode(', ', $stats_columns) . ")
-                 SELECT " . implode(', ', $stats_columns) . " FROM {$table_stats} WHERE dt < %d",
-                $days_ago
-            ))) {
-                self::record_degradation(
-                    'purge (archiving pageviews)',
-                    self::$wpdb->last_error,
-                    self::DEGRADATION_OPERATIONAL
-                );
-            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
-                return;
-            }
-
         }
-
-        $rows_removed = \SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)->execute();
-
-        if (false === $rows_removed) {
-            self::record_degradation('purge (deleting pageviews)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);
+        if ('' !== $error) {
+            self::record_degradation('purge (verified retention)', $error, self::DEGRADATION_OPERATIONAL);
+            return;
+        }
+        $remaining = false;
+        foreach ([$table_stats, $table_events] as $table) {
+            $found = $db->get_var($db->prepare("SELECT 1 FROM {$table} WHERE dt < %d LIMIT 1", $days_ago));
+            $query_error = (string) $db->last_error;
+            if ('' !== $query_error) {
+                self::record_degradation('purge (checking completion)', $query_error, self::DEGRADATION_OPERATIONAL);
+                return;
+            }
+            $remaining = $remaining || null !== $found;
+        }
+        // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
+        if ($remaining) {
+            $next = wp_next_scheduled('wp_slimstat_purge');
+            if (!$next || $next > time() + 120) { wp_schedule_single_event(time() + 60, 'wp_slimstat_purge'); }
             return;
         }
 
@@ -2043,13 +1983,14 @@ class wp_slimstat
         // rebuild so a crash cannot retry it every 12 hours.
         $last_optimized = (int) get_option('slimstat_purge_optimized_at', 0);
 
-        if ($rows_removed > 0 && (self::now() - $last_optimized) > 30 * DAY_IN_SECONDS) {
+        if ('on' === (self::$settings['auto_purge_optimize'] ?? 'no')
+            && $rows_removed > 0 && (self::now() - $last_optimized) > 30 * DAY_IN_SECONDS) {
             self::update_option('slimstat_purge_optimized_at', self::now(), false);
             // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
-            self::$wpdb->query('OPTIMIZE TABLE ' . $table_stats);
+            $db->query('OPTIMIZE TABLE ' . $table_stats);
             // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
             // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix identifiers and manifest-intersected archive columns; retention timestamps are bound on the analytics connection.
-            self::$wpdb->query('OPTIMIZE TABLE ' . $table_events);
+            $db->query('OPTIMIZE TABLE ' . $table_events);
             // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
         }
 
@@ -2192,29 +2133,6 @@ class wp_slimstat
         }
 
         wp_add_privacy_policy_content('SlimStat Analytics', $content);
-    }
-
-    public static function add_plugin_manual_download_link($_links = [], $_plugin_file = '')
-    {
-        $a_clean_slug = str_replace(['wp-slimstat-', '/index.php'], ['', ''], $_plugin_file);
-
-        if (false !== ($download_url = get_transient('wp-slimstat-download-link-' . $a_clean_slug))) {
-            $_links[] = '<a href="' . $download_url . '">Download ZIP</a>';
-        } else {
-            $url      = 'https://www.wp-slimstat.com/update-checker/?slug=' . $a_clean_slug . '&key=' . urlencode(self::$settings['addon_licenses']['wp-slimstat-' . $a_clean_slug]);
-            $response = wp_safe_remote_get($url, ['timeout' => 300, 'user-agent' => 'Slimstat Analytics/' . SLIMSTAT_ANALYTICS_VERSION . '; ' . home_url()]);
-
-            if (!is_wp_error($response) && 200 == wp_remote_retrieve_response_code($response)) {
-                $data = @json_decode($response['body']);
-
-                if (is_object($data)) {
-                    $_links[] = '<a href="' . $data->download_url . '">Download ZIP</a>';
-                    set_transient('wp-slimstat-download-link-' . $a_clean_slug, $data->download_url, 172800); // 48 hours
-                }
-            }
-        }
-
-        return $_links;
     }
 
     /**
@@ -2684,13 +2602,22 @@ class wp_slimstat
             ? (string) ($GLOBALS['current_user']->user_login ?? '') : '';
         $where = '' !== $author ? self::$wpdb->prepare('author = %s', $author) : '1=1';
         $context = [$GLOBALS['wpdb']->prefix, self::$wpdb->dbhost ?? '', self::$wpdb->dbname ?? '', $author];
-        return ['where' => $where, 'cache' => md5(serialize($context))];
+        return ['where' => $where, 'humans' => '(' . $where . ') AND (browser_type IS NULL OR browser_type <> 1)', 'cache' => md5(serialize($context))];
     }
 
     /**
-     * Check if slimstat pro plugin is installed
+     * Whether Pro features may run: the Pro plugin is active AND its license is verified for this site.
+     * Activation alone is not entitlement; see \SlimStat\Services\ProLicense.
      */
     public static function pro_is_installed($pluginSlug = 'wp-slimstat-pro/wp-slimstat-pro.php')
+    {
+        return self::pro_plugin_active($pluginSlug) && \SlimStat\Services\ProLicense::active();
+    }
+
+    /**
+     * Whether the Pro plugin is active, licensed or not. Use it only for license and activation UI.
+     */
+    public static function pro_plugin_active($pluginSlug = 'wp-slimstat-pro/wp-slimstat-pro.php')
     {
         include_once(ABSPATH . 'wp-admin/includes/plugin.php');
         return (bool) is_plugin_active($pluginSlug);
@@ -2816,7 +2743,7 @@ class slimstat_widget extends WP_Widget
 
         <p>
             <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>"><?php esc_html_e('Optional filters', 'wp-slimstat'); ?></label>
-            <a href="https://wp-slimstat.com/resources/what-is-the-syntax-of-a-slimstat-shortcode-#slimstat-operators" target="_blank">[?]</a>
+            <a href="<?php echo esc_url(\SlimStat\Utils\ProLinks::tag('https://wp-slimstat.com/resources/what-is-the-syntax-of-a-slimstat-shortcode-#slimstat-operators', 'shortcodes', 'operators-help')); ?>" target="_blank" rel="noopener noreferrer">[?]</a>
             <textarea class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_filters')); ?>"><?php echo esc_textarea(trim(wp_strip_all_tags($slimstat_widget_filters))) ?></textarea>
         </p>
         <?php
@@ -2929,6 +2856,7 @@ if (function_exists('add_action')) {
     add_action('init', ['wp_slimstat', 'load_textdomain'], 1);
 
     // Add the appropriate actions
+    \SlimStat\Services\ProLicense::register();
     add_action('plugins_loaded', ['wp_slimstat', 'init'], 20);
     // Add the action to fetch chart data
     add_action('wp_ajax_slimstat_fetch_chart_data', [\SlimStat\Modules\Chart::class, 'ajaxFetchChartData']);

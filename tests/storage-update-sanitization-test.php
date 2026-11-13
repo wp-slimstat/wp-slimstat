@@ -79,7 +79,12 @@ namespace SlimStat\Utils {
 namespace {
     function wp_parse_url($url, $component = -1) { return parse_url($url, $component); }
 
-    class wp_slimstat { public static $wpdb; }
+    class wp_slimstat {
+        public static $wpdb;
+        private static array $stat = [];
+        public static function get_stat() { return self::$stat; }
+        public static function set_stat($stat) { self::$stat = $stat; }
+    }
 
     $assertions = 0;
 
@@ -310,6 +315,18 @@ namespace {
     ]);
     assert_true(!array_key_exists('id', \SlimStat\Utils\FakeQueryRecorder::$setClauses), 'id must not appear in SET clauses');
     assert_same(99, \SlimStat\Utils\FakeQueryRecorder::$where_id, 'id is bound to WHERE clause only');
+
+    // A redirect must not replay stale notes over Pro's intervening login write.
+    require_once dirname(__DIR__) . '/src/Tracker/Processor.php';
+    \SlimStat\Utils\FakeQueryRecorder::reset();
+    wp_slimstat::set_stat(['id' => 99, 'notes' => '[ec:eligible]', 'username' => 'before-login', 'dt' => 123]);
+    assert_same(302, \SlimStat\Tracker\Processor::updateContentType(302), 'redirect status is preserved');
+    assert_same(['content_type' => 'redirect:302'], \SlimStat\Utils\FakeQueryRecorder::$setClauses, 'redirect changes only content type, preserving later notes and identity');
+    assert_same(99, \SlimStat\Utils\FakeQueryRecorder::$where_id, 'redirect updates its own pageview');
+    assert_same('redirect:302', wp_slimstat::get_stat()['content_type'], 'in-memory content type stays current');
+    \SlimStat\Utils\FakeQueryRecorder::reset();
+    assert_same(200, \SlimStat\Tracker\Processor::updateContentType(200), 'non-redirect status is preserved');
+    assert_same(0, \SlimStat\Utils\FakeQueryRecorder::$executeCalls, 'non-redirect does not write');
 
     fwrite(STDOUT, "OK: {$assertions} assertions passed (Storage::updateRow sanitization)\n");
     exit(0);

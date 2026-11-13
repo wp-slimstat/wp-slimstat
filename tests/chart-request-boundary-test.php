@@ -23,6 +23,7 @@ eval('class ChartBoundary {
     private $args = [], $data = [], $prevData = [], $chartLabels = [], $translations = [];
     private function init($args) { $this->args = $args; }
     public static function run() {' . slimstat_function_body($source, 'ajaxFetchChartData') . '}
+    public static function summarizeTotals(array $rows): array {' . slimstat_function_body($source, 'summarizeTotals') . '}
 }');
 set_error_handler(static function ($severity, $message) { throw new RuntimeException($message); });
 $GLOBALS['current_user'] = (object) ['user_login' => 'alice'];
@@ -34,6 +35,11 @@ function run_chart($args, $expected, $granularity = 'daily') {
 }
 $GLOBALS['caps'] = ['read'];
 run_chart($valid, false); // A valid nonce does not grant the configured report capability.
+wp_slimstat::$settings['can_view'] = 'malice';
+run_chart($valid, false); // A partial login is not an allowlisted account.
+$GLOBALS['current_user']->user_login = '';
+run_chart($valid, false);
+$GLOBALS['current_user']->user_login = 'alice';
 wp_slimstat::$settings['can_view'] = 'alice';
 run_chart($valid, true);
 if (wp_slimstat_db::$filters_normalized['columns'] !== ['author' => ['equals', 'alice'], 'country' => ['equals', 'gb']]) { throw new RuntimeException('Posted filter escaped author scope'); }
@@ -47,3 +53,21 @@ foreach ([['data1' => []], ['data2' => true], ['where' => []]] as $data) { run_c
 foreach ([['equals', []], [['equals'], 'gb'], 'text'] as $filter) { run_chart(array_merge($valid, ['filters' => ['country' => $filter]]), false); }
 run_chart($valid, false, []);
 echo "PASS: chart capability, whitelist, immutable author scope and malformed request shapes\n";
+
+$abstract = file_get_contents(dirname(__DIR__) . '/src/Reports/Abstracts/AbstractReport.php');
+eval('class ReportPolicyProbe { private $capability = "manage_options"; public function can_view(): bool {' . slimstat_function_body($abstract, 'can_view') . '} }');
+$GLOBALS['caps'] = ['read'];
+wp_slimstat::$settings['can_view'] = "joann, alice\nbob";
+foreach (['ann' => false, '' => false, 'alice' => true, 'bob' => true, 'Alice' => false] as $login => $expected) {
+    $GLOBALS['current_user']->user_login = $login;
+    if ((new ReportPolicyProbe())->can_view() !== $expected) { throw new RuntimeException('OO report allowlist must match exact nonempty login'); }
+}
+echo "PASS: OO reports use exact allowlist tokens\n";
+
+wp_slimstat::$settings['can_view'] = "john smith, alice\nbob\r\n0";
+foreach (['john' => false, 'smith' => false, 'john smith' => true, 'alice' => true, 'bob' => true, '0' => true] as $login => $expected) {
+    $GLOBALS['current_user']->user_login = (string) $login;
+    if (wp_slimstat_admin::can_view_stats() !== $expected || (new ReportPolicyProbe())->can_view() !== $expected) {
+        throw new RuntimeException('Spaced username must remain one exact account');
+    }
+}

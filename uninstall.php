@@ -274,6 +274,9 @@ function slimstat_uninstall_artifacts($delete_data = false)
     }
 
     $wp_filesystem->delete($upload_dir . '/browscap-cache-master', true, 'd');
+    $wp_filesystem->delete($upload_dir . '/browscap-cache-backup', true, 'd');
+    $wp_filesystem->delete($upload_dir . '/browscap-staging', true, 'd');
+    $wp_filesystem->delete($upload_dir . '/browscap-update.lock');
 }
 
 /**
@@ -524,6 +527,7 @@ function slimstat_uninstall($_wpdb = '')
     delete_option('slimstat_goals_funnels_since');
     delete_option('slimstat_ecommerce_since');
     delete_option('slimstat_heatmaps_since');
+    delete_option('slimstat_ai_since');
     delete_option('slimstat_shortcodes_since');
     delete_option('slimstat_release_notice_since');
     delete_option('slimstat_dt_out_indexed');
@@ -541,13 +545,19 @@ function slimstat_uninstall($_wpdb = '')
     // pair of near-identical names is why this one survived every hand-audit of this list.
     delete_option('slimstat_visit_id_counter');
     delete_option('slimstat_visit_id_repair_marker');
+    delete_option('slimstat_custom_db_changed_since');
+    delete_metadata('user', 0, 'slimstat_notice_dismissals_' . get_current_blog_id(), '', true);
     // Minted with bare literals rather than constants, so no convention-based scan can
     // see them; they are here because the gate's own residual gap was written down.
     delete_option('wp_slimstat_notifications');
     delete_option('slimstat_notification_fetch_state');
+    delete_option('wp_slimstat_marketing_campaigns');
+    delete_option('slimstat_marketing_campaign_fetch_state');
+    delete_option('slimstat_marketing_campaign_execution_lock');
     delete_option('slimstat_notification_execution_lock');
     delete_option('slimstat_notification_dismissed');
     delete_option('slimstat_purge_optimized_at');
+    delete_option('slimstat_pro_license_verdict'); // \SlimStat\Services\ProLicense::OPTION
 // Migration runner state. Every option this plugin creates has to be removable — and the
 // run claim especially, since a stranded one is the single thing a user cannot clear from
 // the UI, making reinstall the only remedy that must actually work.
@@ -565,6 +575,7 @@ delete_option('slimstat_heatmap_setup');
     delete_option('slimstat_goals');
     delete_option('slimstat_funnels');
     delete_option('slimstat_goals_cache_ver');
+    delete_option('slimstat_data_ver');
 
     // The goals/funnels/unique-visitor transients used to be swept here, and the
     // filter-options ones below. Both are now covered by slimstat_uninstall_transients(),

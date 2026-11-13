@@ -14,6 +14,7 @@
 import { test, expect } from '@playwright/test';
 import {
   installOptionMutator,
+  installHeaderInjector, uninstallHeaderInjector, setHeaderOverrides, clearHeaderOverrides,
   uninstallOptionMutator,
   setSlimstatOption,
   snapshotSlimstatOptions,
@@ -27,6 +28,7 @@ import {
 test.describe('wp.org Support Issues: GDPR, IP, and Geolocation', () => {
   test.beforeAll(async () => {
     installOptionMutator();
+    installHeaderInjector();
   });
 
   test.beforeEach(async () => {
@@ -35,10 +37,12 @@ test.describe('wp.org Support Issues: GDPR, IP, and Geolocation', () => {
   });
 
   test.afterEach(async () => {
+    clearHeaderOverrides();
     await restoreSlimstatOptions();
   });
 
   test.afterAll(async () => {
+    uninstallHeaderInjector();
     uninstallOptionMutator();
     await closeDb();
   });
@@ -54,7 +58,8 @@ test.describe('wp.org Support Issues: GDPR, IP, and Geolocation', () => {
     await setSlimstatOption(page, 'geolocation_country', 'no'); // city precision
 
     // Inject Cloudflare headers to guarantee geolocation data
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-soolee-001',
       'CF-IPCountry': 'US',
       'CF-IPContinent': 'NA',
@@ -95,7 +100,8 @@ test.describe('wp.org Support Issues: GDPR, IP, and Geolocation', () => {
     await setSlimstatOption(page, 'geolocation_provider', 'cloudflare');
     await setSlimstatOption(page, 'geolocation_country', 'no');
 
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-soolee-002',
       'CF-IPCountry': 'DE',
       'CF-IPContinent': 'EU',
@@ -134,7 +140,8 @@ test.describe('wp.org Support Issues: GDPR, IP, and Geolocation', () => {
     await setSlimstatOption(page, 'geolocation_provider', 'cloudflare');
     await setSlimstatOption(page, 'geolocation_country', 'no');
 
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-kindness-001',
       'CF-IPCountry': 'CA',
       'CF-IPContinent': 'NA',
@@ -188,7 +195,8 @@ test.describe('wp.org Support Issues: GDPR, IP, and Geolocation', () => {
     await setSlimstatOption(page, 'geolocation_provider', 'cloudflare');
     await setSlimstatOption(page, 'geolocation_country', 'no');
 
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-anon-001',
       'CF-IPCountry': 'FR',
       'CF-IPCity': 'Paris',

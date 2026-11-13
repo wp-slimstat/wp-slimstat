@@ -406,7 +406,9 @@ pro_floor_notice() {
     wp_set_current_user(1);
     if (class_exists("wp_slimstat")) { \wp_slimstat::$settings["addon_email_report_send_authors"] = "on"; }
     ob_start(); do_action("admin_notices"); $o = (string) ob_get_clean();
-    echo (false !== strpos($o, "6.0.0") && false !== stripos($o, "per-author")) ? "NOTICE" : "NONOTICE";
+    $floor_notice = false !== stripos($o, "per-author")
+        || false !== strpos(wp_strip_all_tags($o), "requires SlimStat Analytics 6.0.0 or newer");
+    echo (false !== strpos($o, "6.0.0") && $floor_notice) ? "NOTICE" : "NONOTICE";
   ' 2>>"$ART/pro-probe.log" | tr -d '[:space:]'
 }
 

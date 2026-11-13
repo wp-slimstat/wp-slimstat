@@ -10,12 +10,16 @@ import { test, expect } from '@playwright/test';
 import { BASE_URL } from './helpers/env';
 
 test('online counts name their window, and header and admin bar agree', async ({ page }) => {
+  await page.setViewportSize({width:1440,height:900});
   await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`);
 
-  await expect(page.locator('.slimstat-header__online-label')).toHaveText('Visitors online (last 30 min)');
+  await expect(page.locator('.slimstat-header__online-label:visible')).toHaveText('Visitors online (last 30 min)');
   await expect(page.locator('#wp-admin-bar-slimstat-header .slimstat-adminbar__stat-title').first()).toContainText('Visitors online (last 30 min)');
   const header = (await page.locator('#slimstat-online-visitors-count').textContent())?.trim();
   await expect(page.locator('#slimstat-adminbar-online-count')).toHaveText(header!);
 
   await expect(page.locator('#slim_p1_04 h3').first()).toContainText('Visitors online (last 5 min)');
+  await page.setViewportSize({width:390,height:900});
+  await expect(page.locator('.slimstat-header__online-label:visible')).toHaveText('Online (30 min)');
+  await expect(page.locator('#slimstat-online-visitors-count')).toHaveText(header!);
 });

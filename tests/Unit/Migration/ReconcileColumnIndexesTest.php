@@ -40,6 +40,7 @@ class ReconcileColumnIndexesTest extends WpSlimstatTestCase
 
         $statements = [];
         $wpdb->shouldReceive('query')->andReturnUsing(static function ($sql) use (&$statements) {
+            if (strpos($sql, 'SET SESSION') === 0) { return 0; }
             $statements[] = $sql;
 
             return 1;
@@ -47,7 +48,7 @@ class ReconcileColumnIndexesTest extends WpSlimstatTestCase
 
         $this->assertTrue((new AddVisitIdentity($wpdb))->run());
 
-        // Exactly one CREATE INDEX. `slim_stats_archive` declares the same index and reconciles
+        // Exactly one online ADD INDEX. `slim_stats_archive` declares the same index and reconciles
         // NONE of its indexes by manifest, so a second statement here would mean the helper had
         // started building the archive's whole declared index set on cold storage.
         $this->assertCount(1, $statements, 'expected exactly one index statement');
@@ -94,6 +95,7 @@ class ReconcileColumnIndexesTest extends WpSlimstatTestCase
         // query() -- a blanket never() would be asserting something this test does not mean.
         $statements = [];
         $wpdb->shouldReceive('query')->andReturnUsing(static function ($sql) use (&$statements) {
+            if (strpos($sql, 'SET SESSION') === 0) { return 0; }
             $statements[] = $sql;
 
             return false;
@@ -115,7 +117,7 @@ class ReconcileColumnIndexesTest extends WpSlimstatTestCase
         // the thing it exists to do. A missing index is slower, not broken — turning it into a
         // failed migration would re-offer an ALTER that already landed.
         $wpdb = $this->addVisitIdentityDb(true, ['PRIMARY']);
-        $wpdb->shouldReceive('query')->andReturn(false);
+        $wpdb->shouldReceive('query')->with(\Mockery::pattern('/^ALTER TABLE /'))->andReturn(false);
 
         $this->assertTrue((new AddVisitIdentity($wpdb))->run());
     }
@@ -143,6 +145,7 @@ class ReconcileColumnIndexesTest extends WpSlimstatTestCase
 
         $statements = [];
         $wpdb->shouldReceive('query')->andReturnUsing(static function ($sql) use (&$statements) {
+            if (strpos($sql, 'SET SESSION') === 0) { return 0; }
             $statements[] = $sql;
 
             return false; // every statement refused

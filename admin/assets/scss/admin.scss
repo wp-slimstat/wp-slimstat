@@ -121,139 +121,6 @@ body.index-php {
       font-size: 12px;
     }
   }
-
-  .inside:has(.map-container) {
-    height: auto !important;
-  }
-
-  .map-container {
-    display: flex;
-    flex-wrap: wrap;
-    padding: 0px 20px;
-    height: 720px !important;
-  }
-
-  #map_slim_p6_01 {
-    width: 100%;
-    height: 395px;
-    min-height: 395px;
-    flex: 1;
-
-    @media (max-width: 768px) {
-      height: 310px;
-      min-height: 310px;
-      max-height: 310px;
-    }
-  }
-
-  .top-countries-wrap {
-    min-width: 370px;
-    max-width: 370px;
-    margin-left: 0px;
-    display: flex;
-    justify-content: center;
-    // align-items: center;
-
-    [dir="rtl"] & {
-      margin-left: 0;
-      margin-right: 0px;
-    }
-
-    @media (max-width: 768px) {
-      margin-left: 0;
-      min-width: 100%;
-      max-width: 100%;
-
-      [dir="rtl"] & {
-        margin-right: 0;
-      }
-    }
-  }
-
-  .top-countries {
-    flex: 1;
-
-    h4 {
-      font-weight: 700;
-      font-size: 14px;
-      line-height: 100%;
-      letter-spacing: -0.43px;
-    }
-  }
-
-  .country-bar {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-    position: relative;
-    height: 36px;
-
-    .country-flag-container {
-      width: 24px;
-      height: 24px;
-      border-radius: 100px;
-      overflow: hidden;
-      margin: 0px 10px 0 0px;
-      display: inline-block;
-      min-width: 24px;
-    }
-
-    strong {
-      font-weight: 700;
-      font-size: 14px;
-      line-height: 100%;
-      letter-spacing: 0px;
-      vertical-align: middle;
-      position: absolute;
-      top: 3px;
-      left: 43px;
-      color: #202224;
-    }
-
-    span {
-      color: #202224;
-      font-weight: 800;
-      font-size: 12px;
-      line-height: 100%;
-      letter-spacing: 0px;
-      vertical-align: middle;
-      margin-left: 5px;
-      margin-top: 23px;
-    }
-  }
-
-  .country-flag {
-    height: auto;
-    transform: translateX(-13%);
-  }
-
-  .bar-container {
-    background-color: #e5e6e9;
-    height: 8px;
-    width: 100%;
-    margin-left: 10px;
-    border-radius: 4px;
-    margin-top: 25px;
-    overflow: hidden;
-  }
-
-  .bar-fill {
-    height: 100%;
-    background-color: #e7294b;
-  }
-
-  .map-container {
-    flex-direction: column;
-  }
-  .top-countries {
-    margin-left: 0;
-    margin-top: 20px;
-
-    [dir="rtl"] & {
-      margin-left: 0;
-      margin-right: 0;
-    }
-  }
 }
 
 [id^="slim_"] .inside:has(.slimstat-postbox-chart--canvas) {
@@ -285,208 +152,6 @@ body.index-php {
 
   .postbox:has(p.loading) a.refresh svg {
     animation: spin 1s linear infinite;
-  }
-
-  .map-container {
-    display: flex;
-    flex-wrap: wrap;
-    padding: 0px 20px;
-
-    @media (min-width: 782px) {
-      overflow: hidden;
-      height: 370px;
-    }
-  }
-
-  #map_slim_p6_01 {
-    width: 100%;
-    height: 395px;
-    min-height: 395px;
-    flex: 1;
-
-    @media (max-width: 768px) {
-      height: 310px;
-      min-height: 310px;
-      max-height: 310px;
-    }
-  }
-
-  .top-countries-wrap {
-    min-width: 430px;
-    max-width: 430px;
-    margin-left: 30px;
-    display: flex;
-    justify-content: center;
-    // align-items: center;
-
-    [dir="rtl"] & {
-      margin-left: 0;
-      margin-right: 30px;
-    }
-
-    @media (max-width: 768px) {
-      margin-left: 0;
-      min-width: 100%;
-      max-width: 100%;
-
-      [dir="rtl"] & {
-        margin-right: 0;
-      }
-    }
-  }
-
-  .top-countries {
-    flex: 1;
-
-    h4 {
-      font-weight: 700;
-      font-size: 14px;
-      line-height: 100%;
-      letter-spacing: -0.43px;
-    }
-  }
-
-  .country-bar {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-    position: relative;
-    height: 36px;
-
-    .country-flag-container {
-      width: 24px;
-      height: 24px;
-      border-radius: 100px;
-      overflow: hidden;
-      margin: 0px 10px 0 0px;
-      display: inline-block;
-      min-width: 24px;
-    }
-
-    strong {
-      font-weight: 700;
-      font-size: 14px;
-      line-height: 100%;
-      letter-spacing: 0px;
-      vertical-align: middle;
-      position: absolute;
-      top: 3px;
-      left: 43px;
-      color: #202224;
-    }
-
-    span {
-      color: #202224;
-      font-weight: 800;
-      font-size: 12px;
-      line-height: 100%;
-      letter-spacing: 0px;
-      vertical-align: middle;
-      margin-left: 5px;
-      margin-top: 23px;
-    }
-  }
-
-  .country-flag {
-    height: auto;
-    transform: translateX(-13%);
-  }
-
-  .bar-container {
-    background-color: #e5e6e9;
-    height: 8px;
-    width: 100%;
-    margin-left: 10px;
-    border-radius: 4px;
-    margin-top: 25px;
-    overflow: hidden;
-  }
-
-  .bar-fill {
-    height: 100%;
-    background-color: #e7294b;
-  }
-
-  @media (max-width: 768px) {
-    .map-container {
-      flex-direction: column;
-    }
-    .top-countries {
-      margin-left: 0;
-      margin-top: 20px;
-
-      [dir="rtl"] & {
-        margin-left: 0;
-        margin-right: 0;
-      }
-    }
-  }
-}
-
-body {
-  &.index-php,
-  &.toplevel_page_slimview1,
-  &.slimstat_page_slimview2,
-  &.slimstat_page_slimview3,
-  &.slimstat_page_slimview4,
-  &.slimstat_page_slimview5,
-  &.slimstat_page_slimconfig,
-  &.slimstat_page_slimpro,
-  &.slimstat_page_slimlayout,
-  &.slimstat_page_slimemail,
-  &.slimstat_page_migration {
-    .jqvmap-label {
-      z-index: 999999;
-      position: absolute !important;
-      background-color: #2b2b2b !important;
-      color: #ffffff !important;
-      padding: 10px !important;
-      transform: translateY(-15px) translateX(50%) !important;
-      max-width: 280px !important;
-      min-width: 50px !important;
-      font-size: 1em !important;
-      line-height: 1.5em !important;
-      direction: ltr !important;
-      border-radius: 8px !important;
-      backdrop-filter: blur(34px) !important;
-      box-shadow: 0px 2px 4px 0px #0000000a !important;
-
-      & h3 {
-        margin: 0 !important;
-        font-size: 16px !important;
-        line-height: 100% !important;
-        font-weight: bold !important;
-        background-color: #2b2b2b !important;
-        color: #ffffff !important;
-        letter-spacing: 1px !important;
-      }
-
-      & p {
-        font-family: Inter !important;
-        font-weight: 600 !important;
-        font-size: 12px !important;
-        line-height: 100% !important;
-        letter-spacing: 1px !important;
-        background-color: #2b2b2b !important;
-        color: #ffffff !important;
-      }
-
-      & canvas {
-        position: absolute;
-        color: #2b2b2b !important;
-        background: #2b2b2b !important;
-        border: 0 dashed transparent;
-        background-color: #2b2b2b !important;
-        width: 12px !important;
-        height: 12px !important;
-        transform: rotate(135deg) translateX(0px) translateY(1px);
-        line-height: unset !important;
-        border-top-right-radius: 4px;
-        display: inline-block;
-        bottom: -5px;
-        left: calc(50% - 6px);
-      }
-    }
   }
 }
 
@@ -550,7 +215,7 @@ body {
 }
 
 #slimstat-date-filters {
-  padding: 4px 10px 6px 20px;
+  padding: 4px 12px;
   position: absolute;
   right: 5px;
   top: 5px;
@@ -754,8 +419,8 @@ body {
   margin: 0 !important;
   overflow: auto;
 
-  // #156 — native scroll: contain wheel chaining and reserve scrollbar gutter
-  overscroll-behavior: contain;
+  // Keep sideways scrolling local; vertical gestures continue onto the page at either boundary.
+  overscroll-behavior: contain auto;
   scrollbar-gutter: stable;
   padding: 0 !important;
   margin-bottom: 45px !important;
@@ -780,15 +445,6 @@ body {
 
 .wrap-slimstat .postbox.tall .inside {
   height: 465px;
-}
-
-.map-wrap {
-  .inside {
-    height: 370px !important;
-    @media (max-width: 767px) {
-      height: auto !important;
-    }
-  }
 }
 
 [id^="slim_"] p {
@@ -837,6 +493,29 @@ body {
   margin-inline-start: auto;
 }
 
+[id^="slim_"] p .slimstat-count-pct .slimstat-pct {
+  float: none;
+}
+
+[id^="slim_"] p a.slimstat-filter-link > span {
+  float: none;
+}
+
+/* Mixed-language labels choose their own direction, independently of the admin page. */
+.wrap-slimstat .postbox .slimstat-filter-link > [dir="auto"] {
+  .slimstat-flag-icon,
+  .slimstat-browser-icon,
+  span.slimstat-flag-container {
+    float: none !important;
+    display: inline-block;
+    margin: 0 !important;
+    margin-inline-end: 10px !important;
+    vertical-align: middle;
+    transform: none;
+  }
+}
+
+[id^="slim_"] p span.slimstat-pagination-range,
 [id^="slim_"] p span.refresh-countdown {
   float: none;
 }
@@ -1283,6 +962,7 @@ body.slimstat-admin-page {
   float: left;
 }
 
+.rtl [id^="slim_"] p span.slimstat-pagination-range,
 .rtl [id^="slim_"] p span.refresh-countdown {
   float: none;
 }
@@ -1732,9 +1412,8 @@ body.slimstat-admin-page.rtl .ui-datepicker-multi .ui-datepicker-group {
   /* Real-Time Access Log Responsive Improvements */
   [id^="slim_"] p {
     padding: 8px 10px;
-    word-break: break-all;
-    overflow-wrap: break-word;
-    hyphens: auto;
+    word-break: normal;
+    overflow-wrap: anywhere;
   }
 
   [id^="slim_"] p .slimstat-filter-link {
@@ -1864,11 +1543,12 @@ body.slimstat-admin-page.rtl .ui-datepicker-multi .ui-datepicker-group {
     margin-left: 3px;
   }
 
-  /* Stack header elements vertically on very small screens */
+  /* Keep visitor icons together and let long identifiers wrap naturally. */
   [id^="slim_"] p.header {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
   }
 
   [id^="slim_"] p.header .inline-icon {
@@ -3276,6 +2956,65 @@ body.slimstat-admin-page {
         }
       }
 
+      // Title row: title and info icon on one side, Export then Refresh on the other.
+      // A long title wraps beside the controls; a narrow card moves them to their own line.
+      .slimstat-report-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+
+        h3 {
+          flex: 1 1 10em;
+          min-width: 0;
+          overflow-wrap: anywhere;
+        }
+
+        .slimstat-header-buttons {
+          float: none;
+          flex: 0 0 auto;
+          gap: 8px;
+          margin-inline-start: auto;
+          padding: 0 10px;
+        }
+      }
+
+      // Second row: Copy Prompt and AI Analysis, on the title's start edge.
+      .slimstat-ai-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 16px;
+        margin-top: -10px;
+        padding: 0 15px 12px;
+
+        .slimstat-ai-prompt,
+        .slimstat-ai-analyze {
+          padding: 4px 0;
+        }
+
+        .slimstat-ai-prompt {
+          border: 0;
+          background: none;
+          font-family: inherit;
+          font-weight: 700;
+          font-size: 12px;
+          line-height: 1.4;
+          color: rgb(103, 110, 116);
+          text-decoration: none;
+          transition: 0.3s all ease-out;
+          cursor: pointer;
+
+          &:hover:not(:disabled):not([aria-disabled="true"]) {
+            color: #202224;
+          }
+
+          &:disabled,
+          &[aria-disabled="true"] {
+            cursor: default;
+          }
+        }
+      }
+
       h3 {
         background-color: #ffffff;
         color: #202224;
@@ -3864,4 +3603,48 @@ body.slimstat-admin-page {
 .rtl .slimstat-select-text .slimstat-option-icon {
   margin-right: 0;
   margin-left: 5px;
+}
+
+// Keep prose and fallback English punctuation readable in an RTL admin.
+.wrap-slimstat .slimstat-pro-adds p,
+.wrap-slimstat .slimstat-preview-caption,
+.wrap-slimstat .slimstat-gf-empty p,
+.wrap-slimstat .slimstat-map-hint,
+.wrap-slimstat .ss-ai-intro p,
+.wrap-slimstat .ss-ai-intro li { unicode-bidi: plaintext; }
+
+// Access Log details are inline content, not independent floating controls.
+.wrap-slimstat #slim_p7_02 p .details {
+  display: block;
+  float: none !important;
+  margin-top: 8px;
+  padding: 0;
+  line-height: 1.8;
+  unicode-bidi: plaintext;
+  > * { position: static !important; float: none !important; }
+  .spaced { margin-inline: 8px 4px; }
+  .slimstat-delete-entry { margin-inline-start: 8px; }
+}
+
+@media (max-width: 600px) {
+  .wrap-slimstat [id^="slim_"] p.pagination {
+    display: flow-root;
+    min-height: 64px;
+  }
+  .wrap-slimstat [id^="slim_"] .pagination a.refresh {
+    width: 44px;
+    height: 44px;
+    line-height: 42px;
+    margin: 0;
+    margin-inline-start: 4px;
+  }
+  .wrap-slimstat [id^="slim_"]:has(> p.pagination) .inside { margin-bottom: 108px !important; }
+}
+
+.rtl .wrap-slimstat #slim_p7_02 p .details { text-align: right; }
+
+// Counts isolate Latin digits without changing which edge receives the auto margin.
+.rtl [id^="slim_"] p span.slimstat-count-pct {
+  margin-right: auto;
+  margin-left: 0;
 }

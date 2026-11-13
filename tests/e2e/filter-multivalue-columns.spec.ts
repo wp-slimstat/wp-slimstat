@@ -238,6 +238,7 @@ test.describe('Filter operator: equals auto-upgrade for multi-value columns', ()
     );
 
     // The page should show our seeded row
+    await page.locator('#slim_p1_08').scrollIntoViewIfNeeded();
     await expect(page.locator('#slim_p1_08')).toContainText(`${MARKER}-outbound`);
   });
 
@@ -252,6 +253,7 @@ test.describe('Filter operator: equals auto-upgrade for multi-value columns', ()
       { waitUntil: 'domcontentloaded' }
     );
 
+    await page.locator('#slim_p1_08').scrollIntoViewIfNeeded();
     await expect(page.locator('#slim_p1_08')).toContainText(`${MARKER}-notes`);
   });
 
@@ -267,6 +269,7 @@ test.describe('Filter operator: equals auto-upgrade for multi-value columns', ()
       { waitUntil: 'domcontentloaded' }
     );
 
+    await page.locator('#slim_p1_08').scrollIntoViewIfNeeded();
     await expect(page.locator('#slim_p1_08')).toContainText(`${MARKER}-cat`);
   });
 
@@ -281,6 +284,7 @@ test.describe('Filter operator: equals auto-upgrade for multi-value columns', ()
       { waitUntil: 'domcontentloaded' }
     );
 
+    await page.locator('#slim_p1_08').scrollIntoViewIfNeeded();
     await expect(page.locator('#slim_p1_08')).toContainText(`${MARKER}-browser`);
   });
 });

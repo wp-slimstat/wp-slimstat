@@ -11,17 +11,19 @@ import { BASE_URL } from './helpers/env';
 
 const PAGE = `${BASE_URL}/wp-admin/admin.php?page=slimview5`;
 const top = (page: Page, id: string) => page.locator(id).evaluate((e) => Math.round(e.getBoundingClientRect().top));
+// Reports above load one by one and change height, so poll until the two tops settle level.
+const sameRow = (page: Page, a: string, b: string) => expect.poll(async () => (await top(page, a)) - (await top(page, b))).toBe(0);
 
 test.use({ viewport: { width: 1440, height: 900 } });
 
 test('Top Countries and Traffic Summary share a row', async ({ page }) => {
   await page.goto(PAGE);
-  expect(await top(page, '#slim_p3_02')).toBe(await top(page, '#slim_p1_13'));
+  await sameRow(page, '#slim_p3_02', '#slim_p1_13');
 });
 
 test('Channels and UTM Campaigns share a row at half width', async ({ page }) => {
   await page.goto(PAGE);
-  expect(await top(page, '#slim_p3_04')).toBe(await top(page, '#slim_p3_03'));
+  await sameRow(page, '#slim_p3_04', '#slim_p3_03');
   const share = await page.locator('#slim_p3_03').evaluate((e) => e.getBoundingClientRect().width / e.parentElement!.getBoundingClientRect().width);
   expect(share).toBeGreaterThan(0.45); expect(share).toBeLessThan(0.52);
 });
@@ -29,7 +31,7 @@ test('Channels and UTM Campaigns share a row at half width', async ({ page }) =>
 test('the campaign link builder sits in the header left of Export, and the bottom help link is gone', async ({ page }) => {
   await page.goto(PAGE);
   for (const id of ['#slim_p3_03', '#slim_p3_04']) {
-    const header = page.locator(`${id} > .slimstat-header-buttons`);
+    const header = page.locator(`${id} > .slimstat-report-head > .slimstat-header-buttons`);
     expect((await header.locator('a').allTextContents()).map((t) => t.trim()).slice(0, 2)).toEqual(['Build campaign link', 'Export']);
     await expect(header.locator('.slimstat-utm-builder-link')).toHaveCSS('border-top-width', '0px');
     await expect(page.locator(id).getByRole('button', { name: 'How to read this report' })).toHaveCount(0);
@@ -38,6 +40,7 @@ test('the campaign link builder sits in the header left of Export, and the botto
 
 test('the chart keeps its last x label clear of the card edge', async ({ page }) => {
   await page.goto(PAGE);
+  await page.locator('#slim_p3_01').scrollIntoViewIfNeeded();
   const gap = () => page.evaluate(() => {
     const canvas = document.querySelector<HTMLCanvasElement>('#slimstat_chart_slim_p3_01');
     const chart = canvas && (window as any).Chart?.getChart(canvas);

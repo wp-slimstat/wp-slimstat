@@ -27,17 +27,12 @@ class Storage
 				: ('resource' == $key ? esc_url_raw($value) : sanitize_text_field($value));
 		}
 
-		// vid_hash travels through $stat as 32 hex chars — the one spelling that survives
-		// sanitize_text_field() above, filters, and log lines — and is packed to the raw
-		// 16 bytes BINARY(16) stores only here, at the terminal, AFTER sanitization.
+		// Keep identity as hex until SQL decodes it: raw binary bytes make wpdb reject
+		// old schemas before MySQL can report the missing column or table.
 		// Anything that is not exactly 32 hex chars is dropped rather than stored: a
 		// mangled identity matching nobody is strictly worse than no identity.
-		if (isset($data['vid_hash'])) {
-			if (preg_match('/^[0-9a-f]{32}$/i', (string) $data['vid_hash'])) {
-				$data['vid_hash'] = hex2bin((string) $data['vid_hash']);
-			} else {
-				unset($data['vid_hash']);
-			}
+		if (isset($data['vid_hash']) && !preg_match('/^[0-9a-f]{32}$/i', (string) $data['vid_hash'])) {
+			unset($data['vid_hash']);
 		}
 
 		$result = self::write($table, $data);
@@ -108,7 +103,7 @@ class Storage
 	{
 		$outcome = Query::insert($table)
 			->ignore()
-			->values($data)
+			->values($data, ['vid_hash'])
 			->execute();
 
 		$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];

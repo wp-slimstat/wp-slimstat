@@ -8,6 +8,9 @@
 
 name: CI
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -36,8 +39,8 @@ jobs:
     name: Catalog freshness and required-red control
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
           php-version: '8.2'
           tools: composer:v2, wp-cli:2.12.0
@@ -63,12 +66,12 @@ jobs:
         # the entry point dies with "unknown ref" - exit 1, but for the WRONG REASON, so the case
         # reports a mismatch rather than the refusal it exists to prove. A gate written against a
         # developer's full clone cannot pass on a shallow one. PITFALLS 96.
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 2
 
       - name: Set up PHP ${{ matrix.php }}
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
           php-version: ${{ matrix.php }}
           extensions: mbstring, xml, dom, curl, json
@@ -79,7 +82,7 @@ jobs:
       - name: Cache Composer dependencies
         # Only lanes that install development dependencies need this cache.
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: vendor
           key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
@@ -96,8 +99,8 @@ jobs:
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: |
           composer run build:autoload
-          git diff --exit-code -- src/Dependencies
-          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies)"
+          git diff --exit-code -- vendor-prefixed
+          test -z "$(git ls-files --others --exclude-standard -- vendor-prefixed)"
           php tests/autoloader-production-test.php
           php tests/classmap-completeness-test.php
           composer dump-autoload
@@ -124,12 +127,12 @@ jobs:
         run: composer test:assertion-floor
 
       - name: PHP syntax lint (src/)
-        # Lint plugin source only — skip src/Dependencies/ which contains
-        # WP-Scoper vendor files that may use PHP 8.0+ syntax.
+        # Lint plugin source only. The WP-Scoper output lives in vendor-prefixed/,
+        # outside src/, and may use PHP 8.0+ syntax.
         # Print only files with errors; grep exits 1 when nothing matches (no
         # errors), so we invert: fail only when errors ARE found.
         run: |
-          ERRORS=$(find src/ -not -path "src/Dependencies/*" -name "*.php" -exec php -l {} \; 2>&1 | grep -v "No syntax errors" || true)
+          ERRORS=$(find src/ -name "*.php" -exec php -l {} \; 2>&1 | grep -v "No syntax errors" || true)
           if [ -n "$ERRORS" ]; then
             echo "$ERRORS"
             exit 1
@@ -150,7 +153,7 @@ jobs:
         # test failure. Pinned here instead. Deliberately NOT guarded with `command -v python3
         # ||` — that converts a hard failure into a gate that silently does not run, which is
         # this programme's most repeated defect.
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
 
@@ -172,7 +175,7 @@ jobs:
         # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
         # this runs here rather than living in composer.json unreferenced.
         #
-        # The full registry holds 252 entries. The step took 210-270s per lane across all six
+        # The full registry holds 319 entries. The step took 210-270s per lane across all six
         # Tier 1 lanes on run 33874090767 (2026-09-04). THAT RUN IS THE AUTHORITY for the
         # duration: the seconds in this block are not gate-checked, and no sentence written here
         # can tell you whether they are still current.
@@ -229,10 +232,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up PHP 8.2
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
           php-version: "8.2"
           extensions: mbstring, xml, dom, curl, json
@@ -244,12 +247,12 @@ jobs:
       - name: Verify generated dependencies, then enable the dev autoloader
         run: |
           composer run build:autoload
-          git diff --exit-code -- src/Dependencies
-          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies)"
+          git diff --exit-code -- vendor-prefixed
+          test -z "$(git ls-files --others --exclude-standard -- vendor-prefixed)"
           composer dump-autoload
 
       - name: Run PHPStan (level 5, target 7.4, baseline-gated)
-        # phpstan.neon.dist analyzes own code (src/Dependencies excluded); legacy
+        # phpstan.neon.dist analyzes own code (vendor-prefixed excluded); legacy
         # findings are parked in phpstan-baseline.neon — this lane fails only on
         # NEW errors. Ratchet the baseline down over time; never grow it.
         run: composer phpstan
@@ -274,7 +277,7 @@ jobs:
         github.ref == 'refs/heads/main' ||
         github.ref == 'refs/heads/development' ||
         (github.event_name == 'pull_request' &&
-          (github.base_ref == 'master' || github.base_ref == 'main' || github.base_ref == 'development'))
+          (github.base_ref == 'master' || github.base_ref == 'main' || github.base_ref == 'development' || github.base_ref == 'feat/ai-copy-prompt'))
       )
 
     strategy:
@@ -291,10 +294,10 @@ jobs:
           - { wp: "6.6", php: "8.2" }
           - { wp: "6.9", php: "8.2" }
           - { wp: "7.0", php: "8.2" }
-          # 7.1.2 is current. Added with the metadata bump in readme.txt/README.md, so
+          # 7.1.4 is current. Added with the metadata bump in readme.txt/README.md, so
           # "Tested up to" and the lane that tests it move together — which is the whole
           # property tests/wp70-tested-up-to-test.php exists to hold.
-          - { wp: "7.1.2", php: "8.3" }
+          - { wp: "7.1.4", php: "8.3" }
 
     env:
       TEST_BASE_URL: http://localhost:8889
@@ -311,28 +314,28 @@ jobs:
       # Named once, read by three steps (override, active-plugin check, E2E grep) so
       # they cannot drift into "installed here, run there".
       #
-      # 7.1.2, not 6.9, for two reasons. WooCommerce 10.6.2 declares `Requires at
-      # least: 6.8`, so the 6.4 full-suite lane cannot host it -- and 7.1.2 is the only
+      # 7.1.4, not 6.9, for two reasons. WooCommerce 10.6.2 declares `Requires at
+      # least: 6.8`, so the 6.4 full-suite lane cannot host it -- and 7.1.4 is the only
       # lane at or above that floor whose E2E step BLOCKS (continue-on-error is false
       # for the baseline and the newest lane only). On a soft lane a WooCommerce
       # regression would fail the step and leave the job green, which is the exact
       # shape of self-skipping this workstream exists to end.
-      WOO_E2E_LANE: "7.1.2"
+      WOO_E2E_LANE: "7.1.4"
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Generate production autoloader before wp-env mounts the plugin
         run: composer run build:autoload
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "20"
 
       - name: Cache npm dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.npm
           key: npm-${{ hashFiles('package.json') }}
@@ -367,6 +370,11 @@ jobs:
         # Browser binaries + apt deps are fetched over the network; a transient
         # blip must not fail the job. Retry up to 3x with backoff. Loop is set -e
         # safe (attempt guarded by `if`; final failure exits 1).
+        # When only apt is down (2026-11-11: the runners' Ubuntu mirrors stopped
+        # resolving for an hour while Playwright's CDN worked), fall back to the
+        # browser alone: the runner image ships Chrome and the libraries it links.
+        # The fallback must launch Chromium here: install only warns about a missing
+        # library, and E2E is soft on most lanes, so a dead browser would pass there.
         run: |
           n=0
           until [ "$n" -ge 3 ]; do
@@ -379,6 +387,10 @@ jobs:
               sleep $((n * 15))
             fi
           done
+          if npx playwright install chromium && node -e "require('@playwright/test').chromium.launch().then(b => b.close())"; then
+            echo "::warning::system deps could not be installed (apt unreachable); running with the runner image's libraries"
+            exit 0
+          fi
           echo "::error::playwright install failed after 3 attempts"
           exit 1
 
@@ -503,7 +515,7 @@ jobs:
         # because that file set varies by WP version. 6.4 already runs the full E2E suite; the
         # NEWEST lane is where that surface is most likely to move under it again — so this
         # condition names the newest WordPress in the matrix, and widens with it. It said
-        # `6.4 || 7.0` while 7.1.2 was added, which would have quietly stopped covering the
+        # `6.4 || 7.0` while 7.1.4 was added, which would have quietly stopped covering the
         # version the readme claims to be tested against. §8 of
         # tests/perf-gate-integrity-test.php asserts the condition names every blocking
         # version rather than a fixed pair.
@@ -516,7 +528,7 @@ jobs:
         #
         # Blocking, unlike the E2E step below. On these lanes it is the first step that can
         # fail this job, which is the point of adding it.
-        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.4' }}
         run: npx wp-env run tests-cli -- php wp-content/plugins/wp-slimstat/tests/reports-output-escaping-test.php
 
       - name: Activate plugin and create database tables
@@ -539,15 +551,46 @@ jobs:
           npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
 
       - name: Acquisition schema, attribution and report database checks
-        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.4' }}
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/acquisition-reports-db-test.php
 
+      - name: Native SQL top list accuracy
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/query-topn-mysql.php
+
+      - name: Verify metadata-lock timeout and online migration safety
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/schema-online-mysql.php
+
+      - name: Verified retention, concurrency and resumption
+        run: |
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/purge-mysql.php
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/purge-selection-mysql.php
+
+      - name: Privacy export database boundaries
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/privacy-export-mysql.php
+
+      - name: Privacy erasure database boundaries
+        run: |
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/data-eraser-mysql.php
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/privacy-external-mysql.php
+
+      - name: Summary accuracy, query budgets and cache isolation
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.4' }}
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/report-summary-counts-db-test.php
+
+      - name: Legacy column repair preserves historical data
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/docker/probe-legacy-column-repair.php
+
       - name: Shortcode rendering and privacy
-        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.2' }}
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1.4' }}
         run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/shortcode-render-wp-test.php
 
+      - name: Pro license gate
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/pro-license-wp-test.php
+
       - name: Heatmap author isolation
-        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/heatmap-author-scope-wp-test.php
+        run: |
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/heatmap-author-scope-wp-test.php
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/live-country-scope-wp-test.php
 
       - name: Pretty permalinks, and prove /wp-json/ actually routes
         # WordPress installs with an EMPTY permalink_structure, so /wp-json/ is not rewritten
@@ -654,6 +697,12 @@ jobs:
           npx wp-env run tests-cli -- wp transient delete _wc_activation_redirect
           npx wp-env run tests-cli -- wp plugin get woocommerce --field=version
 
+      - name: Deletion cache invalidation and full WooCommerce refunds
+        if: ${{ matrix.wp == env.WOO_E2E_LANE }}
+        run: |
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/data-version-mysql.php
+          npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/ecommerce-full-refund-mysql.php
+
       - name: Expose wp-env filesystem and MySQL to E2E tests
         # wp-env runs WordPress inside Docker containers. The E2E test helpers
         # (setup.ts) need direct filesystem access to wp-config.php and mu-plugins,
@@ -688,6 +737,7 @@ jobs:
           sudo chown "$(id -u):$(id -g)" "$WP_ROOT/wp-config.php"
 
           echo "WP_ROOT=$WP_ROOT" >> $GITHUB_ENV
+          echo "FREE_PLUGIN_ROOT=$GITHUB_WORKSPACE" >> $GITHUB_ENV
 
           # ── MySQL access via host-mapped port ────────────────────────────
           # wp-env maps container port 3306 to a dynamic host port.
@@ -725,7 +775,7 @@ jobs:
       - name: Cache the DB-IP City Lite database
         if: ${{ matrix.wp == '6.4' }}
         id: dbip-cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/dbip/dbip-city-lite.mmdb
           key: dbip-city-lite-${{ env.DBIP_MONTH }}
@@ -783,14 +833,14 @@ jobs:
         # matrix lanes run only the @compat-tagged compat specs via --grep, so
         # PRs stay within budget (the lane is the CI job, not the filename).
         #
-        # BLOCKING on 6.4 and 7.1.2; soft everywhere else. continue-on-error is the
+        # BLOCKING on 6.4 and 7.1.4; soft everywhere else. continue-on-error is the
         # setting being excused, and the expression is FALSE — the lane can fail
         # the job — for exactly two versions: the committed baseline that
         # .wp-env.json boots, and the newest WordPress in the matrix above.
         #
-        # Read "blocking on 7.1.2" literally. The branch below runs the full suite
+        # Read "blocking on 7.1.4" literally. The branch below runs the full suite
         # only when WP_VERSION is the baseline; every other lane runs
-        # --grep "@compat". So 7.1.2 blocking gates the @compat subset, and the real
+        # --grep "@compat". So 7.1.4 blocking gates the @compat subset, and the real
         # target of this flip is 6.4/PHP 7.4 running all 748 tests. The interior
         # lanes stay soft on purpose: they are version-drift signal, not a merge
         # gate, and making them blocking would fail the job on host-environment
@@ -802,7 +852,7 @@ jobs:
         # everything, dropping either version, or reverting to a bare `true` all
         # fail that gate. §7 used to match only the literal `continue-on-error:
         # true`, so before this commit it would have matched nothing here.
-        continue-on-error: ${{ !contains(fromJSON('["6.4","7.1.2"]'), matrix.wp) }}
+        continue-on-error: ${{ !contains(fromJSON('["6.4","7.1.4"]'), matrix.wp) }}
         env:
           # wp-env creates a fresh WordPress with default admin credentials.
           # Override WP_ADMIN_USER / WP_ADMIN_PASS in global-setup.ts.
@@ -823,7 +873,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           # upload-artifact@v4 requires a unique name per run — all 7 matrix lanes
           # sharing "playwright-report" caused HTTP 409 conflicts. Scope by lane.
@@ -877,10 +927,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up PHP ${{ matrix.php }}
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
           php-version: ${{ matrix.php }}
           extensions: mbstring, xml, dom, curl, json
@@ -889,7 +939,7 @@ jobs:
       - name: Cache Composer dependencies
         # The 7.4/8.0 exclusion this step carried went with those lanes (see the matrix
         # above). The ignored vendor tree is rebuilt and checked before use.
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: vendor
           key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
@@ -902,8 +952,8 @@ jobs:
       - name: Verify generated dependencies, then enable the dev autoloader
         run: |
           composer run build:autoload
-          git diff --exit-code -- src/Dependencies
-          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies)"
+          git diff --exit-code -- vendor-prefixed
+          test -z "$(git ls-files --others --exclude-standard -- vendor-prefixed)"
           composer dump-autoload
 
       - name: Run full PHPUnit suite
@@ -930,13 +980,13 @@ jobs:
 
       - name: Set up Node.js (for wp-env + k6 tests)
         if: ${{ matrix.php == '8.2' }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "20"
 
       - name: Cache npm dependencies
         if: ${{ matrix.php == '8.2' }}
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.npm
           key: npm-${{ hashFiles('package.json') }}
@@ -1098,24 +1148,24 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: wordpress
+          MYSQL_DATABASE: test_slimstat_minimum
         ports: ["3306:3306"]
         options: >-
           --health-cmd="mysqladmin ping -h localhost -ppassword"
           --health-interval=5s --health-timeout=5s --health-retries=20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           path: wp-slimstat
       # Build dependencies on the toolchain's PHP, then execute on the declared minimum.
-      - uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
           php-version: "8.2"
           tools: composer, wp-cli
       - name: Install plugin dependencies
         run: |
           composer install --working-dir=wp-slimstat --no-dev --prefer-dist --no-interaction
-      - uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
         with:
           php-version: "7.4"
           extensions: mysqli, mbstring
@@ -1126,7 +1176,7 @@ jobs:
           set -euo pipefail
           WP_DIR="$RUNNER_TEMP/slimstat-minimum"
           wp core download --version=5.6 --path="$WP_DIR"
-          wp config create --path="$WP_DIR" --dbname=wordpress --dbuser=root --dbpass=password --dbhost=127.0.0.1
+          wp config create --path="$WP_DIR" --dbname=test_slimstat_minimum --dbuser=root --dbpass=password --dbhost=127.0.0.1
           wp core install --path="$WP_DIR" --url=http://localhost --title=Compatibility --admin_user=admin --admin_password=password --admin_email=qa@example.com --skip-email
           for plugin in wp-slimstat; do
             ln -s "$GITHUB_WORKSPACE/$plugin" "$WP_DIR/wp-content/plugins/$plugin"
@@ -1134,5 +1184,8 @@ jobs:
           wp plugin activate wp-slimstat --path="$WP_DIR"
           wp eval 'require_once WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php"; wp_slimstat_admin::init_tables($GLOBALS["wpdb"]);' --path="$WP_DIR"
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/shortcode-render-wp-test.php" --path="$WP_DIR"
+          wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/pro-license-wp-test.php" --path="$WP_DIR"
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/heatmap-author-scope-wp-test.php" --path="$WP_DIR"
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/notification-delivery-wp-test.php" --path="$WP_DIR"
+          wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/horizon-campaign-wp-test.php" --path="$WP_DIR"
+          wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/notification-targeting-wp-test.php" --path="$WP_DIR"

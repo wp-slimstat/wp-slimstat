@@ -88,7 +88,7 @@ class NotificationDecorator
             ? \str_replace('{baseUrl}', $homeUrl, $this->notification->primary_button['url'])
             : null;
 
-        return $url;
+        return is_string($url) ? \SlimStat\Utils\ProLinks::tag($url, 'notifications', 'primary-' . (int) $this->getID(), true) : $url;
     }
 
     /**
@@ -112,7 +112,7 @@ class NotificationDecorator
         $url     = isset($this->notification->secondary_button['url'])
             ? \str_replace('{baseUrl}', $homeUrl, $this->notification->secondary_button['url'])
             : null;
-        return $url;
+        return is_string($url) ? \SlimStat\Utils\ProLinks::tag($url, 'notifications', 'secondary-' . (int) $this->getID(), true) : $url;
     }
 
     /**
@@ -125,6 +125,7 @@ class NotificationDecorator
         $backgroundColors = [
             'inherit' => '',
             'danger'  => 'slimstat-notification-sidebar__danger',
+            'promo'   => 'slimstat-notification-sidebar__promo',
             'info'    => 'slimstat-notification-sidebar__info',
             'warning' => 'slimstat-notification-sidebar__warning',
             'success' => 'slimstat-notification-sidebar__success'
@@ -163,5 +164,26 @@ class NotificationDecorator
     public function getDismiss()
     {
         return $this->notification->dismiss ?? null;
+    }
+
+    public function isPromo(): bool
+    {
+        return 'promo' === ($this->notification->background_color ?? '');
+    }
+
+    private function extraText(string $key): string
+    {
+        $extra = $this->notification->extra_data ?? [];
+        if (is_object($extra)) $extra = (array) $extra;
+        return is_array($extra) && is_string($extra[$key] ?? null) ? $extra[$key] : '';
+    }
+
+    public function getCampaign(): string { return \SlimStat\Utils\ProLinks::campaign((string) ($this->notification->primary_button['url'] ?? '')); }
+    public function getBadge(): string { return $this->extraText('badge'); }
+    public function getCode(): string { return $this->extraText('code'); }
+    public function getEndsAt(): string
+    {
+        $end = \SlimStat\Services\Admin\FeedWindow::timestamp($this->notification->ends_at ?? null);
+        return is_int($end) ? gmdate('Y-m-d\TH:i:s\Z', $end) : '';
     }
 }

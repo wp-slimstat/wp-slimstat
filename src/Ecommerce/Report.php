@@ -4,25 +4,37 @@ namespace SlimStat\Ecommerce;
 
 use SlimStat\Tracker\Acquisition;
 use SlimStat\Utils\NetworkMerge;
+use SlimStat\Utils\Query;
 
 /** One metric/query contract for Free, Pro, HTML and exports. */
 final class Report
 {
 	public const CURRENCY_FILTER = 'addon_ecommerce_currency';
 	private array $range;
-	private array $requestedRange;
 	private string $currency;
 	private string $scope;
 	private string $join;
 	private string $table;
 	private string $stats;
 	private bool $acquisition;
+	/** One clock read per report, for the end clamp and the cache key (CodeRabbit on #411). */
+	private int $now;
 
 	/** Commerce permissions are additional to the native analytics permission. */
 	public static function canView(): bool
 	{
 		return class_exists('wp_slimstat_admin') && \wp_slimstat_admin::can_view_stats()
 			&& (current_user_can('view_woocommerce_reports') || current_user_can('manage_options'));
+	}
+
+	/**
+	 * One key per question. A range still running in the current minute is open-ended and keyed 'now' (the 60 s TTL bounds staleness);
+	 * a closed range ends on an :59 boundary before that minute, so "Yesterday" at 00:00:30 keeps its own key. The scope is hashed
+	 * without wpdb's per-request LIKE marker (PITFALLS 257).
+	 */
+	private static function cacheIdentity(array $range, int $now, string $scope): array
+	{
+		return [$range[0], $range[1] >= $now - $now % MINUTE_IN_SECONDS ? 'now' : $range[1], Query::cacheHash($GLOBALS['wpdb'], $scope)];
 	}
 
 	/** @return never */
@@ -34,12 +46,9 @@ final class Report
 
 	public function __construct()
 	{
+		$this->now = \wp_slimstat::now();
 		$this->range = \wp_slimstat_db::$filters_normalized['utime'];
-		$this->requestedRange = [(int) $this->range['start'], (int) $this->range['end']];
-		if (abs((int) $this->range['end'] - \wp_slimstat::now()) < MINUTE_IN_SECONDS) {
-			$this->requestedRange[1] = (int) ceil($this->range['end'] / MINUTE_IN_SECONDS) * MINUTE_IN_SECONDS;
-		}
-		$this->range['end'] = min((int) $this->range['end'], \wp_slimstat::now());
+		$this->range['end'] = min((int) $this->range['end'], $this->now);
 		$this->currency = (string) (\wp_slimstat_db::$filters_normalized['columns'][self::CURRENCY_FILTER][1] ?? get_woocommerce_currency());
 		if (!preg_match('/\A[A-Z0-9]{3,8}\z/', $this->currency)
 			|| 'equals' !== (\wp_slimstat_db::$filters_normalized['columns'][self::CURRENCY_FILTER][0] ?? 'equals')) {
@@ -308,7 +317,7 @@ final class Report
 		if ($days > 366 && 'daily' === $interval) { $interval = 'weekly'; }
 		if ($days > 2562) { $interval = 'monthly'; }
 		$key = 'slimstat_ec_' . md5(wp_json_encode([
-			$this->requestedRange, $this->currency, $this->scope, $extra, $this->acquisition, get_current_blog_id(), Acquisition::readinessKey(), $details, 4,
+			self::cacheIdentity([(int) $this->range['start'], (int) $this->range['end']], $this->now, $this->scope), $this->currency, $extra, $this->acquisition, get_current_blog_id(), Acquisition::readinessKey(), $details, 4,
 		]));
 		$signature = [get_option('slimstat_ecommerce_generation', ''), $state, \wp_slimstat::$settings['auto_purge'] ?? 420];
 		$cached = get_transient($key);
@@ -345,7 +354,8 @@ final class Report
 		if (!$details) { return $data; }
 		// Interval changes reuse summaries/rankings and query only their own trend.
 		$this->range['start'] = $data['range'][0]; $this->range['end'] = $data['range'][1];
-		$seriesKey = $key . '_' . $interval . '_' . (int) get_option('start_of_week', 1);
+		$locale = is_locale_switched() ? get_locale() : determine_locale();
+		$seriesKey = $key . '_' . $interval . '_' . (int) get_option('start_of_week', 1) . '_' . $locale;
 		$cachedSeries = get_transient($seriesKey);
 		if (is_array($cachedSeries) && ($cachedSeries['signature'] ?? []) === $signature && ($cachedSeries['range'] ?? []) === $data['range']) {
 			$data['series'] = $cachedSeries['data'];

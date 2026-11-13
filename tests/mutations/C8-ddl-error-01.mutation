@@ -1,0 +1,17 @@
+target: src/Schema/Schema.php
+gate: php tests/schema-online-safety-test.php
+kind: guard-removal
+expect: preserve DDL error
+rationale: A successful restore statement must not erase the failure callers need.
+---
+--- a/src/Schema/Schema.php
++++ b/src/Schema/Schema.php
+@@ -1009,7 +1009,7 @@
+                 $error .= ' Could not restore the metadata-lock timeout: ' . $db->last_error;
+             }
+             // A successful SET clears last_error; callers still need the DDL failure.
+-            $db->last_error = $error;
++            $db->last_error = '';
+         }
+         // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
+         return $result;

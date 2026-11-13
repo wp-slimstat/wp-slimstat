@@ -175,7 +175,7 @@ if ('' === $merge_src) {
 // Nothing else may answer that question for itself.
 $own_files = slimstat_own_php_files(
     [$plugin_root . '/admin', $plugin_root . '/src'],
-    $plugin_root . '/src/Dependencies'
+    $plugin_root . '/vendor-prefixed'
 );
 
 $askers = [];

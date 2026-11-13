@@ -6,6 +6,7 @@ namespace SlimStat\Migration\Admin;
 use SlimStat\Migration\MigrationManager;
 use SlimStat\Migration\MigrationService;
 use SlimStat\Schema\Schema;
+use SlimStat\Tracker\VisitIdGenerator;
 use wp_slimstat_admin;
 
 class MigrationAdmin
@@ -24,7 +25,6 @@ class MigrationAdmin
 		add_action('admin_menu', [$this, 'registerPage'], 20);
 		add_action('admin_notices', [$this, 'maybeShowNotice']);
 		add_action('wp_ajax_slimstat_run_migrations', [$this, 'ajaxRunMigrations']);
-		add_action('wp_ajax_slimstat_migration_dismiss', [$this, 'ajaxDismiss']);
 		add_action('wp_ajax_slimstat_migration_reset', [$this, 'ajaxResetDismissal']);
 	}
 
@@ -54,12 +54,29 @@ class MigrationAdmin
 			'slimstat_migration',
 			[$this, 'renderPage']
 		);
+		add_action('load-' . $hook, [$this, 'retryUpgrade']);
 		add_action('load-' . $hook, [$this, 'enqueueAssets']);
 	}
+
+    /** Handle an explicit retry before the admin header sends output. */
+    public function retryUpgrade(): void
+    {
+        if (!isset($_POST['slimstat_retry_upgrade'])) {
+            return;
+        }
+        if (!current_user_can('manage_options')) {
+            wp_die(esc_html__('Sorry, you are not allowed to access this page.', 'wp-slimstat'));
+        }
+        check_admin_referer('slimstat_retry_upgrade');
+        wp_slimstat_admin::update_tables_and_options();
+        $this->manager->forgetProbe();
+    }
 
 	public function enqueueAssets(): void
 	{
 		global $parent_file, $submenu_file;
+        // Refresh only on the explicit Migration screen; old cached offers can hide a new repair.
+        $this->manager->forgetProbe();
 		if (!empty(wp_slimstat_admin::$main_menu_slug)) {
 			$parent_file = wp_slimstat_admin::$main_menu_slug;
 			$submenu_file = 'slimstat_migration'; // highlight Migration submenu
@@ -126,7 +143,7 @@ class MigrationAdmin
 				'inProgress' => __('In progress…', 'wp-slimstat'),
 				'done' => __('Done', 'wp-slimstat'),
 				'failed' => __('Failed', 'wp-slimstat'),
-				'allFinished' => __('✓ Database is up to date', 'wp-slimstat'),
+				'allFinished' => __('Required migrations are complete. Reload this page to verify column repairs.', 'wp-slimstat'),
 				// S7 error paths. Hardcoding these in migration.js would have been an i18n
 				// regression in a file where every other string is translated.
 				'notComplete' => __('The migration did not complete. Nothing further has been run.', 'wp-slimstat'),
@@ -206,6 +223,10 @@ class MigrationAdmin
 			wp_die(esc_html__('Sorry, you are not allowed to access this page.', 'wp-slimstat'));
 		}
 
+        $counter_initialized = VisitIdGenerator::isInitialized();
+        $stored_settings = is_network_admin() ? get_site_option('slimstat_options', []) : get_option('slimstat_options', []);
+        $upgrade_pending = ($stored_settings['version'] ?? '') !== SLIMSTAT_ANALYTICS_VERSION;
+
 		// Nothing owed AND nothing offered — only then is there no page to show. Testing the
 		// required set alone redirected the admin away from the one screen an optional
 		// migration can be started from.
@@ -221,6 +242,13 @@ class MigrationAdmin
 		// how a wrong one survives review.
 		$offered_migrations = $this->manager->getOfferedMigrations();
 		$has_required_migrations = !empty($required_migrations);
+        $column_drift = wp_slimstat_admin::observe_column_drift();
+        foreach ($this->manager->getMigrations() as $migration) {
+            if (!$migration->isOptional() && method_exists($migration, 'probeUnavailable') && $migration->probeUnavailable()) {
+                $column_drift = null;
+                break;
+            }
+        }
 		// MyISAM has no online index build: each step locks the table for writes while it runs.
 		// Required steps write to both tables tracking writes to (idx_events_notes_dt is on slim_events).
 		$db = MigrationService::analyticsConnection();
@@ -253,36 +281,13 @@ class MigrationAdmin
 			return;
 		}
 
-		$url = esc_url(admin_url('admin.php?page=slimstat_migration'));
-		$nonce = wp_create_nonce('slimstat_migration_dismiss');
-		$extra_class = 'slimstat-migration-notice-show'; // Always show if checks pass
-        $diag = $this->getRequiredDiagnostics();
-
-        echo '<div class="notice slimstat-notice notice-info notice-alt slimstat-migration-notice ' . esc_attr($extra_class) . '" data-nonce="' . esc_attr($nonce) . '" role="region" aria-label="' . esc_attr__('SlimStat Database Migration', 'wp-slimstat') . '">';
-        echo '<h2>' . esc_html__('SlimStat database migration required', 'wp-slimstat') . '</h2>';
-        echo '<p>' . esc_html__('SlimStat requires a database update. Reports that depend on the pending schema remain unavailable until it completes. Back up your database first.', 'wp-slimstat') . '</p>';
-
-        if ($diag !== []) {
-            echo '<details>';
-            echo '<summary>' . esc_html__('Technical details', 'wp-slimstat') . '</summary>';
-            echo '<ul>';
-            foreach ($diag as $row) {
-                $icon = $row['exists'] ? 'yes' : 'warning';
-                echo '<li>';
-                echo '<span class="dashicons dashicons-' . esc_attr($icon) . '"></span>';
-                echo '<code>' . esc_html($row['key']) . '</code>';
-                echo '<span class="details-col-desc">(' . esc_html($row['columns']) . ')</span>';
-                echo '</li>';
-            }
-
-            echo '</ul>';
-            echo '</details>';
-        }
-
-        echo '<p class="wp-core-ui">';
-        echo '<a href="' . esc_url($url) . '" class="button button-primary">' . esc_html__('Start Migration', 'wp-slimstat') . '</a>';
-        echo '</p>';
-        echo '</div>';
+        \wp_slimstat_admin::show_dismissible_notice(
+            'migration', hash('sha256', $this->manager->migrationSetFingerprint()),
+            '<strong>' . esc_html__('SlimStat database migration required', 'wp-slimstat') . '</strong> ' .
+            esc_html__('SlimStat requires a database update. Reports that depend on the pending schema remain unavailable until it completes. Back up your database first.', 'wp-slimstat'),
+            [[__('Start Migration', 'wp-slimstat'), admin_url('admin.php?page=slimstat_migration'), false]],
+            'info'
+        );
 	}
 
 	public function ajaxRunMigrations(): void
@@ -389,7 +394,7 @@ class MigrationAdmin
 			}
 
 			// Check if all migrations are now complete
-			$all_complete = !$this->manager->needsMigration();
+			$all_complete = !in_array(false, $result, true) && [] === $this->manager->getRequiredMigrations();
 		} finally {
 			$analytics->suppress_errors($suppressed);
 		}
@@ -397,20 +402,10 @@ class MigrationAdmin
 		wp_send_json_success([
 			'results' => $result,
 			'all_complete' => $all_complete,
-			'message' => $all_complete ? __('✓ Database is up to date', 'wp-slimstat') : __('Migrations completed, but some may still be needed.', 'wp-slimstat')
+			'message' => $all_complete ? __('Required migrations are complete. Reload this page to verify column repairs.', 'wp-slimstat') : __('Migrations completed, but some may still be needed.', 'wp-slimstat')
 		]);
 	}
 
-	public function ajaxDismiss(): void
-	{
-		check_ajax_referer('slimstat_migration_dismiss');
-		if (!current_user_can('manage_options')) {
-			wp_send_json_error(__('Permission denied', 'wp-slimstat'));
-		}
-
-		$this->manager->dismissNotice();
-		wp_send_json_success();
-	}
 
 	/**
 	 * Reset migration dismissal for testing purposes.

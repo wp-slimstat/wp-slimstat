@@ -5,10 +5,7 @@
  * does not regress admin page load times. The method uses a 60s
  * transient cache, so only the first request per minute should hit DB.
  *
- * Note: k6 has known cookie-handling limitations with localhost
- * that prevent reliable auth-state verification. Use the Playwright
- * E2E spec (adminbar-chart-consistency.spec.ts) for functional
- * assertions including chart data comparison.
+ * Chart data comparisons are covered by adminbar-chart-consistency.spec.ts.
  *
  * Run: k6 run tests/perf/adminbar-chart-perf.js
  */
@@ -21,6 +18,7 @@ import { BASE_URL, credentials } from './lib/env.js';
 const adminPageDuration = new Trend('admin_page_duration_ms', true);
 
 export const options = {
+  noCookiesReset: true, // Login is retained once per virtual user.
   scenarios: {
     admin_load: {
       executor: 'constant-vus',
@@ -29,6 +27,7 @@ export const options = {
     },
   },
   thresholds: {
+    checks: ['rate==1'],
     http_req_failed: ['rate<0.05'],
     http_req_duration: ['p(95)<5000'],
     admin_page_duration_ms: ['p(95)<4000'],
@@ -47,6 +46,7 @@ const ADMIN_PAGES = [
 
 let loggedIn = false;
 
+/** Authenticate once per VU; noCookiesReset keeps the session across iterations. */
 function ensureLogin() {
   if (loggedIn) return;
   http.get(`${BASE_URL}/wp-login.php`);
@@ -60,6 +60,7 @@ function ensureLogin() {
   loggedIn = true;
 }
 
+/** Measure authenticated reports and reject login-page redirects masquerading as HTTP 200. */
 export default function () {
   ensureLogin();
 
@@ -72,6 +73,7 @@ export default function () {
 
   check(res, {
     'status 200': (r) => r.status === 200,
+    'still authenticated': (r) => !r.url.includes('/wp-login.php'),
     'no Fatal error': (r) => !r.body.includes('Fatal error'),
     'no PHP warnings': (r) => !(/PHP Warning:.*\.php/).test(r.body),
     'response not empty': (r) => r.body.length > 500,

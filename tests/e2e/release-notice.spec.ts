@@ -68,7 +68,8 @@ test.describe('6.0 release notice', () => {
       await page.goto(url);
       await expect(notice(page)).toHaveCount(1);
       await expect(notice(page)).toContainText(core ? 'SlimStat 6 is here.' : 'New in SlimStat 6');
-      for (const slug of ['slimview5','slimheatmap','slimshortcodes']) await expect(notice(page).locator(`a[href$="page=${slug}"]`)).toBeVisible();
+      for (const slug of ['slimai','slimview5','slimheatmap','slimshortcodes']) await expect(notice(page).locator(`a[href$="page=${slug}"]`)).toBeVisible();
+      await expect(notice(page).locator(core ? '.slimstat-ai-spotlight a.button-primary[href$="page=slimai"]' : 'a.slimstat-release-bar__ai[href$="page=slimai"]')).toBeVisible();
       await expect(notice(page).getByRole('link', { name: 'Explore Pro', exact: true })).toHaveCount(pro || core ? 0 : 1);
     }
     const anchored = Number(await meta(admin,ANCHOR));
@@ -147,6 +148,7 @@ test.describe('6.0 release notice', () => {
   });
   test('Pro opens available features without a purchase action', async ({ page }) => {
     await requireProBooted(page); await simulateUpdate(page); await page.goto(PAGES[2]);
+    await expect(notice(page).getByRole('link',{ name:'Open AI Analysis' })).toBeVisible();
     await expect(notice(page).getByRole('link',{ name:'Open Heatmaps' })).toBeVisible();
     await expect(notice(page).locator('a[href*="page=slimpro"]')).toHaveCount(0);
   });

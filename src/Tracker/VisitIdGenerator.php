@@ -34,11 +34,8 @@ class VisitIdGenerator
      */
     public static function generateNextVisitId(): int
     {
-        // Frontend tracking may precede the admin-only upgrade. Repair legacy
-        // counters before allocating; current-version requests retain the one-query path.
-        if (defined('SLIMSTAT_ANALYTICS_VERSION') && isset(\wp_slimstat::$settings['version'])
-            && SLIMSTAT_ANALYTICS_VERSION !== \wp_slimstat::$settings['version']
-            && self::repairMarker() !== get_option(self::REPAIR_MARKER_OPTION)
+        // A database switch needs a new seed even when the plugin is up to date.
+        if (self::repairMarker() !== get_option(self::REPAIR_MARKER_OPTION)
             && self::initializeCounter() < 0) {
             return 0;
         }
@@ -81,7 +78,7 @@ class VisitIdGenerator
         global $wpdb;
         $added = $wpdb->query($wpdb->prepare(
             "INSERT INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %d, %s)
-            ON DUPLICATE KEY UPDATE option_value = GREATEST(CAST(option_value AS UNSIGNED), CAST(VALUES(option_value) AS UNSIGNED))",
+            ON DUPLICATE KEY UPDATE option_value = IF(LEFT(TRIM(option_value), 1) = '-', VALUES(option_value), GREATEST(CAST(option_value AS UNSIGNED), CAST(VALUES(option_value) AS UNSIGNED)))",
             self::OPTION_NAME,
             $initial_value,
             'no'
@@ -94,7 +91,7 @@ class VisitIdGenerator
         }
 
         $counter = (int) get_option(self::OPTION_NAME, $initial_value);
-        update_option(self::REPAIR_MARKER_OPTION, self::repairMarker(), false);
+        update_option(self::REPAIR_MARKER_OPTION, self::repairMarker(), true);
 
         return $counter;
     }
@@ -110,6 +107,15 @@ class VisitIdGenerator
     public static function getCurrentCounter(): int
     {
         return (int) get_option(self::OPTION_NAME, 0);
+    }
+
+    /** Read-only evidence that initialization completed for this dataset and version. */
+    public static function isInitialized(): bool
+    {
+        $counter = get_option(self::OPTION_NAME, false);
+        return (is_int($counter) || is_string($counter)) && ctype_digit((string) $counter)
+            && (float) $counter < 4294967295
+            && self::repairMarker() === get_option(self::REPAIR_MARKER_OPTION);
     }
 
     /**
@@ -135,9 +141,10 @@ class VisitIdGenerator
     private static function repairMarker(): string
     {
         $db    = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
-        $table = $db->prefix . 'slim_stats';
+        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
         return hash('sha256', implode('|', [
+            'v2', // Refresh old non-autoloaded markers once.
             (string) $db->dbhost,
             (string) $db->dbname,
             $table,
@@ -186,7 +193,7 @@ class VisitIdGenerator
         // Lines 73/182 stay on global $wpdb — they query wp_options (always main WP DB).
         $stats_db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
 
-        $table = $stats_db->prefix . 'slim_stats';
+        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
         $max_visit_id = $stats_db->get_var("SELECT COALESCE(MAX(visit_id), 0) FROM `{$table}`");
         if (null === $max_visit_id || !ctype_digit((string) $max_visit_id)) {
@@ -223,14 +230,8 @@ class VisitIdGenerator
             $message .= ' ' . $reason;
         }
 
-        if (class_exists('\wp_slimstat')) {
+        if (Utils::recordDiagnostic('slimstat_tracker_error', $message)) {
             \wp_slimstat::log($message, 'error');
-            return;
-        }
-
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Diagnostic logging is guarded by WP_DEBUG; normal production requests do not log here.
-            error_log('[WP SLIMSTAT] [ERROR]: ' . $message);
         }
     }
 }

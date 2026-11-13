@@ -8,10 +8,11 @@ function check($ok, $message) { if (!$ok) { throw new RuntimeException($message)
 function __($text, $domain = '') { return $text; }
 function esc_html__($text, $domain = '') { return esc_html($text); }
 function esc_attr_e($text, $domain = '') { echo esc_attr($text); }
-function esc_html($text) { return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8'); }
+// Match WordPress: recognized entities are not double-encoded.
+function esc_html($text) { return htmlspecialchars((string) $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', false); }
 function esc_attr($text) { return esc_html($text); }
 function esc_attr__($text, $domain = '') { return esc_attr($text); }
-function esc_textarea($text) { return esc_html($text); }
+function esc_textarea($text) { return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8'); }
 function esc_url($text) { return esc_attr($text); }
 function wp_kses_post($text) { return strip_tags($text, '<li><a><strong><p>'); }
 function sanitize_text_field($text) { return strip_tags($text); }
@@ -26,6 +27,7 @@ class wp_slimstat {
     public static $wpdb;
     public static $settings = [];
     public static function pro_is_installed() { return false; }
+    public static function pro_plugin_active() { return false; }
     public static function update_option(...$args) { $GLOBALS['writes']++; }
     public static function get_fresh_defaults() { return []; }
 }
@@ -129,7 +131,7 @@ function get_option($name, $default = []) { return $GLOBALS['saved_filters_fixtu
 class wp_slimstat_reports { public static function fs_url($filters) { return '/admin?filter="onmouseover="attack'; } }
 $admin = file_get_contents(__DIR__ . '/../admin/index.php');
 $methods = '';
-foreach (['wp_slimstat_userdefined_stylesheet' => '', 'add_column_header' => '$_columns = []', 'add_post_column' => '$_column_name, $_post_id', 'show_message' => '$_message = "", $_type = "info", $_dismiss_handle = ""'] as $name => $args) {
+foreach (['wp_slimstat_userdefined_stylesheet' => '', 'add_column_header' => '$_columns = []', 'add_post_column' => '$_column_name, $_post_id', 'show_message' => '$_message = "", $_type = "info", $_dismiss_handle = ""', 'is_valid_saved_filter' => '$label, $details', 'saved_filter_display_html' => '$label, $operator, $encoded_value'] as $name => $args) {
     $methods .= 'public static function ' . $name . '(' . $args . ') {' . slimstat_function_body($admin, $name) . '}';
 }
 function get_post($id) { return null; }
@@ -153,9 +155,17 @@ $handler = slimstat_function_body($admin, 'manage_filters');
 $start = strpos($handler, '$new_filter =');
 $end = strpos($handler, '// Check if this filter is already saved', $start);
 check($start !== false && $end !== false, 'saved filter validation missing');
-$validation = substr($handler, $start, $end - $start);
-foreach (['null', 'false', '"scalar"', '{broken', '[]', '{"resource":["equals",[]]}'] as $bad) {
-    $_POST = ['filter_array' => $bad];
+$validation = str_replace('self::', 'SlimstatAdminRenderProbe::', substr($handler, $start, $end - $start));
+wp_slimstat_db::$all_columns_names = ['resource' => ['Permalink', 'varchar'], 'content_id' => ['Content ID', 'int'], 'no_filter_selected_2' => ['', 'none'], 'interval' => ['Interval', 'int'], 'strtotime' => [0, 'int'], 'utm_campaign' => ['Campaign', 'varchar']];
+wp_slimstat_db::$operator_names = ['equals' => 'equals', 'contains' => 'contains', 'is_empty' => 'is empty'];
+check('strtotime equals 2026-01-15' === SlimstatAdminRenderProbe::saved_filter_display_html('strtotime', 'equals', '2026-01-15'), 'saved date filter lost its column name');
+// The label and operator are listed back in Saved Filters, so only known ones are kept.
+$unknown_label = json_encode(['<img src=x>' => ['equals', 'a']]);
+$unsafe_addon_label = json_encode(['addon_<img src=x>' => ['equals', 'a']]);
+$placeholder_label = json_encode(['no_filter_selected_2' => ['equals', 'a']]);
+$unknown_operator = json_encode(['resource' => ['<b>attack</b>', 'a']]);
+foreach (['null', 'false', '"scalar"', '{broken', '[]', '{"resource":["equals",[]]}', $unknown_label, $unsafe_addon_label, $placeholder_label, $unknown_operator, '{"resource":["equals",""]}', '{"interval":["is_empty",""]}', '{"resource":["equals","%20"]}', '{"resource":["equals","+"]}', '{"resource":["equals","&&&"]}', json_encode(['resource' => ['equals', "\nX"]]), json_encode(['utm_campaign' => ['equals', "\nX"]]), '{"resource":["equals","%0AX"]}', '{"strtotime":["equals","not-a-date"]}', '{"utm_campaign":["equals","<b>"]}', '{"utm_campaign":["equals","<script>x</script>"]}'] as $bad) {
+    $_POST = ['filter_array' => addslashes($bad)]; // WordPress supplies slashed request values, including JSON escapes.
     try { eval($validation); throw new RuntimeException('malformed filter accepted: ' . $bad); }
     catch (LogicException $error) { check($error->getMessage() === 'Invalid filter data.', 'wrong filter rejection'); }
 }
@@ -163,12 +173,43 @@ $filter = ['resource' => ['contains', '<tag> & "literal"'], 'content_id' => ['eq
 $_POST = ['filter_array' => addslashes(json_encode($filter))];
 eval($validation);
 check($new_filter === $filter, 'valid saved filter values changed during JSON parsing');
-echo "PASS: admin CSS, headers, links and notices escape by context; malformed saved filters refused; valid filter JSON preserved\n";
+$addon_filter = ['addon_ecommerce_currency' => ['equals', 'USD']];
+$_POST = ['filter_array' => json_encode($addon_filter)];
+eval($validation);
+check($new_filter === $addon_filter, 'machine-safe add-on filter rejected');
+$special_value      = 'A&B + %20 = x &&& y "quoted" &amp; \\ literal';
+$encoded_value      = htmlentities($special_value, ENT_QUOTES, 'UTF-8');
+$saved_filter_html  = SlimstatAdminRenderProbe::saved_filter_display_html('resource', 'equals', $encoded_value);
+check('permalink equals ' . $encoded_value === $saved_filter_html, 'saved-filter display changed literal entity text');
+check(strpos($saved_filter_html, '&amp;amp;') !== false, 'literal &amp; text would be decoded by the browser');
+$saved_xss_html = SlimstatAdminRenderProbe::saved_filter_display_html('resource', 'equals', htmlentities('<img src=x onerror=alert(1)>', ENT_QUOTES, 'UTF-8'));
+check(strpos($saved_xss_html, '&lt;img src=x onerror=alert(1)&gt;') !== false && strpos($saved_xss_html, '<img') === false, 'saved-filter value is not inert text');
+echo "PASS: admin CSS, headers, links and notices escape by context; malformed or unknown saved filters refused; valid filter JSON preserved\n";
+
+$list_start = strpos($handler, 'echo \'<div id="slim_filters_overlay">\'');
+$list_end = strrpos($handler, 'break;');
+check($list_start !== false && $list_end > $list_start, 'saved-filter list boundary missing');
+$listing = str_replace('self::', 'SlimstatAdminRenderProbe::', substr($handler, $list_start, $list_end - $list_start));
+foreach ([['unknown' => ['equals', 'x']], ['resource' => ['equals', '/allowed'], 'unknown' => ['equals', 'x']], [], 'malformed', ['resource' => ['equals', '']], ['interval' => ['is_empty', '']], ['resource' => ['equals', '%20']], ['resource' => ['equals', '+']], ['resource' => ['equals', '&&&']], ['resource' => ['equals', "\nX"]], ['utm_campaign' => ['equals', "\nX"]], ['strtotime' => ['equals', 'not-a-date']], ['utm_campaign' => ['equals', '<b>']], ['resource' => ['equals', '/restricted'], 'utm_campaign' => ['equals', '<script>x</script>']]] as $legacy) {
+    $saved_filters = [17 => $legacy];
+    ob_start(); eval($listing); $listed = ob_get_clean();
+    check(strpos($listed, 'slimstat-filter-link') === false, 'invalid saved entry became a partial or empty apply link');
+    check(strpos($listed, 'data-filter-id="17"') !== false, 'invalid saved entry cannot be deleted by its original ID');
+    check($saved_filters === [17 => $legacy], 'listing rewrote stored filter data');
+}
+$saved_filters = [17 => $filter];
+ob_start(); eval($listing); $listed = ob_get_clean();
+check(substr_count($listed, 'slimstat-filter-link') === 1, 'valid saved filter lost its apply link');
+echo "PASS: invalid saved entries stay intact and deletable, without partial or empty apply links\n";
 
 function is_admin() { return true; }
-class wp_slimstat_db { public static $debug_message = ''; }
+class wp_slimstat_db { public static $debug_message = ''; public static $all_columns_names = []; public static $operator_names = []; public static $valueless_operators = ['is_empty', 'is_not_empty']; public const NON_COLUMN_FILTER_KEYS = ['interval']; }
+if (!defined('ABSPATH')) {
+    define('ABSPATH', dirname(__DIR__) . '/');
+}
+require_once __DIR__ . '/../src/Reports/ReportData.php';
 $reports = file_get_contents(__DIR__ . '/../admin/view/wp-slimstat-reports.php');
-eval('class SlimstatSummaryProbe { public static function raw_results_to_html($_args = []) {' . slimstat_function_body($reports, 'raw_results_to_html') . '} }');
+eval('class SlimstatSummaryProbe { public static function raw_results_to_html($_args = []) {' . slimstat_function_body($reports, 'raw_results_to_html') . '} private static function render_raw_data(array $_args, array $all_results) {' . slimstat_function_body($reports, 'render_raw_data') . '} }');
 wp_slimstat::$settings['async_load'] = 'no';
 ob_start();
 SlimstatSummaryProbe::raw_results_to_html(['columns' => '', 'raw' => static function () {
@@ -177,42 +218,6 @@ SlimstatSummaryProbe::raw_results_to_html(['columns' => '', 'raw' => static func
 $summary = ob_get_clean();
 check(strpos($summary, '<script>') === false && strpos($summary, '<strong>Visits</strong>') !== false, 'summary branches must filter markup without removing formatting');
 echo "PASS: summary metric, value and details use contextual HTML filtering (real WordPress KSES control in reports-output-escaping-test.php)\n";
-
-// The legacy add-on list is a separate remote-data and license-write boundary.
-function esc_html_e($text, $domain = '') { echo esc_html($text); }
-function sanitize_title($text) { return strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', $text)); }
-function get_transient($key) { return $GLOBALS['addon_response']; }
-function wp_remote_retrieve_body($response) { return is_array($response) && isset($response['body']) ? $response['body'] : ''; }
-function is_plugin_active($plugin) { return false; }
-if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
-$addons = file_get_contents(__DIR__ . '/../admin/view/addons.php');
-$start = strpos($addons, '// Update license keys');
-$end = strpos($addons, '$response      =', $start);
-$license_boundary = substr($addons, $start, $end - $start);
-$_POST = ['licenses' => ['wp-slimstat-addon' => 'key'], 'slimstat_update_licenses' => 'valid'];
-$GLOBALS['allowed'] = false;
-$GLOBALS['writes'] = 0;
-try { eval($license_boundary); throw new RuntimeException('unauthorized license write accepted'); }
-catch (LogicException $error) { check($GLOBALS['writes'] === 0, 'unauthorized license write executed'); }
-$GLOBALS['allowed'] = true;
-foreach ([['../outside' => 'key'], ['wp-addon' => ['nested']]] as $bad) {
-    $_POST['licenses'] = $bad;
-    try { eval($license_boundary); throw new RuntimeException('malformed license data accepted'); }
-    catch (LogicException $error) { check($GLOBALS['writes'] === 0, 'invalid license write executed'); }
-}
-$_POST = [];
-$_GET = [];
-$_SERVER['REQUEST_URI'] = '/admin?page=slimaddons';
-$GLOBALS['addon_response'] = ['body' => json_encode([['slug' => 'wp-addon', 'name' => '<script>name</script>', 'download_url' => '/addon', 'description' => '<strong>Keep</strong>', 'price' => '<script>price</script>', 'version' => '<script>version</script>']])];
-ob_start(); include __DIR__ . '/../admin/view/addons.php'; $addon_html = ob_get_clean();
-check(strpos($addon_html, '<script>') === false && strpos($addon_html, '&lt;script&gt;price') !== false, 'remote add-on metadata not escaped');
-check(strpos($addon_html, '<strong>Keep</strong>') !== false, 'remote add-on description formatting lost');
-foreach ([(object) ['error' => 'network failure'], ['body' => '{bad'], ['body' => '[{"slug":"../outside"}]']] as $bad) {
-    $GLOBALS['addon_response'] = $bad;
-    ob_start(); include __DIR__ . '/../admin/view/addons.php'; $addon_html = ob_get_clean();
-    check(strpos($addon_html, 'slimstat-addons') === false, 'malformed remote response rendered as valid list');
-}
-echo "PASS: legacy license writes authorized and validated; remote add-on metadata escaped; malformed remote responses fail closed\n";
 
 // The external-page code must be copyable JavaScript, not literal backslash-n text.
 function admin_url($path, $scheme = null) { return ($scheme === 'relative' ? '/wp-admin/' : 'https://example.test/wp-admin/') . $path; }

@@ -7,6 +7,38 @@ use WpSlimstat\Tests\Unit\WpSlimstatTestCase;
 
 class UtilsTest extends WpSlimstatTestCase
 {
+    public function test_forwarded_headers_require_a_trusted_connecting_peer(): void
+    {
+        $this->stubCommonWpFunctions();
+        $saved = $_SERVER;
+        try {
+            $_SERVER = ['REMOTE_ADDR' => '8.8.8.8', 'HTTP_X_FORWARDED_FOR' => '1.1.1.1',
+                'HTTP_CF_RAY' => 'forged', 'HTTP_CF_CONNECTING_IP' => '1.1.1.1'];
+            $this->assertSame(['8.8.8.8', ''], \SlimStat\Tracker\Utils::getRemoteIp());
+            $this->assertSame(['8.8.8.8', ''], \SlimStat\Tracker\Tracker::_get_remote_ip());
+            $geo = (new \ReflectionClass(\SlimStat\Services\GeoService::class))->newInstanceWithoutConstructor();
+            $this->assertSame('8.8.8.8', $geo->getUserIP());
+            $this->assertNull(\SlimStat\Tracker\Utils::getCfClientIp());
+            foreach (['173.245.48.1', '2606:4700::1'] as $edge) {
+                $_SERVER['REMOTE_ADDR'] = $edge;
+                $this->assertSame('1.1.1.1', \SlimStat\Tracker\Utils::getCfClientIp());
+                $this->assertSame([$edge, '1.1.1.1'], \SlimStat\Tracker\Utils::getRemoteIp());
+            }
+            $_SERVER['REMOTE_ADDR'] = '173.245.64.1'; // Just outside the /20.
+            $this->assertNull(\SlimStat\Tracker\Utils::getCfClientIp());
+            $_SERVER['REMOTE_ADDR'] = '10.0.0.1';
+            $_SERVER['HTTP_X_FORWARDED_FOR'] = '1.1.1.1, 8.8.8.8, 10.0.0.2';
+            \Brain\Monkey\Filters\expectApplied('slimstat_trusted_proxy')->andReturnUsing(static function ($trusted, $ip) {
+                return in_array($ip, ['10.0.0.1', '10.0.0.2'], true);
+            });
+            $this->assertSame(['10.0.0.1', '8.8.8.8'], \SlimStat\Tracker\Utils::getRemoteIp());
+            $this->assertSame(['10.0.0.1', '8.8.8.8'], \SlimStat\Tracker\Tracker::_get_remote_ip());
+            $this->assertSame('8.8.8.8', $geo->getUserIP());
+        } finally {
+            $_SERVER = $saved;
+        }
+    }
+
     /** @test */
     public function test_dtrPton_returns_empty_string_for_empty_input(): void
     {

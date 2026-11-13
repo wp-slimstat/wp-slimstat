@@ -6,8 +6,9 @@ rationale: Restores the Query converter get_results() carried for years - the re
 ---
 --- a/admin/view/wp-slimstat-db.php
 +++ b/admin/view/wp-slimstat-db.php
-@@ -586,6 +586,37 @@
+@@ -600,7 +600,38 @@
              if (false !== $cached_results) {
+                 Query::recordSqlDebug($_sql, '', true);
                  return $cached_results;
              }
 +

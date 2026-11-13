@@ -178,9 +178,7 @@ class Processor
         // Store original IP for GeoIP lookup (before hashing)
         $originalIpForGeo = !empty($stat['other_ip']) ? $stat['other_ip'] : $stat['ip'];
 
-        // Cloudflare: prefer CF-Connecting-IP for geolocation when request is verified
-        // as coming through CF (CF-Ray header present). This handles the edge case where
-        // mod_remoteip restores real IP to REMOTE_ADDR but other_ip picks up the CF edge IP.
+        // Only a verified Cloudflare edge may supply the visitor address.
         $cfIp = Utils::getCfClientIp();
         if ($cfIp) {
             $originalIpForGeo = $cfIp;
@@ -226,6 +224,8 @@ class Processor
             Query::setProcessingTimestamp(null);
             return Utils::logError(305);
         }
+        // Acquisition was extracted above; exclusions still see the original resource.
+        $stat['resource'] = Utils::normalizeResourceParameters($stat['resource']);
 
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
         $http_referer = $_SERVER['HTTP_REFERER'] ?? '';
@@ -469,7 +469,7 @@ class Processor
         \wp_slimstat::set_stat($stat);
         // If this is a consent upgrade request, only force assignment if no cookie exists
         // If cookie exists, use it to maintain session continuity
-        $forceVisitIdAssign = false;
+        $forceVisitIdAssign = 'on' !== (\wp_slimstat::$settings['javascript_mode'] ?? 'on');
         if ($isConsentUpgrade && !isset($_COOKIE['slimstat_tracking_code'])) {
             // No cookie exists, force assignment to create new visit_id and set cookie
             $forceVisitIdAssign = true;
@@ -883,7 +883,8 @@ class Processor
             $stat = \wp_slimstat::get_stat();
             $stat['content_type'] = 'redirect:' . intval($status);
             \wp_slimstat::set_stat($stat);
-            Storage::updateRow($stat);
+            // Login hooks or concurrent requests may have enriched the stored row.
+            Storage::updateRow(['id' => $stat['id'] ?? 0, 'content_type' => $stat['content_type']]);
         }
 
         return $status;

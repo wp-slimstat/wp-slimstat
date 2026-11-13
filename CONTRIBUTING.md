@@ -64,7 +64,7 @@ Use sparingly — most violations should be fixed, not exempted.
    — must run on 7.4 lane).
 2. Use `exit(1)` on failure, print a clear actionable error to stderr.
 3. Mirror the file-walker pattern from `tests/php-implicit-nullable-test.php`
-   (uses `RecursiveDirectoryIterator` + prunes `src/Dependencies/`).
+   (uses `RecursiveDirectoryIterator` + prunes `vendor-prefixed/`).
 4. Register the script in `composer.json` under `scripts` as
    `test:your-name`.
 5. Add it to the `test:source-level` aggregator, and `test:all` will
@@ -151,10 +151,10 @@ developers.
 
 ## Static analysis — the PHPStan baseline, disclosed
 
-`composer phpstan` runs PHPStan at level 5 over own code (`src/Dependencies` is excluded — it
+`composer phpstan` runs PHPStan at level 5 over own code (`vendor-prefixed` is excluded — it
 is vendored, WP-Scoper output). Errors that predate the analysis are parked in
 `phpstan-baseline.neon`, and that file is a **migration tool, not a permission**: it holds
-**160 entries suppressing 312 errors**, and `tests/phpstan-baseline-ratchet-test.php` fails the
+**160 entries suppressing 311 errors**, and `tests/phpstan-baseline-ratchet-test.php` fails the
 build if either number differs from `tests/PHPSTAN-BASELINE-CEILING` or if the ceiling is ever
 raised. Fixing a baselined error means lowering the ceiling in the same commit; regenerating the
 baseline to absorb a new error is exactly what the gate exists to refuse.
@@ -164,3 +164,7 @@ Why the disclosure lives here and not only in the config: `phpstan.neon.dist` se
 the throwaway analysis one, so some entries legitimately do not recur), and the consequence is
 that a fixed error leaves a dead entry behind with nothing to say so. The two numbers above are
 the literal values the gate checks, so this paragraph goes stale visibly rather than silently.
+
+## Plugin Check review
+
+Run Plugin Check against the built ZIP and retain the unfiltered report. The `trademarked_term` finding on `wp-slimstat.php` concerns the existing `wp-slimstat` directory slug (https://wordpress.org/plugins/wp-slimstat/). Keep this installed identity and text domain so existing sites retain updates and translations. Do not rename the plugin to satisfy the new-submission slug check. Review every additional finding independently; this explanation is not a blanket exclusion.

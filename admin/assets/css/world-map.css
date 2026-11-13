@@ -1,0 +1,234 @@
+/*
+ * Audience Location (slim_p6_01): the report screen, the WordPress Dashboard widget and the
+ * [slimstat f='widget' w='slim_p6_01'] shortcode all load this file with the map scripts
+ * (wp_slimstat_reports::enqueue_world_map_assets), so every rule is scoped to the report.
+ */
+
+/* The report body grows with the map. #dashboard-widgets beats the Dashboard's fixed widget height. */
+#slim_p6_01 .inside,
+#dashboard-widgets #slim_p6_01 .inside {
+    height: auto;
+    max-height: none;
+    container: slimstat-map / inline-size;
+}
+
+/* Map first, Top Countries underneath; beside it at the inline end (right in LTR) when the box is wide. */
+#slim_p6_01 .map-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 0 20px 20px;
+}
+
+@container slimstat-map (min-width: 720px) {
+    #slim_p6_01 .map-container {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) clamp(240px, 30%, 380px);
+        gap: 40px;
+        align-items: start;
+    }
+}
+
+#slim_p6_01 .slimstat-map-area {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* jsVectorMap sizes the drawing from this box, so the box needs a definite height. The world map is about 2:1. */
+#map_slim_p6_01 {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 2 / 1;
+    max-height: 540px;
+    overflow: hidden;
+    touch-action: none;
+}
+
+#map_slim_p6_01 .jvm-zoom-btn {
+    position: absolute;
+    left: 10px;
+    box-sizing: border-box;
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    background-color: #2b2b2b;
+    color: #ffffff;
+    line-height: 18px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+#map_slim_p6_01 .jvm-zoomin {
+    top: 10px;
+}
+
+#map_slim_p6_01 .jvm-zoomout {
+    top: 34px;
+}
+
+/* The tooltip is appended to <body>; the map script tags it with this class when it first shows. */
+.slimstat-map-tooltip {
+    display: none;
+    position: absolute;
+    z-index: 999999;
+    max-width: 280px;
+    padding: 10px;
+    border-radius: 8px;
+    background-color: #2b2b2b;
+    box-shadow: 0 2px 4px 0 #0000000a;
+    color: #ffffff;
+    font-size: 1em;
+    line-height: 1.5em;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.slimstat-map-tooltip.active {
+    display: block;
+}
+
+.slimstat-map-tooltip h3 {
+    margin: 0 0 6px;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 100%;
+    letter-spacing: 1px;
+}
+
+.slimstat-map-tooltip p {
+    margin: 0;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 100%;
+    letter-spacing: 1px;
+}
+
+#slim_p6_01 .slimstat-map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 20px;
+    margin-top: 8px;
+    color: #50575e;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#slim_p6_01 .slimstat-map-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Swatches mirror the map: translucent brand dots in three sizes, the country shading as a ramp. */
+#slim_p6_01 .slimstat-map-legend-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+#slim_p6_01 .slimstat-map-legend-dots i {
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: rgba(231, 41, 75, 0.7); /* the marker fill and opacity */
+}
+
+#slim_p6_01 .slimstat-map-legend-dots i + i {
+    width: 10px;
+    height: 10px;
+}
+
+#slim_p6_01 .slimstat-map-legend-dots i + i + i {
+    width: 16px;
+    height: 16px;
+}
+
+#slim_p6_01 .slimstat-map-legend-scale {
+    display: block;
+    width: 48px;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(to right, #c9cedb, #7a839e);
+}
+
+[dir="rtl"] #slim_p6_01 .slimstat-map-legend-scale {
+    background: linear-gradient(to left, #c9cedb, #7a839e);
+}
+
+/* Anchored to the map's id to beat the report body's `.wrap-slimstat .inside p { padding: 10px 25px }`. */
+#map_slim_p6_01 ~ .slimstat-map-hint {
+    margin: 6px 0 0;
+    padding: 0;
+    border: 0;
+    color: #50575e;
+    font-size: 12px;
+}
+
+#slim_p6_01 .top-countries h4 {
+    margin: 0 0 16px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.43px;
+}
+
+/* Flag, then the name over the bar and its share. A grid, so the row mirrors itself in RTL. */
+#slim_p6_01 .country-bar {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    grid-template-areas: "flag name name" "flag bar share";
+    align-items: center;
+    gap: 6px 10px;
+    margin-bottom: 16px;
+    color: var(--ss-text-body, #202224);
+}
+
+#slim_p6_01 .country-flag-container {
+    grid-area: flag;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+#slim_p6_01 .country-flag {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#slim_p6_01 .country-bar > strong {
+    grid-area: name;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+#slim_p6_01 .bar-container {
+    grid-area: bar;
+    height: 8px;
+    border-radius: 4px;
+    background-color: #e5e6e9;
+    overflow: hidden;
+}
+
+#slim_p6_01 .bar-fill {
+    height: 100%;
+    background-color: #e7294b;
+}
+
+#slim_p6_01 .country-bar > span {
+    grid-area: share;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}

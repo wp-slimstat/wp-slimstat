@@ -76,7 +76,7 @@ $sources = array_merge(
     [$plugin_root . '/wp-slimstat.php', $plugin_root . '/uninstall.php'],
     slimstat_own_php_files(
         [$plugin_root . '/src', $plugin_root . '/admin'],
-        $plugin_root . '/src/Dependencies'
+        $plugin_root . '/vendor-prefixed'
     )
 );
 

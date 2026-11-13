@@ -4,24 +4,33 @@ namespace SlimStat\Services;
 
 use SlimStat\Components\Event;
 use SlimStat\Services\Admin\Notification\NotificationFetcher;
+use SlimStat\Services\Admin\MarketingCampaign;
 
 class CronEventManager
 {
 	public function __construct()
 	{
 		Event::schedule('slimstat_daily_cron_hook', time(), 'daily', [$this, 'handleDailyTasks']);
+		Event::schedule('slimstat_notifications_cron_hook', time(), 'hourly', [$this, 'handleInitialFetch']);
+		\add_action('slimstat_notifications_cron_hook', [$this, 'fetchMarketingCampaign']);
 
 		// Register handler for initial fetch event
 		\add_action('slimstat_initial_notification_fetch', [$this, 'handleInitialFetch']);
+		\add_action('slimstat_initial_marketing_campaign_fetch', [$this, 'fetchMarketingCampaign']);
 
 		// Schedule initial fetch if needed (non-blocking)
 		if (\is_admin() || \wp_doing_cron() || (defined('WP_CLI') && WP_CLI)) {
 			$this->maybeScheduleInitialFetch();
+			$state = \get_option(MarketingCampaign::STATE, []);
+			if ('on' === \wp_slimstat::$settings['display_notifications'] && empty($state['last_success'])
+				&& ($state['failures'] ?? 0) < 3 && !\wp_next_scheduled('slimstat_initial_marketing_campaign_fetch')) {
+				\wp_schedule_single_event(max(time(), (int) ($state['next_attempt'] ?? 0)), 'slimstat_initial_marketing_campaign_fetch');
+			}
 		}
 	}
 
 	/**
-	 * Bootstrap once, including a successful empty feed. The daily job refreshes thereafter.
+	 * Bootstrap once, including a successful empty feed. The hourly job refreshes thereafter.
 	 * Uses a transient lock to prevent repeated scheduling and avoid race conditions.
 	 * This defers the HTTP request to avoid blocking the current page load.
 	 */
@@ -71,7 +80,13 @@ class CronEventManager
 		if ('on' === \wp_slimstat::$settings['display_notifications']) {
 			// A late run yesterday must not cause today's scheduled check to skip a day.
 			$this->fetchNotification(true);
+			$this->fetchMarketingCampaign(true);
 		}
+	}
+
+	public function fetchMarketingCampaign($force = false)
+	{
+		(new MarketingCampaign())->fetch($force);
 	}
 
 	private function fetchNotification($force = false)

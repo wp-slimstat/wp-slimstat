@@ -85,4 +85,25 @@ class DateRangeHelperCompatTest extends WpSlimstatTestCase
         $this->assertSame('last_28_days', $range['preset']);
         $this->assertSame(\SlimStat\Components\DateRangeHelper::get_range_by_preset('last_28_days')['start'], $range['start']);
     }
+
+    /** Reports → Heatmaps carries fs[…] date filters, never type or from/to: the picker shows the window the reports query. */
+    public function test_range_follows_the_reports_date_filter(): void
+    {
+        if (!class_exists('wp_slimstat_db', false)) {
+            require_once dirname(__DIR__, 3) . '/admin/view/wp-slimstat-db.php';
+        }
+        \Brain\Monkey\Functions\when('wp_date')->alias(static fn($format, $ts = null) => gmdate($format, $ts ?? time()));
+        $six = \SlimStat\Components\DateRangeHelper::get_range_by_preset('last_6_months');
+        try {
+            \wp_slimstat_db::$filters_normalized['utime'] = ['start' => $six['start'], 'end' => $six['end']];
+            $range = \SlimStat\Components\DateRangeHelper::get_current_date_range();
+            $this->assertSame(['last_6_months', $six['start'], $six['end']], [$range['preset'], $range['start'], $range['end']]);
+
+            \wp_slimstat_db::$filters_normalized['utime'] = ['start' => strtotime('2026-01-05'), 'end' => strtotime('2026-02-10 23:59:59')];
+            $range = \SlimStat\Components\DateRangeHelper::get_current_date_range();
+            $this->assertSame(['custom', strtotime('2026-01-05'), strtotime('2026-02-10 23:59:59')], [$range['preset'], $range['start'], $range['end']]);
+        } finally {
+            unset(\wp_slimstat_db::$filters_normalized['utime']);
+        }
+    }
 }

@@ -328,23 +328,20 @@ class DateRangeHelper
             }
         }
 
-        // Check SlimStat filters - ensure class exists and property is accessible
-        if (class_exists('\wp_slimstat_db') && 
-            isset(\wp_slimstat_db::$filters_normalized['date']) && 
-            !empty(\wp_slimstat_db::$filters_normalized['date'])) {
-            $filters = \wp_slimstat_db::$filters_normalized['date'];
-            
-            if (!empty($filters['strtotime']) && !empty($filters['interval'])) {
-                $end_date = strtotime($filters['strtotime'] . ' 23:59:59'); // Include the full end date
-                $interval_days = abs(intval($filters['interval']));
-                $start_date = $end_date - (($interval_days - 1) * 86400);
-                
-                return [
-                    'start' => $start_date,
-                    'end' => $end_date,
-                    'preset' => self::detect_preset($start_date, $end_date)
-                ];
+        // Tab navigation and saved filters carry fs[day|month|year|interval], never type or from/to.
+        // The reports query the resolved window, so the picker reads it too. utime holds site-local
+        // wall time, which gmdate() prints as the site's calendar day.
+        $utime = class_exists('\wp_slimstat_db') ? (\wp_slimstat_db::$filters_normalized['utime'] ?? []) : [];
+        if (!empty($utime['start']) && !empty($utime['end'])) {
+            $from = gmdate('Y-m-d', (int) $utime['start']);
+            $to   = gmdate('Y-m-d', (int) $utime['end']);
+            foreach (self::get_preset_ranges() as $preset => $range) {
+                if (wp_date('Y-m-d', $range['start']) === $from && wp_date('Y-m-d', $range['end']) === $to) {
+                    return ['start' => $range['start'], 'end' => $range['end'], 'preset' => $preset];
+                }
             }
+
+            return ['start' => strtotime($from), 'end' => strtotime($to . ' 23:59:59'), 'preset' => 'custom'];
         }
 
         return [
@@ -352,26 +349,6 @@ class DateRangeHelper
             'end' => $defaults['end'],
             'preset' => 'last_28_days'
         ];
-    }
-
-    /**
-     * Try to detect which preset matches the given date range
-     */
-    public static function detect_preset($start_timestamp, $end_timestamp)
-    {
-        $ranges = self::get_preset_ranges();
-        
-        foreach ($ranges as $preset => $range) {
-            // Allow some tolerance for time differences (within same day)
-            $start_diff = abs($start_timestamp - $range['start']);
-            $end_diff = abs($end_timestamp - $range['end']);
-            
-            if ($start_diff < 86400 && $end_diff < 86400) {
-                return $preset;
-            }
-        }
-        
-        return 'custom';
     }
 
     /**

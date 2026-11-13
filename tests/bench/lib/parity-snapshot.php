@@ -107,7 +107,14 @@ if ($parity_bucket >= 2) {
     });
 }
 
-$straddling = 'interval equals -30';
+// Older artifacts do not implement the bucket hook. Set the public normalized
+// window after init in BOTH eras; retain its exact bounds in the evidence.
+$pinned_end = (int) (getenv('SLIMSTAT_PARITY_END') ?: (floor(time() / max(1, $parity_bucket)) * max(1, $parity_bucket)));
+if ($pinned_end <= 0 || $pinned_end > time()) {
+    throw new RuntimeException('Invalid pinned capture end');
+}
+$straddling = sprintf('day equals %d&&&month equals %d&&&year equals %d&&&interval equals -30',
+    gmdate('j', $pinned_end), gmdate('n', $pinned_end), gmdate('Y', $pinned_end));
 
 $all_cells = [
     'historical-unfiltered' => $fixed,
@@ -241,6 +248,7 @@ $snapshot = [
     // boundary, so the comparator matches on this resolved value rather than on the bucket
     // size. 0 when unpinned.
     'live_window_end'  => 0,
+    'requested_live_window_end' => $pinned_end,
     'report_ids'       => array_keys($reports),
     'cells'            => [],
 ];
@@ -248,7 +256,7 @@ $snapshot = [
 foreach ($wanted as $cell => $filters) {
     printf("cell %s\n", $cell);
     foreach ($reports as $report_id => $report) {
-        wp_slimstat_db::init($filters);
+        slimstat_bench_prepare_report($report_id, $filters, strpos($cell, 'straddling') === 0 ? $pinned_end : 0);
 
         if (!isset($cell_contexts[$cell])) {
             $cell_contexts[$cell] = [
@@ -267,12 +275,19 @@ foreach ($wanted as $cell => $filters) {
         $html  = '';
         $error = null;
         try {
-            if (empty($report['callback'])) {
+            if (!empty($report['callback'])) {
+                ob_start();
+                wp_slimstat_reports::callback_wrapper(['id' => $report_id]);
+                $html = (string) ob_get_clean();
+            } elseif (in_array($report_id, ['slim_heatmap_01', 'slim_p10_01'], true)
+                && is_callable($report['callback_args']['raw'] ?? null)) {
+                // Only these raw reports have a frontend table-rendering contract.
+                $callback_args = $report['callback_args'];
+                $callback_args['is_widget'] = true;
+                $html = \SlimStat\Shortcodes\Shortcode::table(call_user_func($callback_args['raw'], $callback_args));
+            } else {
                 throw new \RuntimeException('Registered report has no callable callback');
             }
-            ob_start();
-            wp_slimstat_reports::callback_wrapper(['id' => $report_id]);
-            $html = (string) ob_get_clean();
         } catch (\Throwable $e) {
             while (ob_get_level() > 0) {
                 ob_end_clean();
@@ -293,6 +308,8 @@ foreach ($wanted as $cell => $filters) {
         $db->queries = [];
     }
 }
+
+$snapshot['cell_contexts'] = $cell_contexts;
 
 // ── COVERAGE, COMPUTED BEFORE THE FILE IS WRITTEN ──────────────────────────
 //

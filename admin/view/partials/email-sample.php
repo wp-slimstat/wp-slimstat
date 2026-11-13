@@ -25,7 +25,7 @@ $cell = 'padding:8px 0;border-bottom:1px solid #dcdcde;text-align:start;';
             <tbody>
                 <?php foreach ($section['rows'] as $row) : ?>
                     <tr>
-                        <td style="<?php echo esc_attr($cell); ?>word-break:break-all;"><?php echo esc_html($row[$section['column']]); ?></td>
+                        <td style="<?php echo esc_attr($cell); ?>word-break:break-all;"><span dir="auto"><?php echo esc_html($row[$section['column']]); ?></span></td>
                         <td style="<?php echo esc_attr($cell); ?>text-align:end;"><?php echo esc_html(number_format_i18n((int) $row['counthits'])); ?></td>
                     </tr>
                 <?php endforeach; ?>

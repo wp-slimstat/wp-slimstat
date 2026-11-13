@@ -210,7 +210,7 @@ class WriteTerminalTest extends WpSlimstatTestCase
 
         $result = Storage::insertRow(
             // 32 hex chars, as Session actually produces: insertRow() VALIDATES vid_hash
-            // before packing it to BINARY(16) and drops anything else — so the 8-char
+            // before binding it for BINARY(16) and drops anything else — so the 8-char
             // 'deadbeef' this test originally used was discarded before the first INSERT,
             // the intersection had nothing to narrow, and the retry never fired. The test
             // failing on that change was correct behaviour on both sides.
@@ -229,6 +229,26 @@ class WriteTerminalTest extends WpSlimstatTestCase
         $retry = end($this->statements);
         $this->assertStringNotContainsString('vid_hash', $retry, 'the absent column must be dropped from the retry');
         $this->assertStringContainsString('ip', $retry, 'and the present ones must survive it');
+    }
+
+    public function test_binary_identity_is_bound_as_ascii_hex_without_a_schema_probe(): void
+    {
+        $hash = 'ff005c2722deadbeef0123456789abcd';
+        $result = Storage::insertRow(['resource' => '/first-visit', 'vid_hash' => $hash], 'wp_slim_stats');
+        $this->assertTrue($result->isStored());
+        $this->assertCount(1, $this->queries());
+        $this->assertSame(0, $this->probes());
+        $this->assertStringContainsString("UNHEX('" . $hash . "')", $this->queries()[0]);
+        $this->assertDoesNotMatchRegularExpression('/[^\x20-\x7e]/', $this->queries()[0]);
+    }
+
+    public function test_bulk_insert_hex_binding_preserves_other_columns_and_rows(): void
+    {
+        \SlimStat\Utils\Query::insert('wp_slim_stats')->values([
+            ['resource' => '/first', 'vid_hash' => 'ff00'],
+            ['resource' => '/second', 'vid_hash' => 'ab27'],
+        ], ['vid_hash'])->execute();
+        $this->assertSame("INSERT INTO wp_slim_stats (`resource`, `vid_hash`) VALUES ('/first', UNHEX('ff00')), ('/second', UNHEX('ab27'))", $this->queries()[0]);
     }
 
     public function test_the_degradation_is_recorded_once_not_per_hit(): void

@@ -18,6 +18,8 @@ class MigrationNoticeScreenTest extends WpSlimstatTestCase
 {
     private function noticeOn(string $base, string $id): string
     {
+        require_once dirname(__DIR__, 3) . '/admin/index.php';
+        Functions\stubs(['get_current_user_id' => 1, 'get_current_blog_id' => 1, 'get_user_meta' => [], 'wp_kses_post' => static fn($v) => $v, 'wpautop' => static fn($v) => '<p>' . $v . '</p>']);
         Functions\stubTranslationFunctions();
         Functions\stubEscapeFunctions();
         Functions\when('current_user_can')->justReturn(true);
@@ -27,6 +29,7 @@ class MigrationNoticeScreenTest extends WpSlimstatTestCase
 
         $manager = \Mockery::mock(MigrationManager::class);
         $manager->shouldReceive('needsMigration')->andReturn(true);
+        $manager->shouldReceive('migrationSetFingerprint')->andReturn('test-set');
         $manager->shouldReceive('getRequiredMigrations')->andReturn([]);
 
         ob_start();

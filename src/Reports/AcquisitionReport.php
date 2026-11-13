@@ -86,12 +86,10 @@ class AcquisitionReport
         $order = 'counthits DESC, ' . $group;
         $range = \wp_slimstat_db::$filters_normalized['utime'];
         $limit = max(1, (int) \wp_slimstat::$settings['limit_results']);
-        // Never split a limited GROUP BY at midnight: partition top-Ns lose contributions.
-        // Historical-only ranges use the existing SQL cache; ranges reaching today stay live.
-        $today = (int) (floor(\wp_slimstat::now() / DAY_IN_SECONDS) * DAY_IN_SECONDS);
+        // Query keeps grouped live ranges exact; network merging owns its full-range path.
         $query = Query::select($columns . ', COUNT(*) AS counthits')
             ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
-            ->whereDate('dt', ['from' => (int) $range['start'], 'to' => (int) $range['end']], $range['end'] >= $today)
+            ->whereDate('dt', ['from' => (int) $range['start'], 'to' => (int) $range['end']], NetworkMerge::isMerging())
             ->whereRaw(\wp_slimstat_db::get_combined_where(self::where($mode), '', false))
             ->groupBy($group)->orderBy($order);
         if (!empty($args['where'])) {
@@ -207,7 +205,7 @@ class AcquisitionReport
         if (!empty($args['is_widget'])) {
             echo '</div>';
         }
-        if (wp_doing_ajax()) {
+        if (wp_doing_ajax() && (!class_exists('wp_slimstat_reports', false) || !\wp_slimstat_reports::is_batch_rendering())) {
             wp_die();
         }
     }
@@ -215,7 +213,7 @@ class AcquisitionReport
     private static function content(array $args): void
     {
         echo '<div class="slimstat-acquisition">';
-        $ready = is_admin() ? Acquisition::checkSchema() : '1' === get_option(Acquisition::readinessKey(), '0');
+        $ready = is_admin() ? Acquisition::checkSchema(true) : '1' === get_option(Acquisition::readinessKey(), '0');
         if (!$ready) {
             echo '<p class="slimstat-acquisition__empty">' . esc_html__('UTM and channel reports need a database update. Existing tracking continues while setup is pending.', 'wp-slimstat') . '</p>';
             if (current_user_can('manage_options')) {

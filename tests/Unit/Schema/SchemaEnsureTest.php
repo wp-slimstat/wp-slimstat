@@ -233,7 +233,7 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         // questions before changing it. 12 to 15 for heatmaps (6.1.0): only on sites that enabled
         // heatmap tracking, on the same two non-per-request paths; ordinary sites keep 10 (below).
         $this->assertCount(
-            15,
+            16,
             $this->probes,
             'a healthy install must cost one table probe plus one index probe and one column '
                 . 'probe per reconciled table: ' . implode(' | ', $this->probes)
@@ -249,7 +249,7 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         $this->assertSame([], $this->queries, 'ordinary sites incur no Ecommerce or heatmap DDL');
         $this->assertSame([], $report['failed']);
         $this->assertCount(19, $report['present']);
-        $this->assertCount(10, $this->probes, 'ordinary sites retain the original schema probe budget');
+        $this->assertCount(11, $this->probes, 'one additional archive metadata probe on activation/upgrade, never per request');
     }
 
     public function testCollationIsNotResolvedWhenNothingNeedsCreating(): void
@@ -703,4 +703,23 @@ class SchemaEnsureTest extends WpSlimstatTestCase
             '`plugins` was retired in 4.8.4.1 and the manifest correctly does not declare it'
         );
     }
+    public function test_failed_column_observation_is_not_a_healthy_schema(): void
+    {
+        $db = $this->db([], [], 'access denied');
+        $this->assertTrue(Schema::columnState($db, 'slim_stats', 'wp_')['unavailable'] ?? false);
+        $this->assertNotEmpty(Schema::columnDrift($db, 'wp_')['unavailable'] ?? []);
+    }
+
+    public function test_archive_only_drift_is_observed_without_reconciling_its_indexes(): void
+    {
+        [$tables, $indexes] = $this->healthy();
+        $columns = [];
+        foreach (Schema::columns('slim_stats_archive') as $field => $definition) {
+            if ('dt_out' !== $field) { $columns[$field] = strtolower(explode(' ', $definition)[0]); }
+        }
+        $report = Schema::ensure($this->db($tables, $indexes, '', ['wp_slim_stats_archive' => $columns]), 'wp_', static fn () => '');
+        $this->assertContains('slim_stats_archive.dt_out', $report['columns_missing']);
+        $this->assertSame([], $this->queries);
+    }
+
 }

@@ -101,8 +101,9 @@ check(!preg_match('/\.pages-label\s*\{[^}]*underline/', read_or_die('admin/asset
 // C2: rate rows render with a % sign. The suffix is added by the renderer, not the
 // data row, because the report-answer contract pins the raw value ("66.67").
 $reports = read_or_die('admin/view/wp-slimstat-reports.php');
-check((bool) preg_match('/\$percent_metrics\s*=\s*\[__\(\'Bounce rate\', \'wp-slimstat\'\), __\(\'New Visitors Rate\', \'wp-slimstat\'\)\]/', $reports), 'C2: Bounce rate and New Visitors Rate are listed as percentages');
-check(false !== strpos($reports, 'in_array($a_result[\'metric\'], $percent_metrics, true) ? \'%\' : \'\''), 'C2: the summary renderer appends % to rate rows');
+$report_data = file_get_contents(dirname(__DIR__) . '/src/Reports/ReportData.php');
+check((bool) preg_match('/\$percent_metrics\s*=\s*array\(\s*__\( \'Bounce rate\', \'wp-slimstat\' \), __\( \'New Visitors Rate\', \'wp-slimstat\' \)\s*\)/', $report_data), 'C2: Bounce rate and New Visitors Rate are listed as percentages');
+check(false !== strpos($report_data, 'in_array( $row[\'metric\'], $percent_metrics, true ) ? \'%\' : \'\''), 'C2: the shared summary formatter appends % to rate rows');
 check(false === strpos($rightnow, "__('SL'") && false === strpos($rightnow, "__('PS'"), 'B11: no SL/PS abbreviations in the Access Log');
 // QA §5: the count floated right AFTER the label, so a label that wrapped pushed its count onto
 // a line of its own. The row is flex instead; DOM order (which the parity harness reads) is kept.
@@ -138,7 +139,8 @@ check(['index.php', 'plugins.php'] === $pages[1] && false === strpos($gate, 'sli
 $dismiss = read_or_die('admin/assets/js/promotions.js');
 check(false !== strpos($dismiss, "action: 'slimstat_notice_latest_news'") && false !== strpos($dismiss, 'security: bar.dataset.dismissNonce'), 'Release notice: dismissal posts the shared nonce-protected AJAX action');
 check(false !== strpos($admin, "wp_create_nonce('meta-box-order')") && false !== strpos($admin, 'self::enqueue_promotions();'), 'Release notice: rendered bar has its dismiss nonce and shared script');
-check(false !== strpos($dismiss, "closest('.slimstat-release-dismiss')") && false === strpos($dismiss, 'notice-dismiss'), 'Release notice: its dedicated button cannot trigger core notice handlers');
+preg_match('/<button[^>]*class="[^"]*slimstat-release-dismiss[^"]*"/', $admin, $release_button);
+check(false !== strpos($dismiss, "closest('.slimstat-release-dismiss')") && !empty($release_button) && false === strpos($release_button[0], 'notice-dismiss'), 'Release notice: its dedicated button cannot trigger core notice handlers');
 check(false !== strpos(read_or_die('admin/view/partials/header.php'), "show_latest_news(null, null, null, 'bar')"), 'Release bar: shared header renders it across SlimStat pages');
 check(false !== strpos(read_or_die('src/Migration/MigrationService.php'), 'public static function manager(): ?MigrationManager'), 'Release notice: MigrationService exposes the manager so the notice can wait for migrations');
 // Plugin Check (WordPress.Security.EscapeOutput) flags `echo $var` even when $var holds escaped
@@ -179,6 +181,58 @@ check(false !== strpos($migrationAdmin, 'Schema::tableEngine('), 'Migration page
 // Required steps also build idx_events_notes_dt, which write-locks a MyISAM slim_events (CodeRabbit, PR #349).
 check((bool) preg_match("/\['slim_stats', 'slim_events'\]/", $migrationAdmin), 'Migration page: the MyISAM probe covers slim_stats and slim_events');
 check(false === strpos($ecommerce, 'wp-slimstat.com/pricing') && false === strpos(read_or_die('src/Reports/AcquisitionReport.php'), 'wp-slimstat.com/pricing'), 'Ecommerce and Channels: no pricing link for users who cannot buy');
+
+// Black Friday 2026 strip (delete with the feature after 2026-12-01). It replaces the release bar for that request
+// and is isolated: no queries or outside transport, its one write is the dismissal the admin asks for (user meta, so it
+// holds on every browser), and its CSS/JS reach nothing outside #slimstat-bf-2026.
+check(false !== strpos(read_or_die('admin/view/partials/header.php'), "<?php if (!\\SlimStat\\Services\\BlackFriday2026::render()) { wp_slimstat_admin::show_latest_news(null, null, null, 'bar'); } ?>"), 'Black Friday: the header renders the strip first and the release bar only when it did not print');
+$bfAdmin = read_or_die('admin/index.php');
+check(3 === substr_count($bfAdmin, 'BlackFriday2026') && (bool) preg_match("/if \('index\.php' === \(\\\$GLOBALS\['pagenow'\] \?\? ''\)\) \{\s+add_action\('admin_notices', \[\\\\SlimStat\\\\Services\\\\BlackFriday2026::class, 'dashboard_notice'\], 9, 0\);/", $bfAdmin), 'Black Friday: init() hooks dashboard_notice at priority 9, only when pagenow is index.php');
+check(false !== strpos($bfAdmin, "add_action('wp_ajax_' . \\SlimStat\\Services\\BlackFriday2026::ACTION, [\\SlimStat\\Services\\BlackFriday2026::class, 'dismiss']);") && false === strpos($bfAdmin, 'wp_ajax_nopriv_slimstat_bf2026'), 'Black Friday: the dismissal is a logged-in AJAX action only');
+$bfClass = read_or_die('src/Services/BlackFriday2026.php');
+foreach (['wp_remote_', '$wpdb', 'wp_schedule_', 'set_transient', 'update_option', 'setcookie', '$_COOKIE'] as $banned) {
+    check(false === strpos($bfClass, $banned), "Black Friday: the class never calls {$banned}");
+}
+$bfWrite = strpos($bfClass, 'update_user_meta(');
+$bfGate = strpos($bfClass, "if (!check_ajax_referer(self::ACTION, 'security', false) || !current_user_can('manage_options')) {");
+check(1 === substr_count($bfClass, 'update_user_meta(') && false !== $bfWrite && false !== $bfGate && $bfGate < $bfWrite, 'Black Friday: the one write is the dismissal, after its nonce and capability check');
+preg_match_all("/__\('((?:[^'\\\\]|\\\\.)*)', 'wp-slimstat'\)/", $bfClass, $bfMsgids);
+check(count($bfMsgids[1]) >= 9, 'Black Friday: the msgid scan found the strip strings');
+foreach ($bfMsgids[1] as $msgid) {
+    check(false === strpos(preg_replace('/%(%|s|\d+\$s)/', '', $msgid), '%'), "Black Friday: no bare % in msgid \"{$msgid}\"");
+}
+$bfFence = static function (string $file): string {
+    $source = read_or_die($file);
+    $start = strpos($source, '/* Black Friday 2026 banner: delete after 2026-12-01');
+    $end = strpos($source, '/* End Black Friday 2026 banner */');
+    check(false !== $start && false !== $end && $start < $end, "Black Friday: {$file} has one fenced block");
+    return false !== $start && false !== $end ? substr($source, $start, $end - $start) : '';
+};
+$bfJs = $bfFence('admin/assets/js/promotions.js');
+// Page lifecycle listeners may only expire this strip; other global handlers remain forbidden.
+$bfLocalJs = str_replace([
+    "document.addEventListener('visibilitychange', expire);",
+    "document.removeEventListener('visibilitychange', expire);",
+    "window.addEventListener('pageshow', expire);",
+    "window.removeEventListener('pageshow', expire);",
+], '', $bfJs);
+foreach (['XMLHttpRequest', 'sendBeacon', 'document.cookie', 'document.addEventListener', 'window.', 'document.body', 'localStorage', 'sessionStorage'] as $banned) {
+    check(false === strpos($bfLocalJs, $banned), "Black Friday: the JS block never uses {$banned} outside its expiry lifecycle");
+}
+check(1 === substr_count($bfJs, 'fetch(') && false !== strpos($bfJs, "action: 'slimstat_bf2026_dismiss', security: root.getAttribute('data-slimstat-bf26-nonce')"), 'Black Friday: the JS block sends one request, the nonce-protected dismissal');
+check(false !== strpos($bfJs, "document.getElementById('slimstat-bf-2026')") && false !== strpos($bfJs, "root.addEventListener('click'"), 'Black Friday: the JS block listens on its own root');
+$bfCss = preg_replace('#/\*.*?\*/#s', '', $bfFence('admin/assets/css/promotions.css'));
+check(false === strpos($bfCss, '!important') && false === strpos($bfCss, ':root'), 'Black Friday: the CSS block has no !important or :root');
+preg_match_all('/([^{}]+)\{/', $bfCss, $bfPreludes);
+$bfSelectors = 0;
+foreach ($bfPreludes[1] as $prelude) {
+    if ('@' === trim($prelude)[0]) { continue; }
+    foreach (explode(',', $prelude) as $selector) {
+        $bfSelectors++;
+        check(0 === strpos(trim($selector), '#slimstat-bf-2026'), 'Black Friday: CSS selector "' . trim($selector) . '" is scoped to #slimstat-bf-2026');
+    }
+}
+check($bfSelectors >= 20, 'Black Friday: the selector scan found the strip rules');
 
 if ($failures > 0) {
     fwrite(STDERR, "{$failures} check(s) failed in admin-ui-render-guards-test.php\n");

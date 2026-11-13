@@ -152,6 +152,44 @@ $same(20.0, array_sum(array_column($data['series']['previous'], 'net')), 'Chart 
 $same(120, array_sum(array_column($data['series']['current'], 'visits')), 'Chart eligible visit denominator');
 $same(1, array_sum(array_column($data['series']['current'], 'buyers')), 'Chart counts buying visits once');
 $same(['visits' => 120, 'products' => 120, 'carts' => 1, 'checkouts' => 1, 'buyers' => 1, 'completed' => 1], $data['journey'], 'Ordered journey and distinct converting visits');
+// Localized chart labels must not be reused by an administrator in another locale.
+$labelLocale = 'en_US';
+$localeFilter = static function () use (&$labelLocale) { return $labelLocale; };
+$dateFilter = static function ($date) use (&$labelLocale) { return (is_locale_switched() ? get_locale() : $labelLocale) . ':' . $date; };
+// WordPress 5.6 keeps an explicit admin locale in determine_locale() during a switch.
+add_filter('determine_locale', $localeFilter, PHP_INT_MAX);
+add_filter('wp_date', $dateFilter);
+$originalSwitcher = $GLOBALS['wp_locale_switcher'];
+$availableLocales = static function ($locales) { return array_unique(array_merge($locales, ['fa_IR'])); };
+add_filter('get_available_languages', $availableLocales);
+$switcher = new \WP_Locale_Switcher();
+remove_filter('get_available_languages', $availableLocales);
+$GLOBALS['wp_locale_switcher'] = $switcher;
+$switcher->init();
+Integration::invalidate();
+try {
+    $english = $reportData();
+    $same(true, strpos($english['series']['current'][0]['short'], 'en_US:') === 0, 'English chart labels');
+    $labelLocale = 'fa_IR';
+    $persian = $reportData();
+    $same(true, strpos($persian['series']['current'][0]['short'], 'fa_IR:') === 0, 'Chart cache follows the current locale');
+    $labelLocale = 'en_US';
+    $same($english['series'], $reportData()['series'], 'English chart cache remains reusable');
+    $same(true, switch_to_locale('fa_IR'), 'Switch to Persian');
+    $same('en_US', determine_locale(), 'Explicit English admin locale models WordPress 5.6');
+    $switched = $reportData();
+    $same(true, strpos($switched['series']['current'][0]['short'], 'fa_IR:') === 0, 'Chart cache follows the active switched locale');
+    restore_previous_locale();
+    $same($english['series'], $reportData()['series'], 'Restoring the locale restores English chart labels');
+} finally {
+    $switcher->restore_current_locale();
+    remove_filter('locale', [$switcher, 'filter_locale']);
+    remove_filter('determine_locale', [$switcher, 'filter_locale']);
+    $GLOBALS['wp_locale_switcher'] = $originalSwitcher;
+    remove_filter('determine_locale', $localeFilter, PHP_INT_MAX);
+    remove_filter('wp_date', $dateFilter);
+    Integration::invalidate();
+}
 $same(115000000, array_sum(array_map(static function ($row) { return Money::units($row['net']); }, $data['groups']['channel'])), 'Channel reconciliation');
 wp_slimstat_db::$filters_normalized['columns']['utm_source'] = ['equals', 'google'];
 $filtered = $reportData();
@@ -215,6 +253,7 @@ if ('safety' === $mode) {
 	wp_slimstat_db::$filters_normalized['columns'] = [Report::CURRENCY_FILTER => ['equals', 'USD']];
 	$state = get_option(Integration::STATE); $settings = wp_slimstat::$settings;
 	$cookie = $_COOKIE; $server = $_SERVER; $user = get_current_user_id();
+	$permissionUsers = [];
 	$hold = wc_get_order($fixture['hold']); $entry = $fixture['stats'][0];
 	try {
 		$url = '/checkout/order-received/7/?utm_source=fixture&key=wc_order_private#thanks';
@@ -231,10 +270,12 @@ if ('safety' === $mode) {
 			\SlimStat\Tracker\Storage::updateRow(['id' => $redactedId, 'resource' => '/search/?key=ordinary&x=1']);
 			$same('/search/?key=ordinary&x=1', $db->get_var($db->prepare("SELECT resource FROM {$stats} WHERE id=%d", $redactedId)), 'Unrelated key parameters remain intact');
 		} finally { $db->delete($stats, ['id' => $redactedId]); }
-		foreach (['admin' => true, 'e2e_author' => false, 'e2e_subscriber' => false] as $login => $allowed) {
-			$account = get_user_by('login', $login); if (!$account) { throw new RuntimeException('Missing fixture role: ' . $login); }
-			wp_set_current_user($account->ID);
-			$same($allowed, Report::canView(), 'Revenue permission for ' . $login);
+		foreach (['administrator' => true, 'author' => false, 'subscriber' => false] as $role => $allowed) {
+			$account = wp_insert_user(['user_login' => 'ec-permission-' . wp_generate_password(12, false), 'user_pass' => wp_generate_password(), 'role' => $role]);
+			if (is_wp_error($account)) { throw new RuntimeException($account->get_error_message()); }
+			$permissionUsers[] = $account;
+			wp_set_current_user($account);
+			$same($allowed, Report::canView(), 'Revenue permission for ' . $role);
 		}
 		wp_set_current_user(0);
 		$fallback = wc_get_order($fixture['orders'][1]);
@@ -338,6 +379,8 @@ if ('safety' === $mode) {
 	} finally {
 		remove_filter('slimstat_can_track', '__return_false', 999);
 		wp_slimstat::$settings = $settings; $_COOKIE = $cookie; $_SERVER = $server; wp_set_current_user($user);
+		require_once ABSPATH . 'wp-admin/includes/user.php';
+		foreach ($permissionUsers as $account) { wp_delete_user($account); }
 		if (isset($page)) { $db->delete($stats, ['id' => $page]); }
 		$db->delete($table, ['order_id' => 900001]);
 		$db->update($stats, ['traffic_source' => 'google', 'utm_campaign' => 'ecommerce-fixture'], ['id' => $entry]);
