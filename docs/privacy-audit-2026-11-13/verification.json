@@ -535,7 +535,8 @@
         "Removing the locking read from the fixed atomic implementation restores the shared label under READ COMMITTED in the real two-connection fixture."
       ],
       "database_concurrency": "Actual ingest/erase SQL tested on two connections, erase-first and ingest-first, under READ COMMITTED and REPEATABLE READ; all pass.",
-      "validation_status": "Final focused browser, PHP, mutation and CI results are recorded in PR #414."
+      "validation_status": "40 focused Free browser scenarios and 50 Pro browser scenarios pass on 80649474. The subsequent parent-erasure change passes actual inter-callback and rollback fixtures, external analytics routing and all 0/1/500/501/1000/1001 live/archive paging cases. Final source checks and CI are recorded in PR #414.",
+      "parent_erasure": "A reproduced inter-callback gap also let new heatmap clicks restore shared labels after the heatmap eraser. The live pageview eraser now locks its exact 500-row parent batch, repeats heatmap erasure and deletes those parents in one transaction. A failed parent write rolls back the heatmap deletion and refuses completion; retry succeeds."
     }
   }
 }

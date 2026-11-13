@@ -168,6 +168,25 @@ try {
         remove_filter('slimstat_heatmap_row_url', '__return_true');
         $db->delete($prefix . 'slim_heatmap_elements', ['sel' => $concurrent_key]);
     }
+    add_filter('slimstat_heatmap_row_url', '__return_true');
+    \SlimStat\Heatmap\Store::ingest($id, $batch);
+    \SlimStat\Heatmap\Store::erase($row['email']);
+    \SlimStat\Heatmap\Store::ingest($id, $batch);
+    $break_parent = static function ($sql) use ($prefix) {
+        return strpos($sql, "DELETE FROM {$prefix}slim_stats WHERE id") === 0 ? 'DELETE FROM missing_privacy_parent_fixture' : $sql;
+    };
+    $suppressed = $db->suppress_errors(true);
+    add_filter('query', $break_parent);
+    try { $failed_parent = \SlimStat\Services\Privacy\DataEraser::erasePageviews($row['email']); }
+    finally { remove_filter('query', $break_parent); $db->suppress_errors($suppressed); }
+    $check(is_wp_error($failed_parent), 'parent write failure refuses completed erasure');
+    $check(1 === (int) $db->get_var($db->prepare("SELECT COUNT(*) FROM {$prefix}slim_heatmap WHERE id=%d", $id))
+        && 'Personal label' === $db->get_var($db->prepare("SELECT label FROM {$prefix}slim_heatmap_elements WHERE sel=%s", $concurrent_key)), 'failed parent deletion rolls back heatmap erasure so it remains retryable');
+    $erased = \SlimStat\Services\Privacy\DataEraser::erasePageviews($row['email']);
+    $check(!is_wp_error($erased) && $erased['done'], 'parent erasure completes');
+    $check(!$db->get_var($db->prepare("SELECT label FROM {$prefix}slim_heatmap_elements WHERE sel=%s", $concurrent_key)), 'parent erasure removes a shared label captured between privacy callbacks');
+    remove_filter('slimstat_heatmap_row_url', '__return_true');
+    $db->delete($prefix . 'slim_heatmap_elements', ['sel' => $concurrent_key]);
     $break_labels = static function ($sql) use ($prefix) {
         return strpos($sql, "DELETE FROM {$prefix}slim_heatmap_elements WHERE NOT EXISTS") === 0 ? 'SELECT * FROM missing_privacy_label_fixture' : $sql;
     };

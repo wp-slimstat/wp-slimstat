@@ -8,7 +8,7 @@ $originalPrefix = $wpdb->prefix;
 $originalAnalytics = wp_slimstat::$wpdb;
 $settings = wp_slimstat::$settings;
 $options = [];
-foreach (['slimstat_data_ver', 'slimstat_goals_cache_ver', \SlimStat\Ecommerce\Integration::STATE] as $key) { $options[$key] = get_option($key, null); }
+foreach (['slimstat_data_ver', 'slimstat_goals_cache_ver', \SlimStat\Ecommerce\Integration::STATE, \SlimStat\Heatmap\Store::STATE] as $key) { $options[$key] = get_option($key, null); }
 $run = static function ($db, $sql) { if (false === $db->query($sql)) { throw new RuntimeException($db->last_error); } };
 $check = static function ($ok, $message) { if (!$ok) { throw new RuntimeException($message); } };
 $db = null;
@@ -26,6 +26,7 @@ try {
     // Deliberately leave the analytics handle's prefix different, as CustomDB does.
     $db->prefix = 'wrong_';
     update_option(\SlimStat\Ecommerce\Integration::STATE, []);
+    update_option(\SlimStat\Heatmap\Store::STATE, []);
     foreach ([$wpdb, $db] as $handle) {
         foreach (['', '_archive'] as $suffix) {
             $run($handle, "INSERT INTO {$prefix}slim_stats{$suffix} VALUES (1,'192.0.2.1','','visitor','erase@example.test','fingerprint',UNHEX(REPEAT('ab',16)),1,'/retained',1000000)");
