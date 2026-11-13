@@ -11,7 +11,7 @@ import {
   snapshotSlimstatOptions,
 } from './helpers/setup';
 import { AUTHOR_USER, BASE_URL } from './helpers/env';
-import { requireProBooted } from './helpers/pro-state';
+import { getProState, requireProBooted } from './helpers/pro-state';
 
 let wpNow = 0;
 
@@ -95,15 +95,22 @@ test.describe('author report privacy boundaries', () => {
     await expect(report).toContainText('Hidden');
     await expect(report.locator('a.whois')).toHaveCount(0);
     await expect(report.locator('img[src*="gravatar"]')).toHaveCount(0);
-    const exportUrl = await report.locator('.button-export-to-xls').getAttribute('href');
-    expect(exportUrl).toBeTruthy();
-    const exported = await page.request.get(exportUrl!);
-    expect(exported.ok()).toBe(true);
-    expect(exported.headers()['content-type']).toContain('text/csv');
-    const csv = await exported.text();
-    expect(csv).toContain('/author-own');
-    for (const value of ['198.51.100.73', 'private-visitor', 'private@example.test', 'private-note', '/author-secret']) {
-      expect(csv).not.toContain(value);
+    // Free CI has no CSV add-on. Keep its HTML and exact-count assertions,
+    // and require the complete export journey whenever Pro is installed.
+    if ((await getProState(page)).pro_installed) {
+      await requireProBooted(page);
+      const exportUrl = await report.locator('.button-export-to-xls').getAttribute('href');
+      expect(exportUrl).toBeTruthy();
+      const exported = await page.request.get(exportUrl!);
+      expect(exported.ok()).toBe(true);
+      expect(exported.headers()['content-type']).toContain('text/csv');
+      const csv = await exported.text();
+      expect(csv).toContain('/author-own');
+      for (const value of ['198.51.100.73', 'private-visitor', 'private@example.test', 'private-note', '/author-secret']) {
+        expect(csv).not.toContain(value);
+      }
+    } else {
+      await expect(report.locator('.button-export-to-xls')).toHaveCount(0);
     }
 
     // Author scope still exposes precisely the one owned pageview, even with masking enabled.

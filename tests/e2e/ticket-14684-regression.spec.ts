@@ -477,6 +477,7 @@ test.describe('Bug 2: Chart timezone offset must match DataBuckets offset', () =
 		const ajaxSum = sumV1(ajaxJson);
 
 		// Path 2: Server-rendered chart (same path but via initial page load)
+		await setSlimstatOption(page, 'async_load', 'no');
 		await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&type=custom&from=${fromDate}&to=${toDate}`, {
 			waitUntil: 'domcontentloaded',
 		});
@@ -494,9 +495,8 @@ test.describe('Bug 2: Chart timezone offset must match DataBuckets offset', () =
 		// Both paths should show the same count
 		expect(ajaxSum).toBe(dbCount);
 		// The server page was given the same explicit range as AJAX.
-		if (serverSum >= 0) {
-			expect(serverSum).toBeGreaterThanOrEqual(dbCount);
-		}
+		expect(serverJson, 'the synchronous page must contain chart data').not.toBeNull();
+		expect(serverSum).toBe(dbCount);
 	});
 });
 
