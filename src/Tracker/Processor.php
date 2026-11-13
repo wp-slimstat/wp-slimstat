@@ -581,61 +581,48 @@ class Processor
                             }
                         }
 
-                        // Update the existing record
-                        if (!empty($update_data)) {
-                            $update_query = Query::update($table);
+                        // Update only the signed pageview.
+                        $update_query = Query::update($table);
 
-                            // Handle notes separately (append if needed)
-                            if (!empty($update_data['notes'])) {
-                                $notes_to_append = $update_data['notes'];
-                                unset($update_data['notes']);
-                                $update_query->setRaw('notes', "CONCAT(IFNULL(notes, ''), %s)", [$notes_to_append]);
-                            }
-
-                            if (!empty($update_data)) {
-                                $update_query->set($update_data);
-                            }
-
-                            $update_query->where('id', '=', $existing_id);
-
-                            if (false === $update_query->execute()) {
-                                Query::setProcessingTimestamp(null);
-                                return Utils::logError(500);
-                            }
-
-                            // Return existing ID (upgraded record)
-                            $stat['id'] = $existing_id;
-                            \wp_slimstat::set_stat($stat);
-                            Query::setProcessingTimestamp(null);
-
-                            // Keep subsequent consented pages in the new session.
-                            if (!empty($stat['visit_id'])) {
-                                Session::setTrackingCookie($stat['visit_id'], 'visit');
-                            } elseif (!empty($stat['id'])) {
-                                Session::setTrackingCookie($stat['id'], 'id', 2678400);
-                            }
-
-                            if ($isConsentUpgrade) {
-                                /**
-                                 * Fires when a consent upgrade request is processed.
-                                 *
-                                 * @param int   $pageview_id Upgraded pageview ID.
-                                 * @param array $stat        Current tracking stat array.
-                                 */
-                                do_action('slimstat_consent_granted', $stat['id'], $stat);
-                            }
-
-                            return $stat['id'];
-                        } else {
-                            // No update data but record found - just return existing ID
-                            $stat['id'] = $existing_id;
-                            \wp_slimstat::set_stat($stat);
-                            Query::setProcessingTimestamp(null);
-                            if ($isConsentUpgrade) {
-                                do_action('slimstat_consent_granted', $stat['id'], $stat);
-                            }
-                            return $stat['id'];
+                        // Handle notes separately (append if needed)
+                        if (!empty($update_data['notes'])) {
+                            $notes_to_append = $update_data['notes'];
+                            unset($update_data['notes']);
+                            $update_query->setRaw('notes', "CONCAT(IFNULL(notes, ''), %s)", [$notes_to_append]);
                         }
+
+                        $update_query->set($update_data);
+
+                        $update_query->where('id', '=', $existing_id);
+
+                        if (false === $update_query->execute()) {
+                            Query::setProcessingTimestamp(null);
+                            return Utils::logError(500);
+                        }
+
+                        // Return existing ID (upgraded record)
+                        $stat['id'] = $existing_id;
+                        \wp_slimstat::set_stat($stat);
+                        Query::setProcessingTimestamp(null);
+
+                        // Keep subsequent consented pages in the new session.
+                        if (!empty($stat['visit_id'])) {
+                            Session::setTrackingCookie($stat['visit_id'], 'visit');
+                        } elseif (!empty($stat['id'])) {
+                            Session::setTrackingCookie($stat['id'], 'id', 2678400);
+                        }
+
+                        if ($isConsentUpgrade) {
+                            /**
+                             * Fires when a consent upgrade request is processed.
+                             *
+                             * @param int   $pageview_id Upgraded pageview ID.
+                             * @param array $stat        Current tracking stat array.
+                             */
+                            do_action('slimstat_consent_granted', $stat['id'], $stat);
+                        }
+
+                        return $stat['id'];
                     }
                     // If no existing record found, continue with normal insert flow below
                 }

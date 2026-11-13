@@ -86,6 +86,7 @@ function isTrackerResponse(response: Response): boolean {
   const request = response.request();
   if (request.method() !== 'POST') return false;
   if (request.url().includes('/wp-json/slimstat/v1/hit')) return true;
+  if (new URL(request.url()).searchParams.get('rest_route') === '/slimstat/v1/hit') return true;
   if (!request.url().includes('admin-ajax.php')) return false;
   return new URLSearchParams(request.postData() ?? '').get('action') === 'slimtrack';
 }

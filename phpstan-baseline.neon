@@ -625,12 +625,6 @@ parameters:
 			path: src/Tracker/Processor.php
 
 		-
-			message: '#^Variable \$update_data in empty\(\) always exists and is not falsy\.$#'
-			identifier: empty.variable
-			count: 1
-			path: src/Tracker/Processor.php
-
-		-
 			message: '#^Constant SLIMSTAT_ANALYTICS_DIR not found\.$#'
 			identifier: constant.notFound
 			count: 2
