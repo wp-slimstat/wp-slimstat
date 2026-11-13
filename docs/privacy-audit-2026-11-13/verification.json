@@ -1,0 +1,233 @@
+{
+  "environment": {
+    "wordpress": "7.1.4",
+    "php": "8.2.29",
+    "mysql": "8.4.0",
+    "data": "Disposable databases and synthetic visitors; outbound email and fake license calls intercepted locally."
+  },
+  "verified_source": {
+    "free": "0872bdfc",
+    "pro": "93b7d9a3"
+  },
+  "free": {
+    "unit": {
+      "tests": 716,
+      "assertions": 2803
+    },
+    "integration": {
+      "tests": 229,
+      "assertions": 965
+    },
+    "source_level": "pass",
+    "phpstan": "pass",
+    "i18n": "pass",
+    "reports_escaping": {
+      "assertions": 85,
+      "status": "pass"
+    },
+    "mutations": {
+      "full_suite_killed": 319,
+      "latest_changed_targets_killed": 34,
+      "survived": 0,
+      "invalid": 0
+    },
+    "browser": {
+      "collected": 1071,
+      "initial_passes": 904,
+      "followup_passes": 165,
+      "remaining_skips": [
+        {
+          "file": "i18n-catalog-sync.spec.ts",
+          "scenario": "es_ES locale renders without PHP errors on Settings page",
+          "initial_status": [
+            "skipped"
+          ]
+        },
+        {
+          "file": "live-analytics-timezone-customdb.spec.ts",
+          "scenario": "Live counters work with Custom DB simulator (Tokyo timezone)",
+          "initial_status": [
+            "skipped"
+          ]
+        }
+      ],
+      "interpretation": "Census plus focused reruns, not one uninterrupted green run. All initial failures and unfinished cases accounted for; affected cases rerun after their fixes. CookieYes, standalone WP Consent API, debug-off and Free-only checks were also run with their required environment."
+    }
+  },
+  "pro": {
+    "unit": {
+      "tests": 156,
+      "assertions": 394
+    },
+    "source_level": "pass",
+    "phpstan": "pass",
+    "i18n": "pass",
+    "scoped_runtime": "pass",
+    "free_floor": "pass",
+    "mutations": {
+      "killed": 43,
+      "survived": 0,
+      "invalid": 0
+    },
+    "browser": {
+      "tests": 50,
+      "status": "pass across final full run and one corrected-credential rerun",
+      "detail": "49 passed in final full run; ecommerce CSV/access-control scenario passed after supplying the local author credentials."
+    },
+    "release_runtime_php": [
+      "7.4",
+      "8.0",
+      "8.1",
+      "8.2",
+      "8.3",
+      "8.4",
+      "8.5"
+    ],
+    "stock_php_without_intl": [
+      "7.4",
+      "8.2"
+    ]
+  },
+  "real_database_fixtures": [
+    {
+      "test": "Integration/query-topn-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/pageview-chart-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/privacy-export-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/data-eraser-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/privacy-external-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/purge-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/purge-selection-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/schema-online-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/data-version-mysql.php",
+      "exit_code": 0,
+      "initial_exit_code": 255,
+      "rerun": "passed after supplying required disposable fixture environment"
+    },
+    {
+      "test": "Integration/ecommerce-full-refund-mysql.php",
+      "exit_code": 0,
+      "initial_exit_code": 1,
+      "rerun": "passed after supplying required disposable fixture environment"
+    },
+    {
+      "test": "report-summary-counts-db-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "acquisition-reports-db-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "shortcode-render-wp-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "heatmap-author-scope-wp-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "heatmap-legacy-oracle-wp-test.php",
+      "exit_code": 0,
+      "initial_exit_code": 1,
+      "rerun": "passed after supplying required disposable fixture environment"
+    },
+    {
+      "test": "live-country-scope-wp-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "date-i18n-filter-suspension-wp-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "settings-cache-family-wp-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "horizon-campaign-wp-test.php",
+      "exit_code": 0,
+      "initial_exit_code": 1,
+      "rerun": "passed after supplying required disposable fixture environment"
+    },
+    {
+      "test": "notification-delivery-wp-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "notification-targeting-wp-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "privacy-data-wp-test.php",
+      "exit_code": 0
+    }
+  ],
+  "additional_real_database_checks": {
+    "historical_chart": {
+      "cases": 20,
+      "granularities": [
+        "hour",
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "database_timezones": [
+        "SYSTEM",
+        "UTC",
+        "+05:30",
+        "-07:00"
+      ],
+      "expected_views": 468,
+      "expected_distinct_terms": 24,
+      "status": "pass"
+    },
+    "multisite_acquisition": "pass on two sites: UTM/channel totals, site grouping, shares, caps and exact author restrictions",
+    "privacy": "pass: complete export, 1001-event erasure, independent archive retention, orphan labels, cache generation, masked output with unchanged counts, private attachment permissions and cleanup on success/failure/exception, AI export/erasure failure handling"
+  },
+  "before_after": "Repeated against archived development and final working code; outputs exactly match committed before.json and after.json.",
+  "plugin_check": {
+    "free": {
+      "errors": 0,
+      "warnings": 1,
+      "remaining": [
+        "trademarked_term: existing registered wp-slimstat slug"
+      ]
+    },
+    "pro": {
+      "errors": 1,
+      "warnings": 3,
+      "remaining": [
+        "trademarked_term: existing wp-slimstat-pro slug",
+        "plugin_updater_detected: commercial Pro updater outside WordPress.org",
+        "update_modification_detected: two commercial updater hooks"
+      ]
+    },
+    "decision": "Keep registered slugs and commercial update delivery. No other findings remain. Raw Plugin Check output is not zero."
+  },
+  "pr_status": "CI and CodeRabbit results are recorded on the PRs; no merge authorized."
+}
