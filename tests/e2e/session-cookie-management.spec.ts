@@ -289,15 +289,14 @@ test.describe('Session & Cookie Management — #199', () => {
   //   Regression for bug #246 where consent-upgrade broke session merge.
   // ═══════════════════════════════════════════════════════════════════
 
-  test('consent upgrade — anonymous rows while declined, PII rows after accept', async ({
+  test('consent upgrade — only the current pageview gains PII after accept', async ({
     page,
   }) => {
     await clearStatsTable();
 
     // Enable GDPR with SlimStat banner + anonymous tracking so that
     // declined visitors still get tracked without PII. This exercises
-    // the real merge/upgrade path in Processor.php (gated on
-    // $isAnonymousTracking && $piiAllowed).
+    // the signed current-pageview upgrade in Processor.php.
     await setSlimstatOption(page, 'gdpr_enabled', 'on');
     await setSlimstatOption(page, 'consent_integration', 'slimstat_banner');
     await setSlimstatOption(page, 'use_slimstat_banner', 'on');
@@ -375,24 +374,7 @@ test.describe('Session & Cookie Management — #199', () => {
 
     // ── Phase 3: Click Accept on the real banner ──────────────────
     //
-    // Production flow (wp-slimstat.js:2232-2244):
-    //   1. User clicks [data-consent="accepted"] on the banner
-    //   2. JS sets slimstat_gdpr_consent=accepted cookie
-    //   3. JS calls sendConsentChangeToServer("slimstat_banner", consent, pageviewId)
-    //   4. JS calls requestConsentUpgrade({ consent, consentNonce })
-    //   5. Server Processor.php:409 receives consent_upgrade=1 + pageview_id
-    //   6. Server merges PII into the anonymous row
-    //
-    // We trigger this by navigating to a new page (which creates a fresh
-    // anonymous row + shows the banner again after we clear the consent cookie),
-    // then clicking Accept. No manual cookie setting, no direct JS calls,
-    // no force:true bypass.
-
-    // Clear ONLY the consent cookie so the banner re-appears on next navigation.
-    // CRITICAL: Do NOT clear all cookies — slimstat_tracking_code must survive
-    // so the server preserves session continuity across the consent upgrade.
-    // If cleared, Processor.php:382 forces a new visit_id (fallback branch)
-    // instead of upgrading the existing anonymous session rows (line 646-650).
+    // Reopen on a new page. Earlier declined history must remain anonymous.
     const allCookies = await ctx.cookies();
     const cookiesToRemove = allCookies.filter(
       (c) => c.name === 'slimstat_gdpr_consent',
@@ -473,43 +455,17 @@ test.describe('Session & Cookie Management — #199', () => {
       `Upgrade row IP should be real PII, not hashed (${preUpgradeIp})`,
     ).not.toBe(preUpgradeIp);
 
-    // ── Verify the EARLIER anonymous rows from Phase 2 were ALSO upgraded ──
-    // The production merge at Processor.php:646-650 upgrades ALL rows with
-    // matching visit_id + anonymous IP within the session window. If this
-    // doesn't happen, only the upgrade-trigger row gets PII while earlier
-    // browsing during the declined phase keeps hashed IPs.
+    // Earlier declined history keeps its IP and visit, distinct from the accepted page.
     const earlierRows = await waitForStatRows(declinedNavMarker, 1, 10_000);
-    expect(earlierRows.length, 'Phase 2 anonymous row should still exist').toBeGreaterThanOrEqual(1);
-    const earlierIp = earlierRows[0].ip;
-    const earlierVisitId = parseInt(earlierRows[0].visit_id, 10);
-
-    // Key assertion 1: Earlier anonymous row's IP should now be PII
-    // (upgraded by the merge at Processor.php:646-650).
-    // If the merge didn't run (e.g. tracking cookie was cleared, forcing
-    // fallback branch), the earlier row keeps its hashed IP.
-    expect(
-      earlierIp,
-      `Phase 2 anonymous row IP should be upgraded from hashed (${anonymousIp}) to PII`,
-    ).not.toBe(anonymousIp);
-
-    // Key assertion 2: The Phase 2 visit_id must be UNCHANGED after upgrade.
-    // We captured preUpgradeVisitId BEFORE clicking Accept. If the merge code
-    // at Processor.php:615 rewrites all rows to a fresh visit_id, this fails.
-    // This proves the ORIGINAL session identifier was preserved, not just that
-    // rows were rewritten together.
-    expect(
-      earlierVisitId,
-      `Phase 2 visit_id (${earlierVisitId}) must match pre-upgrade value (${preUpgradeVisitId}) — session identity preserved`,
-    ).toBe(preUpgradeVisitId);
-
-    // Key assertion 3: Both rows should share the same visit_id,
-    // proving session continuity across the consent upgrade.
-    expect(
-      upgradeVisitId,
-      `Upgrade row visit_id (${upgradeVisitId}) should match Phase 2 row (${earlierVisitId})`,
-    ).toBe(earlierVisitId);
+    expect(earlierRows).toHaveLength(1);
+    expect(earlierRows[0].ip).toBe(anonymousIp);
+    expect(Number(earlierRows[0].visit_id)).toBe(preUpgradeVisitId);
+    expect(upgradeVisitId).not.toBe(preUpgradeVisitId);
+    expect(upgradeVisitId).not.toBe(Number(preUpgradeRows[0].visit_id));
+    const [identity] = await getPool().execute('SELECT vid_hash FROM wp_slim_stats WHERE id=?', [upgradedRows[0].id]) as any;
+    expect(identity[0].vid_hash).toBeNull();
     const visitCookie = (await ctx.cookies()).find(cookie => cookie.name === 'slimstat_tracking_code');
-    expect(visitCookie?.value.split('.')[0], 'Consent cookie must retain the original visit').toBe(String(preUpgradeVisitId));
+    expect(visitCookie?.value.split('.')[0], 'Tracking cookie must identify the accepted page visit').toBe(String(upgradeVisitId));
     expect(visitCookie?.httpOnly).toBe(true);
     expect(upgradedRows).toHaveLength(1);
 
@@ -517,7 +473,7 @@ test.describe('Session & Cookie Management — #199', () => {
     await testPage.goto(`${BASE_URL}/?e2e_marker=${subsequentMarker}`, { waitUntil: 'networkidle' });
     const subsequentRows = await waitForStatRows(subsequentMarker, 1, 10_000);
     expect(subsequentRows).toHaveLength(1);
-    expect(Number(subsequentRows[0].visit_id)).toBe(preUpgradeVisitId);
+    expect(Number(subsequentRows[0].visit_id)).toBe(upgradeVisitId);
     expect(subsequentRows[0].ip).toBe(upgradedIp);
 
     await testPage.close();

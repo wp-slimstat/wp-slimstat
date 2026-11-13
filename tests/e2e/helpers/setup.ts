@@ -41,6 +41,8 @@ export function injectWpConfigLine(line: string): void {
 }
 
 export function enableDisableWpCron(): void {
+  // WP-CLI writes spaced defines; duplicating one emits output before login cookies.
+  if (/\bdefine\s*\(\s*['"]DISABLE_WP_CRON['"]\s*,\s*true\s*\)/i.test(fs.readFileSync(WP_CONFIG, 'utf8'))) return;
   injectWpConfigLine(CRON_LINE);
 }
 

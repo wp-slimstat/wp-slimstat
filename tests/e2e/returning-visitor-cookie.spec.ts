@@ -370,8 +370,7 @@ test.describe('Returning Visitor Cookie Behavior', () => {
       await anonPage.locator('[data-consent="denied"]').click();
       await anonPage.waitForTimeout(2000);
 
-      // Note: with anonymous_tracking=on, a tracking cookie may be set even after
-      // decline — anonymous mode uses cookies for session continuity with hashed IPs.
+      expect(await findTrackingCookie(ctx), 'Declined anonymous tracking must remain cookieless').toBeUndefined();
 
       // Phase 2: Clear consent cookie, re-navigate, accept
       const allCookies = await ctx.cookies();
@@ -396,8 +395,7 @@ test.describe('Returning Visitor Cookie Behavior', () => {
       }
 
       // Cookie should now exist
-      const cookie = await findTrackingCookie(ctx);
-      expect(cookie, 'Cookie must be set after consent upgrade').toBeTruthy();
+      await expect.poll(() => findTrackingCookie(ctx), { message: 'Cookie must be set after consent upgrade', timeout: 15000 }).toBeTruthy();
 
       // Phase 3: Navigate again — should reuse session
       await anonPage.goto(`${BASE_URL}/?e2e_marker=return-consent-${ts}-post`, { waitUntil: 'load' });

@@ -1,6 +1,7 @@
 = 6.1.1 - 2026-11-12 =
 
 * Privacy and security: consent gates identifiers, fingerprints and queued events on every request; withdrawal stays available and no longer enriches earlier anonymous history. Sensitive URL parameters and guest comment identities are excluded.
+* Fix: Historical chart buckets retain all views across database timezone and daylight-saving changes.
 * New installations use privacy-focused defaults. Existing settings are preserved; administrators can set archive retention and mask personal data for report viewers. Global Privacy Control is honored alongside Do Not Track, and report avatars are off by default.
 * Privacy exports include additional stored fields; erasure clears heatmap labels and related caches. Tracker diagnostics store error categories without visitor values.
 

@@ -12,7 +12,7 @@ diff --git a/src/Tracker/Processor.php b/src/Tracker/Processor.php
                      // Never associate a previous anonymous visit by IP or session alone.
                      $query = Query::select('id, ip, visit_id, fingerprint, username, email, notes')
 -                        ->from($table)->where('id', '=', $requestId > 0 ? $requestId : 0);
-+                        ->from($table)->where('visit_id', '=', $requestedVisitId);
++                        ->from($table)->where('visit_id', '=', $stat['visit_id']);
  
                      $existing_record = $query->orderBy('dt', 'DESC')
                          ->limit(1)

@@ -30,6 +30,7 @@ for (const initialId of ['', 'invalid-cache-id']) {
       const w = window as any;
       w.SlimStatParams.id = id;
       w.slimstatPageviewTracked = false;
+      document.cookie = 'slimstat_gdpr_consent=accepted; path=/';
       w.SlimStat.send_to_server('action=slimtrack&ci=fixture', true);
     }, initialId);
     await expect.poll(() => page.evaluate(() => (window as any).SlimStatParams.id)).toBe('901.abcdef');

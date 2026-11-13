@@ -246,7 +246,10 @@ test('a dismissal from another tab returns focus to a visible control', async ({
   await page.locator('.js-slimstat-open-notification').click();
   const copy = page.locator('#tab-1 .slimstat-notification-sidebar__copy');
   await copy.focus();
+  const firstPoll = page.waitForResponse(response => response.request().postData()?.includes('action=slimstat_notification_status') ?? false);
   await page.clock.fastForward(61000);
+  await firstPoll;
+  await page.waitForFunction(() => (window as any).jQuery.active === 0);
   await expect(copy).toBeFocused();
   runWordPressFixture('<?php update_option("slimstat_notification_dismissed", [902601 => true], false);');
   await page.clock.fastForward(61000);

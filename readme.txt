@@ -179,11 +179,12 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 == Changelog ==
 
+= 6.1.1 - 2026-11-12 =
+
 * Privacy and security: consent gates identifiers, fingerprints and queued events on every request; withdrawal stays available and no longer enriches earlier anonymous history. Sensitive URL parameters and guest comment identities are excluded.
+* Fix: Historical chart buckets retain all views across database timezone and daylight-saving changes.
 * New installations use privacy-focused defaults. Existing settings are preserved; administrators can set archive retention and mask personal data for report viewers. Global Privacy Control is honored alongside Do Not Track, and report avatars are off by default.
 * Privacy exports include additional stored fields; erasure clears heatmap labels and related caches. Tracker diagnostics store error categories without visitor values.
-
-= 6.1.1 - 2026-11-12 =
 
 * The Black Friday fallback offer expires at December 1, 2026 23:59:59 UTC, matching the existing BFCM2026 coupon instead of closing 59 seconds early.
 * Website links include campaign and placement attribution, while preserving existing campaign parameters and coupon codes.

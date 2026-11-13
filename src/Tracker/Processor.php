@@ -184,7 +184,7 @@ class Processor
             $originalIpForGeo = $cfIp;
         }
 
-        // Store original IP before processing (needed for consent upgrade lookup)
+        // Store original IP before consent-aware processing
         $originalIpBeforeProcessing = $stat['ip'];
         $originalOtherIpBeforeProcessing = $stat['other_ip'] ?? '';
 
@@ -469,29 +469,6 @@ class Processor
 
 				$piiAllowed = Consent::piiAllowed(true);
 
-				// Allow explicit visit_id from client to target original anonymous record
-				// Security: Only accept visit_id with valid checksum to prevent targeting arbitrary records
-				$requestedVisitId = 0;
-				// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Public analytics observation, not an admin mutation; caller enforces tracking consent/exclusions and signed visit IDs. Input shape is checked before unslashing and context-specific sanitization below.
-				$requestedVisitIdRaw = $_REQUEST['visit_id'] ?? '';
-				if (is_scalar($requestedVisitIdRaw) && '' !== (string) $requestedVisitIdRaw) {
-					$visitIdRaw = sanitize_text_field(wp_unslash((string) $requestedVisitIdRaw));
-					$visitIdValue = Utils::getValueWithoutChecksum($visitIdRaw);
-					if (false !== $visitIdValue) {
-						$requestedVisitId = intval($visitIdValue);
-					}
-				} elseif (!empty($data_js['visit_id'])) {
-					$visitIdValue = Utils::getValueWithoutChecksum($data_js['visit_id']);
-					if (false !== $visitIdValue) {
-						$requestedVisitId = intval($visitIdValue);
-					}
-				}
-
-				if ($requestedVisitId > 0) {
-					$stat['visit_id'] = $requestedVisitId;
-					\wp_slimstat::set_stat($stat);
-				}
-
 				// Only upgrade if we're in anonymous mode and consent is now granted
 				if ($isAnonymousTracking && $piiAllowed) {
 					$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
@@ -510,17 +487,23 @@ class Processor
                         // Found existing anonymous pageview - upgrade it
                         $existing_id = intval($existing_record->id);
 
-                       	// Use visit_id from existing record if not provided in request
-                       	if (empty($requestedVisitId) && !empty($existing_record->visit_id)) {
-                       		$stat['visit_id'] = intval($existing_record->visit_id);
-                       		\wp_slimstat::set_stat($stat);
-                       	}
-
                         // Get real IP (before hashing) for upgrade
                         [$realIp, $realOtherIp] = Utils::getRemoteIp();
 
                         // Prepare update data
-                        $update_data = [];
+                        if (empty($stat['visit_id'])) {
+                            $stat['visit_id'] = VisitIdGenerator::generateNextVisitId();
+                            if ($stat['visit_id'] <= 0) {
+                                Query::setProcessingTimestamp(null);
+                                return Utils::logError(500);
+                            }
+                        }
+                        $update_data = ['visit_id' => $stat['visit_id']];
+                        // Removing the anonymous identity prevents linking earlier declined history.
+                        if (in_array('vid_hash', Storage::presentColumns($table), true)) {
+                            $update_data['vid_hash'] = null;
+                            unset($stat['vid_hash']);
+                        }
 
                         // Check hash_ip setting to determine if we should upgrade IP
                         $hashIpEnabled = ('on' === (\wp_slimstat::$settings['hash_ip'] ?? 'off'));
@@ -598,9 +581,6 @@ class Processor
                             }
                         }
 
-                        // Consent enriches the existing session; it must not allocate a new visit.
-                        $stat['visit_id'] = intval($existing_record->visit_id);
-
                         // Update the existing record
                         if (!empty($update_data)) {
                             $update_query = Query::update($table);
@@ -618,14 +598,17 @@ class Processor
 
                             $update_query->where('id', '=', $existing_id);
 
-                            $update_query->execute();
+                            if (false === $update_query->execute()) {
+                                Query::setProcessingTimestamp(null);
+                                return Utils::logError(500);
+                            }
 
                             // Return existing ID (upgraded record)
                             $stat['id'] = $existing_id;
                             \wp_slimstat::set_stat($stat);
                             Query::setProcessingTimestamp(null);
 
-                            // Match the cookie to the preserved session after ensureVisitId's provisional allocation.
+                            // Keep subsequent consented pages in the new session.
                             if (!empty($stat['visit_id'])) {
                                 Session::setTrackingCookie($stat['visit_id'], 'visit');
                             } elseif (!empty($stat['id'])) {

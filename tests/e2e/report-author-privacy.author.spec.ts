@@ -79,7 +79,7 @@ test.describe('author report privacy boundaries', () => {
 
   test.afterAll(async () => { await closeDb(); });
 
-  test('personal-data masking preserves author counts and removes visitor identity from report HTML', async ({ page }) => {
+  test('personal-data masking preserves author counts and removes visitor identity from report HTML and CSV', async ({ page }) => {
     await seedAuthorRows(wpNow);
     await setSlimstatSetting('capability_can_view', 'read');
     await setSlimstatOptions({ mask_personal_data: 'on' });
@@ -95,6 +95,17 @@ test.describe('author report privacy boundaries', () => {
     await expect(report).toContainText('Hidden');
     await expect(report.locator('a.whois')).toHaveCount(0);
     await expect(report.locator('img[src*="gravatar"]')).toHaveCount(0);
+    const exportUrl = await report.locator('.button-export-to-xls').getAttribute('href');
+    expect(exportUrl).toBeTruthy();
+    const exported = await page.request.get(exportUrl!);
+    expect(exported.ok()).toBe(true);
+    expect(exported.headers()['content-type']).toContain('text/csv');
+    const csv = await exported.text();
+    expect(csv).toContain('/author-own');
+    for (const value of ['198.51.100.73', 'private-visitor', 'private@example.test', 'private-note', '/author-secret']) {
+      expect(csv).not.toContain(value);
+    }
+
     // Author scope still exposes precisely the one owned pageview, even with masking enabled.
     const nonce = await chartNonce(page);
     const response = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, { form: {

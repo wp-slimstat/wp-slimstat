@@ -20,7 +20,7 @@ final class ReportPrivacy
             if (!is_array($row)) { continue; }
             foreach (self::PERSONAL as $key) {
                 if (!array_key_exists($key, $row)) { continue; }
-                // Stable anonymous labels preserve grouping without disclosing the account name.
+                // Stable pseudonyms preserve grouping without disclosing the account name.
                 $row[$key] = 'username' === $key && '' !== (string) $row[$key]
                     ? __('Visitor', 'wp-slimstat') . ' ' . substr(hash_hmac('sha256', (string) $row[$key], \wp_slimstat::$settings['secret']), 0, 12)
                     : (in_array($key, ['ip', 'other_ip', 'email', 'user_email', 'full_name', 'display_name', 'hostname'], true) && '' !== (string) $row[$key] ? __('Hidden', 'wp-slimstat') : '');

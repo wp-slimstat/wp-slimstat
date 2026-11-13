@@ -186,7 +186,9 @@ test.describe('User Overview (slim_p8_01)', () => {
     test('login note survives the post-login redirect with a tracking cookie', async ({ browser }) => {
       // The redirect updates a server-tracked pageview; the default client mode has no such row.
       const mode = JSON.parse(runWordPressFixture('<?php echo wp_json_encode(wp_slimstat::$settings["javascript_mode"]);'));
+      const cookie = JSON.parse(runWordPressFixture('<?php echo wp_json_encode(wp_slimstat::$settings["set_tracker_cookie"]);'));
       await setSlimstatSetting('javascript_mode', 'no');
+      await setSlimstatSetting('set_tracker_cookie', 'on');
       let context: import('@playwright/test').BrowserContext | undefined;
       try {
         ({ context } = await loginAsGerlando(browser));
@@ -201,6 +203,7 @@ test.describe('User Overview (slim_p8_01)', () => {
       } finally {
         await context?.close();
         await setSlimstatSetting('javascript_mode', mode);
+        await setSlimstatSetting('set_tracker_cookie', cookie);
       }
     });
 

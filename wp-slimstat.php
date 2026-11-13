@@ -330,7 +330,8 @@ class wp_slimstat
 		// Consent-sync: derive use_slimstat_banner from consent_integration.
 		// Only run when GDPR is on — when off, banner stays off and canTrack() returns true early.
 		if ('on' === (self::$settings['gdpr_enabled'] ?? 'off')) {
-			$consent_integration = self::$settings['consent_integration'] ?? '';
+			$consent_integration = \SlimStat\Utils\Consent::getIntegrationKey();
+			self::$settings['consent_integration'] = $consent_integration;
 
 			// If WP Consent API is selected but the plugin isn't installed, fall back to
 			// SlimStat's own banner so consent enforcement stays active. Resetting to ''

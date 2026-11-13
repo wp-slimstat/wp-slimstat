@@ -73,7 +73,7 @@
       "id": "H5",
       "severity": "high",
       "development_verdict": "confirmed",
-      "resolution_or_remaining_limit": "Only a valid signed current pageview can be upgraded. Removed visit-wide updates and historical IP/visitor-hash lookup. Hash/anonymization/cookieless settings still apply after acceptance.",
+      "resolution_or_remaining_limit": "Only a valid signed current pageview can be upgraded. It moves into the consented session and drops the anonymous identity hash; earlier rows retain their original fields and visit. Removed visit-wide updates and historical IP/visitor-hash lookup. Hash/anonymization/cookieless settings still apply after acceptance.",
       "source": "src/Tracker/Processor.php; src/Providers/IPHashProvider.php; src/Tracker/Session.php"
     },
     {
@@ -231,6 +231,30 @@
     "Email-based privacy requests cannot safely identify an unlinked anonymous visitor by a claimed IP.",
     "Delivered email attachments and data already sent to configured external providers cannot be recalled by local WordPress erasure.",
     "Retention relies on WordPress cron or an equivalent server scheduler.",
-    "URL redaction covers named sensitive fields, not arbitrary personal prose in every URL path or campaign value. Sites should avoid embedding personal data in page names, labels and campaign values."
+    "URL redaction covers named sensitive fields, not arbitrary personal prose in every URL path or campaign value. Sites should avoid embedding personal data in page names, labels and campaign values.",
+    "Accepting consent begins the identifiable session. A session spanning anonymous and consented activity can therefore appear as two visits; pageview totals remain unchanged."
+  ],
+  "additional_report_findings": [
+    {
+      "issue": "Historical charts lost buckets across database daylight-saving changes",
+      "before": {
+        "database_fixture_views": 468,
+        "distinct_search_terms": 24,
+        "daily_plotted": 459,
+        "weekly_plotted": 425
+      },
+      "after": {
+        "database_fixture_views": 468,
+        "distinct_search_terms": 24,
+        "daily_plotted": 468,
+        "weekly_plotted": 468
+      },
+      "fix": "Group stored wall-clock seconds with timezone-independent MySQL date arithmetic; remove current server offset from bucket placement.",
+      "coverage": "Hourly/daily/weekly/monthly/yearly, SYSTEM/UTC/+05:30/-07:00; previous-only corpus and exact distinct-term totals."
+    },
+    {
+      "issue": "Pro WHOIS labels were untranslated and elapsed durations wrapped at 24 hours",
+      "fix": "Translate labels and format elapsed hours explicitly; 111600 seconds displays 31:00:00."
+    }
   ]
 }
