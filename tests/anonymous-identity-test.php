@@ -278,7 +278,10 @@ if (strpos($processor_code, "->where('id', '=', $" . 'requestId > 0 ? $requestId
     || strpos($processor_code, 'vid_hash = UNHEX') !== false) {
     $failures[] = 'consent upgrade must target only the signed pageview';
 }
-if (strpos($processor_code, '$update_data[\'vid_hash\'] = null;') === false
+$upgrade_body = slimstat_blank_comments(slimstat_find_function_body($session_src, 'upgradePageview') ?? '');
+if (strpos($processor_code, 'Session::upgradePageview($existing_id, $update_data)') === false
+    || strpos($upgrade_body, '$updates[\'vid_hash\'] = null;') === false
+    || strpos($upgrade_body, 'VisitIdGenerator::generateNextVisitId()') === false
     || strpos($processor_code, '$stat[\'visit_id\'] = intval($existing_record->visit_id)') !== false) {
     $failures[] = 'consent upgrade must detach the current pageview from its anonymous visit and identity';
 }

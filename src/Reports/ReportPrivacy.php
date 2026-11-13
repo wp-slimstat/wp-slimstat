@@ -15,9 +15,13 @@ final class ReportPrivacy
 
     public static function rows(array $rows, ?string $groupColumn = null): array
     {
-        if (!self::enabled()) { return $rows; }
+        $mask = self::enabled();
         foreach ($rows as &$row) {
             if (!is_array($row)) { continue; }
+            if (isset($row['notes']) && is_string($row['notes'])) {
+                $row['notes'] = preg_replace('/\[consent:accepted:[a-f0-9]{64}\]/', '[consent:accepted]', $row['notes']);
+            }
+            if (!$mask) { continue; }
             foreach (self::PERSONAL as $key) {
                 if (!array_key_exists($key, $row)) { continue; }
                 // Stable pseudonyms preserve grouping without disclosing the account name.

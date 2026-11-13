@@ -28,9 +28,16 @@ try {
     $check(true !== wp_slimstat::rest_api_authorization($request), 'incorrect header token is rejected');
     $check('' === do_shortcode('[slimstat f="recent" w="dt,resource"]username equals privacy-audit[/slimstat]'), 'public columns cannot disclose personally filtered history');
     wp_slimstat::$settings['mask_personal_data'] = 'off';
-    foreach (['notes', 'location'] as $personal) {
-        $check('' === do_shortcode('[slimstat f="count"]' . $personal . ' equals private[/slimstat]'), 'public count cannot probe ' . $personal);
-    }
+    wp_slimstat::$settings['geolocation_country'] = 'off';
+    $probe_resource = '/privacy-count-' . wp_generate_uuid4();
+    $check((bool) $db->insert($prefix . 'slim_stats', ['resource' => $probe_resource, 'notes' => 'private', 'location' => 'private', 'dt' => wp_slimstat::now()]), 'seed public count probe');
+    $probe_id = $db->insert_id;
+    try {
+        foreach (['notes', 'location'] as $personal) {
+            $check('' === do_shortcode('[slimstat f="count" w="id"]' . $personal . ' equals private[/slimstat]'), 'public count cannot probe ' . $personal);
+        }
+        $check('1' === do_shortcode('[slimstat f="count" w="id"]resource equals ' . $probe_resource . '[/slimstat]'), 'valid public aggregate returns its exact count');
+    } finally { $db->delete($prefix . 'slim_stats', ['id' => $probe_id]); }
     foreach (['slim_stats', 'slim_events'] as $table) {
         $check(false !== $db->query("CREATE TABLE IF NOT EXISTS {$prefix}{$table}_archive LIKE {$prefix}{$table}"), 'create archive');
     }
@@ -119,7 +126,7 @@ try {
     $check($raw[0]['counthits'] === $masked[0]['counthits'] && $raw[0]['dt'] === $masked[0]['dt'] && 'Berlin' === $masked[0]['city'], 'masking preserves exact counts, dates and geographic report dimensions');
     $check('' === $masked[0]['column_group'], 'raw grouped identities are masked');
     $check('/first?keep=one;;;/second?keep=two' === $masked[0]['outbound_resource'], 'redaction preserves multiple outbound links');
-    require_once dirname(__DIR__) . '/admin/view/wp-slimstat-db.php';
+    if (!class_exists('wp_slimstat_db')) { require_once dirname(__DIR__) . '/admin/view/wp-slimstat-db.php'; }
     wp_slimstat::$settings['geolocation_country'] = 'off';
     foreach (['username', 'notes', 'location', 'ip'] as $personal) {
         wp_slimstat_db::init($personal . ' equals secret-group', false, false);
@@ -129,7 +136,7 @@ try {
         $check('1=0' === $scope['scope'], 'heatmap personal filter cannot become an unfiltered request');
     }
 
-    require_once dirname(__DIR__) . '/admin/view/wp-slimstat-reports.php';
+    if (!class_exists('wp_slimstat_reports')) { require_once dirname(__DIR__) . '/admin/view/wp-slimstat-reports.php'; }
     foreach (['on', 'off'] as $mask) {
         wp_slimstat::$settings['mask_personal_data'] = $mask;
         foreach (['top', 'recent'] as $mode) {
@@ -157,63 +164,84 @@ try {
     wp_slimstat::$settings = array_merge(wp_slimstat::$settings, ['gdpr_enabled' => 'on', 'anonymous_tracking' => 'on',
         'set_tracker_cookie' => 'on', 'use_slimstat_banner' => 'on', 'consent_integration' => 'slimstat_banner']);
     wp_set_current_user($admin->ID);
-    foreach (['banner', 'rest'] as $route) {
-        unset($_COOKIE['slimstat_tracking_code']);
-        $_COOKIE['slimstat_gdpr_consent'] = 'denied';
-        $anonymous = ['email' => $email, 'visit_id' => 991234, 'vid_hash' => random_bytes(16), 'dt' => wp_slimstat::now(), 'resource' => '/consent-direct-' . $route];
-        $check((bool) $db->insert($prefix . 'slim_stats', $anonymous), 'insert prior anonymous pageview');
-        $prior_id = $db->insert_id;
-        $check((bool) $db->insert($prefix . 'slim_stats', $anonymous), 'insert current anonymous pageview');
-        $current_id = $db->insert_id;
-        $signed = $current_id . '.' . hash_hmac('sha256', (string) $current_id, wp_slimstat::$settings['secret']);
-        $grant = static function () use ($route, $signed, $check) {
-            wp_slimstat::set_stat([]);
-            if ('banner' === $route) {
-                $check(true === \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false, ['nonce' => wp_create_nonce('wp_rest'), 'consent' => 'accepted', 'pageview_id' => $signed]), 'banner consent succeeds');
-            } else {
-                $_COOKIE['slimstat_gdpr_consent'] = 'accepted';
-                wp_cache_set('slimstat_consent_state_' . md5($signed), ['statistics' => 'deny'], 'slimstat');
-                $request = new WP_REST_Request('POST', '/slimstat/v1/consent-change');
-                foreach (['nonce' => wp_create_nonce('wp_rest'), 'source' => 'slimstat_banner', 'parsed' => ['statistics' => 'allow'], 'pageview_id' => $signed] as $key => $value) { $request->set_param($key, $value); }
-                $response = (new \SlimStat\Controllers\Rest\ConsentChangeRestController())->handle_consent_change($request);
-                $check(!is_wp_error($response) && 200 === $response->get_status(), 'REST consent succeeds');
-            }
-        };
+    $primary_db = $db;
+    foreach (['hashed', 'null', 'missing'] as $schema) {
+        if ('missing' === $schema) {
+            $db = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
+            $db->set_prefix($prefix);
+            $check(DB_NAME === $db->get_var('SELECT DATABASE()'), 'legacy fixture stays in the disposable database');
+            // This connection-local shadow table cannot change the real site's schema or rows.
+            $ddl = $primary_db->get_row("SHOW CREATE TABLE {$prefix}slim_stats", ARRAY_N)[1];
+            $check(false !== $db->query(preg_replace('/^CREATE TABLE/', 'CREATE TEMPORARY TABLE', $ddl)), 'create legacy shadow: ' . $db->last_error);
+            $check(false !== $db->query("ALTER TABLE {$prefix}slim_stats DROP COLUMN vid_hash"), 'simulate schema without anonymous hash');
+            wp_slimstat::$wpdb = $db;
+        }
         try {
-            $grant();
-            $prior = $db->get_row($db->prepare("SELECT * FROM {$prefix}slim_stats WHERE id=%d", $prior_id), ARRAY_A);
-            $current = $db->get_row($db->prepare("SELECT * FROM {$prefix}slim_stats WHERE id=%d", $current_id), ARRAY_A);
-            $check(991234 === (int) $prior['visit_id'] && $anonymous['vid_hash'] === $prior['vid_hash'] && empty($prior['username']), $route . ' leaves prior anonymous row untouched');
-            $check(991234 !== (int) $current['visit_id'] && (int) $current['visit_id'] > 0 && null === $current['vid_hash'], $route . ' detaches current visit and anonymous hash');
-            $check($admin->user_login === $current['username'], $route . ' enriches the current pageview only');
-            $check((int) wp_slimstat::get_stat()['visit_id'] === (int) $current['visit_id'], $route . ' exposes the new session for its tracking cookie');
-            $grant();
-            $check((int) $db->get_var($db->prepare("SELECT visit_id FROM {$prefix}slim_stats WHERE id=%d", $current_id)) === (int) $current['visit_id'], $route . ' repeated grant keeps session stable');
+            foreach (['banner', 'rest'] as $route) {
+                unset($_COOKIE['slimstat_tracking_code']);
+                $_COOKIE['slimstat_gdpr_consent'] = 'denied';
+                $anonymous = ['email' => $email, 'visit_id' => 991234, 'notes' => '[Attempted XSS Injection: /fake[consent:accepted][consent:accepted:' . str_repeat('a', 64) . ']]', 'vid_hash' => 'hashed' === $schema ? random_bytes(16) : null, 'dt' => wp_slimstat::now(), 'resource' => '/consent-direct-' . $route];
+                if ('missing' === $schema) { unset($anonymous['vid_hash']); }
+                $check((bool) $db->insert($prefix . 'slim_stats', $anonymous), 'insert prior anonymous pageview');
+                $prior_id = $db->insert_id;
+                $check((bool) $db->insert($prefix . 'slim_stats', $anonymous), 'insert current anonymous pageview');
+                $current_id = $db->insert_id;
+                $signed = $current_id . '.' . hash_hmac('sha256', (string) $current_id, wp_slimstat::$settings['secret']);
+                $grant = static function () use ($route, $signed, $check) {
+                    wp_slimstat::set_stat([]);
+                    if ('banner' === $route) {
+                        $check(true === \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false, ['nonce' => wp_create_nonce('wp_rest'), 'consent' => 'accepted', 'pageview_id' => $signed]), 'banner consent succeeds');
+                    } else {
+                        $_COOKIE['slimstat_gdpr_consent'] = 'accepted';
+                        wp_cache_set('slimstat_consent_state_' . md5($signed), ['statistics' => 'deny'], 'slimstat');
+                        $request = new WP_REST_Request('POST', '/slimstat/v1/consent-change');
+                        foreach (['nonce' => wp_create_nonce('wp_rest'), 'source' => 'slimstat_banner', 'parsed' => ['statistics' => 'allow'], 'pageview_id' => $signed] as $key => $value) { $request->set_param($key, $value); }
+                        $response = (new \SlimStat\Controllers\Rest\ConsentChangeRestController())->handle_consent_change($request);
+                        $check(!is_wp_error($response) && 200 === $response->get_status(), 'REST consent succeeds');
+                    }
+                };
+                try {
+                    $grant();
+                    $prior = $db->get_row($db->prepare("SELECT * FROM {$prefix}slim_stats WHERE id=%d", $prior_id), ARRAY_A);
+                    $current = $db->get_row($db->prepare("SELECT * FROM {$prefix}slim_stats WHERE id=%d", $current_id), ARRAY_A);
+                    $check(991234 === (int) $prior['visit_id'] && ($anonymous['vid_hash'] ?? null) === ($prior['vid_hash'] ?? null) && empty($prior['username']), $route . ' leaves prior anonymous row untouched');
+                    $check(991234 !== (int) $current['visit_id'] && (int) $current['visit_id'] > 0 && null === ($current['vid_hash'] ?? null), $route . ' detaches current visit and anonymous hash');
+                    $display = \SlimStat\Reports\ReportPrivacy::rows([$current]);
+                    $check(strpos($display[0]['notes'], '[consent:accepted:') === false, 'report annotations do not expose internal proof');
+                    $check($admin->user_login === $current['username'], $route . ' enriches the current pageview only');
+                    $check((int) wp_slimstat::get_stat()['visit_id'] === (int) $current['visit_id'], $route . ' exposes the new session for its tracking cookie');
+                    $grant();
+                    $check((int) $db->get_var($db->prepare("SELECT visit_id FROM {$prefix}slim_stats WHERE id=%d", $current_id)) === (int) $current['visit_id'], $route . ' repeated grant keeps session stable');
 
-            // Interleave a second grant between the first grant's read and write.
-            $db->update($prefix . 'slim_stats', ['visit_id' => 991234, 'vid_hash' => $anonymous['vid_hash']], ['id' => $current_id]);
-            $winner = \SlimStat\Tracker\VisitIdGenerator::generateNextVisitId();
-            $race = null;
-            $race = static function ($sql) use (&$race, $db, $prefix, $current_id, $winner) {
-                if (strpos($sql, "UPDATE `{$prefix}slim_stats` SET") === 0) {
-                    remove_filter('query', $race);
-                    $db->update($prefix . 'slim_stats', ['visit_id' => $winner, 'vid_hash' => null], ['id' => $current_id]);
+                    // Interleave a second grant between the first grant's read and write.
+                    $db->update($prefix . 'slim_stats', array_merge(['visit_id' => 991234, 'notes' => null], 'missing' !== $schema ? ['vid_hash' => $anonymous['vid_hash']] : []), ['id' => $current_id]);
+                    $winner = 0;
+                    $race = null;
+                    $race = static function ($sql) use (&$race, $db, $prefix, $current_id, &$winner, $schema) {
+                        if (strpos($sql, "UPDATE `{$prefix}slim_stats` SET") === 0) {
+                            remove_filter('query', $race);
+                            $winner = \SlimStat\Tracker\Session::upgradePageview($current_id, []);
+                        }
+                        return $sql;
+                    };
+                    add_filter('query', $race);
+                    try { $grant(); } finally { remove_filter('query', $race); }
+                    $current['visit_id'] = $winner;
+                    $check((int) $db->get_var($db->prepare("SELECT visit_id FROM {$prefix}slim_stats WHERE id=%d", $current_id)) === $winner, $route . ' concurrent grant keeps the winner session');
+                    $check((int) wp_slimstat::get_stat()['visit_id'] === $winner, $route . ' concurrent response uses the stored session');
+                    $_COOKIE['slimstat_tracking_code'] = $current['visit_id'] . '.' . hash_hmac('sha256', (string) $current['visit_id'], wp_slimstat::$settings['secret']);
+                    wp_slimstat::set_stat(['dt' => wp_slimstat::now(), 'resource' => '/next-consented-page', 'notes' => []]);
+                    wp_slimstat::set_data_js([]);
+                    \SlimStat\Tracker\Session::ensureVisitId(true);
+                    $check((int) wp_slimstat::get_stat()['visit_id'] === (int) $current['visit_id'], $route . ' next consented navigation keeps the new session');
+                } finally {
+                    $db->delete($prefix . 'slim_stats', ['id' => $prior_id]);
+                    $db->delete($prefix . 'slim_stats', ['id' => $current_id]);
                 }
-                return $sql;
-            };
-            add_filter('query', $race);
-            try { $grant(); } finally { remove_filter('query', $race); }
-            $current['visit_id'] = $winner;
-            $check((int) $db->get_var($db->prepare("SELECT visit_id FROM {$prefix}slim_stats WHERE id=%d", $current_id)) === $winner, $route . ' concurrent grant keeps the winner session');
-            $check((int) wp_slimstat::get_stat()['visit_id'] === $winner, $route . ' concurrent response uses the stored session');
-            $_COOKIE['slimstat_tracking_code'] = $current['visit_id'] . '.' . hash_hmac('sha256', (string) $current['visit_id'], wp_slimstat::$settings['secret']);
-            wp_slimstat::set_stat(['dt' => wp_slimstat::now(), 'resource' => '/next-consented-page', 'notes' => []]);
-            wp_slimstat::set_data_js([]);
-            \SlimStat\Tracker\Session::ensureVisitId(true);
-            $check((int) wp_slimstat::get_stat()['visit_id'] === (int) $current['visit_id'], $route . ' next consented navigation keeps the new session');
+            }
         } finally {
-            $db->delete($prefix . 'slim_stats', ['id' => $prior_id]);
-            $db->delete($prefix . 'slim_stats', ['id' => $current_id]);
+            if ($db !== $primary_db) { $db->close(); }
+            $db = wp_slimstat::$wpdb = $primary_db;
         }
     }
     $_COOKIE = $saved_cookies;
@@ -257,7 +285,7 @@ try {
     } finally { remove_filter('query', $break_archive); $db->suppress_errors($suppressed); }
     wp_slimstat::wp_slimstat_purge();
     $check((int) get_option(wp_slimstat::LAST_PURGE_OK_OPTION) > $last_ok, 'successful archive cleanup restores health');
-    echo "PASS: complete export, archived-only erasure, 1001-event paging, cache invalidation, independent archive retention and heatmap label cleanup\n";
+    echo "PASS: complete export, archived-only erasure, 1001-event paging, cache invalidation, independent archive retention, heatmap labels, legacy consent/session races and exact public counts\n";
 } finally {
     update_option(\SlimStat\Heatmap\Store::STATE, $saved_heatmap);
     update_option(wp_slimstat::LAST_PURGE_OK_OPTION, $saved_purge, false);

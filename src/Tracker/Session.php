@@ -171,6 +171,46 @@ class Session
 		return false;
 	}
 
+	/** Detach a signed current pageview once, including on pre-vid_hash schemas. */
+	public static function upgradePageview(int $pageview_id, array $updates): int
+	{
+		if ($pageview_id <= 0 || !Consent::piiAllowed()) { return 0; }
+		$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+		$has_hash = in_array('vid_hash', Storage::presentColumns($table), true);
+		$current = $db->get_row($db->prepare('SELECT visit_id, notes' . ($has_hash ? ', vid_hash' : '') . " FROM {$table} WHERE id = %d", $pageview_id), ARRAY_A);
+		if (!$current || !empty($db->last_error)) { return 0; }
+		// Null hashes also occur on historical rows; only our explicit annotation proves separation.
+		$marker = self::consentMarker($pageview_id, (int) $current['visit_id']);
+		$notes = (string) ($current['notes'] ?? '');
+		$detached = false !== strpos($notes, $marker);
+		$visit_id = $detached ? (int) $current['visit_id'] : VisitIdGenerator::generateNextVisitId();
+		if ($visit_id <= 0) { return 0; }
+		if (!$detached) { $notes .= self::consentMarker($pageview_id, $visit_id); }
+		if (!empty($updates['notes']) && false === strpos($notes, $updates['notes'])) { $notes .= $updates['notes']; }
+		$updates['notes'] = $notes;
+		$updates['visit_id'] = $visit_id;
+		if ($has_hash) { $updates['vid_hash'] = null; }
+		// Compare the read state so simultaneous acknowledgements cannot overwrite each other or notes.
+		$where = ['id' => $pageview_id, 'visit_id' => $current['visit_id'], 'notes' => $current['notes']];
+		if ($has_hash) { $where['vid_hash'] = $current['vid_hash']; }
+		$updated = $db->update($table, $updates, $where);
+		if (false === $updated) { return 0; }
+		if (0 === $updated) {
+			$winner = $db->get_row($db->prepare('SELECT visit_id, notes' . ($has_hash ? ', vid_hash' : '') . " FROM {$table} WHERE id = %d", $pageview_id), ARRAY_A);
+			if (!$winner || !empty($db->last_error) || ($has_hash && null !== $winner['vid_hash'])) { return 0; }
+			$visit_id = (int) $winner['visit_id'];
+			if (false === strpos((string) $winner['notes'], self::consentMarker($pageview_id, $visit_id))) { return 0; }
+		}
+		return $visit_id;
+	}
+
+	/** Notes can contain visitor-supplied referrers, so a plain annotation cannot authorize reuse. */
+	private static function consentMarker(int $pageview_id, int $visit_id): string
+	{
+		return '[consent:accepted:' . hash_hmac('sha256', 'consent-upgrade|' . $pageview_id . '|' . $visit_id, \wp_slimstat::$settings['secret']) . ']';
+	}
+
 	/**
 	 * Set or extend the tracking cookie.
 	 *

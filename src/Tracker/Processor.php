@@ -496,20 +496,7 @@ class Processor
                         // Get real IP (before hashing) for upgrade
                         [$realIp, $realOtherIp] = Utils::getRemoteIp();
 
-                        // Prepare update data
-                        if (empty($stat['visit_id'])) {
-                            $stat['visit_id'] = VisitIdGenerator::generateNextVisitId();
-                            if ($stat['visit_id'] <= 0) {
-                                Query::setProcessingTimestamp(null);
-                                return Utils::logError(500);
-                            }
-                        }
-                        $update_data = ['visit_id' => $stat['visit_id']];
-                        // Removing the anonymous identity prevents linking earlier declined history.
-                        if (in_array('vid_hash', Storage::presentColumns($table), true)) {
-                            $update_data['vid_hash'] = null;
-                            unset($stat['vid_hash']);
-                        }
+                        $update_data = [];
 
                         // Check hash_ip setting to determine if we should upgrade IP
                         $hashIpEnabled = ('on' === (\wp_slimstat::$settings['hash_ip'] ?? 'off'));
@@ -587,24 +574,12 @@ class Processor
                             }
                         }
 
-                        // Update only the signed pageview.
-                        $update_query = Query::update($table);
-
-                        // Handle notes separately (append if needed)
-                        if (!empty($update_data['notes'])) {
-                            $notes_to_append = $update_data['notes'];
-                            unset($update_data['notes']);
-                            $update_query->setRaw('notes', "CONCAT(IFNULL(notes, ''), %s)", [$notes_to_append]);
-                        }
-
-                        $update_query->set($update_data);
-
-                        $update_query->where('id', '=', $existing_id);
-
-                        if (false === $update_query->execute()) {
+                        $stat['visit_id'] = Session::upgradePageview($existing_id, $update_data);
+                        if ($stat['visit_id'] <= 0) {
                             Query::setProcessingTimestamp(null);
                             return Utils::logError(500);
                         }
+                        unset($stat['vid_hash']);
 
                         // Return existing ID (upgraded record)
                         $stat['id'] = $existing_id;

@@ -161,76 +161,11 @@ class ConsentHandler
 						$stat['notes']    = '[user:' . $GLOBALS['current_user']->data->ID . ']';
 					}
 
-					$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-					$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
-					$update_data = [];
-
-					if (!empty($stat['ip'])) {
-						$update_data['ip'] = $stat['ip'];
-					}
-
-					if (!empty($stat['other_ip'])) {
-						$update_data['other_ip'] = $stat['other_ip'];
-					}
-
-					if (!empty($stat['username'])) {
-						$update_data['username'] = $stat['username'];
-					}
-
-					if (!empty($stat['email'])) {
-						$update_data['email'] = $stat['email'];
-					}
-
-					if (!empty($update_data)) {
-						$has_hash = in_array('vid_hash', \SlimStat\Tracker\Storage::presentColumns($table), true);
-						$current = $db->get_row($db->prepare('SELECT visit_id' . ($has_hash ? ', vid_hash' : '') . " FROM {$table} WHERE id = %d", $pageview_id), ARRAY_A);
-						if (!$current || !empty($db->last_error)) { return false; }
-						// Repeated consent acknowledgements keep the already detached session.
-						$visit_id = $has_hash && null === $current['vid_hash'] && (int) $current['visit_id'] > 0
-						    ? (int) $current['visit_id'] : \SlimStat\Tracker\VisitIdGenerator::generateNextVisitId();
-						if ($visit_id <= 0) { return false; }
-						$update_data['visit_id'] = $visit_id;
-						if ($has_hash) { $update_data['vid_hash'] = null; }
-						// A concurrent consent acknowledgement must not replace the session already chosen.
-						$where = ['id' => $pageview_id, 'visit_id' => $current['visit_id']];
-						if ($has_hash) { $where['vid_hash'] = $current['vid_hash']; }
-						$updated = $db->update(
-							$table,
-							$update_data,
-							$where,
-							array_fill(0, count($update_data), '%s'),
-							array_merge(['%d', '%d'], $has_hash ? ['%s'] : [])
-						);
-						if (false === $updated) { return false; }
-						if (0 === $updated) {
-						    $visit_id = (int) $db->get_var($db->prepare("SELECT visit_id FROM {$table} WHERE id = %d" . ($has_hash ? ' AND vid_hash IS NULL' : ''), $pageview_id));
-						    if ($visit_id <= 0 || !empty($db->last_error)) { return false; }
-						}
-						$stat['visit_id'] = $visit_id;
-						\wp_slimstat::set_stat($stat);
-						Session::setTrackingCookie($visit_id, 'visit');
-					}
-
-					// Append user note if not already present
-					if (!empty($stat['notes'])) {
-						$existing_note = $db->get_var(
-							$db->prepare(
-								"SELECT notes FROM {$table} WHERE id = %d AND notes LIKE %s LIMIT 1",
-								$pageview_id,
-								'%' . $db->esc_like($stat['notes']) . '%'
-							)
-						);
-
-						if (empty($db->last_error) && null === $existing_note) {
-							$db->query(
-								$db->prepare(
-									"UPDATE {$table} SET notes = CONCAT(IFNULL(notes, ''), %s) WHERE id = %d",
-									$stat['notes'],
-									$pageview_id
-								)
-							);
-						}
-					}
+					$visit_id = Session::upgradePageview($pageview_id, $stat);
+					if ($visit_id <= 0) { return false; }
+					$stat['visit_id'] = $visit_id;
+					\wp_slimstat::set_stat($stat);
+					Session::setTrackingCookie($visit_id, 'visit');
 
 					do_action('slimstat_consent_granted', $pageview_id, $stat);
 				}
