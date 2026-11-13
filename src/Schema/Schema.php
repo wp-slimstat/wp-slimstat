@@ -379,12 +379,15 @@ final class Schema
                 // index whose columns are missing (reported, not errored) until then.
                 'idx_vid_hash_dt'                   => 'vid_hash, dt',
                 'idx_ecommerce_visit'               => 'visit_id, dt, id',
+                // Scope privacy erasure locks to the matching email range. InnoDB
+                // includes the primary key; 191 characters fits legacy utf8mb4 limits.
+                'idx_privacy_email'                 => 'email(191)',
             ],
             'on_demand_indexes' => ['idx_ecommerce_visit'],
             // Built from the Migration page, never by ensure() on admin_init: each is a prefix
             // index over the whole fact table (release review 2026-10-13, B2). Fresh installs
             // still get them inline from createTableSql().
-            'migration_indexes' => ['idx_goal_queries', 'idx_funnel_queries'],
+            'migration_indexes' => ['idx_goal_queries', 'idx_funnel_queries', 'idx_privacy_email'],
         ],
 
         'slim_stats_archive' => [

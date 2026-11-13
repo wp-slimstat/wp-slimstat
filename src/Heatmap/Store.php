@@ -271,14 +271,18 @@ final class Store
 		$values = [];
 		$args   = [];
 		foreach ($rows as [$kind, $seq, $dh, $x, $y, $sel, $rx, $ry, $flags, $vw, $vh]) {
-			$values[] = '(%d, %d, %d, UNHEX(%s), %d, %d, %d, %d, %d, %d, %d, ' . (null === $sel ? 'NULL' : 'UNHEX(%s)') . ', %d, %d, %d)';
+			$values[] = 'SELECT %d id, %d kind, %d seq, UNHEX(%s) page, %d dt, %d device, %d vw, %d vh, %d dh, %d x, %d y, ' . (null === $sel ? 'NULL' : 'UNHEX(%s)') . ' sel, %d rx, %d ry, %d flags';
 			array_push($args, $common[0], $kind, $seq, $common[1], $common[2], Query::DEVICE_CODES[Query::device($vw)] ?? 0, $vw, $vh);
 			array_push($args, $dh, $x, $y, ...(null === $sel ? [] : [$sel]));
 			array_push($args, $rx, $ry, $flags);
 		}
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery -- Table from the manifest; placeholders built above, values prepared.
-		if (false === $db->query($db->prepare("INSERT INTO {$table} (id, kind, seq, page, dt, device, vw, vh, dh, x, y, sel, rx, ry, flags) VALUES " . implode(', ', $values) . ' ON DUPLICATE KEY UPDATE y = GREATEST(y, VALUES(y)), dh = GREATEST(dh, VALUES(dh))', $args))) {
+		$parents = self::table('slim_stats');
+		$args[] = $id;
+		// The earlier resource lookup may precede an erasure. Lock the parent until
+		// this INSERT finishes, including on legacy tables without a foreign key.
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery -- Tables from the manifest; placeholders built above, values prepared.
+		if (false === $db->query($db->prepare("INSERT INTO {$table} (id, kind, seq, page, dt, device, vw, vh, dh, x, y, sel, rx, ry, flags) SELECT incoming.* FROM (" . implode(' UNION ALL ', $values) . ") incoming WHERE EXISTS (SELECT 1 FROM {$parents} WHERE id = %d FOR UPDATE) ON DUPLICATE KEY UPDATE y = GREATEST({$table}.y, VALUES(y)), dh = GREATEST({$table}.dh, VALUES(dh))", $args))) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; the caller records them as a degradation, which escapes on display.
 			throw new \RuntimeException($db->last_error);
 		}

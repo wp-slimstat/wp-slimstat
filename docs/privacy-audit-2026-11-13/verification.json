@@ -537,6 +537,18 @@
       "database_concurrency": "Actual ingest/erase SQL tested on two connections, erase-first and ingest-first, under READ COMMITTED and REPEATABLE READ; all pass.",
       "validation_status": "40 focused Free browser scenarios and 50 Pro browser scenarios pass on 80649474. The subsequent parent-erasure change passes actual inter-callback and rollback fixtures, external analytics routing and all 0/1/500/501/1000/1001 live/archive paging cases. Final source checks and CI are recorded in PR #414.",
       "parent_erasure": "A reproduced inter-callback gap also let new heatmap clicks restore shared labels after the heatmap eraser. The live pageview eraser now locks its exact 500-row parent batch, repeats heatmap erasure and deletes those parents in one transaction. A failed parent write rolls back the heatmap deletion and refuses completion; retry succeeds."
+    },
+    "fourth_review": {
+      "review": "Free review 5898675246: comments 4569156474 and 4569156481.",
+      "heatmap": "Atomic click/scroll INSERT locks and checks the parent pageview, including legacy tables without a foreign key. The dictionary write remains conditional on a surviving locked click.",
+      "index": "New idx_privacy_email (email prefix 191) is inline on fresh tables and deferred to an explicit online Migration-page build on existing tables. The email-scoped erasure lock is preserved; no settings or stored row values are changed.",
+      "validation": {
+        "real_database": "MySQL 8.4 and MariaDB 12.3: erased-parent interleaving, two connections, erase-first and ingest-first, READ COMMITTED and REPEATABLE READ, retry rollback and exact surviving counts pass. Before migration, an unrelated visitor insert blocks on the email locking scan; after migration it completes while the erasure lock is held. EXPLAIN selects idx_privacy_email. Migration is idempotent and verified.",
+        "required_red": "2d21be1d retains FK-less clicks/scrolls and labels after parent erasure. Removing only the new parent FOR UPDATE reproduces the concurrent orphan under READ COMMITTED.",
+        "local": "718 unit / 2818 assertions, 229 integration / 965 assertions, full source suite, production autoloader, 85 escaping assertions; 22 focused Free browser cases and 50 Pro browser cases pass.",
+        "comparison": "Original after.json behavior snapshot remains identical.",
+        "plugin_check": "Zero code errors; only the existing registered-slug policy warning. Pro updater/slug policy findings remain as documented."
+      }
     }
   }
 }

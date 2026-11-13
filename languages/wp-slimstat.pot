@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-13T21:48:51+00:00\n"
+"POT-Creation-Date: 2026-11-13T22:08:30+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -2859,7 +2859,7 @@ msgstr ""
 
 #: admin/view/heatmaps.php:32
 #: admin/view/wp-slimstat-reports.php:1937
-#: src/Heatmap/Store.php:427
+#: src/Heatmap/Store.php:431
 msgid "Page"
 msgstr ""
 
@@ -2899,8 +2899,8 @@ msgid "Clicks by device: desktop, tablet and mobile."
 msgstr ""
 
 #: admin/view/heatmaps.php:37
-#: src/Heatmap/Store.php:428
-#: src/Heatmap/Store.php:431
+#: src/Heatmap/Store.php:432
+#: src/Heatmap/Store.php:435
 msgid "Scroll depth"
 msgstr ""
 
@@ -5516,7 +5516,7 @@ msgid "Event ID"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:151
-#: src/Heatmap/Store.php:428
+#: src/Heatmap/Store.php:432
 msgid "Type"
 msgstr ""
 
@@ -6410,7 +6410,7 @@ msgid "IP"
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:1937
-#: src/Heatmap/Store.php:426
+#: src/Heatmap/Store.php:430
 #: admin/assets/js/admin.js:157
 msgid "Date"
 msgstr ""
@@ -9156,29 +9156,29 @@ msgstr ""
 msgid "Heatmap data could not be loaded. Try a shorter date range, then retry."
 msgstr ""
 
-#: src/Heatmap/Store.php:354
-#: src/Heatmap/Store.php:404
-#: src/Heatmap/Store.php:437
+#: src/Heatmap/Store.php:358
+#: src/Heatmap/Store.php:408
+#: src/Heatmap/Store.php:441
 msgid "SlimStat Heatmap clicks"
 msgstr ""
 
-#: src/Heatmap/Store.php:428
+#: src/Heatmap/Store.php:432
 msgid "Click"
 msgstr ""
 
-#: src/Heatmap/Store.php:433
+#: src/Heatmap/Store.php:437
 msgid "Element"
 msgstr ""
 
-#: src/Heatmap/Store.php:450
+#: src/Heatmap/Store.php:454
 msgid "You are not allowed to change heatmap tracking."
 msgstr ""
 
-#: src/Heatmap/Store.php:468
+#: src/Heatmap/Store.php:472
 msgid "You are not allowed to delete heatmap data."
 msgstr ""
 
-#: src/Heatmap/Store.php:472
+#: src/Heatmap/Store.php:476
 msgid "Type DELETE to confirm deletion."
 msgstr ""
 
@@ -9403,6 +9403,14 @@ msgstr ""
 
 #: src/Migration/Migrations/CreateGoalQueriesIndex.php:17
 msgid "Create Goal Queries Index"
+msgstr ""
+
+#: src/Migration/Migrations/CreatePrivacyEmailIndex.php:19
+msgid "Index email addresses for personal data requests"
+msgstr ""
+
+#: src/Migration/Migrations/CreatePrivacyEmailIndex.php:24
+msgid "Speeds up personal data export and erasure and limits erasure locks to matching email addresses. Building the index can take time on large databases. Run this maintenance when traffic is low."
 msgstr ""
 
 #: src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php:51

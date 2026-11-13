@@ -83,7 +83,7 @@ class DataEraser
 	/**
 	 * A visitor can click between WordPress's separate privacy callbacks. Lock the
 	 * parent batch, erase its heatmap labels again and delete those same parents
-	 * before releasing the locks. Pending inserts then fail their parent FK check.
+	 * before releasing the locks. Pending inserts then fail their locked parent existence check.
 	 *
 	 * @return array{0: int|false, 1: bool}
 	 */
