@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-13T23:30:25+00:00\n"
+"POT-Creation-Date: 2026-11-13T23:53:38+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -1052,7 +1052,7 @@ msgid "Pro options"
 msgstr ""
 
 #: admin/config/index.php:728
-#: admin/config/index.php:1151
+#: admin/config/index.php:1154
 msgid "License"
 msgstr ""
 
@@ -1205,99 +1205,99 @@ msgstr ""
 msgid "api, token, key, integration"
 msgstr ""
 
-#: admin/config/index.php:1094
+#: admin/config/index.php:1096
 #: admin/index.php:220
 #: admin/view/ai-analysis.php:19
 #: admin/view/partials/header.php:144
 msgid "Settings"
 msgstr ""
 
-#: admin/config/index.php:1100
-#: admin/config/index.php:1101
+#: admin/config/index.php:1102
+#: admin/config/index.php:1103
 msgid "Search settings"
 msgstr ""
 
-#: admin/config/index.php:1102
+#: admin/config/index.php:1104
 msgid "Matching settings"
 msgstr ""
 
-#: admin/config/index.php:1116
+#: admin/config/index.php:1118
 msgid "Setup status"
 msgstr ""
 
-#: admin/config/index.php:1116
+#: admin/config/index.php:1118
 msgid "What your privacy settings do"
 msgstr ""
 
-#: admin/config/index.php:1118
+#: admin/config/index.php:1120
 msgid "A plain summary of how SlimStat treats visitor data with the settings saved below. It is not legal advice: what you must do depends on your site, your visitors and the laws that apply to you."
 msgstr ""
 
-#: admin/config/index.php:1127
+#: admin/config/index.php:1130
 msgid "Needs attention:"
 msgstr ""
 
-#: admin/config/index.php:1136
+#: admin/config/index.php:1139
 msgid "Checked the summary and the settings below? Mark the review complete to stop the reminder. Your settings stay as they are."
 msgstr ""
 
-#: admin/config/index.php:1137
+#: admin/config/index.php:1140
 msgid "Mark privacy review as complete"
 msgstr ""
 
-#: admin/config/index.php:1140
+#: admin/config/index.php:1143
 msgid "Privacy review completed."
 msgstr ""
 
-#: admin/config/index.php:1146
+#: admin/config/index.php:1149
 #: admin/view/index.php:22
 msgid "<strong>AdBlock browser extension detected.</strong> If you see this notice, it means that your browser is not loading our stylesheet and/or JavaScript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href=\"https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work\" target=\"_blank\">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets."
 msgstr ""
 
-#: admin/config/index.php:1151
+#: admin/config/index.php:1154
 msgid "Pro settings"
 msgstr ""
 
-#: admin/config/index.php:1153
+#: admin/config/index.php:1156
 msgid "Install and activate the Pro plugin, then enter your license key here. Activating the plugin and activating a license are separate steps. Your current Free settings stay unchanged."
 msgstr ""
 
-#: admin/config/index.php:1154
+#: admin/config/index.php:1157
 msgid "Install and activate the Pro plugin to configure these settings. Your current Free settings stay unchanged."
 msgstr ""
 
-#: admin/config/index.php:1157
+#: admin/config/index.php:1160
 msgid "A Pro license gives you plugin updates and support."
 msgstr ""
 
-#: admin/config/index.php:1158
+#: admin/config/index.php:1161
 msgid "With Pro, choose which pages heatmaps track and how often, use an internal IP location lookup and keep stats in an external database."
 msgstr ""
 
-#: admin/config/index.php:1199
+#: admin/config/index.php:1202
 msgid "Network-wide"
 msgstr ""
 
-#: admin/config/index.php:1202
+#: admin/config/index.php:1205
 msgid "Network"
 msgstr ""
 
-#: admin/config/index.php:1202
+#: admin/config/index.php:1205
 msgid "Site"
 msgstr ""
 
-#: admin/config/index.php:1241
+#: admin/config/index.php:1244
 #: src/Services/SettingsStatus.php:114
 msgid "On"
 msgstr ""
 
-#: admin/config/index.php:1241
+#: admin/config/index.php:1244
 #: src/Services/SettingsStatus.php:64
 #: src/Services/SettingsStatus.php:98
 msgid "Off"
 msgstr ""
 
-#: admin/config/index.php:1367
+#: admin/config/index.php:1370
 msgid "Save Changes"
 msgstr ""
 
@@ -1627,7 +1627,7 @@ msgstr ""
 #: admin/view/videos.php:17
 #: src/Services/Admin/VideoTutorials.php:62
 #: src/Services/BlackFriday2026.php:66
-#: src/Services/ProLicense.php:242
+#: src/Services/ProLicense.php:243
 msgid "(opens in a new tab)"
 msgstr ""
 
@@ -12260,19 +12260,19 @@ msgstr ""
 msgid "Some selected filters are not supported by Heatmaps. They are kept for other reports and are not applied here:"
 msgstr ""
 
-#: admin/assets/js/settings.js:152
+#: admin/assets/js/settings.js:158
 msgid "No settings match. Try another word."
 msgstr ""
 
 #. translators: %d: number of matching settings.
-#: admin/assets/js/settings.js:159
+#: admin/assets/js/settings.js:165
 #, js-format
 msgid "%d setting found"
 msgid_plural "%d settings found"
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/assets/js/settings.js:201
+#: admin/assets/js/settings.js:207
 msgid "You have unsaved changes."
 msgstr ""
 
