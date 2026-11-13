@@ -602,3 +602,6 @@
         transform: rotate(360deg);
     }
 }
+
+.slimstat-gdpr-banner[hidden] { display: none !important; }
+.slimstat-privacy-settings { cursor: pointer; margin: 0.5em; padding: 0.5em 1em; }

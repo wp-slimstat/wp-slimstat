@@ -61,6 +61,8 @@
     }
   },
   "scripts": {
+    "test:privacy-url-redaction": "php tests/privacy-url-redaction-test.php",
+    "test:privacy-data-wp": "wp eval-file tests/privacy-data-wp-test.php",
     "test:pcp-regressions": "php tests/pcp-core-assets-test.php && php tests/dbip-stream-failure-test.php && php tests/phpcs-ignore-placement-test.php",
     "test:front-end-option-budget": "php tests/front-end-option-read-budget-test.php",
     "test:dashboard-widget-queue": "node tests/dashboard-widget-queue.cjs",
@@ -490,7 +492,8 @@
       "@test:report-sql-debug",
       "@test:browscap-recovery",
       "@test:dashboard-deferred-reports",
-      "@test:privacy-export-archive"
+      "@test:privacy-export-archive",
+      "@test:privacy-url-redaction"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit --log-junit build/junit-unit.xml",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php --log-junit build/junit-integration.xml",

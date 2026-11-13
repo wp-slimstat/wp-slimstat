@@ -190,9 +190,10 @@ class Session
 
 		$piiAllowed = Consent::piiAllowed($isConsentUpgrade);
 		$cookieEnabled = !empty(\wp_slimstat::$settings['set_tracker_cookie']) && 'on' == \wp_slimstat::$settings['set_tracker_cookie'];
-		$shouldSetCookie = apply_filters('slimstat_set_visit_cookie', ($force || ($piiAllowed && $cookieEnabled)));
+		// An upgrade cannot override consent or the site's cookieless setting.
+		$shouldSetCookie = apply_filters('slimstat_set_visit_cookie', $piiAllowed && $cookieEnabled);
 
-		if (!$shouldSetCookie) {
+		if (!$piiAllowed || !$cookieEnabled || !$shouldSetCookie) {
 			return false;
 		}
 

@@ -177,6 +177,33 @@ class DataExporter
 				];
 			}
 
+			$personal_fields = [
+				'other_ip' => __('Forwarded IP Address', 'wp-slimstat'),
+				'location' => __('Location', 'wp-slimstat'),
+				'searchterms' => __('Search Terms', 'wp-slimstat'),
+				'notes' => __('Notes', 'wp-slimstat'),
+				'outbound_resource' => __('Outbound Links', 'wp-slimstat'),
+				'dt_out' => __('Last Activity Timestamp', 'wp-slimstat'),
+				'screen_width' => __('Screen Width', 'wp-slimstat'),
+				'screen_height' => __('Screen Height', 'wp-slimstat'),
+				'language' => __('Language', 'wp-slimstat'),
+				'utm_source' => __('Campaign Source', 'wp-slimstat'),
+				'utm_medium' => __('Campaign Medium', 'wp-slimstat'),
+				'utm_campaign' => __('Campaign Name', 'wp-slimstat'),
+				'utm_term' => __('Campaign Term', 'wp-slimstat'),
+				'utm_content' => __('Campaign Content', 'wp-slimstat'),
+				'traffic_source' => __('Traffic Source', 'wp-slimstat'),
+			];
+			foreach ($personal_fields as $column => $label) {
+				if (isset($pageview->$column) && '' !== (string) $pageview->$column) {
+					$item_data[] = ['name' => $label, 'value' => $pageview->$column];
+				}
+			}
+
+            if (!empty($pageview->vid_hash)) {
+                $item_data[] = ['name' => __('Daily Visit Identifier', 'wp-slimstat'), 'value' => bin2hex($pageview->vid_hash)];
+            }
+
 			// Add to export
 			$data_to_export[] = [
 				'group_id'    => 'slimstat_pageviews',

@@ -11,7 +11,8 @@ use SlimStat\Utils\Query;
  * Implements GDPR Article 17 - Right to Erasure (Right to be Forgotten)
  *
  * This class erases all personal data collected by SlimStat for a given
- * email address or IP address, complying with WordPress Privacy Tools.
+ * email address through WordPress Privacy Tools. The IP helper is for verified
+ * administrator requests; WordPress itself verifies requests by email only.
  *
  * Erasure strategy:
  * - Deletes pageviews and events associated with the email

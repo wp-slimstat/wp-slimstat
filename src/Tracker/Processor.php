@@ -192,18 +192,8 @@ class Processor
         $data_js = \wp_slimstat::get_data_js();
         $isConsentUpgrade = !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
 
-        // Determine if PII is allowed based on cookie and CMP consent
-        // This ensures that after consent is granted, subsequent requests (without consent_upgrade=1)
-        // still use full IP instead of hashing
-        // Pass $isConsentUpgrade to piiAllowed so it knows this is an explicit consent signal
-        // But also check if PII is already allowed via cookie/CMP (for subsequent requests)
-        $piiAllowedForIp = Consent::piiAllowed($isConsentUpgrade);
-
-        // Process IP address with anonymization and hashing (for GDPR compliance)
-        // Pass explicit consent flag: true if this is a consent upgrade request OR if PII is already allowed via cookie/CMP
-        // This ensures IP is not hashed in subsequent requests after consent is granted
-        $explicitConsentForIp = $isConsentUpgrade || $piiAllowedForIp;
-        $stat = IPHashProvider::processIp($stat, $explicitConsentForIp);
+        // The provider reads current consent; request flags cannot authorize identifiers.
+        $stat = IPHashProvider::processIp($stat);
 
         if (!isset($stat['resource'])) {
             $stat['resource'] = \wp_slimstat::get_request_uri();
@@ -331,46 +321,17 @@ class Processor
                 $stat['email']    = $user->data->user_email;
                 $stat['notes'][]  = 'user:' . $user->data->ID;
             }
-            $not_spam = true;
-        } elseif ($piiAllowed && isset($_COOKIE['comment_author_' . COOKIEHASH])) {
-            // Only check comment cookies if PII is allowed
-            // Use original IP (before hashing) for spam check with Query builder
-            // ->local(): wp_comments is a CORE table. The default Query handle is the
-            // analytics connection, which under the custom-DB add-on is a different
-            // database (often server) with no wp_comments — so on an external-DB install
-            // a known commenter's username/email were never attached, silently, on every
-            // one of their pageviews (F6/C44). DB_NAME still qualifies it, harmlessly,
-            // since the local handle IS DB_NAME.
-            $spam_comment = Query::select('comment_author, comment_author_email, COUNT(*) as comment_count')
-                ->local()
-                ->from(DB_NAME . '.' . $GLOBALS['wpdb']->comments)
-                ->where('comment_author_IP', '=', $originalIpForGeo)
-                ->where('comment_approved', '=', 'spam')
-                ->groupBy('comment_author')
-                ->limit(1)
-                ->getRow();
+        }
 
-            if (!empty($spam_comment)) {
-                if ('on' == \wp_slimstat::$settings['ignore_spammers']) {
-                    Query::setProcessingTimestamp(null);
-                    return Utils::logError(317);
-                }
-
-                $stat['notes'][]  = 'spam:yes';
-                $stat['username'] = $spam_comment->comment_author;
-                $stat['email']    = $spam_comment->comment_author_email;
-            } else {
-                // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
-                $comment_author = $_COOKIE['comment_author_' . COOKIEHASH] ?? '';
-                if (is_string($comment_author) && '' !== $comment_author) {
-                    $stat['username'] = sanitize_user(wp_unslash($comment_author));
-                }
-
-                // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
-                $comment_email = $_COOKIE['comment_author_email_' . COOKIEHASH] ?? '';
-                if (is_string($comment_email) && '' !== $comment_email) {
-                    $stat['email'] = sanitize_email(wp_unslash($comment_email));
-                }
+        // Keep the spam exclusion without importing comment identities into analytics.
+        if (empty($user->ID) && 'on' === (\wp_slimstat::$settings['ignore_spammers'] ?? 'off')) {
+            $spam = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare(
+                "SELECT comment_ID FROM {$GLOBALS['wpdb']->comments} WHERE comment_author_IP = %s AND comment_approved = 'spam' LIMIT 1",
+                $originalIpForGeo
+            ));
+            if ($spam) {
+                Query::setProcessingTimestamp(null);
+                return Utils::logError(317);
             }
         }
 
@@ -535,91 +496,11 @@ class Processor
 				if ($isAnonymousTracking && $piiAllowed) {
 					$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
-					// Use ID from request if available (most reliable for upgrade), otherwise fallback to visit_id
-					$requestId = 0;
-					if (!empty($data_js['id'])) {
-						// ID in data_js usually has checksum, verify and strip it
-						$requestId = Utils::getValueWithoutChecksum($data_js['id']);
-					}
+                    $requestId = self::upgradePageviewId($data_js);
 
-					$query = Query::select('id, ip, visit_id, fingerprint, username, email, notes')
-						->from($table);
-					if ($requestId > 0) {
-						// Lookup by specific Pageview ID
-						$query->where('id', '=', $requestId);
-					} else {
-						// Fallback: Lookup by session attributes (less reliable if VisitID changed)
-						$session_duration = !empty(\wp_slimstat::$settings['session_duration']) ? intval(\wp_slimstat::$settings['session_duration']) : 1800;
-						$min_timestamp    = $stat['dt'] - $session_duration;
-
-						$shouldFilterByVisitId = !empty($stat['visit_id']) && !$isConsentUpgrade;
-
-						if ($requestedVisitId > 0) {
-							$query->where('visit_id', '=', $requestedVisitId);
-						} elseif ($shouldFilterByVisitId) {
-							$query->where('visit_id', '=', $stat['visit_id']);
-						}
-
-						// Filter by IP to ensure we find the correct record
-						// We need to reconstruct the IP as it was stored (hashed in anonymous mode)
-						$searchIp = $stat['ip'];
-						$hashedIp = '';
-
-						// If IP is not hashed (looks like real IP), hash it to match anonymous records
-						if (!empty($searchIp) && strlen($searchIp) < 30) {
-							$hashedStat = ['ip' => $originalIpBeforeProcessing, 'other_ip' => $originalOtherIpBeforeProcessing];
-							$hashedStat = IPHashProvider::hashIP($hashedStat, $originalIpBeforeProcessing, $originalOtherIpBeforeProcessing);
-							$hashedIp = $hashedStat['ip'] ?? '';
-							$searchIp = $hashedIp;
-						}
-
-						// Re-derive the anonymous IDENTITY (vid_hash), not a visit id: since
-						// D68 the visit id is sequential and cannot be recomputed, while the
-						// hash is deterministic for the same person on the same day — which
-						// is exactly the window a consent upgrade happens in. It also finds
-						// the whole anonymous session regardless of how many visit ids the
-						// old code had split it across.
-						// Column-gated: before AddVisitIdentity runs, MySQL rejects the whole OR'd
-						// lookup on the unknown column (1054) and the ip/visit_id match goes with it.
-						$anonymousVidHash = Session::generateAnonymousVidHash($stat);
-
-						// Build complex WHERE clause: (ID match) OR (VisitID match) OR (IP match)
-						// Note: We effectively group conditions here
-
-						$whereClause = [];
-
-						if ($requestedVisitId > 0) {
-							$whereClause[] = $GLOBALS['wpdb']->prepare("visit_id = %d", $requestedVisitId);
-						} elseif ($shouldFilterByVisitId) {
-							$whereClause[] = $GLOBALS['wpdb']->prepare("visit_id = %d", $stat['visit_id']);
-						}
-
-						$vidHashMatch = self::vidHashMatch($table, $anonymousVidHash);
-						if (null !== $vidHashMatch) {
-							$whereClause[] = $vidHashMatch;
-						}
-
-						if (!empty($searchIp)) {
-							$whereClause[] = $GLOBALS['wpdb']->prepare("ip = %s", $searchIp);
-						}
-
-						// Apply the OR conditions for Identity
-						if (!empty($whereClause)) {
-							$query->whereRaw('(' . implode(' OR ', $whereClause) . ')');
-						}
-
-						if (!empty($stat['resource'])) {
-							$query->where('resource', '=', $stat['resource']);
-						}
-
-						$query->where('dt', '>=', $min_timestamp)
-							->where('dt', '<=', $stat['dt']);
-
-						// If fingerprint is available, also check it
-						if (!empty($stat['fingerprint'])) {
-							$query->where('fingerprint', '=', $stat['fingerprint']);
-						}
-					}
+                    // Never associate a previous anonymous visit by IP or session alone.
+                    $query = Query::select('id, ip, visit_id, fingerprint, username, email, notes')
+                        ->from($table)->where('id', '=', $requestId > 0 ? $requestId : 0);
 
                     $existing_record = $query->orderBy('dt', 'DESC')
                         ->limit(1)
@@ -735,18 +616,7 @@ class Processor
                                 $update_query->set($update_data);
                             }
 
-                            $session_duration = !empty(\wp_slimstat::$settings['session_duration']) ? intval(\wp_slimstat::$settings['session_duration']) : 1800;
-                            $update_min_ts = $stat['dt'] - $session_duration;
-
-                            if (!empty($existing_record->visit_id) && $existing_record->visit_id > 0) {
-                                // Upgrade ALL records for this session (same visit_id + same anonymous IP)
-                                $update_query->where('visit_id', '=', intval($existing_record->visit_id));
-                                $update_query->where('ip', '=', $existing_record->ip);
-                                $update_query->where('dt', '>=', $update_min_ts);
-                            } else {
-                                // Fallback: Upgrade only this specific record
-                                $update_query->where('id', '=', $existing_id);
-                            }
+                            $update_query->where('id', '=', $existing_id);
 
                             $update_query->execute();
 
@@ -984,16 +854,10 @@ class Processor
         return true;
     }
 
-    /**
-     * The consent-upgrade identity predicate, or null while the column does not exist yet.
-     * One memoised SHOW COLUMNS, and only on a consent-upgrade hit, never per pageview.
-     */
-    private static function vidHashMatch(string $table, string $vidHash): ?string
+    /** Only a signed current pageview can be upgraded; session identities are insufficient. */
+    private static function upgradePageviewId(array $data): int
     {
-        if ('' === $vidHash || !in_array('vid_hash', Storage::presentColumns($table), true)) {
-            return null;
-        }
-
-        return $GLOBALS['wpdb']->prepare('vid_hash = UNHEX(%s)', $vidHash);
+        $id = Utils::getValueWithoutChecksum($data['id'] ?? '');
+        return false !== $id && ctype_digit((string) $id) ? max(0, (int) $id) : 0;
     }
 }

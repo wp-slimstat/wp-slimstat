@@ -209,7 +209,7 @@ console.log('PASS: parser-time and late bootstraps dispatch once; idle delay is 
 const queueStart = source.lastIndexOf('    function loadOfflineQueue()');
 const queueEnd = source.indexOf('    function currentSlimStatParams()', queueStart);
 let storedQueue = JSON.stringify([{p:'expired',t:Date.now()-1800001},{p:'current',t:Date.now()}, {p:'no-timestamp'}]);
-const ttlScope = vm.createContext({OFFLINE_KEY:'test',OFFLINE_MAX_AGE:1800000,localStorage:{getItem:()=>storedQueue,setItem:(k,v)=>{storedQueue=v;}}});
+const ttlScope = vm.createContext({SlimStat:{consent:{checkAllowed:()=>({mode:'full'})}},currentSlimStatParams:()=>({}),OFFLINE_KEY:'test',OFFLINE_MAX_AGE:1800000,localStorage:{getItem:()=>storedQueue,setItem:(k,v)=>{storedQueue=v;}}});
 vm.runInContext(source.slice(queueStart,queueEnd),ttlScope);
 assert.equal(ttlScope.loadOfflineQueue().length,1);
 assert.equal(JSON.parse(storedQueue)[0].p,'current');
@@ -220,3 +220,29 @@ assert.equal(offline[0].t,originalTime,'failed replay must not renew its expiry'
 sessionPending=[{p:'expired-session',t:Date.now()-1800001}]; scope.restoreOfflineReplays();
 assert.equal(sessionPending.length,0); assert(!offline.some(item=>item.p==='expired-session'));
 console.log('PASS: 30-minute expiry prunes shared and session queues and survives retries');
+
+// Exercise the real withdrawal cleanup and a retry created before that withdrawal.
+const changeStart = source.indexOf('    function maybeEmitConsentChange(');
+const changeEnd = source.indexOf('\n    function ', changeStart + 1);
+const removed = [];
+const revokeScope = {consentGeneration: 0, pendingInteractions: ['private-click'], lastConsentSnapshot: 'true|full|cmp_allowed',
+    localStorage: {removeItem: key => removed.push(key)}, sessionStorage: {removeItem: key => removed.push(key)},
+    OFFLINE_REPLAY_KEY: 'slimstat_offline_replay', PENDING_SESSION_KEY: 'slimstat_pending_session',
+    currentSlimStatParams: () => ({}), slimstatConsentAllowed: () => ({allowed: true, mode: 'full'})};
+vm.createContext(revokeScope);
+vm.runInContext(source.slice(changeStart, changeEnd), revokeScope);
+revokeScope.maybeEmitConsentChange({allowed: false, mode: 'blocked', reason: 'cmp_denied'});
+assert.equal(revokeScope.consentGeneration, 1);
+assert.equal(revokeScope.pendingInteractions.length, 0);
+assert.deepEqual(removed.sort(), ['slimstat_offline_queue', 'slimstat_offline_replay', 'slimstat_pending_session'].sort());
+const processStart = source.indexOf('    function processQueueItem(');
+const processEnd = source.indexOf('\n    function ', processStart + 1);
+vm.runInContext(source.slice(processStart, processEnd), revokeScope);
+let staleRejected = false;
+revokeScope.processQueueItem({consentGeneration: 0, payload: 'id=old&no=private'}, result => { staleRejected = result.rejected; });
+assert.equal(staleRejected, true, 'a later grant cannot revive a retry from before withdrawal');
+console.log('PASS: withdrawal clears pending/device data and rejects delayed retries after re-consent');
+
+scope.navigator = {globalPrivacyControl: true};
+assert.equal(scope.slimstatConsentAllowed({...settings, gdpr_enabled: 'off', respect_dnt: 'on'}, {}).allowed, false);
+console.log('PASS: Global Privacy Control blocks tracking even with consent mode disabled');

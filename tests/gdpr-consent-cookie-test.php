@@ -44,6 +44,7 @@ namespace SlimStat\Tracker {
 
 namespace SlimStat\Utils {
     class Consent {
+        public static function piiAllowed(): bool { return true; }
         public static function normalizeConsent($c) { return is_array($c) ? $c : ['statistics' => $c]; }
     }
 }
@@ -358,7 +359,7 @@ $service = new GDPRService([
     'opt_out_message'     => 'Test message',
     'gdpr_theme_mode'     => '',
 ]);
-assert_same('', $service->getBannerHtml(), 'getBannerHtml should return empty string when consent exists');
+assert_true(strpos($service->getBannerHtml(), 'slimstat-privacy-settings') !== false, 'decided visitors can reopen privacy controls');
 
 // ─── Test 5: getBannerHtml returns HTML when no consent ──────────
 

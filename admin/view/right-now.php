@@ -30,7 +30,8 @@ $plugin_url = plugins_url('', __DIR__);
 
 // Get the data
 wp_slimstat_db::$debug_message = '';
-$all_results                   = wp_slimstat_db::get_recent(wp_slimstat_reports::$reports['slim_p7_02']['callback_args']);
+$all_results = \SlimStat\Reports\ReportPrivacy::rows(wp_slimstat_db::get_recent(wp_slimstat_reports::$reports['slim_p7_02']['callback_args']) ?: []);
+$mask_personal = \SlimStat\Reports\ReportPrivacy::enabled();
 
 // Backward compatibility
 if (!$all_results) {
@@ -58,7 +59,7 @@ if (0 == $count_page_results) {
 if (isset($_args['echo']) && false === $_args['echo']) {
 
     // Process the data before returning it
-    if ('on' == wp_slimstat::$settings['convert_ip_addresses']) {
+    if (!$mask_personal && 'on' == wp_slimstat::$settings['convert_ip_addresses']) {
         for ($i = 0; $i < $count_page_results; $i++) {
             // When the IP conversion feature is enabled, we need to return the correct values
             $hostname = wp_slimstat::gethostbyaddr($results[$i]['ip']);
@@ -151,7 +152,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
         // IP Address and user
         $host_by_ip = $results[$i]['ip'];
-        if ('on' == wp_slimstat::$settings['convert_ip_addresses']) {
+        if (!$mask_personal && 'on' == wp_slimstat::$settings['convert_ip_addresses']) {
             // When the IP conversion feature is enabled, we need to return the correct values
             $host_by_ip = wp_slimstat::gethostbyaddr($results[$i]['ip']);
         }
@@ -170,9 +171,9 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
             $ip_address = "<a class='slimstat-filter-link' href='" . esc_url(wp_slimstat_reports::fs_url('username equals ' . $results[$i]['username'])) . "'><span dir='auto'>";
             if ($user) {
-                $ip_address .= get_avatar($user->ID, 16);
+                $ip_address .= (apply_filters('slimstat_report_avatars', false) ? get_avatar($user->ID, 16) : '');
             } else {
-                $ip_address .= get_avatar($results[$i]['username'], 16);
+                $ip_address .= (apply_filters('slimstat_report_avatars', false) ? get_avatar($results[$i]['username'], 16) : '');
             }
 
             $ip_address .= ' ' . esc_html($display_user_name) . '</span></a>';
@@ -199,13 +200,13 @@ for ($i = 0; $i < $count_page_results; $i++) {
         }
 
         $whois_pin = '';
-        if (is_admin() && !empty(wp_slimstat::$settings['ip_lookup_service']) && !wp_slimstat::is_local_ip_address($results[$i]['ip'])) {
+        if (!$mask_personal && is_admin() && !empty(wp_slimstat::$settings['ip_lookup_service']) && !wp_slimstat::is_local_ip_address($results[$i]['ip'])) {
             $whois_pin = "<a class='slimstat-font-location-1 whois' href='" . esc_url(wp_slimstat::$settings['ip_lookup_service'] . $results[$i]['ip']) . "' target='_blank' title='WHOIS: " . esc_attr($results[$i]['ip']) . "'></a>";
         }
 
         // Originating IP Address
         $other_ip_address = '';
-        if (!empty($results[$i]['other_ip'])) {
+        if (!$mask_personal && !empty($results[$i]['other_ip'])) {
             $other_ip_address = "(<a class='slimstat-font-location-1 whois' href='" . esc_url(wp_slimstat::$settings['ip_lookup_service'] . $results[$i]['other_ip']) . "' target='_blank' title='WHOIS: " . esc_attr($results[$i]['other_ip']) . "'></a> <a class='slimstat-filter-link' href='" . esc_url(wp_slimstat_reports::fs_url('other_ip equals ' . $results[$i]['other_ip'])) . "'><span dir='auto'>" . __('Originating IP', 'wp-slimstat') . ': ' . esc_html($results[$i]['other_ip']) . ")</span></a>";
         }
 

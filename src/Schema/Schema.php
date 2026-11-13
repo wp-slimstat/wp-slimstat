@@ -167,10 +167,10 @@ final class Schema
             'indexes' => [
                 'idx_heatmap_page' => 'page, kind, device, dt',
                 'idx_heatmap_list' => 'kind, dt, page, flags',
+                'idx_heatmap_selector' => 'sel',
             ],
         ],
-        // Element dictionary for slim_heatmap.sel. Bounded by site structure, never purged.
-        // ponytail: no orphan cleanup; add one if a site grows this past ~100k rows.
+        // Element dictionary for slim_heatmap.sel; orphaned labels follow retention/erasure.
         'slim_heatmap_elements' => [
             'on_demand' => true,
             'columns' => [

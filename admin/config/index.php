@@ -120,9 +120,9 @@ $settings = [
                 'type'  => 'section_header',
             ],
 			'gdpr_enabled' => [
-				'title'       => __('GDPR compliance mode', 'wp-slimstat'),
+				'title'       => __('GDPR consent mode', 'wp-slimstat'),
 				'type'        => 'toggle',
-				'description' => __('<strong>GDPR Compliance:</strong> When enabled, SlimStat requires user consent before tracking (except in Anonymous Tracking mode). When disabled, tracking operates normally without consent checks.<br/><br/><strong>Enabled:</strong> (Recommended for EU/EEA) Tracking requires consent unless Anonymous Tracking mode is active. This ensures GDPR compliance.<br/><strong>Disabled:</strong> Normal tracking without consent checks. Use this only if you are not subject to GDPR regulations (e.g., non-EU websites with no EU visitors).', 'wp-slimstat'),
+				'description' => __('When enabled, identifying analytics requires consent from the selected integration. Anonymous or cookieless settings can collect limited counts without identifiers. If the integration is missing, SlimStat collects limited counts only. Disabling this setting permits identifying tracking without a consent check. Review consent, retention and privacy disclosures for your site.', 'wp-slimstat'),
 			],
 			'consent_integration' => [
 				'title'         => __('Consent plugin integration', 'wp-slimstat'),
@@ -148,26 +148,7 @@ $settings = [
 					'value' => '|||slimstat_banner',
 				],
 			],
-            'opt_out_cookie_names' => [
-                'title'       => __('Opt-out cookies', 'wp-slimstat'),
-                'type'        => 'textarea',
-                'description' => __("If you are already using another tool to monitor which users opt-out of tracking, and assuming that this tool sets its own cookie to remember their selection, you can enter the cookie names and values in this field to let SlimStat comply with their choice. Please use the following format: <code>cookie_name=value</code>. SlimStat will track any visitors who either don't send a cookie with that name, or send a cookie whose value <strong>does not contain</strong> the string you specified. If your tool uses structured values like JSON or similar encodings, find the substring related to tracking and enter that as the value below. For example, <a href='https://wordpress.org/plugins/smart-cookie-kit/' target='_blank'>Smart Cookie Kit</a> uses something like <code>{\"settings\":{\"technical\":true,\"slimstat\":false,\"profiling\":false},\"ver\":\"2.0.0\"}</code>, so your pair should look like: <code>CookiePreferences-your.website.here=\"slimstat\":false</code>. Separate multiple pairs with commas.", 'wp-slimstat'),
-                'conditional' => [
-                    'field' => 'gdpr_enabled,consent_integration',
-                    'type' => 'checked,equals',
-                    'value' => '|||',
-                ],
-            ],
-            'opt_in_cookie_names' => [
-                'title'       => __('Opt-in cookies', 'wp-slimstat'),
-                'type'        => 'textarea',
-                'description' => __('Similarly to the option above, you can configure SlimStat to work with an opt-in mechanism. Please use the following format: <code>cookie_name=value</code>. SlimStat will only track visitors who send a cookie whose value <strong>contains</strong> the string you specified. Separate multiple pairs with commas.', 'wp-slimstat'),
-                'conditional' => [
-                    'field' => 'gdpr_enabled,consent_integration',
-                    'type' => 'checked,equals',
-                    'value' => '|||',
-                ],
-            ],
+
 			'opt_out_message' => [
 				'title'             => __('Consent banner message', 'wp-slimstat'),
 				'type'              => 'rich_text',
@@ -246,7 +227,7 @@ $settings = [
             'anonymous_tracking' => [
                 'title'       => __('Anonymous tracking mode', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('<strong>GDPR-Safe Mode:</strong> When enabled, SlimStat operates in strict GDPR-compliant mode.<br/><br/><strong>Before Consent:</strong> Tracks anonymously (hashed IPs, no cookies, no username/email)<br/><strong>After Consent:</strong> Upgrades to full tracking (real IPs, cookies, user identification)<br/><br/>This mode is recommended if you want to track all visitors while staying GDPR-compliant. Anonymous data is collected without consent, then upgraded when consent is granted.', 'wp-slimstat'),
+                'description' => __('Before consent, collect limited counts using daily protected IP identifiers, without tracking cookies, fingerprints, usernames or email addresses. After consent, the current pageview and future activity can use identifying analytics, while IP protection settings still apply. Earlier anonymous pageviews are not enriched with identity.', 'wp-slimstat'),
                 'conditional' => [
 					'field' => 'gdpr_enabled',
 					'type' => 'checked',
@@ -254,9 +235,14 @@ $settings = [
             ],
 */
             'do_not_track' => [
-                'title'       => __('Respect Do Not Track (DNT)', 'wp-slimstat'),
+                'title'       => __('Respect DNT and Global Privacy Control', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('<strong>Privacy Enhancement:</strong> Honor the DNT browser header. When a visitor has DNT enabled in their browser, <strong>no</strong> tracking occurs (not even anonymous tracking). GDPR does not require this, but it demonstrates respect for user privacy preferences.', 'wp-slimstat'),
+                'description' => __('Honor Do Not Track and Global Privacy Control browser signals. When either signal is enabled, no tracking occurs, including anonymous pageviews.', 'wp-slimstat'),
+            ],
+            'mask_personal_data' => [
+                'title' => __('Mask personal data in reports', 'wp-slimstat'),
+                'type' => 'toggle',
+                'description' => __('Hide visitor IPs, names, emails, fingerprints and notes from report viewers who cannot manage WordPress options, including their exports. Counts and report calculations stay unchanged. Scheduled reports also omit these identifiers.', 'wp-slimstat'),
             ],
             'anonymize_ip' => [
                 'title'       => __('Anonymize IP addresses', 'wp-slimstat'),
@@ -675,7 +661,7 @@ $settings = [
             'rest_api_tokens' => [
                 'title'       => __('Tokens', 'wp-slimstat'),
                 'type'        => 'textarea',
-                'description' => __("In order to send requests to the SlimStat REST API, you will need to pass a valid token to the endpoint (param ?token=XXX). Using the field below, you can define as many tokens as you like, and distribute them to your API users. Please note: treat these tokens as passwords, as they will grant read access to your reports to anyone who knows them. Use a service like <a href='https://randomkeygen.com/#ci_key' target='_blank'>RandomKeyGen.com</a> to generate unique secure tokens.", 'wp-slimstat'),
+                'description' => __('Configure a strong random token to enable report API access. Send it in the Authorization: Bearer TOKEN header over HTTPS. Treat tokens as passwords: they grant access to visitor reports. Leaving this field empty disables token access. Query-string tokens remain supported for existing integrations, but can be exposed in server logs and should be replaced with headers.', 'wp-slimstat'),
             ],
         ],
     ],
@@ -697,13 +683,18 @@ $settings = [
             'auto_purge_delete' => [
                 'title'       => __('Archive mode', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('<strong>How to handle old data:</strong><br/><br/><strong>Enabled (Archive):</strong> Old records are moved to separate archive tables (<code>wp_slim_stats_archive</code>, <code>wp_slim_events_archive</code>) instead of being permanently deleted. This improves query performance by keeping the main tables smaller, while still allowing you to access historical data if needed. <strong>Note:</strong> Archived data still counts as data retention under GDPR requirements.<br/><br/><strong>Disabled (Delete):</strong> Old records are permanently deleted from the database. This is the most GDPR-compliant approach and frees up database space immediately. <strong>Warning:</strong> Deleted data cannot be recovered.<br/><br/><strong>Important:</strong> Archive tables are deleted on uninstall only when <strong>Delete data on uninstall</strong> is enabled. Back up your database before uninstalling.', 'wp-slimstat'),
+                'description' => __('Age in days at which live analytics is deleted or archived, according to the setting below. Set 0 to disable live-data cleanup. Choose a retention period appropriate for your site. Archived records have a separate lifetime and still count as retained data.', 'wp-slimstat'),
             ],
 
             'auto_purge_optimize' => [
                 'title'       => __('Automatic table optimization', 'wp-slimstat'),
                 'type'        => 'toggle',
                 'description' => __('Disabled by default. Deleted rows leave space that the database can reuse. Enable only with your hosting provider\'s agreement: rebuilding live tables may reclaim disk space but can delay tracking while locks are held. Runs at most once every 30 days after removing pageviews; archive tables are never optimized.', 'wp-slimstat'),
+            ],
+            'archive_retention_days' => [
+                'title' => __('Archive retention (days)', 'wp-slimstat'),
+                'type' => 'text',
+                'description' => __('Permanently delete archived pageviews and events older than this many days, measured from the original visit. Set 0 to keep archives indefinitely. Existing archives are preserved until you choose a period. Back up data you need before enabling expiration.', 'wp-slimstat'),
             ],
 
             // Maintenance - Troubleshooting

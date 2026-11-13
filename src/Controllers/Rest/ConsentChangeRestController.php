@@ -332,7 +332,7 @@ class ConsentChangeRestController implements RestControllerInterface
 		$settings = \wp_slimstat::$settings;
 		$is_anonymous = ('on' === ($settings['anonymous_tracking'] ?? 'off'));
 
-		if (!$is_anonymous) {
+		if (!$is_anonymous || !Consent::piiAllowed()) {
 			return;
 		}
 
@@ -349,6 +349,7 @@ class ConsentChangeRestController implements RestControllerInterface
 			}
 
 			$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+					$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
 			$update_data = [];
 
 			if (!empty($stat['ip'])) {
@@ -368,7 +369,7 @@ class ConsentChangeRestController implements RestControllerInterface
 			}
 
 			if (!empty($update_data)) {
-				$GLOBALS['wpdb']->update(
+				$db->update(
 					$table,
 					$update_data,
 					['id' => $pageview_id],
@@ -378,17 +379,17 @@ class ConsentChangeRestController implements RestControllerInterface
 			}
 
 			if (!empty($stat['notes'])) {
-				$existing_note = $GLOBALS['wpdb']->get_var(
-					$GLOBALS['wpdb']->prepare(
+				$existing_note = $db->get_var(
+					$db->prepare(
 						"SELECT notes FROM {$table} WHERE id = %d AND notes LIKE %s LIMIT 1",
 						$pageview_id,
-						'%' . $GLOBALS['wpdb']->esc_like($stat['notes']) . '%'
+						'%' . $db->esc_like($stat['notes']) . '%'
 					)
 				);
 
-				if (empty($GLOBALS['wpdb']->last_error) && null === $existing_note) {
-					$GLOBALS['wpdb']->query(
-						$GLOBALS['wpdb']->prepare(
+				if (empty($db->last_error) && null === $existing_note) {
+					$db->query(
+						$db->prepare(
 							"UPDATE {$table} SET notes = CONCAT(IFNULL(notes, ''), %s) WHERE id = %d",
 							$stat['notes'],
 							$pageview_id

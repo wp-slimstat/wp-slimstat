@@ -268,6 +268,7 @@ class wp_slimstat
      */
     public static function init()
     {
+        add_action('admin_init', [\SlimStat\Tracker\Utils::class, 'sanitizeStoredErrorDetail']);
         // Fail-soft: a class-load failure here must not white-screen every request (issue #325).
         try {
             \SlimStat\Providers\RestApiManager::run();
@@ -489,6 +490,7 @@ class wp_slimstat
 
         // One-time notice when the v5.4.6 migration reset IP anonymization settings
         add_action('admin_notices', [self::class, 'show_migration_5460_ip_notice']);
+        add_action('admin_notices', [self::class, 'show_privacy_review_notice']);
 
         // Register AJAX handlers for consent upgrade/revocation (anonymous tracking mode)
         try {
@@ -515,6 +517,7 @@ class wp_slimstat
 
         // Shortcodes
         add_shortcode('slimstat', [\SlimStat\Shortcodes\Shortcode::class, 'render']);
+        add_shortcode('slimstat_privacy_settings', [\SlimStat\Services\GDPRService::class, 'privacySettingsButton']);
 
         // Init the plugin functionality
         add_action('init', [self::class, 'init_plugin']);
@@ -561,11 +564,22 @@ class wp_slimstat
         load_plugin_textdomain('wp-slimstat', false, dirname(plugin_basename(__FILE__)) . '/languages');
     }
 
-    /**
-     * Show a one-time admin notice when the v5.4.6 migration reset anonymize_ip
-     * or hash_ip from 'on' to 'off'. EU-facing sites may need to re-enable these.
-     * The transient is deleted after display so the notice appears exactly once.
-     */
+    /** Ask upgraded sites to review privacy and flag identifier settings without a consent source. */
+    public static function show_privacy_review_notice(): void
+    {
+        if (!current_user_can('manage_options') || !class_exists('wp_slimstat_admin')) { return; }
+        $identifiers = 'on' === (self::$settings['set_tracker_cookie'] ?? 'on')
+            || ('on' !== (self::$settings['anonymize_ip'] ?? 'off') && 'on' !== (self::$settings['hash_ip'] ?? 'off'));
+        $missing = $identifiers && 'on' === (self::$settings['gdpr_enabled'] ?? 'off') && !\SlimStat\Utils\Consent::hasConsentSource();
+        $review = 'no' !== (self::$settings['privacy_review_notice'] ?? 'yes');
+        if (!$missing && !$review) { return; }
+        $message = $missing
+            ? __('SlimStat privacy mode is on but no working consent source is configured. Only anonymous pageview counts are enabled. Configure a consent integration before collecting identifiers.', 'wp-slimstat')
+            : __('Review SlimStat privacy settings for your visitors. Existing settings are preserved. Check consent, IP protection, cookies, and archive retention; existing archives are kept until you choose an expiration period.', 'wp-slimstat');
+        \wp_slimstat_admin::show_dismissible_notice('privacy-review', hash('sha256', $missing ? 'privacy-source-missing' : 'privacy-review-20261113'), $message,
+            [[__('Review privacy settings', 'wp-slimstat'), admin_url('admin.php?page=slimconfig&tab=2'), false]], 'warning');
+    }
+
     public static function show_migration_5460_ip_notice(): void
     {
         if (!current_user_can('manage_options')) {
@@ -1039,7 +1053,7 @@ class wp_slimstat
                 $function = 'get_' . str_replace('-all', '', $_request['function']);
 
                 // Retrieve the data
-                $response['data'] = array_values(wp_slimstat_db::$function($_request['dimension'], '', '', false === strpos($_request['function'], '-all')));
+                $response['data'] = \SlimStat\Reports\ReportPrivacy::rows(array_values(wp_slimstat_db::$function($_request['dimension'], '', '', false === strpos($_request['function'], '-all'))));
                 break;
 
             default:
@@ -1057,12 +1071,19 @@ class wp_slimstat
      */
     public static function rest_api_authorization($_request = [])
     {
-        if (empty($_request['token'])) {
+        $token = $_request['token'] ?? '';
+        if ($_request instanceof WP_REST_Request) {
+            $authorization = (string) $_request->get_header('authorization');
+            if (preg_match('/^Bearer\s+(\S+)$/i', $authorization, $matches)) {
+                $token = $matches[1];
+            }
+        }
+        if (!is_string($token) || '' === $token) {
             return new WP_Error('rest_invalid', esc_html__('[REST API] Please use a valid token in order to access the REST API endpoint at this URL.', 'wp-slimstat'), ['status' => 400]);
         }
         $valid_tokens = self::string_to_array(self::$settings['rest_api_tokens']);
         foreach ($valid_tokens as $valid_token) {
-            if (is_string($valid_token) && is_string($_request['token']) && hash_equals($valid_token, $_request['token'])) {
+            if (is_string($valid_token) && '' !== $valid_token && hash_equals($valid_token, $token)) {
                 return true;
             }
         }
@@ -1257,6 +1278,13 @@ class wp_slimstat
     public static function get_fresh_defaults()
     {
         $defaults = self::init_options();
+        // Existing installations keep their saved choices; these apply only on activation/reset.
+        $defaults = array_merge($defaults, [
+            'gdpr_enabled' => 'on', 'anonymize_ip' => 'on', 'set_tracker_cookie' => 'off',
+            'do_not_track' => 'on', 'auto_purge_delete' => 'no', 'privacy_review_notice' => 'no',
+            'rest_api_tokens' => '', 'mask_personal_data' => 'on',
+            'archive_retention_days' => 420,
+        ]);
         $defaults['geolocation_provider'] = 'dbip';
         // Heatmaps start on for new installs only; init_options() keeps upgrades opted out.
         $defaults['heatmap_capture'] = self::pro_plugin_active() ? 'full' : 'off';
@@ -1302,6 +1330,7 @@ class wp_slimstat
             // General - Database
             'auto_purge'        => 420,
             'auto_purge_delete' => 'on',
+            'archive_retention_days' => 0, // Upgrades must explicitly choose when existing archives expire.
             'auto_purge_optimize' => 'no',
 
             // Heatmaps (6.1.0): off | main | full; rate in 1/10,000 of pageviews; pages is a
@@ -1316,6 +1345,7 @@ class wp_slimstat
             // Tracker - Data Protection
             // anonymize_ip: mask IP before storing; hash_ip: generate daily visitor_id based on masked IP + UA
             'gdpr_enabled'             => 'off',  // v5.3.x had no GDPR — off by default; admin enables when ready
+            'mask_personal_data' => 'off', // Existing sites retain their report access choices.
             'anonymize_ip'             => 'off',  // Restored: full IPs stored by default (5.3.x behavior)
             'hash_ip'                  => 'off',  // Restored: no daily visitor hash by default (5.3.x behavior)
 			'set_tracker_cookie'       => 'on',   // v5.3.x default: session cookie identifies returning visitors
@@ -1326,7 +1356,7 @@ class wp_slimstat
 			'gdpr_accept_button_text'  => 'Accept',
 			'gdpr_decline_button_text' => 'Decline',
             'gdpr_theme_mode'          => 'auto', // 'light', 'dark', 'auto'
-            'anonymous_tracking'       => 'off',   // Changed: Enable anonymous tracking by default
+            'anonymous_tracking'       => 'off',
             'do_not_track'             => 'off',
             'display_opt_out'          => 'no',
             'opt_out_cookie_names'     => '',
@@ -1797,10 +1827,51 @@ class wp_slimstat
         update_option('slimstat_data_ver', $version, true);
         // Goal and unique-visitor caches also contain answers derived from erased rows.
         update_option('slimstat_goals_cache_ver', $version, false);
+        do_action('slimstat_data_changed');
+    }
+
+    /** Apply the separately configured archive lifetime, even when the live tables are empty. */
+    private static function purge_expired_archives(): void
+    {
+        $days = (int) (self::$settings['archive_retention_days'] ?? 0);
+        if ($days <= 0) { return; }
+        $db = self::$wpdb;
+        $prefix = $GLOBALS['wpdb']->prefix;
+        $tables = [];
+        foreach (['slim_stats_archive', 'slim_events_archive'] as $suffix) {
+            $exists = $db->get_var($db->prepare('SHOW TABLES LIKE %s', $db->esc_like($prefix . $suffix)));
+            if ($db->last_error) {
+                self::record_degradation('archive retention', (string) $db->last_error, self::DEGRADATION_OPERATIONAL);
+                return;
+            }
+            if ($exists) { $tables[] = $prefix . $suffix; }
+        }
+        if (!$tables) { return; }
+        $cutoff = self::now() - $days * DAY_IN_SECONDS;
+        $deadline = microtime(true) + 5;
+        do {
+            if (count($tables) === 2) {
+                $batch = \SlimStat\Utils\PurgeArchive::purgeBatch($db, $prefix, 0, $cutoff, false, [], [], true);
+            } else {
+                // An interrupted archive setup must not retain the surviving table forever.
+                // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Core-prefix table selected above; cutoff bound as an integer.
+                $deleted = $db->query($db->prepare("DELETE FROM {$tables[0]} WHERE dt < %d LIMIT 500", $cutoff));
+                $batch = ['stats' => (int) $deleted, 'events' => 0, 'error' => (string) $db->last_error];
+            }
+            if ($batch['stats'] || $batch['events']) { self::bump_data_version(); }
+            if ('' !== $batch['error']) {
+                self::record_degradation('archive retention', $batch['error'], self::DEGRADATION_OPERATIONAL);
+                return;
+            }
+            if (!$batch['stats'] && !$batch['events']) { self::clear_degradation('archive retention'); return; }
+        } while (microtime(true) < $deadline);
+        $next = wp_next_scheduled('wp_slimstat_purge');
+        if (!$next || $next > time() + 120) { wp_schedule_single_event(time() + 60, 'wp_slimstat_purge'); }
     }
 
     public static function wp_slimstat_purge()
     {
+        self::purge_expired_archives();
         $autopurge_interval = intval(self::$settings['auto_purge']);
 
         if ($autopurge_interval <= 0) {
@@ -2102,16 +2173,34 @@ class wp_slimstat
             $content .= '<li>' . __('Heatmaps: Where visitors click on links, buttons and other page elements, and how far they scroll. What you type is never recorded.', 'wp-slimstat') . '</li>';
         }
 
+        $content .= '<li>' . __('Interactions: Clicks, downloads and outbound links may be recorded after consent when GDPR mode is enabled. Sensitive URL parameters are removed before storage.', 'wp-slimstat') . '</li>';
+        $content .= '<li>' . __('Browser fingerprint: Used for identifying visits only when identifying analytics is allowed. The bundled fingerprint library sends no monitoring requests.', 'wp-slimstat') . '</li>';
+        if ('on' === (self::$settings['use_slimstat_banner'] ?? 'off')) {
+            $content .= '<li>' . __('Consent preference: The SlimStat consent cookie remembers your choice for one year. Use Privacy settings on the site to change or withdraw consent.', 'wp-slimstat') . '</li>';
+        }
+        if (false !== self::resolve_geolocation_provider()) {
+            $content .= '<li>' . __('Location: The IP address may be used for local geolocation when identifying analytics is allowed.', 'wp-slimstat') . '</li>';
+        }
         $content .= '</ul>';
 
         $content .= '<p><strong>' . __('How long we retain your data', 'wp-slimstat') . '</strong></p>';
         $retention_days = intval(self::$settings['auto_purge'] ?? 420);
+        $archive_days = intval(self::$settings['archive_retention_days'] ?? 0);
         if ($retention_days > 0) {
-            /* translators: %d: configured number of days before analytics data is deleted. */
-            $content .= '<p>' . sprintf(__('Analytics data is automatically deleted after %d days, in compliance with GDPR data retention requirements.', 'wp-slimstat'), $retention_days) . '</p>';
+            $archive = 'no' !== (self::$settings['auto_purge_delete'] ?? 'on');
+            $message = $archive
+                /* translators: %d: age in days when live analytics records move to archive tables. */
+                ? __('Analytics records older than %d days are moved to archive tables. Archiving does not delete personal data.', 'wp-slimstat')
+                /* translators: %d: age in days when live analytics records are deleted. */
+                : __('Analytics records older than %d days are permanently deleted during scheduled cleanup.', 'wp-slimstat');
+            $content .= '<p>' . sprintf($message, $retention_days) . '</p>';
         } else {
-            $content .= '<p>' . __('Analytics data retention is currently disabled. Please contact the site administrator for information about data retention policies.', 'wp-slimstat') . '</p>';
+            $content .= '<p>' . __('Automatic deletion of live analytics records is disabled.', 'wp-slimstat') . '</p>';
         }
+        $content .= '<p>' . ($archive_days > 0
+            /* translators: %d: maximum age in days of archived analytics records, from the original visit. */
+            ? sprintf(__('Archived records older than %d days from the original visit are permanently deleted during scheduled cleanup.', 'wp-slimstat'), $archive_days)
+            : __('Existing archived records are retained indefinitely until the administrator deletes them or sets an archive retention period.', 'wp-slimstat')) . '</p>';
 
         $content .= '<p><strong>' . __('Your rights', 'wp-slimstat') . '</strong></p>';
         $content .= '<p>' . __('Under GDPR, you have the right to:', 'wp-slimstat') . '</p>';

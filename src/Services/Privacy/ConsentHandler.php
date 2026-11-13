@@ -17,7 +17,7 @@ use SlimStat\Tracker\Session;
  *   - The hashed IP is replaced with the user's real or anonymized IP (according to privacy settings)
  *   - A tracking cookie is set to maintain session continuity
  *   - If the user is logged in, username and email are saved
- *   - Previous anonymous pageviews remain non-identifiable (ensuring ongoing GDPR compliance)
+	 *   - Previous anonymous pageviews retain their original privacy protections
  * All subsequent pageviews, once consent is present, are tracked using full PII.
  *
  * If the user revokes consent:
@@ -141,11 +141,13 @@ class ConsentHandler
 
 		do_action('slimstat_gdpr_consent_changed', $consent);
 
-		$parsed_consent = \SlimStat\Utils\Consent::normalizeConsent($consent);
-		$action = ('accepted' === $consent) ? 'grant' : 'revoke';
+		if ('denied' === $consent) {
+			Session::deleteTrackingCookie();
+			do_action('slimstat_consent_revoked');
+		}
 
 		// If consent granted via banner, upgrade current pageview from anonymous to PII
-		if ('accepted' === $consent) {
+		if ('accepted' === $consent && \SlimStat\Utils\Consent::piiAllowed()) {
 			if (!empty($pageview_id_raw)) {
 				$pageview_id = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw);
 				if (false !== $pageview_id && $pageview_id > 0) {
@@ -160,6 +162,7 @@ class ConsentHandler
 					}
 
 					$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+					$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
 					$update_data = [];
 
 					if (!empty($stat['ip'])) {
@@ -179,7 +182,7 @@ class ConsentHandler
 					}
 
 					if (!empty($update_data)) {
-						$GLOBALS['wpdb']->update(
+						$db->update(
 							$table,
 							$update_data,
 							['id' => $pageview_id],
@@ -190,17 +193,17 @@ class ConsentHandler
 
 					// Append user note if not already present
 					if (!empty($stat['notes'])) {
-						$existing_note = $GLOBALS['wpdb']->get_var(
-							$GLOBALS['wpdb']->prepare(
+						$existing_note = $db->get_var(
+							$db->prepare(
 								"SELECT notes FROM {$table} WHERE id = %d AND notes LIKE %s LIMIT 1",
 								$pageview_id,
-								'%' . $GLOBALS['wpdb']->esc_like($stat['notes']) . '%'
+								'%' . $db->esc_like($stat['notes']) . '%'
 							)
 						);
 
-						if (empty($GLOBALS['wpdb']->last_error) && null === $existing_note) {
-							$GLOBALS['wpdb']->query(
-								$GLOBALS['wpdb']->prepare(
+						if (empty($db->last_error) && null === $existing_note) {
+							$db->query(
+								$db->prepare(
 									"UPDATE {$table} SET notes = CONCAT(IFNULL(notes, ''), %s) WHERE id = %d",
 									$stat['notes'],
 									$pageview_id

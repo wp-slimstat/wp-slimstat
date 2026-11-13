@@ -209,8 +209,8 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         // construction and it would stop catching anything — so a new table is REQUIRED to
         // update this number deliberately, which is the point.
         // Ecommerce enabled: three projection indexes; the opt-in visit index is unmanaged here.
-        // Heatmaps enabled: two capture indexes; the element dictionary has none.
-        $this->assertCount(24, $report['present']);
+        // Heatmaps enabled: three capture indexes (including dictionary cleanup); the element dictionary has none.
+        $this->assertCount(25, $report['present']);
 
         // One patterned SHOW TABLES for ALL tables, then per RECONCILED table one SHOW INDEX and
         // one SHOW COLUMNS: 1 + 4 + 4 (slim_events, slim_events_archive, slim_stats,

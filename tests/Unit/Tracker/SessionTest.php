@@ -314,14 +314,15 @@ class SessionTest extends WpSlimstatTestCase
             'wp_unslash'          => static fn($v) => is_string($v) ? stripslashes($v) : $v,
         ]);
 
-        // The filter receives false (cookie disabled), so return false.
+        // Even an extension returning true cannot override disabled cookies.
         Functions\expect('apply_filters')
             ->with('slimstat_set_visit_cookie', false)
-            ->once()
-            ->andReturn(false);
+            ->twice()
+            ->andReturn(true);
 
         $result = \SlimStat\Tracker\Session::setTrackingCookie(1, 'visit');
 
         $this->assertFalse($result, 'setTrackingCookie() must return false when cookie setting is disabled');
+        $this->assertFalse(\SlimStat\Tracker\Session::setTrackingCookie(1, 'visit', null, true), 'consent upgrades cannot force a disabled cookie');
     }
 }

@@ -1597,7 +1597,7 @@ class wp_slimstat_reports
 
                     case 'id':
                     case 'ip':
-                        if ('on' == wp_slimstat::$settings['convert_ip_addresses']) {
+                        if (!\SlimStat\Reports\ReportPrivacy::enabled() && 'on' == wp_slimstat::$settings['convert_ip_addresses']) {
                             $element_value = wp_slimstat::gethostbyaddr($results[$i]['ip']);
                         } else {
                             $element_value = $results[$i]['ip'];
@@ -1706,7 +1706,7 @@ class wp_slimstat_reports
                             $element_custom_value = get_user_by('login', $results[$i]['username']);
                             if ($element_custom_value) {
                                 $element_value = "<a href='" . esc_url(get_author_posts_url($element_custom_value->ID)) . "' class=\"slimstat-author-link\" title='" . esc_attr($element_custom_value->user_login) . "'>";
-                                $element_value .= get_avatar($element_custom_value->ID, 18);
+                                $element_value .= (apply_filters('slimstat_report_avatars', false) ? get_avatar($element_custom_value->ID, 18) : '');
                                 $element_value .= esc_html($results[$i]['username']);
                                 $element_value .= '</a>';
                                 // #273: add a direct link to the admin user profile (the link
@@ -1735,7 +1735,7 @@ class wp_slimstat_reports
                             if ($author) {
                                 $author_id     = $author ? $author->ID : 0;
                                 $element_value = "<a href='" . esc_url(get_author_posts_url($author_id)) . "' class=\"slimstat-author-link\" title='" . esc_attr($author->user_login) . "'>";
-                                $element_value .= get_avatar($author_id, 18);
+                                $element_value .= (apply_filters('slimstat_report_avatars', false) ? get_avatar($author_id, 18) : '');
                                 $element_value .= esc_html($author ? (empty($author->display_name) ? $author->user_login : $author->display_name) : $author_username);
                                 $element_value .= '</a>';
                                 // #273: additive admin-profile link, capability-guarded.
@@ -2549,10 +2549,14 @@ class wp_slimstat_reports
 
     public static function show_group_by($_args = [])
     {
-        $all_results = call_user_func($_args['raw'], $_args);
+        $all_results = \SlimStat\Reports\ReportPrivacy::rows(call_user_func($_args['raw'], $_args) ?: []);
+        if (\SlimStat\Reports\ReportPrivacy::enabled() && in_array($_args['column_group'] ?? '', \SlimStat\Reports\ReportPrivacy::PERSONAL, true)) {
+            foreach ($all_results as &$row) { $row['column_group'] = ''; }
+            unset($row);
+        }
 
         $results = [];
-        if (is_array($all_results) && count($all_results)) {
+        if (count($all_results)) {
             $start_from = (!empty($_args['type']) && $_args['type'] === 'recent')
                 ? 0
                 : self::get_clamped_start(count($all_results), wp_slimstat::$settings['rows_to_show']);
@@ -2604,7 +2608,7 @@ class wp_slimstat_reports
                 foreach ($exploded_group as $a_item) {
                     $user = get_user_by('login', $a_item);
                     if ($user) {
-                        $group_markup[] = '<a class="slimstat-filter-link" title="' . esc_attr(__('Filter by element in a group', 'wp-slimstat')) . '" href="' . self::fs_url($_args['column_group'] . ' equals ' . $a_item) . '">' . get_avatar($user->ID, 16) . esc_html( $user->display_name ) . '</a>';
+                        $group_markup[] = '<a class="slimstat-filter-link" title="' . esc_attr(__('Filter by element in a group', 'wp-slimstat')) . '" href="' . self::fs_url($_args['column_group'] . ' equals ' . $a_item) . '">' . (apply_filters('slimstat_report_avatars', false) ? get_avatar($user->ID, 16) : '') . esc_html( $user->display_name ) . '</a>';
                     } else {
                         $group_markup[] = '<a class="slimstat-filter-link" title="' . esc_attr(__('Filter by element in a group', 'wp-slimstat')) . '" href="' . self::fs_url($_args['column_group'] . ' equals ' . $a_item) . '">' . esc_html( $a_item ) . '</a>';
                     }

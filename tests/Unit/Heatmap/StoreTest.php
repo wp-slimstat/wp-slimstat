@@ -125,7 +125,7 @@ class StoreTest extends WpSlimstatTestCase
 		$GLOBALS['slimstat_test_options'] = [Store::STATE => ['schema' => Store::SCHEMA]];
 
 		Store::purge();
-		self::assertCount(1, $this->heatmapQueries());
+		self::assertCount(2, $this->heatmapQueries());
 		self::assertMatchesRegularExpression('/^DELETE FROM wp_slim_heatmap WHERE kind IN \(0, 1\) AND dt < \d+ LIMIT 50000$/', $this->heatmapQueries()[0]);
 
 		$this->result = false;
@@ -149,11 +149,11 @@ class StoreTest extends WpSlimstatTestCase
 		Functions\when('is_wp_error')->justReturn(false);
 		Store::purge();
 		self::assertTrue($GLOBALS['slimstat_test_options'][Store::PURGE_PENDING]);
-		self::assertCount(1, $this->heatmapQueries());
+		self::assertCount(2, $this->heatmapQueries());
 		$this->result = 0;
 		Store::purge();
 		self::assertFalse($GLOBALS['slimstat_test_options'][Store::PURGE_PENDING]);
-		self::assertCount(2, $this->heatmapQueries());
+		self::assertCount(4, $this->heatmapQueries());
 		self::assertStringStartsWith('DELETE FROM `wp_options`', end($this->queries));
 	}
 
@@ -178,7 +178,7 @@ class StoreTest extends WpSlimstatTestCase
 		Functions\expect('wp_schedule_single_event')->never();
 		Store::purge();
 		self::assertTrue($GLOBALS['slimstat_test_options'][Store::PURGE_PENDING]);
-		self::assertCount(1, $this->heatmapQueries());
+		self::assertCount(2, $this->heatmapQueries());
 	}
 
 	/** Heatmap rows reach a person only through the pageview, so they are erased first. */
@@ -191,7 +191,8 @@ class StoreTest extends WpSlimstatTestCase
 		self::assertSame(['slimstat-heatmap', 'slimstat-events', 'slimstat-pageviews'], array_keys(Store::erasers($existing)));
 
 		$result = Store::erase("o'neil@example.com");
-		self::assertSame("DELETE h FROM wp_slim_heatmap h INNER JOIN wp_slim_stats s ON s.id = h.id WHERE s.email = 'o'neil@example.com'", $this->heatmapQueries()[0]);
+		self::assertSame("DELETE h FROM wp_slim_heatmap h INNER JOIN wp_slim_stats s ON s.id = h.id WHERE s.email = 'o'neil@example.com'", $this->heatmapQueries()[1]);
+		self::assertStringStartsWith('DELETE e FROM wp_slim_heatmap_elements', $this->heatmapQueries()[0]);
 		self::assertTrue($result['items_removed']);
 		self::assertTrue($result['done']);
 	}

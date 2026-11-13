@@ -15,6 +15,7 @@ var SlimStat = (function () {
     var inflightPageview = false;
     // Queue to enforce sequential sending order for tracking requests
     var requestQueue = [];
+    var consentGeneration = 0;
     var queueInFlight = false;
     var offlineInFlight = {};
     var MAX_QUEUE_ATTEMPTS = 4;
@@ -267,6 +268,7 @@ var SlimStat = (function () {
     var STALE_ID_GUARD_TTL = 30 * 1000;
 
     function loadSessionState(key, fallback) {
+        if (slimstatConsentAllowed(currentSlimStatParams()).mode !== "full") return fallback;
         try {
             var raw = sessionStorage.getItem(key);
             if (!raw) return fallback;
@@ -278,6 +280,7 @@ var SlimStat = (function () {
     }
 
     function saveSessionState(key, value) {
+        if (slimstatConsentAllowed(currentSlimStatParams()).mode !== "full") return false;
         try {
             sessionStorage.setItem(key, JSON.stringify(value));
             return true;
@@ -436,6 +439,11 @@ var SlimStat = (function () {
     function sendToServer(payload, useBeacon, opts) {
         if (isEmpty(payload)) return false;
         opts = opts || {};
+        var consent = slimstatConsentAllowed(currentSlimStatParams());
+        if (!consent.allowed || (consent.mode !== "full" && /(?:^|&)id=/.test(payload))) {
+            if (typeof opts.onComplete === "function") opts.onComplete(false, true);
+            return false;
+        }
 
         // Beacon acceptance does not mean delivery while the browser is offline.
         if (navigator.onLine === false) {
@@ -446,7 +454,7 @@ var SlimStat = (function () {
 
         // All requests now go through the queue to ensure consistent handling.
         // Immediate sends are pushed to the front.
-        var item = { payload: payload, useBeacon: useBeacon, opts: opts, attempts: 0 };
+        var item = { payload: payload, useBeacon: useBeacon, opts: opts, attempts: 0, consentGeneration: consentGeneration };
 
         // Check for duplicate payloads in queue to prevent duplicates
         var isDuplicate = requestQueue.some(function (qItem) {
@@ -525,6 +533,11 @@ var SlimStat = (function () {
 
     function processQueueItem(item, callback) {
         var params = currentSlimStatParams();
+        var consent = slimstatConsentAllowed(params);
+        if (item.consentGeneration !== consentGeneration || !consent.allowed || (consent.mode !== "full" && /(?:^|&)id=/.test(item.payload))) {
+            callback({ rejected: true });
+            return;
+        }
         var payload = item.payload;
         var useBeacon = shouldValidateIdWithXHR(item.useBeacon, payload) ? false : item.useBeacon;
         var requiresIdResponse = isEmpty(params.id) || isNaN(parseInt(params.id, 10)) || parseInt(params.id, 10) <= 0;
@@ -801,6 +814,8 @@ var SlimStat = (function () {
 
     function trackInteraction(event, note, useBeacon) {
         var params = currentSlimStatParams();
+        if (event && event.target && event.target.closest && event.target.closest(".slimstat-privacy-settings, #slimstat-gdpr-banner")) return false;
+        if (slimstatConsentAllowed(params).mode !== "full") return false;
         if (isEmpty(params.id) || isNaN(parseInt(params.id, 10)) || parseInt(params.id, 10) <= 0) {
             // Buffer interaction until we have an id
             try {
@@ -845,9 +860,7 @@ var SlimStat = (function () {
 
         // Element attributes
         if (typeof target.getAttribute === "function") {
-            if (target.textContent) noteObj.text = target.textContent;
-            var val = target.getAttribute("value");
-            if (val) noteObj.value = val;
+            if (target.textContent) noteObj.text = target.textContent.slice(0, 128);
             var title = target.getAttribute("title");
             if (title) noteObj.title = title;
             var idAttr = target.getAttribute("id");
@@ -1379,6 +1392,16 @@ var SlimStat = (function () {
         }
         var snapshot = detail.allowed + "|" + detail.mode + "|" + detail.reason;
         if (snapshot !== lastConsentSnapshot) {
+            if (detail.mode !== "full") {
+                // Delayed retries must not revive data after withdrawal and a later grant.
+                consentGeneration++;
+                pendingInteractions.length = 0;
+                try {
+                    localStorage.removeItem("slimstat_offline_queue");
+                    sessionStorage.removeItem(OFFLINE_REPLAY_KEY);
+                    sessionStorage.removeItem(PENDING_SESSION_KEY);
+                } catch (err) { /* Storage may be unavailable. */ }
+            }
             lastConsentSnapshot = snapshot;
             // Only emit consent event if it's a meaningful change (not just initial check)
             // This prevents duplicate pageview requests during initial load
@@ -1408,7 +1431,7 @@ var SlimStat = (function () {
 
         try {
             var dntEnabled = s.respect_dnt === "on";
-            if (dntEnabled && typeof navigator !== "undefined" && (navigator.doNotTrack === "1" || navigator.doNotTrack === "yes")) {
+            if (dntEnabled && typeof navigator !== "undefined" && (navigator.doNotTrack === "1" || navigator.doNotTrack === "yes" || navigator.globalPrivacyControl === true)) {
                 var blocked = { allowed: false, mode: "blocked", reason: "dnt" };
                 maybeEmitConsentChange(blocked);
                 return blocked;
@@ -1431,98 +1454,24 @@ var SlimStat = (function () {
         }
 
         var collectsPII = !!(setCookie || (!anonymizeIP && !hashIP));
-        var requiresCmpCheck = collectsPII || anonMode;
-        var cmpAllows = null;
-
-        if (requiresCmpCheck) {
-            if (integrationKey === "wp_consent_api" || integrationKey === "wpconsent" || integrationKey === "wp_consent" || integrationKey === "") {
-                var jsConsent = detectWPConsentAPI(consentLevel);
-                if (jsConsent !== null) {
-                    cmpAllows = jsConsent;
-                }
-                if (cmpAllows === null && s.server_side_consent !== undefined) {
-                    cmpAllows = !!s.server_side_consent;
-                }
-                if (integrationKey === "" && cmpAllows === null) {
-                    cmpAllows = true;
-                }
-            }
-
-            if (cmpAllows === null && (integrationKey === "real_cookie_banner" || integrationKey === "rcb" || integrationKey === "realcookie")) {
-                var rcbConsent = detectRealCookieBannerConsent(consentLevel);
-                if (rcbConsent !== null) {
-                    cmpAllows = rcbConsent;
-                } else {
-                    if (options.isConsentRetry) {
-                        var fallback = detectWPConsentAPI(consentLevel);
-                        if (fallback !== null) {
-                            cmpAllows = fallback;
-                        }
-                    }
-                }
-            }
-
-            if (cmpAllows === null && (integrationKey === "slimstat_banner" || integrationKey === "slimstat")) {
-                if (s.use_slimstat_banner !== "on") {
-                    // Banner not rendered — no consent gate (mirrors PHP Consent.php:288-295)
-                    cmpAllows = true;
-                } else {
-                    var cookieName = s.gdpr_cookie_name || "slimstat_gdpr_consent";
-                    var bannerConsent = detectSlimStatBanner(cookieName, consentLevel);
-                    if (bannerConsent !== null) {
-                        cmpAllows = bannerConsent;
-                    }
-                }
-            }
-
-            // Use previous consent upgrade only if current consent is unknown (null)
-            // Do NOT override an explicit rejection (false) with a previous consent
-            if (cmpAllows === null && hasConsentUpgradeSucceeded()) {
-                cmpAllows = true;
-            }
-
-            if (cmpAllows === null) {
-                if (anonMode) {
-                    // Permission to count anonymously is not permission to collect PII.
-                    cmpAllows = false;
-                } else if (collectsPII && integrationKey && integrationKey !== "") {
-                    cmpAllows = false;
-                } else {
-                    cmpAllows = true;
-                }
-            }
+        var hasSource = false;
+        var cmpAllows = false;
+        if (integrationKey === "slimstat_banner" || integrationKey === "slimstat" || (!integrationKey && s.use_slimstat_banner === "on")) {
+            hasSource = s.use_slimstat_banner === "on";
+            cmpAllows = hasSource && detectSlimStatBanner(s.gdpr_cookie_name || "slimstat_gdpr_consent", consentLevel) === true;
+        } else if (["wp_consent_api", "wpconsent", "wp_consent", "real_cookie_banner", "rcb", "realcookie"].indexOf(integrationKey) !== -1) {
+            var consent = detectWPConsentAPI(consentLevel);
+            hasSource = consent !== null;
+            cmpAllows = consent === true;
         }
-
-        if (cmpAllows === false) {
-            markConsentUpgradeDone(false);
-        }
-
-        if (anonMode) {
-            var cmpGranted = cmpAllows === true;
-            var anonDecision = {
-                allowed: true,
-                mode: cmpGranted ? "full" : "anonymous",
-                reason: cmpGranted ? "anonymous_mode_consented" : "anonymous_mode",
-            };
-            maybeEmitConsentChange(anonDecision);
-            return anonDecision;
-        }
-
-        if (!collectsPII) {
-            var noPii = { allowed: true, mode: "full", reason: "no_pii" };
-            maybeEmitConsentChange(noPii);
-            return noPii;
-        }
-
-        if (cmpAllows === false) {
-            var denied = { allowed: false, mode: "blocked", reason: "cmp_denied" };
-            maybeEmitConsentChange(denied);
-            return denied;
-        }
-
-        var allowedResult = { allowed: true, mode: "full", reason: "cmp_allowed" };
-        maybeEmitConsentChange(allowedResult);
-        return allowedResult;
+        if (!cmpAllows) markConsentUpgradeDone(false);
+        var decision = {
+            allowed: cmpAllows || anonMode || !collectsPII || !hasSource,
+            mode: cmpAllows ? "full" : (anonMode || !collectsPII || !hasSource ? "anonymous" : "blocked"),
+            reason: cmpAllows ? "cmp_allowed" : (hasSource ? "cmp_denied" : "cmp_missing"),
+        };
+        maybeEmitConsentChange(decision);
+        return decision;
     }
 
     function buildPageviewBase(params, allowPendingSession) {
@@ -1671,6 +1620,8 @@ var SlimStat = (function () {
         }
 
         var run = function () {
+            consentDecision = slimstatConsentAllowed(currentSlimStatParams());
+            if (!consentDecision.allowed) { onComplete(false); return; }
             // If anonymous mode is active, skip fingerprinting entirely to ensure no PII is collected/sent
             if (consentDecision.mode === "anonymous") {
                 initFingerprintHash(null);
@@ -1683,7 +1634,7 @@ var SlimStat = (function () {
                 // Safely check if FingerprintJS library is available
                 var fpPromise = null;
                 if (typeof FingerprintJS !== "undefined" && FingerprintJS.load) {
-                    fpPromise = FingerprintJS.load();
+                    fpPromise = FingerprintJS.load({ monitoring: false });
                 }
 
                 // Only proceed with promise chain if we have a valid promise
@@ -1722,6 +1673,7 @@ var SlimStat = (function () {
 
     // -------------------------- Offline Data Handling -------------------------- //
     function storeOffline(payload, recordedAt) {
+        if (slimstatConsentAllowed(currentSlimStatParams()).mode !== "full") return;
         try {
             var offline = loadOfflineQueue();
             if (!offline.some(function (item) { return item.p === payload; })) {
@@ -1758,6 +1710,7 @@ var SlimStat = (function () {
     }
 
     function flushOfflineQueue() {
+        if (slimstatConsentAllowed(currentSlimStatParams()).mode !== "full") return;
         if (navigator.onLine === false) return;
         try {
             restoreOfflineReplays();
@@ -1934,6 +1887,7 @@ if (!window.requestIdleCallback) {
     }
 
     function loadOfflineQueue() {
+        if (SlimStat.consent.checkAllowed(currentSlimStatParams()).mode !== "full") return [];
         try {
             var raw = localStorage.getItem(OFFLINE_KEY);
             if (!raw) return [];
@@ -1950,6 +1904,7 @@ if (!window.requestIdleCallback) {
     }
 
     function saveOfflineQueue(arr) {
+        if (SlimStat.consent.checkAllowed(currentSlimStatParams()).mode !== "full") return;
         try {
             localStorage.setItem(OFFLINE_KEY, JSON.stringify(arr.slice(-200))); // cap
         } catch (e) {
@@ -2377,7 +2332,7 @@ if (!window.requestIdleCallback) {
 
                     var pageviewId = null;
                     if (params.id && parseInt(params.id, 10) > 0) {
-                        pageviewId = parseInt(params.id, 10);
+                        pageviewId = params.id;
                     }
 
                     SlimStat.consent.sendChange("wp_consent_api", parsedConsent, pageviewId);
@@ -2478,7 +2433,7 @@ if (!window.requestIdleCallback) {
                 var parsedConsent = SlimStat.consent.normalize(consentData || { statistics: ok });
                 var pageviewId = null;
                 if (params.id && parseInt(params.id, 10) > 0) {
-                    pageviewId = parseInt(params.id, 10);
+                    pageviewId = params.id;
                 }
                 SlimStat.consent.sendChange("real_cookie_banner", parsedConsent, pageviewId);
             } catch (rcbError) {}
@@ -2573,6 +2528,7 @@ if (!window.requestIdleCallback) {
     // Before unload, persist any pending interactions that don't have an ID yet
     SlimStat.add_event(window, "beforeunload", function () {
         var params = currentSlimStatParams();
+        if (SlimStat.consent.checkAllowed(params).mode !== "full") { pendingInteractions.length = 0; return; }
         if ((!params.id || parseInt(params.id, 10) <= 0) && pendingInteractions.length > 0) {
             // No ID assigned, so we can't send these. Store them offline.
             // We assume they are for the most recent pageview attempt.
@@ -2788,42 +2744,26 @@ if (!window.requestIdleCallback) {
                 return;
             }
 
-            // Cached page guard: check if user already has a consent cookie.
-            // On cached pages the banner HTML is baked into the static response
-            // even though the user previously consented. Detect and suppress.
-            // Note: reads cookie inline to avoid esbuild scope/renaming issues
-            // with cross-scope function references.
-            var consentCookieName = params.gdpr_cookie_name || "slimstat_gdpr_consent";
-            try {
-                var safeName = consentCookieName.replace(/([.$?*|{}()\[\]\\\/\+^])/g, "\\$1");
-                var cookiePattern = "(?:^|;)\\s*" + safeName + "=([^;]*)";
-                var cookieMatch = document.cookie.match(cookiePattern);
-                if (cookieMatch && cookieMatch[1]) {
-                    // Validate the cookie has a real consent value (not empty/whitespace)
-                    var cookieVal = "";
-                    try { cookieVal = decodeURIComponent(cookieMatch[1]).trim(); } catch (ignore) { cookieVal = cookieMatch[1].trim(); }
-                    if (cookieVal === "accepted" || cookieVal === "denied") {
-                        // User already made a consent decision — remove stale banner
-                        if (banner.parentNode) {
-                            banner.parentNode.removeChild(banner);
-                        }
-                        bannerInitialized = true;
-                        return;
-                    }
-                }
-            } catch (e) {
-                // If cookie check fails, show banner (safe default)
-            }
-
             bannerInitialized = true;
-
-            setTimeout(function () {
-                if (banner && banner.classList) {
-                    banner.classList.add("show");
-                } else if (banner) {
-                    banner.style.display = "block";
-                }
-            }, 50);
+            var returnFocus = null;
+            function showBanner(trigger) {
+                returnFocus = trigger || null;
+                banner.hidden = false;
+                banner.classList.remove("hiding");
+                banner.classList.add("show");
+                document.querySelectorAll(".slimstat-privacy-settings").forEach(function (button) { button.setAttribute("aria-expanded", "true"); });
+                if (trigger) banner.querySelector("[data-consent]").focus();
+            }
+            document.addEventListener("click", function (event) {
+                var target = event.target.closest && event.target.closest(".slimstat-privacy-settings");
+                if (target) { event.preventDefault(); showBanner(target); }
+            });
+            banner.addEventListener("slimstat:banner:closed", function () {
+                document.querySelectorAll(".slimstat-privacy-settings").forEach(function (button) { button.setAttribute("aria-expanded", "false"); });
+                if (returnFocus) returnFocus.focus();
+            });
+            var choice = getCookieStrict(params.gdpr_cookie_name || "slimstat_gdpr_consent");
+            if (choice !== "accepted" && choice !== "denied") setTimeout(function () { showBanner(null); }, 50);
 
             var buttons = banner.querySelectorAll("[data-consent]");
             for (var i = 0; i < buttons.length; i++) {
@@ -2908,10 +2848,11 @@ if (!window.requestIdleCallback) {
                 bannerEl.style.opacity = "0";
             }
 
-            // Remove banner from DOM after animation completes
+            // Keep the controls available for withdrawal on this page and cached pages.
             setTimeout(function () {
-                if (bannerEl && bannerEl.parentNode) {
-                    bannerEl.parentNode.removeChild(bannerEl);
+                if (bannerEl) {
+                    bannerEl.hidden = true;
+                    bannerEl.dispatchEvent(new Event("slimstat:banner:closed"));
                 }
             }, 350);
 
@@ -2934,7 +2875,7 @@ if (!window.requestIdleCallback) {
                     var parsedConsent = SlimStat.consent.normalize(consent);
                     var pageviewId = null;
                     if (params.id && parseInt(params.id, 10) > 0) {
-                        pageviewId = parseInt(params.id, 10);
+                        pageviewId = params.id;
                     }
                     SlimStat.consent.sendChange("slimstat_banner", parsedConsent, pageviewId);
                 } catch (apiError) {}
@@ -2943,6 +2884,14 @@ if (!window.requestIdleCallback) {
                     requestConsentUpgrade({ consent: consent, consentNonce: nonce });
                 } catch (sendError) {}
             } else if (consent === "denied") {
+                SlimStat.consent.checkAllowed(params);
+                pendingInteractions.length = 0;
+                try {
+                    localStorage.removeItem("slimstat_offline_queue");
+                    sessionStorage.removeItem("slimstat_offline_replay");
+                    sessionStorage.removeItem("slimstat_pending_session");
+                } catch (storageError) {}
+                document.dispatchEvent(new CustomEvent("slimstat_banner_consent", { detail: { consent: consent } }));
                 // Send consent change to server via REST API
                 try {
                     var parsedConsentDenied = SlimStat.consent.normalize(consent);
@@ -2951,7 +2900,7 @@ if (!window.requestIdleCallback) {
 
                 // Call revocation handler to delete tracking cookie
                 try {
-                    var ajaxUrl = params.ajaxurl || "/wp-admin/admin-ajax.php";
+                    var ajaxUrl = params.ajaxurl_ajax || "/wp-admin/admin-ajax.php";
                     var revokeXhr = new XMLHttpRequest();
                     revokeXhr.open("POST", ajaxUrl, true);
                     revokeXhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");

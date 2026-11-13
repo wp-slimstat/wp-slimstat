@@ -20,7 +20,7 @@ class Storage
 
 		foreach ($data as $key => $value) {
 			if (is_string($value) && in_array($key, ['resource', 'referer', 'outbound_resource'], true)) {
-				$value = self::redactOrderKey($value);
+				$value = self::redactSensitiveUrl($value);
 			}
 			$data[$key] = 0 === strpos($key, 'utm_') || 'traffic_source' === $key
 				? Acquisition::clean($value)
@@ -72,14 +72,23 @@ class Storage
 		return $result;
 	}
 
-	/** WooCommerce receipt keys grant order access; they are never analytics dimensions. */
-	private static function redactOrderKey(string $url): string
+	/** Remove credentials and personal query values before either insert or update. */
+	public static function redactSensitiveUrl(string $url): string
 	{
-		if (false === strpos($url, '?')) { return $url; }
-		$query = [];
-		parse_str((string) wp_parse_url($url, PHP_URL_QUERY), $query);
-		return isset($query['key']) && is_string($query['key']) && 0 === strpos($query['key'], 'wc_order_')
-			? remove_query_arg('key', $url) : $url;
+		$sensitive = (array) apply_filters('slimstat_sensitive_query_parameters', [
+			'email', 'token', 'key', 'password', 'pass', 'pwd', 'secret', 'nonce',
+			'authorization', 'auth', 'rp', 'login', 'username', 'signature', 'session', 'sessionid', 'jwt', 'phone',
+		]);
+		$url = (string) preg_replace('~((?:[a-z][a-z0-9+.-]*:)?//)[^/?#]*@~i', '$1', $url);
+		return (string) preg_replace_callback('/([?#])([^#]*)/', static function ($match) use ($sensitive) {
+			$parts = array_filter(preg_split('/[&;]/', $match[2]), static function ($part) use ($sensitive) {
+				$key = strtolower(rawurldecode(rawurldecode(explode('=', $part, 2)[0])));
+				if (0 === strpos($key, 'utm_')) { return true; }
+				$words = preg_split('/[^a-z0-9]+/', $key);
+				return !array_intersect(array_merge([$key], $words), $sensitive);
+			});
+			return $parts ? $match[1] . implode('&', $parts) : '';
+		}, $url);
 	}
 
 	/**
@@ -204,7 +213,7 @@ class Storage
 		// sanitize to '' get dropped along with originals.
 		foreach ($data as $key => $value) {
 			if (is_string($value) && in_array($key, ['resource', 'referer', 'outbound_resource'], true)) {
-				$value = self::redactOrderKey($value);
+				$value = self::redactSensitiveUrl($value);
 			}
 			if (is_array($value)) {
 				$data[$key] = array_map('sanitize_text_field', $value);

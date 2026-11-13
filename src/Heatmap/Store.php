@@ -20,7 +20,7 @@ use SlimStat\Utils\OptionClaim;
  */
 final class Store
 {
-	public const SCHEMA = 1;
+	public const SCHEMA = 2;
 	public const STATE = 'slimstat_heatmap_state';
 	public const GENERATION = 'slimstat_heatmap_generation';
 	public const CLAIM = 'slimstat_heatmap_setup';
@@ -324,8 +324,10 @@ final class Store
 			if ($deleted) {
 				self::invalidate();
 			}
-			update_option(self::PURGE_PENDING, 50000 === $deleted, false);
-			if (50000 === $deleted && !wp_next_scheduled(self::PURGE_HOOK)) {
+			$labels = self::purgeOrphanedElements();
+			$pending = 50000 === $deleted || 500 === $labels;
+			update_option(self::PURGE_PENDING, $pending, false);
+			if ($pending && !wp_next_scheduled(self::PURGE_HOOK)) {
 				$scheduled = wp_schedule_single_event(time() + 60, self::PURGE_HOOK, [], true);
 				if (is_wp_error($scheduled)) {
 					\wp_slimstat::record_degradation('purge (heatmap scheduling)', $scheduled->get_error_message(), \wp_slimstat::DEGRADATION_OPERATIONAL);
@@ -353,6 +355,12 @@ final class Store
 		$db    = Query::db();
 		$table = self::table();
 		$stats = self::table('slim_stats');
+		$elements = self::table('slim_heatmap_elements');
+		// A shared selector can contain a personalized label: remove its dictionary entry too.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery -- Manifest tables, prepared email.
+		if (false === $db->query($db->prepare("DELETE e FROM {$elements} e INNER JOIN {$table} h ON h.sel = e.sel INNER JOIN {$stats} s ON s.id = h.id WHERE s.email = %s", $email))) {
+			throw new \RuntimeException('Heatmap element erasure failed.');
+		}
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery -- Table names from the prefix; the email is prepared.
 		$deleted = $db->query($db->prepare("DELETE h FROM {$table} h INNER JOIN {$stats} s ON s.id = h.id WHERE s.email = %s", $email));
 		if (false === $deleted) {
@@ -362,6 +370,22 @@ final class Store
 			self::invalidate();
 		}
 		return ['items_removed' => $deleted > 0, 'items_retained' => false, 'messages' => [], 'done' => true];
+	}
+
+	/** Bounded cleanup, using the selector index even on sites with millions of clicks. */
+	private static function purgeOrphanedElements(): int
+	{
+		$db = Query::db();
+		$table = self::table();
+		$elements = self::table('slim_heatmap_elements');
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery -- Fixed manifest table names, fixed batch limit.
+		$deleted = $db->query("DELETE FROM {$elements} WHERE NOT EXISTS (SELECT 1 FROM {$table} h WHERE h.sel = {$elements}.sel) LIMIT 500");
+		if (false === $deleted) {
+			\wp_slimstat::record_degradation('purge (heatmap labels)', $db->last_error, \wp_slimstat::DEGRADATION_OPERATIONAL);
+			return 0;
+		}
+		if ($deleted) { self::invalidate(); }
+		return $deleted;
 	}
 
 	public static function exporters(array $exporters): array

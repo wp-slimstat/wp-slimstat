@@ -288,6 +288,10 @@ class wp_slimstat_db
 
         // Normalize the filters
         self::$filters_normalized = self::init_filters($filters_raw);
+        if ('on' === (wp_slimstat::$settings['mask_personal_data'] ?? 'off') && \SlimStat\Reports\ReportPrivacy::enabled() && array_intersect(array_keys(self::$filters_normalized['columns']), \SlimStat\Reports\ReportPrivacy::PERSONAL)) {
+            // Masking also blocks probing a named visitor through aggregate filters.
+            self::$filters_normalized['columns'] = ['id' => ['equals', '0']];
+        }
 
         // Retrieve data that will be used by multiple reports
         // Deferred Dashboard widgets post page=dashboard; their shares need the total too.

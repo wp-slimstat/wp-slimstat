@@ -34,6 +34,8 @@ const SLIMVIEW6 = `${BASE_URL}/wp-admin/admin.php?page=slimview6`;
 
 async function gotoSlimview6(page: Page): Promise<void> {
     await page.goto(SLIMVIEW6, { waitUntil: 'domcontentloaded' });
+    // Notices can push Funnels below the viewport; reports load when the visitor scrolls to them.
+    await page.locator('#slim_p9_02').scrollIntoViewIfNeeded();
 }
 
 async function waitForGoalsReload(page: Page): Promise<void> {

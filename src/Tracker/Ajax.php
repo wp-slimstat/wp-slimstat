@@ -225,6 +225,9 @@ class Ajax
         // Use setter with validation
         \wp_slimstat::set_data_js(apply_filters('slimstat_filter_pageview_data_js', \wp_slimstat::$raw_post_array));
         $data_js   = \wp_slimstat::get_data_js();
+        if (!Consent::canTrack()) {
+            return Utils::logError(301);
+        }
         $stat      = \wp_slimstat::get_stat();
 
         $site_host = wp_parse_url(get_site_url(), PHP_URL_HOST);
@@ -270,6 +273,10 @@ class Ajax
         \wp_slimstat::set_stat($stat);
 
         if (!empty($data_js['id'])) {
+            // A signed pageview ID proves ownership, not continuing consent.
+            if (!Consent::piiAllowed()) {
+                return Utils::logError(301);
+            }
             // Defense-in-depth: check bot status even for follow-up AJAX events.
             // The initial pageview (id=empty) goes through Processor::process() which
             // has the full bot check, but follow-up events skip Processor entirely.
@@ -293,7 +300,7 @@ class Ajax
             }
 
             if ($isConsentUpgrade && empty($data_js['pos']) && 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off')) {
-                // The verified existing ID must use the session-wide consent merge,
+                // The verified existing ID must use the consent update for this pageview,
                 // rather than the ordinary one-row update path below. Only when
                 // anonymous tracking is on, though: that merge (Processor::process(),
                 // the `$isAnonymousTracking && $piiAllowed` block) is the only thing
@@ -324,18 +331,6 @@ class Ajax
                     $stat['username'] = $GLOBALS['current_user']->data->user_login;
                     $stat['email']    = $GLOBALS['current_user']->data->user_email;
                     $stat['notes'][]  = 'user:' . $GLOBALS['current_user']->data->ID;
-                } elseif (isset($_COOKIE['comment_author_' . COOKIEHASH])) {
-                    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
-                    $comment_author = $_COOKIE['comment_author_' . COOKIEHASH] ?? '';
-                    if (is_string($comment_author) && '' !== $comment_author) {
-                        $stat['username'] = sanitize_user(wp_unslash($comment_author));
-                    }
-
-                    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
-                    $comment_email = $_COOKIE['comment_author_email_' . COOKIEHASH] ?? '';
-                    if (is_string($comment_email) && '' !== $comment_email) {
-                        $stat['email'] = sanitize_email(wp_unslash($comment_email));
-                    }
                 }
             }
 
@@ -429,69 +424,6 @@ class Ajax
 
                 // Update stat before storage
                 \wp_slimstat::set_stat($stat);
-
-                // GDPR Compliance: Duplicate check for anonymous mode (same as Processor.php)
-                // In Anonymous Tracking Mode without PII, simulate normal session behavior
-                // This prevents duplicate records from page refreshes while still allowing:
-                // - New visits to different pages (different resource)
-                // - New sessions after session_duration expires
-                // - New visits from different browsers/devices (different visit_id)
-                $isAnonymousTracking = ('on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off'));
-                $piiAllowed = Consent::piiAllowed();
-
-                if ($isAnonymousTracking && !$piiAllowed && !empty($stat['visit_id']) && !empty($stat['resource'])) {
-                    $session_duration = !empty(\wp_slimstat::$settings['session_duration']) ? intval(\wp_slimstat::$settings['session_duration']) : 1800;
-                    $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-                    $min_timestamp = $stat['dt'] - $session_duration;
-
-                    $GLOBALS['wpdb']->query('START TRANSACTION');
-
-                    try {
-                        $fingerprint_check = '';
-                        $fingerprint_value = null;
-                        if (!empty($stat['fingerprint'])) {
-                            $fingerprint_check = ' AND fingerprint = %s';
-                            $fingerprint_value = $stat['fingerprint'];
-                        }
-                        $sql = "SELECT id, dt FROM {$table}
-                                WHERE visit_id = %d
-                                AND resource = %s
-                                AND dt >= %d
-                                AND dt <= %d
-                                {$fingerprint_check}
-                                ORDER BY dt DESC
-                                LIMIT 1
-                                FOR UPDATE";
-
-                        $prepare_args = [
-                            $stat['visit_id'],
-                            $stat['resource'],
-                            $min_timestamp,
-                            $stat['dt']
-                        ];
-
-                        if ($fingerprint_value !== null) {
-                            $prepare_args[] = $fingerprint_value;
-                        }
-
-                        $existing_record = $GLOBALS['wpdb']->get_row(
-                            $GLOBALS['wpdb']->prepare($sql, ...$prepare_args),
-                            OBJECT
-                        );
-
-                        if (!empty($existing_record)) {
-                            $stat['id'] = intval($existing_record->id);
-                            \wp_slimstat::set_stat($stat);
-                            $GLOBALS['wpdb']->query('COMMIT');
-                            return Utils::getValueWithChecksum($stat['id']);
-                        }
-
-                        $GLOBALS['wpdb']->query('COMMIT');
-                    } catch (\Exception $e) {
-                        // Rollback on error
-                        $GLOBALS['wpdb']->query('ROLLBACK');
-                    }
-                }
 
                 $id = Storage::updateRow($stat)->id();
             } else {
