@@ -1060,6 +1060,8 @@ $search_keywords = [
     'delete_data_on_uninstall' => __('remove, erase, uninstall, delete everything', 'wp-slimstat'),
     'rest_api_tokens'          => __('api, token, key, integration', 'wp-slimstat'),
 ];
+// One id scheme for search, status links and rows: headers keep their wp-slimstat-{anchor} ids.
+$setting_anchor = static fn($key, array $row): string => 'section_header' === ($row['type'] ?? '') ? 'wp-slimstat-' . ($row['anchor'] ?? sanitize_title($row['title'])) : 'slimstat-setting-' . $key;
 foreach ($settings as $a_tab_id => $a_tab_info) {
     if (!empty($a_tab_info['rows']) || (current_user_can('manage_options') && in_array($a_tab_id, [7, 8], true))) {
         $tabs_html .= "<li class='nav-tab nav-tab" . (($current_tab == $a_tab_id) ? '-active' : '-inactive') . "'><a href='" . esc_url(wp_slimstat_admin::$config_url . $a_tab_id) . "'" . ($current_tab == $a_tab_id ? " aria-current='page'" : '') . sprintf('>%s</a></li>', esc_html($a_tab_info['title']));
@@ -1081,7 +1083,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
                 'l'  => $a_label,
                 'd'  => wp_html_excerpt(wp_strip_all_tags((string) ($a_row['description'] ?? '')), 160, '…'),
                 'k'  => $search_keywords[$a_slug] ?? '',
-                'id' => $a_header ? 'wp-slimstat-' . ($a_row['anchor'] ?? sanitize_title($a_row['title'])) : 'slimstat-setting-' . $a_slug,
+                'id' => $setting_anchor($a_slug, $a_row),
                 'a'  => (string) $a_slug,
             ];
         }
@@ -1119,7 +1121,8 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
                 <?php endif; ?>
                 <dl class="slimstat-settings-status__list">
                     <?php foreach ($status_rows as $status_row) :
-                        $status_target = '' === $status_row['anchor'] ? '' : '#' . (isset($settings[$status_row['tab']]['rows'][$status_row['anchor']]) ? 'slimstat-setting-' : 'wp-slimstat-') . $status_row['anchor'];
+                        $status_setting = $settings[$status_row['tab']]['rows'][$status_row['anchor']] ?? null;
+                        $status_target  = '' === $status_row['anchor'] ? '' : '#' . (null === $status_setting ? 'wp-slimstat-' . $status_row['anchor'] : $setting_anchor($status_row['anchor'], $status_setting));
                         ?>
                         <div class="slimstat-settings-status__row is-<?php echo esc_attr($status_row['state']); ?>">
                             <dt><?php echo esc_html($status_row['label']); ?></dt>
@@ -1215,12 +1218,12 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
                 }
 
                 // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
-                echo '<tr id="slimstat-setting-' . esc_attr($a_setting_slug) . '"' . (0 == $i % 2 ? ' class="alternate"' : '') . $conditional_attrs . '>';
+                echo '<tr' . ('section_header' === $a_setting_info['type'] ? '' : ' id="' . esc_attr($setting_anchor($a_setting_slug, $a_setting_info)) . '"') . (0 == $i % 2 ? ' class="alternate"' : '') . $conditional_attrs . '>';
                 // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                 switch ($a_setting_info['type']) {
                     case 'section_header':
                         // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
-                        echo '<td colspan="2" class="slimstat-options-section-header"' . $conditional_attrs . ' id="wp-slimstat-' . esc_attr($a_setting_info['anchor'] ?? sanitize_title($a_setting_info['title'])) . '">' . wp_kses_post($a_setting_info['title']) . '</td>';
+                        echo '<td colspan="2" class="slimstat-options-section-header"' . $conditional_attrs . ' id="' . esc_attr($setting_anchor($a_setting_slug, $a_setting_info)) . '">' . wp_kses_post($a_setting_info['title']) . '</td>';
                         // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                         break;
 

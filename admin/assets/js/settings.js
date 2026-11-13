@@ -99,14 +99,20 @@
         };
 
         var score = function (row, words) {
-            var label = row.l.toLowerCase();
-            var rest = (row.k + ' ' + row.s + ' ' + row.g + ' ' + row.d).toLowerCase();
+            // Lowercased once per row, not on every keystroke.
+            if (undefined === row.ll) {
+                row.ll = row.l.toLowerCase();
+                row.kl = row.k.toLowerCase();
+                row.rl = (row.k + ' ' + row.s + ' ' + row.g + ' ' + row.d).toLowerCase();
+            }
+            var label = row.ll;
+            var rest = row.rl;
             var total = 0;
             for (var i = 0; i < words.length; i++) {
                 var w = words[i];
                 if (0 === label.indexOf(w)) { total += 4; }
                 else if (label.indexOf(w) >= 0) { total += 3; }
-                else if (row.k.toLowerCase().indexOf(w) >= 0) { total += 2; }
+                else if (row.kl.indexOf(w) >= 0) { total += 2; }
                 else if (rest.indexOf(w) >= 0) { total += 1; }
                 else { return 0; }
             }

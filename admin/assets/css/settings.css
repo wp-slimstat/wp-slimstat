@@ -96,7 +96,7 @@ html:has(.slimstat-save-bar) {
 .slimstat-settings-status {
     margin-block-start: var(--ss-space-6);
     padding: var(--ss-space-5);
-    border-radius: 10px;
+    border-radius: var(--ss-radius-md);
     background: var(--ss-surface);
 }
 

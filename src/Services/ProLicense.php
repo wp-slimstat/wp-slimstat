@@ -200,7 +200,7 @@ final class ProLicense
 	}
 
 	/** One line for screens other than License settings: why Pro is locked. '' while it is licensed. */
-	public static function summary(): string
+	public static function summary(?string $state = null): string
 	{
 		$message = self::message();
 		if ('' === $message || !current_user_can('manage_options') || !class_exists(self::CLIENT)) {
@@ -211,14 +211,14 @@ final class ProLicense
 			'domain_not_activated' => __('SlimStat Pro features are locked: the license is not activated for this site.', 'wp-slimstat'),
 			'invalid'              => __('SlimStat Pro features are locked: the license is expired or not valid for this site.', 'wp-slimstat'),
 		];
-		$line = $short[self::state()] ?? __('SlimStat Pro features are locked: the license could not be verified. SlimStat retries automatically.', 'wp-slimstat');
+		$line = $short[$state ?? self::state()] ?? __('SlimStat Pro features are locked: the license could not be verified. SlimStat retries automatically.', 'wp-slimstat');
 		return $line . ' ' . __('Your Pro settings and data are kept.', 'wp-slimstat');
 	}
 
 	/** A wrong key, or one not activated here, is an error; a missing key, an outage or an outdated Pro is a warning. */
-	private static function tone(array $links): string
+	private static function tone(array $links, ?string $state = null): string
 	{
-		return $links && class_exists(self::CLIENT) && in_array(self::state(), ['invalid', 'domain_not_activated'], true) ? 'error' : 'warning';
+		return $links && class_exists(self::CLIENT) && in_array($state ?? self::state(), ['invalid', 'domain_not_activated'], true) ? 'error' : 'warning';
 	}
 
 	/**
@@ -227,12 +227,13 @@ final class ProLicense
 	 */
 	public static function render(bool $compact = false): void
 	{
-		$message = $compact ? self::summary() : self::message();
+		$state   = self::state();
+		$message = $compact ? self::summary($state) : self::message();
 		if ('' === $message) {
 			return;
 		}
 		$links = $compact ? array_slice(self::links(), 0, 1) : self::links();
-		$tone  = self::tone($links);
+		$tone  = self::tone($links, $state);
 		echo '<div class="notice notice-' . esc_attr($tone) . ' slimstat-notice slimstat-pro-license-notice" role="status"><div class="slimstat-alert-content" dir="auto"><p>' . wp_kses($message, ['a' => ['href' => true], 'strong' => []]) . '</p></div>';
 		if ($links) {
 			echo '<p class="slimstat-pro-license-notice__actions">';
@@ -259,7 +260,8 @@ final class ProLicense
 	{
 		if (self::on_screen() && class_exists('wp_slimstat_admin')) {
 			$links = array_slice(self::links(), 0, 1);
-			\wp_slimstat_admin::show_dismissible_notice('pro-license', hash('sha256', 'pro-license-' . self::state()), self::summary(), $links, self::tone($links), 7 * DAY_IN_SECONDS);
+			$state = self::state();
+			\wp_slimstat_admin::show_dismissible_notice('pro-license', hash('sha256', 'pro-license-' . $state), self::summary($state), $links, self::tone($links, $state), 7 * DAY_IN_SECONDS);
 		}
 	}
 
