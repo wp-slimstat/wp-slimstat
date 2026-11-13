@@ -51,7 +51,7 @@
       "interpretation": "Full zero-retry census plus verified follow-ups, not one uninterrupted green run. All failures and blocked cases are accounted for. Free-only, debug-off and download-budget variants were run explicitly; corrected deferred-report/CSV fixtures pass in both Free-only and Pro installs.",
       "followups": [
         {
-          "status": "\u2718",
+          "status": "✘",
           "ordinal": 7,
           "project": "admin",
           "file": "access-log-date-pagination.spec.ts",
@@ -62,7 +62,7 @@
           ]
         },
         {
-          "status": "\u2718",
+          "status": "✘",
           "ordinal": 8,
           "project": "admin",
           "file": "access-log-date-pagination.spec.ts",
@@ -83,7 +83,7 @@
           ]
         },
         {
-          "status": "\u2718",
+          "status": "✘",
           "ordinal": 119,
           "project": "admin",
           "file": "black-friday-2026.spec.ts",
@@ -183,7 +183,7 @@
           ]
         },
         {
-          "status": "\u2718",
+          "status": "✘",
           "ordinal": 583,
           "project": "admin",
           "file": "issue-14843-browscap-toggle-revert.spec.ts",
@@ -253,7 +253,7 @@
           ]
         },
         {
-          "status": "\u2718",
+          "status": "✘",
           "ordinal": 929,
           "project": "admin",
           "file": "ticket-14684-regression.spec.ts",
@@ -503,7 +503,7 @@
         "d83e3fde"
       ],
       "consent": "Purpose-bound pageview tokens reject visit cookies and legacy generic signatures without replaying old pages. Both direct endpoints preserve consent success independently of pageview upgrade. Actual AJAX upgrades retain the visited page context. Conditional session updates preserve the winning visit, concurrent annotations and pending enrichment; ordinary late updates cannot reattach the row. Late CMP grants remain queued during preparation.",
-      "reports": "Stored goal and funnel criteria retain their aggregate meaning while public personal filters remain blocked after URL decoding. Shared aggregate cache keys include the effective masking decision. Privacy exports hide internal consent proofs while retaining the verified subject\u2019s own data.",
+      "reports": "Stored goal and funnel criteria retain their aggregate meaning while public personal filters remain blocked after URL decoding. Shared aggregate cache keys include the effective masking decision. Privacy exports hide internal consent proofs while retaining the verified subject’s own data.",
       "heatmap": "Scheduled orphan cleanup waits for the indexed schema. Erasure drains orphan labels without relying on retention. Conditional dictionary insertion prevents a paused ingestion from restoring labels after their clicks are erased. Failed orphan cleanup cannot report complete erasure.",
       "migration": "Purpose-bound pageview tokens require clearing full-page/CDN caches; already-open old pages stop follow-ups until navigation, without replaying recorded pageviews. Documented in readme.",
       "required_red_controls": [
@@ -524,6 +524,18 @@
         "comparison": "Final d83e3fde comparison exactly matches committed before.json and after.json.",
         "erased_parent": "Additional real-database interleaving confirms the supported heatmap foreign key rejects an insert paused across parent erasure; no clicks or personal label survive."
       }
+    },
+    "third_review": {
+      "review": "Free review 5897517869, shared heatmap label erasure; follow-up 4568291523, remaining Consent API listeners; public chart assertion nitpick.",
+      "heatmap": "Clicks and shared dictionary entries are deleted in one atomic statement. The ingest existence check locks the subject click through label insertion, including under READ COMMITTED. Other visitors retain their click counts; subject scrolls without labels are erased.",
+      "consent": "All four WP Consent API grant entry points queue through requestConsentUpgrade while initial preparation is locked.",
+      "chart": "Public Chart::reportData returns exactly one pageview for the authorized administrator and zero for the masked personal-filter probe in both cache fill orders.",
+      "required_red_controls": [
+        "Previous code retains the personalized shared label and loses wp_listen_for_consent_change grants during preparation.",
+        "Removing the locking read from the fixed atomic implementation restores the shared label under READ COMMITTED in the real two-connection fixture."
+      ],
+      "database_concurrency": "Actual ingest/erase SQL tested on two connections, erase-first and ingest-first, under READ COMMITTED and REPEATABLE READ; all pass.",
+      "validation_status": "Final focused browser, PHP, mutation and CI results are recorded in PR #414."
     }
   }
 }

@@ -288,8 +288,9 @@ final class Store
 			$selects = [];
 			foreach ($elements as $hex => [$selector, $label]) {
 				// A privacy erasure can remove the clicks while this batch is paused.
-				// Only a still-referenced label may be inserted after that point.
-				$selects[] = "SELECT UNHEX(%s), %s, %s FROM DUAL WHERE EXISTS (SELECT 1 FROM {$table} WHERE id = %d AND sel = UNHEX(%s))";
+				// Lock the live click through this insert, including under READ COMMITTED,
+				// so erasure cannot finish between the existence check and label write.
+				$selects[] = "SELECT UNHEX(%s), %s, %s FROM DUAL WHERE EXISTS (SELECT 1 FROM {$table} WHERE id = %d AND sel = UNHEX(%s) FOR UPDATE)";
 				array_push($args, $hex, $selector, $label, $id, $hex);
 			}
 			$elementsTable = self::table('slim_heatmap_elements');
@@ -361,20 +362,18 @@ final class Store
 		$table = self::table();
 		$stats = self::table('slim_stats');
 		$elements = self::table('slim_heatmap_elements');
-		// A shared selector can contain a personalized label: remove its dictionary entry too.
+		// Delete labels and clicks in one atomic statement: a pending label insert
+		// must run entirely before or after this deletion, even for shared selectors.
+		// LEFT JOIN also removes scrolls and clicks whose dictionary entry is absent.
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery -- Manifest tables, prepared email.
-		if (false === $db->query($db->prepare("DELETE e FROM {$elements} e INNER JOIN {$table} h ON h.sel = e.sel INNER JOIN {$stats} s ON s.id = h.id WHERE s.email = %s", $email))) {
-			throw new \RuntimeException('Heatmap element erasure failed.');
-		}
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery -- Table names from the prefix; the email is prepared.
-		$deleted = $db->query($db->prepare("DELETE h FROM {$table} h INNER JOIN {$stats} s ON s.id = h.id WHERE s.email = %s", $email));
+		$deleted = $db->query($db->prepare("DELETE h, e FROM {$table} h INNER JOIN {$stats} s ON s.id = h.id LEFT JOIN {$elements} e ON e.sel = h.sel WHERE s.email = %s", $email));
 		if (false === $deleted) {
 			throw new \RuntimeException('Heatmap privacy erasure failed.');
 		}
 		if ($deleted) {
 			self::invalidate();
 		}
-		// A concurrent batch may have inserted its label between the two deletes.
+		// Also clear labels orphaned by earlier retention or erasure passes.
 		$labels = self::purgeOrphanedElements();
 		if ($labels < 0) { throw new \RuntimeException('Heatmap element erasure failed.'); }
 		return ['items_removed' => $deleted > 0 || $labels > 0, 'items_retained' => false, 'messages' => [], 'done' => $labels < 500];

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-13T18:56:55+00:00\n"
+"POT-Creation-Date: 2026-11-13T21:39:40+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -139,8 +139,8 @@ msgstr ""
 #: admin/view/heatmaps.php:34
 #: admin/view/partials/email-sample.php:22
 #: admin/view/wp-slimstat-db.php:143
-#: admin/view/wp-slimstat-db.php:1495
-#: admin/view/wp-slimstat-db.php:2016
+#: admin/view/wp-slimstat-db.php:1494
+#: admin/view/wp-slimstat-db.php:2015
 #: admin/view/wp-slimstat-reports.php:51
 #: admin/view/wp-slimstat-reports.php:120
 #: admin/view/wp-slimstat-reports.php:129
@@ -672,7 +672,7 @@ msgid "If enabled, visits from users identified as spammers by third-party tools
 msgstr ""
 
 #: admin/config/index.php:514
-#: admin/view/wp-slimstat-db.php:2175
+#: admin/view/wp-slimstat-db.php:2174
 msgid "Bots"
 msgstr ""
 
@@ -2859,7 +2859,7 @@ msgstr ""
 
 #: admin/view/heatmaps.php:32
 #: admin/view/wp-slimstat-reports.php:1937
-#: src/Heatmap/Store.php:423
+#: src/Heatmap/Store.php:427
 msgid "Page"
 msgstr ""
 
@@ -2899,8 +2899,8 @@ msgid "Clicks by device: desktop, tablet and mobile."
 msgstr ""
 
 #: admin/view/heatmaps.php:37
-#: src/Heatmap/Store.php:424
-#: src/Heatmap/Store.php:427
+#: src/Heatmap/Store.php:428
+#: src/Heatmap/Store.php:431
 msgid "Scroll depth"
 msgstr ""
 
@@ -5516,7 +5516,7 @@ msgid "Event ID"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:151
-#: src/Heatmap/Store.php:424
+#: src/Heatmap/Store.php:428
 msgid "Type"
 msgstr ""
 
@@ -5537,249 +5537,249 @@ msgstr ""
 msgid "Offset"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1497
-#: admin/view/wp-slimstat-db.php:2018
+#: admin/view/wp-slimstat-db.php:1496
+#: admin/view/wp-slimstat-db.php:2017
 msgid "A pageview is a request to load a single HTML page on your website."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1499
+#: admin/view/wp-slimstat-db.php:1498
 msgid "Days in Range"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1502
+#: admin/view/wp-slimstat-db.php:1501
 msgid "Average Daily Pageviews"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1504
+#: admin/view/wp-slimstat-db.php:1503
 msgid "How many daily pageviews have been generated on average."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1506
+#: admin/view/wp-slimstat-db.php:1505
 msgid "Pageviews with a search term"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1508
+#: admin/view/wp-slimstat-db.php:1507
 msgid "Pageviews that arrived with a search term, from a search engine or your own site search. Most search engines no longer pass the term, so Channels counts more Organic Search."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1510
-#: admin/view/wp-slimstat-db.php:2159
+#: admin/view/wp-slimstat-db.php:1509
+#: admin/view/wp-slimstat-db.php:2158
 #: admin/view/wp-slimstat-reports.php:130
 #: admin/view/wp-slimstat-reports.php:314
 #: admin/view/wp-slimstat-reports.php:608
 msgid "Unique IPs"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1512
+#: admin/view/wp-slimstat-db.php:1511
 msgid "Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1514
+#: admin/view/wp-slimstat-db.php:1513
 msgid "Pageviews, last 30 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1515
+#: admin/view/wp-slimstat-db.php:1514
 msgid "Pageviews in the last 30 minutes. Visitors online counts people, not pageviews."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1518
+#: admin/view/wp-slimstat-db.php:1517
 #: src/Components/DateRangeHelper.php:213
 #: src/Modules/Chart.php:173
 msgid "Today"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1521
+#: admin/view/wp-slimstat-db.php:1520
 #: src/Components/DateRangeHelper.php:214
 msgid "Yesterday"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2020
+#: admin/view/wp-slimstat-db.php:2019
 msgid "Unique Referrers"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2022
+#: admin/view/wp-slimstat-db.php:2021
 msgid "A referrer (or referring site) is a site that a visitor previously visited before following a link to your site."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2024
+#: admin/view/wp-slimstat-db.php:2023
 msgid "Direct Pageviews"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2026
+#: admin/view/wp-slimstat-db.php:2025
 msgid "Visitors who typed your website URL directly into their browser address bar. It can also refer to visitors who clicked on one of their bookmarked links, untagged links within emails, or links in documents that don't include tracking variables."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2027
+#: admin/view/wp-slimstat-db.php:2026
 msgid "It also counts older pageviews with no referrer, recorded before channels were tracked; the Channels report lists those as Unassigned."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2029
+#: admin/view/wp-slimstat-db.php:2028
 msgid "From External SERP"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2031
+#: admin/view/wp-slimstat-db.php:2030
 msgid "Visitors who clicked on a link to your website listed on a search engine result page (SERP). This metric only counts visits coming from <strong>external</strong> search pages."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2033
+#: admin/view/wp-slimstat-db.php:2032
 msgid "Unique Landing Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2035
+#: admin/view/wp-slimstat-db.php:2034
 msgid "A landing page is the first page on your website that a visitors opens, also known as <em>entrance page</em>. For example, if they search for 'Brooklyn Office Space,' and they land on a page on your website, this page gets counted (for that visit) as a landing page."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2037
+#: admin/view/wp-slimstat-db.php:2036
 msgid "Bounce Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2039
+#: admin/view/wp-slimstat-db.php:2038
 msgid "Number of single-page visits tracked over the selected period of time."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2041
+#: admin/view/wp-slimstat-db.php:2040
 #: src/Reports/ReportData.php:48
 msgid "New Visitors Rate"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2043
+#: admin/view/wp-slimstat-db.php:2042
 msgid "Percentage of single-page visits, i.e. visits in which the person left your site from the entrance page."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2045
+#: admin/view/wp-slimstat-db.php:2044
 msgid "Currently from search engines"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2047
+#: admin/view/wp-slimstat-db.php:2046
 msgid "Visitors who clicked on a link to your website listed on a search engine result page (SERP), tracked in the last 5 minutes."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2059
+#: admin/view/wp-slimstat-db.php:2058
 msgid "0 - 30 seconds"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2061
-#: admin/view/wp-slimstat-db.php:2068
-#: admin/view/wp-slimstat-db.php:2075
-#: admin/view/wp-slimstat-db.php:2082
-#: admin/view/wp-slimstat-db.php:2089
-#: admin/view/wp-slimstat-db.php:2096
-#: admin/view/wp-slimstat-db.php:2103
-#: admin/view/wp-slimstat-db.php:2155
+#: admin/view/wp-slimstat-db.php:2060
+#: admin/view/wp-slimstat-db.php:2067
+#: admin/view/wp-slimstat-db.php:2074
+#: admin/view/wp-slimstat-db.php:2081
+#: admin/view/wp-slimstat-db.php:2088
+#: admin/view/wp-slimstat-db.php:2095
+#: admin/view/wp-slimstat-db.php:2102
+#: admin/view/wp-slimstat-db.php:2154
 #: admin/view/wp-slimstat-reports.php:313
 msgid "Visits"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2066
+#: admin/view/wp-slimstat-db.php:2065
 msgid "31 - 60 seconds"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2073
+#: admin/view/wp-slimstat-db.php:2072
 msgid "1 - 3 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2080
+#: admin/view/wp-slimstat-db.php:2079
 msgid "3 - 5 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2087
+#: admin/view/wp-slimstat-db.php:2086
 msgid "5 - 7 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2094
+#: admin/view/wp-slimstat-db.php:2093
 msgid "7 - 10 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2101
+#: admin/view/wp-slimstat-db.php:2100
 msgid "More than 10 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2122
+#: admin/view/wp-slimstat-db.php:2121
 msgid "Average Visit Duration"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2157
+#: admin/view/wp-slimstat-db.php:2156
 msgid "A visit is a group of pageviews within a 30-minute time span. Returning visitors are counted multiple times if they start a new visit."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2161
+#: admin/view/wp-slimstat-db.php:2160
 msgid "It includes only traffic generated by human visitors."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2163
+#: admin/view/wp-slimstat-db.php:2162
 #: src/Reports/ReportData.php:48
 msgid "Bounce rate"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2165
+#: admin/view/wp-slimstat-db.php:2164
 msgid "Total number of one-page visits divided by the total number of entries to a website. Please see the <a href=\"https://support.google.com/analytics/answer/1009409?hl=en\" target=\"_blank\">official Google docs</a> for more information."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2167
+#: admin/view/wp-slimstat-db.php:2166
 msgid "Known visitors"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2169
+#: admin/view/wp-slimstat-db.php:2168
 msgid "Visitors who have previously left a comment on your blog."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2171
+#: admin/view/wp-slimstat-db.php:2170
 msgid "Single-page Visits"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2173
+#: admin/view/wp-slimstat-db.php:2172
 msgid "Human users that generated one single page view on your website."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2178
+#: admin/view/wp-slimstat-db.php:2177
 msgid "Pageviews per visit"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2181
+#: admin/view/wp-slimstat-db.php:2180
 msgid "Longest visit"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2182
+#: admin/view/wp-slimstat-db.php:2181
 msgid "pageviews"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2200
+#: admin/view/wp-slimstat-db.php:2199
 msgid "Content Items"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2202
+#: admin/view/wp-slimstat-db.php:2201
 msgid "This value includes not only posts and pages, but any custom post type, regardless of their status."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2204
+#: admin/view/wp-slimstat-db.php:2203
 msgid "Posts"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2207
+#: admin/view/wp-slimstat-db.php:2206
 msgid "Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2210
+#: admin/view/wp-slimstat-db.php:2209
 msgid "Attachments"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2213
+#: admin/view/wp-slimstat-db.php:2212
 msgid "Revisions"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2216
+#: admin/view/wp-slimstat-db.php:2215
 msgid "Comments"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2219
+#: admin/view/wp-slimstat-db.php:2218
 msgid "Avg Comments per Post"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2222
+#: admin/view/wp-slimstat-db.php:2221
 msgid "Avg Server Latency"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2224
+#: admin/view/wp-slimstat-db.php:2223
 msgid "Latency is the amount of time it takes for the host server to receive and process a request for a page object. The amount of latency depends largely on how far away the user is from the server."
 msgstr ""
 
@@ -6410,7 +6410,7 @@ msgid "IP"
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:1937
-#: src/Heatmap/Store.php:422
+#: src/Heatmap/Store.php:426
 #: admin/assets/js/admin.js:157
 msgid "Date"
 msgstr ""
@@ -8929,12 +8929,12 @@ msgstr ""
 
 #: src/Controllers/Rest/GDPRBannerRestController.php:115
 #: src/Services/Privacy/ConsentHandler.php:167
-#: src/Services/Privacy/ConsentHandler.php:185
+#: src/Services/Privacy/ConsentHandler.php:184
 msgid "Consent granted."
 msgstr ""
 
 #: src/Controllers/Rest/GDPRBannerRestController.php:116
-#: src/Services/Privacy/ConsentHandler.php:186
+#: src/Services/Privacy/ConsentHandler.php:185
 msgid "Consent denied."
 msgstr ""
 
@@ -9156,29 +9156,29 @@ msgstr ""
 msgid "Heatmap data could not be loaded. Try a shorter date range, then retry."
 msgstr ""
 
-#: src/Heatmap/Store.php:349
-#: src/Heatmap/Store.php:400
-#: src/Heatmap/Store.php:433
+#: src/Heatmap/Store.php:354
+#: src/Heatmap/Store.php:404
+#: src/Heatmap/Store.php:437
 msgid "SlimStat Heatmap clicks"
 msgstr ""
 
-#: src/Heatmap/Store.php:424
+#: src/Heatmap/Store.php:428
 msgid "Click"
 msgstr ""
 
-#: src/Heatmap/Store.php:429
+#: src/Heatmap/Store.php:433
 msgid "Element"
 msgstr ""
 
-#: src/Heatmap/Store.php:446
+#: src/Heatmap/Store.php:450
 msgid "You are not allowed to change heatmap tracking."
 msgstr ""
 
-#: src/Heatmap/Store.php:464
+#: src/Heatmap/Store.php:468
 msgid "You are not allowed to delete heatmap data."
 msgstr ""
 
-#: src/Heatmap/Store.php:468
+#: src/Heatmap/Store.php:472
 msgid "Type DELETE to confirm deletion."
 msgstr ""
 
@@ -10059,11 +10059,11 @@ msgstr ""
 msgid "Ask a SlimStat administrator to set Geolocation precision to City in Settings."
 msgstr ""
 
-#: src/Reports/ReportPrivacy.php:29
+#: src/Reports/ReportPrivacy.php:34
 msgid "Visitor"
 msgstr ""
 
-#: src/Reports/ReportPrivacy.php:30
+#: src/Reports/ReportPrivacy.php:35
 msgid "Hidden"
 msgstr ""
 

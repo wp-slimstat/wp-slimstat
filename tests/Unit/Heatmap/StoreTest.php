@@ -191,8 +191,7 @@ class StoreTest extends WpSlimstatTestCase
 		self::assertSame(['slimstat-heatmap', 'slimstat-events', 'slimstat-pageviews'], array_keys(Store::erasers($existing)));
 
 		$result = Store::erase("o'neil@example.com");
-		self::assertSame("DELETE h FROM wp_slim_heatmap h INNER JOIN wp_slim_stats s ON s.id = h.id WHERE s.email = 'o'neil@example.com'", $this->heatmapQueries()[1]);
-		self::assertStringStartsWith('DELETE e FROM wp_slim_heatmap_elements', $this->heatmapQueries()[0]);
+		self::assertSame("DELETE h, e FROM wp_slim_heatmap h INNER JOIN wp_slim_stats s ON s.id = h.id LEFT JOIN wp_slim_heatmap_elements e ON e.sel = h.sel WHERE s.email = 'o'neil@example.com'", $this->heatmapQueries()[0]);
 		self::assertTrue($result['items_removed']);
 		self::assertTrue($result['done']);
 	}
@@ -295,7 +294,7 @@ class StoreTest extends WpSlimstatTestCase
 			. ' ON DUPLICATE KEY UPDATE y = GREATEST(y, VALUES(y)), dh = GREATEST(dh, VALUES(dh))',
 			$insert
 		);
-		self::assertSame("INSERT IGNORE INTO wp_slim_heatmap_elements (sel, selector, label) SELECT UNHEX('$sel'), 'div.cta > a#buy', 'Buy now' FROM DUAL WHERE EXISTS (SELECT 1 FROM wp_slim_heatmap WHERE id = 42 AND sel = UNHEX('$sel'))", $elements);
+		self::assertSame("INSERT IGNORE INTO wp_slim_heatmap_elements (sel, selector, label) SELECT UNHEX('$sel'), 'div.cta > a#buy', 'Buy now' FROM DUAL WHERE EXISTS (SELECT 1 FROM wp_slim_heatmap WHERE id = 42 AND sel = UNHEX('$sel') FOR UPDATE)", $elements);
 	}
 
 	/** Main level keeps clicks on interactive elements only, no scroll, no labels from plain text. */

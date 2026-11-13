@@ -2264,9 +2264,7 @@ if (!window.requestIdleCallback) {
 
             if (detail[selectedCategory] && detail[selectedCategory] === "allow" && (!window[retryKey] || window[retryKey] === false)) {
                 window[retryKey] = true;
-                SlimStat._send_pageview({
-                    consentUpgrade: true,
-                });
+                requestConsentUpgrade();
             }
         } catch (e) {
             /* ignore */
@@ -2283,9 +2281,7 @@ if (!window.requestIdleCallback) {
 
                 if (category === selectedCategory && (!window[retryKey] || window[retryKey] === false)) {
                     window[retryKey] = true;
-                    SlimStat._send_pageview({
-                        consentUpgrade: true,
-                    });
+                    requestConsentUpgrade();
                 }
             });
         } catch (e) {
@@ -2333,9 +2329,7 @@ if (!window.requestIdleCallback) {
                 // Double-check with WP Consent API if available
                 if (typeof window.wp_has_consent === "function" && !window.wp_has_consent(selectedCategory)) return;
                 window[retryKey] = true;
-                SlimStat._send_pageview({
-                    consentUpgrade: true,
-                });
+                requestConsentUpgrade();
             }
 
             // Send consent change to server via REST API

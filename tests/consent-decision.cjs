@@ -76,19 +76,24 @@ scope.resetPageviewFlags();
 assert.equal(sent, 1, 'completion must deliver exactly one queued grant');
 assert.equal(scope.pendingConsentUpgrade, null);
 console.log('PASS: consent granted during an in-flight pageview is delivered once after completion');
-// Exercise the real late-CMP listener while the initial anonymous preparation is locked.
-const lateStart = source.indexOf('    document.addEventListener("wp_consent_type_defined"');
-const lateEnd = source.indexOf('\n    });', lateStart) + '\n    });'.length;
-let lateGrant;
-scope.document = {addEventListener: (name, fn) => { lateGrant = fn; }};
-scope.window = {sendingSlimStatPageview: true, wp_has_consent: () => true};
-scope.pendingConsentUpgrade = null;
-vm.runInContext(source.slice(lateStart, lateEnd), scope);
-const sentBeforeLateGrant = sent;
-lateGrant();
-assert.notEqual(scope.pendingConsentUpgrade, null, 'late CMP grant must survive the initial preparation lock');
-scope.resetPageviewFlags();
-assert.equal(sent, sentBeforeLateGrant + 1, 'late CMP grant delivers a replacement after the anonymous preparation ends');
+// Exercise every actual WP Consent API grant listener while preparation is locked.
+for (const name of ['wp_consent_type_defined', 'wp_listen_for_consent_change', 'wp_consent_change', 'legacy-helper']) {
+    const marker = name === 'legacy-helper' ? '    if (typeof window.wp_listen_for_consent_change === "function")' : `    document.addEventListener("${name}"`;
+    const listenerStart = source.indexOf(marker);
+    const listenerEnd = name === 'legacy-helper' ? source.indexOf('    // Listen for consent type definitions', listenerStart) : source.indexOf('\n    });', listenerStart) + '\n    });'.length;
+    let grant;
+    scope.document = {addEventListener: (event, fn) => { grant = fn; }};
+    scope.window = {sendingSlimStatPageview: true, wp_has_consent: () => true, wp_listen_for_consent_change: fn => { grant = fn; }};
+    scope.pendingConsentUpgrade = null;
+    vm.runInContext(source.slice(listenerStart, listenerEnd), scope);
+    const before = sent;
+    grant(name === 'legacy-helper' ? 'statistics' : {detail: {statistics: 'allow', category: 'statistics', consent: 'allow'}});
+    assert.notEqual(scope.pendingConsentUpgrade, null, `${name} grant must survive the preparation lock`);
+    assert.equal(sent, before, `${name} must wait for the active preparation`);
+    scope.resetPageviewFlags();
+    assert.equal(sent, before + 1, `${name} delivers exactly one queued grant`);
+}
+console.log('PASS: all four WP Consent API grant listeners queue during locked preparation');
 
 
 const beaconDeclaration = source.match(/var useBeacon = ([^;]+); \/\/ creation and consent upgrades/);
