@@ -196,7 +196,7 @@ class DataExporter
 			];
 			foreach ($personal_fields as $column => $label) {
 				if (isset($pageview->$column) && '' !== (string) $pageview->$column) {
-					$item_data[] = ['name' => $label, 'value' => $pageview->$column];
+					$item_data[] = ['name' => $label, 'value' => 'notes' === $column ? \SlimStat\Reports\ReportPrivacy::redactConsentMarker((string) $pageview->$column) : $pageview->$column];
 				}
 			}
 

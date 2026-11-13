@@ -13,13 +13,18 @@ final class ReportPrivacy
         return 'on' === (\wp_slimstat::$settings['mask_personal_data'] ?? 'off') && !current_user_can('manage_options');
     }
 
+    public static function redactConsentMarker(string $notes): string
+    {
+        return preg_replace('/\[consent:accepted:[a-f0-9]{64}\]/', '[consent:accepted]', $notes) ?? $notes;
+    }
+
     public static function rows(array $rows, ?string $groupColumn = null): array
     {
         $mask = self::enabled();
         foreach ($rows as &$row) {
             if (!is_array($row)) { continue; }
             if (isset($row['notes']) && is_string($row['notes'])) {
-                $row['notes'] = preg_replace('/\[consent:accepted:[a-f0-9]{64}\]/', '[consent:accepted]', $row['notes']);
+                $row['notes'] = self::redactConsentMarker($row['notes']);
             }
             if (!$mask) { continue; }
             foreach (self::PERSONAL as $key) {

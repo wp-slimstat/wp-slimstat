@@ -330,7 +330,7 @@ final class Store
 				self::invalidate();
 			}
 			$labels = self::SCHEMA === (int) (get_option(self::STATE, [])['schema'] ?? 0) ? self::purgeOrphanedElements() : 0;
-			$pending = 50000 === $deleted || 500 === $labels;
+			$pending = 50000 === $deleted || 500 === $labels || $labels < 0;
 			update_option(self::PURGE_PENDING, $pending, false);
 			if ($pending && !wp_next_scheduled(self::PURGE_HOOK)) {
 				$scheduled = wp_schedule_single_event(time() + 60, self::PURGE_HOOK, [], true);
@@ -376,6 +376,7 @@ final class Store
 		}
 		// A concurrent batch may have inserted its label between the two deletes.
 		$labels = self::purgeOrphanedElements();
+		if ($labels < 0) { throw new \RuntimeException('Heatmap element erasure failed.'); }
 		return ['items_removed' => $deleted > 0 || $labels > 0, 'items_retained' => false, 'messages' => [], 'done' => $labels < 500];
 	}
 
@@ -389,7 +390,7 @@ final class Store
 		$deleted = $db->query("DELETE FROM {$elements} WHERE NOT EXISTS (SELECT 1 FROM {$table} h WHERE h.sel = {$elements}.sel) LIMIT 500");
 		if (false === $deleted) {
 			\wp_slimstat::record_degradation('purge (heatmap labels)', $db->last_error, \wp_slimstat::DEGRADATION_OPERATIONAL);
-			return 0;
+			return -1;
 		}
 		if ($deleted) { self::invalidate(); }
 		return $deleted;

@@ -49,6 +49,7 @@ class ExportDb {
     }
 }
 require dirname(__DIR__) . '/src/Services/Privacy/DataExporter.php';
+require dirname(__DIR__) . '/src/Reports/ReportPrivacy.php';
 $check = static function ($ok, $message) { if (!$ok) { throw new RuntimeException($message); } };
 $core = $GLOBALS['wpdb'] = new ExportDb(); $core->failAll = true;
 $db = wp_slimstat::$wpdb = new ExportDb(); $db->prefix = 'wrong_';

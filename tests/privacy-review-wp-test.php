@@ -63,6 +63,9 @@ try {
     $_COOKIE['slimstat_gdpr_consent'] = 'accepted';
     $new_visit = \SlimStat\Tracker\Session::upgradePageview($current, ['username' => $tag, 'email' => $row['email']]);
     $check($new_visit > 0 && $new_visit !== $old_visit, 'consent detaches the current pageview');
+    $export = wp_json_encode(\SlimStat\Services\Privacy\DataExporter::exportPageviews($row['email']));
+    $check(strpos($export, '[consent:accepted:') === false && strpos($export, '[consent:accepted]') !== false, 'privacy export keeps the consent annotation without its internal proof');
+    $check(strpos($export, $row['email']) !== false, 'privacy exports still include the verified visitor identity when report masking is enabled');
     \SlimStat\Tracker\Storage::updateRow(['id' => $current, 'visit_id' => $old_visit, 'dt_out' => wp_slimstat::now()]);
     $actual = $db->get_row($db->prepare("SELECT visit_id,username,email,dt_out FROM {$prefix}slim_stats WHERE id=%d", $current), ARRAY_A);
     $check($new_visit === (int) $actual['visit_id'] && $tag === $actual['username'] && $row['email'] === $actual['email'], 'in-flight anonymous follow-up cannot reattach identified history');
@@ -110,6 +113,15 @@ try {
         remove_filter('slimstat_heatmap_row_url', '__return_true');
         $db->delete($prefix . 'slim_heatmap_elements', ['label' => $late_label]);
     }
+    $break_labels = static function ($sql) use ($prefix) {
+        return strpos($sql, "DELETE FROM {$prefix}slim_heatmap_elements WHERE NOT EXISTS") === 0 ? 'SELECT * FROM missing_privacy_label_fixture' : $sql;
+    };
+    $suppressed = $db->suppress_errors(true);
+    add_filter('query', $break_labels);
+    $failed = false;
+    try { \SlimStat\Heatmap\Store::erase($row['email']); } catch (RuntimeException $error) { $failed = true; }
+    finally { remove_filter('query', $break_labels); $db->suppress_errors($suppressed); }
+    $check($failed, 'failed orphan cleanup cannot report completed erasure');
 } finally {
     foreach ($ids as $id) {
         $db->delete($prefix . 'slim_events', ['id' => $id]);
