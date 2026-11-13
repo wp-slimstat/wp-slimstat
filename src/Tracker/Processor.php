@@ -325,11 +325,17 @@ class Processor
 
         // Keep the spam exclusion without importing comment identities into analytics.
         if (empty($user->ID) && 'on' === (\wp_slimstat::$settings['ignore_spammers'] ?? 'off')) {
-            $spam = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare(
-                "SELECT comment_ID FROM {$GLOBALS['wpdb']->comments} WHERE comment_author_IP = %s AND comment_approved = 'spam' LIMIT 1",
-                $originalIpForGeo
-            ));
-            if ($spam) {
+            $spam_key = 'slimstat_spam_' . hash_hmac('sha256', $originalIpForGeo, \wp_slimstat::$settings['secret']);
+            $spam = get_transient($spam_key);
+            if (false === $spam) {
+                $match = $GLOBALS['wpdb']->get_var($GLOBALS['wpdb']->prepare(
+                    "SELECT comment_ID FROM {$GLOBALS['wpdb']->comments} WHERE comment_author_IP = %s AND comment_approved = 'spam' LIMIT 1",
+                    $originalIpForGeo
+                ));
+                $spam = $match ? 'blocked' : 'allowed';
+                if (empty($GLOBALS['wpdb']->last_error)) { set_transient($spam_key, $spam, 5 * MINUTE_IN_SECONDS); }
+            }
+            if ('blocked' === $spam) {
                 Query::setProcessingTimestamp(null);
                 return Utils::logError(317);
             }

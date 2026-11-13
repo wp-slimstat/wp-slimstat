@@ -33,7 +33,7 @@ test.describe('privacy audit: real visitor consent boundaries', () => {
       await page.goto(`${BASE_URL}/?privacy_audit=fresh`);
       await expect.poll(() => page.evaluate(() => (window as any).SlimStatParams?.id || '')).toMatch(/^\d+\./);
       const id = await page.evaluate(() => parseInt((window as any).SlimStatParams.id, 10));
-      const [rows]: any = await getPool().query('SELECT ip,email,username,fingerprint FROM wp_slim_stats WHERE id=?', [id]);
+      const [rows]: any = await getPool().query('SELECT ip,email,username,fingerprint,visit_id,vid_hash FROM wp_slim_stats WHERE id=?', [id]);
       expect(rows[0].ip).not.toBe('127.0.0.1');
       for (const key of ['email', 'username', 'fingerprint']) expect(rows[0][key] || '').toBe('');
       expect((await context.cookies()).some(c => c.name === 'slimstat_tracking_code')).toBe(false);
@@ -74,7 +74,7 @@ test.describe('privacy audit: real visitor consent boundaries', () => {
         form: { action: 'slimtrack', id: signedId, consent_upgrade: '1', fh: 'forged-fingerprint' },
       });
       expect(response.ok()).toBe(true);
-      const [rows]: any = await getPool().query('SELECT ip,email,username,fingerprint FROM wp_slim_stats WHERE id=?', [parseInt(signedId, 10)]);
+      const [rows]: any = await getPool().query('SELECT ip,email,username,fingerprint,visit_id,vid_hash FROM wp_slim_stats WHERE id=?', [parseInt(signedId, 10)]);
       expect(rows[0].ip).not.toBe('127.0.0.1');
       for (const key of ['email', 'username', 'fingerprint']) expect(rows[0][key] || '').toBe('');
       expect((await context.cookies()).some(c => c.name === 'slimstat_tracking_code')).toBe(false);
@@ -163,6 +163,27 @@ test.describe('privacy audit: real visitor consent boundaries', () => {
     });
   }
 
+  test('missing CMP with anonymous mode off cannot reuse an identified visitor cookie', async ({ browser }) => {
+    await setSlimstatOptions({ consent_integration: '', use_slimstat_banner: 'off', anonymous_tracking: 'off' });
+    const cookie = runWordPressFixture("<?php echo '991234.' . hash_hmac('sha256', '991234', wp_slimstat::$settings['secret']);").trim();
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      await context.addCookies([{name: 'slimstat_tracking_code', value: cookie, url: BASE_URL}]);
+      const marker = `privacy-missing-cmp-${Date.now()}`;
+      const response = await context.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
+        form: {action: 'slimtrack', res: Buffer.from('/' + marker).toString('base64')},
+      });
+      expect(response.ok()).toBe(true);
+      const id = parseInt(await response.text(), 10);
+      expect(id).toBeGreaterThan(0);
+      const [rows]: any = await getPool().query('SELECT visit_id,vid_hash,username,email FROM wp_slim_stats WHERE id=?', [id]);
+      expect(Number(rows[0].visit_id)).not.toBe(991234);
+      expect(rows[0].vid_hash).toBeTruthy();
+      expect(rows[0].username || '').toBe(''); expect(rows[0].email || '').toBe('');
+      expect(response.headers()['set-cookie'] || '').not.toContain('slimstat_tracking_code=');
+    } finally { await context.close(); }
+  });
+
   test('consenting on a later page preserves earlier anonymous rows', async ({ browser }) => {
     await setSlimstatOptions({ anonymous_tracking: 'on', tracking_request_method: 'ajax' });
     const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
@@ -171,14 +192,19 @@ test.describe('privacy audit: real visitor consent boundaries', () => {
       await page.goto(`${BASE_URL}/?privacy_audit=history-a`);
       await expect.poll(() => page.evaluate(() => (window as any).SlimStatParams?.id || '')).toMatch(/^\d+\./);
       const firstId = await page.evaluate(() => parseInt((window as any).SlimStatParams.id, 10));
-      const [before]: any = await getPool().query('SELECT ip,email,username,fingerprint FROM wp_slim_stats WHERE id=?', [firstId]);
+      const [before]: any = await getPool().query('SELECT ip,email,username,fingerprint,visit_id,vid_hash FROM wp_slim_stats WHERE id=?', [firstId]);
       await page.goto(`${BASE_URL}/?privacy_audit=history-b`);
       await expect.poll(() => page.evaluate(() => (window as any).SlimStatParams?.id || '')).toMatch(/^\d+\./);
       const currentId = await page.evaluate(() => parseInt((window as any).SlimStatParams.id, 10));
       await page.locator('[data-consent="accepted"]').click();
       await expect.poll(async () => { const [rows]: any = await getPool().query('SELECT ip FROM wp_slim_stats WHERE id=?', [currentId]); return rows[0]?.ip; }).toBe('127.0.0.1');
-      const [after]: any = await getPool().query('SELECT ip,email,username,fingerprint FROM wp_slim_stats WHERE id=?', [firstId]);
+      const [after]: any = await getPool().query('SELECT ip,email,username,fingerprint,visit_id,vid_hash FROM wp_slim_stats WHERE id=?', [firstId]);
       expect(after).toEqual(before);
+      const [current]: any = await getPool().query('SELECT visit_id,vid_hash FROM wp_slim_stats WHERE id=?', [currentId]);
+      expect(Number(current[0].visit_id)).not.toBe(Number(before[0].visit_id));
+      expect(current[0].vid_hash).toBeNull();
+      const trackerCookie = (await context.cookies()).find(cookie => cookie.name === 'slimstat_tracking_code');
+      expect(parseInt(trackerCookie?.value || '', 10)).toBe(Number(current[0].visit_id));
     } finally { await context.close(); }
   });
 });

@@ -210,6 +210,7 @@ final class Schema
             'primary'      => 'event_id',
             'indexes'      => [
                 '{prefix}slim_stat_events_archive_idx' => 'dt',
+                '{prefix}slim_stat_events_archive_id_idx' => 'id',
             ],
         ],
 

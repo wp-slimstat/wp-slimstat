@@ -678,12 +678,12 @@ $settings = [
                 'title'             => __('Retention period', 'wp-slimstat'),
                 'type'              => 'integer',
                 'after_input_field' => __('days', 'wp-slimstat'),
-                'description'       => __('<strong>GDPR Compliance:</strong> Automatically purge data older than the specified number of days. This process runs twice daily via WordPress cron to keep your database clean and maintain GDPR compliance.<br/><br/><strong>Recommended:</strong> <strong>420 days (14 months)</strong> - Complies with ePrivacy Directive and most GDPR interpretations. This ensures data is automatically removed after a reasonable retention period.<br/><strong>Warning:</strong> Retaining data longer than 14 months may require additional legal justification and a clear Data Processing Agreement (DPA) under GDPR Article 5(1)(e) (Storage Limitation Principle). Failing to comply can result in significant fines.<br/><br/>Set to <strong>0</strong> to disable automatic purging (<strong>strongly discouraged</strong> for GDPR compliance, as unlimited retention requires a very strong and documented legal justification).', 'wp-slimstat'),
+                'description'       => __('Age in days at which live analytics is deleted or archived, according to Archive mode. Set 0 to disable live-data cleanup. Choose a retention period appropriate for your site. Archived records have a separate lifetime and still count as retained data.', 'wp-slimstat'),
             ],
             'auto_purge_delete' => [
                 'title'       => __('Archive mode', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('Age in days at which live analytics is deleted or archived, according to the setting below. Set 0 to disable live-data cleanup. Choose a retention period appropriate for your site. Archived records have a separate lifetime and still count as retained data.', 'wp-slimstat'),
+                'description' => __('On archives expired live pageviews and events. Off permanently deletes them. Archived records remain stored until their separate archive retention period expires.', 'wp-slimstat'),
             ],
 
             'auto_purge_optimize' => [

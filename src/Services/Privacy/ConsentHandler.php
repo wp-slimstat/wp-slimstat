@@ -182,13 +182,26 @@ class ConsentHandler
 					}
 
 					if (!empty($update_data)) {
-						$db->update(
+						$has_hash = in_array('vid_hash', \SlimStat\Tracker\Storage::presentColumns($table), true);
+						$current = $db->get_row($db->prepare('SELECT visit_id' . ($has_hash ? ', vid_hash' : '') . " FROM {$table} WHERE id = %d", $pageview_id), ARRAY_A);
+						if (!$current || !empty($db->last_error)) { return false; }
+						// Repeated consent acknowledgements keep the already detached session.
+						$visit_id = $has_hash && null === $current['vid_hash'] && (int) $current['visit_id'] > 0
+						    ? (int) $current['visit_id'] : \SlimStat\Tracker\VisitIdGenerator::generateNextVisitId();
+						if ($visit_id <= 0) { return false; }
+						$update_data['visit_id'] = $visit_id;
+						if ($has_hash) { $update_data['vid_hash'] = null; }
+						$updated = $db->update(
 							$table,
 							$update_data,
 							['id' => $pageview_id],
 							array_fill(0, count($update_data), '%s'),
 							['%d']
 						);
+						if (false === $updated) { return false; }
+						$stat['visit_id'] = $visit_id;
+						\wp_slimstat::set_stat($stat);
+						Session::setTrackingCookie($visit_id, 'visit');
 					}
 
 					// Append user note if not already present

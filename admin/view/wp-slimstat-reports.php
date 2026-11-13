@@ -1879,7 +1879,7 @@ class wp_slimstat_reports
 
     public static function show_events($_args = [])
     {
-        $all_results = call_user_func($_args['raw'], $_args);
+        $all_results = \SlimStat\Reports\ReportPrivacy::rows(call_user_func($_args['raw'], $_args) ?: []);
 
         $start_from = (!empty($_args['type']) && $_args['type'] === 'recent')
             ? 0
@@ -2549,11 +2549,7 @@ class wp_slimstat_reports
 
     public static function show_group_by($_args = [])
     {
-        $all_results = \SlimStat\Reports\ReportPrivacy::rows(call_user_func($_args['raw'], $_args) ?: []);
-        if (\SlimStat\Reports\ReportPrivacy::enabled() && in_array($_args['column_group'] ?? '', \SlimStat\Reports\ReportPrivacy::PERSONAL, true)) {
-            foreach ($all_results as &$row) { $row['column_group'] = ''; }
-            unset($row);
-        }
+        $all_results = \SlimStat\Reports\ReportPrivacy::rows(call_user_func($_args['raw'], $_args) ?: [], $_args['column_group'] ?? null);
 
         $results = [];
         if (count($all_results)) {

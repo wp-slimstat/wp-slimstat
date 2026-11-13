@@ -10,6 +10,7 @@ $cases = [
     'https://user:secret@example.test/path?billing%5Bemail%5D=a&access_token=b&view=grid' => 'https://example.test/path?view=grid',
     '/?EMAIL=a&%2574oken=b&password=c&foo=bar' => '/?foo=bar',
     '/?utm_campaign=spring&utm_content=button&order=asc#section' => '/?utm_campaign=spring&utm_content=button&order=asc#section',
+    '/?_wpnonce=secret&%255Fwpnonce=encoded&page=2' => '/?page=2',
     '/#access_token=secret&view=grid' => '/#view=grid',
 ];
 foreach ($cases as $input => $expected) {

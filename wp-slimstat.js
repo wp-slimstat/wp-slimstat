@@ -440,7 +440,7 @@ var SlimStat = (function () {
         if (isEmpty(payload)) return false;
         opts = opts || {};
         var consent = slimstatConsentAllowed(currentSlimStatParams());
-        if (!consent.allowed || (consent.mode !== "full" && /(?:^|&)id=/.test(payload))) {
+        if ((opts.consentGeneration !== undefined && opts.consentGeneration !== consentGeneration) || !consent.allowed || (consent.mode !== "full" && /(?:^|&)(?:(?:id|sid|fh)=[^&]+|(?:pos|no)=)/.test(payload))) {
             if (typeof opts.onComplete === "function") opts.onComplete(false, true);
             return false;
         }
@@ -454,7 +454,7 @@ var SlimStat = (function () {
 
         // All requests now go through the queue to ensure consistent handling.
         // Immediate sends are pushed to the front.
-        var item = { payload: payload, useBeacon: useBeacon, opts: opts, attempts: 0, consentGeneration: consentGeneration };
+        var item = { payload: payload, useBeacon: useBeacon, opts: opts, attempts: 0, consentGeneration: opts.consentGeneration === undefined ? consentGeneration : opts.consentGeneration };
 
         // Check for duplicate payloads in queue to prevent duplicates
         var isDuplicate = requestQueue.some(function (qItem) {
@@ -532,9 +532,16 @@ var SlimStat = (function () {
     }
 
     function processQueueItem(item, callback) {
+        var completed = false;
+        var complete = callback;
+        callback = function (result) {
+            if (completed) return;
+            completed = true;
+            complete(result);
+        };
         var params = currentSlimStatParams();
         var consent = slimstatConsentAllowed(params);
-        if (item.consentGeneration !== consentGeneration || !consent.allowed || (consent.mode !== "full" && /(?:^|&)id=/.test(item.payload))) {
+        if (item.consentGeneration !== consentGeneration || !consent.allowed || (consent.mode !== "full" && /(?:^|&)(?:(?:id|sid|fh)=[^&]+|(?:pos|no)=)/.test(item.payload))) {
             callback({ rejected: true });
             return;
         }
@@ -551,6 +558,15 @@ var SlimStat = (function () {
         var order = buildTransportOrder(selected, endpoints, requiresIdResponse);
         var explicitRejectCode = null;
         var sawExplicitReject = false;
+
+        function rejectStaleItem() {
+            var currentConsent = slimstatConsentAllowed(currentSlimStatParams());
+            if (item.consentGeneration !== consentGeneration || !currentConsent.allowed || (currentConsent.mode !== "full" && /(?:^|&)(?:(?:id|sid|fh)=[^&]+|(?:pos|no)=)/.test(payload))) {
+                callback({ rejected: true });
+                return true;
+            }
+            return false;
+        }
 
         // Debug recording: track transport attempts when slimstat_debug is on
         var debugEnabled = params.slimstat_debug === "on";
@@ -590,6 +606,7 @@ var SlimStat = (function () {
         }
 
         function handleStaleIdRecovery(transport, url, onFail, xhrOpts) {
+            if (rejectStaleItem()) return true;
             if (item.staleIdRecoveryTried || !hasIdParam(payload) || isFinalizePayload(payload) || hasActiveStaleIdGuard()) {
                 return false;
             }
@@ -648,6 +665,7 @@ var SlimStat = (function () {
         }
 
         function sendXHR(url, onFail, xhrOpts) {
+            if (rejectStaleItem()) return false;
             // Send X-WP-Nonce header only when is_logged_in='1' (set by PHP at render time).
             // Anonymous pages: is_logged_in='0' → no nonce header → no 403.
             // Admin-cached pages served to anonymous: is_logged_in='1' (stale) → sends nonce
@@ -668,6 +686,7 @@ var SlimStat = (function () {
             xhr.withCredentials = true;
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) {
+                    if (rejectStaleItem()) return;
                     // On 403 (stale nonce / cookie auth rejected), trigger the failover
                     // to the next transport (e.g. admin-ajax.php) instead of retrying
                     // without X-WP-Nonce, which would strip authentication and bypass
@@ -752,6 +771,7 @@ var SlimStat = (function () {
             return true;
         }
         function trySend(i) {
+            if (rejectStaleItem()) return false;
             if (i >= order.length) {
                 if (sawExplicitReject) {
                     debugFinalize("rejected");
@@ -1541,6 +1561,8 @@ var SlimStat = (function () {
             params.id = null;
         }
 
+        var pageviewConsentGeneration = consentGeneration;
+        var preparedConsentMode = consentDecision.mode;
         var payloadBase = buildPageviewBase(
             params,
             consentDecision.mode === "full" && params.set_tracker_cookie === "on"
@@ -1619,13 +1641,19 @@ var SlimStat = (function () {
             }
         }
 
+        function preparationIsCurrent() {
+            var currentConsent = slimstatConsentAllowed(currentSlimStatParams());
+            return pageviewConsentGeneration === consentGeneration && currentConsent.allowed && currentConsent.mode === preparedConsentMode;
+        }
+
         var run = function () {
+            if (!preparationIsCurrent()) { onComplete(false); return; }
             consentDecision = slimstatConsentAllowed(currentSlimStatParams());
             if (!consentDecision.allowed) { onComplete(false); return; }
             // If anonymous mode is active, skip fingerprinting entirely to ensure no PII is collected/sent
             if (consentDecision.mode === "anonymous") {
                 initFingerprintHash(null);
-                sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete });
+                sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete, consentGeneration: pageviewConsentGeneration });
                 return;
             }
 
@@ -1641,25 +1669,28 @@ var SlimStat = (function () {
                 if (fpPromise && typeof fpPromise.then === "function") {
                     fpPromise
                         .then(function (fp) {
+                            if (!preparationIsCurrent()) return null;
                             return fp.get();
                         })
                         .then(function (result) {
+                            if (!preparationIsCurrent()) { onComplete(false); return; }
                             initFingerprintHash(result);
-                            sendToServer(payloadBase + buildSlimStatData(result.components || {}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete });
+                            sendToServer(payloadBase + buildSlimStatData(result.components || {}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete, consentGeneration: pageviewConsentGeneration });
                         })
                         .catch(function () {
+                            if (!preparationIsCurrent()) { onComplete(false); return; }
                             initFingerprintHash(null);
-                            sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete });
+                            sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete, consentGeneration: pageviewConsentGeneration });
                         });
                 } else {
                     // Library not available; proceed without fingerprint
                     initFingerprintHash(null);
-                    sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete });
+                    sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete, consentGeneration: pageviewConsentGeneration });
                 }
             } catch (e) {
                 // Catch synchronous errors (shouldn't happen, but defensive)
                 initFingerprintHash(null);
-                sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete });
+                sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete, consentGeneration: pageviewConsentGeneration });
             }
         };
         if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 1000 });

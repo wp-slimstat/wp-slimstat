@@ -16,6 +16,7 @@ foreach (['missing' => ['', 'off'], 'banner' => ['slimstat_banner','on'], 'rcb' 
 wp_slimstat::$settings = array_merge($saved, ['gdpr_enabled'=>'on','consent_integration'=>'slimstat_banner','use_slimstat_banner'=>'on','anonymous_tracking'=>'on','anonymize_ip'=>'off','hash_ip'=>'off']);
 $facts['forged_ip'] = SlimStat\Providers\IPHashProvider::processIp(['ip'=>'198.51.100.123'], true)['ip'];
 $db=wp_slimstat::$wpdb; $p=$GLOBALS['wpdb']->prefix;
+if ($db->get_var('SELECT DATABASE()') !== DB_NAME) { throw new RuntimeException('Analytics handle must use the disposable database'); }
 $db->insert($p.'slim_stats', ['email'=>'audit@example.test','username'=>'privacy-audit','resource'=>'/private?email=jane%40example.test&token=secret&utm_source=news','other_ip'=>'198.51.100.99','language'=>'de','searchterms'=>'private query','notes'=>'private note','dt'=>time(),'visit_id'=>9913]);
 $id=$db->insert_id;
 $export=SlimStat\Services\Privacy\DataExporter::exportPageviews('audit@example.test');

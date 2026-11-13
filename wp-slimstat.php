@@ -1832,10 +1832,10 @@ class wp_slimstat
     }
 
     /** Apply the separately configured archive lifetime, even when the live tables are empty. */
-    private static function purge_expired_archives(): void
+    private static function purge_expired_archives(): bool
     {
         $days = (int) (self::$settings['archive_retention_days'] ?? 0);
-        if ($days <= 0) { return; }
+        if ($days <= 0) { return true; }
         $db = self::$wpdb;
         $prefix = $GLOBALS['wpdb']->prefix;
         $tables = [];
@@ -1843,11 +1843,11 @@ class wp_slimstat
             $exists = $db->get_var($db->prepare('SHOW TABLES LIKE %s', $db->esc_like($prefix . $suffix)));
             if ($db->last_error) {
                 self::record_degradation('archive retention', (string) $db->last_error, self::DEGRADATION_OPERATIONAL);
-                return;
+                return false;
             }
             if ($exists) { $tables[] = $prefix . $suffix; }
         }
-        if (!$tables) { return; }
+        if (!$tables) { return true; }
         $cutoff = self::now() - $days * DAY_IN_SECONDS;
         $deadline = microtime(true) + 5;
         do {
@@ -1862,20 +1862,22 @@ class wp_slimstat
             if ($batch['stats'] || $batch['events']) { self::bump_data_version(); }
             if ('' !== $batch['error']) {
                 self::record_degradation('archive retention', $batch['error'], self::DEGRADATION_OPERATIONAL);
-                return;
+                return false;
             }
-            if (!$batch['stats'] && !$batch['events']) { self::clear_degradation('archive retention'); return; }
+            if (!$batch['stats'] && !$batch['events']) { self::clear_degradation('archive retention'); return true; }
         } while (microtime(true) < $deadline);
         $next = wp_next_scheduled('wp_slimstat_purge');
         if (!$next || $next > time() + 120) { wp_schedule_single_event(time() + 60, 'wp_slimstat_purge'); }
+        return false;
     }
 
     public static function wp_slimstat_purge()
     {
-        self::purge_expired_archives();
+        $archives_complete = self::purge_expired_archives();
         $autopurge_interval = intval(self::$settings['auto_purge']);
 
         if ($autopurge_interval <= 0) {
+            if ($archives_complete && (int) (self::$settings['archive_retention_days'] ?? 0) > 0) { self::update_option(self::LAST_PURGE_OK_OPTION, self::now(), false); }
             return;
         }
 
@@ -1904,7 +1906,7 @@ class wp_slimstat
         // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
 
         if (!$has_work) {
-            self::update_option(self::LAST_PURGE_OK_OPTION, self::now(), false);
+            if ($archives_complete) { self::update_option(self::LAST_PURGE_OK_OPTION, self::now(), false); }
             return;
         }
 
@@ -2076,7 +2078,7 @@ class wp_slimstat
         // Absence of success is durable; presence of a recent failure is not. Stamping the
         // success and alarming on its staleness inverts the reporting so that the SILENT
         // case is the one that raises, which is the direction a health signal has to fail.
-        self::update_option(self::LAST_PURGE_OK_OPTION, self::now(), false);
+        if ($archives_complete) { self::update_option(self::LAST_PURGE_OK_OPTION, self::now(), false); }
     }
     // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
@@ -2092,8 +2094,8 @@ class wp_slimstat
      */
     public static function purge_is_stale(): bool
     {
-        if (intval(self::$settings['auto_purge'] ?? 0) <= 0) {
-            return false;   // purging is off; silence is correct
+        if (intval(self::$settings['auto_purge'] ?? 0) <= 0 && intval(self::$settings['archive_retention_days'] ?? 0) <= 0) {
+            return false;   // all retention is off; silence is correct
         }
 
         $last_ok = (int) get_option(self::LAST_PURGE_OK_OPTION, 0);

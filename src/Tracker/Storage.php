@@ -76,7 +76,7 @@ class Storage
 	public static function redactSensitiveUrl(string $url): string
 	{
 		$sensitive = (array) apply_filters('slimstat_sensitive_query_parameters', [
-			'email', 'token', 'key', 'password', 'pass', 'pwd', 'secret', 'nonce',
+			'email', 'token', 'key', 'password', 'pass', 'pwd', 'secret', 'nonce', '_wpnonce',
 			'authorization', 'auth', 'rp', 'login', 'username', 'signature', 'session', 'sessionid', 'jwt', 'phone',
 		]);
 		$url = (string) preg_replace('~((?:[a-z][a-z0-9+.-]*:)?//)[^/?#]*@~i', '$1', $url);

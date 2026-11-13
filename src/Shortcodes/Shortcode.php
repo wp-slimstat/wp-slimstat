@@ -158,7 +158,7 @@ final class Shortcode
         if (is_wp_error($atts)) { return self::comment($atts->get_error_message()); }
         // Public aggregate columns must not expose a named visitor's history through filters.
         $content = html_entity_decode((string) $content, ENT_QUOTES, 'UTF-8');
-        if ((!self::canView() || \SlimStat\Reports\ReportPrivacy::enabled()) && preg_match('/(?:^|&&&)\s*(' . implode('|', array_merge(self::PERSONAL_COLUMNS, ['id', 'visit_id', 'vid_hash'])) . ')\s+/i', $content)) {
+        if ((!self::canView() || \SlimStat\Reports\ReportPrivacy::enabled()) && preg_match('/(?:^|&&&)\s*(' . implode('|', array_merge(\SlimStat\Reports\ReportPrivacy::PERSONAL, ['id', 'visit_id'])) . ')\s+/i', $content)) {
             return '';
         }
         require_once dirname(__DIR__, 2) . '/admin/view/wp-slimstat-db.php';

@@ -13,7 +13,7 @@ final class ReportPrivacy
         return 'on' === (\wp_slimstat::$settings['mask_personal_data'] ?? 'off') && !current_user_can('manage_options');
     }
 
-    public static function rows(array $rows): array
+    public static function rows(array $rows, ?string $groupColumn = null): array
     {
         if (!self::enabled()) { return $rows; }
         foreach ($rows as &$row) {
@@ -26,8 +26,13 @@ final class ReportPrivacy
                     : (in_array($key, ['ip', 'other_ip', 'email', 'user_email', 'full_name', 'display_name', 'hostname'], true) && '' !== (string) $row[$key] ? __('Hidden', 'wp-slimstat') : '');
             }
             if (isset($row['ID'])) { $row['ID'] = 0; }
+            if (isset($row['column_group']) && in_array($groupColumn, self::PERSONAL, true)) { $row['column_group'] = ''; }
             foreach (['resource', 'referer', 'outbound_resource'] as $key) {
-                if (isset($row[$key]) && is_string($row[$key])) { $row[$key] = \SlimStat\Tracker\Storage::redactSensitiveUrl($row[$key]); }
+                if (isset($row[$key]) && is_string($row[$key])) {
+                    $row[$key] = 'outbound_resource' === $key
+                        ? implode(';;;', array_map([\SlimStat\Tracker\Storage::class, 'redactSensitiveUrl'], explode(';;;', $row[$key])))
+                        : \SlimStat\Tracker\Storage::redactSensitiveUrl($row[$key]);
+                }
             }
         }
         unset($row);

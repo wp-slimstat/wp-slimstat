@@ -76,11 +76,11 @@ final class Store
 		return 'off' !== self::level() && has_filter('slimstat_heatmap_row_url');
 	}
 
-	/** Both tables were created and verified at the current schema version. */
+	/** Existing tables remain available to privacy and retention during index upgrades. */
 	public static function ready(): bool
 	{
 		$state = get_option(self::STATE, []);
-		return self::SCHEMA === (int) ($state['schema'] ?? 0);
+		return in_array((int) ($state['schema'] ?? 0), [1, self::SCHEMA], true);
 	}
 
 	/**
@@ -92,7 +92,8 @@ final class Store
 		if (wp_doing_ajax() || wp_doing_cron() || (defined('REST_REQUEST') && REST_REQUEST)) {
 			return;
 		}
-		if (!current_user_can('manage_options') || !self::capturing() || self::ready()) {
+		if (!current_user_can('manage_options') || (!self::capturing() && !self::ready())
+			|| self::SCHEMA === (int) (get_option(self::STATE, [])['schema'] ?? 0)) {
 			return;
 		}
 		if ('' !== (string) (get_option(self::STATE, [])['error'] ?? '')) {

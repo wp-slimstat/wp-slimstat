@@ -201,7 +201,7 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         $this->assertSame([], $report['tables']);
         $this->assertSame([], $report['indexes']);
         $this->assertSame([], $report['failed']);
-        // 14 on slim_stats (idx_vid_hash_dt joined for D68) + 2 on slim_events + 1 on
+        // 14 on slim_stats (idx_vid_hash_dt joined for D68) + 2 on slim_events + 2 on
         // slim_events_archive + 2 on slim_user_agents. slim_stats_archive inherits
         // slim_stats' set via `like` but is not reconciled, so it contributes none.
         //
@@ -210,7 +210,7 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         // update this number deliberately, which is the point.
         // Ecommerce enabled: three projection indexes; the opt-in visit index is unmanaged here.
         // Heatmaps enabled: three capture indexes (including dictionary cleanup); the element dictionary has none.
-        $this->assertCount(25, $report['present']);
+        $this->assertCount(26, $report['present']);
 
         // One patterned SHOW TABLES for ALL tables, then per RECONCILED table one SHOW INDEX and
         // one SHOW COLUMNS: 1 + 4 + 4 (slim_events, slim_events_archive, slim_stats,
@@ -248,7 +248,7 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         $report = Schema::ensure($this->db($tables, $indexes), 'wp_', static fn() => 'utf8mb4_unicode_ci');
         $this->assertSame([], $this->queries, 'ordinary sites incur no Ecommerce or heatmap DDL');
         $this->assertSame([], $report['failed']);
-        $this->assertCount(19, $report['present']);
+        $this->assertCount(20, $report['present']);
         $this->assertCount(11, $this->probes, 'one additional archive metadata probe on activation/upgrade, never per request');
     }
 

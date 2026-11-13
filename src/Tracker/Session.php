@@ -64,7 +64,7 @@ class Session
 		// which is both the stranger-merging collision X3 measured and the new-id-per-
 		// bucket churn D68 names.
 		$piiAllowed = Consent::piiAllowed($isConsentUpgrade);
-		if ($isAnonymousTracking && !$piiAllowed && !$hasCmpConsent) {
+		if (!$piiAllowed) {
 			$stat = \wp_slimstat::get_stat();
 
 			// Hex, not raw bytes: $stat travels through sanitize_text_field() at both
