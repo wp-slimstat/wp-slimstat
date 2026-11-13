@@ -12,11 +12,13 @@ class HorizonWindowTest extends TestCase
 {
     public function test_dates_use_explicit_zones_and_exact_boundaries(): void
     {
-        $window = ['starts_at' => '2026-11-20T00:00:00Z', 'ends_at' => '2026-12-01T23:59:00Z'];
+        $window = ['starts_at' => '2026-11-20T00:00:00Z', 'ends_at' => '2026-12-01T23:59:59Z'];
         $this->assertFalse(FeedWindow::contains($window, strtotime('2026-11-19T23:59:59Z')));
         $this->assertTrue(FeedWindow::contains($window, strtotime('2026-11-20T00:00:00Z')));
         $this->assertTrue(FeedWindow::contains($window, strtotime('2026-12-01T23:58:59Z')));
-        $this->assertFalse(FeedWindow::contains($window, strtotime('2026-12-01T23:59:00Z')));
+        $this->assertTrue(FeedWindow::contains($window, strtotime('2026-12-01T23:59:00Z')));
+        $this->assertTrue(FeedWindow::contains($window, strtotime('2026-12-01T23:59:58Z')));
+        $this->assertFalse(FeedWindow::contains($window, strtotime('2026-12-01T23:59:59Z')));
         $this->assertSame(FeedWindow::timestamp('2026-11-20T00:00:00Z'), FeedWindow::timestamp('2026-11-20T03:30:00+03:30'));
         $this->assertSame(FeedWindow::timestamp('2026-11-20T00:00:00Z'), FeedWindow::timestamp('2026-11-20T00:00:00.000Z'));
     }
@@ -42,10 +44,10 @@ class HorizonWindowTest extends TestCase
             $this->assertFalse($notice->isPromo());
         }
         foreach ([['badge' => '🔥 -30%', 'code' => 'BFCM2026'], (object) ['badge' => '🔥 -30%', 'code' => 'BFCM2026']] as $extra) {
-            $notice = new NotificationDecorator((object) ['background_color' => 'promo', 'extra_data' => $extra, 'ends_at' => '2026-12-02T03:29:00+03:30']);
+            $notice = new NotificationDecorator((object) ['background_color' => 'promo', 'extra_data' => $extra, 'ends_at' => '2026-12-02T03:29:59+03:30']);
             $this->assertSame('🔥 -30%', $notice->getBadge());
             $this->assertSame('BFCM2026', $notice->getCode());
-            $this->assertSame('2026-12-01T23:59:00Z', $notice->getEndsAt());
+            $this->assertSame('2026-12-01T23:59:59Z', $notice->getEndsAt());
             $this->assertSame('slimstat-notification-sidebar__promo', $notice->backgroundColor());
             $this->assertTrue($notice->isPromo());
         }

@@ -10,7 +10,7 @@ final class BlackFriday2026
 	const CODE     = 'BFCM2026';
 	const DISCOUNT = 30;
 	const START    = '2026-11-20T00:00:00Z';
-	const END      = '2026-12-01T23:59:00Z';
+	const END      = '2026-12-01T23:59:59Z';
 	const DISMISSED    = 'slimstat_bf2026_dismissed';
 	const ACTION       = 'slimstat_bf2026_dismiss';
 

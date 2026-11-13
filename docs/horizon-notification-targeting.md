@@ -26,6 +26,14 @@ For one sale notification covering all users without usable Pro, use the first r
 
 ## Publishing safely
 
+### Black Friday 2026 coupon
+
+Verified against the existing Nexus coupon on November 13, 2026: `BFCM2026`, 30% off the first payment, active and scheduled. The window is `2026-11-20T00:00:00Z` to `2026-12-01T23:59:59Z` (UTC). Use those exact timestamps for Horizon's `starts_at` and `ends_at`; the plugin hides offers at `ends_at`.
+
+The coupon allows any customer, every plan and product, any order amount, one redemption per customer and unlimited total redemptions. Nexus enforces those checkout restrictions. Use “first payment” in sale copy; “first year” does not cover every eligible plan. The older November 22 18:00 / December 1 12:00 window is obsolete.
+
+### Audience compatibility
+
 Always keep `is-version-6.1.1` in new audience definitions. Older SlimStat versions treat unknown tags as matching. The version tag prevents those versions from receiving a message intended for a narrower audience. The new addon, `is-free` and invalid-license tags are hidden by 6.1.1 unless an adequate version tag is present. Existing license tags retain their historical 5.4.0 minimum, but the examples require 6.1.1 to obtain the corrected license semantics.
 
 SlimStat 6.1.1 hides notices with unknown or malformed tags instead of showing them to everyone. Missing tags or an empty tag list retain untargeted behavior. Use only the tags documented here or the existing `is-version-*`, `is-locale-*`, `is-country-*` and `is-email-*` forms. Country matching uses the WordPress timezone, not a visitor's IP address.

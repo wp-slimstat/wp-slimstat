@@ -45,7 +45,7 @@ class BlackFriday2026Test extends IntegrationTestCase
             $this->assertStringContainsString($value, $html);
         }
         $this->assertStringContainsString('href="https://wp-slimstat.com/black-friday/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=bfcm2026&utm_content=banner"', $html);
-        $this->assertStringContainsString('data-ends-at="2026-12-01T23:59:00Z"', $html);
+        $this->assertStringContainsString('data-ends-at="2026-12-01T23:59:59Z"', $html);
         $this->assertStringNotContainsString('class="notice', $html, 'the SlimStat-screen strip is not a core notice, so common.js leaves it in place');
         $this->assertStringNotContainsString('$', $html, 'no dollar prices');
         $this->assertStringNotContainsString('—', $html, 'no em dashes');
@@ -85,7 +85,7 @@ class BlackFriday2026Test extends IntegrationTestCase
     {
         return [
             'before the window' => [fn(self $t) => $t->now = '2026-11-20 03:29:59'],
-            'after the window' => [fn(self $t) => $t->now = '2026-12-02 03:29:00'],
+            'after the window' => [fn(self $t) => $t->now = '2026-12-02 03:29:59'],
             'filter returns false' => [fn(self $t) => $t->filterValues['slimstat_black_friday_2026_banner'] = false],
             'dismissed by this user' => [fn(self $t) => $t->meta['7:slimstat_bf2026_dismissed'] = '1'],
             'notifications off' => [fn() => \wp_slimstat::$settings['display_notifications'] = 'no'],

@@ -15,7 +15,10 @@ class BlackFriday2026WindowTest extends TestCase
             '2026-11-19T23:59:59Z' => false,
             '2026-11-20T00:00:00Z' => true,
             '2026-12-01T23:58:59Z' => true,
-            '2026-12-01T23:59:00Z' => false,
+            '2026-12-01T23:59:00Z' => true,
+            '2026-12-01T23:59:58Z' => true,
+            '2026-12-01T23:59:59Z' => false,
+            '2026-12-02T00:00:00Z' => false,
             '2027-11-20T00:00:00Z' => false,
         ];
         // Every quarter-hour offset WordPress permits, including both date-line extremes.

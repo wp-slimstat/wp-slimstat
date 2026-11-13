@@ -106,7 +106,7 @@ test.describe('Black Friday 2026 strip', () => {
 
   for (const url of [SLIMSTAT[0], DASHBOARD]) {
     test(`expires the open strip at the UTC boundary and on restored pages: ${url}`, async ({ page }) => {
-      const end = new Date('2026-12-01T23:59:00Z');
+      const end = new Date('2026-12-01T23:59:59Z');
       await page.goto(url);
       await expect(strip(page)).toBeVisible();
       await page.clock.pauseAt(new Date(end.getTime() - 1000));
