@@ -191,14 +191,21 @@ class ConsentHandler
 						if ($visit_id <= 0) { return false; }
 						$update_data['visit_id'] = $visit_id;
 						if ($has_hash) { $update_data['vid_hash'] = null; }
+						// A concurrent consent acknowledgement must not replace the session already chosen.
+						$where = ['id' => $pageview_id, 'visit_id' => $current['visit_id']];
+						if ($has_hash) { $where['vid_hash'] = $current['vid_hash']; }
 						$updated = $db->update(
 							$table,
 							$update_data,
-							['id' => $pageview_id],
+							$where,
 							array_fill(0, count($update_data), '%s'),
-							['%d']
+							array_merge(['%d', '%d'], $has_hash ? ['%s'] : [])
 						);
 						if (false === $updated) { return false; }
+						if (0 === $updated) {
+						    $visit_id = (int) $db->get_var($db->prepare("SELECT visit_id FROM {$table} WHERE id = %d" . ($has_hash ? ' AND vid_hash IS NULL' : ''), $pageview_id));
+						    if ($visit_id <= 0 || !empty($db->last_error)) { return false; }
+						}
 						$stat['visit_id'] = $visit_id;
 						\wp_slimstat::set_stat($stat);
 						Session::setTrackingCookie($visit_id, 'visit');

@@ -189,6 +189,23 @@ try {
             $check((int) wp_slimstat::get_stat()['visit_id'] === (int) $current['visit_id'], $route . ' exposes the new session for its tracking cookie');
             $grant();
             $check((int) $db->get_var($db->prepare("SELECT visit_id FROM {$prefix}slim_stats WHERE id=%d", $current_id)) === (int) $current['visit_id'], $route . ' repeated grant keeps session stable');
+
+            // Interleave a second grant between the first grant's read and write.
+            $db->update($prefix . 'slim_stats', ['visit_id' => 991234, 'vid_hash' => $anonymous['vid_hash']], ['id' => $current_id]);
+            $winner = \SlimStat\Tracker\VisitIdGenerator::generateNextVisitId();
+            $race = null;
+            $race = static function ($sql) use (&$race, $db, $prefix, $current_id, $winner) {
+                if (strpos($sql, "UPDATE `{$prefix}slim_stats` SET") === 0) {
+                    remove_filter('query', $race);
+                    $db->update($prefix . 'slim_stats', ['visit_id' => $winner, 'vid_hash' => null], ['id' => $current_id]);
+                }
+                return $sql;
+            };
+            add_filter('query', $race);
+            try { $grant(); } finally { remove_filter('query', $race); }
+            $current['visit_id'] = $winner;
+            $check((int) $db->get_var($db->prepare("SELECT visit_id FROM {$prefix}slim_stats WHERE id=%d", $current_id)) === $winner, $route . ' concurrent grant keeps the winner session');
+            $check((int) wp_slimstat::get_stat()['visit_id'] === $winner, $route . ' concurrent response uses the stored session');
             $_COOKIE['slimstat_tracking_code'] = $current['visit_id'] . '.' . hash_hmac('sha256', (string) $current['visit_id'], wp_slimstat::$settings['secret']);
             wp_slimstat::set_stat(['dt' => wp_slimstat::now(), 'resource' => '/next-consented-page', 'notes' => []]);
             wp_slimstat::set_data_js([]);

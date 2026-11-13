@@ -254,6 +254,7 @@
       "php_matrix": "7.4, 8.0, 8.1, 8.2, 8.3, 8.4, 8.5 plus stock 7.4/8.2 without intl: pass"
     },
     "comparison": "Repeated original development/current fixture after the review fixes; before.json and after.json match exactly.",
-    "coderabbit_pro": "The private Pro repository plan supplies summaries but refuses code review; the bot response is recorded on PR #70. No paid plan change was made."
+    "coderabbit_pro": "The private Pro repository plan supplies summaries but refuses code review; the bot response is recorded on PR #70. No paid plan change was made.",
+    "concurrent_consent": "A controlled interleaving reproduces lost session/cookie agreement on 302aa591. Conditional updates now keep the winning consented visit; the current native fixture, all 11 privacy browser scenarios, 718 unit tests, 229 integration tests and PHPStan pass."
   }
 }
