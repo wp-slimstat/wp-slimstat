@@ -6,13 +6,13 @@
     "data": "Disposable databases and synthetic visitors; outbound email and fake license calls intercepted locally."
   },
   "verified_source": {
-    "free": "0872bdfc",
-    "pro": "93b7d9a3"
+    "free": "302aa591",
+    "pro": "3dad28b"
   },
   "free": {
     "unit": {
-      "tests": 716,
-      "assertions": 2803
+      "tests": 718,
+      "assertions": 2817
     },
     "integration": {
       "tests": 229,
@@ -27,7 +27,7 @@
     },
     "mutations": {
       "full_suite_killed": 319,
-      "latest_changed_targets_killed": 34,
+      "latest_changed_targets_killed": 61,
       "survived": 0,
       "invalid": 0
     },
@@ -233,5 +233,27 @@
   "ci_followups": {
     "fresh_install_retention": "Reproduced the delete-only fixture failure with archive_retention_days=420, explicitly isolated archive expiration in that fixture, and passed both InnoDB/MyISAM matrices. Independent real archive-expiration fixture remains green.",
     "active_cookieyes": "48 consent/GDPR scenarios exercised with CookieYes active: 47 passed initially; the one stale acceptance fixture was corrected to make a real provider choice, then its full six-scenario file passed."
+  },
+  "review_followups": {
+    "review": "Free PR #414 review 5895459386: 16 inline findings, one outside-diff finding and one test-strengthening comment addressed.",
+    "consent": "Both real direct consent endpoints detach the signed current pageview, clear its anonymous hash, preserve previous rows, keep repeated grants stable and continue the accepted visit. Missing-source requests with anonymous_tracking off ignore old identified cookies.",
+    "deferred_requests": "Actual JavaScript functions tested for withdrawal during idle/load/get, later re-consent, failover, stale-ID recovery and stale success. Old 7ef505d7 code fails the idle identity assertion; corrected code passes. Anonymous initial counting remains covered.",
+    "report_outputs": "Raw grouped identities and top/recent event notes/IPs are masked after aggregation. Pro grouped CSV/email uses the same grouping context. Outbound URL lists keep their separators; public notes/location probes and masked heatmap filters are denied.",
+    "maintenance": "Legacy schema-1 heatmaps stay available to export, erasure and retention with capture off. Archive event joins gain an id index; incomplete/failed archive cleanup cannot refresh purge health, including archive-only retention. Spam lookups cache both outcomes for five minutes without raw-IP keys.",
+    "validation": {
+      "free_test_all": "pass: unit, integration, source, production autoloader, 85 report escaping assertions",
+      "free_changed_mutations": 61,
+      "pro_test_all": "pass, including all 43 mutations and 23 Free-floor checks",
+      "browser": "30 affected Free scenarios pass across the session run and corrected privacy-file rerun (11/11); Pro native privacy/email browser scenario passes. One new missing-CMP scenario supplements the earlier census.",
+      "i18n": "POT regenerated and freshness check passes",
+      "plugin_check": "Rerun on staged artifacts; only the documented policy findings remain."
+    },
+    "pro_artifact": {
+      "source": "3dad28b",
+      "sha256": "7c4a86f835fbcde1f6d25edd289a4f3398ca03afd91ab0a5ad548d395df24163",
+      "php_matrix": "7.4, 8.0, 8.1, 8.2, 8.3, 8.4, 8.5 plus stock 7.4/8.2 without intl: pass"
+    },
+    "comparison": "Repeated original development/current fixture after the review fixes; before.json and after.json match exactly.",
+    "coderabbit_pro": "The private Pro repository plan supplies summaries but refuses code review; the bot response is recorded on PR #70. No paid plan change was made."
   }
 }
