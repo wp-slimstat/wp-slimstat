@@ -229,17 +229,35 @@ class Consent
 	public static function canTrack(): bool
 	{
 		$settings = \wp_slimstat::$settings;
-		if ('on' === ($settings['do_not_track'] ?? 'off') && ('1' === (isset($_SERVER['HTTP_DNT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_DNT'])) : '')
-            || '1' === (isset($_SERVER['HTTP_SEC_GPC']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_SEC_GPC'])) : ''))) {
+		if (self::optedOut($settings)) {
 			return false;
 		}
 		if ('on' !== ($settings['gdpr_enabled'] ?? 'off') || \wp_slimstat::$is_programmatic_tracking) {
 			return self::applyCanTrackFilter(true);
 		}
 		$anonymous = 'on' === ($settings['anonymous_tracking'] ?? 'off');
-		$cookieless = 'on' !== ($settings['set_tracker_cookie'] ?? 'on')
-			&& ('on' === ($settings['anonymize_ip'] ?? 'off') || 'on' === ($settings['hash_ip'] ?? 'off'));
-		return self::applyCanTrackFilter($anonymous || $cookieless || !self::hasConsentSource() || self::piiAllowed());
+		return self::applyCanTrackFilter($anonymous || !self::collectsIdentifiers($settings) || !self::hasConsentSource() || self::piiAllowed());
+	}
+
+	/** A cookie, or an IP stored neither anonymized nor hashed, can identify a visitor. */
+	public static function collectsIdentifiers(array $settings): bool
+	{
+		return 'on' === ($settings['set_tracker_cookie'] ?? 'on')
+			|| ('on' !== ($settings['anonymize_ip'] ?? 'off') && 'on' !== ($settings['hash_ip'] ?? 'off'));
+	}
+
+	/** The visitor sent Do Not Track or Global Privacy Control and the site honours it. */
+	private static function optedOut(array $settings): bool
+	{
+		if ('on' !== ($settings['do_not_track'] ?? 'off')) {
+			return false;
+		}
+		foreach (['HTTP_DNT', 'HTTP_SEC_GPC'] as $header) {
+			if ('1' === (isset($_SERVER[$header]) ? sanitize_text_field(wp_unslash($_SERVER[$header])) : '')) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -251,8 +269,7 @@ class Consent
 	public static function piiAllowed(bool $explicitConsentGiven = false): bool
 	{
 		$settings = \wp_slimstat::$settings;
-		if ('on' === ($settings['do_not_track'] ?? 'off') && ('1' === (isset($_SERVER['HTTP_DNT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_DNT'])) : '')
-            || '1' === (isset($_SERVER['HTTP_SEC_GPC']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_SEC_GPC'])) : ''))) {
+		if (self::optedOut($settings)) {
 			return false;
 		}
 		$anonymous = 'on' === ($settings['anonymous_tracking'] ?? 'off');

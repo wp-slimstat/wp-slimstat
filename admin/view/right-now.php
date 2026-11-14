@@ -171,9 +171,9 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
             $ip_address = "<a class='slimstat-filter-link' href='" . esc_url(wp_slimstat_reports::fs_url('username equals ' . $results[$i]['username'])) . "'><span dir='auto'>";
             if ($user) {
-                $ip_address .= (apply_filters('slimstat_report_avatars', false) ? get_avatar($user->ID, 16) : '');
+                $ip_address .= (\SlimStat\Reports\ReportPrivacy::avatars() ? get_avatar($user->ID, 16) : '');
             } else {
-                $ip_address .= (apply_filters('slimstat_report_avatars', false) ? get_avatar($results[$i]['username'], 16) : '');
+                $ip_address .= (\SlimStat\Reports\ReportPrivacy::avatars() ? get_avatar($results[$i]['username'], 16) : '');
             }
 
             $ip_address .= ' ' . esc_html($display_user_name) . '</span></a>';

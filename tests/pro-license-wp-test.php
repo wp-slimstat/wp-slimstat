@@ -120,19 +120,38 @@ try {
         foreach (array_slice($links, 1) as [$label, $url, $external]) {
             $check($external && ('Find my license' === $label ? $find === $url : 0 === strpos($url, 'https://wp-slimstat.com/pricing/?')), $label . ' leads to its destination for ' . $state . ': ' . $url);
         }
+        // Outside the License and Pro tabs: one line and the fix, same tone, still not dismissible.
+        ob_start();
+        ProLicense::render(true);
+        $compact = (string) ob_get_clean();
+        $check(1 === substr_count($compact, 'class="button') && 1 === substr_count($compact, 'button-primary') && false !== strpos($compact, esc_html($links[0][0])) && false !== strpos($compact, 'class="notice ' . $tone . ' ') && false === strpos($compact, 'is-dismissible'), 'Compact banner: the fix only, same tone, for ' . $state . ': ' . $compact);
+        $check(false !== strpos($compact, 'settings and data are kept') && ($hasClient ? false !== strpos($compact, 'SlimStat Pro features are locked:') && false === strpos($compact, 'Find my license') : false !== strpos($compact, 'Update SlimStat Pro')), 'Compact banner says why in one line for ' . $state);
     }
 
     // One banner on the Dashboard and the Plugins screen, for administrators only; never elsewhere.
     $check(10 === has_action('admin_notices', [ProLicense::class, 'screen_notice']), 'The Dashboard and Plugins banner is registered');
     $pagenow = $GLOBALS['pagenow'] ?? null;
+    if (!class_exists('wp_slimstat_admin')) { // The admin library loads only for a user logged in at boot.
+        include_once dirname((new ReflectionClass('wp_slimstat'))->getFileName()) . '/admin/index.php';
+    }
     $screen = static function ($page) { $GLOBALS['pagenow'] = $page; ob_start(); ProLicense::screen_notice(); return (string) ob_get_clean(); };
     delete_option(ProLicense::OPTION);
     $key = '';
     foreach (['index.php', 'plugins.php'] as $page) {
         $html = $screen($page);
-        $check(1 === substr_count($html, 'slimstat-pro-license-notice" role="status"') && 1 === substr_count($html, 'button-primary') && false === strpos($html, 'is-dismissible'), 'One banner that cannot be dismissed on ' . $page);
-        $check(!$hasClient || false !== strpos($html, 'href="' . esc_url($find) . '" target="_blank" rel="noopener noreferrer"'), 'Find my license opens the account in a new tab on ' . $page);
+        $check(1 === substr_count($html, 'data-notice-key="pro-license"') && 1 === substr_count($html, 'class="button') && 1 === substr_count($html, 'button-primary') && false !== strpos($html, 'is-dismissible') && false !== strpos($html, 'data-notice-snooze="604800"'), 'One line with the fix on ' . $page . ', snoozed for 7 days: ' . $html);
+        $check(false === strpos($html, 'Find my license') && false === strpos($html, 'View plans'), 'Find my license and plans stay in License settings, not on ' . $page);
     }
+    // A snooze is bound to the license state: a new problem shows again at once.
+    $stamp = hash('sha256', 'pro-license-' . ProLicense::state());
+    update_user_meta(get_current_user_id(), 'slimstat_notice_dismissals_' . get_current_blog_id(), ['pro-license' => ['stamp' => $stamp, 'until' => time() + 7 * DAY_IN_SECONDS]]);
+    $check('' === $screen('index.php'), 'Snoozed on the Dashboard');
+    ProLicense::record('wp-test-license', 'invalid');
+    $key = 'wp-test-license';
+    $check('' !== $screen('index.php'), 'A different license state is not covered by the snooze');
+    delete_user_meta(get_current_user_id(), 'slimstat_notice_dismissals_' . get_current_blog_id());
+    delete_option(ProLicense::OPTION);
+    $key = '';
     $check('' === $screen('edit.php') && '' === $screen('admin.php'), 'No banner on other WordPress screens');
     wp_set_current_user(0);
     $check('' === $screen('index.php'), 'No Dashboard banner for users who cannot manage the license');

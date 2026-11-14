@@ -13,6 +13,12 @@ final class ReportPrivacy
         return 'on' === (\wp_slimstat::$settings['mask_personal_data'] ?? 'off') && !current_user_can('manage_options');
     }
 
+    /** Reports never fetch avatars (Gravatar is an external call) unless a site opts in. */
+    public static function avatars(): bool
+    {
+        return (bool) apply_filters('slimstat_report_avatars', false);
+    }
+
     public static function redactConsentMarker(string $notes): string
     {
         return preg_replace('/\[consent:accepted:[a-f0-9]{64}\]/', '[consent:accepted]', $notes) ?? $notes;

@@ -10,6 +10,9 @@
                 "lang": "id_ID",
                 "plural-forms": "nplurals=2; plural=(n != 1);"
             },
+            "Copied": [
+                ""
+            ],
             "Available with Pro": [
                 ""
             ],
@@ -41,9 +44,6 @@
                 ""
             ],
             "The report selection changed. Try copying again.": [
-                ""
-            ],
-            "Copied": [
                 ""
             ],
             "Copy failed": [

@@ -131,13 +131,20 @@ if ($source === false) {
     exit(1);
 }
 
-$pos_dnt      = strpos($source, 'do_not_track');
-$pos_gdpr     = strpos($source, "'gdpr_enabled'", strpos($source, 'public static function canTrack'));
+$can_track    = (int) strpos($source, 'public static function canTrack');
+$pos_dnt      = strpos($source, 'self::optedOut($settings)', $can_track);
+$pos_gdpr     = strpos($source, "'gdpr_enabled'", $can_track);
+$opted_out    = strpos($source, 'private static function optedOut');
 
 dnt_assert_same(
     true,
-    $pos_dnt !== false && $pos_gdpr !== false && $pos_dnt < $pos_gdpr,
+    $can_track > 0 && $pos_dnt !== false && $pos_gdpr !== false && $pos_dnt < $pos_gdpr,
     'TEST 6: do_not_track check must appear before !$gdprEnabled check in Consent.php'
+);
+dnt_assert_same(
+    true,
+    $opted_out !== false && false !== strpos(substr($source, $opted_out, 400), "'do_not_track'"),
+    'TEST 6b: optedOut() must read the do_not_track setting'
 );
 
 echo "All {$assertions} assertions passed in dnt-gdpr-independence-test.php\n";

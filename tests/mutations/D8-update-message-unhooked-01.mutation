@@ -6,11 +6,11 @@ rationale: Removes the add_action line; the callback stays defined so only the h
 ---
 --- a/admin/index.php
 +++ b/admin/index.php
-@@ -224,7 +224,6 @@
+@@ -311,7 +311,6 @@
          // method runs on every logged-in request, so it is registered only there — see
          // show_update_message() for what it can and cannot reach.
          if ('plugins.php' === ($GLOBALS['pagenow'] ?? '')) {
 -            add_action('in_plugin_update_message-' . plugin_basename(SLIMSTAT_FILE), [self::class, 'show_update_message'], 10, 2);
          }
  
-         // 6.0 release notice: the Dashboard and the Plugins screen only, never SlimStat's own, for
+         // The 6.0 release notice lives in the SlimStat header only (header.php); the Dashboard and

@@ -256,7 +256,10 @@ assert.equal(revokeScope.pendingInteractions.length, 0);
 assert.deepEqual(removed.sort(), ['slimstat_offline_queue', 'slimstat_offline_replay', 'slimstat_pending_session'].sort());
 const processStart = source.indexOf('    function processQueueItem(');
 const processEnd = source.indexOf('\n    function ', processStart + 1);
-vm.runInContext(source.slice(processStart, processEnd), revokeScope);
+// processQueueItem asks the shared payloadBlocked() guard, so load it beside it.
+const blockedStart = source.indexOf('    function payloadBlocked(');
+const processSource = source.slice(blockedStart, source.indexOf('\n    function ', blockedStart + 1)) + source.slice(processStart, processEnd);
+vm.runInContext(processSource, revokeScope);
 let staleRejected = false;
 revokeScope.processQueueItem({consentGeneration: 0, payload: 'id=old&no=private'}, result => { staleRejected = result.rejected; });
 assert.equal(staleRejected, true, 'a later grant cannot revive a retry from before withdrawal');
@@ -330,7 +333,7 @@ async function preparationAndTransportRaces() {
             XMLHttpRequest: function () { requests.push(this); this.open = () => {}; this.setRequestHeader = () => {}; this.send = () => {}; },
             rememberTransportFailure() {}, rememberTransportSuccess() {},
         });
-        vm.runInContext(source.slice(processStart, processEnd), env);
+        vm.runInContext(processSource, env);
         env.processQueueItem({consentGeneration: 0, payload: 'action=slimtrack&id=12.signed&fh=private', useBeacon: false}, result => results.push(result));
         assert.equal(requests.length, 1);
         env.consentGeneration++; // a withdrawal followed by a new grant

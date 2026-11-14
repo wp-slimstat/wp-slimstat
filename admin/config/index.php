@@ -33,49 +33,29 @@ if (!isset(wp_slimstat::$settings['geolocation_provider'])) {
     $resolved = wp_slimstat::resolve_geolocation_provider();
     wp_slimstat::$settings['geolocation_provider'] = false !== $resolved ? $resolved : 'disable';
 }
-
-// Build General → Tracker rows, conditionally adding Tracking Request Method under Tracking Mode
-$general_rows = [
-    // General - Tracking basics (not "Tracker": that is the next tab's name, audit B4)
-    'general_tracking_header' => [
-        'title' => __('Tracking basics', 'wp-slimstat'),
-        'type'  => 'section_header',
-    ],
-    'is_tracking' => [
-        'title'       => __('Enable tracking', 'wp-slimstat'),
-        'type'        => 'toggle',
-        'description' => __('Turn the tracker on or off, while keeping the reports accessible.', 'wp-slimstat'),
-    ],
-    'track_admin_pages' => [
-        'title'       => __('Track backend', 'wp-slimstat'),
-        'type'        => 'toggle',
-        'description' => __("Enable this option to track your users' activity within the WordPress admin.", 'wp-slimstat'),
-    ],
-    'javascript_mode' => [
-        'title'            => __('Tracking mode', 'wp-slimstat'),
-        'type'             => 'toggle',
-        'custom_label_on'  => __('Client', 'wp-slimstat'),
-        'custom_label_off' => __('Server', 'wp-slimstat'),
-        'description'      => __("Select <strong>Client</strong> if you are using a caching plugin (W3 Total Cache, WP SuperCache, HyperCache, etc). SlimStat will behave pretty much like Google Analytics, and visitors whose browser doesn't support JavaScript will be ignored. Select <strong>Server</strong> if you are not using a caching tool on your website, and would like to track <em>every single visit</em> to your site.", 'wp-slimstat'),
-    ],
-    'tracking_request_method' => [
-        'title'         => __('Tracking request method', 'wp-slimstat'),
-        'type'          => 'select',
-        'description'   => __('Choose how SlimStat sends tracking requests to the server. Fallback logic is always enabled: if the selected method fails, SlimStat will automatically try the next available method.<br /><strong>Note:</strong> that some ad blockers may block tracking requests sent via the REST API or admin-ajax.php. If you are using one of these methods and notice that some visits are not being tracked, consider using the Ad-Blocker Bypass method.', 'wp-slimstat'),
-        'select_values' => [
-            'rest'           => __('REST API: fast, falls back to Admin-AJAX if the request fails', 'wp-slimstat'),
-            'ajax'           => __('Admin-AJAX: compatible, but ad blockers may block it too (recommended)', 'wp-slimstat'),
-            'adblock_bypass' => __('Ad-blocker bypass: most reliable, avoids ad blockers', 'wp-slimstat'),
-        ],
-    ],
+// Tabs are grouped by goal. Tab ids are stable (they are in bookmarks, deep links and the
+// slimstat_options_on_page filter); only their order and labels change. Rows keep their option keys.
+$banner_conditional = [
+    'field' => 'gdpr_enabled,consent_integration',
+    'type'  => 'checked,equals',
+    'value' => '|||slimstat_banner',
 ];
 
 // Define all the options
 $settings = [
     1 => [
         'title' => __('General', 'wp-slimstat'),
-        'rows'  => $general_rows + [
-            // General - WordPress Integration
+        'rows'  => [
+            // Not "Tracker": that was the old name of the Tracking tab (audit B4)
+            'general_tracking_header' => [
+                'title' => __('Tracking', 'wp-slimstat'),
+                'type'  => 'section_header',
+            ],
+            'is_tracking' => [
+                'title'       => __('Enable tracking', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Turns visitor tracking on or off. Reports and collected data stay available while it is off.', 'wp-slimstat'),
+            ],
             'general_integration_header' => [
                 'title' => __('WordPress integration', 'wp-slimstat'),
                 'type'  => 'section_header',
@@ -83,214 +63,229 @@ $settings = [
             'add_dashboard_widgets' => [
                 'title'       => __('Dashboard widgets', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('Enable this option if you want to add reports to your WordPress Dashboard. Use the Customizer to choose which ones to display.', 'wp-slimstat'),
+                'description' => __('Shows SlimStat reports on the WordPress Dashboard. Choose which ones in the Customizer.', 'wp-slimstat'),
             ],
             'use_separate_menu' => [
-                'title'       => __('Use admin bar', 'wp-slimstat'),
+                'title'       => __('Menu in the admin bar', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('Choose if you want to display the SlimStat menu in the sidebar or as a drop down in the admin bar (if visible).', 'wp-slimstat'),
+                'description' => __('On: the SlimStat menu moves to the top admin bar, when it is visible. Off: it stays in the sidebar.', 'wp-slimstat'),
             ],
             'add_posts_column' => [
-                'title'       => __('Posts and pages', 'wp-slimstat'),
+                'title'       => __('Stats column in posts and pages', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('Add a new column to the Edit Posts/Pages screens, which shows the pageviews or unique visits per post. You can customize the default timeframe in Settings > Reports > Report Interval.', 'wp-slimstat'),
+                'description' => __('Adds a column to the Posts and Pages lists with the views of each item. The time range follows Reports & display, Time range.', 'wp-slimstat'),
             ],
             'posts_column_pageviews' => [
-                'title'            => __('Report type', 'wp-slimstat'),
+                'title'            => __('Column shows', 'wp-slimstat'),
                 'type'             => 'toggle',
                 'custom_label_on'  => __('Pageviews', 'wp-slimstat'),
                 'custom_label_off' => __('IPs', 'wp-slimstat'),
-                'description'      => __('What the column above shows: <strong>pageviews</strong> counts every view, regardless of the user; <strong>(unique) IPs</strong> displays the amount of distinct IP addresses tracked in the given time range.', 'wp-slimstat'),
+                'description'      => __('Pageviews counts every view. IPs counts distinct IP addresses in the time range.', 'wp-slimstat'),
             ],
-
             'display_notifications' => [
                 'title'       => __('SlimStat notifications', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('Display important notifications inside the plugin, such as new version releases, feature updates, news, and special offers.', 'wp-slimstat'),
+                'description' => __('Shows the notification bell inside SlimStat, with release notes, feature news and offers.', 'wp-slimstat'),
             ],
         ],
     ],
 
-    2 => [
-        'title' => __('Tracker', 'wp-slimstat'),
+    9 => [
+        'title' => __('Privacy & GDPR', 'wp-slimstat'),
         'rows'  => [
-            // Tracker - Consent Management
             'consent_management_header' => [
-                'title' => __('Consent management', 'wp-slimstat'),
+                'title' => __('Consent', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
-			'gdpr_enabled' => [
-				'title'       => __('GDPR consent mode', 'wp-slimstat'),
-				'type'        => 'toggle',
-				'description' => __('When enabled, identifying analytics requires consent from the selected integration. Anonymous or cookieless settings can collect limited counts without identifiers. If the integration is missing, SlimStat collects limited counts only. Disabling this setting permits identifying tracking without a consent check. Review consent, retention and privacy disclosures for your site.', 'wp-slimstat'),
-			],
-			'consent_integration' => [
-				'title'         => __('Consent plugin integration', 'wp-slimstat'),
-				'type'          => 'select',
-				'description'   => __('<strong>GDPR Compliance:</strong> Integrate with a Consent Management Platform (CMP) to ensure tracking only occurs with user consent.<br/><br/><strong>SlimStat Consent Banner:</strong> (Recommended) Use SlimStat\'s built-in banner with customizable messaging and server-side consent tracking.<br/><strong>Via WP Consent API:</strong> Integrates with CMPs supporting WordPress Consent API (Complianz, CookieYes, etc.). Server-side consent checking available for both modes.', 'wp-slimstat'),
-				'select_values' => [
-					''                   => __('Select a consent integration', 'wp-slimstat'),
-					'slimstat_banner'    => __('SlimStat Consent Banner (Recommended)', 'wp-slimstat'),
-					'wp_consent_api'     => __('Via WP Consent API', 'wp-slimstat'),
-					// 'real_cookie_banner' => __('Real Cookie Banner', 'wp-slimstat'),
-				],
-				'conditional' => [
-					'field' => 'gdpr_enabled',
-					'type' => 'checked',
-				],
-			],
-			'slimstat_banner_header' => [
-				'title' => __('SlimStat consent banner', 'wp-slimstat'),
-				'type'  => 'section_header',
-				'conditional' => [
-					'field' => 'gdpr_enabled,consent_integration',
-					'type' => 'checked,equals',
-					'value' => '|||slimstat_banner',
-				],
-			],
-
-			'opt_out_message' => [
-				'title'             => __('Consent banner message', 'wp-slimstat'),
-				'type'              => 'rich_text',
-				'after_input_field' => '',
-				'description'       => __('Content displayed inside the SlimStat consent banner. Basic HTML (p, a, strong, em) is allowed. Links must use full URLs (anchor-only links are stripped). Use the editor above to format your message.', 'wp-slimstat'),
-				'conditional' => [
-					'field' => 'gdpr_enabled,consent_integration',
-					'type' => 'checked,equals',
-					'value' => '|||slimstat_banner',
-				],
-			],
-			'gdpr_accept_button_text' => [
-				'title'              => __('Accept button label', 'wp-slimstat'),
-				'type'               => 'text',
-				'before_input_field' => '',
-				'after_input_field'  => '',
-				'description'        => __('Leave empty to use the default "Accept" text.', 'wp-slimstat'),
-				'conditional' => [
-					'field' => 'gdpr_enabled,consent_integration',
-					'type' => 'checked,equals',
-					'value' => '|||slimstat_banner',
-				],
-			],
-			'gdpr_decline_button_text' => [
-				'title'              => __('Decline button label', 'wp-slimstat'),
-				'type'               => 'text',
-				'before_input_field' => '',
-				'after_input_field'  => '',
-				'description'        => __('Leave empty to use the default "Decline" text.', 'wp-slimstat'),
-				'conditional' => [
-					'field' => 'gdpr_enabled,consent_integration',
-					'type' => 'checked,equals',
-					'value' => '|||slimstat_banner',
-				],
-			],
-            'gdpr_theme_mode' => [
-                'title'         => __('Banner theme mode', 'wp-slimstat'),
-                'type'          => 'select',
-                'description'   => __("Choose the theme mode for the GDPR consent banner. <strong>Light</strong> uses light colors, <strong>Dark</strong> uses dark colors, and <strong>Auto</strong> follows the user's system preference.", 'wp-slimstat'),
-                'select_values' => [
-                    'light' => __('Light Mode', 'wp-slimstat'),
-                    'dark'  => __('Dark Mode', 'wp-slimstat'),
-                    'auto'  => __('Auto (Follow System)', 'wp-slimstat'),
-                ],
-                'conditional' => [
-					'field' => 'gdpr_enabled,consent_integration',
-					'type' => 'checked,equals',
-					'value' => '|||slimstat_banner',
-				],
-            ],
-/*
-            'consent_level_integration' => [
-                'title'         => __('Consent category', 'wp-slimstat'),
-                'type'          => 'select',
-                'description'   => __('Select the consent category SlimStat should belong to. Tracking will only occur if the visitor grants consent for this specific category.<br/><br/><strong>Functional:</strong> Essential website functionality. Not typically used for analytics.<br/><strong>Statistics-Anonymous:</strong> Anonymous analytics only. Use this if you have enabled Anonymous Tracking mode OR configured SlimStat to be cookie-less with anonymized/hashed IPs.<br/><strong>Statistics:</strong> (Default & Recommended) Standard analytics tracking. Appropriate for both anonymous and standard tracking modes. Real Cookie Banner and most CMPs recommend this category for analytics plugins.<br/><strong>Marketing:</strong> Advertising and user profiling. Not applicable to SlimStat core functionality.<br/><br/><strong>Note for Real Cookie Banner:</strong> Make sure to configure SlimStat in the Real Cookie Banner plugin settings and assign it to the same category selected here.', 'wp-slimstat'),
-                'select_values' => [
-                    'functional'            => __('Functional', 'wp-slimstat'),
-                    'statistics-anonymous'  => __('Statistics-Anonymous', 'wp-slimstat'),
-                    'statistics'            => __('Statistics', 'wp-slimstat'),
-                    'marketing'             => __('Marketing', 'wp-slimstat'),
-                ],
-                'conditional' => [
-					'field' => 'gdpr_enabled,consent_integration',
-					'type' => 'checked,in',
-					'value' => '|||wp_consent_api,real_cookie_banner',
-				],
-            ],
-*/
-
-            // Tracker - Data Protection
-            'privacy_header' => [
-                'title' => __('Data protection', 'wp-slimstat'),
-                'type'  => 'section_header',
-            ],
-/*
-            'anonymous_tracking' => [
-                'title'       => __('Anonymous tracking mode', 'wp-slimstat'),
+            'gdpr_enabled' => [
+                'title'       => __('Require visitor consent', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('Before consent, collect limited counts using daily protected IP identifiers, without tracking cookies, fingerprints, usernames or email addresses. After consent, the current pageview and future activity can use identifying analytics, while IP protection settings still apply. Earlier anonymous pageviews are not enriched with identity.', 'wp-slimstat'),
-                'conditional' => [
-					'field' => 'gdpr_enabled',
-					'type' => 'checked',
-				],
+                'description' => __('When enabled, identifying analytics requires consent from the selected integration. Anonymous or cookieless settings can collect limited counts without identifiers. If the integration is missing, SlimStat collects limited counts only. Disabling this setting permits identifying tracking without a consent check. Review consent, retention and privacy disclosures for your site.', 'wp-slimstat'),
             ],
-*/
+            'consent_integration' => [
+                'title'         => __('Consent source', 'wp-slimstat'),
+                'type'          => 'select',
+                'description'   => __('Where SlimStat reads each visitor\'s consent. <strong>SlimStat consent banner:</strong> built in, no other plugin needed. <strong>WP Consent API:</strong> uses a consent plugin that supports the WP Consent API, such as Complianz or CookieYes.', 'wp-slimstat'),
+                'select_values' => [
+                    ''                => __('Select a consent integration', 'wp-slimstat'),
+                    'slimstat_banner' => __('SlimStat consent banner (recommended)', 'wp-slimstat'),
+                    'wp_consent_api'  => __('WP Consent API', 'wp-slimstat'),
+                ],
+                'conditional' => [
+                    'field' => 'gdpr_enabled',
+                    'type'  => 'checked',
+                ],
+            ],
+            'slimstat_banner_header' => [
+                'title'       => __('SlimStat consent banner', 'wp-slimstat'),
+                'type'        => 'section_header',
+                'conditional' => $banner_conditional,
+            ],
+            'opt_out_message' => [
+                'title'             => __('Consent banner message', 'wp-slimstat'),
+                'type'              => 'rich_text',
+                'after_input_field' => '',
+                'description'       => __('Content displayed inside the SlimStat consent banner. Basic HTML (p, a, strong, em) is allowed. Links must use full URLs (anchor-only links are stripped). Use the editor above to format your message.', 'wp-slimstat'),
+                'conditional'       => $banner_conditional,
+            ],
+            'gdpr_accept_button_text' => [
+                'title'              => __('Accept button label', 'wp-slimstat'),
+                'type'               => 'text',
+                'before_input_field' => '',
+                'after_input_field'  => '',
+                'description'        => __('Leave empty to use the default "Accept" text.', 'wp-slimstat'),
+                'conditional'        => $banner_conditional,
+            ],
+            'gdpr_decline_button_text' => [
+                'title'              => __('Decline button label', 'wp-slimstat'),
+                'type'               => 'text',
+                'before_input_field' => '',
+                'after_input_field'  => '',
+                'description'        => __('Leave empty to use the default "Decline" text.', 'wp-slimstat'),
+                'conditional'        => $banner_conditional,
+            ],
+            'gdpr_theme_mode' => [
+                'title'         => __('Banner colors', 'wp-slimstat'),
+                'type'          => 'select',
+                'description'   => __('Auto follows the light or dark preference of each visitor\'s device.', 'wp-slimstat'),
+                'select_values' => [
+                    'light' => __('Light', 'wp-slimstat'),
+                    'dark'  => __('Dark', 'wp-slimstat'),
+                    'auto'  => __('Auto', 'wp-slimstat'),
+                ],
+                'conditional' => $banner_conditional,
+            ],
+
+            'privacy_header' => [
+                'title' => __('Visitor identifiers', 'wp-slimstat'),
+                'type'  => 'section_header',
+            ],
             'do_not_track' => [
                 'title'       => __('Respect DNT and Global Privacy Control', 'wp-slimstat'),
                 'type'        => 'toggle',
                 'description' => __('Honor Do Not Track and Global Privacy Control browser signals. When either signal is enabled, no tracking occurs, including anonymous pageviews.', 'wp-slimstat'),
             ],
-            'mask_personal_data' => [
-                'title' => __('Mask personal data in reports', 'wp-slimstat'),
-                'type' => 'toggle',
-                'description' => __('Hide visitor IPs, names, emails, fingerprints and notes from report viewers who cannot manage WordPress options, including their exports. Counts and report calculations stay unchanged. Scheduled reports also omit these identifiers.', 'wp-slimstat'),
-            ],
             'anonymize_ip' => [
                 'title'       => __('Anonymize IP addresses', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('<strong>GDPR Privacy Protection:</strong> Masks IP addresses before storage (IPv4: 192.168.1.x → 192.168.1.0 / IPv6: last 80 bits removed).<br/><br/>Anonymized IPs cannot identify individual users but still provide useful geographic and network data. <strong>Recommended</strong> for GDPR compliance when not using IP hashing.', 'wp-slimstat'),
+                'description' => __('Removes the last part of each IP address before it is stored: 192.168.1.23 becomes 192.168.1.0, and IPv6 addresses lose their last 80 bits. Country and network reports keep working. Off: full IP addresses are stored.', 'wp-slimstat'),
             ],
             'hash_ip' => [
                 'title'       => __('Hash IP addresses', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('<strong>GDPR-Compliant Visitor Counting:</strong> Creates one-way hash from IP + User Agent + daily salt. Hash changes daily, preventing long-term tracking.<br/><br/><strong>Benefits:</strong> Count unique visitors without storing real IPs or using cookies. Original IP cannot be recovered from hash. <strong>Recommended</strong> for GDPR compliance.', 'wp-slimstat'),
+                'description' => __('Stores a one-way hash of the IP address, browser and a daily salt instead of the IP. Unique visitors can be counted without storing IP addresses or cookies. The hash changes every day and cannot be turned back into an IP. Takes priority over anonymization.', 'wp-slimstat'),
             ],
             'set_tracker_cookie' => [
-                'title'       => __('Set tracking cookie', 'wp-slimstat'),
+                'title'       => __('Use cookies to recognize returning visitors', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('<strong>PII Warning:</strong> Cookies are Personally Identifiable Information under GDPR. Enabling this option requires user consent.<br/><br/><strong>When Disabled:</strong> Cookie-less tracking (more privacy, less accurate return visitor detection)<br/><strong>When Enabled:</strong> Sets a cookie to track returning visitors (better accuracy, requires consent)<br/><br/>Cookies automatically respect consent settings and use Secure, HttpOnly, and SameSite flags for security.', 'wp-slimstat'),
+                'description' => __('On: a first-party cookie recognizes returning visitors more accurately. Cookies can identify a person, so many regions require consent for them; they follow the consent settings above. Off: cookieless tracking, and returning visitors are estimated.', 'wp-slimstat'),
+            ],
+            'mask_personal_data' => [
+                'title'       => __('Mask personal data in reports', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Hide visitor IPs, names, emails, fingerprints and notes from report viewers who cannot manage WordPress options, including their exports. Counts and report calculations stay unchanged. Scheduled reports also omit these identifiers.', 'wp-slimstat'),
             ],
 
-            // Tracker - Link Tracking
+            'maintenance_data_retention_header' => [
+                'title' => __('Data retention', 'wp-slimstat'),
+                'type'  => 'section_header',
+            ],
+            'auto_purge' => [
+                'title'             => __('Retention period', 'wp-slimstat'),
+                'type'              => 'integer',
+                'after_input_field' => __('days', 'wp-slimstat'),
+                'description'       => __('Age in days at which live analytics is deleted or archived, according to Archive mode. Set 0 to disable live-data cleanup. Choose a retention period appropriate for your site. Archived records have a separate lifetime and still count as retained data.', 'wp-slimstat'),
+            ],
+            'auto_purge_delete' => [
+                'title'       => __('Archive mode', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('On archives expired live pageviews and events. Off permanently deletes them. Archived records remain stored until their separate archive retention period expires.', 'wp-slimstat'),
+            ],
+            'archive_retention_days' => [
+                'title'       => __('Archive retention (days)', 'wp-slimstat'),
+                'type'        => 'text',
+                'description' => __('Permanently delete archived pageviews and events older than this many days, measured from the original visit. Set 0 to keep archives indefinitely. Existing archives are preserved until you choose a period. Back up data you need before enabling expiration.', 'wp-slimstat'),
+            ],
+        ],
+    ],
+
+    2 => [
+        'title' => __('Tracking', 'wp-slimstat'),
+        'rows'  => [
+            'tracking_method_header' => [
+                'title' => __('How tracking works', 'wp-slimstat'),
+                'type'  => 'section_header',
+            ],
+            'track_admin_pages' => [
+                'title'       => __('Track WordPress admin activity', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Records the wp-admin pages your logged-in users open. Off: only the public site is tracked.', 'wp-slimstat'),
+            ],
+            'javascript_mode' => [
+                'title'            => __('Tracking mode', 'wp-slimstat'),
+                'type'             => 'toggle',
+                'custom_label_on'  => __('Client', 'wp-slimstat'),
+                'custom_label_off' => __('Server', 'wp-slimstat'),
+                'description'      => __('<strong>Client:</strong> the visitor\'s browser reports each pageview. Use it with caching plugins; visitors without JavaScript are not counted. <strong>Server:</strong> WordPress records every request it serves. Use it only when pages are not cached.', 'wp-slimstat'),
+            ],
+            'tracking_request_method' => [
+                'title'         => __('Tracking request method', 'wp-slimstat'),
+                'type'          => 'select',
+                'description'   => __('How the browser sends tracking data. If the selected method fails, SlimStat tries the next one. Some ad blockers block REST API and Admin-AJAX requests; if visits go missing, try the ad-blocker bypass.', 'wp-slimstat'),
+                'select_values' => [
+                    'rest'           => __('REST API: fast, falls back to Admin-AJAX if the request fails', 'wp-slimstat'),
+                    'ajax'           => __('Admin-AJAX: compatible, but ad blockers may block it too (recommended)', 'wp-slimstat'),
+                    'adblock_bypass' => __('Ad-blocker bypass: most reliable, avoids ad blockers', 'wp-slimstat'),
+                ],
+            ],
+
+            'visits_header' => [
+                'title' => __('Visits', 'wp-slimstat'),
+                'type'  => 'section_header',
+            ],
+            'session_duration' => [
+                'title'             => __('When should a visit end?', 'wp-slimstat'),
+                'type'              => 'integer',
+                'after_input_field' => __('seconds', 'wp-slimstat'),
+                'description'       => __('How long one visit lasts. 1800 seconds (30 minutes) is the common standard. Lower values split the same activity into more visits.', 'wp-slimstat'),
+            ],
+            'extend_session' => [
+                'title'       => __('Restart the timer on each page', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('On: every new pageview restarts the visit timer, so an active visitor stays in one visit. Off: a visit ends a fixed time after it starts.', 'wp-slimstat'),
+            ],
+
             'filters_outbound_header' => [
-                'title' => __('Link tracking', 'wp-slimstat'),
+                'title' => __('Links and downloads', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
             'track_same_domain_referers' => [
                 'title'       => __('Same-domain referrers', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __("By default, when a referrer's domain's pageview is the same as the current site, that information is not saved in the database. However, if you are running a multisite network with subfolders, you might need to enable this option to track same-domain referrers from one site to another, as they are technically 'independent' websites.", 'wp-slimstat'),
+                'description' => __('Records referrers from your own domain, which are skipped by default. Turn it on for a multisite network in subfolders, where each site counts as a separate website.', 'wp-slimstat'),
             ],
             'extensions_to_track' => [
                 'title'       => __('Downloads', 'wp-slimstat'),
                 'type'        => 'textarea',
-                'description' => __('List all the file extensions that you want to be identified as Downloads. Please note that links pointing to external resources (e.g. PDFs on an external website) will be tracked as Downloads and not Outbound Links, if they match one of the extensions listed below.', 'wp-slimstat'),
+                'description' => __('File extensions to count as downloads. Links to matching files on other websites also count as downloads, not outbound links.', 'wp-slimstat'),
             ],
 
-            // Maintenance - Third-party Libraries
+            // Anchor kept: reports, notices and Pro link to #wp-slimstat-third-party-libraries.
             'maintenance_third_party_header' => [
-                'title' => __('Third-party libraries', 'wp-slimstat'),
-                'type'  => 'section_header',
+                'title'  => __('Visitor location and browsers', 'wp-slimstat'),
+                'type'   => 'section_header',
+                'anchor' => 'third-party-libraries',
             ],
-			'geolocation_provider' => [
-				'title'         => __('Geolocation provider', 'wp-slimstat'),
-				'type'          => 'select',
-				'select_values' => [
-					'disable'    => __('Disabled', 'wp-slimstat'),
-					'maxmind'    => __('MaxMind GeoLite2 (recommended)', 'wp-slimstat'),
-					'dbip'       => __('DB-IP City Lite (free)', 'wp-slimstat'),
-					'cloudflare' => __('Cloudflare Header', 'wp-slimstat'),
-				],
-                'description' => __('<strong>Choose how SlimStat resolves visitor locations:</strong><br /><strong>DB-IP City Lite</strong> – Free, no license required. SlimStat downloads a local database and updates it automatically in the background after you save settings. You can also run the update manually using the button below. Works for arbitrary IPs in reports.<br /><strong>MaxMind GeoLite2</strong> – Requires a free MaxMind license key. City vs Country precision affects database size and download time. Updates run in the background after saving; you can also update manually. If PHP Phar is disabled on your server, please upload the .mmdb file manually to wp-content/uploads/wp-slimstat/.<br /><strong>Cloudflare Header</strong> – No database needed. SlimStat reads the HTTP_CF_IPCOUNTRY header set by Cloudflare for the current request only. It won\'t resolve arbitrary test IPs (like 8.8.8.8). Make sure "IP Geolocation" is enabled in your Cloudflare dashboard and your site is actually proxied through Cloudflare.', 'wp-slimstat'),
+            'geolocation_provider' => [
+                'title'         => __('Geolocation provider', 'wp-slimstat'),
+                'type'          => 'select',
+                'select_values' => [
+                    'disable'    => __('Disabled', 'wp-slimstat'),
+                    'maxmind'    => __('MaxMind GeoLite2 (recommended)', 'wp-slimstat'),
+                    'dbip'       => __('DB-IP City Lite (free)', 'wp-slimstat'),
+                    'cloudflare' => __('Cloudflare Header', 'wp-slimstat'),
+                ],
+                'description' => __('<strong>Choose how SlimStat resolves visitor locations:</strong><br /><strong>DB-IP City Lite</strong>: free, no license required. SlimStat downloads a local database and updates it automatically in the background after you save settings. You can also run the update manually using the button below. Works for arbitrary IPs in reports.<br /><strong>MaxMind GeoLite2</strong>: requires a free MaxMind license key. City vs Country precision affects database size and download time. Updates run in the background after saving; you can also update manually. If PHP Phar is disabled on your server, please upload the .mmdb file manually to wp-content/uploads/wp-slimstat/.<br /><strong>Cloudflare Header</strong>: no database needed. SlimStat reads the HTTP_CF_IPCOUNTRY header set by Cloudflare for the current request only. It won\'t resolve arbitrary test IPs (like 8.8.8.8). Make sure "IP Geolocation" is enabled in your Cloudflare dashboard and your site is actually proxied through Cloudflare.', 'wp-slimstat'),
             ],
             'maxmind_license_key' => [
                 'title'       => __('MaxMind license key', 'wp-slimstat'),
@@ -301,19 +296,7 @@ $settings = [
                 'title'             => __('Geolocation database', 'wp-slimstat'),
                 'after_input_field' => '<input type="hidden" id="slimstat-geoip-nonce" value="' . esc_attr(wp_create_nonce('slimstat_geoip_action')) . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . esc_attr__('An error occurred while updating the geolocation database.', 'wp-slimstat') . '">' . esc_html__('Update Database', 'wp-slimstat') . '</a> <a href="#" id="slimstat-check-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . esc_attr__('An error occurred while updating the geolocation database.', 'wp-slimstat') . '">' . esc_html__('Check Database', 'wp-slimstat') . '</a>',
                 'type'              => 'plain-text',
-					'description'       => __('Download or refresh the selected geolocation database. <strong>DB-IP/MaxMind only</strong>: "Update Database" runs it now; after saving settings, SlimStat also schedules a background update. "Check Database" verifies that the file exists and is readable. <strong>Cloudflare</strong>: no database is required. The header is used at request time.', 'wp-slimstat'),
-            ],
-            'enable_browscap' => [
-                'title'       => __('Browscap library', 'wp-slimstat'),
-                'type'        => 'toggle',
-                /* translators: %s: installed Browscap data version, wrapped in strong tags. */
-                'description' => __("We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-cache' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, SlimStat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every week, when available.", 'wp-slimstat') . (empty(\SlimStat\Services\Browscap::$browscap_local_version) ? '' : ' ' . sprintf(__('You are currently using version %s.', 'wp-slimstat'), '<strong>' . \SlimStat\Services\Browscap::$browscap_local_version . '</strong>')),
-            ],
-
-            // Tracker - Advanced Options
-            'advanced_tracker_header' => [
-                'title' => __('Advanced options', 'wp-slimstat'),
-                'type'  => 'section_header',
+                'description'       => __('Download or refresh the selected geolocation database. <strong>DB-IP/MaxMind only</strong>: "Update Database" runs it now; after saving settings, SlimStat also schedules a background update. "Check Database" verifies that the file exists and is readable. <strong>Cloudflare</strong>: no database is required. The header is used at request time.', 'wp-slimstat'),
             ],
             'geolocation_country' => [
                 'title'            => __('Geolocation precision', 'wp-slimstat'),
@@ -322,45 +305,6 @@ $settings = [
                 'custom_label_off' => __('City', 'wp-slimstat'),
                 'description'      => __('Choose between Country and City precision. For DB‑IP and MaxMind, City uses a larger database. For Cloudflare, city-level data requires the <strong>Add visitor location headers</strong> Managed Transform enabled in your Cloudflare dashboard (Rules &gt; Transform Rules &gt; Managed Transforms). Without it, only country is available.', 'wp-slimstat'),
             ],
-            'session_duration' => [
-                'title'             => __('Visit duration', 'wp-slimstat'),
-                'type'              => 'integer',
-                'after_input_field' => __('seconds', 'wp-slimstat'),
-                'description'       => __('How many seconds should a human visit last? Google Analytics sets it to 1800 seconds.', 'wp-slimstat'),
-            ],
-            'extend_session' => [
-                'title'       => __('Extend duration', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __("Reset your visitors' visit duration every time they access a new page within the current visit.", 'wp-slimstat'),
-            ],
-
-            // Tracker - Performance
-            'performance_header' => [
-                'title' => __('Performance', 'wp-slimstat'),
-                'type'  => 'section_header',
-            ],
-            'ajax_relative_path' => [
-                'title'       => __('Relative Ajax', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __('Try enabling this option if you are experiencing issues related to the header field X-Requested-With not being allowed by Access-Control-Allow-Headers in preflight response (or similar).', 'wp-slimstat'),
-            ],
-
-            // Tracker - External Pages
-            'advanced_external_pages_header' => [
-                'title' => __('External pages', 'wp-slimstat'),
-                'type'  => 'section_header',
-            ],
-            'external_domains' => [
-                'title'       => __('Allowed domains', 'wp-slimstat'),
-                'type'        => 'textarea',
-                'description' => __("If you are getting an error saying that no 'Access-Control-Allow-Origin' header is present on the requested resource, when using the external tracking code above, list the domains (complete with scheme) you would like to allow. For example: <code>https://my.domain.ext</code> (no trailing slash). Please see <a href='https://www.w3.org/TR/cors/#security' target='_blank'>this W3 resource</a> for more information on the security implications of allowing CORS requests.", 'wp-slimstat'),
-            ],
-            'external_pages_script' => [
-                'type'   => 'custom',
-                'title'  => __('Add the following code to all the non-WordPress pages you would like to track, right before the closing BODY tag. Please make sure to change the protocol of all the URLs to HTTPS, if your external site is using a secure channel.', 'wp-slimstat'),
-                'markup' => str_replace('\\n', "\n", '<pre style="max-width:100%">&lt;script type="text/javascript"&gt;\n/* &lt;![CDATA[ */\nvar SlimStatParams = {\n  transport: "ajax",\n  ajaxurl: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '",\n  ajaxurl_ajax: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '"\n};\n/* ]]&gt; */\n&lt;/script&gt;\n&lt;script type="text/javascript" src="' . esc_url(plugins_url('/wp-slimstat.min.js', dirname(__DIR__))) . '"&gt;&lt;/script&gt;</pre>'),
-            ],
-
             'enable_browscap' => [
                 'title'       => __('Browscap library', 'wp-slimstat'),
                 'type'        => 'toggle',
@@ -371,11 +315,10 @@ $settings = [
     ],
 
     3 => [
-        'title' => __('Reports', 'wp-slimstat'),
+        'title' => __('Reports & display', 'wp-slimstat'),
         'rows'  => [
-            // Reports - Functionality
             'reports_functionality_header' => [
-                'title' => __('Functionality', 'wp-slimstat'),
+                'title' => __('Report defaults', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
             'use_current_month_timespan' => [
@@ -421,7 +364,6 @@ $settings = [
                 'description' => __('Enable this option to display the hostname associated to each IP address. Please note that this might affect performance, as SlimStat will need to query your DNS server for each address.', 'wp-slimstat'),
             ],
 
-            // Reports - Access Log and World Map
             'reports_right_now_header' => [
                 'title' => __('Access log and world map', 'wp-slimstat'),
                 'type'  => 'section_header',
@@ -432,20 +374,21 @@ $settings = [
                 'after_input_field' => __('seconds', 'wp-slimstat'),
                 'description'       => __('When a value greater than zero is entered, the Access Log view will refresh every X seconds. Enter <strong>0</strong> (the number zero) if you would like to deactivate this feature.', 'wp-slimstat'),
             ],
-            'number_results_raw_data' => ['title' => __('Rows to display', 'wp-slimstat'),
-                'type'                            => 'integer',
-                'description'                     => __('Define the number of rows to visualize in the Access Log.', 'wp-slimstat'),
-                'after_input_field'               => __('rows', 'wp-slimstat'),
+            'number_results_raw_data' => [
+                'title'             => __('Rows to display', 'wp-slimstat'),
+                'type'              => 'integer',
+                'description'       => __('Define the number of rows to visualize in the Access Log.', 'wp-slimstat'),
+                'after_input_field' => __('rows', 'wp-slimstat'),
             ],
-            'max_dots_on_map' => ['title' => __('Map data points', 'wp-slimstat'),
-                'type'                    => 'integer',
-                'description'             => __('Customize the maximum number of data points displayed on the world map. Please note that larger numbers might negatively affect rendering times.', 'wp-slimstat'),
-                'after_input_field'       => __('points', 'wp-slimstat'),
+            'max_dots_on_map' => [
+                'title'             => __('Map data points', 'wp-slimstat'),
+                'type'              => 'integer',
+                'description'       => __('Customize the maximum number of data points displayed on the world map. Please note that larger numbers might negatively affect rendering times.', 'wp-slimstat'),
+                'after_input_field' => __('points', 'wp-slimstat'),
             ],
 
-            // Reports - Miscellaneous
             'reports_miscellaneous_header' => [
-                'title' => __('Miscellaneous', 'wp-slimstat'),
+                'title' => __('Appearance', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
             'custom_css' => [
@@ -460,29 +403,10 @@ $settings = [
                 'type'        => 'textarea',
                 'description' => __('Customize the look and feel of your charts by assigning your own colors to each metric. List four hex colors, in the following order: metric 1 previous, metric 2 previous, metric 1 current, metric 2 current. For example: <code>#ccc, #999, #bbcc44, #21759b</code>.', 'wp-slimstat'),
             ],
-            'mozcom_access_id' => ['title' => __('Mozscape access ID', 'wp-slimstat'),
-                'type'                     => 'text',
-                'description'              => __('Get accurate rankings for your website through the <a href="https://moz.com/community/join?redirect=/products/api/keys" target="_blank">Mozscape API</a>. Sign up for a free community account to get started. Then enter your personal identification code in this field.', 'wp-slimstat'),
-            ],
-            'mozcom_secret_key' => ['title' => __('Mozscape secret key', 'wp-slimstat'),
-                'type'                      => 'text',
-                'description'               => __('This key is needed to query the Mozscape API (see option above). Treat it like a password and do not share it with anyone, or they will be able to make API requests using your account.', 'wp-slimstat'),
-            ],
             'show_complete_user_agent_tooltip' => [
                 'title'       => __('Show user agent', 'wp-slimstat'),
                 'type'        => 'toggle',
                 'description' => __('Enable this option if you want to see the full user agent string when hovering over each browser icon in the Access Log and elsewhere.', 'wp-slimstat'),
-            ],
-            'async_load' => [
-                'title'       => __('Async mode', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __('Activate this feature if your reports take a while to load. It breaks down the load on your server into multiple smaller requests, thus avoiding memory issues and performance problems.', 'wp-slimstat'),
-            ],
-            'limit_results' => [
-                'title'             => __('SQL limit', 'wp-slimstat'),
-                'type'              => 'integer',
-                'after_input_field' => __('rows', 'wp-slimstat'),
-                'description'       => __("You can limit the number of records that each SQL query will take into consideration when crunching aggregate values (maximum, average, etc). You might need to adjust this value if you're getting an error saying that you exceeded your PHP memory limit while accessing the slimstat.", 'wp-slimstat'),
             ],
             'enable_sov' => [
                 'title'       => __('Reverse the filter bar order', 'wp-slimstat'),
@@ -495,9 +419,8 @@ $settings = [
     4 => [
         'title' => __('Exclusions', 'wp-slimstat'),
         'rows'  => [
-            // Exclusions - User Properties
             'filters_users_header' => [
-                'title' => __('User properties', 'wp-slimstat'),
+                'title' => __('Visitors', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
             'ignore_wp_users' => [
@@ -556,9 +479,8 @@ $settings = [
                 'description' => __('Enter a list of operating system codes that should not be tracked. Please refer to <a href="https://wp-slimstat.com/knowledge-base/" target="_blank">this page</a> in our knowledge base to learn more about which codes can be used. See note at the bottom of this page for more information on how to use wildcards.', 'wp-slimstat'),
             ],
 
-            // Exclusions - Page Properties
             'filters_pageview_header' => [
-                'title' => __('Page properties', 'wp-slimstat'),
+                'title' => __('Pages and links', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
             'ignore_resources' => [
@@ -567,8 +489,8 @@ $settings = [
                 'description' => __('Enter a list of permalinks that should not be tracked. Do not include your website domain name: <code>/about, ?p=1</code>, etc. See note at the bottom of this page for more information on how to use wildcards. Strings are case-insensitive.', 'wp-slimstat'),
             ],
             'ignore_resource_parameters' => [
-                'title' => __('Ignore resource query parameters', 'wp-slimstat'),
-                'type' => 'text',
+                'title'       => __('Ignore resource query parameters', 'wp-slimstat'),
+                'type'        => 'text',
                 'description' => __('Optional comma-separated query parameter names, such as fbclid or gclid, to omit from newly tracked page URLs. Names are case-sensitive. Leave empty to keep all parameters. Campaign attribution is extracted first; historical URLs are unchanged. Do not include parameters that identify different pages or products.', 'wp-slimstat'),
             ],
             'do_not_track_outbound_classes_rel_href' => [
@@ -579,14 +501,14 @@ $settings = [
             'ignore_referers' => [
                 'title'       => __('Referring sites', 'wp-slimstat'),
                 'type'        => 'textarea',
-                'description' => __('Enter a list of referring URLs that should not be tracked: <code>https://mysite.com*</code>, <code>*/ignore-me-please</code>, etc. See note at the bottom of this page for more information on how to use wildcards. Strings are case-insensitive and must include the protocol (https://, https://).', 'wp-slimstat'),
+                'description' => __('Enter a list of referring URLs that should not be tracked: <code>https://mysite.com*</code>, <code>*/ignore-me-please</code>, etc. See note at the bottom of this page for more information on how to use wildcards. Strings are case-insensitive and must include the protocol (http:// or https://).', 'wp-slimstat'),
             ],
             'ignore_content_types' => [
                 'title'       => __('Content types', 'wp-slimstat'),
                 'type'        => 'textarea',
                 'description' => __('Enter a list of SlimStat content types that should not be tracked: <code>post, page, cpt:attachment, tag, 404, taxonomy, author, archive, search, feed, login</code>, etc. For custom post types, use the <code>cpt:</code> prefix (e.g., <code>cpt:product</code>, <code>cpt:portfolio</code>, <code>cpt:attachment</code>). See note at the bottom of this page for more information on how to use wildcards. Strings are case-insensitive.', 'wp-slimstat'),
             ],
-            'wildcards_description' => ['Wildcards',
+            'wildcards_description' => [
                 'type'   => 'custom',
                 'title'  => '<p class="description">' . __('<strong>Wildcards</strong><br>You can use the character <code>*</code> to match <em>any string, including the empty string</em>, and the character <code>!</code> to match <em>any character, including no character</em>. For example, <code>user*</code> matches user12 and userfoo, <code>u*100</code> matches user100 and ur100, <code>user!0</code> matches user10, user0 and user90, but not user100.', 'wp-slimstat') . '</p>',
                 'markup' => '',
@@ -595,11 +517,10 @@ $settings = [
     ],
 
     5 => [
-        'title' => __('Access control', 'wp-slimstat'),
+        'title' => __('Access & security', 'wp-slimstat'),
         'rows'  => [
-            // Access Control - Reports
             'permissions_reports_header' => [
-                'title' => __('Reports', 'wp-slimstat'),
+                'title' => __('Who can see reports', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
             'restrict_authors_view' => [
@@ -619,9 +540,8 @@ $settings = [
                 'description' => __("Enter a list of usernames who should have access to SlimStat. Administrators are implicitly allowed, so you don't need to list them below. Usernames are case sensitive. Wildcards are not allowed.", 'wp-slimstat'),
             ],
 
-            // Access Control - Customizer
             'permissions_customize_header' => [
-                'title' => __('Customizer', 'wp-slimstat'),
+                'title' => __('Who can customize reports', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
             'capability_can_customize' => [
@@ -636,9 +556,8 @@ $settings = [
                 'description' => __("Enter a list of usernames who should have access to the customizer. Administrators are implicitly allowed, so you don't need to list them below. Usernames are case sensitive. Wildcards are not allowed.", 'wp-slimstat'),
             ],
 
-            // Access Control - Settings
             'permissions_config_header' => [
-                'title' => __('Settings', 'wp-slimstat'),
+                'title' => __('Who can change settings', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
             'capability_can_admin' => [
@@ -653,7 +572,6 @@ $settings = [
                 'description' => __('Enter a list of usernames who should have access to the plugin settings. Please be advised that administrators <strong>are not</strong> implicitly allowed, so do not forget to include yourself! Usernames are case sensitive. Wildcards are not allowed.', 'wp-slimstat'),
             ],
 
-            // Access Control - REST API
             'rest_api_header' => [
                 'title' => __('REST API', 'wp-slimstat'),
                 'type'  => 'section_header',
@@ -667,37 +585,23 @@ $settings = [
     ],
 
     6 => [
-        'title' => __('Maintenance', 'wp-slimstat'),
+        'title' => __('Data & maintenance', 'wp-slimstat'),
         'rows'  => [
-            // Maintenance - Data Retention
-            'maintenance_data_retention_header' => [
-                'title' => __('Data retention and auto-purge', 'wp-slimstat'),
+            'maintenance_database_header' => [
+                'title' => __('Database', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
-            'auto_purge' => [
-                'title'             => __('Retention period', 'wp-slimstat'),
-                'type'              => 'integer',
-                'after_input_field' => __('days', 'wp-slimstat'),
-                'description'       => __('Age in days at which live analytics is deleted or archived, according to Archive mode. Set 0 to disable live-data cleanup. Choose a retention period appropriate for your site. Archived records have a separate lifetime and still count as retained data.', 'wp-slimstat'),
-            ],
-            'auto_purge_delete' => [
-                'title'       => __('Archive mode', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __('On archives expired live pageviews and events. Off permanently deletes them. Archived records remain stored until their separate archive retention period expires.', 'wp-slimstat'),
-            ],
-
             'auto_purge_optimize' => [
                 'title'       => __('Automatic table optimization', 'wp-slimstat'),
                 'type'        => 'toggle',
                 'description' => __('Disabled by default. Deleted rows leave space that the database can reuse. Enable only with your hosting provider\'s agreement: rebuilding live tables may reclaim disk space but can delay tracking while locks are held. Runs at most once every 30 days after removing pageviews; archive tables are never optimized.', 'wp-slimstat'),
             ],
-            'archive_retention_days' => [
-                'title' => __('Archive retention (days)', 'wp-slimstat'),
-                'type' => 'text',
-                'description' => __('Permanently delete archived pageviews and events older than this many days, measured from the original visit. Set 0 to keep archives indefinitely. Existing archives are preserved until you choose a period. Back up data you need before enabling expiration.', 'wp-slimstat'),
+            'db_indexes' => [
+                'title'       => __('Increase performance', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Enable this option to add column indexes to the main SlimStat table. This will make SQL queries faster and increase the size of the table by about 30%.', 'wp-slimstat'),
             ],
 
-            // Maintenance - Troubleshooting
             'maintenance_troubleshooting_header' => [
                 'title' => __('Troubleshooting', 'wp-slimstat'),
                 'type'  => 'section_header',
@@ -735,25 +639,19 @@ $settings = [
                 'type'        => 'toggle',
                 'description' => __('Enable detailed tracker diagnostics. When active, tracking responses include debug headers (X-SlimStat-Transport, X-SlimStat-Outcome, X-SlimStat-Error-Code) and the browser records transport attempts in window.__slimstatDebug. Disable after troubleshooting.', 'wp-slimstat'),
             ],
-            'db_indexes' => [
-                'title'       => __('Increase performance', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __('Enable this option to add column indexes to the main SlimStat table. This will make SQL queries faster and increase the size of the table by about 30%.', 'wp-slimstat'),
-            ],
 
-            // Maintenance - Danger Zone
             'maintenance_danger_zone_header' => [
                 'title' => __('Danger zone', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
             'delete_all_records' => [
-                'title'             => __('Data', 'wp-slimstat'),
+                'title'             => __('Delete all records', 'wp-slimstat'),
                 'type'              => 'plain-text',
                 'after_input_field' => '<a class="button-link button-link-delete" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=truncate-table&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '" onclick="return( confirm( \'' . esc_js(__('Delete all records from your database? This cannot be undone.', 'wp-slimstat')) . '\' ) )">' . esc_html__('Delete Records', 'wp-slimstat') . '</a>',
                 'description'       => __('Permanently delete active pageview and event records, including linked full Heatmaps records through database relationships. Archives, Ecommerce order summaries, and settings remain. Archive tables may contain older records, but are not a backup of the records being deleted. Restore a database backup to recover deleted records.', 'wp-slimstat'),
             ],
             'reset_all_settings' => [
-                'title'             => __('Settings', 'wp-slimstat'),
+                'title'             => __('Reset all settings', 'wp-slimstat'),
                 'type'              => 'plain-text',
                 'after_input_field' => '<a class="button-link button-link-delete" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=reset-settings&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '" onclick="return( confirm( \'' . esc_js(__('Reset all settings to their defaults?', 'wp-slimstat')) . '\' ) )">' . esc_html__('Factory Reset', 'wp-slimstat') . '</a>',
                 'description'       => __('Restore all the settings to their default value. This <strong>does not</strong> delete any records collected by the plugin.', 'wp-slimstat'),
@@ -762,6 +660,62 @@ $settings = [
                 'title'       => __('Delete data on uninstall', 'wp-slimstat'),
                 'type'        => 'toggle',
                 'description' => __('<strong>Off (default):</strong> deleting the plugin keeps analytics tables and report settings. Scheduled jobs and cached files are removed. Custom database credentials are cleared and must be entered again after reinstalling. <strong>On:</strong> deleting the plugin <strong>permanently</strong> erases every SlimStat table, all collected visits and all plugin settings. This cannot be undone. Turn it on only if you really want the data gone.', 'wp-slimstat'),
+            ],
+        ],
+    ],
+
+    10 => [
+        'title' => __('Advanced', 'wp-slimstat'),
+        'rows'  => [
+            'performance_header' => [
+                'title' => __('Performance', 'wp-slimstat'),
+                'type'  => 'section_header',
+            ],
+            'async_load' => [
+                'title'       => __('Async mode', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Loads each report in its own request instead of one large page. Turn it on if reports load slowly or run out of memory.', 'wp-slimstat'),
+            ],
+            'limit_results' => [
+                'title'             => __('Rows per summary query', 'wp-slimstat'),
+                'type'              => 'integer',
+                'after_input_field' => __('rows', 'wp-slimstat'),
+                'description'       => __('The most rows one database query reads when it calculates totals, averages and other summaries. Lower it only if reports fail with a PHP memory error. On busy sites, a lower value can make those numbers less complete.', 'wp-slimstat'),
+            ],
+            'ajax_relative_path' => [
+                'title'       => __('Relative Ajax', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Try enabling this option if you are experiencing issues related to the header field X-Requested-With not being allowed by Access-Control-Allow-Headers in preflight response (or similar).', 'wp-slimstat'),
+            ],
+
+            'advanced_external_pages_header' => [
+                'title' => __('External pages', 'wp-slimstat'),
+                'type'  => 'section_header',
+            ],
+            'external_domains' => [
+                'title'       => __('Allowed domains', 'wp-slimstat'),
+                'type'        => 'textarea',
+                'description' => __("If you are getting an error saying that no 'Access-Control-Allow-Origin' header is present on the requested resource, when using the external tracking code above, list the domains (complete with scheme) you would like to allow. For example: <code>https://my.domain.ext</code> (no trailing slash). Please see <a href='https://www.w3.org/TR/cors/#security' target='_blank'>this W3 resource</a> for more information on the security implications of allowing CORS requests.", 'wp-slimstat'),
+            ],
+            'external_pages_script' => [
+                'type'   => 'custom',
+                'title'  => __('Add the following code to all the non-WordPress pages you would like to track, right before the closing BODY tag. Please make sure to change the protocol of all the URLs to HTTPS, if your external site is using a secure channel.', 'wp-slimstat'),
+                'markup' => str_replace('\\n', "\n", '<pre style="max-width:100%">&lt;script type="text/javascript"&gt;\n/* &lt;![CDATA[ */\nvar SlimStatParams = {\n  transport: "ajax",\n  ajaxurl: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '",\n  ajaxurl_ajax: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '"\n};\n/* ]]&gt; */\n&lt;/script&gt;\n&lt;script type="text/javascript" src="' . esc_url(plugins_url('/wp-slimstat.min.js', dirname(__DIR__))) . '"&gt;&lt;/script&gt;</pre>'),
+            ],
+
+            'third_party_services_header' => [
+                'title' => __('Third-party services', 'wp-slimstat'),
+                'type'  => 'section_header',
+            ],
+            'mozcom_access_id' => [
+                'title'       => __('Mozscape access ID', 'wp-slimstat'),
+                'type'        => 'text',
+                'description' => __('Get accurate rankings for your website through the <a href="https://moz.com/community/join?redirect=/products/api/keys" target="_blank">Mozscape API</a>. Sign up for a free community account to get started. Then enter your personal identification code in this field.', 'wp-slimstat'),
+            ],
+            'mozcom_secret_key' => [
+                'title'       => __('Mozscape secret key', 'wp-slimstat'),
+                'type'        => 'text',
+                'description' => __('This key is needed to query the Mozscape API (see option above). Treat it like a password and do not share it with anyone, or they will be able to make API requests using your account.', 'wp-slimstat'),
             ],
         ],
     ],
@@ -813,6 +767,18 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
             case 'reset-geoip-error':
                 $settings[6]['rows']['last_geoip_error']['after_input_field'] = __('No errors.', 'wp-slimstat');
                 \SlimStat\Tracker\Utils::clearDiagnostic('slimstat_geoip_error');
+                break;
+
+            case 'privacy-reviewed':
+                // Marks the review task complete and changes only that stored key: $settings holds
+                // runtime fallbacks (WP Consent API swapped for the banner while it is inactive).
+                wp_slimstat::$settings['privacy_review_notice'] = 'no';
+                $slimstat_stored = is_network_admin() ? get_site_option('slimstat_options') : get_option('slimstat_options');
+                if (is_array($slimstat_stored)) {
+                    $slimstat_stored['privacy_review_notice'] = 'no';
+                    wp_slimstat::update_option('slimstat_options', $slimstat_stored);
+                }
+                wp_slimstat_admin::show_message(__('Privacy review marked as complete. No settings were changed.', 'wp-slimstat'), 'info');
                 break;
 
             case 'reset-settings':
@@ -1074,19 +1040,113 @@ if ([] !== $missing_indexes) {
 }
 
 $tabs_html = '';
+$search_index = [];
+// Extra words people search for. Comma-separated; translators may add their own.
+$search_keywords = [
+    'is_tracking'              => __('enable, disable, pause, stop, on, off', 'wp-slimstat'),
+    'gdpr_enabled'             => __('consent, gdpr, cookie banner, ccpa, opt-in', 'wp-slimstat'),
+    'consent_integration'      => __('cmp, consent api, cookie plugin, banner', 'wp-slimstat'),
+    'anonymize_ip'             => __('ip, mask, privacy, personal data', 'wp-slimstat'),
+    'hash_ip'                  => __('ip, hash, salt, pseudonymize', 'wp-slimstat'),
+    'set_tracker_cookie'       => __('cookie, returning visitors, cookieless', 'wp-slimstat'),
+    'do_not_track'             => __('dnt, gpc, global privacy control', 'wp-slimstat'),
+    'auto_purge'               => __('retention, delete old data, purge, cleanup, archive', 'wp-slimstat'),
+    'track_admin_pages'        => __('backend, wp-admin, dashboard', 'wp-slimstat'),
+    'session_duration'         => __('session, timeout, visit length', 'wp-slimstat'),
+    'geolocation_provider'     => __('maxmind, geoip, dbip, country, city, location', 'wp-slimstat'),
+    'ignore_ip'                => __('exclude, block, filter, ip address', 'wp-slimstat'),
+    'ignore_wp_users'          => __('exclude, logged in, admins, myself', 'wp-slimstat'),
+    'ignore_bots'              => __('crawlers, spiders, robots', 'wp-slimstat'),
+    'capability_can_view'      => __('permissions, roles, access, who can see', 'wp-slimstat'),
+    'limit_results'            => __('sql, query limit, rows, performance', 'wp-slimstat'),
+    'delete_data_on_uninstall' => __('remove, erase, uninstall, delete everything', 'wp-slimstat'),
+    'rest_api_tokens'          => __('api, token, key, integration', 'wp-slimstat'),
+];
+// One id scheme for search, status links and rows: headers keep their wp-slimstat-{anchor} ids.
+$setting_anchor = static fn($key, array $row): string => 'section_header' === ($row['type'] ?? '') ? 'wp-slimstat-' . ($row['anchor'] ?? sanitize_title($row['title'])) : 'slimstat-setting-' . $key;
 foreach ($settings as $a_tab_id => $a_tab_info) {
     if (!empty($a_tab_info['rows']) || (current_user_can('manage_options') && in_array($a_tab_id, [7, 8], true))) {
-        $tabs_html .= "<li class='nav-tab nav-tab" . (($current_tab == $a_tab_id) ? '-active' : '-inactive') . "'><a href='" . esc_url(wp_slimstat_admin::$config_url . $a_tab_id) . sprintf("'>%s</a></li>", esc_html($a_tab_info['title']));
+        $tabs_html .= "<li class='nav-tab nav-tab" . (($current_tab == $a_tab_id) ? '-active' : '-inactive') . "'><a href='" . esc_url(wp_slimstat_admin::$config_url . $a_tab_id) . "'" . ($current_tab == $a_tab_id ? " aria-current='page'" : '') . sprintf('>%s</a></li>', esc_html($a_tab_info['title']));
+        // Search index: labels and help text only, never stored values.
+        $a_section = '';
+        foreach ((array) ($a_tab_info['rows'] ?? []) as $a_slug => $a_row) {
+            $a_label = trim(wp_strip_all_tags((string) ($a_row['title'] ?? '')));
+            if ('' === $a_label) {
+                continue;
+            }
+            $a_header = 'section_header' === ($a_row['type'] ?? '');
+            if ($a_header) {
+                $a_section = $a_label;
+            }
+            $search_index[] = [
+                't'  => (int) $a_tab_id,
+                'g'  => wp_strip_all_tags($a_tab_info['title']),
+                's'  => $a_header ? '' : $a_section,
+                'l'  => $a_label,
+                'd'  => wp_html_excerpt(wp_strip_all_tags((string) ($a_row['description'] ?? '')), 160, '…'),
+                'k'  => $search_keywords[$a_slug] ?? '',
+                'id' => $setting_anchor($a_slug, $a_row),
+                'a'  => (string) $a_slug,
+            ];
+        }
     }
 }
 
 ?>
 <div class="backdrop-container">
     <div class="wrap-slimstat slimstat-config">
-        <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed(), 'title' => __('Settings', 'wp-slimstat')]); ?>
+        <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed(), 'title' => __('Settings', 'wp-slimstat'), 'license_detail' => in_array($current_tab, [7, 8], true)]); ?>
         <ul class="nav-tabs">
             <?php echo wp_kses_post($tabs_html) ?>
         </ul>
+
+        <div class="slimstat-settings-search" role="search" hidden>
+            <label for="slimstat-settings-search-input" class="screen-reader-text"><?php esc_html_e('Search settings', 'wp-slimstat'); ?></label>
+            <input type="search" id="slimstat-settings-search-input" placeholder="<?php esc_attr_e('Search settings', 'wp-slimstat'); ?>" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="slimstat-settings-search-results">
+            <ul id="slimstat-settings-search-results" class="slimstat-settings-search__results" role="listbox" aria-label="<?php esc_attr_e('Matching settings', 'wp-slimstat'); ?>" hidden></ul>
+            <span class="screen-reader-text" role="status" aria-live="polite"></span>
+            <p class="slimstat-settings-search__hint" hidden></p>
+        </div>
+        <?php wp_add_inline_script('slimstat-settings', 'window.slimstatSettingsIndex = ' . wp_json_encode(['url' => wp_specialchars_decode(wp_slimstat_admin::$config_url), 'rows' => $search_index], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) . ';', 'before'); ?>
+
+        <?php
+        if (in_array($current_tab, [1, 9], true) && current_user_can('manage_options')) :
+            $has_consent_source = \SlimStat\Utils\Consent::hasConsentSource();
+            $status_rows        = 1 === $current_tab
+                ? \SlimStat\Services\SettingsStatus::setupRows(wp_slimstat::$settings, (array) $last_tracker_error, !empty($last_geoip_error), $has_consent_source)
+                : \SlimStat\Services\SettingsStatus::privacyRows(wp_slimstat::$settings, $has_consent_source);
+            $review_pending     = \SlimStat\Services\SettingsStatus::privacyReviewPending(wp_slimstat::$settings);
+            ?>
+            <section class="slimstat-settings-status" aria-labelledby="slimstat-settings-status-title">
+                <h2 id="slimstat-settings-status-title"><?php echo esc_html(1 === $current_tab ? __('Setup status', 'wp-slimstat') : __('What your privacy settings do', 'wp-slimstat')); ?></h2>
+                <?php if (9 === $current_tab) : ?>
+                    <p class="slimstat-settings-status__intro"><?php esc_html_e('A plain summary of how SlimStat treats visitor data with the settings saved below. It is not legal advice: what you must do depends on your site, your visitors and the laws that apply to you.', 'wp-slimstat'); ?></p>
+                <?php endif; ?>
+                <dl class="slimstat-settings-status__list">
+                    <?php foreach ($status_rows as $status_row) :
+                        $status_setting = $settings[$status_row['tab']]['rows'][$status_row['anchor']] ?? null;
+                        $status_target  = '' === $status_row['anchor'] ? '' : '#' . (null === $status_setting ? 'wp-slimstat-' . $status_row['anchor'] : $setting_anchor($status_row['anchor'], $status_setting));
+                        ?>
+                        <div class="slimstat-settings-status__row is-<?php echo esc_attr($status_row['state']); ?>">
+                            <dt><?php echo esc_html($status_row['label']); ?></dt>
+                            <dd>
+                                <?php if ('attention' === $status_row['state']) : ?><span class="screen-reader-text"><?php esc_html_e('Needs attention:', 'wp-slimstat'); ?> </span><?php endif; ?>
+                                <a href="<?php echo esc_url(wp_slimstat_admin::$config_url . $status_row['tab'] . $status_target); ?>"><?php echo esc_html($status_row['value']); ?></a>
+                            </dd>
+                        </div>
+                    <?php endforeach; ?>
+                </dl>
+                <?php if (9 === $current_tab && $review_pending) : ?>
+                    <form method="post" action="<?php echo esc_url(wp_slimstat_admin::$config_url . '9&action=privacy-reviewed'); ?>" class="slimstat-settings-status__task">
+                        <?php wp_nonce_field('slimstat_update_settings', 'slimstat_update_settings', false); ?>
+                        <p><?php esc_html_e('Checked the summary and the settings below? Mark the review complete to stop the reminder. Your settings stay as they are.', 'wp-slimstat'); ?></p>
+                        <button type="submit" class="button"><?php esc_html_e('Mark privacy review as complete', 'wp-slimstat'); ?></button>
+                    </form>
+                <?php elseif (9 === $current_tab) : ?>
+                    <p class="slimstat-settings-status__task"><?php esc_html_e('Privacy review completed.', 'wp-slimstat'); ?></p>
+                <?php endif; ?>
+            </section>
+        <?php endif; ?>
 
         <div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px">
             <?php echo wp_kses_post(__('<strong>AdBlock browser extension detected.</strong> If you see this notice, it means that your browser is not loading our stylesheet and/or JavaScript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat')); ?>
@@ -1161,12 +1221,12 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
                 }
 
                 // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
-                echo '<tr' . (0 == $i % 2 ? ' class="alternate"' : '') . $conditional_attrs . '>';
+                echo '<tr' . ('section_header' === $a_setting_info['type'] ? '' : ' id="' . esc_attr($setting_anchor($a_setting_slug, $a_setting_info)) . '"') . (0 == $i % 2 ? ' class="alternate"' : '') . $conditional_attrs . '>';
                 // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                 switch ($a_setting_info['type']) {
                     case 'section_header':
                         // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Literal attributes and extension-provided form markup; dynamic attribute values are escaped when assembled above. KSES post rules would remove required form controls.
-                        echo '<td colspan="2" class="slimstat-options-section-header"' . $conditional_attrs . ' id="wp-slimstat-' . esc_attr(sanitize_title($a_setting_info['title'])) . '">' . wp_kses_post($a_setting_info['title']) . '</td>';
+                        echo '<td colspan="2" class="slimstat-options-section-header"' . $conditional_attrs . ' id="' . esc_attr($setting_anchor($a_setting_slug, $a_setting_info)) . '">' . wp_kses_post($a_setting_info['title']) . '</td>';
                         // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
                         break;
 
@@ -1226,7 +1286,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 					<td>
 						<span class="block-element"> ' .
                             $a_setting_info['before_input_field'] . '
-							<input class="' . (('integer' == $a_setting_info['type']) ? 'small-text' : 'regular-text') . '"' . $is_readonly . '
+							<input class="' . (('integer' == $a_setting_info['type']) ? 'small-text' : 'regular-text') . '"' . $is_readonly . (('integer' == $a_setting_info['type'] && (int) (wp_slimstat::$settings[$a_setting_slug] ?? 0) >= 0) ? ' min="0"' : '') . '
 								type="' . (('integer' == $a_setting_info['type']) ? 'number' : 'text') . '"
 								name="options[' . esc_attr($a_setting_slug) . ']"
 								id="' . esc_attr($a_setting_slug) . '"
@@ -1309,8 +1369,9 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
             ?></tbody>
                 </table>
 
-                <p class="submit">
+                <p class="submit slimstat-save-bar">
                     <input type="submit" value="<?php esc_attr_e('Save Changes', 'wp-slimstat'); ?>" class="button-primary slimstat-settings-button" name="Submit">
+                    <span class="slimstat-save-bar__status" role="status" aria-live="polite"></span>
                 </p>
             </form>
 

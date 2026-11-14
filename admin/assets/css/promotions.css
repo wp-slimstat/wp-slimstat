@@ -1,6 +1,6 @@
 /* Shared SlimStat alerts retain their WordPress severity and dismiss controls. */
-.notice.slimstat-notice:not(.slimstat-pro-license-notice):not(.slimstat-release-notice){border:1px solid var(--ss-border,#e2e4e7);border-radius:8px;padding:12px 16px;box-shadow:none}
-.notice.slimstat-notice.is-dismissible:not(.slimstat-pro-license-notice):not(.slimstat-release-notice){padding-inline-end:48px}
+.notice.slimstat-notice:not(.slimstat-pro-license-notice){border:1px solid var(--ss-border,#e2e4e7);border-radius:8px;padding:12px 16px;box-shadow:none}
+.notice.slimstat-notice.is-dismissible:not(.slimstat-pro-license-notice){padding-inline-end:48px}
 .notice.slimstat-notice.notice-warning:not(.slimstat-pro-license-notice){border-color:#e2c785;background:#fff8e5}
 .notice.slimstat-notice.notice-error:not(.slimstat-pro-license-notice){border-color:#e9b4ae;background:#fcebea}
 .notice.slimstat-notice.notice-success:not(.slimstat-pro-license-notice){border-color:#a7cdb5;background:#f0f8f3}
@@ -16,30 +16,14 @@
 .slimstat-release-bar a{color:#2271b1;text-decoration:underline;text-underline-offset:3px}.slimstat-release-bar a:hover{color:#135e96}.slimstat-release-bar__pro{font-weight:600}
 .slimstat-release-dismiss{position:absolute;inset-inline-end:4px;top:4px;width:36px;height:36px;border:0;background:transparent;color:#50575e;font-size:24px;cursor:pointer}
 .slimstat-release-bar a:focus-visible,.slimstat-release-dismiss:focus-visible{outline:2px solid currentColor;outline-offset:3px}
-/* Dashboard and Plugins feature card: the SlimStat mark beside the title, feature rows in one row on wide screens, two columns, then one.
-   A full border instead of the 4px notice stripe; text starts at 52px like the license banner. */
-.notice.slimstat-release-notice{position:relative;padding-inline:52px 44px;border:1px solid #c5d9ed;border-radius:8px}
-.slimstat-release-notice::before{content:"";position:absolute;inset-inline-start:14px;top:12px;width:26px;height:26px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath fill='%23F22F46' fill-rule='evenodd' d='M0 15C0 6.71582 6.7069 0 14.9801 0C20.2546 0 24.8865 2.72788 27.5572 6.84316L19.371 15.1743H19.3643V15.1877C19.0765 15.4893 18.5946 15.496 18.2934 15.2011C18.2599 15.1743 18.2331 15.1408 18.2064 15.1005L15.9239 11.9638C13.9627 9.27614 10.047 9.03485 7.77787 11.4678L0.589029 19.1756C0.194112 17.8217 0 16.4142 0 15ZM2.69079 23.5858C5.40167 27.4665 9.89302 30.0067 14.9801 30.0067C23.2533 30.0067 29.9602 23.2909 29.9602 15.0067C29.9602 13.7399 29.8062 12.5134 29.5117 11.3405L22.604 18.3646C20.3148 20.7172 16.466 20.4424 14.5316 17.7949L12.2491 14.6582C12.0015 14.3231 11.5329 14.2426 11.1916 14.4906C11.1514 14.5174 11.1179 14.5509 11.0845 14.5845L2.69079 23.5858Z'/%3E%3C/svg%3E") center/contain no-repeat}
-.slimstat-release-notice__title{display:block;margin-bottom:2px;font-size:15px;line-height:1.4}.slimstat-release-notice a{white-space:nowrap}
-.slimstat-whats-new{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px;margin:12px -8px;padding:0;list-style:none}
-.slimstat-whats-new li{position:relative;display:grid;grid-template-columns:20px minmax(0,1fr);align-content:start;column-gap:8px;margin:0;padding:8px;border-radius:8px;transition:background-color .15s cubic-bezier(.4,0,.2,1)}
-.slimstat-whats-new li:hover{background:color-mix(in srgb,var(--wp-admin-theme-color,#2271b1) 7%,transparent)}
-.slimstat-whats-new .dashicons{grid-column:1;grid-row:1/span 3;color:var(--wp-admin-theme-color,#2271b1)}.slimstat-whats-new strong{font-size:14px}.slimstat-whats-new__why{color:#56585a}
-.slimstat-whats-new a::before{content:"";position:absolute;inset:0;border-radius:inherit}
-.slimstat-whats-new a::after{content:"\2192";content:"\2192"/"";display:inline-block;margin-inline-start:4px;transition:transform .15s cubic-bezier(.4,0,.2,1)}.slimstat-whats-new li:hover a::after{transform:translateX(3px)}
-[dir=rtl] .slimstat-whats-new a::after{content:"\2190";content:"\2190"/""}[dir=rtl] .slimstat-whats-new li:hover a::after{transform:translateX(-3px)}
-@media (min-width:1280px){.slimstat-whats-new{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}}
-@media (max-width:782px){.slimstat-whats-new{grid-template-columns:minmax(0,1fr)}.slimstat-whats-new__why{display:none}}
-/* AI Analysis leads both placements with the ✨ of "AI Analysis": a warm tint with a full border, a sparkle that settles in once and turns on hover. */
-.slimstat-release-notice .slimstat-ai-spotlight,.slimstat-release-bar a.slimstat-release-bar__ai{border:1px solid oklch(87% .07 78);background:oklch(97.5% .025 85)}
-.slimstat-release-notice .slimstat-ai-spotlight{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:12px 0 4px;padding:12px 14px;border-radius:8px}
-.slimstat-release-notice .slimstat-ai-spotlight p{flex:1 1 12em;margin:0;padding:0}.slimstat-ai-spotlight strong{margin-inline-end:4px;font-size:14px}.slimstat-ai-spotlight__how{color:#50575e}.slimstat-ai-spotlight .slimstat-ai-spark{align-self:start}
+/* AI Analysis leads the release bar with the ✨ of "AI Analysis": a warm tint with a full border, a sparkle that settles in once and turns on hover. */
+.slimstat-release-bar a.slimstat-release-bar__ai{border:1px solid oklch(87% .07 78);background:oklch(97.5% .025 85)}
 .slimstat-ai-spark{display:inline-block;flex:none;font-size:22px;line-height:1;animation:slimstat-spark .5s cubic-bezier(.22,1,.36,1) .15s backwards;transition:transform .2s cubic-bezier(.22,1,.36,1)}
-.slimstat-ai-spotlight:hover .slimstat-ai-spark,.slimstat-release-bar__ai:hover .slimstat-ai-spark{transform:rotate(15deg) scale(1.08)}
+.slimstat-release-bar__ai:hover .slimstat-ai-spark{transform:rotate(15deg) scale(1.08)}
 @keyframes slimstat-spark{from{opacity:0;transform:scale(.4) rotate(-40deg)}}
 .slimstat-release-bar a.slimstat-release-bar__ai{display:inline-flex;align-items:center;gap:6px;padding:2px 10px 2px 6px;border-radius:12px;color:#1d2327;font-weight:600;text-decoration:none}
 .slimstat-release-bar a.slimstat-release-bar__ai:hover{border-color:oklch(76% .12 75)}.slimstat-release-bar__ai .slimstat-ai-spark{font-size:14px}
-@media (prefers-reduced-motion:reduce){.slimstat-whats-new li,.slimstat-whats-new a::after,.slimstat-ai-spark{transition:none;animation:none}}
+@media (prefers-reduced-motion:reduce){.slimstat-ai-spark{transition:none;animation:none}}
 /* Locked Pro: a full tinted border instead of the 4px side stripe, led by the lock that names the problem. Red for a wrong key, amber otherwise.
    Message and actions share a row when they fit; on a wrapped row the actions start under the text. */
 .notice.slimstat-pro-license-notice{--slimstat-tone:oklch(60% .13 70);position:relative;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding-block:12px;padding-inline:52px 16px;border:1px solid oklch(86% .09 82);border-radius:8px;background:oklch(97.6% .03 88)}
