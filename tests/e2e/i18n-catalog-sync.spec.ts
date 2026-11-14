@@ -288,10 +288,9 @@ test.describe('Issue #173: i18n catalog sync', () => {
 
     for (const poFile of poFiles) {
       const content = fs.readFileSync(path.join(PLUGIN_LANGUAGES, poFile), 'utf8');
-      // Extract all msgid values (quoted strings after `msgid `)
-      const msgids = (content.match(/^msgid "(.+)"$/gm) || [])
-        .map(line => line.match(/^msgid "(.+)"$/)?.[1] ?? '')
-        .filter(Boolean);
+      // Extract all msgid values, keyed by msgctxt: gettext treats a context variant as its own entry.
+      const msgids = [...content.matchAll(/^(?:msgctxt "(.*)"\n)?msgid "(.+)"$/gm)]
+        .map(m => (m[1] !== undefined ? `${m[1]}\u0004` : '') + m[2]);
 
       const seen = new Set<string>();
       const duplicates: string[] = [];
