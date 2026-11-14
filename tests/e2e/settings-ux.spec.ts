@@ -6,7 +6,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import { unserialize as phpUnserialize } from 'php-serialize';
 import { setSettingsToggle } from './helpers/settings';
-import { snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions, getPool, closeDb } from './helpers/setup';
+import { snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions, snapshotOption, restoreOption, getPool, closeDb } from './helpers/setup';
+import { runWordPressFixture } from './helpers/chart';
 import { BASE_URL } from './helpers/env';
 
 const tabUrl = (tab: number, hash = '') => `${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=${tab}${hash}`;
@@ -30,14 +31,17 @@ test.describe('Settings redesign keeps every saved setting', () => {
   test.afterAll(async () => { await closeDb(); });
 
   test('saving any tab without changes leaves slimstat_options byte-identical', async ({ page }) => {
-    // First save of each tab: every stored value survives. Normalisation may only add keys.
+    // First save of each tab: every stored value survives. Normalisation may only add keys, store an
+    // integer default (auto_purge 420) as the posted string (readers intval() it), and store an unset
+    // toggle default 'off' as the 'no' its hidden input posts (readers test 'on' ===).
+    const same = (v: unknown) => (null !== v && 'object' === typeof v ? v : ('off' === v ? 'no' : String(v)));
     for (const tab of [1, 9, 2, 3, 4, 5, 6, 10]) {
       const before = phpUnserialize(await rawOptions()) as Record<string, unknown>;
       await page.goto(tabUrl(tab));
       await save(page);
       const after = phpUnserialize(await rawOptions()) as Record<string, unknown>;
       for (const [key, value] of Object.entries(before)) {
-        expect(after[key], `first save of tab ${tab} changed ${key}`).toEqual(value);
+        expect(same(after[key]), `first save of tab ${tab} changed ${key}`).toEqual(same(value));
       }
     }
     // Then saving again changes nothing at all.
@@ -125,16 +129,30 @@ test.describe('Settings redesign keeps every saved setting', () => {
     expect(await rawOptions()).toBe(before);
   });
 
-  test('completing the privacy review keeps a consent source whose plugin is inactive', async ({ page }) => {
-    // With WP Consent API inactive, SlimStat runs its own banner in memory; the stored choice must stay.
-    await setSlimstatOptions({ privacy_review_notice: 'yes', gdpr_enabled: 'on', consent_integration: 'wp_consent_api' });
+  test('a consent source whose plugin is inactive survives saves and the privacy review', async ({ page }) => {
+    // With WP Consent API inactive the stored choice stays selected and identifying tracking fails closed.
+    await setSlimstatOptions({ privacy_review_notice: 'yes', gdpr_enabled: 'on', consent_integration: 'wp_consent_api', use_slimstat_banner: 'off', set_tracker_cookie: 'on' });
     const before = phpUnserialize(await rawOptions()) as Record<string, unknown>;
-    await page.goto(tabUrl(9));
-    await expect(page.locator('#consent_integration'), 'the in-memory fallback must be active for this test to mean anything').toHaveValue('slimstat_banner');
-    await page.getByRole('button', { name: 'Mark privacy review as complete' }).click();
-    await page.waitForLoadState('load');
-    await expect(page.getByText('Privacy review marked as complete. No settings were changed.')).toBeVisible();
-    expect(phpUnserialize(await rawOptions())).toEqual({ ...before, privacy_review_notice: 'no' });
+    await snapshotOption('active_plugins');
+    try {
+      runWordPressFixture("<?php update_option('active_plugins', array_values(array_filter(get_option('active_plugins'), static fn($plugin) => 0 !== strpos($plugin, 'wp-consent-api/'))));");
+      await page.goto(tabUrl(9));
+      await expect(page.getByText('Required, but no working consent source: only limited counts are collected'), 'WP Consent API must be inactive for this test to mean anything').toBeVisible();
+      await expect(page.locator('#consent_integration')).toHaveValue('wp_consent_api');
+      await page.getByRole('button', { name: 'Mark privacy review as complete' }).click();
+      await page.waitForLoadState('load');
+      await expect(page.getByText('Privacy review marked as complete. No settings were changed.')).toBeVisible();
+      const reviewed = { ...before, privacy_review_notice: 'no' };
+      expect(phpUnserialize(await rawOptions())).toEqual(reviewed);
+      for (const tab of [2, 9]) {
+        await page.goto(tabUrl(tab));
+        await save(page);
+        const after = phpUnserialize(await rawOptions()) as Record<string, unknown>;
+        expect([after.consent_integration, after.use_slimstat_banner], `saving tab ${tab} changed the consent source`).toEqual(['wp_consent_api', 'off']);
+      }
+    } finally {
+      await restoreOption('active_plugins');
+    }
   });
 
   test('completing the privacy review writes only privacy_review_notice', async ({ page }) => {

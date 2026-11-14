@@ -969,12 +969,9 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
             }
         }
 
-        // Keep legacy banner toggle in sync with the selected consent integration.
-        $current_consent_integration = wp_slimstat::$settings['consent_integration'] ?? '';
-        if ('slimstat_banner' === $current_consent_integration) {
-            wp_slimstat::$settings['use_slimstat_banner'] = 'on';
-        } else {
-            wp_slimstat::$settings['use_slimstat_banner'] = 'off';
+        // Only an explicit integration save may change the legacy banner preference.
+        if (isset($posted_options['consent_integration'])) {
+            wp_slimstat::$settings['use_slimstat_banner'] = 'slimstat_banner' === (wp_slimstat::$settings['consent_integration'] ?? '') ? 'on' : 'off';
         }
 
         // Allow third-party functions to manipulate the options right before they are saved
@@ -1382,30 +1379,10 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
     </div>
 </div>
 
-<?php
-// Detect companion consent plugins to disable unavailable options in UI
-if (!function_exists('is_plugin_active')) {
-    include_once ABSPATH . 'wp-admin/includes/plugin.php';
-}
-$has_wp_consent_api     = function_exists('is_plugin_active') && is_plugin_active('wp-consent-api/wp-consent-api.php');
-// $has_real_cookie_banner = function_exists('is_plugin_active') && is_plugin_active('real-cookie-banner/index.php');
-?>
 <script>
 (function($){
     $(function(){
-        // Disable integrations that are not installed
-        var hasWpConsent = <?php echo $has_wp_consent_api ? 'true' : 'false'; ?>;
-        // var hasRCB       = <?php echo isset($has_real_cookie_banner) && $has_real_cookie_banner ? 'true' : 'false'; ?>;
-        var $ci = $('#consent_integration');
-        if(!hasWpConsent){
-            $ci.find('option[value="wp_consent_api"]').prop('disabled', true);
-            // If currently selected value is wp_consent_api but plugin is not installed, reset to default
-            if($ci.val() === 'wp_consent_api') {
-                $ci.val('slimstat_banner').trigger('change');
-            }
-        }
-        // if(!hasRCB){ $ci.find('option[value="real_cookie_banner"]').prop('disabled', true); }
-
+        // Preserve unavailable consent choices; the privacy notice explains missing sources.
         // Initialize conditional fields system (from admin.js)
         if (typeof window.SlimStatConditionalFields !== 'undefined') {
             window.SlimStatConditionalFields.init();

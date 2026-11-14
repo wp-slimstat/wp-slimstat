@@ -333,14 +333,8 @@ class wp_slimstat
 			$consent_integration = \SlimStat\Utils\Consent::getIntegrationKey();
 			self::$settings['consent_integration'] = $consent_integration;
 
-			// If WP Consent API is selected but the plugin isn't installed, fall back to
-			// SlimStat's own banner so consent enforcement stays active. Resetting to ''
-			// would leave GDPR on but with no consent mechanism — getIntegrationKey()
-			// silently picks 'slimstat_banner' but without the banner UI enabled.
-			if ('wp_consent_api' === $consent_integration && !function_exists('wp_has_consent')) {
-				$consent_integration = 'slimstat_banner';
-				self::$settings['consent_integration'] = 'slimstat_banner';
-			}
+			// An unavailable selected CMP remains selected. Switching to another source
+			// could trust its old consent cookie; Consent::piiAllowed() fails closed.
 
 			if ('' === $consent_integration && ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'))) {
 				$consent_integration = 'slimstat_banner';
