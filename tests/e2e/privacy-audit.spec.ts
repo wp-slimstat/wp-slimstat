@@ -140,6 +140,31 @@ test.describe('privacy audit: real visitor consent boundaries', () => {
     } finally { await context.close(); }
   });
 
+  for (const mode of ['on', 'no']) test(`an unavailable selected CMP stays selected and ignores old banner consent (JavaScript ${mode})`, async ({ browser, page: adminPage }) => {
+    await snapshotOption('active_plugins');
+    await setSlimstatOptions({ javascript_mode: mode, consent_integration: 'wp_consent_api', use_slimstat_banner: 'off', anonymous_tracking: 'on' });
+    runWordPressFixture("<?php require_once ABSPATH . 'wp-admin/includes/plugin.php'; deactivate_plugins('wp-consent-api/wp-consent-api.php', true);");
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      await context.addCookies([{ name: 'slimstat_gdpr_consent', value: 'accepted', url: BASE_URL }]);
+      const page = await context.newPage();
+      await page.goto(`${BASE_URL}/?privacy_audit=missing-selected-cmp`);
+      await expect.poll(() => page.evaluate(() => (window as any).SlimStatParams?.id || '')).toMatch(/^\d+\./);
+      const id = await page.evaluate(() => parseInt((window as any).SlimStatParams.id, 10));
+      const [rows]: any = await getPool().query('SELECT ip,email,username,fingerprint,visit_id FROM wp_slim_stats WHERE id=?', [id]);
+      expect(rows[0].ip).toMatch(/^[0-9a-f]{39}$/);
+      for (const key of ['email', 'username', 'fingerprint']) expect(rows[0][key] || '').toBe('');
+      expect((await context.cookies()).some(c => c.name === 'slimstat_tracking_code')).toBe(false);
+      expect(runWordPressFixture("<?php echo wp_slimstat::$settings['consent_integration'] . ':' . wp_slimstat::$settings['use_slimstat_banner'];").trim()).toBe('wp_consent_api:off');
+      await adminPage.goto(`${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=2`);
+      await expect(adminPage.locator('#consent_integration')).toHaveValue('wp_consent_api');
+      await expect(adminPage.locator('#consent_integration option[value="wp_consent_api"]')).toBeEnabled();
+      await adminPage.goto(`${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=1`);
+      await adminPage.locator('input[name="Submit"]').click();
+      expect(runWordPressFixture("<?php $s = get_option('slimstat_options'); echo $s['consent_integration'] . ':' . $s['use_slimstat_banner'];").trim()).toBe('wp_consent_api:off');
+    } finally { await context.close(); }
+  });
+
   test('server-side tracking keeps consent controls available and respects hashing after acceptance', async ({ browser }) => {
     await setSlimstatOptions({ javascript_mode: 'off', anonymous_tracking: 'on', hash_ip: 'on', set_tracker_cookie: 'off' });
     const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });

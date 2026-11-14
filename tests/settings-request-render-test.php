@@ -94,7 +94,7 @@ $settings = [1 => ['title' => 'Settings', 'rows' => ['hostile' => [
 ]]]];
 wp_slimstat::$settings['hostile'] = '</textarea><script>alert(1)</script>\\literal';
 $start = strpos($source, '$tabs_html =');
-$end = strpos($source, "<?php\n// Detect companion");
+$end = strpos($source, '<script>', $start);
 check($start !== false && $end !== false, 'settings render boundary disappeared');
 ob_start();
 eval(substr($source, $start, $end - $start));
