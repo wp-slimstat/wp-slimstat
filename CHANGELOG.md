@@ -1,5 +1,8 @@
 = 6.1.1 - 2026-11-12 =
 
+* Settings are grouped by goal. A new Privacy & GDPR tab holds consent, visitor identifiers and data retention, with a plain summary of what the saved settings do and a privacy review you can mark complete; expert options move to a new Advanced tab. Search finds any setting, a save bar shows unsaved changes, and old links to a moved setting still open it. Every saved setting keeps its value.
+* Notices are quieter. The SlimStat 6 release card no longer shows on the Dashboard and Plugins screens (it stays in the SlimStat header), the locked-license banner is one line outside License settings, and the privacy review is information, not a warning. A missing consent source still shows its own warning until it is fixed.
+* Translations: 99 reworded settings strings (tab names, labels and help text) show in English until translators update them.
 * Privacy and security: consent gates identifiers, fingerprints and queued events on every request; withdrawal stays available and no longer enriches earlier anonymous history. Sensitive URL parameters and guest comment identities are excluded.
 * Fix: Historical chart buckets retain all views across database timezone and daylight-saving changes.
 * New installations use privacy-focused defaults. Existing settings are preserved; administrators can set archive retention and mask personal data for report viewers. Global Privacy Control is honored alongside Do Not Track, and report avatars are off by default.

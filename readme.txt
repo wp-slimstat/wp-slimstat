@@ -183,6 +183,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 = 6.1.1 - 2026-11-12 =
 
+* Settings are grouped by goal, with a Privacy & GDPR tab that sums up what your privacy settings do, an Advanced tab, search and an unsaved-changes bar. Every saved setting keeps its value and old links still work. Notices are quieter, and the privacy review can be marked complete. Reworded labels show in English until translated.
 * Privacy and security: consent gates identifiers, fingerprints and queued events on every request; withdrawal stays available and no longer enriches earlier anonymous history. Sensitive URL parameters and guest comment identities are excluded.
 * Fix: Historical chart buckets retain all views across database timezone and daylight-saving changes.
 * New installations use privacy-focused defaults. Existing settings are preserved; administrators can set archive retention and mask personal data for report viewers. Global Privacy Control is honored alongside Do Not Track, and report avatars are off by default.
