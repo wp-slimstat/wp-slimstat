@@ -10,6 +10,9 @@
                 "lang": "ja",
                 "plural-forms": "nplurals=1; plural=0;"
             },
+            "Copied": [
+                ""
+            ],
             "Available with Pro": [
                 ""
             ],
@@ -41,9 +44,6 @@
                 ""
             ],
             "The report selection changed. Try copying again.": [
-                ""
-            ],
-            "Copied": [
                 ""
             ],
             "Copy failed": [

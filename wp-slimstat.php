@@ -562,20 +562,27 @@ class wp_slimstat
         load_plugin_textdomain('wp-slimstat', false, dirname(plugin_basename(__FILE__)) . '/languages');
     }
 
-    /** Ask upgraded sites to review privacy and flag identifier settings without a consent source. */
+    /**
+     * Ask upgraded sites to review privacy and flag identifier settings without a consent source.
+     * Shown on the Dashboard, Plugins and SlimStat screens only; Settings > General and Privacy carry
+     * the same status in their panels. A snooze is temporary: an unresolved problem returns.
+     */
     public static function show_privacy_review_notice(): void
     {
         if (!current_user_can('manage_options') || !class_exists('wp_slimstat_admin')) { return; }
-        $identifiers = 'on' === (self::$settings['set_tracker_cookie'] ?? 'on')
-            || ('on' !== (self::$settings['anonymize_ip'] ?? 'off') && 'on' !== (self::$settings['hash_ip'] ?? 'off'));
-        $missing = $identifiers && 'on' === (self::$settings['gdpr_enabled'] ?? 'off') && !\SlimStat\Utils\Consent::hasConsentSource();
-        $review = 'no' !== (self::$settings['privacy_review_notice'] ?? 'yes');
-        if (!$missing && !$review) { return; }
+        global $pagenow;
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen routing.
+        $page = isset($_GET['page']) && is_string($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen routing.
+        $tab = isset($_GET['tab']) ? absint($_GET['tab']) : 1;
+        if (!in_array($pagenow, ['index.php', 'plugins.php'], true) && (0 !== strpos($page, 'slim') || ('slimconfig' === $page && in_array($tab, [1, 9], true)))) { return; }
+        $missing = \SlimStat\Services\SettingsStatus::consentSourceMissing(self::$settings, \SlimStat\Utils\Consent::hasConsentSource());
+        if (!$missing && !\SlimStat\Services\SettingsStatus::privacyReviewPending(self::$settings)) { return; }
         $message = $missing
             ? __('SlimStat privacy mode is on but no working consent source is configured. Only anonymous pageview counts are enabled. Configure a consent integration before collecting identifiers.', 'wp-slimstat')
             : __('Review SlimStat privacy settings for your visitors. Existing settings are preserved. Check consent, IP protection, cookies, and archive retention; existing archives are kept until you choose an expiration period.', 'wp-slimstat');
         \wp_slimstat_admin::show_dismissible_notice('privacy-review', hash('sha256', $missing ? 'privacy-source-missing' : 'privacy-review-20261113'), $message,
-            [[__('Review privacy settings', 'wp-slimstat'), admin_url('admin.php?page=slimconfig&tab=2'), false]], 'warning');
+            [[__('Review privacy settings', 'wp-slimstat'), admin_url('admin.php?page=slimconfig&tab=9'), false]], $missing ? 'warning' : 'info', $missing ? DAY_IN_SECONDS : 7 * DAY_IN_SECONDS);
     }
 
     public static function show_migration_5460_ip_notice(): void
@@ -590,13 +597,13 @@ class wp_slimstat
 
         delete_transient('slimstat_migration_5460_ip_notice');
 
-        $settings_url = admin_url('admin.php?page=slimconfig&tab=2');
+        $settings_url = admin_url('admin.php?page=slimconfig&tab=9');
         ?>
         <div class="notice notice-warning">
             <p>
                 <strong><?php esc_html_e('SlimStat: IP privacy settings reset', 'wp-slimstat'); ?></strong><br>
-                <?php esc_html_e('This update restored full-IP storage (the 5.3.x default) by turning off IP anonymization and daily visitor hashing. If your site serves EU visitors, please review your Data Protection settings.', 'wp-slimstat'); ?>
-                &nbsp;<a href="<?php echo esc_url($settings_url); ?>"><?php esc_html_e('Review Settings → Data Protection', 'wp-slimstat'); ?></a>
+                <?php esc_html_e('This update restored full-IP storage (the 5.3.x default) by turning off IP anonymization and daily visitor hashing. If your site serves EU visitors, please review your privacy settings.', 'wp-slimstat'); ?>
+                &nbsp;<a href="<?php echo esc_url($settings_url); ?>"><?php esc_html_e('Review privacy settings', 'wp-slimstat'); ?></a>
             </p>
         </div>
         <?php

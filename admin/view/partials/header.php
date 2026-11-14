@@ -149,7 +149,7 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
     </div>
 </div>
 
-<?php if (!\SlimStat\Services\BlackFriday2026::render()) { wp_slimstat_admin::show_latest_news(null, null, null, 'bar'); } ?>
+<?php if (!\SlimStat\Services\BlackFriday2026::render()) { wp_slimstat_admin::show_latest_news(); } ?>
 
 <?php if (!empty($title)) : // One page heading on every screen, directly under the brand bar (audit A6). ?>
 <div class="slimstat-pageintro">
@@ -158,7 +158,7 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
 </div>
 <?php endif; ?>
 
-<?php \SlimStat\Services\ProLicense::render(); // Says why Pro is locked; nothing while it is licensed. ?>
+<?php \SlimStat\Services\ProLicense::render(empty($license_detail)); // Why Pro is locked: in full on the License and Pro tabs, one line elsewhere; nothing while it is licensed. ?>
 
 <?php
 if ($displayNotifications && class_exists(NotificationFactory::class)) {

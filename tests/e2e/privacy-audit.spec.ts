@@ -156,11 +156,13 @@ test.describe('privacy audit: real visitor consent boundaries', () => {
       for (const key of ['email', 'username', 'fingerprint']) expect(rows[0][key] || '').toBe('');
       expect((await context.cookies()).some(c => c.name === 'slimstat_tracking_code')).toBe(false);
       expect(runWordPressFixture("<?php echo wp_slimstat::$settings['consent_integration'] . ':' . wp_slimstat::$settings['use_slimstat_banner'];").trim()).toBe('wp_consent_api:off');
-      await adminPage.goto(`${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=2`);
+      // Consent settings live on the Privacy & GDPR tab (9) since the settings redesign.
+      await adminPage.goto(`${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=9`);
       await expect(adminPage.locator('#consent_integration')).toHaveValue('wp_consent_api');
       await expect(adminPage.locator('#consent_integration option[value="wp_consent_api"]')).toBeEnabled();
       await adminPage.goto(`${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=1`);
       await adminPage.locator('input[name="Submit"]').click();
+      await adminPage.waitForLoadState('load');
       expect(runWordPressFixture("<?php $s = get_option('slimstat_options'); echo $s['consent_integration'] . ':' . $s['use_slimstat_banner'];").trim()).toBe('wp_consent_api:off');
     } finally { await context.close(); }
   });

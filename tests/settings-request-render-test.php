@@ -23,6 +23,15 @@ function current_user_can($cap) { return $cap === 'manage_network_options' ? ($G
 function wp_die($message) { throw new LogicException($message); }
 function wp_nonce_field(...$args) {}
 function is_network_admin() { return $GLOBALS['network'] ?? false; }
+function esc_html_e($text, $domain = '') { echo esc_html($text); }
+function _n($single, $plural, $n, $domain = '') { return 1 === $n ? $single : $plural; }
+function wp_html_excerpt($text, $length, $more = '') { return substr($text, 0, $length); }
+function sanitize_title($text) { return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($text)), '-'); }
+function wp_json_encode($data, $flags = 0) { return json_encode($data, $flags); }
+function wp_specialchars_decode($text, $quote = ENT_NOQUOTES) { return htmlspecialchars_decode($text, $quote); }
+function wp_add_inline_script($handle, $data, $position = 'after') { $GLOBALS['inline_scripts'][] = $data; }
+require_once __DIR__ . '/../src/Services/SettingsStatus.php';
+eval('namespace SlimStat\\Utils; class Consent { public static function hasConsentSource() { return false; } }');
 class wp_slimstat {
     public static $wpdb;
     public static $settings = [];
@@ -32,7 +41,7 @@ class wp_slimstat {
     public static function get_fresh_defaults() { return []; }
 }
 class wp_slimstat_admin {
-    public static $config_url = '/wp-admin/admin.php?page=slimconfig&tab=';
+    public static $config_url = '/wp-admin/admin.php?page=slimconfig&amp;tab=';
     public static function show_message(...$args) {}
     public static function get_template(...$args) {}
 }
@@ -58,6 +67,22 @@ foreach (['reset-settings', 'truncate-table'] as $action) {
     eval($boundary);
     check($GLOBALS['writes'] > 0, 'authorized action did not execute');
 }
+// Completing the privacy review records the task and nothing else.
+$current_tab = 9;
+$settings = [9 => ['rows' => ['gdpr_enabled' => ['type' => 'toggle']]]];
+wp_slimstat::$settings = ['gdpr_enabled' => 'on', 'anonymize_ip' => 'no', 'set_tracker_cookie' => 'on'];
+$_REQUEST = ['slimstat_update_settings' => 'valid'];
+$_GET = ['action' => 'privacy-reviewed'];
+$_POST = [];
+$GLOBALS['allowed'] = false;
+$GLOBALS['writes'] = 0;
+try { eval($boundary); throw new RuntimeException('unauthorized review accepted'); }
+catch (LogicException $error) { check($error->getMessage() === 'Insufficient permissions.', 'wrong review denial'); }
+check(0 === $GLOBALS['writes'] && !isset(wp_slimstat::$settings['privacy_review_notice']), 'review recorded before authorization');
+$GLOBALS['allowed'] = true;
+eval($boundary);
+check(1 === $GLOBALS['writes'] && ['gdpr_enabled' => 'on', 'anonymize_ip' => 'no', 'set_tracker_cookie' => 'on', 'privacy_review_notice' => 'no'] === wp_slimstat::$settings, 'review changed a privacy setting');
+[$current_tab, $settings, $_GET, wp_slimstat::$settings] = [1, [1 => ['rows' => ['option' => ['type' => 'text']]]], ['action' => 'truncate-table'], []];
 foreach (['bad', ['valid'], ''] as $nonce) {
     $_REQUEST = ['slimstat_update_settings' => $nonce];
     $GLOBALS['writes'] = 0;
@@ -88,6 +113,7 @@ check($GLOBALS['writes'] > 0, 'network administrator action refused');
 $GLOBALS['network'] = false;
 $current_tab = 1;
 $GLOBALS['wp_locale'] = (object) ['text_direction' => 'ltr'];
+[$last_tracker_error, $last_geoip_error] = [[], []]; // Read from options at the top of the real page.
 $settings = [1 => ['title' => 'Settings', 'rows' => ['hostile' => [
     'type' => 'textarea', 'title' => 'Text', 'description' => '',
     'after_input_field' => '<input type="hidden" name="trusted-extension" value="1">',
@@ -102,6 +128,12 @@ $html = ob_get_clean();
 check(strpos($html, '&lt;/textarea&gt;&lt;script&gt;') !== false, 'textarea breakout not escaped');
 check(strpos($html, '\\literal') !== false, 'literal backslash lost on render');
 check(strpos($html, 'name="trusted-extension"') !== false, 'extension field markup removed');
+check(strpos($html, '<tr id="slimstat-setting-hostile"') !== false, 'setting row has no deep-link id');
+check(strpos($html, 'Setup status') !== false && strpos($html, 'role="search"') !== false && strpos($html, 'slimstat-save-bar__status') !== false, 'status panel, search or save bar missing');
+$index = implode('', $GLOBALS['inline_scripts'] ?? []);
+check(strpos($index, 'slimstatSettingsIndex') !== false && strpos($index, '"id":"slimstat-setting-hostile"') !== false, 'search index missing the setting');
+check(strpos($index, 'slimconfig\\u0026tab=') !== false && strpos($index, 'amp;') === false, 'search index URL keeps the HTML-escaped &amp;, so old links land on General');
+check(strpos($index, 'alert') === false && strpos($index, 'literal') === false, 'search index leaks a stored value');
 echo "PASS: settings capabilities precede destructive actions; malformed nonce/options refuse writes; textarea escaped without stripping extension fields\n";
 
 // Audit A10: on/off renders a native role="switch"; a two-way choice renders a segmented radio group.
@@ -224,7 +256,7 @@ echo "PASS: summary metric, value and details use contextual HTML filtering (rea
 function admin_url($path, $scheme = null) { return ($scheme === 'relative' ? '/wp-admin/' : 'https://example.test/wp-admin/') . $path; }
 function plugins_url($path, $plugin = '') { return 'https://example.test/wp-content/plugins/wp-slimstat' . $path; }
 $start = strpos($source, "'external_pages_script' => [");
-$end = strpos($source, "'enable_browscap' => [", $start);
+$end = strpos($source, "'mozcom_access_id' => [", $start); // Next row on the Advanced tab.
 check($start !== false && $end !== false, 'external-page settings row missing');
 $external_row = eval('return [' . substr($source, $start, $end - $start) . '];');
 $copyable_code = html_entity_decode(strip_tags($external_row['external_pages_script']['markup']), ENT_QUOTES, 'UTF-8');
