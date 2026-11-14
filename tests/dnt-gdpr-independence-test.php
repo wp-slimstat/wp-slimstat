@@ -132,7 +132,7 @@ if ($source === false) {
 }
 
 $pos_dnt      = strpos($source, 'do_not_track');
-$pos_gdpr     = strpos($source, '!$gdprEnabled');
+$pos_gdpr     = strpos($source, "'gdpr_enabled'", strpos($source, 'public static function canTrack'));
 
 dnt_assert_same(
     true,

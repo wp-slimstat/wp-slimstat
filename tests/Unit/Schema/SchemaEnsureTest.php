@@ -201,7 +201,7 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         $this->assertSame([], $report['tables']);
         $this->assertSame([], $report['indexes']);
         $this->assertSame([], $report['failed']);
-        // 14 on slim_stats (idx_vid_hash_dt joined for D68) + 2 on slim_events + 1 on
+        // 14 on slim_stats (idx_vid_hash_dt joined for D68) + 2 on slim_events + 2 on
         // slim_events_archive + 2 on slim_user_agents. slim_stats_archive inherits
         // slim_stats' set via `like` but is not reconciled, so it contributes none.
         //
@@ -209,8 +209,8 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         // construction and it would stop catching anything — so a new table is REQUIRED to
         // update this number deliberately, which is the point.
         // Ecommerce enabled: three projection indexes; the opt-in visit index is unmanaged here.
-        // Heatmaps enabled: two capture indexes; the element dictionary has none.
-        $this->assertCount(24, $report['present']);
+        // Heatmaps enabled: three capture indexes (including dictionary cleanup); the element dictionary has none.
+        $this->assertCount(27, $report['present']);
 
         // One patterned SHOW TABLES for ALL tables, then per RECONCILED table one SHOW INDEX and
         // one SHOW COLUMNS: 1 + 4 + 4 (slim_events, slim_events_archive, slim_stats,
@@ -248,7 +248,7 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         $report = Schema::ensure($this->db($tables, $indexes), 'wp_', static fn() => 'utf8mb4_unicode_ci');
         $this->assertSame([], $this->queries, 'ordinary sites incur no Ecommerce or heatmap DDL');
         $this->assertSame([], $report['failed']);
-        $this->assertCount(19, $report['present']);
+        $this->assertCount(21, $report['present']);
         $this->assertCount(11, $this->probes, 'one additional archive metadata probe on activation/upgrade, never per request');
     }
 
@@ -449,11 +449,11 @@ class SchemaEnsureTest extends WpSlimstatTestCase
 
     public function testEnsureDefersMigrationOwnedIndexes(): void
     {
-        // B2 (release review 2026-10-13): these three are prefix indexes over the whole fact
+        // B2 (release review 2026-10-13): these are prefix indexes over the whole fact
         // table, and ensure() runs on admin_init right after the update. Built there, the
         // first admin page after updating sits through them; the Migration page owns them.
         [$tables, $indexes] = $this->healthy();
-        $deferred = ['idx_goal_queries', 'idx_funnel_queries'];
+        $deferred = ['idx_goal_queries', 'idx_funnel_queries', 'idx_privacy_email'];
         $indexes['wp_slim_stats']  = array_values(array_diff($indexes['wp_slim_stats'], $deferred));
         $indexes['wp_slim_events'] = array_values(array_diff($indexes['wp_slim_events'], ['idx_events_notes_dt']));
 

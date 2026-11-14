@@ -156,6 +156,8 @@ final class Shortcode
     {
         $atts = self::attributes($atts);
         if (is_wp_error($atts)) { return self::comment($atts->get_error_message()); }
+        // Public aggregate columns must not expose a named visitor's history through filters.
+        $content = html_entity_decode((string) $content, ENT_QUOTES, 'UTF-8');
         require_once dirname(__DIR__, 2) . '/admin/view/wp-slimstat-db.php';
         // Catalog initialization and report callbacks both mutate shared report state.
         $filters = wp_slimstat_db::$filters_normalized;
@@ -164,6 +166,10 @@ final class Shortcode
         $agentTooltip = wp_slimstat::$settings['show_complete_user_agent_tooltip'] ?? 'off';
         wp_slimstat::$settings['show_complete_user_agent_tooltip'] = 'off';
         try {
+            wp_slimstat_db::init($content, false, false);
+            if ((!self::canView() || \SlimStat\Reports\ReportPrivacy::enabled()) && array_intersect(array_keys(wp_slimstat_db::$filters_normalized['columns'] ?? []), array_merge(\SlimStat\Reports\ReportPrivacy::PERSONAL, ['id', 'visit_id']))) {
+                return '';
+            }
             $catalog = self::catalog();
             foreach ($atts['columns'] as $column) {
                 if (!isset($catalog[$column])) { return self::comment(__('Invalid shortcode attribute: w.', 'wp-slimstat')); }
@@ -188,7 +194,7 @@ final class Shortcode
                 }
                 return esc_html(number_format_i18n($counts[$w]));
             }
-            wp_slimstat_db::init(html_entity_decode((string) $content, ENT_QUOTES, 'UTF-8'), false);
+            wp_slimstat_db::init($content, false);
             return self::output($atts);
         } catch (\Throwable $e) {
             return self::comment(__('This report could not load. Check reporting setup and retry.', 'wp-slimstat'));
@@ -246,7 +252,7 @@ final class Shortcode
             $query['columns'] = implode(', ', $queryColumns);
             if ('get_top' === $function) { $query['more_select'] = $expression . ' AS resource'; }
         }
-        $results = wp_slimstat_db::$function($query);
+        $results = \SlimStat\Reports\ReportPrivacy::rows(wp_slimstat_db::$function($query) ?: []);
         if (!$results) { return ''; }
         $rows = [];
         foreach ($results as $row) {
@@ -256,7 +262,7 @@ final class Shortcode
                 switch ($column) {
                     case 'count': $value = isset($row['counthits']) ? number_format_i18n($row['counthits']) : ''; break;
                     case 'display_name': $user = get_user_by('login', $row['username'] ?? ''); $value = $user ? $user->display_name : ($row['username'] ?? ''); break;
-                    case 'hostname': $value = self::canView() ? wp_slimstat::gethostbyaddr($row['ip'] ?? '') : ''; break;
+                    case 'hostname': $value = self::canView() && !\SlimStat\Reports\ReportPrivacy::enabled() ? wp_slimstat::gethostbyaddr($row['ip'] ?? '') : ''; break;
                     case 'country': $value = wp_slimstat_i18n::get_string('c-' . $value); break;
                     case 'language': $value = wp_slimstat_i18n::get_string('l-' . $value); break;
                     case 'platform': $value = wp_slimstat_i18n::get_string($value); break;

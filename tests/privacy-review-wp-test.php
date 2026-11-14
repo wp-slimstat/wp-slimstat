@@ -1,0 +1,330 @@
+<?php
+/** Real SQL checks for review findings: aggregate accuracy, session races and erasure. */
+if (PHP_SAPI !== 'cli' || !defined('DB_NAME') || !preg_match('/^tests?[-_]/', DB_NAME)) { throw new RuntimeException('Disposable test database required'); }
+$db = wp_slimstat::$wpdb;
+if ($db->get_var('SELECT DATABASE()') !== DB_NAME) { throw new RuntimeException('Disposable analytics database required'); }
+require_once WP_PLUGIN_DIR . '/wp-slimstat/admin/view/wp-slimstat-reports.php';
+wp_slimstat_reports::init(false);
+$saved = wp_slimstat::$settings;
+$user = get_current_user_id();
+$cookies = $_COOKIE;
+$stat = wp_slimstat::get_stat();
+$data = wp_slimstat::get_data_js();
+$heatmap = get_option(\SlimStat\Heatmap\Store::STATE, []);
+$prefix = $GLOBALS['wpdb']->prefix;
+$tag = 'privacy-review-' . wp_generate_uuid4();
+$ids = [];
+$failures = [];
+$check = static function ($ok, $message) use (&$failures) { if (!$ok) { $failures[] = $message; } };
+$admin = get_users(['role' => 'administrator', 'number' => 1])[0];
+try {
+    wp_slimstat::$settings = array_merge($saved, ['mask_personal_data' => 'on', 'restrict_authors_view' => 'off', 'geolocation_country' => 'off', 'gdpr_enabled' => 'on', 'anonymous_tracking' => 'on', 'use_slimstat_banner' => 'on', 'consent_integration' => 'slimstat_banner', 'do_not_track' => 'off', 'auto_purge' => 0]);
+    $row = ['dt' => wp_slimstat::now() - 120, 'resource' => '/' . $tag, 'username' => $tag, 'email' => $tag . '@example.test', 'visit_id' => 992123, 'browser_type' => 0];
+    if (!$db->insert($prefix . 'slim_stats', $row)) { throw new RuntimeException($db->last_error); }
+    $id = $ids[] = $db->insert_id;
+    if (!$db->insert($prefix . 'slim_events', ['id' => $id, 'dt' => wp_slimstat::now() - 4, 'notes' => $tag])) { throw new RuntimeException($db->last_error); }
+    $event = ['id' => $tag, 'name' => 'Event', 'dimension' => 'event_notes', 'operator' => 'equals', 'value' => $tag];
+    $resource = ['id' => $tag . '-resource', 'name' => 'Page', 'dimension' => 'resource', 'operator' => 'equals', 'value' => '/' . $tag];
+    $funnel = ['steps' => [$resource, $event]];
+    wp_set_current_user(0);
+    wp_slimstat_db::init('resource equals /' . $tag, false, false);
+    $check(1 === wp_slimstat_db::get_goal_results($event)['total'], 'masked viewer retains the exact stored event-goal count');
+    $steps = wp_slimstat_db::get_funnel_results($funnel);
+    $check([1, 1] === array_map('intval', array_column($steps, 'visitors')), 'masked viewer retains both funnel step counts');
+    // Same personal filter, same scope, both cache fill orders. Stored rules stay authorized.
+    foreach ([[$admin->ID, 0], [0, $admin->ID]] as $order => $viewers) {
+        $resource['id'] = $tag . '-cache-' . $order;
+        $funnel['steps'][0]['name'] = 'Page ' . $order;
+        foreach ($viewers as $viewer) {
+            wp_set_current_user($viewer);
+            wp_slimstat_db::init('username equals ' . $tag, false, false);
+            $expected = $viewer ? 1 : 0;
+            $chart = (new \SlimStat\Modules\Chart())->reportData(wp_slimstat_reports::$reports['slim_p1_01']['callback_args'])['data'];
+            $check($expected === (int) $chart['totals'][0]->v1 && $expected === (int) array_sum($chart['datasets']['v1']), 'chart returns exact masked/admin totals in fill order ' . $order . ' viewer ' . $viewer);
+            $check($expected === wp_slimstat_db::get_goal_results($resource)['total'], 'goal cache isolates masking in fill order ' . $order . ' viewer ' . $viewer);
+            $steps = wp_slimstat_db::get_funnel_results($funnel);
+            $check([$expected, $expected] === array_map('intval', array_column($steps, 'visitors')), 'funnel cache isolates masking in fill order ' . $order . ' viewer ' . $viewer);
+        }
+    }
+
+    // Let an ordinary anonymous request prepare its session before the consent write.
+    wp_set_current_user(0);
+    $_COOKIE = ['slimstat_gdpr_consent' => 'denied'];
+    wp_slimstat::set_data_js([]);
+    wp_slimstat::set_stat(['ip' => '198.51.100.73', 'dt' => wp_slimstat::now(), 'notes' => []]);
+    \SlimStat\Tracker\Session::ensureVisitId(true);
+    $stale = wp_slimstat::get_stat();
+    $old_visit = (int) $stale['visit_id'];
+    foreach (['earlier', 'current'] as $which) {
+        if (!$db->insert($prefix . 'slim_stats', ['visit_id' => $old_visit, 'vid_hash' => hex2bin($stale['vid_hash']), 'dt' => wp_slimstat::now(), 'resource' => '/' . $tag . '-' . $which])) { throw new RuntimeException($db->last_error); }
+        $ids[] = $db->insert_id;
+    }
+    $current = end($ids);
+    $_COOKIE['slimstat_gdpr_consent'] = 'accepted';
+    $new_visit = \SlimStat\Tracker\Session::upgradePageview($current, ['username' => $tag, 'email' => $row['email']]);
+    $check($new_visit > 0 && $new_visit !== $old_visit, 'consent detaches the current pageview');
+    $export = wp_json_encode(\SlimStat\Services\Privacy\DataExporter::exportPageviews($row['email']));
+    $check(strpos($export, '[consent:accepted:') === false && strpos($export, '[consent:accepted]') !== false, 'privacy export keeps the consent annotation without its internal proof');
+    $check(strpos($export, $row['email']) !== false, 'privacy exports still include the verified visitor identity when report masking is enabled');
+    \SlimStat\Tracker\Storage::updateRow(['id' => $current, 'visit_id' => $old_visit, 'dt_out' => wp_slimstat::now()]);
+    $actual = $db->get_row($db->prepare("SELECT visit_id,username,email,dt_out FROM {$prefix}slim_stats WHERE id=%d", $current), ARRAY_A);
+    $check($new_visit === (int) $actual['visit_id'] && $tag === $actual['username'] && $row['email'] === $actual['email'], 'in-flight anonymous follow-up cannot reattach identified history');
+    $check((int) $actual['dt_out'] > 0, 'protected ordinary follow-up still records duration');
+    $check($old_visit === (int) $db->get_var($db->prepare("SELECT visit_id FROM {$prefix}slim_stats WHERE id=%d", $ids[1])), 'earlier anonymous session remains separate');
+
+    // A shared selector must not retain the erased visitor's label if a pending
+    // ingest arrives during erasure, even when another visitor still has a click.
+    \SlimStat\Heatmap\Store::setup();
+    $selector = random_bytes(8);
+    $db->insert($prefix . 'slim_heatmap_elements', ['sel' => $selector, 'selector' => '#review', 'label' => $tag]);
+    $db->insert($prefix . 'slim_heatmap', ['id' => $id, 'page' => random_bytes(8), 'sel' => $selector, 'dt' => wp_slimstat::now()]);
+    if (!$db->insert($prefix . 'slim_stats', ['dt' => wp_slimstat::now(), 'resource' => '/' . $tag . '-other'])) { throw new RuntimeException($db->last_error); }
+    $other = $ids[] = $db->insert_id;
+    $db->insert($prefix . 'slim_heatmap', ['id' => $other, 'page' => random_bytes(8), 'sel' => $selector, 'dt' => wp_slimstat::now()]);
+    $db->insert($prefix . 'slim_heatmap', ['id' => $id, 'kind' => 1, 'page' => random_bytes(8), 'dt' => wp_slimstat::now()]);
+    $race = null;
+    $race = static function ($sql) use (&$race, $db, $prefix, $selector, $tag) {
+        if (preg_match("/^DELETE (?:h|h, e) FROM {$prefix}slim_heatmap h/", $sql)) {
+            remove_filter('query', $race);
+            $db->replace($prefix . 'slim_heatmap_elements', ['sel' => $selector, 'selector' => '#review', 'label' => $tag]);
+        }
+        return $sql;
+    };
+    add_filter('query', $race);
+    try { \SlimStat\Heatmap\Store::erase($row['email']); } finally { remove_filter('query', $race); }
+    $check(!$db->get_var($db->prepare("SELECT label FROM {$prefix}slim_heatmap_elements WHERE sel=%s", $selector)), 'erasure removes a concurrently written shared label with retention disabled');
+    $check(1 === (int) $db->get_var($db->prepare("SELECT COUNT(*) FROM {$prefix}slim_heatmap WHERE id=%d", $other)), 'erasure preserves the other visitor click count');
+    $check(0 === (int) $db->get_var($db->prepare("SELECT COUNT(*) FROM {$prefix}slim_heatmap WHERE id=%d", $id)), 'erasure removes subject clicks and scrolls without dictionary entries');
+    // Also finish erasure before a paused ingest writes its dictionary entry.
+    wp_slimstat::$settings['heatmap_capture'] = 'full';
+    wp_slimstat::$settings['heatmap_rate'] = 10000;
+    wp_slimstat::$settings['heatmap_pages'] = '';
+    add_filter('slimstat_heatmap_row_url', '__return_true');
+    $late_label = 'Late ' . substr($tag, -20);
+    $race = static function ($sql) use (&$race, $db, $prefix, $id) {
+        if (strpos($sql, "INSERT IGNORE INTO {$prefix}slim_heatmap_elements") === 0) {
+            remove_filter('query', $race);
+            $db->delete($prefix . 'slim_heatmap', ['id' => $id]);
+        }
+        return $sql;
+    };
+    add_filter('query', $race);
+    try {
+        \SlimStat\Heatmap\Store::ingest($id, wp_json_encode(['v' => 2, 's' => [['#review-late', $late_label]], 'r' => [[0, \SlimStat\Heatmap\Store::FLAG_INTERACTIVE, 0, 1, 1, 1, 1]]]));
+        $check(!$db->get_var($db->prepare("SELECT label FROM {$prefix}slim_heatmap_elements WHERE label=%s", $late_label)), 'late ingest cannot recreate an erased orphan label');
+        $written = \SlimStat\Heatmap\Store::ingest($id, wp_json_encode(['v' => 2, 's' => [['#' . $tag . '-a', $late_label], ['#' . $tag . '-b', $late_label]], 'r' => [[0, \SlimStat\Heatmap\Store::FLAG_INTERACTIVE, 0, 1, 1, 1, 1], [1, \SlimStat\Heatmap\Store::FLAG_INTERACTIVE, 1, 2, 2, 2, 2]]]));
+        $check(2 === $written && 2 === (int) $db->get_var($db->prepare("SELECT COUNT(*) FROM {$prefix}slim_heatmap_elements WHERE label=%s", $late_label)), 'ordinary multi-selector heatmap ingestion retains exact rows and labels');
+    } finally {
+        remove_filter('query', $race);
+        remove_filter('slimstat_heatmap_row_url', '__return_true');
+        $db->delete($prefix . 'slim_heatmap_elements', ['label' => $late_label]);
+    }
+    // A legacy heatmap table may have no FK. Pause ingest after its initial
+    // parent read, erase the parent, then let the pending click write proceed.
+    $legacy_prefix = 'privacy_fkless_' . substr(md5($tag), 0, 8) . '_';
+    $core_prefix = $GLOBALS['wpdb']->prefix;
+    foreach (['slim_stats', 'slim_heatmap', 'slim_heatmap_elements'] as $suffix) {
+        if (false === $db->query("CREATE TABLE {$legacy_prefix}{$suffix} LIKE {$prefix}{$suffix}")) { throw new RuntimeException($db->last_error); }
+    }
+    $GLOBALS['wpdb']->prefix = $legacy_prefix;
+    $race = static function ($sql) use (&$race, $db, $legacy_prefix) {
+        if (strpos($sql, "INSERT INTO {$legacy_prefix}slim_heatmap ") === 0) {
+            remove_filter('query', $race);
+            $db->query("DELETE FROM {$legacy_prefix}slim_stats WHERE id=1");
+        }
+        return $sql;
+    };
+    add_filter('slimstat_heatmap_row_url', '__return_true');
+    try {
+        $db->insert($legacy_prefix . 'slim_stats', ['id' => 1, 'dt' => wp_slimstat::now(), 'resource' => '/privacy-parent', 'email' => $row['email']]);
+        add_filter('query', $race);
+        \SlimStat\Heatmap\Store::ingest(1, wp_json_encode(['v' => 2, 's' => [['#privacy-parent', 'Personal label']], 'r' => [[0, 1, 0, 1, 1, 1, 1]], 'sc' => [100, 1000]]));
+        $check(0 === (int) $db->get_var("SELECT COUNT(*) FROM {$legacy_prefix}slim_heatmap"), 'FK-less delayed ingest cannot recreate clicks or scrolls after parent erasure');
+        $check(0 === (int) $db->get_var("SELECT COUNT(*) FROM {$legacy_prefix}slim_heatmap_elements"), 'FK-less delayed ingest cannot recreate personal labels after parent erasure');
+        $peer = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
+        $handle = $peer->dbh;
+        $isolation = $db->get_var('SELECT @@session.transaction_isolation');
+        $parent_batch = wp_json_encode(['v' => 2, 's' => [['#privacy-parent', 'Personal label']], 'r' => [[0, 1, 0, 1, 1, 1, 1]], 'sc' => [100, 1000]]);
+        $capture_parent = static function ($sql) use (&$click_sql, &$parent_label_sql, &$parent_lock_sql, $legacy_prefix) {
+            if (strpos($sql, "INSERT INTO {$legacy_prefix}slim_heatmap ") === 0) { $click_sql = $sql; }
+            if (strpos($sql, "INSERT IGNORE INTO {$legacy_prefix}slim_heatmap_elements") === 0) { $parent_label_sql = $sql; }
+            if (strpos($sql, "SELECT id FROM {$legacy_prefix}slim_stats WHERE email") === 0) { $parent_lock_sql = $sql; }
+            return $sql;
+        };
+        add_filter('query', $capture_parent);
+        try {
+            $db->insert($legacy_prefix . 'slim_stats', ['id' => 1, 'dt' => wp_slimstat::now(), 'resource' => '/privacy-parent', 'email' => $row['email']]);
+            \SlimStat\Heatmap\Store::ingest(1, $parent_batch);
+            \SlimStat\Services\Privacy\DataEraser::erasePageviews($row['email']);
+        } finally { remove_filter('query', $capture_parent); }
+        try {
+            foreach (['READ COMMITTED', 'REPEATABLE READ'] as $level) {
+                $db->query('SET SESSION TRANSACTION ISOLATION LEVEL ' . $level);
+                $peer->query('SET SESSION TRANSACTION ISOLATION LEVEL ' . $level);
+                foreach (['erase-first', 'ingest-first'] as $order) {
+                    $db->insert($legacy_prefix . 'slim_stats', ['id' => 1, 'dt' => wp_slimstat::now(), 'resource' => '/privacy-parent', 'email' => $row['email']]);
+                    $db->query('START TRANSACTION');
+                    $peer->query('START TRANSACTION');
+                    $first = 'erase-first' === $order ? $parent_lock_sql : $click_sql;
+                    $second = 'erase-first' === $order ? $click_sql : $parent_lock_sql;
+                    $check(false !== $db->query($first), "FK-less $level $order first statement succeeds");
+                    if ('erase-first' === $order) {
+                        \SlimStat\Heatmap\Store::erase($row['email']);
+                        $db->delete($legacy_prefix . 'slim_stats', ['id' => 1]);
+                    }
+                    $check(mysqli_query($handle, $second, MYSQLI_ASYNC), "FK-less $level $order second statement starts");
+                    $ready = [$handle]; $errors = []; $reject = [];
+                    $check(0 === mysqli_poll($ready, $errors, $reject, 0, 100000), "FK-less $level $order serializes parent and click writes");
+                    $db->query('COMMIT');
+                    $ready = [$handle]; $errors = []; $reject = [];
+                    if (1 !== mysqli_poll($ready, $errors, $reject, 8)) { throw new RuntimeException('Parent lock did not complete'); }
+                    $result = mysqli_reap_async_query($handle);
+                    $check(false !== $result, "FK-less $level $order pending statement completes");
+                    if ($result instanceof mysqli_result) { $result->free(); }
+                    if ('ingest-first' === $order) {
+                        wp_slimstat::$wpdb = $peer;
+                        try { \SlimStat\Heatmap\Store::erase($row['email']); }
+                        finally { wp_slimstat::$wpdb = $db; }
+                        $peer->delete($legacy_prefix . 'slim_stats', ['id' => 1]);
+                    }
+                    $peer->query('COMMIT');
+                    $db->query($parent_label_sql);
+                    $check(0 === (int) $db->get_var("SELECT COUNT(*) FROM {$legacy_prefix}slim_heatmap"), "FK-less $level $order leaves no orphan click/scroll");
+                    $check(0 === (int) $db->get_var("SELECT COUNT(*) FROM {$legacy_prefix}slim_heatmap_elements"), "FK-less $level $order leaves no personal label");
+                }
+            }
+            // Demonstrate the full-table lock before migration, and prove an
+            // unrelated visitor can be inserted while erasure holds locks after it.
+            $db->query('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+            $db->insert($legacy_prefix . 'slim_stats', ['id' => 1, 'dt' => wp_slimstat::now(), 'resource' => '/privacy-parent', 'email' => $row['email']]);
+            for ($n = 0; $n < 10; $n++) {
+                $db->query("INSERT INTO {$legacy_prefix}slim_stats (email, dt) VALUES " . implode(',', array_fill(0, 100, "(NULL, 100)")));
+            }
+            $indexes = $db->get_col("SHOW INDEX FROM {$legacy_prefix}slim_stats WHERE Key_name='idx_privacy_email'");
+            if ($indexes) { $db->query("ALTER TABLE {$legacy_prefix}slim_stats DROP INDEX idx_privacy_email"); }
+            foreach ([false, true] as $indexed) {
+                if ($indexed) {
+                    $migration = new \SlimStat\Migration\Migrations\CreatePrivacyEmailIndex($db, $GLOBALS['wpdb']);
+                    $check($migration->shouldRun() && $migration->run() && !$migration->shouldRun(), 'privacy email index migration builds once and verifies completion');
+                    $plan = $db->get_row('EXPLAIN ' . $parent_lock_sql, ARRAY_A);
+                    $check('idx_privacy_email' === ($plan['key'] ?? ''), 'erasure uses the email index');
+                }
+                $db->query('START TRANSACTION');
+                $db->query($parent_lock_sql);
+                $peer->query('SET innodb_lock_wait_timeout=5');
+                mysqli_query($handle, "INSERT INTO {$legacy_prefix}slim_stats (email,dt) VALUES ('unrelated@example.test',100)", MYSQLI_ASYNC);
+                $ready = [$handle]; $errors = []; $reject = [];
+                $poll = mysqli_poll($ready, $errors, $reject, 0, 200000);
+                $check(($indexed ? 1 : 0) === $poll, $indexed ? 'indexed erasure does not block an unrelated visitor insert' : 'before: unindexed erasure blocks unrelated visitor inserts');
+                $db->query('COMMIT');
+                if (!$poll) {
+                    $ready = [$handle]; $errors = []; $reject = [];
+                    if (1 !== mysqli_poll($ready, $errors, $reject, 8)) { throw new RuntimeException('Unrelated visitor insert did not complete'); }
+                }
+                $check(false !== mysqli_reap_async_query($handle), 'unrelated visitor insert succeeds');
+            }
+        } finally {
+            $db->query('ROLLBACK');
+            $peer->query('ROLLBACK');
+            $peer->close();
+            $db->query('SET SESSION TRANSACTION ISOLATION LEVEL ' . str_replace('-', ' ', $isolation));
+        }
+
+    } finally {
+        remove_filter('query', $race);
+        remove_filter('slimstat_heatmap_row_url', '__return_true');
+        $GLOBALS['wpdb']->prefix = $core_prefix;
+        foreach (['slim_heatmap', 'slim_heatmap_elements', 'slim_stats'] as $suffix) { $db->query("DROP TABLE {$legacy_prefix}{$suffix}"); }
+    }
+    // Two real connections, both orderings, and both common isolation levels.
+    // Capture the statements from the public methods so this exercises their SQL.
+    $peer = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
+    $handle = $peer->dbh;
+    $isolation = $db->get_var('SELECT @@session.transaction_isolation');
+    $capture = static function ($sql) use (&$label_sql, &$erase_sql, $prefix) {
+        if (strpos($sql, "INSERT IGNORE INTO {$prefix}slim_heatmap_elements") === 0) { $label_sql = $sql; }
+        if (strpos($sql, "DELETE h, e FROM {$prefix}slim_heatmap h") === 0) { $erase_sql = $sql; }
+        return $sql;
+    };
+    $concurrent_selector = '#' . $tag . '-concurrent';
+    $concurrent_key = hex2bin(\SlimStat\Schema\SurrogateKey::hex($concurrent_selector));
+    $batch = wp_json_encode(['v' => 2, 's' => [[$concurrent_selector, 'Personal label']], 'r' => [[0, 1, 0, 1, 1, 1, 1]]]);
+    add_filter('slimstat_heatmap_row_url', '__return_true');
+    add_filter('query', $capture);
+    try {
+        \SlimStat\Heatmap\Store::ingest($id, $batch);
+        \SlimStat\Heatmap\Store::erase($row['email']);
+    } finally { remove_filter('query', $capture); }
+    try {
+        foreach (['READ COMMITTED', 'REPEATABLE READ'] as $level) {
+            $db->query('SET SESSION TRANSACTION ISOLATION LEVEL ' . $level);
+            $peer->query('SET SESSION TRANSACTION ISOLATION LEVEL ' . $level);
+            foreach (['erase-first', 'ingest-first'] as $order) {
+                \SlimStat\Heatmap\Store::ingest($id, $batch);
+                $db->replace($prefix . 'slim_heatmap', ['id' => $other, 'page' => random_bytes(8), 'sel' => $concurrent_key, 'dt' => wp_slimstat::now()]);
+                $db->query('START TRANSACTION');
+                $first = 'erase-first' === $order ? $erase_sql : $label_sql;
+                $second = 'erase-first' === $order ? $label_sql : $erase_sql;
+                $check(false !== $db->query($first), "$level $order first write succeeds");
+                $check(mysqli_query($handle, $second, MYSQLI_ASYNC), "$level $order competing write starts");
+                $ready = [$handle]; $errors = []; $reject = [];
+                $check(0 === mysqli_poll($ready, $errors, $reject, 0, 100000), "$level $order competing write waits for the lock");
+                $db->query('COMMIT');
+                $ready = [$handle]; $errors = []; $reject = [];
+                if (1 !== mysqli_poll($ready, $errors, $reject, 8)) { throw new RuntimeException('Heatmap competing write did not finish'); }
+                $check(false !== mysqli_reap_async_query($handle), "$level $order competing write succeeds");
+                $check(!$db->get_var($db->prepare("SELECT label FROM {$prefix}slim_heatmap_elements WHERE sel=%s", $concurrent_key)), "$level $order cannot restore the erased shared label");
+                $check(0 === (int) $db->get_var($db->prepare("SELECT COUNT(*) FROM {$prefix}slim_heatmap WHERE id=%d", $id)), "$level $order removes subject clicks");
+                $check(1 === (int) $db->get_var($db->prepare("SELECT COUNT(*) FROM {$prefix}slim_heatmap WHERE id=%d", $other)), "$level $order preserves unrelated clicks");
+            }
+        }
+    } finally {
+        $db->query('ROLLBACK');
+        $peer->close();
+        $db->query('SET SESSION TRANSACTION ISOLATION LEVEL ' . str_replace('-', ' ', $isolation));
+        remove_filter('slimstat_heatmap_row_url', '__return_true');
+        $db->delete($prefix . 'slim_heatmap_elements', ['sel' => $concurrent_key]);
+    }
+    add_filter('slimstat_heatmap_row_url', '__return_true');
+    \SlimStat\Heatmap\Store::ingest($id, $batch);
+    \SlimStat\Heatmap\Store::erase($row['email']);
+    \SlimStat\Heatmap\Store::ingest($id, $batch);
+    $break_parent = static function ($sql) use ($prefix) {
+        return strpos($sql, "DELETE FROM {$prefix}slim_stats WHERE id") === 0 ? 'DELETE FROM missing_privacy_parent_fixture' : $sql;
+    };
+    $suppressed = $db->suppress_errors(true);
+    add_filter('query', $break_parent);
+    try { $failed_parent = \SlimStat\Services\Privacy\DataEraser::erasePageviews($row['email']); }
+    finally { remove_filter('query', $break_parent); $db->suppress_errors($suppressed); }
+    $check(is_wp_error($failed_parent), 'parent write failure refuses completed erasure');
+    $check(1 === (int) $db->get_var($db->prepare("SELECT COUNT(*) FROM {$prefix}slim_heatmap WHERE id=%d", $id))
+        && 'Personal label' === $db->get_var($db->prepare("SELECT label FROM {$prefix}slim_heatmap_elements WHERE sel=%s", $concurrent_key)), 'failed parent deletion rolls back heatmap erasure so it remains retryable');
+    $erased = \SlimStat\Services\Privacy\DataEraser::erasePageviews($row['email']);
+    $check(!is_wp_error($erased) && $erased['done'], 'parent erasure completes');
+    $check(!$db->get_var($db->prepare("SELECT label FROM {$prefix}slim_heatmap_elements WHERE sel=%s", $concurrent_key)), 'parent erasure removes a shared label captured between privacy callbacks');
+    remove_filter('slimstat_heatmap_row_url', '__return_true');
+    $db->delete($prefix . 'slim_heatmap_elements', ['sel' => $concurrent_key]);
+    $break_labels = static function ($sql) use ($prefix) {
+        return strpos($sql, "DELETE FROM {$prefix}slim_heatmap_elements WHERE NOT EXISTS") === 0 ? 'SELECT * FROM missing_privacy_label_fixture' : $sql;
+    };
+    $suppressed = $db->suppress_errors(true);
+    add_filter('query', $break_labels);
+    $failed = false;
+    try { \SlimStat\Heatmap\Store::erase($row['email']); } catch (RuntimeException $error) { $failed = true; }
+    finally { remove_filter('query', $break_labels); $db->suppress_errors($suppressed); }
+    $check($failed, 'failed orphan cleanup cannot report completed erasure');
+} finally {
+    foreach ($ids as $id) {
+        $db->delete($prefix . 'slim_events', ['id' => $id]);
+        $db->delete($prefix . 'slim_stats', ['id' => $id]);
+    }
+    if (isset($selector)) { $db->delete($prefix . 'slim_heatmap_elements', ['sel' => $selector]); }
+    wp_slimstat::$settings = $saved;
+    wp_set_current_user($user);
+    $_COOKIE = $cookies;
+    wp_slimstat::set_stat($stat);
+    wp_slimstat::set_data_js($data);
+    update_option(\SlimStat\Heatmap\Store::STATE, $heatmap, false);
+}
+if ($failures) { throw new RuntimeException(implode("\n", $failures)); }
+echo "PASS: exact masked goal/funnel totals, cache isolation, in-flight anonymous update and concurrent heatmap erasure\n";

@@ -1,0 +1,652 @@
+{
+  "environment": {
+    "wordpress": "7.1.4",
+    "php": "8.2.29",
+    "mysql": "8.4.0",
+    "data": "Disposable databases and synthetic visitors; outbound email and fake license calls intercepted locally."
+  },
+  "verified_source": {
+    "free": "3acb8c2e",
+    "pro": "3dad28b"
+  },
+  "free": {
+    "unit": {
+      "tests": 721,
+      "assertions": 2821
+    },
+    "integration": {
+      "tests": 229,
+      "assertions": 965
+    },
+    "source_level": "pass",
+    "phpstan": "pass",
+    "i18n": "pass",
+    "reports_escaping": {
+      "assertions": 85,
+      "status": "pass"
+    },
+    "mutations": {
+      "full_suite_killed": 319,
+      "latest_changed_targets_killed": 25,
+      "survived": 0,
+      "invalid": 0
+    },
+    "browser": {
+      "collected": 1076,
+      "initial_passes": 1052,
+      "followup_passes": 22,
+      "initial_failures": 5,
+      "initial_declared_skips": 4,
+      "initial_blocked_by_serial_precondition": 15,
+      "remaining_skips": [
+        {
+          "file": "i18n-catalog-sync.spec.ts",
+          "scenario": "es_ES locale renders without PHP errors on Settings page"
+        },
+        {
+          "file": "live-analytics-timezone-customdb.spec.ts",
+          "scenario": "Live counters work with Custom DB simulator (Tokyo timezone)"
+        }
+      ],
+      "interpretation": "Full zero-retry census plus verified follow-ups, not one uninterrupted green run. All failures and blocked cases are accounted for. Free-only, debug-off and download-budget variants were run explicitly; corrected deferred-report/CSV fixtures pass in both Free-only and Pro installs.",
+      "followups": [
+        {
+          "status": "✘",
+          "ordinal": 7,
+          "project": "admin",
+          "file": "access-log-date-pagination.spec.ts",
+          "title": "refresh_report() without forceRecent preserves date filters in AJAX",
+          "passed_in": [
+            "review2-ci-fixtures-free-after.log",
+            "review2-ci-fixtures-pro-after.log"
+          ]
+        },
+        {
+          "status": "✘",
+          "ordinal": 8,
+          "project": "admin",
+          "file": "access-log-date-pagination.spec.ts",
+          "title": "pagination next-page click preserves the custom date range",
+          "passed_in": [
+            "review2-ci-fixtures-free-after.log",
+            "review2-ci-fixtures-pro-after.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 59,
+          "project": "admin",
+          "file": "adminbar-chart-consistency.spec.ts",
+          "title": "free users see an honest decorative chart preview and Pro badges",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "✘",
+          "ordinal": 119,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "expires the open strip at the UTC boundary and on restored pages: /wp-admin/admin.php?page=slimview1",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 120,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "expires the open strip at the UTC boundary and on restored pages: /wp-admin/index.php",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 121,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "shows on SlimStat screens and the Dashboard only, and never stacks with the release notice",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 122,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "adds no request and no query; copy sends nothing and dismiss sends one same-origin request",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 123,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "dismissal moves focus and holds for this admin on both surfaces and in every browser",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 124,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "a refused dismissal keeps the strip, says so, and a retry works",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 125,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "copy writes the code, or selects it when the clipboard is unavailable or refused",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 126,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "keyboard order runs copy, pricing, dismiss, each with a visible focus ring",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 127,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "fits every width, RTL and long translations, forced colors, and is hidden in print",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 128,
+          "project": "admin",
+          "file": "black-friday-2026.spec.ts",
+          "title": "leaves the rest of the admin, the front end and other roles untouched",
+          "passed_in": [
+            "review2-free-only-browser.log"
+          ]
+        },
+        {
+          "status": "✘",
+          "ordinal": 583,
+          "project": "admin",
+          "file": "issue-14843-browscap-toggle-revert.spec.ts",
+          "title": "toggle reverts to OFF when unzip_file() fails",
+          "passed_in": [
+            "review2-browscap-budget-rerun.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 584,
+          "project": "admin",
+          "file": "issue-14843-browscap-toggle-revert.spec.ts",
+          "title": "error message includes WP_Error diagnostic details @after-fix",
+          "passed_in": [
+            "review2-browscap-budget-rerun.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 585,
+          "project": "admin",
+          "file": "issue-14843-browscap-toggle-revert.spec.ts",
+          "title": "toggle stays ON when browscap download and unzip succeed",
+          "passed_in": [
+            "review2-browscap-budget-rerun.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 586,
+          "project": "admin",
+          "file": "issue-14843-browscap-toggle-revert.spec.ts",
+          "title": "corrupt zip file produces an error and toggle reverts",
+          "passed_in": [
+            "review2-browscap-budget-rerun.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 587,
+          "project": "admin",
+          "file": "issue-14843-browscap-toggle-revert.spec.ts",
+          "title": "toggle OFF removes browscap cache and persists",
+          "passed_in": [
+            "review2-browscap-budget-rerun.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 588,
+          "project": "admin",
+          "file": "issue-14843-browscap-toggle-revert.spec.ts",
+          "title": "other settings save correctly even when browscap toggle fails",
+          "passed_in": [
+            "review2-browscap-budget-rerun.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 589,
+          "project": "admin",
+          "file": "issue-14843-browscap-toggle-revert.spec.ts",
+          "title": "toggle shows filesystem error when WP_Filesystem fails",
+          "passed_in": [
+            "review2-browscap-budget-rerun.log"
+          ]
+        },
+        {
+          "status": "✘",
+          "ordinal": 929,
+          "project": "admin",
+          "file": "ticket-14684-regression.spec.ts",
+          "title": "Chart.php and DataBuckets.php timezone offsets produce consistent results",
+          "passed_in": [
+            "review2-ci-fixtures-free-after.log",
+            "review2-ci-fixtures-pro-after.log"
+          ]
+        },
+        {
+          "status": "-",
+          "ordinal": 942,
+          "project": "admin",
+          "file": "tracker-observability.spec.ts",
+          "title": "JS __slimstatDebug is absent when debug is off",
+          "passed_in": [
+            "review2-debug-off.log"
+          ]
+        }
+      ]
+    }
+  },
+  "pro": {
+    "unit": {
+      "tests": 156,
+      "assertions": 394
+    },
+    "source_level": "pass",
+    "phpstan": "pass",
+    "i18n": "pass",
+    "scoped_runtime": "pass",
+    "free_floor": "pass",
+    "mutations": {
+      "killed": 43,
+      "survived": 0,
+      "invalid": 0
+    },
+    "browser": {
+      "tests": 50,
+      "status": "pass",
+      "detail": "50/50 passed without retries with final Free production code 3acb8c2e (pro-full-browser-free3acb8c2e-pro3dad28b run)."
+    },
+    "release_runtime_php": [
+      "7.4",
+      "8.0",
+      "8.1",
+      "8.2",
+      "8.3",
+      "8.4",
+      "8.5"
+    ],
+    "stock_php_without_intl": [
+      "7.4",
+      "8.2"
+    ]
+  },
+  "real_database_fixtures": [
+    {
+      "test": "Integration/query-topn-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/pageview-chart-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/privacy-export-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/data-eraser-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/privacy-external-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/purge-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/purge-selection-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/schema-online-mysql.php",
+      "exit_code": 0
+    },
+    {
+      "test": "Integration/data-version-mysql.php",
+      "exit_code": 0,
+      "initial_exit_code": 255,
+      "rerun": "passed after supplying required disposable fixture environment"
+    },
+    {
+      "test": "Integration/ecommerce-full-refund-mysql.php",
+      "exit_code": 0,
+      "initial_exit_code": 1,
+      "rerun": "passed after supplying required disposable fixture environment"
+    },
+    {
+      "test": "report-summary-counts-db-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "acquisition-reports-db-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "shortcode-render-wp-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "heatmap-author-scope-wp-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "heatmap-legacy-oracle-wp-test.php",
+      "exit_code": 0,
+      "initial_exit_code": 1,
+      "rerun": "passed after supplying required disposable fixture environment"
+    },
+    {
+      "test": "live-country-scope-wp-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "date-i18n-filter-suspension-wp-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "settings-cache-family-wp-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "horizon-campaign-wp-test.php",
+      "exit_code": 0,
+      "initial_exit_code": 1,
+      "rerun": "passed after supplying required disposable fixture environment"
+    },
+    {
+      "test": "notification-delivery-wp-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "notification-targeting-wp-test.php",
+      "exit_code": 0
+    },
+    {
+      "test": "privacy-data-wp-test.php",
+      "exit_code": 0
+    }
+  ],
+  "additional_real_database_checks": {
+    "historical_chart": {
+      "cases": 20,
+      "granularities": [
+        "hour",
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "database_timezones": [
+        "SYSTEM",
+        "UTC",
+        "+05:30",
+        "-07:00"
+      ],
+      "expected_views": 468,
+      "expected_distinct_terms": 24,
+      "status": "pass"
+    },
+    "multisite_acquisition": "pass on two sites: UTM/channel totals, site grouping, shares, caps and exact author restrictions",
+    "privacy": "pass: complete export, 1001-event erasure, independent archive retention, orphan labels, cache generation, masked output with unchanged counts, private attachment permissions and cleanup on success/failure/exception, AI export/erasure failure handling"
+  },
+  "before_after": "Repeated against archived development and final working code; outputs exactly match committed before.json and after.json. The after capture was repeated on 94c94447 on 2026-11-14: nine of ten facts are identical to after.json. The tenth, forged_ip, is a hash made with the daily salt, so its value differs from the 2026-11-13 capture; it is still a hash and not the address. The before capture was not repeated because development did not change. Repeated on 8141890e on 2026-11-14 with the same result: nine of ten facts identical to after.json, and all ten identical to the 94c94447 capture of the same day.",
+  "plugin_check": {
+    "free": {
+      "errors": 0,
+      "warnings": 1,
+      "remaining": [
+        "trademarked_term: existing registered wp-slimstat slug"
+      ]
+    },
+    "pro": {
+      "errors": 1,
+      "warnings": 3,
+      "remaining": [
+        "trademarked_term: existing wp-slimstat-pro slug",
+        "plugin_updater_detected: commercial Pro updater outside WordPress.org",
+        "update_modification_detected: two commercial updater hooks"
+      ]
+    },
+    "decision": "Keep registered slugs and commercial update delivery. No other findings remain. Raw Plugin Check output is not zero."
+  },
+  "pr_status": "CI and CodeRabbit results are recorded on the PRs; no merge authorized.",
+  "ci_followups": {
+    "fresh_install_retention": "Reproduced the delete-only fixture failure with archive_retention_days=420, explicitly isolated archive expiration in that fixture, and passed both InnoDB/MyISAM matrices. Independent real archive-expiration fixture remains green.",
+    "active_cookieyes": "48 consent/GDPR scenarios exercised with CookieYes active: 47 passed initially; the one stale acceptance fixture was corrected to make a real provider choice, then its full six-scenario file passed.",
+    "portable_visitor_ip": "GitHub Docker traffic does not necessarily use 127.0.0.1. Browser assertions now require a 39-character anonymous hash, then an actual IP after consent and the identical IP/visit on the next navigation. All 11 privacy scenarios passed three consecutive local runs (33 passes, no retries).",
+    "edition_and_deferred_reports": {
+      "source": "92300d63",
+      "cause": "The Free-only CI job tried to click a Pro-only CSV link, and a synchronous chart assertion depended on async loading. Historical Access Log fixtures also waited for deferred rows below the viewport.",
+      "validation": "Reproduced all three fixture defects. Corrected fixtures retain exact totals and personal-data assertions: Free-only 15 passed/one declared Pro-only skip; Pro 16 passed. Short viewport was retained in the controlled reproductions. Free-only promotion/preview run: 24 passed/two Pro-only skips. The long-running census retained the pre-fix transformed fixture; its five observed failures are all covered by these follow-ups."
+    },
+    "local_download_budget": {
+      "cause": "The local PHP web server hit its 30-second execution limit while streaming the real Browscap archive, before the intended unzip assertion. Debug-off reproduced the same timeout.",
+      "validation": "All seven success/failure/diagnostic/cleanup cases passed with debug on, GitHub download hosts allowed and a 120-second test-only PHP execution budget. No plugin behavior or assertion was weakened."
+    },
+    "banner_reopen_close_timer": {
+      "source": "3acb8c2e",
+      "ci": "Run 43588971447 on 1843a1fc, job \"Tier 2 · standard · E2E · WP 6.4 · PHP 8.2\": privacy-audit.spec.ts \"accept, reopen, withdraw and reject stale events\" failed over rest and adblock_bypass on both attempts and over ajax once (2 failed, 1 flaky, 972 passed). The four other E2E lanes passed. The same job passed on 15496035.",
+      "cause": "A decision in SlimStat's own banner adds the class that hides it at once and schedules the real close (the hidden attribute) 350 ms later. The \"Privacy settings\" link reopened the banner, and the scheduled close then shut it again. In the CI trace the link was clicked about 160 ms after Accept; the Decline click then waited on a hidden button until the 45 s timeout. The page snapshot at the timeout shows the banner closed. The test checks that the banner is hidden before it reopens it; that check passes as soon as the class is applied, so whether the reopen fell inside the 350 ms depended on how fast the first tracked request returned. The close timer and the reopen link both came in with 828b33da on this branch. 8141890e did not change this code.",
+      "fix": "Reopening the banner cancels the pending close (wp-slimstat.js, three lines; the minified tracker and its source map are rebuilt).",
+      "tests": "tests/e2e/privacy-audit.spec.ts, \"a banner reopened straight after a decision stays open\": Accept and the reopen are clicked in one task, the test waits past the scheduled close, then the banner must still be open and Decline must store the denied choice.",
+      "validation": {
+        "required_red": "banner-reopen-required-red.log: before the fix the new test fails with the banner closed (the hidden attribute is set while the class that shows it is still present).",
+        "local": "On 3acb8c2e: 721 unit / 2821 assertions, 229 integration / 965 assertions, full source suite, 85 escaping assertions (banner-reopen-test-all-3acb8c2e.log). Full Pro browser suite 50/50 passed without retries (pro-full-browser-free3acb8c2e-pro3dad28b run); the Pro site received the three changed tracker files by copy. On the working tree before it was committed as 3acb8c2e: the new test and the three accept, reopen and withdraw tests, five repeats each, 20 of 20 passed (banner-reopen-after-fix-repeat5.log); affected Free browser specs (15 consent and tracker files, 105 cases, no retries): 105 passed (free-affected-browser-banner-reopen-fix.log).",
+        "own_banner": "SlimStat's own banner, 13 scenarios on the disposable site serving 3acb8c2e: 12 passed and 1 does not apply, on Free alone and on Free with Pro (real-cmp-slimstat-free-only-banner-reopen-fix.log, real-cmp-slimstat-free-with-pro-final-banner-reopen-fix.log).",
+        "not_rerun": "Since 8141890e only wp-slimstat.js, its minified build and source map, one browser test and this file changed. No PHP file and no translatable string changed, and no registered mutation targets the tracker script, so PHPStan, the mutations, Plugin Check, the i18n check and the before/after snapshot were not repeated. The Complianz, CookieYes and Real Cookie Banner scenarios were not repeated: the changed code runs only when SlimStat's own banner is in use.",
+        "wp_env": "wp-env stack (WordPress 6.4, PHP 8.2) serving the redesign branch with this fix merged (abab486b, PR #415): privacy-audit.spec.ts 16 of 16 passed (settings-ux-wpenv-privacy-audit-merge-04cdfabd.log). Control in the same stack with the fix taken out of the served minified tracker: the three accept, reopen and withdraw tests time out at 45 s, as they did before the fix, and the new test fails; 4 of 4 failed (settings-ux-wpenv-privacy-audit-control-fix-removed.log). A first attempt did not start (saved logins from the other test site) and is not counted. On the disposable site serving abab486b, the 15 affected files and the settings spec: 113 of 113 passed (settings-ux-affected-browser-merge-04cdfabd.log).",
+        "ci_after_fix": "Run 43609594834 on 04cdfabd (the fix commit 3acb8c2e plus this file): all five E2E lanes passed. In the full-suite lane (WP 6.4, PHP 8.2) 975 passed, 74 skipped and 1 was flaky; the three accept, reopen and withdraw tests and the new test passed on the first attempt. The flaky test is october-backlog.spec.ts:182, in a file this branch does not change: it compares chart data from two page loads, the data holds the time rounded to the minute, and the two loads fell on either side of a minute boundary (1794670920 against 1794670980). It passed on the retry."
+      },
+      "limits": [
+        "The defect depended on timing: the reopen had to land within 350 ms of the decision. Four CI lanes and the earlier local runs on the disposable site passed with it present; a wp-env stack failed it on every run (last limit). The new test does not depend on timing; it was run once before the fix on the disposable site and once in the wp-env control.",
+        "The existing accept, reopen and withdraw test is unchanged. Its check that the banner is hidden passes as soon as the hiding class is applied, before the close has finished.",
+        "Not counted as results: a run of the 15 files while the site was set up for the banner scenarios (CookieYes inactive: 101 passed and the 4 CookieYes tests skipped themselves; free-affected-browser-banner-reopen-fix-wrong-site-state.log), and a run during which the machine slept (lid closed seconds after the start: 93 passed, 9 timed out and 3 did not run in 2.1 hours; free-affected-browser-banner-reopen-fix-void-machine-slept.log, with the power log beside it).",
+        "This defect was traced from CI after 8141890e had been recorded here as verified. It had been seen earlier the same day and set aside: a local wp-env run made for PR #415 failed the accept, reopen and withdraw test on all three transports, on 69257827 and on the redesign branch. The failures were listed in that pull request as failures of its base branch and were not traced, although its base branch is this one."
+      ]
+    }
+  },
+  "review_followups": {
+    "review": "Free PR #414 review 5895459386: 16 inline findings, one outside-diff finding and one test-strengthening comment addressed.",
+    "consent": "Both real direct consent endpoints detach the signed current pageview, clear its anonymous hash, preserve previous rows, keep repeated grants stable and continue the accepted visit. Missing-source requests with anonymous_tracking off ignore old identified cookies.",
+    "deferred_requests": "Actual JavaScript functions tested for withdrawal during idle/load/get, later re-consent, failover, stale-ID recovery and stale success. Old 7ef505d7 code fails the idle identity assertion; corrected code passes. Anonymous initial counting remains covered.",
+    "report_outputs": "Raw grouped identities and top/recent event notes/IPs are masked after aggregation. Pro grouped CSV/email uses the same grouping context. Outbound URL lists keep their separators; public notes/location probes and masked heatmap filters are denied.",
+    "maintenance": "Legacy schema-1 heatmaps stay available to export, erasure and retention with capture off. Archive event joins gain an id index; incomplete/failed archive cleanup cannot refresh purge health, including archive-only retention. Spam lookups cache both outcomes for five minutes without raw-IP keys.",
+    "validation": {
+      "free_test_all": "pass: unit, integration, source, production autoloader, 85 report escaping assertions",
+      "free_changed_mutations": 61,
+      "pro_test_all": "pass, including all 43 mutations and 23 Free-floor checks",
+      "browser": "30 affected Free scenarios pass across the session run and corrected privacy-file rerun (11/11); Pro native privacy/email browser scenario passes. One new missing-CMP scenario supplements the earlier census.",
+      "i18n": "POT regenerated and freshness check passes",
+      "plugin_check": "Rerun on staged artifacts; only the documented policy findings remain."
+    },
+    "pro_artifact": {
+      "source": "3dad28b",
+      "sha256": "7c4a86f835fbcde1f6d25edd289a4f3398ca03afd91ab0a5ad548d395df24163",
+      "php_matrix": "7.4, 8.0, 8.1, 8.2, 8.3, 8.4, 8.5 plus stock 7.4/8.2 without intl: pass"
+    },
+    "comparison": "Repeated original development/current fixture after the review fixes; before.json and after.json match exactly.",
+    "coderabbit_pro": "The private Pro repository plan supplies summaries but refuses code review; the bot response is recorded on PR #70. No paid plan change was made.",
+    "concurrent_consent": "A controlled interleaving reproduces lost session/cookie agreement on 302aa591. Conditional updates now keep the winning consented visit; the current native fixture, all 11 privacy browser scenarios, 718 unit tests, 229 integration tests and PHPStan pass.",
+    "legacy_consent": {
+      "source": "cf872d47",
+      "behavior": "Shared consent upgrade detaches historical null-hash rows and stays idempotent when vid_hash is absent. A server-authenticated, pageview/visit-bound marker prevents visitor note text from authorizing reuse. Conditional writes retain the concurrent winning visit; reports hide the internal proof.",
+      "native_regression": "Both real direct endpoints pass hashed, historical-null and missing-column schemas, repeated grants, controlled concurrent grants, forged markers, earlier-row isolation, exact cookie/session continuity and proof hiding. The missing-column fixture uses a connection-local temporary table.",
+      "required_red_controls": "a4bb5ca5 fails historical-null detachment and missing-column repeat stability; 7ef505d7 fails the valid personal-filter shortcode probe.",
+      "shortcode": "Valid w=id personal probes reach the privacy guard; a seeded non-personal resource query returns exactly 1.",
+      "validation": "Full test:all passes: 718 unit / 2817 assertions, 229 integration / 965 assertions, source suite and 85 escaping assertions. All 8 affected mutations killed; zero survivors/invalid. PHPStan and i18n pass. 20 affected browser scenarios passed, then all 11 privacy scenarios rerun after final marker authentication. Free and Pro real database fixtures pass. Before/after snapshots match. PCP retains only the registered Free slug warning."
+    },
+    "second_review": {
+      "review": "Free PR #414 review 5896309886: eight inline findings and three outside-diff findings addressed, plus the follow-up export-proof comment.",
+      "source": [
+        "27c389e6",
+        "d83e3fde"
+      ],
+      "consent": "Purpose-bound pageview tokens reject visit cookies and legacy generic signatures without replaying old pages. Both direct endpoints preserve consent success independently of pageview upgrade. Actual AJAX upgrades retain the visited page context. Conditional session updates preserve the winning visit, concurrent annotations and pending enrichment; ordinary late updates cannot reattach the row. Late CMP grants remain queued during preparation.",
+      "reports": "Stored goal and funnel criteria retain their aggregate meaning while public personal filters remain blocked after URL decoding. Shared aggregate cache keys include the effective masking decision. Privacy exports hide internal consent proofs while retaining the verified subject’s own data.",
+      "heatmap": "Scheduled orphan cleanup waits for the indexed schema. Erasure drains orphan labels without relying on retention. Conditional dictionary insertion prevents a paused ingestion from restoring labels after their clicks are erased. Failed orphan cleanup cannot report complete erasure.",
+      "migration": "Purpose-bound pageview tokens require clearing full-page/CDN caches; already-open old pages stop follow-ups until navigation, without replaying recorded pageviews. Documented in readme.",
+      "required_red_controls": [
+        "Old goal/cache/session/heatmap code fails eight real database assertions.",
+        "Old normalized-filter guard permits encoded notes probes.",
+        "Old late CMP handler loses an in-flight grant.",
+        "Old generic signatures accept a visit cookie as a pageview token.",
+        "A cleanup-only heatmap fix permits a late label insertion.",
+        "Old privacy exports include the internal consent proof."
+      ],
+      "validation": {
+        "test_all": "pass: 718 unit / 2819 assertions, 229 integration / 965 assertions, full source suite and 85 escaping assertions",
+        "phpstan": "pass, 158 files",
+        "changed_mutations": "50 plus 9 killed across the two review commits; no survivors or invalid mutations",
+        "browser": "All 1076 Free scenarios accounted for: 1052 initial passes plus 22 passing follow-ups, with two existing unavailable-environment skips. All 13 privacy scenarios pass in the full census. Latest complete Pro run: 50/50 passed against d83e3fde production code.",
+        "i18n": "POT regenerated; freshness passes",
+        "plugin_check": "Only the documented existing slug/commercial updater findings remain",
+        "comparison": "Final d83e3fde comparison exactly matches committed before.json and after.json.",
+        "erased_parent": "Additional real-database interleaving confirms the supported heatmap foreign key rejects an insert paused across parent erasure; no clicks or personal label survive."
+      }
+    },
+    "third_review": {
+      "review": "Free review 5897517869, shared heatmap label erasure; follow-up 4568291523, remaining Consent API listeners; public chart assertion nitpick.",
+      "heatmap": "Clicks and shared dictionary entries are deleted in one atomic statement. The ingest existence check locks the subject click through label insertion, including under READ COMMITTED. Other visitors retain their click counts; subject scrolls without labels are erased.",
+      "consent": "All four WP Consent API grant entry points queue through requestConsentUpgrade while initial preparation is locked.",
+      "chart": "Public Chart::reportData returns exactly one pageview for the authorized administrator and zero for the masked personal-filter probe in both cache fill orders.",
+      "required_red_controls": [
+        "Previous code retains the personalized shared label and loses wp_listen_for_consent_change grants during preparation.",
+        "Removing the locking read from the fixed atomic implementation restores the shared label under READ COMMITTED in the real two-connection fixture."
+      ],
+      "database_concurrency": "Actual ingest/erase SQL tested on two connections, erase-first and ingest-first, under READ COMMITTED and REPEATABLE READ; all pass.",
+      "validation_status": "40 focused Free browser scenarios and 50 Pro browser scenarios pass on 80649474. The subsequent parent-erasure change passes actual inter-callback and rollback fixtures, external analytics routing and all 0/1/500/501/1000/1001 live/archive paging cases. Final source checks and CI are recorded in PR #414.",
+      "parent_erasure": "A reproduced inter-callback gap also let new heatmap clicks restore shared labels after the heatmap eraser. The live pageview eraser now locks its exact 500-row parent batch, repeats heatmap erasure and deletes those parents in one transaction. A failed parent write rolls back the heatmap deletion and refuses completion; retry succeeds."
+    },
+    "fourth_review": {
+      "review": "Free review 5898675246: comments 4569156474 and 4569156481.",
+      "heatmap": "Atomic click/scroll INSERT locks and checks the parent pageview, including legacy tables without a foreign key. The dictionary write remains conditional on a surviving locked click.",
+      "index": "New idx_privacy_email (email prefix 191) is inline on fresh tables and deferred to an explicit online Migration-page build on existing tables. The email-scoped erasure lock is preserved; no settings or stored row values are changed.",
+      "validation": {
+        "real_database": "MySQL 8.4 and MariaDB 12.3: erased-parent interleaving, two connections, erase-first and ingest-first, READ COMMITTED and REPEATABLE READ, retry rollback and exact surviving counts pass. Before migration, an unrelated visitor insert blocks on the email locking scan; after migration it completes while the erasure lock is held. EXPLAIN selects idx_privacy_email. Migration is idempotent and verified.",
+        "required_red": "2d21be1d retains FK-less clicks/scrolls and labels after parent erasure. Removing only the new parent FOR UPDATE reproduces the concurrent orphan under READ COMMITTED.",
+        "local": "718 unit / 2818 assertions, 229 integration / 965 assertions, full source suite, production autoloader, 85 escaping assertions; 22 focused Free browser cases and 50 Pro browser cases pass.",
+        "comparison": "Original after.json behavior snapshot remains identical.",
+        "plugin_check": "Zero code errors; only the existing registered-slug policy warning. Pro updater/slug policy findings remain as documented."
+      }
+    },
+    "missing_consent_source": {
+      "source": "0f6fb8bb",
+      "cause": "When the selected WP Consent API plugin was not active, startup switched to SlimStat's own banner as the consent source, so an old slimstat_gdpr_consent=accepted cookie could allow identifying analytics. A real browser run stored the plain address 127.0.0.1. The Settings page also changed the selected integration in JavaScript, and every save synchronised the legacy banner flag.",
+      "fix": "wp-slimstat.php keeps the configured source and Consent::piiAllowed() fails closed. admin/config/index.php no longer disables or resets the unavailable saved choice, and synchronises the legacy banner preference only when the integration is explicitly submitted.",
+      "tests": "Two real visitor regressions in tests/e2e/privacy-audit.spec.ts: JavaScript mode and server mode.",
+      "validation": {
+        "required_red": "missing-cmp-red.log fails on the stored plain address before the fix.",
+        "local": "34/34 focused Free browser cases without retries; 718 unit / 2818 assertions, 229 integration / 965 assertions, full source suite, production autoloader, 85 escaping assertions; PHPStan 159 files, no errors; POT fresh, with a deliberate-stale control.",
+        "plugin_check": "Zero errors; only the existing registered-slug warning.",
+        "not_counted": "One Pro browser run was interrupted after 8 passes and is not a green run. The full Pro suite was rerun afterwards; see pro.browser."
+      }
+    },
+    "real_consent_plugins": {
+      "source": "94c94447",
+      "plugins": {
+        "complianz-gdpr": "7.5.7",
+        "cookie-law-info (CookieYes)": "3.5.9",
+        "real-cookie-banner": "5.4.3",
+        "wp-consent-api": "2.1.0"
+      },
+      "method": "Each banner plugin was installed on a disposable site and driven through its own buttons by a real browser. 13 scenarios per banner: no decision; rejection; statistics only; full accept with a return visit, events, heatmap and withdrawal; old cookies without a decision; Global Privacy Control; Do Not Track; the ajax and adblock_bypass transports; server-side tracking; anonymous mode; report totals against the database; banner plugin switched off and on again. SlimStat's own banner ran the same set; the plugin off-and-on scenario does not apply to it.",
+      "findings": {
+        "withdrawal": "Fixed. Complianz, CookieYes and Real Cookie Banner report a withdrawal only through the WP Consent API change event. The tracker ignored a deny on that event, so the HttpOnly slimstat_tracking_code cookie stayed in the browser until it expired. A deny that follows full consent on the same page now reaches the consent endpoint, which deletes the cookie. A deny with no earlier consent sends nothing.",
+        "builtin_banner_cookie": "Fixed. The tracker accepts only the cookie values accepted and denied; any other value is no decision, as on the server.",
+        "real_cookie_banner": "Limitation, not changed. Real Cookie Banner has no WP Consent API code of its own. It reaches SlimStat when SlimStat is set to Via WP Consent API, the WP Consent API plugin is active and a Real Cookie Banner service calls wp_set_consent for the statistics category in its opt-in and opt-out code; all 13 scenarios pass in that setup. The stored value real_cookie_banner was never offered in the Settings screen of any release; with it stored, a withdrawal in Real Cookie Banner 5.4.3 does not remove the tracking cookie (real-cmp-rcb-free-legacy-key-withdrawal-fails.log, run after the fix)."
+      },
+      "results": {
+        "free_only": {
+          "complianz": "13 passed",
+          "cookieyes": "13 passed",
+          "real_cookie_banner": "13 passed",
+          "slimstat_banner": "12 passed, 1 does not apply"
+        },
+        "free_with_pro": {
+          "complianz": "13 passed",
+          "cookieyes": "13 passed",
+          "real_cookie_banner": "First run: 1 failed (server-side tracking), 9 passed, 3 did not run. Rerun: 13 passed. The miss was first put down to another browser job on the same machine. That was wrong: the traces made on 8141890e (see leftover_tracking_cookie) show the scenario file left the page before Real Cookie Banner had stored the first decision.",
+          "slimstat_banner": "12 passed, 1 does not apply"
+        }
+      },
+      "validation": {
+        "required_red": "withdrawal-regression-before-fix.log: the cookie survives a real WP Consent API denial before the fix. withdrawal-no-decision-deny-ungated.log: with the earlier-consent condition removed, a deny with no earlier consent posts to the consent endpoint and the same test fails.",
+        "local": "718 unit / 2818 assertions, 229 integration / 965 assertions, full source suite, production autoloader, 85 escaping assertions on 94c94447. Affected Free browser specs (15 consent and tracker files, 103 cases, no retries): 103 passed. Full Pro browser suite 50/50. Mutations on targets changed since 69257827: 20 killed, 0 survived, 0 invalid; no registered mutation targets the tracker script, which is covered by the browser scenarios. i18n check and POT freshness pass. PHPStan was not repeated because no PHP file changed after 0f6fb8bb.",
+        "comparison": "See before_after.",
+        "plugin_check": "Repeated on 94c94447: zero errors; only the existing registered-slug warning."
+      },
+      "limits": [
+        "The banner scenarios ran on one WordPress, PHP and MySQL version (see environment) and one version of each banner plugin.",
+        "Free with Pro ran on the Free test site with Pro active; the Pro test site uses its own harness and ran the Pro suite only.",
+        "A stale-nonce 403 on a cached page leaves the tracking cookie until it expires; the cookie is ignored while consent is denied.",
+        "Changed by 8141890e (see leftover_tracking_cookie): a front-end page request now removes the tracking cookie once consent is denied, in server-side tracking mode too. A page served from a full-page cache does not reach PHP and leaves the cookie until it expires.",
+        "The scenario file is kept with the audit evidence, not in the test suite: it needs the three banner plugins installed."
+      ]
+    },
+    "leftover_tracking_cookie": {
+      "source": "8141890e",
+      "review": "CodeRabbit review 5903147935 on 15496035, two findings.",
+      "cause": "The tracker cannot read the HttpOnly slimstat_tracking_code cookie, so it reports a withdrawal only when it saw full consent on the same page. Consent withdrawn where the tracker did not see it (another tab, a decision that expired, a page where the tracker did not run) left the cookie in the browser until it expired. The cookie was ignored while consent was denied. Separately, one browser test changed active_plugins before its try block, so a failing setup step could leave the site without its banner plugin.",
+      "fix": "Session::deleteTrackingCookieWithoutConsent() runs on template_redirect at priority 1 on every front-end page request, tracked or not: when the cookie arrives and Consent::piiAllowed() is false, the cookie is expired. The tracker is unchanged: a page that starts without consent still sends no request. The comment at the withdrawal condition in wp-slimstat.js is corrected (the minified tracker is byte-identical; only the source map changed). The test setup moved into useWpConsentApiAlone(), called inside try.",
+      "tests": "tests/e2e/consent-followups.spec.ts: a cookie set with consent survives the next page (one visit), then consent is denied outside the page; the next page request removes the cookie, the tracker sends nothing and no row is stored. tests/Unit/Tracker/SessionTest.php: three cases (denied: removed; given: kept; consent not required: kept).",
+      "validation": {
+        "required_red": "leftover-cookie-required-red.log: before the fix the cookie is still present after the page request. leftover-cookie-ungated-control.log: with the consent check removed the browser test fails on the one-visit control. leftover-cookie-unit-ungated-control.log: with the consent check removed two of the three unit cases fail.",
+        "local": "On 8141890e: 721 unit / 2821 assertions, 229 integration / 965 assertions, full source suite, production autoloader, 85 escaping assertions. PHPStan 159 files, no errors. Affected Free browser specs (15 consent and tracker files, 104 cases, no retries): 104 passed. Full Pro browser suite 50/50 passed without retries (pro-full-browser-free8141890e-pro3dad28b run). Mutations on targets changed since 69257827: 25 killed, 0 survived, 0 invalid (mutations-changed-8141890e.log). No registered mutation targets the new method or the tracker script; the two hand-made controls under required_red stand in for one. i18n catalog check passes; no translatable string was added.",
+        "real_banners": "Repeated on 8141890e on the disposable site, 13 scenarios per banner, each banner on Free alone and on Free with Pro. Complianz: 13 passed alone, 13 with Pro. CookieYes: 13 passed alone, 13 with Pro. SlimStat's own banner: 12 passed and 1 does not apply, alone and with Pro. Real Cookie Banner through the WP Consent API: 13 passed with Pro. Alone, its first run failed the server-side tracking scenario (1 failed, 9 passed, 3 did not run). Three traced runs of that scenario (32 repeats, 7 failed) put the cause in the scenario file: it left the page about 40 ms after 'Continue without consent', before Real Cookie Banner had stored that decision. With a wait after that decision, as the scenario already had after the others: 12 of 12 repeats and 13 of 13 scenarios passed. Logs: real-cmp-<banner>-free-only-leftover-fix.log, real-cmp-<banner>-free-with-pro-final-leftover-fix.log, real-cmp-rcb-free-only-server-scenario-trace-1.log to -3.log, real-cmp-rcb-free-only-server-scenario-repeat12-leftover-fix.log, real-cmp-rcb-free-only-leftover-fix-rerun.log.",
+        "comparison": "See before_after.",
+        "plugin_check": "Repeated on 8141890e: zero errors; only the existing registered-slug warning."
+      },
+      "limits": [
+        "A page served from a full-page cache does not reach PHP. There the cookie stays until it expires (session_duration, 30 minutes by default) and is ignored while consent is denied.",
+        "template_redirect does not run for wp-admin, admin-ajax or REST requests; the cookie is removed by the next front-end page request.",
+        "wp_slimstat::slimtrack_server() bypasses consent by design and can set the cookie on a browser without consent. With GDPR mode on, anonymous tracking off and the tracker cookie on, that visitor's next front-end page request now removes the cookie, so later programmatic hits start a new visit.",
+        "Not counted as a result: the first real-banner run on this code failed at its first step for the three banner plugins because the test database had been restored and their setup was gone (logs in leftover-fix-no-banner-setup/). The setup was re-applied and the run repeated.",
+        "Real Cookie Banner: when a visitor leaves the page within a few tens of milliseconds of clicking 'Continue without consent', the banner does not store that decision. A later 'Accept all' from the privacy settings link stores consent, but Real Cookie Banner did not run the service's opt-in code on that page or the next one, so wp_consent_statistics stayed 'deny' and SlimStat did not track that visitor (it fails closed). Seen only in the test. The cause inside Real Cookie Banner was not investigated and later pages were not followed.",
+        "The Complianz, CookieYes, own-banner and with-Pro logs on 8141890e were made before the wait was added to the scenario file. The change only adds a wait; those runs were not repeated with it.",
+        "PHPStan, the affected Free browser specs, the banner scenarios, Plugin Check and the snapshot ran on the working tree before it was committed as 8141890e. test:all (leftover-cookie-test-all-8141890e.log), the Pro browser suite and the mutations ran on the commit itself; the Pro site received the five changed production files by copy."
+      ]
+    }
+  }
+}

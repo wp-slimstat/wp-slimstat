@@ -96,6 +96,7 @@ test.describe('AC-CON-001/002: WP Consent API Accept/Reject Flows', () => {
     installOptionMutator();
 
     // Configure SlimStat to use WP Consent API
+    await setSlimstatOption(page, 'javascript_mode', 'on');
     await setSlimstatOption(page, 'consent_integration', 'wp_consent_api');
     await setSlimstatOption(page, 'consent_level_integration', 'statistics');
     await setSlimstatOption(page, 'gdpr_enabled', 'on');
@@ -115,24 +116,24 @@ test.describe('AC-CON-001/002: WP Consent API Accept/Reject Flows', () => {
     const marker = `e2e-consent-accept-${Date.now()}`;
     const testUrl = `${BASE_URL}/?e2e_marker=${marker}`;
 
-    // Anonymous context with allow cookie set
-    const { trackingRequests, cleanup } = await withAnonymousContext(page, testUrl, [
+    // An active CMP owns the decision and may replace a manually seeded API cookie.
+    const visitor = await withAnonymousContext(page, testUrl, cookieLawInfoActive ? undefined : [
       { name: 'wp_consent_statistics', value: 'allow', domain: COOKIE_DOMAIN, path: '/' },
     ]);
 
     try {
-      // With consent granted, tracking should work either via JS (client-side request)
-      // or via server-side tracking (DB row). Check both paths.
-      if (trackingRequests.length === 0) {
-        // Server-side tracking may have created the row without JS
+      if (cookieLawInfoActive) {
+        await visitor.page.getByRole('button', { name: 'Accept All', exact: true }).click();
+      }
+      await expect.poll(async () => {
         const [rows] = await db.execute(
           'SELECT id FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1',
           [`%${marker}%`],
         ) as any;
-        expect(rows.length, 'Tracking should occur via JS or server-side after consent granted').toBeGreaterThan(0);
-      }
+        return rows.length;
+      }, { message: 'An accepted visitor must create a stored pageview' }).toBeGreaterThan(0);
     } finally {
-      await cleanup();
+      await visitor.cleanup();
     }
   });
 

@@ -189,7 +189,7 @@ class ConsentChangeRestController implements RestControllerInterface
 
 		$pageview_id = null;
 		if (!empty($pageview_id_raw)) {
-			$pageview_id_clean = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw);
+			$pageview_id_clean = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw, 'pageview');
 			if (false !== $pageview_id_clean && $pageview_id_clean > 0) {
 				$pageview_id = intval($pageview_id_clean);
 			}
@@ -332,7 +332,7 @@ class ConsentChangeRestController implements RestControllerInterface
 		$settings = \wp_slimstat::$settings;
 		$is_anonymous = ('on' === ($settings['anonymous_tracking'] ?? 'off'));
 
-		if (!$is_anonymous) {
+		if (!$is_anonymous || !Consent::piiAllowed()) {
 			return;
 		}
 
@@ -348,54 +348,10 @@ class ConsentChangeRestController implements RestControllerInterface
 				$stat['notes']    = '[user:' . $user->data->ID . ']';
 			}
 
-			$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-			$update_data = [];
-
-			if (!empty($stat['ip'])) {
-				$update_data['ip'] = $stat['ip'];
-			}
-
-			if (!empty($stat['other_ip'])) {
-				$update_data['other_ip'] = $stat['other_ip'];
-			}
-
-			if (!empty($stat['username'])) {
-				$update_data['username'] = $stat['username'];
-			}
-
-			if (!empty($stat['email'])) {
-				$update_data['email'] = $stat['email'];
-			}
-
-			if (!empty($update_data)) {
-				$GLOBALS['wpdb']->update(
-					$table,
-					$update_data,
-					['id' => $pageview_id],
-					array_fill(0, count($update_data), '%s'),
-					['%d']
-				);
-			}
-
-			if (!empty($stat['notes'])) {
-				$existing_note = $GLOBALS['wpdb']->get_var(
-					$GLOBALS['wpdb']->prepare(
-						"SELECT notes FROM {$table} WHERE id = %d AND notes LIKE %s LIMIT 1",
-						$pageview_id,
-						'%' . $GLOBALS['wpdb']->esc_like($stat['notes']) . '%'
-					)
-				);
-
-				if (empty($GLOBALS['wpdb']->last_error) && null === $existing_note) {
-					$GLOBALS['wpdb']->query(
-						$GLOBALS['wpdb']->prepare(
-							"UPDATE {$table} SET notes = CONCAT(IFNULL(notes, ''), %s) WHERE id = %d",
-							$stat['notes'],
-							$pageview_id
-						)
-					);
-				}
-			}
+			$visit_id = Session::upgradePageview($pageview_id, $stat);
+			if ($visit_id <= 0) { return; }
+			$stat['visit_id'] = $visit_id;
+			\wp_slimstat::set_stat($stat);
 
 			do_action('slimstat_consent_granted', $pageview_id, $stat);
 		}

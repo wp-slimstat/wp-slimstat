@@ -18,6 +18,33 @@ use SlimStat\Utils\Consent;
  */
 class ConsentTest extends WpSlimstatTestCase
 {
+    public function test_upgrade_flag_cannot_grant_consent(): void
+    {
+        foreach (['', 'slimstat_banner', 'real_cookie_banner'] as $integration) {
+            \wp_slimstat::$settings['consent_integration'] = $integration;
+            \wp_slimstat::$settings['anonymous_tracking'] = 'on';
+            \wp_slimstat::$settings['use_slimstat_banner'] = 'on';
+            $_COOKIE = ['slimstat_tracking_code' => 'old-tracking-cookie'];
+            $this->assertFalse(Consent::piiAllowed(true), $integration . ': an upgrade flag or tracking cookie cannot replace current consent');
+        }
+    }
+
+    public function test_cookieless_settings_do_not_authorize_other_identifiers(): void
+    {
+        \wp_slimstat::$settings['set_tracker_cookie'] = 'off';
+        \wp_slimstat::$settings['anonymize_ip'] = 'on';
+        $this->assertFalse(Consent::piiAllowed());
+    }
+
+    public function test_gpc_blocks_tracking_and_identifiers_even_with_gdpr_off(): void
+    {
+        \wp_slimstat::$settings['do_not_track'] = 'on';
+        \wp_slimstat::$settings['gdpr_enabled'] = 'off';
+        $_SERVER['HTTP_SEC_GPC'] = '1';
+        self::assertFalse(Consent::canTrack());
+        self::assertFalse(Consent::piiAllowed(true));
+    }
+
     /** @var array<string,mixed> */
     private array $baseSettings = [
         'gdpr_enabled'         => 'on',
@@ -39,13 +66,13 @@ class ConsentTest extends WpSlimstatTestCase
         \wp_slimstat::$is_programmatic_tracking = false;
 
         $_COOKIE = [];
-        unset($_SERVER['HTTP_DNT']);
+        unset($_SERVER['HTTP_DNT'], $_SERVER['HTTP_SEC_GPC']);
     }
 
     protected function tearDown(): void
     {
         $_COOKIE = [];
-        unset($_SERVER['HTTP_DNT']);
+        unset($_SERVER['HTTP_DNT'], $_SERVER['HTTP_SEC_GPC']);
         parent::tearDown();
     }
 
@@ -127,18 +154,17 @@ class ConsentTest extends WpSlimstatTestCase
     // -----------------------------------------------------------------------
 
     /**
-     * piiAllowed() must return true when the banner is disabled, preserving pre-upgrade
-     * PII behaviour for sites that never configured GDPR explicitly.
+     * A disabled banner must permit only anonymous counts while GDPR mode is on.
      *
      * @test
      */
-    public function test_pii_allowed_when_banner_disabled(): void
+    public function test_pii_blocked_when_banner_disabled(): void
     {
         \wp_slimstat::$settings['use_slimstat_banner'] = 'off';
 
-        $this->assertTrue(
+        $this->assertFalse(
             Consent::piiAllowed(),
-            'piiAllowed() must return true when use_slimstat_banner = off'
+            'A missing banner must never authorize identifiers'
         );
     }
 

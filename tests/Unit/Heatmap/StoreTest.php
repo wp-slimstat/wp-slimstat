@@ -125,7 +125,7 @@ class StoreTest extends WpSlimstatTestCase
 		$GLOBALS['slimstat_test_options'] = [Store::STATE => ['schema' => Store::SCHEMA]];
 
 		Store::purge();
-		self::assertCount(1, $this->heatmapQueries());
+		self::assertCount(2, $this->heatmapQueries());
 		self::assertMatchesRegularExpression('/^DELETE FROM wp_slim_heatmap WHERE kind IN \(0, 1\) AND dt < \d+ LIMIT 50000$/', $this->heatmapQueries()[0]);
 
 		$this->result = false;
@@ -149,11 +149,11 @@ class StoreTest extends WpSlimstatTestCase
 		Functions\when('is_wp_error')->justReturn(false);
 		Store::purge();
 		self::assertTrue($GLOBALS['slimstat_test_options'][Store::PURGE_PENDING]);
-		self::assertCount(1, $this->heatmapQueries());
+		self::assertCount(2, $this->heatmapQueries());
 		$this->result = 0;
 		Store::purge();
 		self::assertFalse($GLOBALS['slimstat_test_options'][Store::PURGE_PENDING]);
-		self::assertCount(2, $this->heatmapQueries());
+		self::assertCount(4, $this->heatmapQueries());
 		self::assertStringStartsWith('DELETE FROM `wp_options`', end($this->queries));
 	}
 
@@ -178,7 +178,7 @@ class StoreTest extends WpSlimstatTestCase
 		Functions\expect('wp_schedule_single_event')->never();
 		Store::purge();
 		self::assertTrue($GLOBALS['slimstat_test_options'][Store::PURGE_PENDING]);
-		self::assertCount(1, $this->heatmapQueries());
+		self::assertCount(2, $this->heatmapQueries());
 	}
 
 	/** Heatmap rows reach a person only through the pageview, so they are erased first. */
@@ -191,7 +191,7 @@ class StoreTest extends WpSlimstatTestCase
 		self::assertSame(['slimstat-heatmap', 'slimstat-events', 'slimstat-pageviews'], array_keys(Store::erasers($existing)));
 
 		$result = Store::erase("o'neil@example.com");
-		self::assertSame("DELETE h FROM wp_slim_heatmap h INNER JOIN wp_slim_stats s ON s.id = h.id WHERE s.email = 'o'neil@example.com'", $this->heatmapQueries()[0]);
+		self::assertSame("DELETE h, e FROM wp_slim_heatmap h INNER JOIN wp_slim_stats s ON s.id = h.id LEFT JOIN wp_slim_heatmap_elements e ON e.sel = h.sel WHERE s.email = 'o'neil@example.com'", $this->heatmapQueries()[0]);
 		self::assertTrue($result['items_removed']);
 		self::assertTrue($result['done']);
 	}
@@ -281,20 +281,20 @@ class StoreTest extends WpSlimstatTestCase
 
 		$page = bin2hex(substr(md5('/about', true), 0, 8));
 		$sel  = bin2hex(substr(md5('div.cta > a#buy', true), 0, 8));
-		$head = "(42, %d, %d, UNHEX('$page'), 1700000000, 1, 1280, 720, ";
-		$rows = [
-			sprintf($head, 0, 0) . "0, 100, 200, UNHEX('$sel'), 2500, 10000, 1)",
-			sprintf($head, 0, 199) . '0, 0, 16777215, NULL, 0, 5000, 7)',
-			sprintf($head, 0, 2) . '0, 1, 1, NULL, 1, 1, 0)',
-			sprintf($head, 1, 0) . '16777215, 0, 3000, NULL, 0, 0, 0)',
-		];
-		self::assertSame(
-			'INSERT INTO wp_slim_heatmap (id, kind, seq, page, dt, device, vw, vh, dh, x, y, sel, rx, ry, flags) VALUES '
-			. implode(', ', $rows)
-			. ' ON DUPLICATE KEY UPDATE y = GREATEST(y, VALUES(y)), dh = GREATEST(dh, VALUES(dh))',
-			$insert
-		);
-		self::assertSame("INSERT IGNORE INTO wp_slim_heatmap_elements (sel, selector, label) VALUES (UNHEX('$sel'), 'div.cta > a#buy', 'Buy now')", $elements);
+        $head = "SELECT 42 id, %d kind, %d seq, UNHEX('$page') page, 1700000000 dt, 1 device, 1280 vw, 720 vh, ";
+        $rows = [
+            sprintf($head, 0, 0) . "0 dh, 100 x, 200 y, UNHEX('$sel') sel, 2500 rx, 10000 ry, 1 flags",
+            sprintf($head, 0, 199) . '0 dh, 0 x, 16777215 y, NULL sel, 0 rx, 5000 ry, 7 flags',
+            sprintf($head, 0, 2) . '0 dh, 1 x, 1 y, NULL sel, 1 rx, 1 ry, 0 flags',
+            sprintf($head, 1, 0) . '16777215 dh, 0 x, 3000 y, NULL sel, 0 rx, 0 ry, 0 flags',
+        ];
+        self::assertSame(
+            'INSERT INTO wp_slim_heatmap (id, kind, seq, page, dt, device, vw, vh, dh, x, y, sel, rx, ry, flags) SELECT incoming.* FROM ('
+            . implode(' UNION ALL ', $rows)
+            . ') incoming WHERE EXISTS (SELECT 1 FROM wp_slim_stats WHERE id = 42 FOR UPDATE) ON DUPLICATE KEY UPDATE y = GREATEST(wp_slim_heatmap.y, VALUES(y)), dh = GREATEST(wp_slim_heatmap.dh, VALUES(dh))',
+            $insert
+        );
+		self::assertSame("INSERT IGNORE INTO wp_slim_heatmap_elements (sel, selector, label) SELECT UNHEX('$sel'), 'div.cta > a#buy', 'Buy now' FROM DUAL WHERE EXISTS (SELECT 1 FROM wp_slim_heatmap WHERE id = 42 AND sel = UNHEX('$sel') FOR UPDATE)", $elements);
 	}
 
 	/** Main level keeps clicks on interactive elements only, no scroll, no labels from plain text. */
@@ -305,14 +305,14 @@ class StoreTest extends WpSlimstatTestCase
 
 		self::assertSame(1, Store::ingest(42, $raw));
 		[$insert, $elements] = $this->heatmapQueries();
-		self::assertSame(1, substr_count($insert, '(42, '), 'one click row, no scroll row');
+		self::assertSame(1, substr_count($insert, 'SELECT 42 id, '), 'one click row, no scroll row');
 		self::assertStringNotContainsString('Private text', $elements);
 
 		// Full level stores the dead click, but its element keeps no label.
 		$this->readyToIngest('full');
 		$this->queries = [];
 		self::assertSame(3, Store::ingest(42, $raw));
-		self::assertStringContainsString("'p', '')", $this->heatmapQueries()[1]);
+		self::assertStringContainsString("'p', '' FROM DUAL", $this->heatmapQueries()[1]);
 	}
 
 	public function test_each_click_keeps_its_viewport_after_a_resize(): void
@@ -323,8 +323,8 @@ class StoreTest extends WpSlimstatTestCase
 			[1, 1, 0, 4000, 5000, 80, 20, 390, 844],
 		], [['#buy', 'Buy']]));
 		$sql = $this->heatmapQueries()[0];
-		self::assertStringContainsString('1700000000, 1, 1280, 720, 0, 50, 10', $sql);
-		self::assertStringContainsString('1700000000, 3, 390, 844, 0, 80, 20', $sql);
+		self::assertStringContainsString('1700000000 dt, 1 device, 1280 vw, 720 vh, 0 dh, 50 x, 10 y', $sql);
+		self::assertStringContainsString('1700000000 dt, 3 device, 390 vw, 844 vh, 0 dh, 80 x, 20 y', $sql);
 	}
 
 	/** Form posts arrive slashed by WordPress; the batch still decodes. A write failure throws. */

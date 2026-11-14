@@ -196,11 +196,24 @@ class Utils
 	 */
 	public static function recordErrorDetail(string $detail): void
 	{
-		$detail = \sanitize_text_field($detail);
+		// Database messages can embed visitor values; persist only a fixed diagnostic code.
+		$codes = ['duplicate_key', 'constraint_failed', 'missing_column', 'missing_table', 'value_too_long', 'deadlock', 'timeout', 'no_row_stored', 'write_failed'];
+		$code = in_array($detail, $codes, true) ? $detail : 'write_failed';
+		foreach (['duplicate' => 'duplicate_key', 'foreign key' => 'constraint_failed', 'unknown column' => 'missing_column', 'doesn\'t exist' => 'missing_table', 'data too long' => 'value_too_long', 'deadlock' => 'deadlock', 'timeout' => 'timeout', 'insert stored no row' => 'no_row_stored'] as $needle => $category) {
+			if (false !== stripos($detail, $needle)) { $code = $category; break; }
+		}
+		$detail = $code;
 
 		if ($detail !== (string) \get_option('slimstat_tracker_error_detail', '')) {
 			\wp_slimstat::update_option('slimstat_tracker_error_detail', $detail, self::DIAGNOSTIC_AUTOLOAD);
 		}
+	}
+
+	/** Remove diagnostic values persisted by older releases on the next admin visit. */
+	public static function sanitizeStoredErrorDetail(): void
+	{
+		$detail = (string) \get_option('slimstat_tracker_error_detail', '');
+		if ('' !== $detail) { self::recordErrorDetail($detail); }
 	}
 
 	/**
@@ -291,12 +304,12 @@ class Utils
 		return $secret;
 	}
 
-	public static function getValueWithChecksum($value = 0)
+	public static function getValueWithChecksum($value = 0, string $purpose = '')
 	{
-		return $value . '.' . hash_hmac('sha256', (string) $value, self::resolveSecret());
+		return $value . '.' . hash_hmac('sha256', ('' === $purpose ? '' : $purpose . '|') . (string) $value, self::resolveSecret());
 	}
 
-	public static function getValueWithoutChecksum($valueWithChecksum = '')
+	public static function getValueWithoutChecksum($valueWithChecksum = '', string $purpose = '')
 	{
 		if (!is_scalar($valueWithChecksum)) {
 			return false;
@@ -310,7 +323,7 @@ class Utils
 		[$value, $checksum] = $parts;
 		$secret = self::resolveSecret();
 
-		if (hash_equals($checksum, hash_hmac('sha256', (string) $value, $secret))) {
+		if (hash_equals($checksum, hash_hmac('sha256', ('' === $purpose ? '' : $purpose . '|') . (string) $value, $secret))) {
 			return $value;
 		}
 
@@ -319,7 +332,7 @@ class Utils
 		// Tracker::_* surface, so retiring it is not simply a matter of waiting out an
 		// upgrade window — and the two E2E specs that claim to cover it assert only
 		// `status < 500`, so they pass with it deleted. Sunset tracked as W7.
-		if (hash_equals($checksum, md5($value . $secret))) {
+		if ('' === $purpose && hash_equals($checksum, md5($value . $secret))) {
 			return $value;
 		}
 
@@ -717,7 +730,7 @@ class Utils
 				$isAnonymousTracking = ('on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off'));
 				$piiAllowed = Consent::piiAllowed();
 
-				if ($piiAllowed || $isAnonymousTracking) {
+				if ($piiAllowed) {
 					// Guard against array injection (e.g. fh[]=...) from untrusted input
 					$rawFh = is_scalar($dataJs['fh']) ? (string) $dataJs['fh'] : '';
 					$fingerprint = preg_replace('/[^a-zA-Z0-9\-_]/', '', $rawFh);

@@ -4153,6 +4153,10 @@ class wp_slimstat_admin
 
         $dimension = isset($_POST['dimension']) && is_string($_POST['dimension']) ? sanitize_text_field(wp_unslash($_POST['dimension'])) : '';
 
+        if (\SlimStat\Reports\ReportPrivacy::enabled() && in_array($dimension, \SlimStat\Reports\ReportPrivacy::PERSONAL, true)) {
+            wp_send_json_success([]);
+        }
+
         // Validate dimension exists in columns_names
         include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php');
 
@@ -4431,7 +4435,7 @@ class wp_slimstat_admin
                     $icon_url = self::get_filter_icon_url($dimension, $sanitized_value);
 
                     // For username, get user gravatar
-                    if ($dimension === 'username' && empty($icon_url)) {
+                    if ($dimension === 'username' && empty($icon_url) && apply_filters('slimstat_report_avatars', false)) {
                         $user = get_user_by('login', $sanitized_value);
                         if ($user) {
                             $icon_url = get_avatar_url($user->ID, ['size' => 32]);
@@ -5144,6 +5148,8 @@ class wp_slimstat_admin
             'anonymous visit reuse'      => __('Cookieless visit grouping', 'wp-slimstat'),
             'purge (lock limits)'         => __('Retention: database lock limits', 'wp-slimstat'),
             'purge (verified retention)'  => __('Retention: verified archive and deletion', 'wp-slimstat'),
+            'archive retention' => __('Retention: deleting expired archives', 'wp-slimstat'),
+            'purge (heatmap labels)' => __('Retention: deleting unused heatmap labels', 'wp-slimstat'),
             'purge (heatmap rows)'        => __('Retention: deleting heatmap clicks', 'wp-slimstat'),
             'heatmap insert'              => __('Tracking: saving heatmap clicks', 'wp-slimstat'),
             'heatmap delete'              => __('Heatmaps: deleting heatmap data', 'wp-slimstat'),

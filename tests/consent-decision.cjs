@@ -76,6 +76,25 @@ scope.resetPageviewFlags();
 assert.equal(sent, 1, 'completion must deliver exactly one queued grant');
 assert.equal(scope.pendingConsentUpgrade, null);
 console.log('PASS: consent granted during an in-flight pageview is delivered once after completion');
+// Exercise every actual WP Consent API grant listener while preparation is locked.
+for (const name of ['wp_consent_type_defined', 'wp_listen_for_consent_change', 'wp_consent_change', 'legacy-helper']) {
+    const marker = name === 'legacy-helper' ? '    if (typeof window.wp_listen_for_consent_change === "function")' : `    document.addEventListener("${name}"`;
+    const listenerStart = source.indexOf(marker);
+    const listenerEnd = name === 'legacy-helper' ? source.indexOf('    // Listen for consent type definitions', listenerStart) : source.indexOf('\n    });', listenerStart) + '\n    });'.length;
+    let grant;
+    scope.document = {addEventListener: (event, fn) => { grant = fn; }};
+    scope.window = {sendingSlimStatPageview: true, wp_has_consent: () => true, wp_listen_for_consent_change: fn => { grant = fn; }};
+    scope.pendingConsentUpgrade = null;
+    vm.runInContext(source.slice(listenerStart, listenerEnd), scope);
+    const before = sent;
+    grant(name === 'legacy-helper' ? 'statistics' : {detail: {statistics: 'allow', category: 'statistics', consent: 'allow'}});
+    assert.notEqual(scope.pendingConsentUpgrade, null, `${name} grant must survive the preparation lock`);
+    assert.equal(sent, before, `${name} must wait for the active preparation`);
+    scope.resetPageviewFlags();
+    assert.equal(sent, before + 1, `${name} delivers exactly one queued grant`);
+}
+console.log('PASS: all four WP Consent API grant listeners queue during locked preparation');
+
 
 const beaconDeclaration = source.match(/var useBeacon = ([^;]+); \/\/ creation and consent upgrades/);
 assert(beaconDeclaration, 'pageview beacon decision must be present');
@@ -209,7 +228,7 @@ console.log('PASS: parser-time and late bootstraps dispatch once; idle delay is 
 const queueStart = source.lastIndexOf('    function loadOfflineQueue()');
 const queueEnd = source.indexOf('    function currentSlimStatParams()', queueStart);
 let storedQueue = JSON.stringify([{p:'expired',t:Date.now()-1800001},{p:'current',t:Date.now()}, {p:'no-timestamp'}]);
-const ttlScope = vm.createContext({OFFLINE_KEY:'test',OFFLINE_MAX_AGE:1800000,localStorage:{getItem:()=>storedQueue,setItem:(k,v)=>{storedQueue=v;}}});
+const ttlScope = vm.createContext({SlimStat:{consent:{checkAllowed:()=>({mode:'full'})}},currentSlimStatParams:()=>({}),OFFLINE_KEY:'test',OFFLINE_MAX_AGE:1800000,localStorage:{getItem:()=>storedQueue,setItem:(k,v)=>{storedQueue=v;}}});
 vm.runInContext(source.slice(queueStart,queueEnd),ttlScope);
 assert.equal(ttlScope.loadOfflineQueue().length,1);
 assert.equal(JSON.parse(storedQueue)[0].p,'current');
@@ -220,3 +239,122 @@ assert.equal(offline[0].t,originalTime,'failed replay must not renew its expiry'
 sessionPending=[{p:'expired-session',t:Date.now()-1800001}]; scope.restoreOfflineReplays();
 assert.equal(sessionPending.length,0); assert(!offline.some(item=>item.p==='expired-session'));
 console.log('PASS: 30-minute expiry prunes shared and session queues and survives retries');
+
+// Exercise the real withdrawal cleanup and a retry created before that withdrawal.
+const changeStart = source.indexOf('    function maybeEmitConsentChange(');
+const changeEnd = source.indexOf('\n    function ', changeStart + 1);
+const removed = [];
+const revokeScope = {consentGeneration: 0, pendingInteractions: ['private-click'], lastConsentSnapshot: 'true|full|cmp_allowed',
+    localStorage: {removeItem: key => removed.push(key)}, sessionStorage: {removeItem: key => removed.push(key)},
+    OFFLINE_REPLAY_KEY: 'slimstat_offline_replay', PENDING_SESSION_KEY: 'slimstat_pending_session',
+    currentSlimStatParams: () => ({}), slimstatConsentAllowed: () => ({allowed: true, mode: 'full'})};
+vm.createContext(revokeScope);
+vm.runInContext(source.slice(changeStart, changeEnd), revokeScope);
+revokeScope.maybeEmitConsentChange({allowed: false, mode: 'blocked', reason: 'cmp_denied'});
+assert.equal(revokeScope.consentGeneration, 1);
+assert.equal(revokeScope.pendingInteractions.length, 0);
+assert.deepEqual(removed.sort(), ['slimstat_offline_queue', 'slimstat_offline_replay', 'slimstat_pending_session'].sort());
+const processStart = source.indexOf('    function processQueueItem(');
+const processEnd = source.indexOf('\n    function ', processStart + 1);
+vm.runInContext(source.slice(processStart, processEnd), revokeScope);
+let staleRejected = false;
+revokeScope.processQueueItem({consentGeneration: 0, payload: 'id=old&no=private'}, result => { staleRejected = result.rejected; });
+assert.equal(staleRejected, true, 'a later grant cannot revive a retry from before withdrawal');
+console.log('PASS: withdrawal clears pending/device data and rejects delayed retries after re-consent');
+
+scope.navigator = {globalPrivacyControl: true};
+assert.equal(scope.slimstatConsentAllowed({...settings, gdpr_enabled: 'off', respect_dnt: 'on'}, {}).allowed, false);
+console.log('PASS: Global Privacy Control blocks tracking even with consent mode disabled');
+
+// Deterministic races against the actual pageview preparation and transport code.
+async function preparationAndTransportRaces() {
+    const pageStart = source.indexOf('    function sendPageview(');
+    const pageEnd = source.indexOf('\n    // -------------------------- Consent Management', pageStart);
+    const settle = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
+    for (const phase of ['idle', 'load', 'get', 'unchanged', 'anonymous']) {
+        let mode = phase === 'anonymous' ? 'anonymous' : 'full';
+        let idleRun, resolveLoad, resolveGet, gets = 0;
+        const payloads = [], fingerprints = [];
+        const params = {id: null, set_tracker_cookie: 'on'};
+        const env = vm.createContext({
+            consentGeneration: 0, pageviewInProgress: false, inflightPageview: false,
+            pendingConsentUpgrade: null, lastPageviewPayload: '', lastPageviewSentAt: 0,
+            extractSlimStatParams() {}, currentSlimStatParams: () => params,
+            slimstatConsentAllowed: () => {
+                // The initial anonymous decision itself advances the generation.
+                if (phase === 'anonymous') env.consentGeneration = 1;
+                return {allowed: true, mode};
+            },
+            window: {requestIdleCallback: fn => { idleRun = fn; }},
+            SlimStat: {empty: value => !value}, isEmpty: value => !value,
+            buildPageviewBase: (p, allow) => 'action=slimtrack&res=page' + (allow ? '&sid=old-private-session' : ''),
+            buildSlimStatData: () => '&fh=' + (fingerprints.at(-1)?.visitorId || ''),
+            initFingerprintHash: value => fingerprints.push(value),
+            sendToServer: (payload, beacon, opts) => { payloads.push(payload); opts.onComplete(true); },
+            setTimeout: fn => fn(), clearSessionState() {}, PENDING_SESSION_KEY: 'pending',
+            FingerprintJS: {load: () => new Promise(resolve => { resolveLoad = resolve; })},
+        });
+        vm.runInContext(source.slice(pageStart, pageEnd), env);
+        env.sendPageview();
+        const revoke = () => { env.consentGeneration++; mode = 'anonymous'; };
+        if (phase === 'idle') revoke();
+        idleRun();
+        if (phase !== 'idle' && phase !== 'anonymous') {
+            if (phase === 'load') revoke();
+            resolveLoad({get: () => { gets++; return new Promise(resolve => { resolveGet = resolve; }); }});
+            await settle();
+            if (phase !== 'load') {
+                if (phase === 'get') { revoke(); mode = 'full'; } // revoke then grant again
+                resolveGet({visitorId: 'old-private-fingerprint', components: {}});
+                await settle();
+            }
+        }
+        if (['idle', 'load', 'get'].includes(phase)) {
+            assert.equal(payloads.length, 0, `${phase}: no stale identity is sent`);
+            assert.equal(fingerprints.length, 0, `${phase}: no stale fingerprint is persisted`);
+            if (phase !== 'get') assert.equal(gets, 0, `${phase}: no fingerprint collection starts`);
+        } else {
+            assert.equal(payloads.length, 1, `${phase}: ordinary pageview still works`);
+            assert.equal(payloads[0].includes('sid='), phase === 'unchanged');
+        }
+        assert.equal(env.window.sendingSlimStatPageview, false, `${phase}: pageview lock released`);
+    }
+    for (const response of [{status: 500, body: ''}, {status: 403, body: ''}, {status: 200, body: '-101'}, {status: 200, body: '77.signed'}]) {
+        const requests = [], results = [];
+        const params = {id: '12.signed', ajaxurl_rest: '/rest', ajaxurl_ajax: '/ajax', is_logged_in: '1'};
+        const env = vm.createContext({
+            consentGeneration: 0, currentSlimStatParams: () => params,
+            slimstatConsentAllowed: () => ({allowed: true, mode: 'full'}),
+            shouldValidateIdWithXHR: () => false, isEmpty: value => !value,
+            buildTransportOrder: () => ['rest_pretty', 'ajax'],
+            XMLHttpRequest: function () { requests.push(this); this.open = () => {}; this.setRequestHeader = () => {}; this.send = () => {}; },
+            rememberTransportFailure() {}, rememberTransportSuccess() {},
+        });
+        vm.runInContext(source.slice(processStart, processEnd), env);
+        env.processQueueItem({consentGeneration: 0, payload: 'action=slimtrack&id=12.signed&fh=private', useBeacon: false}, result => results.push(result));
+        assert.equal(requests.length, 1);
+        env.consentGeneration++; // a withdrawal followed by a new grant
+        Object.assign(requests[0], {readyState: 4, status: response.status, responseText: response.body});
+        requests[0].onreadystatechange();
+        requests[0].onreadystatechange();
+        assert.equal(requests.length, 1, 'stale response cannot cause failover or stale-ID replay');
+        assert.equal(results.length, 1, 'stale completion delivered once');
+        assert.equal(results[0].rejected, true);
+        assert.equal(params.id, '12.signed', 'stale success cannot restore an identifier');
+    }
+    console.log('PASS: idle/fingerprint races, anonymous initial counts, revoked transport failover/recovery and stale success are covered');
+}
+preparationAndTransportRaces().catch(error => { console.error(error); process.exitCode = 1; });
+
+const setupSource = fs.readFileSync(`${__dirname}/e2e/helpers/setup.ts`, 'utf8');
+const configStart = setupSource.indexOf('function activePhpConfig(');
+const configEnd = setupSource.indexOf('\nexport function', configStart);
+const configScope = vm.createContext({});
+vm.runInContext(setupSource.slice(configStart, configEnd).replace('content: string): string', 'content)'), configScope);
+const cronPattern = /\bdefine\s*\(\s*['"]DISABLE_WP_CRON['"]\s*,\s*true\s*\)/i;
+for (const comment of ["// define('DISABLE_WP_CRON', true);", "# define('DISABLE_WP_CRON', true);", "/* define('DISABLE_WP_CRON', true); */"]) {
+    assert.equal(cronPattern.test(configScope.activePhpConfig(comment)), false, 'commented cron definition is inactive');
+}
+assert.equal(cronPattern.test(configScope.activePhpConfig("define( 'DISABLE_WP_CRON', true );")), true);
+assert.equal(configScope.activePhpConfig("define('URL', 'https://example.test/#path');"), "define('URL', 'https://example.test/#path');");
+console.log('PASS: wp-config cron detection ignores comments and preserves quoted URL values');

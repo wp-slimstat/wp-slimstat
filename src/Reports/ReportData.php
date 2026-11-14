@@ -35,7 +35,7 @@ final class ReportData {
 			);
 		}
 		$rows = call_user_func( $args['raw'], $args );
-		return is_array( $rows ) ? $rows : array();
+		return is_array( $rows ) ? ReportPrivacy::rows( $rows, $args['column_group'] ?? null ) : array();
 	}
 
 	/**

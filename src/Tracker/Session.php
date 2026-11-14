@@ -64,7 +64,7 @@ class Session
 		// which is both the stranger-merging collision X3 measured and the new-id-per-
 		// bucket churn D68 names.
 		$piiAllowed = Consent::piiAllowed($isConsentUpgrade);
-		if ($isAnonymousTracking && !$piiAllowed && !$hasCmpConsent) {
+		if (!$piiAllowed) {
 			$stat = \wp_slimstat::get_stat();
 
 			// Hex, not raw bytes: $stat travels through sanitize_text_field() at both
@@ -171,6 +171,47 @@ class Session
 		return false;
 	}
 
+	/** Detach a signed current pageview once, including on pre-vid_hash schemas. */
+	public static function upgradePageview(int $pageview_id, array $updates): int
+	{
+		if ($pageview_id <= 0 || !Consent::piiAllowed()) { return 0; }
+		$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+		$has_hash = in_array('vid_hash', Storage::presentColumns($table), true);
+		for ($attempt = 0; $attempt < 3; $attempt++) {
+			$current = $db->get_row($db->prepare("SELECT * FROM {$table} WHERE id = %d", $pageview_id), ARRAY_A);
+			if (!$current || !empty($db->last_error)) { return 0; }
+			// Null hashes also occur on historical rows; only our authenticated annotation proves separation.
+			$notes = (string) ($current['notes'] ?? '');
+			$detached = false !== strpos($notes, self::consentMarker($pageview_id, (int) $current['visit_id']));
+			$visit_id = $detached ? (int) $current['visit_id'] : VisitIdGenerator::generateNextVisitId();
+			if ($visit_id <= 0) { return 0; }
+			if (!$detached) { $notes .= self::consentMarker($pageview_id, $visit_id); }
+			if (!empty($updates['notes']) && false === strpos($notes, $updates['notes'])) { $notes .= $updates['notes']; }
+			$write = array_merge($updates, ['notes' => $notes, 'visit_id' => $visit_id]);
+			if ($has_hash) { $write['vid_hash'] = null; }
+			$same = true;
+			foreach ($write as $key => $value) {
+				if (($current[$key] ?? null) !== $value && (string) ($current[$key] ?? '') !== (string) $value) { $same = false; break; }
+			}
+			if ($same) { return $visit_id; }
+			// Compare the read state so acknowledgements cannot overwrite another session or annotation.
+			$where = ['id' => $pageview_id, 'visit_id' => $current['visit_id'], 'notes' => $current['notes']];
+			if ($has_hash) { $where['vid_hash'] = $current['vid_hash']; }
+			$updated = $db->update($table, $write, $where);
+			if (false === $updated) { return 0; }
+			if ($updated > 0) { return $visit_id; }
+			// Reread the winner and retry our enrichment, preserving its session and annotations.
+		}
+		return 0;
+	}
+
+	/** Notes can contain visitor-supplied referrers, so a plain annotation cannot authorize reuse. */
+	private static function consentMarker(int $pageview_id, int $visit_id): string
+	{
+		return '[consent:accepted:' . hash_hmac('sha256', 'consent-upgrade|' . $pageview_id . '|' . $visit_id, \wp_slimstat::$settings['secret']) . ']';
+	}
+
 	/**
 	 * Set or extend the tracking cookie.
 	 *
@@ -190,9 +231,10 @@ class Session
 
 		$piiAllowed = Consent::piiAllowed($isConsentUpgrade);
 		$cookieEnabled = !empty(\wp_slimstat::$settings['set_tracker_cookie']) && 'on' == \wp_slimstat::$settings['set_tracker_cookie'];
-		$shouldSetCookie = apply_filters('slimstat_set_visit_cookie', ($force || ($piiAllowed && $cookieEnabled)));
+		// An upgrade cannot override consent or the site's cookieless setting.
+		$shouldSetCookie = apply_filters('slimstat_set_visit_cookie', $piiAllowed && $cookieEnabled);
 
-		if (!$shouldSetCookie) {
+		if (!$piiAllowed || !$cookieEnabled || !$shouldSetCookie) {
 			return false;
 		}
 
@@ -244,6 +286,20 @@ class Session
 		unset($_COOKIE['slimstat_tracking_code']);
 
 		return true;
+	}
+
+	/**
+	 * Expire a tracking cookie that arrives while identifying analytics is not allowed.
+	 *
+	 * The tracker cannot read the HttpOnly cookie and reports a withdrawal only when it saw
+	 * consent on the same page. Consent withdrawn anywhere else (another tab, an expired
+	 * decision, a page where the tracker did not run) leaves the cookie for the page request.
+	 */
+	public static function deleteTrackingCookieWithoutConsent(): void
+	{
+		if (isset($_COOKIE['slimstat_tracking_code']) && !Consent::piiAllowed()) {
+			self::deleteTrackingCookie();
+		}
 	}
 
 	/**

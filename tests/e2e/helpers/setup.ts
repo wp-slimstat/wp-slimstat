@@ -28,12 +28,17 @@ const CRON_LINE = "define('DISABLE_WP_CRON', true);";
 
 let wpConfigBackup: string | null = null;
 
+function activePhpConfig(content: string): string {
+  return content.replace(/("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|\/\*[\s\S]*?\*\/|\/\/[^\r\n]*|#[^\r\n]*/g,
+    (match, quoted) => quoted || ' '.repeat(match.length));
+}
+
 export function injectWpConfigLine(line: string): void {
   const content = fs.readFileSync(WP_CONFIG, 'utf8');
   if (wpConfigBackup === null) wpConfigBackup = content;
   // Match the exact injected form (line + newline) so the guard can't false-match
   // a partial substring, and stays symmetric with removeWpConfigLine(). Idempotent.
-  if (content.includes(line + '\n')) return; // already set
+  if (activePhpConfig(content).includes(line + '\n')) return; // already set
   const marker = "/* That's all, stop editing!";
   const idx = content.indexOf(marker);
   if (idx === -1) throw new Error('Cannot find stop-editing marker in wp-config.php');
@@ -41,6 +46,8 @@ export function injectWpConfigLine(line: string): void {
 }
 
 export function enableDisableWpCron(): void {
+  // WP-CLI writes spaced defines; duplicating one emits output before login cookies.
+  if (/\bdefine\s*\(\s*['"]DISABLE_WP_CRON['"]\s*,\s*true\s*\)/i.test(activePhpConfig(fs.readFileSync(WP_CONFIG, 'utf8')))) return;
   injectWpConfigLine(CRON_LINE);
 }
 

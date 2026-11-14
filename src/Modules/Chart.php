@@ -406,39 +406,30 @@ class Chart
             $filterWhere = !empty($filterWhere) ? $filterWhere . ' AND ' . $wrapped : $wrapped;
         }
 
-        // One probe per request, shared with DataBuckets, which asks the same question
-        // of the same connection. The sign below is INVERTED relative to it, and that
-        // is INTENTIONAL: FROM_UNIXTIME(dt) returns server-local time while CONVERT_TZ
-        // declares its source as UTC, so the inversion cancels the implicit shift and
-        // produces actual UTC. DataBuckets then applies the offset for display.
-        $totalOffsetSeconds = DataBuckets::serverTimezoneOffset();
-        $sign               = ($totalOffsetSeconds < 0) ? '+' : '-';
-        $abs                = abs($totalOffsetSeconds);
-        $h                  = floor($abs / 3600);
-        $m                  = floor(($abs % 3600) / 60);
-        $tzOffset           = sprintf('%s%02d:%02d', $sign, $h, $m);
-
-        $startOfWeek = (int) get_option('start_of_week', 1); // default Monday
-
+        // Stored wall-clock seconds must not pass through MySQL's timezone or historical DST.
+        $date = "DATE_ADD('1970-01-01', INTERVAL dt SECOND)";
+        $epoch = "TIMESTAMPDIFF(SECOND, '1970-01-01', %s)";
+        $startOfWeek = (int) get_option('start_of_week', 1);
         switch ($gran) {
             case 'HOUR':
-                $dtExpr = sprintf("UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s'), '%%Y-%%m-%%d %%H:00:00'))", $tzOffset);
+                $bucket = "DATE_FORMAT($date, '%Y-%m-%d %H:00:00')";
                 break;
             case 'DAY':
-                $dtExpr = sprintf("UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s'), '%%Y-%%m-%%d'))", $tzOffset);
+                $bucket = "DATE_FORMAT($date, '%Y-%m-%d')";
                 break;
             case 'MONTH':
-                $dtExpr = sprintf("UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s'), '%%Y-%%m-01'))", $tzOffset);
+                $bucket = "DATE_FORMAT($date, '%Y-%m-01')";
                 break;
             case 'WEEK':
-                $dtExpr = sprintf("UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s')) - 1 - %d + 7) %% 7) DAY), '%%Y-%%m-%%d'))", $tzOffset, $tzOffset, $startOfWeek);
+                $bucket = "DATE_FORMAT(DATE_SUB($date, INTERVAL ((DAYOFWEEK($date) - 1 - $startOfWeek + 7) % 7) DAY), '%Y-%m-%d')";
                 break;
             case 'YEAR':
-                $dtExpr = sprintf("UNIX_TIMESTAMP(STR_TO_DATE(CONCAT(YEAR(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '%s')), '-01-01'), '%%Y-%%m-%%d'))", $tzOffset);
+                $bucket = "DATE_FORMAT($date, '%Y-01-01')";
                 break;
             default:
                 throw new \WP_Error('invalid_granularity');
         }
+        $dtExpr = sprintf($epoch, $bucket);
 
         $periods = [
             'HOUR'  => ['label' => 'Y/m/d H:00:00'],

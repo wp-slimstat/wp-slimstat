@@ -1,32 +1,5 @@
 <?php
-/**
- * Regression test: the consent banner's stylesheet must load only when the banner does
- * (D45).
- *
- * `enqueue_gdpr_assets()` enqueued a 14.8 KB render-blocking stylesheet whenever the
- * banner feature was on. `getBannerHtml()` returns '' as soon as the visitor has made a
- * consent decision — so every visitor who had already accepted or denied kept
- * downloading and parsing that stylesheet, on every page, to style markup that was no
- * longer emitted.
- *
- * Verified against the running site before the fix:
- *
- *     cookie=none      banner markup present   stylesheet present    <- correct
- *     cookie=accepted  banner markup ABSENT    stylesheet present    <- the defect
- *
- * The fix is a single authority, `GDPRService::shouldRenderBanner()`, consumed by both
- * the markup and the stylesheet so they cannot disagree. That is what this test pins:
- *
- *   1. The decision is correct for every cookie state and both feature states.
- *   2. The markup path consults it.
- *   3. The enqueue path consults it, and cannot throw — it runs on
- *      login_enqueue_scripts, where a fatal locks the administrator out (issue #325).
- *   4. It fails OPEN. The cost of a wrong guess that way is one unused stylesheet; the
- *      other way is an unstyled consent banner, which is compliance-visible.
- *
- * @see src/Services/GDPRService.php
- * @see wp-slimstat.php  enqueue_gdpr_assets()
- */
+/** Consent controls and their stylesheet stay available for withdrawal. */
 
 declare(strict_types=1);
 
@@ -55,6 +28,7 @@ if (!function_exists('wp_unslash')) {
 if (!function_exists('__')) {
     function __($t, $d = 'default') { return $t; }
 }
+if (!function_exists('esc_html__')) { function esc_html__($t, $d = 'default') { return $t; } }
 if (!function_exists('esc_html')) {
     function esc_html($t) { return $t; }
 }
@@ -107,8 +81,8 @@ $cookie = GDPRService::CONSENT_COOKIE_NAME;
 foreach ([
     // consent cookie, banner setting, expected
     ['none',     'on',  true,  'an undecided visitor sees the banner'],
-    ['accepted', 'on',  false, 'a visitor who accepted does not'],
-    ['denied',   'on',  false, 'a visitor who denied does not'],
+    ['accepted', 'on',  true, 'an accepted visitor can reopen controls'],
+    ['denied',   'on',  true, 'a denied visitor can reopen controls'],
     ['none',     'off', false, 'the feature being off wins over an undecided visitor'],
     ['accepted', 'off', false, 'the feature being off wins over a decided visitor'],
 ] as [$consent, $setting, $expected, $label]) {
@@ -137,9 +111,9 @@ gba_assert(
 
 // ── 2. The markup path is downstream of the same decision ───────────────────
 //
-// Asserted behaviourally: a decided visitor gets no markup, an undecided one does.
+// Both undecided and decided visitors can access consent controls.
 foreach ([
-    ['accepted', '', 'a decided visitor gets no banner markup'],
+    ['accepted', 'slimstat-privacy-settings', 'a decided visitor gets privacy controls'],
     ['none',     'slimstat-gdpr-banner', 'an undecided visitor gets banner markup'],
 ] as [$consent, $needle, $label]) {
     unset($_COOKIE[$cookie]);

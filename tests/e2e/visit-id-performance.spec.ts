@@ -86,6 +86,7 @@ function isTrackerResponse(response: Response): boolean {
   const request = response.request();
   if (request.method() !== 'POST') return false;
   if (request.url().includes('/wp-json/slimstat/v1/hit')) return true;
+  if (new URL(request.url()).searchParams.get('rest_route') === '/slimstat/v1/hit') return true;
   if (!request.url().includes('admin-ajax.php')) return false;
   return new URLSearchParams(request.postData() ?? '').get('action') === 'slimtrack';
 }
@@ -534,28 +535,20 @@ test.describe('Visit ID Atomic Counter', () => {
   // ─── AC-TRK-006: visit_id reuses within same session ───────────
 
   test('visit_id reuses within same session (rapid navigation)', async ({ page }) => {
-    test.setTimeout(60_000);
-
-    const sessionMarker = `reuse-${Date.now()}`;
-
-    // Visit 2 pages quickly in the same browser context (same session cookie)
-    await page.goto(`/?p=${sessionMarker}-a`);
-    await page.waitForTimeout(1500);
-    await page.goto(`/?p=${sessionMarker}-b`);
-    await page.waitForTimeout(2500);
-
-    // Both pageviews should share the same visit_id
-    const [rows] = await getPool().execute(
-      `SELECT visit_id FROM wp_slim_stats
-       WHERE resource LIKE ? ORDER BY id ASC`,
-      [`%${sessionMarker}%`]
-    ) as any;
-
-    if (rows.length >= 2) {
-      const visitIds = rows.map((r: any) => parseInt(r.visit_id, 10));
-      // Same session → same visit_id
-      expect(visitIds[0]).toBe(visitIds[1]);
-    }
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'set_tracker_cookie', 'on');
+    await setSlimstatOption(page, 'javascript_mode', 'on');
+    const sessionMarker = `rapid-session-${Date.now()}`;
+    await page.goto(`/?e2e=${sessionMarker}-a`);
+    await expect.poll(async () => (await page.context().cookies()).some(cookie => cookie.name === 'slimstat_tracking_code')).toBe(true);
+    await page.goto(`/?e2e=${sessionMarker}-b`);
+    await expect.poll(async () => {
+      const [rows] = await getPool().execute('SELECT visit_id FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id', [`%${sessionMarker}%`]) as any;
+      return rows;
+    }).toHaveLength(2);
+    const [rows] = await getPool().execute('SELECT visit_id FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id', [`%${sessionMarker}%`]) as any;
+    expect(Number(rows[0].visit_id)).toBeGreaterThan(0);
+    expect(rows[0].visit_id).toBe(rows[1].visit_id);
   });
 
   // ─── AC-TRK-006: new visit_id after session gap ────────────────

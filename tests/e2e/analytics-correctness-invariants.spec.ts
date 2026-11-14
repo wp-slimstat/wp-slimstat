@@ -245,7 +245,7 @@ test.describe('Analytics Correctness Invariants', () => {
   });
 
   test('INV-7: denied consent rejects a direct tracking attempt without storing PII or a cookie', async ({ browser }) => {
-    await setSlimstatOptions({ javascript_mode: 'on', gdpr_enabled: 'on', anonymous_tracking: 'off', consent_integration: 'slimstat_banner' });
+    await setSlimstatOptions({ javascript_mode: 'on', gdpr_enabled: 'on', anonymous_tracking: 'off', consent_integration: 'slimstat_banner', use_slimstat_banner: 'on', set_tracker_cookie: 'on', anonymize_ip: 'off', hash_ip: 'off' });
     const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const marker = `${RUN_ID}-denied-${Date.now()}`;
     try {

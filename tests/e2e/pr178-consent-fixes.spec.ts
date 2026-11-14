@@ -2,7 +2,7 @@
  * PR #178 — Consent tracking fixes E2E tests
  *
  * Tests:
- * 1. JS consent upgrade recovery: CMP null + previous upgrade → allowed
+ * 1. JS consent safety: a stale upgrade cannot override a missing/rejecting CMP
  * 2. JS consent rejection respected: explicit false not overridden
  * 3. PHP canTrack guard: wp_get_consent_type() filter applied
  * 4. Textdomain: init_options defaults stored without __()
@@ -11,11 +11,6 @@
 import { test, expect } from '@playwright/test';
 import {
   closeDb,
-  snapshotSlimstatOptions,
-  restoreSlimstatOptions,
-  installOptionMutator,
-  uninstallOptionMutator,
-  setSlimstatOption,
 } from './helpers/setup';
 import { BASE_URL, MYSQL_CONFIG, PLUGIN_DIR } from './helpers/env';
 
@@ -33,77 +28,34 @@ test.afterAll(async () => {
   await closeDb();
 });
 
-// ─── Test 1: JS consent upgrade check runs before fallback ──────────
-test.describe('JS Consent Upgrade Recovery', () => {
-  test('consent upgrade succeeds when CMP returns null', async ({ page }) => {
-    // Visit front-end, inject sessionStorage to simulate prior upgrade,
-    // then verify SlimStat sees consent as granted
-    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-
-    // Set sessionStorage to simulate a successful prior consent upgrade
-    await page.evaluate(() => {
+// A previous client upgrade never substitutes for the current consent source.
+for (const decision of [null, false]) {
+  test(`stale consent upgrade cannot override CMP ${decision}`, async ({ page }) => {
+    const origin = 'https://slimstat-consent.test';
+    let posts = 0;
+    await page.route(`${origin}/**`, async route => {
+      if (route.request().method() === 'POST') posts++;
+      await route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>Consent fixture</title>' });
+    });
+    await page.goto(origin);
+    await page.evaluate(({ origin, decision }) => {
+      const w = window as any;
       sessionStorage.setItem('slimstat_consent_upgrade_state', 'done');
-    });
-
-    // Reload to let SlimStat pick up the upgrade state
-    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-
-    // Wait for SlimStat to initialize and check consent
-    await page.waitForTimeout(2000);
-
-    // Evaluate the consent decision by checking if tracking fired
-    // The consent upgrade check should run BEFORE the fallback normalization
-    const consentResult = await page.evaluate(() => {
-      // Check if SlimStat set tracking mode
-      const ss = sessionStorage.getItem('slimstat_consent_upgrade_state');
-      return {
-        upgradeState: ss,
-        // Check if SlimStat tracker is active (it injects slimstat[id] in forms/tracking)
-        trackerActive: typeof (window as any).SlimStatParams !== 'undefined',
-      };
-    });
-
-    expect(consentResult.upgradeState).toBe('done');
-    // Tracker should be active since upgrade succeeded
-    expect(consentResult.trackerActive).toBe(true);
-  });
-});
-
-// ─── Test 2: JS explicit rejection not overridden ────────────────────
-test.describe('JS Consent Rejection Respected', () => {
-  test('explicit false from CMP is not overridden by upgrade state', async ({ page }) => {
-    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-
-    // Simulate: set consent upgrade as done + inject a CMP that returns false
-    await page.evaluate(() => {
-      sessionStorage.setItem('slimstat_consent_upgrade_state', 'done');
-    });
-
-    // Add route interception to inject consent rejection via WP Consent API
-    await page.addScriptTag({
-      content: `
-        // Simulate WP Consent API returning false (user rejected)
-        window.wp_has_consent = function(category) { return false; };
-        window.wp_consent_type = 'optin';
-      `,
-    });
-
-    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(2000);
-
-    // The upgrade state being 'done' should NOT override explicit rejection
-    // because the check only applies when cmpAllows === null
+      w.SlimStatParams = { id: '901.abcdef', ajaxurl_rest: `${origin}/hit`, transport: 'rest', gdpr_enabled: 'on', anonymous_tracking: 'off', consent_integration: 'wp_consent_api', is_logged_in: '0' };
+      w.wp_has_consent = () => decision;
+      w.wp_consent_type = 'optin';
+    }, { origin, decision });
+    await page.addScriptTag({ path: path.join(PLUGIN_DIR, 'wp-slimstat.min.js') });
     const result = await page.evaluate(() => {
-      return {
-        upgradeState: sessionStorage.getItem('slimstat_consent_upgrade_state'),
-      };
+      const w = window as any;
+      w.SlimStat.send_to_server('action=slimtrack&id=901.abcdef&fv=1', false);
+      return { consent: w.SlimStat.consent.checkAllowed(w.SlimStatParams), upgrade: sessionStorage.getItem('slimstat_consent_upgrade_state') };
     });
-
-    expect(result.upgradeState).toBe('done');
-    // The key assertion: even though upgrade succeeded before,
-    // if CMP now says false, tracking should respect that
+    expect(result.consent.mode).not.toBe('full');
+    expect(result.upgrade).toBeNull();
+    expect(posts).toBe(0);
   });
-});
+}
 
 // ─── Test 3: PHP textdomain — defaults stored without __() ──────────
 test.describe('Textdomain Timing Fix', () => {

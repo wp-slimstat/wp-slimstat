@@ -272,22 +272,18 @@ if (null === $probe_body) {
     }
 }
 
-// ── S1 (release review 2026-10-13): the consent-upgrade lookup is column-gated ──────────
-//
-// Processor OR's `vid_hash = UNHEX(...)` into the lookup that claims the anonymous row when
-// consent arrives. Before AddVisitIdentity adds the column MySQL rejects the whole statement
-// (1054), the ip/visit_id disjuncts go with it, and the upgrade inserts a duplicate visit.
-// The predicate may only come from vidHashMatch(), which asks Storage::presentColumns().
-// Consent upgrades are rare, so this one memoised probe is not the per-pageview kind above.
+// Consent upgrades use only a signed pageview, including on pre-migration schemas.
 $processor_code = slimstat_blank_comments((string) file_get_contents($plugin_root . '/src/Tracker/Processor.php'));
-$match_body     = slimstat_find_function_body($processor_code, 'vidHashMatch');
-
-if (null === $match_body || false === strpos($match_body, 'presentColumns')) {
-    $failures[] = 'Processor::vidHashMatch() is missing or no longer checks Storage::presentColumns(), '
-        . 'so the consent-upgrade lookup names vid_hash before the migration adds it';
-} elseif (substr_count($processor_code, 'vid_hash = UNHEX') !== substr_count($match_body, 'vid_hash = UNHEX')) {
-    $failures[] = 'Processor.php builds `vid_hash = UNHEX(...)` outside vidHashMatch(): on a '
-        . 'pre-migration table the consent-upgrade lookup fails (1054) and the visit is duplicated';
+if (strpos($processor_code, "->where('id', '=', $" . 'requestId > 0 ? $requestId : 0)') === false
+    || strpos($processor_code, 'vid_hash = UNHEX') !== false) {
+    $failures[] = 'consent upgrade must target only the signed pageview';
+}
+$upgrade_body = slimstat_blank_comments(slimstat_find_function_body($session_src, 'upgradePageview') ?? '');
+if (strpos($processor_code, 'Session::upgradePageview($existing_id, $update_data)') === false
+    || strpos($upgrade_body, '$write[\'vid_hash\'] = null;') === false
+    || strpos($upgrade_body, 'VisitIdGenerator::generateNextVisitId()') === false
+    || strpos($processor_code, '$stat[\'visit_id\'] = intval($existing_record->visit_id)') !== false) {
+    $failures[] = 'consent upgrade must detach the current pageview from its anonymous visit and identity';
 }
 
 echo "\n";

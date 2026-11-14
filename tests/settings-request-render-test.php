@@ -94,7 +94,7 @@ $settings = [1 => ['title' => 'Settings', 'rows' => ['hostile' => [
 ]]]];
 wp_slimstat::$settings['hostile'] = '</textarea><script>alert(1)</script>\\literal';
 $start = strpos($source, '$tabs_html =');
-$end = strpos($source, "<?php\n// Detect companion");
+$end = strpos($source, '<script>', $start);
 check($start !== false && $end !== false, 'settings render boundary disappeared');
 ob_start();
 eval(substr($source, $start, $end - $start));
@@ -207,6 +207,7 @@ class wp_slimstat_db { public static $debug_message = ''; public static $all_col
 if (!defined('ABSPATH')) {
     define('ABSPATH', dirname(__DIR__) . '/');
 }
+require_once __DIR__ . '/../src/Reports/ReportPrivacy.php';
 require_once __DIR__ . '/../src/Reports/ReportData.php';
 $reports = file_get_contents(__DIR__ . '/../admin/view/wp-slimstat-reports.php');
 eval('class SlimstatSummaryProbe { public static function raw_results_to_html($_args = []) {' . slimstat_function_body($reports, 'raw_results_to_html') . '} private static function render_raw_data(array $_args, array $all_results) {' . slimstat_function_body($reports, 'render_raw_data') . '} }');

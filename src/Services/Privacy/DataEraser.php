@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace SlimStat\Services\Privacy;
 
 use SlimStat\Utils\Query;
+use SlimStat\Heatmap\Store;
 
 /**
  * WordPress Privacy API Data Eraser for SlimStat
@@ -11,7 +12,8 @@ use SlimStat\Utils\Query;
  * Implements GDPR Article 17 - Right to Erasure (Right to be Forgotten)
  *
  * This class erases all personal data collected by SlimStat for a given
- * email address or IP address, complying with WordPress Privacy Tools.
+ * email address through WordPress Privacy Tools. The IP helper is for verified
+ * administrator requests; WordPress itself verifies requests by email only.
  *
  * Erasure strategy:
  * - Deletes pageviews and events associated with the email
@@ -45,7 +47,12 @@ class DataEraser
 
 		// Each call drains the first batch; archives may outlive every live pageview.
 		foreach ($tables as $table) {
-			$deleted = Query::delete($table)->where('email', '=', $email_address)->limit(500)->execute();
+			if ($table === $tables[0] && Store::ready()) {
+				[$deleted, $heatmaps_done] = self::eraseLivePageviewsWithHeatmaps($email_address, $table);
+				$done = $done && $heatmaps_done;
+			} else {
+				$deleted = Query::delete($table)->where('email', '=', $email_address)->limit(500)->execute();
+			}
 			$failed = $failed || false === $deleted;
 			if ($deleted > 0) {
 				$items_removed = true;
@@ -71,6 +78,31 @@ class DataEraser
 			'messages' => $messages,
 			'done' => $done,
 		];
+	}
+
+	/**
+	 * A visitor can click between WordPress's separate privacy callbacks. Lock the
+	 * parent batch, erase its heatmap labels again and delete those same parents
+	 * before releasing the locks. Pending inserts then fail their locked parent existence check.
+	 *
+	 * @return array{0: int|false, 1: bool}
+	 */
+	private static function eraseLivePageviewsWithHeatmaps(string $email, string $table): array
+	{
+		$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+		if (false === $db->query('START TRANSACTION')) { return [false, false]; }
+		try {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery -- Internal live table name, prepared email, fixed batch limit.
+			$ids = $db->get_col($db->prepare("SELECT id FROM {$table} WHERE email = %s ORDER BY id LIMIT 500 FOR UPDATE", $email));
+			if ('' !== (string) $db->last_error) { throw new \RuntimeException('Pageview erasure lookup failed.'); }
+			$heatmaps = Store::erase($email);
+			$deleted = $ids ? Query::delete($table)->where('id', 'IN', $ids)->execute() : 0;
+			if (false === $deleted || false === $db->query('COMMIT')) { throw new \RuntimeException('Pageview erasure failed.'); }
+			return [$deleted, $heatmaps['done']];
+		} catch (\Throwable $error) {
+			$db->query('ROLLBACK');
+			return [false, false];
+		}
 	}
 
 	/**

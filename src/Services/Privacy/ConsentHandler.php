@@ -17,7 +17,7 @@ use SlimStat\Tracker\Session;
  *   - The hashed IP is replaced with the user's real or anonymized IP (according to privacy settings)
  *   - A tracking cookie is set to maintain session continuity
  *   - If the user is logged in, username and email are saved
- *   - Previous anonymous pageviews remain non-identifiable (ensuring ongoing GDPR compliance)
+	 *   - Previous anonymous pageviews retain their original privacy protections
  * All subsequent pageviews, once consent is present, are tracked using full PII.
  *
  * If the user revokes consent:
@@ -67,8 +67,8 @@ class ConsentHandler
 		add_action('wp_ajax_slimstat_consent_revoked', [self::class, 'handleConsentRevoked']);
 		add_action('wp_ajax_nopriv_slimstat_consent_revoked', [self::class, 'handleConsentRevoked']);
 
-		add_action('wp_ajax_slimstat_gdpr_consent', [self::class, 'handleBannerConsent']);
-		add_action('wp_ajax_nopriv_slimstat_gdpr_consent', [self::class, 'handleBannerConsent']);
+		add_action('wp_ajax_slimstat_gdpr_consent', [self::class, 'handleBannerConsent'], 10, 0);
+		add_action('wp_ajax_nopriv_slimstat_gdpr_consent', [self::class, 'handleBannerConsent'], 10, 0);
 	}
 
 	/**
@@ -141,13 +141,15 @@ class ConsentHandler
 
 		do_action('slimstat_gdpr_consent_changed', $consent);
 
-		$parsed_consent = \SlimStat\Utils\Consent::normalizeConsent($consent);
-		$action = ('accepted' === $consent) ? 'grant' : 'revoke';
+		if ('denied' === $consent) {
+			Session::deleteTrackingCookie();
+			do_action('slimstat_consent_revoked');
+		}
 
 		// If consent granted via banner, upgrade current pageview from anonymous to PII
-		if ('accepted' === $consent) {
+		if ('accepted' === $consent && \SlimStat\Utils\Consent::piiAllowed()) {
 			if (!empty($pageview_id_raw)) {
-				$pageview_id = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw);
+				$pageview_id = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw, 'pageview');
 				if (false !== $pageview_id && $pageview_id > 0) {
 					$pageview_id = intval($pageview_id);
 
@@ -159,55 +161,16 @@ class ConsentHandler
 						$stat['notes']    = '[user:' . $GLOBALS['current_user']->data->ID . ']';
 					}
 
-					$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-					$update_data = [];
-
-					if (!empty($stat['ip'])) {
-						$update_data['ip'] = $stat['ip'];
-					}
-
-					if (!empty($stat['other_ip'])) {
-						$update_data['other_ip'] = $stat['other_ip'];
-					}
-
-					if (!empty($stat['username'])) {
-						$update_data['username'] = $stat['username'];
-					}
-
-					if (!empty($stat['email'])) {
-						$update_data['email'] = $stat['email'];
-					}
-
-					if (!empty($update_data)) {
-						$GLOBALS['wpdb']->update(
-							$table,
-							$update_data,
-							['id' => $pageview_id],
-							array_fill(0, count($update_data), '%s'),
-							['%d']
-						);
-					}
-
-					// Append user note if not already present
-					if (!empty($stat['notes'])) {
-						$existing_note = $GLOBALS['wpdb']->get_var(
-							$GLOBALS['wpdb']->prepare(
-								"SELECT notes FROM {$table} WHERE id = %d AND notes LIKE %s LIMIT 1",
-								$pageview_id,
-								'%' . $GLOBALS['wpdb']->esc_like($stat['notes']) . '%'
-							)
-						);
-
-						if (empty($GLOBALS['wpdb']->last_error) && null === $existing_note) {
-							$GLOBALS['wpdb']->query(
-								$GLOBALS['wpdb']->prepare(
-									"UPDATE {$table} SET notes = CONCAT(IFNULL(notes, ''), %s) WHERE id = %d",
-									$stat['notes'],
-									$pageview_id
-								)
-							);
+					$visit_id = Session::upgradePageview($pageview_id, $stat);
+					if ($visit_id <= 0) {
+						if ($return_json) {
+							wp_send_json_success(['success' => true, 'consent' => $consent, 'upgraded' => false, 'message' => __('Consent granted.', 'wp-slimstat')]);
 						}
+						return false;
 					}
+					$stat['visit_id'] = $visit_id;
+					\wp_slimstat::set_stat($stat);
+					Session::setTrackingCookie($visit_id, 'visit');
 
 					do_action('slimstat_consent_granted', $pageview_id, $stat);
 				}

@@ -254,11 +254,12 @@ class PurgeArchive
      *
      * @return array{stats:int,events:int,error:string}
      */
-    public static function purgeBatch($db, string $prefix, int $from, int $to, bool $archive, array $eventColumns, array $statsColumns): array
+    public static function purgeBatch($db, string $prefix, int $from, int $to, bool $archive, array $eventColumns, array $statsColumns, bool $archiveTables = false): array
     {
         $result = ['stats' => 0, 'events' => 0, 'error' => ''];
-        $stats = $prefix . 'slim_stats';
-        $events = $prefix . 'slim_events';
+        $stats = $prefix . 'slim_stats' . ($archiveTables ? '_archive' : '');
+        $events = $prefix . 'slim_events' . ($archiveTables ? '_archive' : '');
+        if ($archiveTables) { $archive = false; }
         // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Core-prefix tables; bound dates; database keys validated as decimal strings before interpolation.
         try {
             foreach (['events', 'stats'] as $kind) {
