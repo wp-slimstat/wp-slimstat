@@ -6,7 +6,7 @@
     "data": "Disposable databases and synthetic visitors; outbound email and fake license calls intercepted locally."
   },
   "verified_source": {
-    "free": "8141890e",
+    "free": "3acb8c2e",
     "pro": "3dad28b"
   },
   "free": {
@@ -294,7 +294,7 @@
     "browser": {
       "tests": 50,
       "status": "pass",
-      "detail": "50/50 passed without retries with final Free production code 8141890e (pro-full-browser-free8141890e-pro3dad28b run)."
+      "detail": "50/50 passed without retries with final Free production code 3acb8c2e (pro-full-browser-free3acb8c2e-pro3dad28b run)."
     },
     "release_runtime_php": [
       "7.4",
@@ -464,6 +464,25 @@
     "local_download_budget": {
       "cause": "The local PHP web server hit its 30-second execution limit while streaming the real Browscap archive, before the intended unzip assertion. Debug-off reproduced the same timeout.",
       "validation": "All seven success/failure/diagnostic/cleanup cases passed with debug on, GitHub download hosts allowed and a 120-second test-only PHP execution budget. No plugin behavior or assertion was weakened."
+    },
+    "banner_reopen_close_timer": {
+      "source": "3acb8c2e",
+      "ci": "Run 43588971447 on 1843a1fc, job \"Tier 2 · standard · E2E · WP 6.4 · PHP 8.2\": privacy-audit.spec.ts \"accept, reopen, withdraw and reject stale events\" failed over rest and adblock_bypass on both attempts and over ajax once (2 failed, 1 flaky, 972 passed). The four other E2E lanes passed. The same job passed on 15496035.",
+      "cause": "A decision in SlimStat's own banner adds the class that hides it at once and schedules the real close (the hidden attribute) 350 ms later. The \"Privacy settings\" link reopened the banner, and the scheduled close then shut it again. In the CI trace the link was clicked about 160 ms after Accept; the Decline click then waited on a hidden button until the 45 s timeout. The page snapshot at the timeout shows the banner closed. The test checks that the banner is hidden before it reopens it; that check passes as soon as the class is applied, so whether the reopen fell inside the 350 ms depended on how fast the first tracked request returned. The close timer and the reopen link both came in with 828b33da on this branch. 8141890e did not change this code.",
+      "fix": "Reopening the banner cancels the pending close (wp-slimstat.js, three lines; the minified tracker and its source map are rebuilt).",
+      "tests": "tests/e2e/privacy-audit.spec.ts, \"a banner reopened straight after a decision stays open\": Accept and the reopen are clicked in one task, the test waits past the scheduled close, then the banner must still be open and Decline must store the denied choice.",
+      "validation": {
+        "required_red": "banner-reopen-required-red.log: before the fix the new test fails with the banner closed (the hidden attribute is set while the class that shows it is still present).",
+        "local": "On 3acb8c2e: 721 unit / 2821 assertions, 229 integration / 965 assertions, full source suite, 85 escaping assertions (banner-reopen-test-all-3acb8c2e.log). Full Pro browser suite 50/50 passed without retries (pro-full-browser-free3acb8c2e-pro3dad28b run); the Pro site received the three changed tracker files by copy. On the working tree before it was committed as 3acb8c2e: the new test and the three accept, reopen and withdraw tests, five repeats each, 20 of 20 passed (banner-reopen-after-fix-repeat5.log); affected Free browser specs (15 consent and tracker files, 105 cases, no retries): 105 passed (free-affected-browser-banner-reopen-fix.log).",
+        "own_banner": "SlimStat's own banner, 13 scenarios on the disposable site serving 3acb8c2e: 12 passed and 1 does not apply, on Free alone and on Free with Pro (real-cmp-slimstat-free-only-banner-reopen-fix.log, real-cmp-slimstat-free-with-pro-final-banner-reopen-fix.log).",
+        "not_rerun": "Since 8141890e only wp-slimstat.js, its minified build and source map, one browser test and this file changed. No PHP file and no translatable string changed, and no registered mutation targets the tracker script, so PHPStan, the mutations, Plugin Check, the i18n check and the before/after snapshot were not repeated. The Complianz, CookieYes and Real Cookie Banner scenarios were not repeated: the changed code runs only when SlimStat's own banner is in use."
+      },
+      "limits": [
+        "The defect depended on timing: the reopen had to land within 350 ms of the decision. Four CI lanes and the earlier local runs passed with it present. The new test does not depend on timing; it was run once before the fix.",
+        "The existing accept, reopen and withdraw test is unchanged. Its check that the banner is hidden passes as soon as the hiding class is applied, before the close has finished.",
+        "Not counted as results: a run of the 15 files while the site was set up for the banner scenarios (CookieYes inactive: 101 passed and the 4 CookieYes tests skipped themselves; free-affected-browser-banner-reopen-fix-wrong-site-state.log), and a run during which the machine slept (lid closed seconds after the start: 93 passed, 9 timed out and 3 did not run in 2.1 hours; free-affected-browser-banner-reopen-fix-void-machine-slept.log, with the power log beside it).",
+        "This defect was found by CI after 8141890e had been recorded here as verified."
+      ]
     }
   },
   "review_followups": {

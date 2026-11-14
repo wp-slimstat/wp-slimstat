@@ -2760,6 +2760,7 @@ if (!window.requestIdleCallback) {
 
     function initSlimStatBanner() {
         var bannerInitialized = false;
+        var closeTimer = null;
 
         function attachBannerHandlers() {
             if (bannerInitialized) {
@@ -2779,6 +2780,8 @@ if (!window.requestIdleCallback) {
             bannerInitialized = true;
             var returnFocus = null;
             function showBanner(trigger) {
+                // A close scheduled by the previous decision must not shut a banner that was reopened meanwhile.
+                clearTimeout(closeTimer);
                 returnFocus = trigger || null;
                 banner.hidden = false;
                 banner.classList.remove("hiding");
@@ -2881,7 +2884,7 @@ if (!window.requestIdleCallback) {
             }
 
             // Keep the controls available for withdrawal on this page and cached pages.
-            setTimeout(function () {
+            closeTimer = setTimeout(function () {
                 if (bannerEl) {
                     bannerEl.hidden = true;
                     bannerEl.dispatchEvent(new Event("slimstat:banner:closed"));
