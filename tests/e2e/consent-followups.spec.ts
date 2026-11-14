@@ -36,17 +36,21 @@ test.describe('consent wire and unchanged settings (#366/#367)', () => {
   }
   // Complianz and CookieYes withdraw through wp_set_consent(), which fires wp_listen_for_consent_change.
   // The test above calls sendChange() itself, so it cannot see whether that event is wired.
-  test('a denial through the real WP Consent API call removes the tracking cookie, and accepting again restores it', async ({ browser }) => {
+  // WP Consent API alone, with SlimStat reading its statistics category. Call inside try: the caller's finally restores active_plugins.
+  const useWpConsentApiAlone = async () => {
     await snapshotOption('active_plugins');
     runWordPressFixture(`<?php require_once ABSPATH . 'wp-admin/includes/plugin.php';
       update_option('active_plugins', array_values(array_filter(get_option('active_plugins'), static fn($plugin) => !preg_match('~^(cookie-law-info|complianz-gdpr|real-cookie-banner)/~', $plugin))));
       activate_plugin('wp-consent-api/wp-consent-api.php');`);
     await setSlimstatOptions({ gdpr_enabled: 'on', consent_integration: 'wp_consent_api', consent_level_integration: 'statistics', use_slimstat_banner: 'off',
       javascript_mode: 'on', is_tracking: 'on', anonymous_tracking: 'off', set_tracker_cookie: 'on', ignore_bots: 'off', ignore_users: '', ignore_ips: '', tracking_request_method: 'rest' });
+  };
+  test('a denial through the real WP Consent API call removes the tracking cookie, and accepting again restores it', async ({ browser }) => {
     const marker = `consent-real-api-${Date.now()}`;
     const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const hasTrackerCookie = async () => (await context.cookies()).some(c => c.name === 'slimstat_tracking_code' && c.httpOnly);
     try {
+      await useWpConsentApiAlone();
       const page = await context.newPage();
       await page.addInitScript(() => { (window as any).wp_consent_type = 'optin'; });
       await page.goto(`${BASE_URL}/?consent_wire=${marker}`);
@@ -65,6 +69,40 @@ test.describe('consent wire and unchanged settings (#366/#367)', () => {
       await expect.poll(hasTrackerCookie).toBe(false);
       await page.evaluate(() => (window as any).wp_set_consent('statistics', 'allow'));
       await expect.poll(hasTrackerCookie).toBe(true);
+    } finally {
+      try { await context.close(); } finally {
+        await restoreOption('active_plugins');
+        await getPool().query('DELETE FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]);
+      }
+    }
+  });
+
+  // The tracker cannot read the HttpOnly cookie, so it reports a withdrawal only when it saw consent on the same page.
+  // Consent withdrawn where the tracker did not see it leaves the cookie behind: only a page request shows it to the server.
+  test('a tracking cookie left from an earlier page is removed by the next page request once consent is denied', async ({ browser }) => {
+    const marker = `consent-leftover-${Date.now()}`;
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const hasTrackerCookie = async () => (await context.cookies()).some(c => c.name === 'slimstat_tracking_code' && c.httpOnly);
+    const visits = async () => { const [rows]: any = await getPool().query('SELECT visit_id FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]); return rows.map((r: any) => r.visit_id); };
+    try {
+      await useWpConsentApiAlone();
+      const page = await context.newPage();
+      await page.addInitScript(() => { (window as any).wp_consent_type = 'optin'; });
+      await context.addCookies([{ name: 'wp_consent_statistics', value: 'allow', url: BASE_URL }]);
+      await page.goto(`${BASE_URL}/?consent_wire=${marker}-1`, { waitUntil: 'networkidle' });
+      await expect.poll(hasTrackerCookie).toBe(true);
+      await page.goto(`${BASE_URL}/?consent_wire=${marker}-2`, { waitUntil: 'networkidle' });
+      // Consent stands: the page request keeps the cookie, so the two pages are one visit.
+      await expect.poll(async () => (await visits()).length).toBe(2);
+      expect(new Set(await visits()).size).toBe(1);
+      // Withdrawn elsewhere: this page starts with "deny" and never saw consent, so the tracker sends nothing.
+      await context.addCookies([{ name: 'wp_consent_statistics', value: 'deny', url: BASE_URL }]);
+      let trackerRequests = 0;
+      page.on('request', r => { if (/\/consent-change|\/slimstat\/v1\/hit/.test(r.url())) trackerRequests++; });
+      await page.goto(`${BASE_URL}/?consent_wire=${marker}-3`, { waitUntil: 'networkidle' });
+      expect(await hasTrackerCookie()).toBe(false);
+      expect(trackerRequests).toBe(0);
+      expect(await visits()).toHaveLength(2);
     } finally {
       try { await context.close(); } finally {
         await restoreOption('active_plugins');
