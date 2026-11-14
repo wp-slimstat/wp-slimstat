@@ -6,13 +6,13 @@
     "data": "Disposable databases and synthetic visitors; outbound email and fake license calls intercepted locally."
   },
   "verified_source": {
-    "free": "94c94447",
+    "free": "8141890e",
     "pro": "3dad28b"
   },
   "free": {
     "unit": {
-      "tests": 718,
-      "assertions": 2818
+      "tests": 721,
+      "assertions": 2821
     },
     "integration": {
       "tests": 229,
@@ -27,7 +27,7 @@
     },
     "mutations": {
       "full_suite_killed": 319,
-      "latest_changed_targets_killed": 20,
+      "latest_changed_targets_killed": 25,
       "survived": 0,
       "invalid": 0
     },
@@ -294,7 +294,7 @@
     "browser": {
       "tests": 50,
       "status": "pass",
-      "detail": "50/50 passed without retries with final Free production code 94c94447 (pro-full-browser-free94c94447-pro3dad28b run)."
+      "detail": "50/50 passed without retries with final Free production code 8141890e (pro-full-browser-free8141890e-pro3dad28b run)."
     },
     "release_runtime_php": [
       "7.4",
@@ -431,7 +431,7 @@
     "multisite_acquisition": "pass on two sites: UTM/channel totals, site grouping, shares, caps and exact author restrictions",
     "privacy": "pass: complete export, 1001-event erasure, independent archive retention, orphan labels, cache generation, masked output with unchanged counts, private attachment permissions and cleanup on success/failure/exception, AI export/erasure failure handling"
   },
-  "before_after": "Repeated against archived development and final working code; outputs exactly match committed before.json and after.json. The after capture was repeated on 94c94447 on 2026-11-14: nine of ten facts are identical to after.json. The tenth, forged_ip, is a hash made with the daily salt, so its value differs from the 2026-11-13 capture; it is still a hash and not the address. The before capture was not repeated because development did not change.",
+  "before_after": "Repeated against archived development and final working code; outputs exactly match committed before.json and after.json. The after capture was repeated on 94c94447 on 2026-11-14: nine of ten facts are identical to after.json. The tenth, forged_ip, is a hash made with the daily salt, so its value differs from the 2026-11-13 capture; it is still a hash and not the address. The before capture was not repeated because development did not change. Repeated on 8141890e on 2026-11-14 with the same result: nine of ten facts identical to after.json, and all ten identical to the 94c94447 capture of the same day.",
   "plugin_check": {
     "free": {
       "errors": 0,
@@ -586,7 +586,7 @@
         "free_with_pro": {
           "complianz": "13 passed",
           "cookieyes": "13 passed",
-          "real_cookie_banner": "First run: 1 failed (server-side tracking), 9 passed, 3 did not run, while another browser job ran on the same machine. Rerun alone: 13 passed.",
+          "real_cookie_banner": "First run: 1 failed (server-side tracking), 9 passed, 3 did not run. Rerun: 13 passed. The miss was first put down to another browser job on the same machine. That was wrong: the traces made on 8141890e (see leftover_tracking_cookie) show the scenario file left the page before Real Cookie Banner had stored the first decision.",
           "slimstat_banner": "12 passed, 1 does not apply"
         }
       },
@@ -600,8 +600,31 @@
         "The banner scenarios ran on one WordPress, PHP and MySQL version (see environment) and one version of each banner plugin.",
         "Free with Pro ran on the Free test site with Pro active; the Pro test site uses its own harness and ran the Pro suite only.",
         "A stale-nonce 403 on a cached page leaves the tracking cookie until it expires; the cookie is ignored while consent is denied.",
-        "Server-side tracking mode has no withdrawal path of its own; the cookie is removed by the tracker script.",
+        "Changed by 8141890e (see leftover_tracking_cookie): a front-end page request now removes the tracking cookie once consent is denied, in server-side tracking mode too. A page served from a full-page cache does not reach PHP and leaves the cookie until it expires.",
         "The scenario file is kept with the audit evidence, not in the test suite: it needs the three banner plugins installed."
+      ]
+    },
+    "leftover_tracking_cookie": {
+      "source": "8141890e",
+      "review": "CodeRabbit review 5903147935 on 15496035, two findings.",
+      "cause": "The tracker cannot read the HttpOnly slimstat_tracking_code cookie, so it reports a withdrawal only when it saw full consent on the same page. Consent withdrawn where the tracker did not see it (another tab, a decision that expired, a page where the tracker did not run) left the cookie in the browser until it expired. The cookie was ignored while consent was denied. Separately, one browser test changed active_plugins before its try block, so a failing setup step could leave the site without its banner plugin.",
+      "fix": "Session::deleteTrackingCookieWithoutConsent() runs on template_redirect at priority 1 on every front-end page request, tracked or not: when the cookie arrives and Consent::piiAllowed() is false, the cookie is expired. The tracker is unchanged: a page that starts without consent still sends no request. The comment at the withdrawal condition in wp-slimstat.js is corrected (the minified tracker is byte-identical; only the source map changed). The test setup moved into useWpConsentApiAlone(), called inside try.",
+      "tests": "tests/e2e/consent-followups.spec.ts: a cookie set with consent survives the next page (one visit), then consent is denied outside the page; the next page request removes the cookie, the tracker sends nothing and no row is stored. tests/Unit/Tracker/SessionTest.php: three cases (denied: removed; given: kept; consent not required: kept).",
+      "validation": {
+        "required_red": "leftover-cookie-required-red.log: before the fix the cookie is still present after the page request. leftover-cookie-ungated-control.log: with the consent check removed the browser test fails on the one-visit control. leftover-cookie-unit-ungated-control.log: with the consent check removed two of the three unit cases fail.",
+        "local": "On 8141890e: 721 unit / 2821 assertions, 229 integration / 965 assertions, full source suite, production autoloader, 85 escaping assertions. PHPStan 159 files, no errors. Affected Free browser specs (15 consent and tracker files, 104 cases, no retries): 104 passed. Full Pro browser suite 50/50 passed without retries (pro-full-browser-free8141890e-pro3dad28b run). Mutations on targets changed since 69257827: 25 killed, 0 survived, 0 invalid (mutations-changed-8141890e.log). No registered mutation targets the new method or the tracker script; the two hand-made controls under required_red stand in for one. i18n catalog check passes; no translatable string was added.",
+        "real_banners": "Repeated on 8141890e on the disposable site, 13 scenarios per banner, each banner on Free alone and on Free with Pro. Complianz: 13 passed alone, 13 with Pro. CookieYes: 13 passed alone, 13 with Pro. SlimStat's own banner: 12 passed and 1 does not apply, alone and with Pro. Real Cookie Banner through the WP Consent API: 13 passed with Pro. Alone, its first run failed the server-side tracking scenario (1 failed, 9 passed, 3 did not run). Three traced runs of that scenario (32 repeats, 7 failed) put the cause in the scenario file: it left the page about 40 ms after 'Continue without consent', before Real Cookie Banner had stored that decision. With a wait after that decision, as the scenario already had after the others: 12 of 12 repeats and 13 of 13 scenarios passed. Logs: real-cmp-<banner>-free-only-leftover-fix.log, real-cmp-<banner>-free-with-pro-final-leftover-fix.log, real-cmp-rcb-free-only-server-scenario-trace-1.log to -3.log, real-cmp-rcb-free-only-server-scenario-repeat12-leftover-fix.log, real-cmp-rcb-free-only-leftover-fix-rerun.log.",
+        "comparison": "See before_after.",
+        "plugin_check": "Repeated on 8141890e: zero errors; only the existing registered-slug warning."
+      },
+      "limits": [
+        "A page served from a full-page cache does not reach PHP. There the cookie stays until it expires (session_duration, 30 minutes by default) and is ignored while consent is denied.",
+        "template_redirect does not run for wp-admin, admin-ajax or REST requests; the cookie is removed by the next front-end page request.",
+        "wp_slimstat::slimtrack_server() bypasses consent by design and can set the cookie on a browser without consent. With GDPR mode on, anonymous tracking off and the tracker cookie on, that visitor's next front-end page request now removes the cookie, so later programmatic hits start a new visit.",
+        "Not counted as a result: the first real-banner run on this code failed at its first step for the three banner plugins because the test database had been restored and their setup was gone (logs in leftover-fix-no-banner-setup/). The setup was re-applied and the run repeated.",
+        "Real Cookie Banner: when a visitor leaves the page within a few tens of milliseconds of clicking 'Continue without consent', the banner does not store that decision. A later 'Accept all' from the privacy settings link stores consent, but Real Cookie Banner did not run the service's opt-in code on that page or the next one, so wp_consent_statistics stayed 'deny' and SlimStat did not track that visitor (it fails closed). Seen only in the test. The cause inside Real Cookie Banner was not investigated and later pages were not followed.",
+        "The Complianz, CookieYes, own-banner and with-Pro logs on 8141890e were made before the wait was added to the scenario file. The change only adds a wait; those runs were not repeated with it.",
+        "PHPStan, the affected Free browser specs, the banner scenarios, Plugin Check and the snapshot ran on the working tree before it was committed as 8141890e. test:all (leftover-cookie-test-all-8141890e.log), the Pro browser suite and the mutations ran on the commit itself; the Pro site received the five changed production files by copy."
       ]
     }
   }
