@@ -485,6 +485,23 @@
         "Not counted as results: a run of the 15 files while the site was set up for the banner scenarios (CookieYes inactive: 101 passed and the 4 CookieYes tests skipped themselves; free-affected-browser-banner-reopen-fix-wrong-site-state.log), and a run during which the machine slept (lid closed seconds after the start: 93 passed, 9 timed out and 3 did not run in 2.1 hours; free-affected-browser-banner-reopen-fix-void-machine-slept.log, with the power log beside it).",
         "This defect was traced from CI after 8141890e had been recorded here as verified. It had been seen earlier the same day and set aside: a local wp-env run made for PR #415 failed the accept, reopen and withdraw test on all three transports, on 69257827 and on the redesign branch. The failures were listed in that pull request as failures of its base branch and were not traced, although its base branch is this one."
       ]
+    },
+    "review_fixture_degradation_record": {
+      "source": "c9b79905",
+      "found_by": "A full local browser run of the redesign branch (PR #415, 411cd2eb, which contains this branch at f4fddee9) in a reused wp-env stack: 970 passed, 12 failed, 74 skipped (settings-ux-wpenv-full-411cd2eb.log). CI did not show it.",
+      "cause": "tests/privacy-review-wp-test.php breaks the heatmap label cleanup on purpose. The plugin records that failure as a degradation ('purge (heatmap labels)', \"Table '...missing_privacy_label_fixture' doesn't exist\") in the option slimstat_degradations, and admin screens list it for three hours. The fixture restored everything else it touched, but not that option. custom-db-chart-regression.spec.ts:349 asserts that the Overview page does not contain \"Table '\", so it failed on a site that had run the fixture within three hours. A fresh CI site runs the chart spec before the privacy spec and is not affected.",
+      "fix": "Test code only. The fixture saves the option before its work, puts it back in the closing finally (deleted when it was absent), and fails itself when the option differs afterwards.",
+      "validation": {
+        "php": "Comparison site: with the change no record is left, starting from none and starting from one unrelated record (kept). With the restore line removed the new self-check fails. Without the change the record stays.",
+        "browser_before": "wp-env serving 411cd2eb: records cleared, chart test passes; privacy fixture test passes and leaves the record; chart test fails (settings-ux-wpenv-leak-before-fix-1..3 logs).",
+        "browser_after": "wp-env serving f008f843 (411cd2eb plus this commit): same sequence, no record left, chart test passes; then privacy-audit.spec.ts 16 of 16 and custom-db-chart-regression.spec.ts 6 of 6 (settings-ux-wpenv-leak-fixed-1..5 logs).",
+        "other_eleven": "The other 11 failures of that run were geolocation tests returning a null country: the rebuilt wp-env stack had no dbip-city-lite.mmdb, which CI stages in its full-suite lane. With the file copied in, the four geolocation spec files passed 23 of 23 (settings-ux-wpenv-geolocation-411cd2eb.log)."
+      },
+      "limits": [
+        "The full suite was not repeated after this commit; only the sequences above were.",
+        "tests/e2e/october-migration.spec.ts, which this branch does not change, leaves two records of its own on a reused site ('migration_db_unreachable', whose text also contains \"Table '\", and 'issue395 unrelated'). Within three hours of that spec the chart test fails in the same way. Not changed here; why its own restore step does not remove them was not traced.",
+        "custom-db-chart-regression.spec.ts:349 was listed in PR #415 as a failure of this branch at 69257827 without a trace; a leftover record of this kind explains it, but that earlier run was not re-examined."
+      ]
     }
   },
   "review_followups": {
