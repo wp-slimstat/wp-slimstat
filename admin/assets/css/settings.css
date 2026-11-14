@@ -92,6 +92,13 @@ html:has(.slimstat-save-bar) {
     cursor: default;
 }
 
+/* Shown when search opens a setting that another setting hides. */
+.slimstat-settings-search__hint {
+    margin: var(--ss-space-2) 0 0;
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-sm);
+}
+
 /* Status panels (Setup status on General, privacy summary on Privacy & GDPR) */
 .slimstat-settings-status {
     margin-block-start: var(--ss-space-6);

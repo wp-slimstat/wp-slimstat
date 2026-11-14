@@ -770,9 +770,14 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
                 break;
 
             case 'privacy-reviewed':
-                // Marks the review task complete. No privacy setting changes here.
+                // Marks the review task complete and changes only that stored key: $settings holds
+                // runtime fallbacks (WP Consent API swapped for the banner while it is inactive).
                 wp_slimstat::$settings['privacy_review_notice'] = 'no';
-                wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
+                $slimstat_stored = is_network_admin() ? get_site_option('slimstat_options') : get_option('slimstat_options');
+                if (is_array($slimstat_stored)) {
+                    $slimstat_stored['privacy_review_notice'] = 'no';
+                    wp_slimstat::update_option('slimstat_options', $slimstat_stored);
+                }
                 wp_slimstat_admin::show_message(__('Privacy review marked as complete. No settings were changed.', 'wp-slimstat'), 'info');
                 break;
 
@@ -1103,6 +1108,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
             <input type="search" id="slimstat-settings-search-input" placeholder="<?php esc_attr_e('Search settings', 'wp-slimstat'); ?>" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="slimstat-settings-search-results">
             <ul id="slimstat-settings-search-results" class="slimstat-settings-search__results" role="listbox" aria-label="<?php esc_attr_e('Matching settings', 'wp-slimstat'); ?>" hidden></ul>
             <span class="screen-reader-text" role="status" aria-live="polite"></span>
+            <p class="slimstat-settings-search__hint" hidden></p>
         </div>
         <?php wp_add_inline_script('slimstat-settings', 'window.slimstatSettingsIndex = ' . wp_json_encode(['url' => wp_specialchars_decode(wp_slimstat_admin::$config_url), 'rows' => $search_index], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) . ';', 'before'); ?>
 

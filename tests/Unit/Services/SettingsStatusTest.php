@@ -53,6 +53,9 @@ class SettingsStatusTest extends WpSlimstatTestCase
         $this->assertSame('Deleted after 30 days', $this->values(SettingsStatus::privacyRows(['auto_purge' => 30, 'auto_purge_delete' => 'no'], false))['Retention']);
         $this->assertSame('Archived after 30 days; archives kept indefinitely', $this->values(SettingsStatus::privacyRows(['auto_purge' => 30], false))['Retention']);
         $this->assertSame('Archived after 30 days; archives deleted after 90 days', $this->values(SettingsStatus::privacyRows(['auto_purge' => 30, 'auto_purge_delete' => 'on', 'archive_retention_days' => 90], false))['Retention']);
+        // Archive expiry runs even when live data is kept or deleted outright.
+        $this->assertSame('Kept indefinitely; archives deleted after 90 days', $this->values(SettingsStatus::privacyRows(['auto_purge' => 0, 'archive_retention_days' => 90], false))['Retention']);
+        $this->assertSame('Deleted after 30 days; archives deleted after 7 days', $this->values(SettingsStatus::privacyRows(['auto_purge' => 30, 'auto_purge_delete' => 'no', 'archive_retention_days' => 7], false))['Retention']);
     }
 
     public function test_setup_rows_flag_real_problems_and_link_to_the_fix(): void

@@ -48,7 +48,7 @@ msgstr ""
 
 #: admin/config/index.php:47
 msgid "General"
-msgstr "Allgemein"
+msgstr "Umum"
 
 #: admin/config/index.php:51 admin/config/index.php:213
 #: admin/view/heatmaps.php:40 src/Services/SettingsStatus.php:114
@@ -1250,7 +1250,7 @@ msgstr ""
 
 #: admin/config/index.php:671
 msgid "Performance"
-msgstr "Leistung"
+msgstr "Kinerja"
 
 #: admin/config/index.php:675
 msgid "Async mode"

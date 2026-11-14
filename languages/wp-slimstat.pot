@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-13T23:53:38+00:00\n"
+"POT-Creation-Date: 2026-11-14T03:41:41+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -1052,7 +1052,7 @@ msgid "Pro options"
 msgstr ""
 
 #: admin/config/index.php:728
-#: admin/config/index.php:1154
+#: admin/config/index.php:1160
 msgid "License"
 msgstr ""
 
@@ -1072,232 +1072,232 @@ msgstr ""
 msgid "Invalid settings data."
 msgstr ""
 
-#: admin/config/index.php:776
+#: admin/config/index.php:781
 msgid "Privacy review marked as complete. No settings were changed."
 msgstr ""
 
-#: admin/config/index.php:781
+#: admin/config/index.php:786
 msgid "All settings were successfully reset to their default values."
 msgstr ""
 
-#: admin/config/index.php:799
+#: admin/config/index.php:804
 msgid "All your records were successfully deleted."
 msgstr ""
 
-#: admin/config/index.php:800
+#: admin/config/index.php:805
 msgid "Database maintenance failed. Some records may already have been deleted. Check the database connection and retry."
 msgstr ""
 
-#: admin/config/index.php:814
+#: admin/config/index.php:819
 #: admin/index.php:695
 #: src/Migration/Admin/MigrationAdmin.php:68
 #: src/Migration/Admin/MigrationAdmin.php:223
 msgid "Sorry, you are not allowed to access this page."
 msgstr ""
 
-#: admin/config/index.php:861
+#: admin/config/index.php:866
 msgid "Congratulations! SlimStat Analytics is now optimized for <a href=\"https://www.youtube.com/watch?v=ygE01sOhzz0\" target=\"_blank\">ludicrous speed</a>."
 msgstr ""
 
-#: admin/config/index.php:862
+#: admin/config/index.php:867
 msgid "Table indexes have been disabled. Enjoy the extra database space!"
 msgstr ""
 
-#: admin/config/index.php:864
+#: admin/config/index.php:869
 msgid "The database index change could not be completed. The saved preference is unchanged; check the database and retry."
 msgstr ""
 
-#: admin/config/index.php:907
+#: admin/config/index.php:912
 msgid "The geolocation database update has been scheduled in the background. You can also use the Update Database button below to start it now."
 msgstr ""
 
-#: admin/config/index.php:925
+#: admin/config/index.php:930
 msgid "The Browscap data file has been uninstalled from your server."
 msgstr ""
 
-#: admin/config/index.php:928
+#: admin/config/index.php:933
 msgid "There was an error deleting the Browscap data folder on your server. Please check your permissions."
 msgstr ""
 
-#: admin/config/index.php:1011
+#: admin/config/index.php:1016
 msgid "Your new settings have been saved."
 msgstr ""
 
-#: admin/config/index.php:1033
+#: admin/config/index.php:1038
 msgid "Performance Notice:"
 msgstr ""
 
 #. translators: %s: comma-separated list of missing database index names.
-#: admin/config/index.php:1035
+#: admin/config/index.php:1040
 #, php-format
 msgid "The following DB indexes are missing and should be created for optimal performance: %s. Please visit the SlimStat settings or re-activate the plugin to trigger index creation."
 msgstr ""
 
-#: admin/config/index.php:1044
+#: admin/config/index.php:1049
 msgid "enable, disable, pause, stop, on, off"
 msgstr ""
 
-#: admin/config/index.php:1045
+#: admin/config/index.php:1050
 msgid "consent, gdpr, cookie banner, ccpa, opt-in"
 msgstr ""
 
-#: admin/config/index.php:1046
+#: admin/config/index.php:1051
 msgid "cmp, consent api, cookie plugin, banner"
 msgstr ""
 
-#: admin/config/index.php:1047
+#: admin/config/index.php:1052
 msgid "ip, mask, privacy, personal data"
 msgstr ""
 
-#: admin/config/index.php:1048
+#: admin/config/index.php:1053
 msgid "ip, hash, salt, pseudonymize"
 msgstr ""
 
-#: admin/config/index.php:1049
+#: admin/config/index.php:1054
 msgid "cookie, returning visitors, cookieless"
 msgstr ""
 
-#: admin/config/index.php:1050
+#: admin/config/index.php:1055
 msgid "dnt, gpc, global privacy control"
 msgstr ""
 
-#: admin/config/index.php:1051
+#: admin/config/index.php:1056
 msgid "retention, delete old data, purge, cleanup, archive"
 msgstr ""
 
-#: admin/config/index.php:1052
+#: admin/config/index.php:1057
 msgid "backend, wp-admin, dashboard"
 msgstr ""
 
-#: admin/config/index.php:1053
+#: admin/config/index.php:1058
 msgid "session, timeout, visit length"
 msgstr ""
 
-#: admin/config/index.php:1054
+#: admin/config/index.php:1059
 msgid "maxmind, geoip, dbip, country, city, location"
 msgstr ""
 
-#: admin/config/index.php:1055
+#: admin/config/index.php:1060
 msgid "exclude, block, filter, ip address"
 msgstr ""
 
-#: admin/config/index.php:1056
+#: admin/config/index.php:1061
 msgid "exclude, logged in, admins, myself"
 msgstr ""
 
-#: admin/config/index.php:1057
+#: admin/config/index.php:1062
 msgid "crawlers, spiders, robots"
 msgstr ""
 
-#: admin/config/index.php:1058
+#: admin/config/index.php:1063
 msgid "permissions, roles, access, who can see"
 msgstr ""
 
-#: admin/config/index.php:1059
+#: admin/config/index.php:1064
 msgid "sql, query limit, rows, performance"
 msgstr ""
 
-#: admin/config/index.php:1060
+#: admin/config/index.php:1065
 msgid "remove, erase, uninstall, delete everything"
 msgstr ""
 
-#: admin/config/index.php:1061
+#: admin/config/index.php:1066
 msgid "api, token, key, integration"
 msgstr ""
 
-#: admin/config/index.php:1096
+#: admin/config/index.php:1101
 #: admin/index.php:220
 #: admin/view/ai-analysis.php:19
 #: admin/view/partials/header.php:144
 msgid "Settings"
 msgstr ""
 
-#: admin/config/index.php:1102
-#: admin/config/index.php:1103
+#: admin/config/index.php:1107
+#: admin/config/index.php:1108
 msgid "Search settings"
 msgstr ""
 
-#: admin/config/index.php:1104
+#: admin/config/index.php:1109
 msgid "Matching settings"
 msgstr ""
 
-#: admin/config/index.php:1118
+#: admin/config/index.php:1124
 msgid "Setup status"
 msgstr ""
 
-#: admin/config/index.php:1118
+#: admin/config/index.php:1124
 msgid "What your privacy settings do"
 msgstr ""
 
-#: admin/config/index.php:1120
+#: admin/config/index.php:1126
 msgid "A plain summary of how SlimStat treats visitor data with the settings saved below. It is not legal advice: what you must do depends on your site, your visitors and the laws that apply to you."
 msgstr ""
 
-#: admin/config/index.php:1130
+#: admin/config/index.php:1136
 msgid "Needs attention:"
 msgstr ""
 
-#: admin/config/index.php:1139
+#: admin/config/index.php:1145
 msgid "Checked the summary and the settings below? Mark the review complete to stop the reminder. Your settings stay as they are."
 msgstr ""
 
-#: admin/config/index.php:1140
+#: admin/config/index.php:1146
 msgid "Mark privacy review as complete"
 msgstr ""
 
-#: admin/config/index.php:1143
+#: admin/config/index.php:1149
 msgid "Privacy review completed."
 msgstr ""
 
-#: admin/config/index.php:1149
+#: admin/config/index.php:1155
 #: admin/view/index.php:22
 msgid "<strong>AdBlock browser extension detected.</strong> If you see this notice, it means that your browser is not loading our stylesheet and/or JavaScript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href=\"https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work\" target=\"_blank\">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets."
 msgstr ""
 
-#: admin/config/index.php:1154
+#: admin/config/index.php:1160
 msgid "Pro settings"
 msgstr ""
 
-#: admin/config/index.php:1156
+#: admin/config/index.php:1162
 msgid "Install and activate the Pro plugin, then enter your license key here. Activating the plugin and activating a license are separate steps. Your current Free settings stay unchanged."
 msgstr ""
 
-#: admin/config/index.php:1157
+#: admin/config/index.php:1163
 msgid "Install and activate the Pro plugin to configure these settings. Your current Free settings stay unchanged."
 msgstr ""
 
-#: admin/config/index.php:1160
+#: admin/config/index.php:1166
 msgid "A Pro license gives you plugin updates and support."
 msgstr ""
 
-#: admin/config/index.php:1161
+#: admin/config/index.php:1167
 msgid "With Pro, choose which pages heatmaps track and how often, use an internal IP location lookup and keep stats in an external database."
 msgstr ""
 
-#: admin/config/index.php:1202
+#: admin/config/index.php:1208
 msgid "Network-wide"
 msgstr ""
 
-#: admin/config/index.php:1205
+#: admin/config/index.php:1211
 msgid "Network"
 msgstr ""
 
-#: admin/config/index.php:1205
+#: admin/config/index.php:1211
 msgid "Site"
 msgstr ""
 
-#: admin/config/index.php:1244
+#: admin/config/index.php:1250
 #: src/Services/SettingsStatus.php:114
 msgid "On"
 msgstr ""
 
-#: admin/config/index.php:1244
+#: admin/config/index.php:1250
 #: src/Services/SettingsStatus.php:64
 #: src/Services/SettingsStatus.php:98
 msgid "Off"
 msgstr ""
 
-#: admin/config/index.php:1370
+#: admin/config/index.php:1376
 msgid "Save Changes"
 msgstr ""
 
@@ -10911,12 +10911,24 @@ msgstr ""
 msgid "Privacy review"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:125
+#. translators: %d: number of days.
+#: src/Services/SettingsStatus.php:128
+#, php-format
+msgid "archives deleted after %d day"
+msgid_plural "archives deleted after %d days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Services/SettingsStatus.php:129
+msgid "archives kept indefinitely"
+msgstr ""
+
+#: src/Services/SettingsStatus.php:131
 msgid "Kept indefinitely"
 msgstr ""
 
 #. translators: %d: number of days.
-#: src/Services/SettingsStatus.php:130
+#: src/Services/SettingsStatus.php:135
 #, php-format
 msgid "Deleted after %d day"
 msgid_plural "Deleted after %d days"
@@ -10924,24 +10936,12 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of days.
-#: src/Services/SettingsStatus.php:134
+#: src/Services/SettingsStatus.php:138
 #, php-format
 msgid "Archived after %d day"
 msgid_plural "Archived after %d days"
 msgstr[0] ""
 msgstr[1] ""
-
-#. translators: %d: number of days.
-#: src/Services/SettingsStatus.php:137
-#, php-format
-msgid "archives deleted after %d day"
-msgid_plural "archives deleted after %d days"
-msgstr[0] ""
-msgstr[1] ""
-
-#: src/Services/SettingsStatus.php:138
-msgid "archives kept indefinitely"
-msgstr ""
 
 #: src/Shortcodes/Shortcode.php:45
 msgid "Invalid shortcode attribute: f."
@@ -12260,19 +12260,25 @@ msgstr ""
 msgid "Some selected filters are not supported by Heatmaps. They are kept for other reports and are not applied here:"
 msgstr ""
 
-#: admin/assets/js/settings.js:158
+#. translators: 1: a setting that is hidden, 2: the setting that shows it.
+#: admin/assets/js/settings.js:62
+#, js-format
+msgid "“%1$s” is hidden until you change “%2$s”."
+msgstr ""
+
+#: admin/assets/js/settings.js:190
 msgid "No settings match. Try another word."
 msgstr ""
 
 #. translators: %d: number of matching settings.
-#: admin/assets/js/settings.js:165
+#: admin/assets/js/settings.js:197
 #, js-format
 msgid "%d setting found"
 msgid_plural "%d settings found"
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/assets/js/settings.js:207
+#: admin/assets/js/settings.js:241
 msgid "You have unsaved changes."
 msgstr ""
 

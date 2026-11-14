@@ -30,11 +30,17 @@ test.describe('Settings redesign keeps every saved setting', () => {
   test.afterAll(async () => { await closeDb(); });
 
   test('saving any tab without changes leaves slimstat_options byte-identical', async ({ page }) => {
-    // One normalising save per tab first, so the check isolates the layout, not older normalisation.
+    // First save of each tab: every stored value survives. Normalisation may only add keys.
     for (const tab of [1, 9, 2, 3, 4, 5, 6, 10]) {
+      const before = phpUnserialize(await rawOptions()) as Record<string, unknown>;
       await page.goto(tabUrl(tab));
       await save(page);
+      const after = phpUnserialize(await rawOptions()) as Record<string, unknown>;
+      for (const [key, value] of Object.entries(before)) {
+        expect(after[key], `first save of tab ${tab} changed ${key}`).toEqual(value);
+      }
     }
+    // Then saving again changes nothing at all.
     for (const tab of [1, 9, 2, 3, 4, 5, 6, 10]) {
       const before = await rawOptions();
       await page.goto(tabUrl(tab));
@@ -93,6 +99,42 @@ test.describe('Settings redesign keeps every saved setting', () => {
     await setSettingsToggle(toggle, was);
     await expect(status).toHaveText('');
     expect(await warns()).toBe(false);
+  });
+
+  test('edits in the Custom CSS code editor count as unsaved changes', async ({ page }) => {
+    await page.goto(tabUrl(3));
+    const status = page.locator('.slimstat-save-bar__status');
+    await page.locator('#slimstat-setting-custom_css .CodeMirror').click();
+    await page.keyboard.type('a');
+    await expect(status).toHaveText('You have unsaved changes.');
+    await page.evaluate(() => (document.querySelector('#slimstat-setting-custom_css .CodeMirror') as any).CodeMirror.undo());
+    await expect(status).toHaveText('');
+  });
+
+  test('search for a setting hidden by another opens the one that shows it', async ({ page }) => {
+    await setSlimstatOptions({ gdpr_enabled: 'off' });
+    const before = await rawOptions();
+    await page.goto(tabUrl(1));
+    const input = page.getByRole('combobox', { name: 'Search settings' });
+    await input.fill('accept button');
+    await expect(page.getByRole('listbox', { name: 'Matching settings' }).getByRole('option').first()).toContainText('Accept button label');
+    await input.press('Enter');
+    await expect(page).toHaveURL(/tab=9#slimstat-setting-gdpr_enabled$/);
+    await expect(page.locator('.slimstat-settings-search__hint')).toHaveText('“Accept button label” is hidden until you change “Require visitor consent”.');
+    await expect(page.locator('#gdpr_enabled')).toBeFocused();
+    expect(await rawOptions()).toBe(before);
+  });
+
+  test('completing the privacy review keeps a consent source whose plugin is inactive', async ({ page }) => {
+    // With WP Consent API inactive, SlimStat runs its own banner in memory; the stored choice must stay.
+    await setSlimstatOptions({ privacy_review_notice: 'yes', gdpr_enabled: 'on', consent_integration: 'wp_consent_api' });
+    const before = phpUnserialize(await rawOptions()) as Record<string, unknown>;
+    await page.goto(tabUrl(9));
+    await expect(page.locator('#consent_integration'), 'the in-memory fallback must be active for this test to mean anything').toHaveValue('slimstat_banner');
+    await page.getByRole('button', { name: 'Mark privacy review as complete' }).click();
+    await page.waitForLoadState('load');
+    await expect(page.getByText('Privacy review marked as complete. No settings were changed.')).toBeVisible();
+    expect(phpUnserialize(await rawOptions())).toEqual({ ...before, privacy_review_notice: 'no' });
   });
 
   test('completing the privacy review writes only privacy_review_notice', async ({ page }) => {

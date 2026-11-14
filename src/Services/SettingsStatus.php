@@ -120,22 +120,25 @@ final class SettingsStatus
 
 	private static function retention(array $s): string
 	{
-		$days = (int) ($s['auto_purge'] ?? 0);
-		if ($days <= 0) {
-			return __('Kept indefinitely', 'wp-slimstat');
-		}
-		// Same test as wp_slimstat_purge(): anything but 'no' archives.
-		if ('no' === ($s['auto_purge_delete'] ?? 'on')) {
-			/* translators: %d: number of days. */
-			return sprintf(_n('Deleted after %d day', 'Deleted after %d days', $days, 'wp-slimstat'), $days);
-		}
+		$days    = (int) ($s['auto_purge'] ?? 0);
 		$archive = (int) ($s['archive_retention_days'] ?? 0);
-		/* translators: %d: number of days. */
-		$moved = sprintf(_n('Archived after %d day', 'Archived after %d days', $days, 'wp-slimstat'), $days);
-		return $moved . '; ' . ($archive > 0
+		// wp_slimstat_purge() expires archives on every run, whether or not live data is purged.
+		$archives = $archive > 0
 			/* translators: %d: number of days. */
 			? sprintf(_n('archives deleted after %d day', 'archives deleted after %d days', $archive, 'wp-slimstat'), $archive)
-			: __('archives kept indefinitely', 'wp-slimstat'));
+			: __('archives kept indefinitely', 'wp-slimstat');
+		if ($days <= 0) {
+			$live = __('Kept indefinitely', 'wp-slimstat');
+		} elseif ('no' === ($s['auto_purge_delete'] ?? 'on')) {
+			// Same test as wp_slimstat_purge(): anything but 'no' archives.
+			/* translators: %d: number of days. */
+			$live = sprintf(_n('Deleted after %d day', 'Deleted after %d days', $days, 'wp-slimstat'), $days);
+		} else {
+			/* translators: %d: number of days. */
+			return sprintf(_n('Archived after %d day', 'Archived after %d days', $days, 'wp-slimstat'), $days) . '; ' . $archives;
+		}
+		// Not archiving now: mention archives only when older ones still expire.
+		return $archive > 0 ? $live . '; ' . $archives : $live;
 	}
 
 	private static function row(string $label, string $value, string $state, int $tab, string $anchor): array

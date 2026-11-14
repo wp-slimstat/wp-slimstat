@@ -33,8 +33,40 @@
         return null;
     }
 
+    // A row hidden by its conditional field: the field to change is the last visible one it
+    // depends on (a parent hides its children, so earlier ones are already set).
+    function controller(row) {
+        var fields = (row.getAttribute('data-conditional-field') || '').split(',');
+        for (var i = fields.length - 1; i >= 0; i--) {
+            var el = find('slimstat-setting-' + fields[i].trim());
+            if (el && el.getClientRects().length) {
+                return el;
+            }
+        }
+        return null;
+    }
+
     function reveal(target) {
         var row = target.closest('tr') || target;
+        var hint = document.querySelector('.slimstat-settings-search__hint');
+        if (hint) {
+            hint.hidden = true;
+        }
+        var parent = row.getClientRects().length ? null : controller(row);
+        if (parent) {
+            // Explain the dependency and open the controlling setting; never change it for the user.
+            var hidden = locate(row.id);
+            var shown = locate(parent.id);
+            if (hint && hidden && shown) {
+                /* translators: 1: a setting that is hidden, 2: the setting that shows it. */
+                hint.textContent = i18n.sprintf(i18n.__('“%1$s” is hidden until you change “%2$s”.', 'wp-slimstat'), hidden.l, shown.l);
+                hint.hidden = false;
+                // The visible hint is not a live region; the search status announces it.
+                hint.parentNode.querySelector('[role=status]').textContent = hint.textContent;
+            }
+            window.location.replace('#' + parent.id);
+            target = row = parent;
+        }
         row.scrollIntoView({ block: 'center' });
         var control = target.matches('input, select, textarea') ? target : row.querySelector('input:not([type=hidden]), select, textarea');
         if (control) {
@@ -198,15 +230,37 @@
     var serialize = function () { return new URLSearchParams(new FormData(form)).toString(); };
     var saved = null;
     var dirty = false;
+    // CodeMirror and TinyMCE write to their textarea only on submit, so each is compared with its own start.
+    var editors = [];
     var check = function () {
         if (null === saved) { return; }
-        var now = serialize() !== saved;
+        var now = serialize() !== saved || editors.some(function (changed) { return changed(); });
         if (now === dirty) { return; }
         dirty = now;
         bar.classList.toggle('is-dirty', dirty);
         note.textContent = dirty ? i18n.__('You have unsaved changes.', 'wp-slimstat') : '';
     };
-    window.addEventListener('load', function () { saved = serialize(); });
+    window.addEventListener('load', function () {
+        saved = serialize();
+        form.querySelectorAll('.CodeMirror').forEach(function (el) {
+            var cm = el.CodeMirror;
+            var clean = cm.changeGeneration();
+            editors.push(function () { return !cm.isClean(clean); });
+            cm.on('change', check);
+        });
+        if (window.tinymce) {
+            var track = function (ed) {
+                if (!form.contains(ed.getElement())) { return; }
+                var start = null;
+                var begin = function () { start = ed.getContent(); };
+                if (ed.initialized) { begin(); } else { ed.on('init', begin); }
+                editors.push(function () { return null !== start && ed.getContent() !== start; });
+                ed.on('input change undo redo', check);
+            };
+            window.tinymce.editors.forEach(track);
+            window.tinymce.on('AddEditor', function (e) { track(e.editor); });
+        }
+    });
     form.addEventListener('input', check);
     form.addEventListener('change', check);
     form.addEventListener('submit', function () { saved = null; dirty = false; });
