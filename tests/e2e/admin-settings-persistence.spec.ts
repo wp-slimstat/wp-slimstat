@@ -29,6 +29,9 @@ const SETTINGS_URL = `${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=1`;
 /** Tracking tab: tracking mode, transport and admin tracking live here since the settings redesign. */
 const TRACKING_URL = `${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=2`;
 
+/** Tab 2 also holds geolocation: on a site without the DB-IP file a save reports the scheduled download instead. */
+const SAVED = /Your new settings have been saved|geolocation database update has been scheduled/;
+
 // ─── Helpers ──────────────────────────────────────────────────────────
 
 /** Read the full slimstat_options from the DB and return as a parsed object. */
@@ -115,10 +118,8 @@ test.describe('Admin Settings Persistence', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // Verify save confirmation message appeared
-    const notice = page.locator('.slimstat-notice.notice-info').filter({ hasText: 'Your new settings have been saved' });
+    const notice = page.locator('.slimstat-notice').filter({ hasText: SAVED });
     await expect(notice).toBeVisible();
-    const noticeText = await notice.innerText();
-    expect(noticeText).toContain('saved');
 
     // Reload the page to verify the value sticks
     await page.goto(TRACKING_URL, { waitUntil: 'domcontentloaded' });
@@ -169,7 +170,7 @@ test.describe('Admin Settings Persistence', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // Verify save confirmation
-    await expect(page.locator('.slimstat-notice.notice-info').filter({ hasText: 'Your new settings have been saved' })).toBeVisible();
+    await expect(page.locator('.slimstat-notice').filter({ hasText: SAVED })).toBeVisible();
 
     // Verify ALL three values in the DB
     const opts = await getSlimstatOptionsFromDb();
@@ -212,7 +213,7 @@ test.describe('Admin Settings Persistence', () => {
     // Submit and wait for confirmation
     await page.locator('input.slimstat-settings-button[type="submit"]').click();
     await page.waitForLoadState('domcontentloaded');
-    await expect(page.locator('.slimstat-notice.notice-info').filter({ hasText: 'Your new settings have been saved' })).toBeVisible();
+    await expect(page.locator('.slimstat-notice').filter({ hasText: SAVED })).toBeVisible();
 
     // Navigate away to the WP Dashboard
     await page.goto(`${BASE_URL}/wp-admin/`, { waitUntil: 'domcontentloaded' });
