@@ -34,13 +34,18 @@ test.describe('Settings redesign keeps every saved setting', () => {
     // First save of each tab: every stored value survives. Normalisation may only add keys, store an
     // integer default (auto_purge 420) as the posted string (readers intval() it), and store an unset
     // toggle default 'off' as the 'no' its hidden input posts (readers test 'on' ===).
+    // Saving tab 2 also syncs the legacy enable_maxmind flag to the stored provider (as on development);
+    // the resolver ignores that flag whenever geolocation_provider is set, so tracking cannot change.
     const same = (v: unknown) => (null !== v && 'object' === typeof v ? v : ('off' === v ? 'no' : String(v)));
+    const legacyFlag: Record<string, string> = { maxmind: 'on', dbip: 'no', cloudflare: 'no', disable: 'disable' };
     for (const tab of [1, 9, 2, 3, 4, 5, 6, 10]) {
       const before = phpUnserialize(await rawOptions()) as Record<string, unknown>;
       await page.goto(tabUrl(tab));
       await save(page);
       const after = phpUnserialize(await rawOptions()) as Record<string, unknown>;
+      expect(after.geolocation_provider, `first save of tab ${tab} changed geolocation_provider`).toEqual(before.geolocation_provider);
       for (const [key, value] of Object.entries(before)) {
+        if ('enable_maxmind' === key && 2 === tab && after[key] === legacyFlag[String(after.geolocation_provider)]) continue;
         expect(same(after[key]), `first save of tab ${tab} changed ${key}`).toEqual(same(value));
       }
     }

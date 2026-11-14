@@ -232,6 +232,18 @@
     var dirty = false;
     // CodeMirror and TinyMCE write to their textarea only on submit, so each is compared with its own start.
     var editors = [];
+    // admin.js builds CodeMirror in a jQuery ready callback, which jQuery 3 may run after window load,
+    // and its typing fires no form input event, so an editor is also picked up when it takes focus.
+    // isClean() needs no snapshot: a new CodeMirror document starts clean.
+    var watchCodeEditors = function () {
+        form.querySelectorAll('.CodeMirror').forEach(function (el) {
+            var cm = el.CodeMirror;
+            if (!cm || cm.slimstatWatched) { return; }
+            cm.slimstatWatched = true;
+            editors.push(function () { return !cm.isClean(); });
+            cm.on('change', check);
+        });
+    };
     var check = function () {
         if (null === saved) { return; }
         var now = serialize() !== saved || editors.some(function (changed) { return changed(); });
@@ -242,12 +254,7 @@
     };
     window.addEventListener('load', function () {
         saved = serialize();
-        form.querySelectorAll('.CodeMirror').forEach(function (el) {
-            var cm = el.CodeMirror;
-            var clean = cm.changeGeneration();
-            editors.push(function () { return !cm.isClean(clean); });
-            cm.on('change', check);
-        });
+        watchCodeEditors();
         if (window.tinymce) {
             var track = function (ed) {
                 if (!form.contains(ed.getElement())) { return; }
@@ -261,6 +268,7 @@
             window.tinymce.on('AddEditor', function (e) { track(e.editor); });
         }
     });
+    form.addEventListener('focusin', watchCodeEditors);
     form.addEventListener('input', check);
     form.addEventListener('change', check);
     form.addEventListener('submit', function () { saved = null; dirty = false; });
