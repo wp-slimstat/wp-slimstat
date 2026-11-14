@@ -1197,7 +1197,7 @@ var SlimStat = (function () {
         return null;
     }
 
-    function detectSlimStatBanner(consentCookieName, category) {
+    function detectSlimStatBanner(consentCookieName) {
         try {
             var cookieName = consentCookieName || "slimstat_gdpr_consent";
             var value = getCookieStrict(cookieName);
@@ -1210,15 +1210,8 @@ var SlimStat = (function () {
             if (value === "denied") {
                 return false;
             }
-            try {
-                var parsed = JSON.parse(value);
-                if (parsed && parsed[category] !== undefined) {
-                    return !!parsed[category];
-                }
-            } catch (err) {
-                /* ignore */
-            }
-            return value.length > 0;
+            // Anything else is not a decision: the server and the banner read only these two values.
+            return null;
         } catch (err4) {
             return null;
         }
@@ -1415,6 +1408,8 @@ var SlimStat = (function () {
         }
         var snapshot = detail.allowed + "|" + detail.mode + "|" + detail.reason;
         if (snapshot !== lastConsentSnapshot) {
+            // Full consent was seen on this page and is gone now: only then is there a server-side cookie to remove.
+            detail.withdrawn = detail.mode !== "full" && (lastConsentSnapshot || "").indexOf("|full|") !== -1;
             if (detail.mode !== "full") {
                 // Delayed retries must not revive data after withdrawal and a later grant.
                 consentGeneration++;
@@ -1481,7 +1476,7 @@ var SlimStat = (function () {
         var cmpAllows = false;
         if (integrationKey === "slimstat_banner" || integrationKey === "slimstat" || (!integrationKey && s.use_slimstat_banner === "on")) {
             hasSource = s.use_slimstat_banner === "on";
-            cmpAllows = hasSource && detectSlimStatBanner(s.gdpr_cookie_name || "slimstat_gdpr_consent", consentLevel) === true;
+            cmpAllows = hasSource && detectSlimStatBanner(s.gdpr_cookie_name || "slimstat_gdpr_consent") === true;
         } else if (["wp_consent_api", "wpconsent", "wp_consent", "real_cookie_banner", "rcb", "realcookie"].indexOf(integrationKey) !== -1) {
             var consent = detectWPConsentAPI(consentLevel);
             hasSource = consent !== null;
@@ -2257,6 +2252,27 @@ if (!window.requestIdleCallback) {
         startInitialPageview();
     }
 
+    // Tell the server about a WP Consent API decision: only the server can remove the HttpOnly tracking cookie.
+    function forwardWpConsentDecision(params, hasConsent) {
+        try {
+            // Clear consent upgrade state when consent is denied
+            if (!hasConsent) {
+                SlimStat.consent.checkAllowed(params, {});
+            }
+
+            var parsedConsent = SlimStat.consent.normalize({
+                statistics: hasConsent ? "allow" : "deny",
+            });
+
+            var pageviewId = null;
+            if (params.id && parseInt(params.id, 10) > 0) {
+                pageviewId = params.id;
+            }
+
+            SlimStat.consent.sendChange("wp_consent_api", parsedConsent, pageviewId);
+        } catch (consentError) {}
+    }
+
     // Listen for WP Consent API consent changes and retry pageview if previously blocked
     document.addEventListener("wp_listen_for_consent_change", function (event) {
         try {
@@ -2268,6 +2284,12 @@ if (!window.requestIdleCallback) {
             if (detail[selectedCategory] && detail[selectedCategory] === "allow" && (!window[retryKey] || window[retryKey] === false)) {
                 window[retryKey] = true;
                 requestConsentUpgrade();
+            } else if (detail[selectedCategory] === "deny" && params.consent_integration === "wp_consent_api") {
+                // wp_set_consent() fires only this event, so a withdrawal made in Complianz or CookieYes arrives here.
+                // CookieYes also writes "deny" on a first visit, before any decision: nothing to withdraw, no server call.
+                // Real Cookie Banner sites arrive here too: that plugin was never a selectable integration, they use this setting.
+                window[retryKey] = false;
+                if (SlimStat.consent.checkAllowed(params, {}).withdrawn) forwardWpConsentDecision(params, false);
             }
         } catch (e) {
             /* ignore */
@@ -2345,21 +2367,7 @@ if (!window.requestIdleCallback) {
                         hasConsent = event.detail.consent === true || event.detail.consent === "allow";
                     }
 
-                    // Clear consent upgrade state when consent is denied
-                    if (!hasConsent) {
-                        SlimStat.consent.checkAllowed(params, {});
-                    }
-
-                    var parsedConsent = SlimStat.consent.normalize({
-                        statistics: hasConsent ? "allow" : "deny",
-                    });
-
-                    var pageviewId = null;
-                    if (params.id && parseInt(params.id, 10) > 0) {
-                        pageviewId = params.id;
-                    }
-
-                    SlimStat.consent.sendChange("wp_consent_api", parsedConsent, pageviewId);
+                    forwardWpConsentDecision(params, hasConsent);
                 } catch (consentError) {}
             }
         }

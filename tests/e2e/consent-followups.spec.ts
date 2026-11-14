@@ -34,6 +34,64 @@ test.describe('consent wire and unchanged settings (#366/#367)', () => {
       } finally { await context.close(); await getPool().query('DELETE FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]); }
     });
   }
+  // Complianz and CookieYes withdraw through wp_set_consent(), which fires wp_listen_for_consent_change.
+  // The test above calls sendChange() itself, so it cannot see whether that event is wired.
+  test('a denial through the real WP Consent API call removes the tracking cookie, and accepting again restores it', async ({ browser }) => {
+    await snapshotOption('active_plugins');
+    runWordPressFixture(`<?php require_once ABSPATH . 'wp-admin/includes/plugin.php';
+      update_option('active_plugins', array_values(array_filter(get_option('active_plugins'), static fn($plugin) => !preg_match('~^(cookie-law-info|complianz-gdpr|real-cookie-banner)/~', $plugin))));
+      activate_plugin('wp-consent-api/wp-consent-api.php');`);
+    await setSlimstatOptions({ gdpr_enabled: 'on', consent_integration: 'wp_consent_api', consent_level_integration: 'statistics', use_slimstat_banner: 'off',
+      javascript_mode: 'on', is_tracking: 'on', anonymous_tracking: 'off', set_tracker_cookie: 'on', ignore_bots: 'off', ignore_users: '', ignore_ips: '', tracking_request_method: 'rest' });
+    const marker = `consent-real-api-${Date.now()}`;
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const hasTrackerCookie = async () => (await context.cookies()).some(c => c.name === 'slimstat_tracking_code' && c.httpOnly);
+    try {
+      const page = await context.newPage();
+      await page.addInitScript(() => { (window as any).wp_consent_type = 'optin'; });
+      await page.goto(`${BASE_URL}/?consent_wire=${marker}`);
+      expect(await page.evaluate(() => typeof (window as any).wp_set_consent)).toBe('function');
+      expect(await hasTrackerCookie()).toBe(false);
+      // CookieYes writes "deny" on a first visit, before any decision: nothing was withdrawn, so no server call.
+      let consentPosts = 0;
+      page.on('request', r => { if (r.url().includes('/consent-change') && r.method() === 'POST') consentPosts++; });
+      await page.evaluate(() => (window as any).wp_set_consent('statistics', 'deny'));
+      await page.evaluate(() => (window as any).wp_set_consent('statistics', 'allow'));
+      await expect.poll(hasTrackerCookie).toBe(true);
+      expect(consentPosts).toBe(0);
+      const response = page.waitForResponse(r => r.url().includes('/consent-change') && r.request().method() === 'POST', { timeout: 10000 });
+      await page.evaluate(() => (window as any).wp_set_consent('statistics', 'deny'));
+      expect((await response).status()).toBe(200);
+      await expect.poll(hasTrackerCookie).toBe(false);
+      await page.evaluate(() => (window as any).wp_set_consent('statistics', 'allow'));
+      await expect.poll(hasTrackerCookie).toBe(true);
+    } finally {
+      try { await context.close(); } finally {
+        await restoreOption('active_plugins');
+        await getPool().query('DELETE FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]);
+      }
+    }
+  });
+
+  // The server and the banner itself read only "accepted" or "denied" as a decision; the tracker has to agree.
+  test('an unknown value in the built-in banner cookie is not consent: no tracker request, no row', async ({ browser }) => {
+    await setSlimstatOptions({ gdpr_enabled: 'on', consent_integration: 'slimstat_banner', use_slimstat_banner: 'on', anonymous_tracking: 'off',
+      set_tracker_cookie: 'on', javascript_mode: 'on', is_tracking: 'on', ignore_bots: 'off', do_not_track: 'off', tracking_request_method: 'rest' });
+    const marker = `banner-cookie-${Date.now()}`;
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      await context.addCookies([{ name: 'slimstat_gdpr_consent', value: 'bogus', url: BASE_URL }]);
+      const page = await context.newPage();
+      const hits: string[] = [];
+      page.on('request', r => { if (r.url().includes('/slimstat/v1/hit')) hits.push(r.url()); });
+      await page.goto(`${BASE_URL}/?banner_cookie=${marker}`, { waitUntil: 'networkidle' });
+      await expect(page.locator('#slimstat-gdpr-banner')).toBeVisible();
+      await page.waitForTimeout(2000);
+      expect(hits).toHaveLength(0);
+      const [rows]: any = await getPool().query('SELECT id FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]);
+      expect(rows).toHaveLength(0);
+    } finally { await context.close(); await getPool().query('DELETE FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]); }
+  });
   test('saving Privacy & GDPR with GDPR off preserves an unchosen consent integration', async ({ page }) => {
     await setSlimstatOptions({ gdpr_enabled: 'off', consent_integration: '', use_slimstat_banner: 'off' });
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=9`);
