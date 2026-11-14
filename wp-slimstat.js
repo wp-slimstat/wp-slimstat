@@ -1408,7 +1408,7 @@ var SlimStat = (function () {
         }
         var snapshot = detail.allowed + "|" + detail.mode + "|" + detail.reason;
         if (snapshot !== lastConsentSnapshot) {
-            // Full consent was seen on this page and is gone now: only then is there a server-side cookie to remove.
+            // Full consent was seen on this page and is gone now: tell the server, which removes its cookie. A cookie left from an earlier page is removed by the next page request.
             detail.withdrawn = detail.mode !== "full" && (lastConsentSnapshot || "").indexOf("|full|") !== -1;
             if (detail.mode !== "full") {
                 // Delayed retries must not revive data after withdrawal and a later grant.

@@ -332,4 +332,39 @@ class SessionTest extends WpSlimstatTestCase
         $this->assertFalse($result, 'setTrackingCookie() must return false when cookie setting is disabled');
         $this->assertFalse(\SlimStat\Tracker\Session::setTrackingCookie(1, 'visit', null, true), 'consent upgrades cannot force a disabled cookie');
     }
+
+    // -----------------------------------------------------------------------
+    // deleteTrackingCookieWithoutConsent — page-request cleanup
+    // -----------------------------------------------------------------------
+
+    /**
+     * A page request removes the tracking cookie only while identifying analytics is not allowed.
+     *
+     * @test
+     * @dataProvider leftoverCookieCases
+     */
+    public function test_page_request_removes_the_tracking_cookie_only_without_consent(string $gdpr, bool $consent, bool $kept): void
+    {
+        \wp_slimstat::$settings['gdpr_enabled'] = $gdpr;
+        \wp_slimstat::$settings['consent_integration'] = 'wp_consent_api';
+        $_COOKIE['slimstat_tracking_code'] = '999.left-from-an-earlier-page';
+        Functions\stubs([
+            'wp_has_consent' => $consent, 'wp_get_consent_type' => 'optin', 'is_ssl' => false,
+            'sanitize_text_field' => static fn($v) => is_string($v) ? $v : '',
+            'wp_unslash'          => static fn($v) => is_string($v) ? stripslashes($v) : $v,
+        ]);
+
+        \SlimStat\Tracker\Session::deleteTrackingCookieWithoutConsent();
+
+        $this->assertSame($kept, isset($_COOKIE['slimstat_tracking_code']));
+    }
+
+    public static function leftoverCookieCases(): array
+    {
+        return [
+            'consent denied: removed'    => ['on', false, false],
+            'consent given: kept'        => ['on', true, true],
+            'consent not required: kept' => ['off', false, true],
+        ];
+    }
 }

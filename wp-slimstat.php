@@ -409,6 +409,9 @@ class wp_slimstat
         $is_tracking_filter_js = apply_filters('slimstat_filter_pre_tracking_js', true);
         unset($_request_uri, $_is_internal_endpoint);
 
+        // Front-end page requests remove a tracking cookie the visitor no longer consents to, whether or not this page is tracked.
+        add_action('template_redirect', [\SlimStat\Tracker\Session::class, 'deleteTrackingCookieWithoutConsent'], 1);
+
         // Enable the tracker (both server- and client-side)
         if ((!is_admin() || 'on' == self::$settings['track_admin_pages']) && 'on' == self::$settings['is_tracking'] && $is_tracking_filter) {
 

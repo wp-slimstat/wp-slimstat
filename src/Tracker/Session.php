@@ -289,6 +289,20 @@ class Session
 	}
 
 	/**
+	 * Expire a tracking cookie that arrives while identifying analytics is not allowed.
+	 *
+	 * The tracker cannot read the HttpOnly cookie and reports a withdrawal only when it saw
+	 * consent on the same page. Consent withdrawn anywhere else (another tab, an expired
+	 * decision, a page where the tracker did not run) leaves the cookie for the page request.
+	 */
+	public static function deleteTrackingCookieWithoutConsent(): void
+	{
+		if (isset($_COOKIE['slimstat_tracking_code']) && !Consent::piiAllowed()) {
+			self::deleteTrackingCookie();
+		}
+	}
+
+	/**
 	 * Find the visit this anonymous person is already in, by identity, within the window.
 	 *
 	 * The old probe matched request ATTRIBUTES — hashed ip (unindexed), the exact
