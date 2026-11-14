@@ -220,6 +220,24 @@ test.describe('privacy audit: real visitor consent boundaries', () => {
     });
   }
 
+  test('a banner reopened straight after a decision stays open', async ({ browser }) => {
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      const page = await context.newPage();
+      await page.goto(`${BASE_URL}/?privacy_audit=reopen`);
+      await expect(page.locator('#slimstat-gdpr-banner')).toBeVisible();
+      // Both clicks in one task, so the reopen always lands before the close that the decision scheduled.
+      await page.evaluate(() => {
+        (document.querySelector('[data-consent="accepted"]') as HTMLElement).click();
+        (document.querySelector('.slimstat-privacy-settings') as HTMLElement).click();
+      });
+      await page.waitForTimeout(600); // the scheduled close is due 350 ms after the decision
+      await expect(page.locator('#slimstat-gdpr-banner')).toBeVisible();
+      await page.locator('[data-consent="denied"]').click();
+      await expect.poll(async () => (await context.cookies()).find(c => c.name === 'slimstat_gdpr_consent')?.value).toBe('denied');
+    } finally { await context.close(); }
+  });
+
   test('missing CMP with anonymous mode off cannot reuse an identified visitor cookie', async ({ browser }) => {
     await setSlimstatOptions({ consent_integration: '', use_slimstat_banner: 'off', anonymous_tracking: 'off' });
     const cookie = runWordPressFixture("<?php echo '991234.' . hash_hmac('sha256', '991234', wp_slimstat::$settings['secret']);").trim();
