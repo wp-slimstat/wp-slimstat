@@ -11,6 +11,7 @@ $cookies = $_COOKIE;
 $stat = wp_slimstat::get_stat();
 $data = wp_slimstat::get_data_js();
 $heatmap = get_option(\SlimStat\Heatmap\Store::STATE, []);
+$degradations = get_option(wp_slimstat::DEGRADATION_OPTION, null);
 $prefix = $GLOBALS['wpdb']->prefix;
 $tag = 'privacy-review-' . wp_generate_uuid4();
 $ids = [];
@@ -325,6 +326,9 @@ try {
     wp_slimstat::set_stat($stat);
     wp_slimstat::set_data_js($data);
     update_option(\SlimStat\Heatmap\Store::STATE, $heatmap, false);
+    // The failed label cleanup above is recorded as a degradation, which admin screens list for three hours.
+    if (null === $degradations) { delete_option(wp_slimstat::DEGRADATION_OPTION); } else { update_option(wp_slimstat::DEGRADATION_OPTION, $degradations, false); }
 }
+if (get_option(wp_slimstat::DEGRADATION_OPTION, null) !== $degradations) { $failures[] = 'fixture leaves the stored degradation records as it found them'; }
 if ($failures) { throw new RuntimeException(implode("\n", $failures)); }
 echo "PASS: exact masked goal/funnel totals, cache isolation, in-flight anonymous update and concurrent heatmap erasure\n";
