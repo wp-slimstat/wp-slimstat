@@ -224,10 +224,14 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
     await page.locator('input.slimstat-settings-button[type="submit"]').click();
     await page.waitForLoadState('domcontentloaded');
 
-    // Should show an error (either uncompressing or downloading)
-    const bodyText = await page.locator('body').innerText();
-    const hasError = /error/i.test(bodyText);
-    expect(hasError, 'An error message should appear for corrupt zip').toBe(true);
+    // The blocker serves an HTML page as the archive, so the save must report "not a valid ZIP archive".
+    // Read the notices, not the body: the word "error" anywhere on the page matched unrelated help text.
+    const notices = await page
+      .locator('.slimstat-notice, .notice, .updated, #setting-error-settings_updated, #message')
+      .allInnerTexts();
+    expect(notices.join(' '), 'The save notice should say the download is not a ZIP archive').toContain(
+      'not a valid ZIP archive',
+    );
 
     // Toggle should revert
     await page.goto(SETTINGS_URL, { waitUntil: 'domcontentloaded' });
