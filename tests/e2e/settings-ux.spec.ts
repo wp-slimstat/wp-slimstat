@@ -19,7 +19,8 @@ async function rawOptions(): Promise<string> {
 async function save(page: Page): Promise<void> {
   await page.locator('input.slimstat-settings-button[type="submit"]').click();
   await page.waitForLoadState('load');
-  await expect(page.locator('.slimstat-notice').filter({ hasText: 'Your new settings have been saved' })).toBeVisible();
+  // Tab 2 reports a scheduled geolocation download instead when the DB-IP file is missing (fresh sites).
+  await expect(page.locator('.slimstat-notice').filter({ hasText: /Your new settings have been saved|geolocation database update has been scheduled/ })).toBeVisible();
 }
 
 test.describe('Settings redesign keeps every saved setting', () => {

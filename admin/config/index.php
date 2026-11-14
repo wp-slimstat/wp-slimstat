@@ -1104,7 +1104,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
             <ul id="slimstat-settings-search-results" class="slimstat-settings-search__results" role="listbox" aria-label="<?php esc_attr_e('Matching settings', 'wp-slimstat'); ?>" hidden></ul>
             <span class="screen-reader-text" role="status" aria-live="polite"></span>
         </div>
-        <?php wp_add_inline_script('slimstat-settings', 'window.slimstatSettingsIndex = ' . wp_json_encode(['url' => wp_slimstat_admin::$config_url, 'rows' => $search_index], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) . ';', 'before'); ?>
+        <?php wp_add_inline_script('slimstat-settings', 'window.slimstatSettingsIndex = ' . wp_json_encode(['url' => wp_specialchars_decode(wp_slimstat_admin::$config_url), 'rows' => $search_index], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) . ';', 'before'); ?>
 
         <?php
         if (in_array($current_tab, [1, 9], true) && current_user_can('manage_options')) :

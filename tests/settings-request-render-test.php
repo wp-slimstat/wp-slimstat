@@ -28,6 +28,7 @@ function _n($single, $plural, $n, $domain = '') { return 1 === $n ? $single : $p
 function wp_html_excerpt($text, $length, $more = '') { return substr($text, 0, $length); }
 function sanitize_title($text) { return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($text)), '-'); }
 function wp_json_encode($data, $flags = 0) { return json_encode($data, $flags); }
+function wp_specialchars_decode($text, $quote = ENT_NOQUOTES) { return htmlspecialchars_decode($text, $quote); }
 function wp_add_inline_script($handle, $data, $position = 'after') { $GLOBALS['inline_scripts'][] = $data; }
 require_once __DIR__ . '/../src/Services/SettingsStatus.php';
 eval('namespace SlimStat\\Utils; class Consent { public static function hasConsentSource() { return false; } }');
@@ -40,7 +41,7 @@ class wp_slimstat {
     public static function get_fresh_defaults() { return []; }
 }
 class wp_slimstat_admin {
-    public static $config_url = '/wp-admin/admin.php?page=slimconfig&tab=';
+    public static $config_url = '/wp-admin/admin.php?page=slimconfig&amp;tab=';
     public static function show_message(...$args) {}
     public static function get_template(...$args) {}
 }
@@ -131,6 +132,7 @@ check(strpos($html, '<tr id="slimstat-setting-hostile"') !== false, 'setting row
 check(strpos($html, 'Setup status') !== false && strpos($html, 'role="search"') !== false && strpos($html, 'slimstat-save-bar__status') !== false, 'status panel, search or save bar missing');
 $index = implode('', $GLOBALS['inline_scripts'] ?? []);
 check(strpos($index, 'slimstatSettingsIndex') !== false && strpos($index, '"id":"slimstat-setting-hostile"') !== false, 'search index missing the setting');
+check(strpos($index, 'slimconfig\\u0026tab=') !== false && strpos($index, 'amp;') === false, 'search index URL keeps the HTML-escaped &amp;, so old links land on General');
 check(strpos($index, 'alert') === false && strpos($index, 'literal') === false, 'search index leaks a stored value');
 echo "PASS: settings capabilities precede destructive actions; malformed nonce/options refuse writes; textarea escaped without stripping extension fields\n";
 
