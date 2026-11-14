@@ -13,17 +13,10 @@ namespace SlimStat\Services;
  */
 final class SettingsStatus
 {
-	/** A cookie, or an IP stored neither anonymized nor hashed, can identify a visitor. */
-	public static function collectsIdentifiers(array $s): bool
-	{
-		return 'on' === ($s['set_tracker_cookie'] ?? 'on')
-			|| ('on' !== ($s['anonymize_ip'] ?? 'off') && 'on' !== ($s['hash_ip'] ?? 'off'));
-	}
-
 	/** Consent is required for identifiers, but no source can answer on this site. */
 	public static function consentSourceMissing(array $s, bool $has_source): bool
 	{
-		return !$has_source && 'on' === ($s['gdpr_enabled'] ?? 'off') && self::collectsIdentifiers($s);
+		return !$has_source && 'on' === ($s['gdpr_enabled'] ?? 'off') && \SlimStat\Utils\Consent::collectsIdentifiers($s);
 	}
 
 	/** Upgraded sites lack the key until an administrator marks the review complete. */

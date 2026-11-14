@@ -436,11 +436,16 @@ var SlimStat = (function () {
         }
     }
 
+    // Consent changed since the payload was built, is missing, or allows only anonymous counts for an identifying payload.
+    function payloadBlocked(payload, generation) {
+        var consent = slimstatConsentAllowed(currentSlimStatParams());
+        return generation !== consentGeneration || !consent.allowed || (consent.mode !== "full" && /(?:^|&)(?:(?:id|sid|fh)=[^&]+|(?:pos|no)=)/.test(payload));
+    }
+
     function sendToServer(payload, useBeacon, opts) {
         if (isEmpty(payload)) return false;
         opts = opts || {};
-        var consent = slimstatConsentAllowed(currentSlimStatParams());
-        if ((opts.consentGeneration !== undefined && opts.consentGeneration !== consentGeneration) || !consent.allowed || (consent.mode !== "full" && /(?:^|&)(?:(?:id|sid|fh)=[^&]+|(?:pos|no)=)/.test(payload))) {
+        if (payloadBlocked(payload, opts.consentGeneration === undefined ? consentGeneration : opts.consentGeneration)) {
             if (typeof opts.onComplete === "function") opts.onComplete(false, true);
             return false;
         }
@@ -539,12 +544,11 @@ var SlimStat = (function () {
             completed = true;
             complete(result);
         };
-        var params = currentSlimStatParams();
-        var consent = slimstatConsentAllowed(params);
-        if (item.consentGeneration !== consentGeneration || !consent.allowed || (consent.mode !== "full" && /(?:^|&)(?:(?:id|sid|fh)=[^&]+|(?:pos|no)=)/.test(item.payload))) {
+        if (payloadBlocked(item.payload, item.consentGeneration)) {
             callback({ rejected: true });
             return;
         }
+        var params = currentSlimStatParams();
         var payload = item.payload;
         var useBeacon = shouldValidateIdWithXHR(item.useBeacon, payload) ? false : item.useBeacon;
         var requiresIdResponse = isEmpty(params.id) || isNaN(parseInt(params.id, 10)) || parseInt(params.id, 10) <= 0;
@@ -560,8 +564,7 @@ var SlimStat = (function () {
         var sawExplicitReject = false;
 
         function rejectStaleItem() {
-            var currentConsent = slimstatConsentAllowed(currentSlimStatParams());
-            if (item.consentGeneration !== consentGeneration || !currentConsent.allowed || (currentConsent.mode !== "full" && /(?:^|&)(?:(?:id|sid|fh)=[^&]+|(?:pos|no)=)/.test(payload))) {
+            if (payloadBlocked(payload, item.consentGeneration)) {
                 callback({ rejected: true });
                 return true;
             }

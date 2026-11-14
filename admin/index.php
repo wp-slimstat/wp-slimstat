@@ -4405,7 +4405,7 @@ class wp_slimstat_admin
                     $icon_url = self::get_filter_icon_url($dimension, $sanitized_value);
 
                     // For username, get user gravatar
-                    if ($dimension === 'username' && empty($icon_url) && apply_filters('slimstat_report_avatars', false)) {
+                    if ($dimension === 'username' && empty($icon_url) && \SlimStat\Reports\ReportPrivacy::avatars()) {
                         $user = get_user_by('login', $sanitized_value);
                         if ($user) {
                             $icon_url = get_avatar_url($user->ID, ['size' => 32]);
