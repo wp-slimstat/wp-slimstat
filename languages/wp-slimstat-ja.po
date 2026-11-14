@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Slimstat\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-slimstat\n"
-"POT-Creation-Date: 2026-11-13T23:53:38+00:00\n"
+"POT-Creation-Date: 2026-11-14T04:32:39+00:00\n"
 "PO-Revision-Date: 2019-06-10 15:36-0400\n"
 "Last-Translator: WP Slimstat <support@wp-slimstat.com>\n"
 "Language-Team: 半月\n"
@@ -20,7 +20,7 @@ msgstr ""
 "X-Poedit-SearchPathExcluded-1: ../admin/js\n"
 
 #. Plugin Name of the plugin
-#: wp-slimstat.php wp-slimstat.php:468 wp-slimstat.php:2164
+#: wp-slimstat.php wp-slimstat.php:462 wp-slimstat.php:2158
 msgid "SlimStat Analytics"
 msgstr ""
 
@@ -51,7 +51,7 @@ msgid "General"
 msgstr "全般"
 
 #: admin/config/index.php:51 admin/config/index.php:213
-#: admin/view/heatmaps.php:40 src/Services/SettingsStatus.php:114
+#: admin/view/heatmaps.php:40 src/Services/SettingsStatus.php:107
 msgid "Tracking"
 msgstr ""
 
@@ -64,6 +64,8 @@ msgid ""
 "Turns visitor tracking on or off. Reports and collected data stay available "
 "while it is off."
 msgstr ""
+"訪問者のトラッキングをオン/オフにします。オフの間も、レポートと収集済みのデー"
+"タは引き続き利用できます。"
 
 #: admin/config/index.php:60
 msgid "WordPress integration"
@@ -136,11 +138,11 @@ msgstr ""
 
 #: admin/config/index.php:94
 msgid "Privacy & GDPR"
-msgstr ""
+msgstr "プライバシーと GDPR"
 
 #: admin/config/index.php:97
 msgid "Consent"
-msgstr ""
+msgstr "同意"
 
 #: admin/config/index.php:101
 msgid "Require visitor consent"
@@ -176,12 +178,12 @@ msgstr ""
 msgid "SlimStat consent banner (recommended)"
 msgstr ""
 
-#: admin/config/index.php:112 src/Services/SettingsStatus.php:39
-#: src/Services/SettingsStatus.php:40
+#: admin/config/index.php:112 src/Services/SettingsStatus.php:32
+#: src/Services/SettingsStatus.php:33
 msgid "WP Consent API"
 msgstr ""
 
-#: admin/config/index.php:120 src/Services/SettingsStatus.php:38
+#: admin/config/index.php:120 src/Services/SettingsStatus.php:31
 msgid "SlimStat consent banner"
 msgstr ""
 
@@ -234,7 +236,7 @@ msgstr ""
 
 #: admin/config/index.php:160
 msgid "Visitor identifiers"
-msgstr ""
+msgstr "訪問者の識別子"
 
 #: admin/config/index.php:164
 msgid "Respect DNT and Global Privacy Control"
@@ -295,7 +297,7 @@ msgstr ""
 
 #: admin/config/index.php:190
 msgid "Data retention"
-msgstr ""
+msgstr "データ保持"
 
 #: admin/config/index.php:194
 msgid "Retention period"
@@ -339,7 +341,7 @@ msgstr ""
 
 #: admin/config/index.php:216
 msgid "How tracking works"
-msgstr ""
+msgstr "トラッキングの仕組み"
 
 #: admin/config/index.php:220
 msgid "Track WordPress admin activity"
@@ -428,7 +430,7 @@ msgstr ""
 
 #: admin/config/index.php:259
 msgid "Links and downloads"
-msgstr ""
+msgstr "リンクとダウンロード"
 
 #: admin/config/index.php:263
 msgid "Same-domain referrers"
@@ -453,7 +455,7 @@ msgstr ""
 
 #: admin/config/index.php:275
 msgid "Visitor location and browsers"
-msgstr ""
+msgstr "訪問者の地域とブラウザー"
 
 #: admin/config/index.php:280
 msgid "Geolocation provider"
@@ -543,7 +545,7 @@ msgstr ""
 
 #: admin/config/index.php:305 admin/view/wp-slimstat-db.php:87
 #: src/Reports/CountryCities.php:134 src/Services/Privacy/DataExporter.php:167
-#: src/Services/SettingsStatus.php:66 src/Services/SettingsStatus.php:102
+#: src/Services/SettingsStatus.php:59 src/Services/SettingsStatus.php:95
 msgid "City"
 msgstr ""
 
@@ -581,11 +583,11 @@ msgstr ""
 
 #: admin/config/index.php:318
 msgid "Reports & display"
-msgstr ""
+msgstr "レポートと表示"
 
 #: admin/config/index.php:321
 msgid "Report defaults"
-msgstr ""
+msgstr "レポートの既定値"
 
 #: admin/config/index.php:325
 msgid "Current month"
@@ -715,7 +717,7 @@ msgstr ""
 
 #: admin/config/index.php:391
 msgid "Appearance"
-msgstr ""
+msgstr "外観"
 
 #: admin/config/index.php:395
 msgid "Custom CSS"
@@ -843,7 +845,7 @@ msgid ""
 "information on how to use wildcards."
 msgstr ""
 
-#: admin/config/index.php:457 src/Services/SettingsStatus.php:71
+#: admin/config/index.php:457 src/Services/SettingsStatus.php:64
 msgid "IP addresses"
 msgstr ""
 
@@ -911,7 +913,7 @@ msgstr ""
 
 #: admin/config/index.php:483
 msgid "Pages and links"
-msgstr ""
+msgstr "ページとリンク"
 
 #: admin/config/index.php:487
 msgid "Permalinks"
@@ -989,11 +991,11 @@ msgstr ""
 
 #: admin/config/index.php:520
 msgid "Access & security"
-msgstr ""
+msgstr "アクセスとセキュリティ"
 
 #: admin/config/index.php:523
 msgid "Who can see reports"
-msgstr ""
+msgstr "レポートを閲覧できるユーザー"
 
 #: admin/config/index.php:527
 msgid "Restrict authors"
@@ -1027,7 +1029,7 @@ msgstr ""
 
 #: admin/config/index.php:544
 msgid "Who can customize reports"
-msgstr ""
+msgstr "レポートをカスタマイズできるユーザー"
 
 #: admin/config/index.php:551
 msgid ""
@@ -1046,7 +1048,7 @@ msgstr ""
 
 #: admin/config/index.php:560
 msgid "Who can change settings"
-msgstr ""
+msgstr "設定を変更できるユーザー"
 
 #: admin/config/index.php:567
 msgid ""
@@ -1084,11 +1086,11 @@ msgstr ""
 
 #: admin/config/index.php:588
 msgid "Data & maintenance"
-msgstr ""
+msgstr "データとメンテナンス"
 
 #: admin/config/index.php:591
 msgid "Database"
-msgstr ""
+msgstr "データベース"
 
 #: admin/config/index.php:595
 msgid "Automatic table optimization"
@@ -1246,7 +1248,7 @@ msgstr ""
 
 #: admin/config/index.php:668
 msgid "Advanced"
-msgstr ""
+msgstr "詳細設定"
 
 #: admin/config/index.php:671
 msgid "Performance"
@@ -1313,7 +1315,7 @@ msgstr ""
 
 #: admin/config/index.php:707
 msgid "Third-party services"
-msgstr ""
+msgstr "外部サービス"
 
 #: admin/config/index.php:711
 msgid "Mozscape access ID"
@@ -1342,7 +1344,7 @@ msgstr ""
 msgid "Pro options"
 msgstr ""
 
-#: admin/config/index.php:728 admin/config/index.php:1154
+#: admin/config/index.php:728 admin/config/index.php:1157
 msgid "License"
 msgstr ""
 
@@ -1356,72 +1358,72 @@ msgstr ""
 msgid "Invalid settings data."
 msgstr ""
 
-#: admin/config/index.php:776
+#: admin/config/index.php:781
 msgid "Privacy review marked as complete. No settings were changed."
 msgstr ""
 
-#: admin/config/index.php:781
+#: admin/config/index.php:786
 msgid "All settings were successfully reset to their default values."
 msgstr ""
 
-#: admin/config/index.php:799
+#: admin/config/index.php:804
 msgid "All your records were successfully deleted."
 msgstr ""
 
-#: admin/config/index.php:800
+#: admin/config/index.php:805
 msgid ""
 "Database maintenance failed. Some records may already have been deleted. "
 "Check the database connection and retry."
 msgstr ""
 
-#: admin/config/index.php:814 admin/index.php:695
+#: admin/config/index.php:819 admin/index.php:695
 #: src/Migration/Admin/MigrationAdmin.php:68
 #: src/Migration/Admin/MigrationAdmin.php:223
 msgid "Sorry, you are not allowed to access this page."
 msgstr ""
 
-#: admin/config/index.php:861
+#: admin/config/index.php:866
 msgid ""
 "Congratulations! SlimStat Analytics is now optimized for <a href=\"https://"
 "www.youtube.com/watch?v=ygE01sOhzz0\" target=\"_blank\">ludicrous speed</a>."
 msgstr ""
 
-#: admin/config/index.php:862
+#: admin/config/index.php:867
 msgid "Table indexes have been disabled. Enjoy the extra database space!"
 msgstr ""
 
-#: admin/config/index.php:864
+#: admin/config/index.php:869
 msgid ""
 "The database index change could not be completed. The saved preference is "
 "unchanged; check the database and retry."
 msgstr ""
 
-#: admin/config/index.php:907
+#: admin/config/index.php:912
 msgid ""
 "The geolocation database update has been scheduled in the background. You "
 "can also use the Update Database button below to start it now."
 msgstr ""
 
-#: admin/config/index.php:925
+#: admin/config/index.php:930
 msgid "The Browscap data file has been uninstalled from your server."
 msgstr ""
 
-#: admin/config/index.php:928
+#: admin/config/index.php:933
 msgid ""
 "There was an error deleting the Browscap data folder on your server. Please "
 "check your permissions."
 msgstr ""
 
-#: admin/config/index.php:1011
+#: admin/config/index.php:1013
 msgid "Your new settings have been saved."
 msgstr ""
 
-#: admin/config/index.php:1033
+#: admin/config/index.php:1035
 msgid "Performance Notice:"
 msgstr ""
 
 #. translators: %s: comma-separated list of missing database index names.
-#: admin/config/index.php:1035
+#: admin/config/index.php:1037
 #, php-format
 msgid ""
 "The following DB indexes are missing and should be created for optimal "
@@ -1429,125 +1431,125 @@ msgid ""
 "plugin to trigger index creation."
 msgstr ""
 
-#: admin/config/index.php:1044
+#: admin/config/index.php:1046
 msgid "enable, disable, pause, stop, on, off"
 msgstr ""
 
-#: admin/config/index.php:1045
+#: admin/config/index.php:1047
 msgid "consent, gdpr, cookie banner, ccpa, opt-in"
 msgstr ""
 
-#: admin/config/index.php:1046
+#: admin/config/index.php:1048
 msgid "cmp, consent api, cookie plugin, banner"
 msgstr ""
 
-#: admin/config/index.php:1047
+#: admin/config/index.php:1049
 msgid "ip, mask, privacy, personal data"
 msgstr ""
 
-#: admin/config/index.php:1048
+#: admin/config/index.php:1050
 msgid "ip, hash, salt, pseudonymize"
 msgstr ""
 
-#: admin/config/index.php:1049
+#: admin/config/index.php:1051
 msgid "cookie, returning visitors, cookieless"
 msgstr ""
 
-#: admin/config/index.php:1050
+#: admin/config/index.php:1052
 msgid "dnt, gpc, global privacy control"
 msgstr ""
 
-#: admin/config/index.php:1051
+#: admin/config/index.php:1053
 msgid "retention, delete old data, purge, cleanup, archive"
 msgstr ""
 
-#: admin/config/index.php:1052
+#: admin/config/index.php:1054
 msgid "backend, wp-admin, dashboard"
 msgstr ""
 
-#: admin/config/index.php:1053
+#: admin/config/index.php:1055
 msgid "session, timeout, visit length"
 msgstr ""
 
-#: admin/config/index.php:1054
+#: admin/config/index.php:1056
 msgid "maxmind, geoip, dbip, country, city, location"
 msgstr ""
 
-#: admin/config/index.php:1055
+#: admin/config/index.php:1057
 msgid "exclude, block, filter, ip address"
 msgstr ""
 
-#: admin/config/index.php:1056
+#: admin/config/index.php:1058
 msgid "exclude, logged in, admins, myself"
 msgstr ""
 
-#: admin/config/index.php:1057
+#: admin/config/index.php:1059
 msgid "crawlers, spiders, robots"
 msgstr ""
 
-#: admin/config/index.php:1058
+#: admin/config/index.php:1060
 msgid "permissions, roles, access, who can see"
 msgstr ""
 
-#: admin/config/index.php:1059
+#: admin/config/index.php:1061
 msgid "sql, query limit, rows, performance"
 msgstr ""
 
-#: admin/config/index.php:1060
+#: admin/config/index.php:1062
 msgid "remove, erase, uninstall, delete everything"
 msgstr ""
 
-#: admin/config/index.php:1061
+#: admin/config/index.php:1063
 msgid "api, token, key, integration"
 msgstr ""
 
-#: admin/config/index.php:1096 admin/index.php:220
+#: admin/config/index.php:1098 admin/index.php:220
 #: admin/view/ai-analysis.php:19 admin/view/partials/header.php:144
 msgid "Settings"
 msgstr "設定"
 
-#: admin/config/index.php:1102 admin/config/index.php:1103
+#: admin/config/index.php:1104 admin/config/index.php:1105
 msgid "Search settings"
-msgstr ""
+msgstr "設定を検索"
 
-#: admin/config/index.php:1104
+#: admin/config/index.php:1106
 msgid "Matching settings"
 msgstr ""
 
-#: admin/config/index.php:1118
+#: admin/config/index.php:1121
 msgid "Setup status"
-msgstr ""
+msgstr "セットアップ状況"
 
-#: admin/config/index.php:1118
+#: admin/config/index.php:1121
 msgid "What your privacy settings do"
-msgstr ""
+msgstr "プライバシー設定の内容"
 
-#: admin/config/index.php:1120
+#: admin/config/index.php:1123
 msgid ""
 "A plain summary of how SlimStat treats visitor data with the settings saved "
 "below. It is not legal advice: what you must do depends on your site, your "
 "visitors and the laws that apply to you."
 msgstr ""
 
-#: admin/config/index.php:1130
+#: admin/config/index.php:1133
 msgid "Needs attention:"
 msgstr ""
 
-#: admin/config/index.php:1139
+#: admin/config/index.php:1142
 msgid ""
 "Checked the summary and the settings below? Mark the review complete to stop "
 "the reminder. Your settings stay as they are."
 msgstr ""
 
-#: admin/config/index.php:1140
-msgid "Mark privacy review as complete"
-msgstr ""
-
 #: admin/config/index.php:1143
-msgid "Privacy review completed."
-msgstr ""
+msgid "Mark privacy review as complete"
+msgstr "プライバシーの確認を完了にする"
 
-#: admin/config/index.php:1149 admin/view/index.php:22
+#: admin/config/index.php:1146
+msgid "Privacy review completed."
+msgstr "プライバシーの確認が完了しました。"
+
+#: admin/config/index.php:1152 admin/view/index.php:22
 msgid ""
 "<strong>AdBlock browser extension detected.</strong> If you see this notice, "
 "it means that your browser is not loading our stylesheet and/or JavaScript "
@@ -1559,55 +1561,55 @@ msgid ""
 "assets."
 msgstr ""
 
-#: admin/config/index.php:1154
+#: admin/config/index.php:1157
 msgid "Pro settings"
 msgstr ""
 
-#: admin/config/index.php:1156
+#: admin/config/index.php:1159
 msgid ""
 "Install and activate the Pro plugin, then enter your license key here. "
 "Activating the plugin and activating a license are separate steps. Your "
 "current Free settings stay unchanged."
 msgstr ""
 
-#: admin/config/index.php:1157
+#: admin/config/index.php:1160
 msgid ""
 "Install and activate the Pro plugin to configure these settings. Your "
 "current Free settings stay unchanged."
 msgstr ""
 
-#: admin/config/index.php:1160
+#: admin/config/index.php:1163
 msgid "A Pro license gives you plugin updates and support."
 msgstr ""
 
-#: admin/config/index.php:1161
+#: admin/config/index.php:1164
 msgid ""
 "With Pro, choose which pages heatmaps track and how often, use an internal "
 "IP location lookup and keep stats in an external database."
 msgstr ""
 
-#: admin/config/index.php:1202
+#: admin/config/index.php:1205
 msgid "Network-wide"
 msgstr ""
 
-#: admin/config/index.php:1205
+#: admin/config/index.php:1208
 msgid "Network"
 msgstr ""
 
-#: admin/config/index.php:1205
+#: admin/config/index.php:1208
 msgid "Site"
 msgstr ""
 
-#: admin/config/index.php:1244 src/Services/SettingsStatus.php:114
+#: admin/config/index.php:1247 src/Services/SettingsStatus.php:107
 msgid "On"
 msgstr ""
 
-#: admin/config/index.php:1244 src/Services/SettingsStatus.php:64
-#: src/Services/SettingsStatus.php:98
+#: admin/config/index.php:1247 src/Services/SettingsStatus.php:57
+#: src/Services/SettingsStatus.php:91
 msgid "Off"
 msgstr ""
 
-#: admin/config/index.php:1370
+#: admin/config/index.php:1373
 msgid "Save Changes"
 msgstr "変更を保存"
 
@@ -1900,7 +1902,7 @@ msgstr ""
 
 #: admin/index.php:2674 admin/index.php:4566 admin/index.php:4614
 #: src/Migration/Admin/MigrationAdmin.php:297
-#: src/Migration/Admin/MigrationAdmin.php:430 wp-slimstat.php:2970
+#: src/Migration/Admin/MigrationAdmin.php:430 wp-slimstat.php:2964
 msgid "Permission denied"
 msgstr ""
 
@@ -5222,7 +5224,7 @@ msgstr ""
 msgid "Clear search"
 msgstr ""
 
-#: admin/view/shortcodes.php:31 wp-slimstat.php:2831
+#: admin/view/shortcodes.php:31 wp-slimstat.php:2825
 #: admin/assets/js/shortcodes.js:12
 msgid "Report"
 msgstr ""
@@ -10838,11 +10840,11 @@ msgid ""
 "Settings."
 msgstr ""
 
-#: src/Reports/ReportPrivacy.php:34
+#: src/Reports/ReportPrivacy.php:40
 msgid "Visitor"
 msgstr ""
 
-#: src/Reports/ReportPrivacy.php:35
+#: src/Reports/ReportPrivacy.php:41
 msgid "Hidden"
 msgstr ""
 
@@ -11120,7 +11122,7 @@ msgstr ""
 
 #: src/Services/GDPRService.php:239
 msgid "Privacy settings"
-msgstr ""
+msgstr "プライバシー設定"
 
 #: src/Services/GDPRService.php:264
 msgid ""
@@ -11128,6 +11130,9 @@ msgid ""
 "Accept or decline below. You can change your choice at any time using "
 "Privacy settings."
 msgstr ""
+"このサイトの利用状況を把握するため、分析用 Cookie を使用したいと考えていま"
+"す。下のボタンで同意または拒否を選択してください。選択内容は「プライバシー設"
+"定」からいつでも変更できます。"
 
 #: src/Services/GDPRService.php:298
 msgid "Accept"
@@ -11573,169 +11578,169 @@ msgid ""
 "SlimStat retries automatically."
 msgstr ""
 
-#: src/Services/SettingsStatus.php:44
+#: src/Services/SettingsStatus.php:37
 msgid "Not required: visitors are tracked without a consent check"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:46
+#: src/Services/SettingsStatus.php:39
 msgid ""
 "Required, but no working consent source: only limited counts are collected"
 msgstr ""
 
 #. translators: %s: consent source name, such as SlimStat consent banner.
-#: src/Services/SettingsStatus.php:49
+#: src/Services/SettingsStatus.php:42
 #, php-format
 msgid "Required, through %s"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:51
+#: src/Services/SettingsStatus.php:44
 msgid "Required; no consent source, so tracking stays cookieless"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:55
+#: src/Services/SettingsStatus.php:48
 msgid "Hashed with a daily salt, never stored"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:57
+#: src/Services/SettingsStatus.php:50
 msgid "Anonymized: the last part is removed"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:59
+#: src/Services/SettingsStatus.php:52
 msgid "Stored in full"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:66 src/Services/SettingsStatus.php:102
+#: src/Services/SettingsStatus.php:59 src/Services/SettingsStatus.php:95
 msgid "Country only"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:70
+#: src/Services/SettingsStatus.php:63
 msgid "Visitor consent"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:72
+#: src/Services/SettingsStatus.php:65
 msgid "Returning visitors"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:72
+#: src/Services/SettingsStatus.php:65
 msgid "Recognized with a cookie"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:72
+#: src/Services/SettingsStatus.php:65
 msgid "Cookieless: estimated"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:73
+#: src/Services/SettingsStatus.php:66
 msgid "Do Not Track and GPC"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:73
+#: src/Services/SettingsStatus.php:66
 msgid "Respected: no tracking"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:73
+#: src/Services/SettingsStatus.php:66
 msgid "Not checked"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:74
+#: src/Services/SettingsStatus.php:67
 msgid "Personal data in reports"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:74
+#: src/Services/SettingsStatus.php:67
 msgid "Masked for viewers who cannot manage options"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:74
+#: src/Services/SettingsStatus.php:67
 msgid "Visible to everyone who can see reports"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:75 src/Services/SettingsStatus.php:116
+#: src/Services/SettingsStatus.php:68 src/Services/SettingsStatus.php:109
 msgid "Visitor location"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:76
+#: src/Services/SettingsStatus.php:69
 msgid "Retention"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:77
+#: src/Services/SettingsStatus.php:70
 msgid "When the plugin is deleted"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:77
+#: src/Services/SettingsStatus.php:70
 msgid "All SlimStat data is erased"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:77
+#: src/Services/SettingsStatus.php:70
 msgid "Data and settings are kept"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:89
+#: src/Services/SettingsStatus.php:82
 msgid "No errors"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:91
+#: src/Services/SettingsStatus.php:84
 msgid "Working: some pageviews were skipped on purpose"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:93
+#: src/Services/SettingsStatus.php:86
 msgid "A pageview could not be recorded"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:100
+#: src/Services/SettingsStatus.php:93
 msgid "The location database reported an error"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:106
+#: src/Services/SettingsStatus.php:99
 msgid "No working consent source"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:108
+#: src/Services/SettingsStatus.php:101
 msgid "Not reviewed yet"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:110
+#: src/Services/SettingsStatus.php:103
 msgid "Reviewed"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:114
+#: src/Services/SettingsStatus.php:107
 msgid "Off: no new visits are recorded"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:115
+#: src/Services/SettingsStatus.php:108
 msgid "Tracker"
 msgstr "解析"
 
-#: src/Services/SettingsStatus.php:117
+#: src/Services/SettingsStatus.php:110
 msgid "Privacy review"
 msgstr ""
 
-#: src/Services/SettingsStatus.php:125
+#. translators: %d: number of days.
+#: src/Services/SettingsStatus.php:121
+#, php-format
+msgid "archives deleted after %d day"
+msgid_plural "archives deleted after %d days"
+msgstr[0] ""
+
+#: src/Services/SettingsStatus.php:122
+msgid "archives kept indefinitely"
+msgstr ""
+
+#: src/Services/SettingsStatus.php:124
 msgid "Kept indefinitely"
 msgstr ""
 
 #. translators: %d: number of days.
-#: src/Services/SettingsStatus.php:130
+#: src/Services/SettingsStatus.php:128
 #, php-format
 msgid "Deleted after %d day"
 msgid_plural "Deleted after %d days"
 msgstr[0] ""
 
 #. translators: %d: number of days.
-#: src/Services/SettingsStatus.php:134
+#: src/Services/SettingsStatus.php:131
 #, php-format
 msgid "Archived after %d day"
 msgid_plural "Archived after %d days"
 msgstr[0] ""
-
-#. translators: %d: number of days.
-#: src/Services/SettingsStatus.php:137
-#, php-format
-msgid "archives deleted after %d day"
-msgid_plural "archives deleted after %d days"
-msgstr[0] ""
-
-#: src/Services/SettingsStatus.php:138
-msgid "archives kept indefinitely"
-msgstr ""
 
 #: src/Shortcodes/Shortcode.php:45
 msgid "Invalid shortcode attribute: f."
@@ -12154,91 +12159,91 @@ msgid "Pro adds a minute-by-minute chart of who is on your site."
 msgstr ""
 
 #. translators: %d: number of seconds for session duration
-#: wp-slimstat.php:472
+#: wp-slimstat.php:466
 #, php-format
 msgid "%d second"
 msgid_plural "%d seconds"
 msgstr[0] ""
 
-#: wp-slimstat.php:475
+#: wp-slimstat.php:469
 msgid "Session cookie that identifies returning visitors for analytics."
 msgstr ""
 
-#: wp-slimstat.php:585
+#: wp-slimstat.php:579
 msgid ""
 "SlimStat privacy mode is on but no working consent source is configured. "
 "Only anonymous pageview counts are enabled. Configure a consent integration "
 "before collecting identifiers."
 msgstr ""
 
-#: wp-slimstat.php:586
+#: wp-slimstat.php:580
 msgid ""
 "Review SlimStat privacy settings for your visitors. Existing settings are "
 "preserved. Check consent, IP protection, cookies, and archive retention; "
 "existing archives are kept until you choose an expiration period."
 msgstr ""
 
-#: wp-slimstat.php:588 wp-slimstat.php:609
+#: wp-slimstat.php:582 wp-slimstat.php:603
 msgid "Review privacy settings"
-msgstr ""
+msgstr "プライバシー設定を確認"
 
-#: wp-slimstat.php:607
+#: wp-slimstat.php:601
 msgid "SlimStat: IP privacy settings reset"
 msgstr ""
 
-#: wp-slimstat.php:608
+#: wp-slimstat.php:602
 msgid ""
 "This update restored full-IP storage (the 5.3.x default) by turning off IP "
 "anonymization and daily visitor hashing. If your site serves EU visitors, "
 "please review your privacy settings."
 msgstr ""
 
-#: wp-slimstat.php:1034
+#: wp-slimstat.php:1028
 msgid ""
 "[REST API] The <code>dimension</code> parameter is required. Please review "
 "your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:1038
+#: wp-slimstat.php:1032
 msgid ""
 "[REST API] The <code>function</code> parameter is required. Please review "
 "your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:1069
+#: wp-slimstat.php:1063
 msgid ""
 "[REST API] You sent an invalid request. Accepted function values include: "
 "<code>count, count-all, recent, recent-all, top and top-all</code>. Please "
 "review your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:1090
+#: wp-slimstat.php:1084
 msgid ""
 "[REST API] Please use a valid token in order to access the REST API endpoint "
 "at this URL."
 msgstr ""
 
-#: wp-slimstat.php:1113
+#: wp-slimstat.php:1107
 msgid ""
 "You will need to specify a valid token to be able to query the data. Tokens "
 "are defined in SlimStat > Settings > Access Control."
 msgstr ""
 
-#: wp-slimstat.php:1117
+#: wp-slimstat.php:1111
 msgid ""
 "This parameter specifies the type of query you would like to perform. "
 "Accepted function values include: count, count-all, recent, recent-all, top "
 "and top-all."
 msgstr ""
 
-#: wp-slimstat.php:1122
+#: wp-slimstat.php:1116
 msgid ""
 "This parameter indicates what dimension to return: * (all data), ip, "
 "resource, browser, operating system, etc. You can only specify one dimension "
 "at a time."
 msgstr ""
 
-#: wp-slimstat.php:1127
+#: wp-slimstat.php:1121
 msgid ""
 "This parameter is used to filter a given dimension (resources, browsers, "
 "operating systems, etc) so that it satisfies certain conditions (e.g. "
@@ -12246,90 +12251,90 @@ msgid ""
 "use the usual filter format: browser contains Chrome&&&referer contains slim"
 msgstr ""
 
-#: wp-slimstat.php:2165
+#: wp-slimstat.php:2159
 msgid "What personal data we collect and why"
 msgstr ""
 
-#: wp-slimstat.php:2166
+#: wp-slimstat.php:2160
 msgid "SlimStat Analytics collects the following data about website visitors:"
 msgstr ""
 
-#: wp-slimstat.php:2168
+#: wp-slimstat.php:2162
 msgid ""
 "IP Address: Collected for analytics and security purposes. May be anonymized "
 "or hashed based on your privacy settings."
 msgstr ""
 
-#: wp-slimstat.php:2169
+#: wp-slimstat.php:2163
 msgid "Page URLs: Tracks which pages are visited to analyze website usage."
 msgstr ""
 
-#: wp-slimstat.php:2170
+#: wp-slimstat.php:2164
 msgid ""
 "Referrer Information: Tracks where visitors came from (search engines, other "
 "websites, etc.)."
 msgstr ""
 
-#: wp-slimstat.php:2171
+#: wp-slimstat.php:2165
 msgid ""
 "Browser and Device Information: User agent, screen resolution, and device "
 "type for analytics."
 msgstr ""
 
-#: wp-slimstat.php:2172
+#: wp-slimstat.php:2166
 msgid "Timestamp: Date and time of each page visit."
 msgstr ""
 
-#: wp-slimstat.php:2175
+#: wp-slimstat.php:2169
 msgid ""
 "Cookies: A tracking cookie is used to identify returning visitors and "
 "maintain session continuity."
 msgstr ""
 
-#: wp-slimstat.php:2179
+#: wp-slimstat.php:2173
 msgid ""
 "User Information: If you are logged in, your username and email may be "
 "associated with your visits (only with consent when GDPR mode is enabled)."
 msgstr ""
 
-#: wp-slimstat.php:2183
+#: wp-slimstat.php:2177
 msgid ""
 "Heatmaps: Where visitors click on links, buttons and other page elements, "
 "and how far they scroll. What you type is never recorded."
 msgstr ""
 
-#: wp-slimstat.php:2186
+#: wp-slimstat.php:2180
 msgid ""
 "Interactions: Clicks, downloads and outbound links may be recorded after "
 "consent when GDPR mode is enabled. Sensitive URL parameters are removed "
 "before storage."
 msgstr ""
 
-#: wp-slimstat.php:2187
+#: wp-slimstat.php:2181
 msgid ""
 "Browser fingerprint: Used for identifying visits only when identifying "
 "analytics is allowed. The bundled fingerprint library sends no monitoring "
 "requests."
 msgstr ""
 
-#: wp-slimstat.php:2189
+#: wp-slimstat.php:2183
 msgid ""
 "Consent preference: The SlimStat consent cookie remembers your choice for "
 "one year. Use Privacy settings on the site to change or withdraw consent."
 msgstr ""
 
-#: wp-slimstat.php:2192
+#: wp-slimstat.php:2186
 msgid ""
 "Location: The IP address may be used for local geolocation when identifying "
 "analytics is allowed."
 msgstr ""
 
-#: wp-slimstat.php:2196
+#: wp-slimstat.php:2190
 msgid "How long we retain your data"
 msgstr ""
 
 #. translators: %d: age in days when live analytics records move to archive tables.
-#: wp-slimstat.php:2203
+#: wp-slimstat.php:2197
 #, php-format
 msgid ""
 "Analytics records older than %d days are moved to archive tables. Archiving "
@@ -12337,77 +12342,77 @@ msgid ""
 msgstr ""
 
 #. translators: %d: age in days when live analytics records are deleted.
-#: wp-slimstat.php:2205
+#: wp-slimstat.php:2199
 #, php-format
 msgid ""
 "Analytics records older than %d days are permanently deleted during "
 "scheduled cleanup."
 msgstr ""
 
-#: wp-slimstat.php:2208
+#: wp-slimstat.php:2202
 msgid "Automatic deletion of live analytics records is disabled."
 msgstr ""
 
 #. translators: %d: maximum age in days of archived analytics records, from the original visit.
-#: wp-slimstat.php:2212
+#: wp-slimstat.php:2206
 #, php-format
 msgid ""
 "Archived records older than %d days from the original visit are permanently "
 "deleted during scheduled cleanup."
 msgstr ""
 
-#: wp-slimstat.php:2213
+#: wp-slimstat.php:2207
 msgid ""
 "Existing archived records are retained indefinitely until the administrator "
 "deletes them or sets an archive retention period."
 msgstr ""
 
-#: wp-slimstat.php:2215
+#: wp-slimstat.php:2209
 msgid "Your rights"
 msgstr ""
 
-#: wp-slimstat.php:2216
+#: wp-slimstat.php:2210
 msgid "Under GDPR, you have the right to:"
 msgstr ""
 
-#: wp-slimstat.php:2218
+#: wp-slimstat.php:2212
 msgid "Access your personal data collected by SlimStat"
 msgstr ""
 
-#: wp-slimstat.php:2219
+#: wp-slimstat.php:2213
 msgid "Request deletion of your personal data (Right to be Forgotten)"
 msgstr ""
 
-#: wp-slimstat.php:2220
+#: wp-slimstat.php:2214
 msgid "Opt-out of tracking by revoking consent (if GDPR mode is enabled)"
 msgstr ""
 
-#: wp-slimstat.php:2224
+#: wp-slimstat.php:2218
 msgid ""
 "You can exercise these rights by using the WordPress Privacy Tools (Tools → "
 "Export Personal Data / Erase Personal Data) or by contacting the site "
 "administrator."
 msgstr ""
 
-#: wp-slimstat.php:2227
+#: wp-slimstat.php:2221
 msgid "Consent Management"
 msgstr ""
 
-#: wp-slimstat.php:2229
+#: wp-slimstat.php:2223
 msgid ""
 "This website uses Anonymous Tracking Mode. Initial tracking occurs without "
 "collecting personally identifiable information (PII). Full tracking with PII "
 "collection only occurs after you grant explicit consent."
 msgstr ""
 
-#: wp-slimstat.php:2231
+#: wp-slimstat.php:2225
 msgid ""
 "Tracking requires your consent when GDPR mode is enabled. You can grant or "
 "revoke consent at any time through the consent management interface."
 msgstr ""
 
 #. translators: %s: a number of sites.
-#: wp-slimstat.php:2541
+#: wp-slimstat.php:2535
 #, php-format
 msgid ""
 "SlimStat is still setting up %s site on this network. Reload this page to "
@@ -12417,28 +12422,28 @@ msgid_plural ""
 "continue."
 msgstr[0] ""
 
-#: wp-slimstat.php:2770
+#: wp-slimstat.php:2764
 msgid "Add a SlimStat report to your sidebar"
 msgstr ""
 
-#: wp-slimstat.php:2833
+#: wp-slimstat.php:2827
 msgid "Select a report"
 msgstr ""
 
-#: wp-slimstat.php:2839
+#: wp-slimstat.php:2833
 msgid "Title"
 msgstr ""
 
-#: wp-slimstat.php:2844
+#: wp-slimstat.php:2838
 msgid "Optional filters"
 msgstr ""
 
-#: wp-slimstat.php:2974
+#: wp-slimstat.php:2968
 msgid "Invalid nonce"
 msgstr ""
 
 #. translators: %d: number of cache items cleared.
-#: wp-slimstat.php:2991
+#: wp-slimstat.php:2985
 #, php-format
 msgid "SlimStat cache cleared (%d items)"
 msgstr ""
@@ -13133,19 +13138,24 @@ msgid ""
 "reports and are not applied here:"
 msgstr ""
 
-#: admin/assets/js/settings.js:158
+#. translators: 1: a setting that is hidden, 2: the setting that shows it.
+#: admin/assets/js/settings.js:62
+msgid "“%1$s” is hidden until you change “%2$s”."
+msgstr "「%2$s」を変更するまで「%1$s」は表示されません。"
+
+#: admin/assets/js/settings.js:190
 msgid "No settings match. Try another word."
-msgstr ""
+msgstr "一致する設定がありません。別の語句で検索してください。"
 
 #. translators: %d: number of matching settings.
-#: admin/assets/js/settings.js:165
+#: admin/assets/js/settings.js:197
 msgid "%d setting found"
 msgid_plural "%d settings found"
-msgstr[0] ""
+msgstr[0] "%d 件の設定が見つかりました"
 
-#: admin/assets/js/settings.js:207
+#: admin/assets/js/settings.js:253
 msgid "You have unsaved changes."
-msgstr ""
+msgstr "保存されていない変更があります。"
 
 #: admin/assets/js/shortcodes.js:12
 msgid "Number"
