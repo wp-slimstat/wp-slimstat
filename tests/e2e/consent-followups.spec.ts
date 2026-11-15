@@ -29,8 +29,10 @@ test.describe('consent wire and unchanged settings (#366/#367)', () => {
         const endpoint = `${BASE_URL}/?rest_route=/slimstat/v1/consent-change`;
         const malformed = await context.request.post(endpoint, { data: { source, parsed: { statistics: 'deny' }, nonce, mode: { unknown: true } } });
         expect(malformed.status()).toBe(400);
-        const denied = await context.request.post(endpoint, { data: { source, parsed: { statistics: 'deny' }, nonce: 'invalid' } });
-        expect(denied.status()).toBe(403);
+        // A withdrawal needs no valid token (a cached page carries an expired one); a grant does.
+        const stale = (parsed: object) => context.request.post(endpoint, { data: { source, parsed, nonce: 'invalid' } });
+        expect((await stale({ statistics: 'deny' })).status()).toBe(200);
+        expect((await stale({ statistics: 'allow' })).status()).toBe(403);
       } finally { await context.close(); await getPool().query('DELETE FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]); }
     });
   }

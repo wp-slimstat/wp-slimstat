@@ -194,6 +194,16 @@ html:has(.slimstat-save-bar) {
     margin: 0;
 }
 
+.slimstat-settings-status__safe > div {
+    flex: 1 1 320px;
+}
+
+.slimstat-settings-status__safe ul {
+    margin: var(--ss-space-2) 0;
+    padding-inline-start: var(--ss-space-5);
+    list-style: disc;
+}
+
 /* Rows: tighter rhythm, and a clear mark on the setting a link or search opened. */
 .slimstat-config .form-table tr th {
     padding-block: var(--ss-space-4);

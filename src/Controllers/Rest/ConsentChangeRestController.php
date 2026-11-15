@@ -45,8 +45,8 @@ class ConsentChangeRestController implements RestControllerInterface
 			[
 				'methods'             => 'POST',
 				'callback'            => [$this, 'handle_consent_change'],
-				// Security: Public endpoint with nonce verification in handle_consent_change().
-				// Nonce is required and verified via wp_verify_nonce() before any state changes.
+				// Security: public endpoint; handle_consent_change() verifies the nonce before a grant
+				// changes any state. A withdrawal is accepted without a valid nonce (see there).
 				// This endpoint only modifies the current user's own consent state (cookie-based).
 				'permission_callback' => '__return_true',
 				'args'                => [
@@ -146,23 +146,22 @@ class ConsentChangeRestController implements RestControllerInterface
 	{
 		$this->currentRequest = $request;
 
-		// Verify nonce for all users — consent is a state-changing operation.
-		// Without verification, a cross-site POST could force-accept consent,
-		// enabling PII tracking without genuine user action (GDPR violation).
-		// On cached pages with stale nonces, this returns 403 — the JS cookie
-		// still records consent client-side, and tracking works via /hit (PR #235).
-		$nonce = $request->get_param('nonce');
-		if (!wp_verify_nonce($nonce, 'wp_rest')) {
+		$source = $request->get_param('source');
+		$parsed = $request->get_param('parsed');
+		$pageview_id_raw = $request->get_param('pageview_id');
+
+		// Granting consent needs a valid nonce: without it a cross-site POST could force-accept
+		// consent and enable PII tracking without the visitor's action. A withdrawal does not:
+		// it only removes this visitor's tracking cookie, and it has to work on a cached page
+		// whose nonce expired, because the cookie is HttpOnly and only the server can delete it.
+		$withdrawal = is_array($parsed) && 'allow' !== Consent::normalizeConsent($parsed)['statistics'];
+		if (!$withdrawal && !wp_verify_nonce($request->get_param('nonce'), 'wp_rest')) {
 			return new \WP_Error(
 				'rest_forbidden',
 				__('Invalid security token.', 'wp-slimstat'),
 				['status' => 403]
 			);
 		}
-
-		$source = $request->get_param('source');
-		$parsed = $request->get_param('parsed');
-		$pageview_id_raw = $request->get_param('pageview_id');
 
 		if (!is_array($parsed)) {
 			return new \WP_Error(

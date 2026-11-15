@@ -25,6 +25,23 @@ final class SettingsStatus
 		return 'no' !== ($s['privacy_review_notice'] ?? 'yes');
 	}
 
+	/**
+	 * The privacy values a new install starts with. An upgraded site keeps what it saved and
+	 * gets these only when an administrator asks for them on the Privacy tab.
+	 */
+	public const SAFE_PRIVACY = ['gdpr_enabled' => 'on', 'anonymize_ip' => 'on', 'set_tracker_cookie' => 'off', 'do_not_track' => 'on', 'mask_personal_data' => 'on'];
+
+	/**
+	 * Keys of SAFE_PRIVACY that behave differently on this site. Readers take anything but 'on'
+	 * as off (the Settings form stores 'no'), and a missing key as the opposite of the safe value.
+	 */
+	public static function privacyDifferences(array $s): array
+	{
+		return array_keys(array_filter(self::SAFE_PRIVACY, static function ($safe, $key) use ($s) {
+			return !isset($s[$key]) || ('on' === $s[$key]) !== ('on' === $safe);
+		}, ARRAY_FILTER_USE_BOTH));
+	}
+
 	public static function privacyRows(array $s, bool $has_source): array
 	{
 		$sources = [

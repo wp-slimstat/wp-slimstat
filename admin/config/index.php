@@ -770,15 +770,51 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
                 break;
 
             case 'privacy-reviewed':
-                // Marks the review task complete and changes only that stored key: $settings holds
-                // runtime fallbacks (WP Consent API swapped for the banner while it is inactive).
-                wp_slimstat::$settings['privacy_review_notice'] = 'no';
+            case 'privacy-safe-settings':
+                // Marks the review task complete; the second action also stores the new-install privacy
+                // values, which no update applies by itself. Only these stored keys change: $settings
+                // holds runtime fallbacks (WP Consent API swapped for the banner while it is inactive).
+                $slimstat_safe    = 'privacy-safe-settings' === sanitize_key(wp_unslash($_GET['action']));
+                $slimstat_changes = ($slimstat_safe ? \SlimStat\Services\SettingsStatus::SAFE_PRIVACY : []) + ['privacy_review_notice' => 'no'];
+                wp_slimstat::$settings = array_merge(wp_slimstat::$settings, $slimstat_changes);
                 $slimstat_stored = is_network_admin() ? get_site_option('slimstat_options') : get_option('slimstat_options');
                 if (is_array($slimstat_stored)) {
-                    $slimstat_stored['privacy_review_notice'] = 'no';
-                    wp_slimstat::update_option('slimstat_options', $slimstat_stored);
+                    wp_slimstat::update_option('slimstat_options', array_merge($slimstat_stored, $slimstat_changes));
                 }
-                wp_slimstat_admin::show_message(__('Privacy review marked as complete. No settings were changed.', 'wp-slimstat'), 'info');
+                wp_slimstat_admin::show_message($slimstat_safe ? __('Privacy-safe settings applied. Each one can be changed below.', 'wp-slimstat') : __('Privacy review marked as complete. No settings were changed.', 'wp-slimstat'), 'info');
+                break;
+
+            case 'anonymize-ip':
+                // An erasure request by IP address: identifiers on matching rows are cleared, pageviews stay.
+                $slimstat_ip = isset($_POST['slimstat_erase_ip']) && is_string($_POST['slimstat_erase_ip']) ? trim(sanitize_text_field(wp_unslash($_POST['slimstat_erase_ip']))) : '';
+                if (!filter_var($slimstat_ip, FILTER_VALIDATE_IP)) {
+                    wp_slimstat_admin::show_message(__('Enter one complete IPv4 or IPv6 address.', 'wp-slimstat'), 'error');
+                    break;
+                }
+                $slimstat_count  = 0;
+                $slimstat_result = [];
+                try {
+                    // ponytail: 40 passes of 500 rows per request; beyond that the notice asks for another run. Queue it if sites hit this.
+                    for ($slimstat_page = 1; $slimstat_page <= 40 && empty($slimstat_result['done']); $slimstat_page++) {
+                        $slimstat_result = \SlimStat\Services\Privacy\DataEraser::anonymizeByIp($slimstat_ip, $slimstat_page);
+                        if (is_wp_error($slimstat_result)) {
+                            break;
+                        }
+                        $slimstat_count += (int) ($slimstat_result['count'] ?? 0);
+                    }
+                } catch (\Throwable $slimstat_error) {
+                    $slimstat_result = new \WP_Error('slimstat_erasure_failed', __('SlimStat could not finish erasing the data. Please try again.', 'wp-slimstat'));
+                }
+                if (is_wp_error($slimstat_result)) {
+                    wp_slimstat_admin::show_message($slimstat_result->get_error_message(), 'error');
+                } elseif (0 === $slimstat_count) {
+                    /* translators: %s: IP address. */
+                    wp_slimstat_admin::show_message(sprintf(__('No record stored with IP %s holds personal data.', 'wp-slimstat'), $slimstat_ip), 'info');
+                } else {
+                    /* translators: 1: anonymized record count, 2: IP address. */
+                    $slimstat_done = sprintf(__('Anonymized %1$d record(s) with IP %2$s in SlimStat.', 'wp-slimstat'), $slimstat_count, $slimstat_ip);
+                    wp_slimstat_admin::show_message(empty($slimstat_result['done']) ? $slimstat_done . ' ' . __('More records remain: run it again.', 'wp-slimstat') : $slimstat_done, 'info');
+                }
                 break;
 
             case 'reset-settings':
@@ -1144,6 +1180,34 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
                     </form>
                 <?php elseif (9 === $current_tab) : ?>
                     <p class="slimstat-settings-status__task"><?php esc_html_e('Privacy review completed.', 'wp-slimstat'); ?></p>
+                <?php endif; ?>
+                <?php if (9 === $current_tab) : ?>
+                    <form method="post" action="<?php echo esc_url(wp_slimstat_admin::$config_url . '9&action=anonymize-ip'); ?>" class="slimstat-settings-status__task">
+                        <?php wp_nonce_field('slimstat_update_settings', 'slimstat_update_settings', false); ?>
+                        <p><label for="slimstat-erase-ip"><?php esc_html_e('Erasure request for an IP address: clears the IP, username, email and fingerprint on every record stored with that full address and keeps the pageviews. Records stored with an anonymized or hashed IP cannot be matched to an address. For a person with an account or email, use Tools, Erase Personal Data.', 'wp-slimstat'); ?></label></p>
+                        <input type="text" id="slimstat-erase-ip" name="slimstat_erase_ip" class="regular-text" inputmode="text" autocomplete="off" spellcheck="false" required placeholder="203.0.113.9">
+                        <button type="submit" class="button"><?php esc_html_e('Anonymize records for this IP', 'wp-slimstat'); ?></button>
+                    </form>
+                <?php endif; ?>
+                <?php
+                // An update never applies the new-install privacy values. This offers them, and says what will change.
+                $privacy_differences = 9 === $current_tab ? \SlimStat\Services\SettingsStatus::privacyDifferences(wp_slimstat::$settings) : [];
+                if ($privacy_differences) :
+                    $banner_returns = in_array('gdpr_enabled', $privacy_differences, true) && 'slimstat_banner' === \SlimStat\Utils\Consent::getIntegrationKey();
+                    ?>
+                    <form method="post" action="<?php echo esc_url(wp_slimstat_admin::$config_url . '9&action=privacy-safe-settings'); ?>" class="slimstat-settings-status__task slimstat-settings-status__safe">
+                        <?php wp_nonce_field('slimstat_update_settings', 'slimstat_update_settings', false); ?>
+                        <div>
+                            <p><?php esc_html_e('New installs start with stricter privacy settings than this site has saved. Updates never change your settings. To use the stricter ones, apply them here. This changes only:', 'wp-slimstat'); ?></p>
+                            <ul>
+                                <?php foreach ($privacy_differences as $privacy_key) : ?>
+                                    <li><?php echo esc_html(wp_strip_all_tags($settings[9]['rows'][$privacy_key]['title'] ?? $privacy_key) . ': ' . ('on' === \SlimStat\Services\SettingsStatus::SAFE_PRIVACY[$privacy_key] ? __('On', 'wp-slimstat') : __('Off', 'wp-slimstat'))); ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                            <p><?php esc_html_e('After that, returning visitors are estimated without a cookie, and visitors who send Do Not Track or Global Privacy Control are no longer counted. Records already stored stay as they are.', 'wp-slimstat'); ?><?php if ($banner_returns) : ?> <?php esc_html_e('The SlimStat consent banner selected below will be shown to visitors.', 'wp-slimstat'); ?><?php endif; ?></p>
+                        </div>
+                        <button type="submit" class="button"><?php esc_html_e('Apply privacy-safe settings', 'wp-slimstat'); ?></button>
+                    </form>
                 <?php endif; ?>
             </section>
         <?php endif; ?>

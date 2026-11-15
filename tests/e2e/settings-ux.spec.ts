@@ -186,4 +186,68 @@ test.describe('Settings redesign keeps every saved setting', () => {
       }
     }
   });
+
+  test('privacy-safe settings change nothing until the button is clicked, then exactly the listed settings', async ({ page }) => {
+    // An updated site: privacy settings as older versions saved them ('no' is what the form stores for off).
+    await setSlimstatOptions({ privacy_review_notice: 'yes', gdpr_enabled: 'off', anonymize_ip: 'no', set_tracker_cookie: 'on', do_not_track: 'off', mask_personal_data: 'off' });
+    const raw = await rawOptions();
+    const before = phpUnserialize(raw) as Record<string, unknown>;
+
+    await page.goto(tabUrl(9));
+    const offer = page.locator('.slimstat-settings-status__safe');
+    await expect(offer.locator('li')).toHaveCount(5);
+    for (const tab of [1, 2, 9]) {
+      await page.goto(tabUrl(tab));
+      expect(await rawOptions(), `opening tab ${tab} must not write a setting`).toBe(raw);
+    }
+
+    await offer.getByRole('button', { name: 'Apply privacy-safe settings' }).click();
+    await page.waitForLoadState('load');
+    await expect(page.getByText('Privacy-safe settings applied. Each one can be changed below.')).toBeVisible();
+    expect(phpUnserialize(await rawOptions())).toEqual({ ...before, gdpr_enabled: 'on', anonymize_ip: 'on',
+      set_tracker_cookie: 'off', do_not_track: 'on', mask_personal_data: 'on', privacy_review_notice: 'no' });
+    await expect(page.locator('.slimstat-settings-status__safe'), 'nothing left to offer once the settings match').toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'What your privacy settings do' })).toBeVisible();
+  });
+
+  test('an erasure request by IP address clears identity on that address only and refuses an incomplete address', async ({ page }) => {
+    const marker = `/erase-ip-${Date.now()}`;
+    const [target, other] = ['198.51.100.213', '198.51.100.214'];
+    const insert = (ip: string, n: number) => getPool().query(
+      'INSERT INTO wp_slim_stats (resource, ip, username, email, fingerprint, dt) VALUES (?, ?, ?, ?, ?, UNIX_TIMESTAMP())',
+      [`${marker}-${n}`, ip, 'erase-me', 'erase-me@example.test', 'f'.repeat(32)]);
+    const records = async () => {
+      const [rows]: any = await getPool().query('SELECT ip, username, email, fingerprint FROM wp_slim_stats WHERE resource LIKE ? ORDER BY resource', [`${marker}-%`]);
+      return rows.map((row: any) => ({ ...row }));
+    };
+    const request = async (ip: string) => {
+      await page.locator('#slimstat-erase-ip').fill(ip);
+      await page.getByRole('button', { name: 'Anonymize records for this IP' }).click();
+      await page.waitForLoadState('load');
+    };
+    try {
+      await insert(target, 1);
+      await insert(target, 2);
+      await insert(other, 3);
+      const raw = await rawOptions();
+      const stored = await records();
+      expect(stored).toHaveLength(3);
+
+      await page.goto(tabUrl(9));
+      await request('198.51.100');
+      await expect(page.getByText('Enter one complete IPv4 or IPv6 address.')).toBeVisible();
+      expect(await records(), 'a refused request must change no record').toEqual(stored);
+
+      await request(target);
+      await expect(page.getByText(`Anonymized 2 record(s) with IP ${target} in SlimStat.`)).toBeVisible();
+      const cleared = { ip: '0.0.0.0', username: '', email: '', fingerprint: '' };
+      expect(await records()).toEqual([cleared, cleared, stored[2]]);
+
+      await request(target);
+      await expect(page.getByText(`No record stored with IP ${target} holds personal data.`)).toBeVisible();
+      expect(await rawOptions(), 'an erasure request must not write a setting').toBe(raw);
+    } finally {
+      await getPool().query('DELETE FROM wp_slim_stats WHERE resource LIKE ?', [`${marker}-%`]);
+    }
+  });
 });

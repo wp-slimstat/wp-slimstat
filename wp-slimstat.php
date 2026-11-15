@@ -1284,11 +1284,9 @@ class wp_slimstat
     {
         $defaults = self::init_options();
         // Existing installations keep their saved choices; these apply only on activation/reset.
-        $defaults = array_merge($defaults, [
-            'gdpr_enabled' => 'on', 'anonymize_ip' => 'on', 'set_tracker_cookie' => 'off',
-            'do_not_track' => 'on', 'auto_purge_delete' => 'no', 'privacy_review_notice' => 'no',
-            'rest_api_tokens' => '', 'mask_personal_data' => 'on',
-            'archive_retention_days' => 420,
+        $defaults = array_merge($defaults, \SlimStat\Services\SettingsStatus::SAFE_PRIVACY, [
+            'auto_purge_delete' => 'no', 'privacy_review_notice' => 'no',
+            'rest_api_tokens' => '', 'archive_retention_days' => 420,
         ]);
         $defaults['geolocation_provider'] = 'dbip';
         // Heatmaps start on for new installs only; init_options() keeps upgrades opted out.

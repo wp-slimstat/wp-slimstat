@@ -170,15 +170,15 @@ class DataEraser
 	}
 
 	/**
-	 * Anonymize data by IP address
+	 * Anonymize the records stored with one full IP address.
 	 *
-	 * This is an additional eraser that handles IP-based erasure requests.
-	 * It anonymizes the IP instead of deleting the record entirely,
-	 * preserving aggregate statistics.
+	 * Not a registered WordPress eraser: those are keyed by email. An administrator runs it from
+	 * Settings, Privacy (action anonymize-ip). It clears the identifiers and keeps the pageview,
+	 * 500 rows per table and call. Rows stored with an anonymized or hashed IP cannot be matched.
 	 *
 	 * @param string $ip_address The IP address to anonymize
 	 * @param int    $page       Page number for pagination
-	 * @return array|\WP_Error WordPress Privacy API formatted erase response
+	 * @return array|\WP_Error Privacy API shaped response, plus 'count': rows anonymized by this call
 	 */
 	public static function anonymizeByIp($ip_address, $page = 1)
 	{
@@ -201,6 +201,7 @@ class DataEraser
         $items_removed = false;
         $done = true;
         $messages = [];
+        $count = 0;
         foreach ($tables as $table) {
             // Older archives may predate identity columns or store IPv4 as an integer.
             // Read the actual schema so a missing optional field cannot disable erasure.
@@ -233,6 +234,7 @@ class DataEraser
             if (false === $updated) { $failed = true; break; }
             if ($updated > 0) {
                 $items_removed = true;
+                $count += $updated;
                 \wp_slimstat::bump_data_version();
                 $messages[] = sprintf(
                     /* translators: 1: anonymized record count, 2: IP address. */
@@ -248,7 +250,7 @@ class DataEraser
         if ($failed) {
             return new \WP_Error('slimstat_erasure_failed', __('SlimStat could not finish erasing the data. Please try again.', 'wp-slimstat'));
         }
-        return ['items_removed' => $items_removed, 'items_retained' => false, 'messages' => $messages, 'done' => $done];
+        return ['items_removed' => $items_removed, 'items_retained' => false, 'messages' => $messages, 'done' => $done, 'count' => $count];
 	}
 
 	/**

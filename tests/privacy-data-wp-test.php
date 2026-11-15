@@ -291,7 +291,20 @@ try {
     } finally { remove_filter('query', $break_archive); $db->suppress_errors($suppressed); }
     wp_slimstat::wp_slimstat_purge();
     $check((int) get_option(wp_slimstat::LAST_PURGE_OK_OPTION) > $last_ok, 'successful archive cleanup restores health');
-    echo "PASS: complete export, archived-only erasure, 1001-event paging, cache invalidation, independent archive retention, heatmap labels, legacy consent/session races and exact public counts\n";
+    // A cached page carries an expired nonce: a withdrawal there still removes the tracking cookie, a grant is refused.
+    $stale = static function (array $parsed) {
+        $_COOKIE['slimstat_tracking_code'] = 'left-behind';
+        $request = new WP_REST_Request('POST', '/slimstat/v1/consent-change');
+        foreach (['nonce' => 'expired-nonce', 'source' => 'slimstat_banner', 'parsed' => $parsed] as $key => $value) { $request->set_param($key, $value); }
+        return (new \SlimStat\Controllers\Rest\ConsentChangeRestController())->handle_consent_change($request);
+    };
+    $response = $stale(['statistics' => 'deny']);
+    $check(!is_wp_error($response) && 200 === $response->get_status() && !isset($_COOKIE['slimstat_tracking_code']), 'a withdrawal with an expired nonce removes the tracking cookie');
+    foreach ([['statistics' => 'allow'], ['statistics' => 'deny', 'allowed' => ['statistics']], ['decision' => 'all']] as $grant) {
+        $response = $stale($grant);
+        $check(is_wp_error($response) && 403 === $response->get_error_data()['status'] && isset($_COOKIE['slimstat_tracking_code']), 'a grant with an expired nonce is refused: ' . wp_json_encode($grant));
+    }
+    echo "PASS: complete export, archived-only erasure, 1001-event paging, cache invalidation, independent archive retention, heatmap labels, legacy consent/session races, expired-nonce withdrawal and exact public counts\n";
 } finally {
     update_option(\SlimStat\Heatmap\Store::STATE, $saved_heatmap);
     update_option(wp_slimstat::LAST_PURGE_OK_OPTION, $saved_purge, false);

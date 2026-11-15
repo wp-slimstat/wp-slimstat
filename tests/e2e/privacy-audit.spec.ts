@@ -295,4 +295,73 @@ test.describe('privacy audit: real visitor consent boundaries', () => {
       expect(Number(next[0].visit_id)).toBe(Number(current[0].visit_id));
     } finally { await context.close(); }
   });
+
+  test('a withdrawal on a cached page with an expired security token removes the tracking cookie; a grant there is refused', async ({ browser }) => {
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const anonymous = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      const page = await context.newPage();
+      await page.goto(`${BASE_URL}/?privacy_audit=stale-token-fresh`);
+      await page.locator('[data-consent="accepted"]').click();
+      await expect.poll(async () => (await context.cookies()).some(c => c.name === 'slimstat_tracking_code' && c.httpOnly)).toBe(true);
+
+      // What a full-page cache serves: the copy rendered for a visitor without cookies, long
+      // enough ago that its security token has expired. The page has one token, used by every consent call.
+      const cachedUrl = `${BASE_URL}/?privacy_audit=stale-token-cached`;
+      const cached = (await (await anonymous.request.get(cachedUrl)).text()).replace(/"wp_rest_nonce":"[^"]*"/, '"wp_rest_nonce":"expired-token"');
+      expect(cached).toContain('"wp_rest_nonce":"expired-token"');
+      await page.route(url => url.searchParams.get('privacy_audit') === 'stale-token-cached',
+        route => route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: cached }));
+      await page.goto(cachedUrl);
+      expect(await page.evaluate(() => (window as any).SlimStatParams.wp_rest_nonce)).toBe('expired-token');
+
+      const consentChange = (statistics: string) => page.waitForResponse(r => r.url().includes('consent-change')
+        && r.request().method() === 'POST' && r.request().postDataJSON()?.parsed?.statistics === statistics);
+      const reopen = page.getByRole('button', { name: 'Privacy settings', exact: true }).last();
+      const withdrawal = consentChange('deny');
+      await reopen.click();
+      await page.locator('[data-consent="denied"]').click();
+      expect((await withdrawal).status()).toBe(200);
+      await expect.poll(async () => (await context.cookies()).some(c => c.name === 'slimstat_tracking_code')).toBe(false);
+
+      // The blocked path: consent cannot be granted with an expired token.
+      const grant = consentChange('allow');
+      await reopen.click();
+      await page.locator('[data-consent="accepted"]').click();
+      expect((await grant).status()).toBe(403);
+      expect((await context.cookies()).some(c => c.name === 'slimstat_tracking_code')).toBe(false);
+    } finally { await anonymous.close(); await context.close(); }
+  });
+
+  test('the bundled fingerprint library makes no request to its vendor', async ({ browser }) => {
+    // With GDPR mode off the library runs on the first pageview; the fresh-defaults test above never loads it.
+    await setSlimstatOptions({ gdpr_enabled: 'off' });
+    const vendorCalls = async (label: string, patch: (js: string) => string) => {
+      const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+      try {
+        const page = await context.newPage();
+        const calls: string[] = [];
+        // The library reports one load in a thousand: make this load that one. The call is
+        // aborted here, so the test contacts no outside host.
+        await page.addInitScript(() => { Math.random = () => 0; });
+        await page.route(url => url.hostname.endsWith('openfpcdn.io'), route => { calls.push(route.request().url()); return route.abort(); });
+        await page.route(/\/wp-slimstat(\.min)?\.js/, async route => {
+          const response = await route.fetch();
+          await route.fulfill({ response, body: patch(await response.text()) });
+        });
+        await page.goto(`${BASE_URL}/?privacy_audit=fingerprint-${label}`);
+        await expect.poll(() => page.evaluate(() => (window as any).SlimStatParams?.id || '')).toMatch(/^\d+\./);
+        const id = await page.evaluate(() => parseInt((window as any).SlimStatParams.id, 10));
+        const [rows]: any = await getPool().query('SELECT fingerprint FROM wp_slim_stats WHERE id=?', [id]);
+        expect(rows[0].fingerprint || '', 'the fingerprint library must have run, or the test proves nothing').not.toBe('');
+        return calls;
+      } finally { await context.close(); }
+    };
+    expect(await vendorCalls('shipped', js => js)).toEqual([]);
+    const control = await vendorCalls('control', js => {
+      expect(js, 'control: the bundle must switch monitoring off in exactly one place').toContain('monitoring:!1');
+      return js.replace('monitoring:!1', 'monitoring:!0');
+    });
+    expect(control.length, 'control: with monitoring left on, the library calls its vendor').toBeGreaterThan(0);
+  });
 });

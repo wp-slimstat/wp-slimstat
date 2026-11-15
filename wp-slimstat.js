@@ -1084,81 +1084,6 @@ var SlimStat = (function () {
         }
     }
 
-    function detectRealCookieBannerConsent(category) {
-        try {
-            // Latest API (RCB 4.x+): window.rcb() function
-            if (isFunction(window.rcb)) {
-                try {
-                    var rcbConsent = window.rcb("consent", category);
-                    if (rcbConsent === true || rcbConsent === false) return !!rcbConsent;
-                    if (isObject(rcbConsent) && "cookie" in rcbConsent) return !!rcbConsent.cookie;
-                    if (isObject(rcbConsent) && "consent" in rcbConsent) return !!rcbConsent.consent;
-                } catch (e) {}
-            }
-
-            // New API: window.RCB.consent.get()
-            if (isObject(window.RCB) && isObject(window.RCB.consent) && isFunction(window.RCB.consent.get)) {
-                var rcbNew = window.RCB.consent.get(category);
-                if (rcbNew === true || rcbNew === false) return !!rcbNew;
-                if (isObject(rcbNew) && "cookie" in rcbNew) return !!rcbNew.cookie;
-                if (isObject(rcbNew) && "consent" in rcbNew) return !!rcbNew.consent;
-            }
-
-            // Current API: window.rcbConsentManager.getUserDecision()
-            if (isObject(window.rcbConsentManager) && isFunction(window.rcbConsentManager.getUserDecision)) {
-                var decision = window.rcbConsentManager.getUserDecision();
-                if (decision && decision.decision) {
-                    if (decision.decision === "all") return true;
-                    if (typeof decision.decision === "object") {
-                        var value = decision.decision[category];
-                        if (typeof value === "boolean") return value;
-                        if (Array.isArray(value)) return value.length > 0;
-                    }
-                }
-            }
-
-            // Legacy API: window.realCookieBanner.consent.get()
-            var rcb = window.realCookieBanner || window.RealCookieBanner || null;
-            if (isObject(rcb) && isObject(rcb.consent) && isFunction(rcb.consent.get)) {
-                var consent = rcb.consent.get(category);
-                if (consent === true || consent === false) return !!consent;
-                if (isObject(consent) && "cookie" in consent) return !!consent.cookie;
-                if (consent) return true;
-            }
-
-            // Very old API: window.__rcb
-            var legacy = window.__rcb || window.__RCB || null;
-            if (isObject(legacy) && legacy.consent) {
-                var legacyVal = legacy.consent[category];
-                if (typeof legacyVal === "boolean") return legacyVal;
-                if (Array.isArray(legacyVal)) return legacyVal.length > 0;
-            }
-
-            // Cookie fallback
-            var possibleNames = ["real_cookie_banner", "rcb_consent", "rcb_acceptance", "real_cookie_consent", "rcb-consent"];
-            for (var i = 0; i < possibleNames.length; i++) {
-                var raw = getCookieStrict(possibleNames[i]);
-                if (!raw) {
-                    continue;
-                }
-                try {
-                    var parsed = JSON.parse(raw);
-                    if (parsed) {
-                        if (typeof parsed[category] === "boolean") return parsed[category];
-                        if (typeof parsed.consent === "boolean") return parsed.consent;
-                        if (typeof parsed[category] === "object" && parsed[category].cookie !== undefined) return !!parsed[category].cookie;
-                    }
-                } catch (err) {
-                    var normalized = raw.toLowerCase();
-                    if (raw.indexOf(category) !== -1 || raw === "1" || normalized === "true" || normalized === "all" || normalized === "accepted") {
-                        return true;
-                    }
-                }
-            }
-        } catch (error) {}
-        return null;
-    }
-
     function detectWPConsentAPI(category) {
         try {
             // This setting is a category, not a service name. Service lookup can
@@ -1339,12 +1264,14 @@ var SlimStat = (function () {
                 payload.pageview_id = String(pageviewId);
             }
 
-            // Build headers — only include X-WP-Nonce when nonce is non-empty.
-            // Anonymous users on cached pages have no valid nonce. Sending an
-            // empty/stale X-WP-Nonce causes WordPress core (rest_cookie_check_errors)
-            // to reject with 403 before the controller handler even runs.
+            // X-WP-Nonce goes out only with a grant. WordPress core (rest_cookie_check_errors)
+            // answers an empty or stale header with 403 before the controller runs, and a
+            // withdrawal has to get through on a cached page whose nonce expired: the tracking
+            // cookie is HttpOnly, so only the server can delete it. The controller accepts a
+            // withdrawal without a valid nonce and still refuses a grant.
+            var sendNonceHeader = !!nonce && !!parsedConsent && parsedConsent.statistics === "allow";
             var headers = { "Content-Type": "application/json" };
-            if (nonce) {
+            if (sendNonceHeader) {
                 headers["X-WP-Nonce"] = nonce;
             }
 
@@ -1366,7 +1293,7 @@ var SlimStat = (function () {
                 var xhr = new XMLHttpRequest();
                 xhr.open("POST", endpoint, true);
                 xhr.setRequestHeader("Content-Type", "application/json");
-                if (nonce) {
+                if (sendNonceHeader) {
                     xhr.setRequestHeader("X-WP-Nonce", nonce);
                 }
                 xhr.onload = function () {
