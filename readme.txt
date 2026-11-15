@@ -173,6 +173,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 = 6.1.1 - 2026-11-12 =
 
+* The Real-time Access Log lines up each visit's details on the right again on wider screens. On phones the details stay readable, each icon stays beside its value, and the delete button stays next to the date.
 * The Black Friday fallback offer expires at December 1, 2026 23:59:59 UTC, matching the existing BFCM2026 coupon instead of closing 59 seconds early.
 * Website links include campaign and placement attribution, while preserving existing campaign parameters and coupon codes.
 * Notification audiences follow the verified Pro license, including network keys and outage grace. New version-gated tags distinguish plugin activation and invalid licenses, and unsupported tags no longer show targeted messages to everyone.
