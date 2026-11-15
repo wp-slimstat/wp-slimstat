@@ -6,17 +6,17 @@
     "data": "Disposable databases and synthetic visitors; outbound email and fake license calls intercepted locally."
   },
   "verified_source": {
-    "free": "3acb8c2e",
+    "free": "64b36565",
     "pro": "3dad28b"
   },
   "free": {
     "unit": {
-      "tests": 721,
-      "assertions": 2821
+      "tests": 725,
+      "assertions": 2843
     },
     "integration": {
       "tests": 229,
-      "assertions": 965
+      "assertions": 946
     },
     "source_level": "pass",
     "phpstan": "pass",
@@ -27,7 +27,7 @@
     },
     "mutations": {
       "full_suite_killed": 319,
-      "latest_changed_targets_killed": 25,
+      "latest_changed_targets_killed": 31,
       "survived": 0,
       "invalid": 0
     },
@@ -294,7 +294,7 @@
     "browser": {
       "tests": 50,
       "status": "pass",
-      "detail": "50/50 passed without retries with final Free production code 3acb8c2e (pro-full-browser-free3acb8c2e-pro3dad28b run)."
+      "detail": "50/50 passed without retries with final Free production code 64b36565 (pro-suite-64b36565 run)."
     },
     "release_runtime_php": [
       "7.4",
@@ -502,6 +502,20 @@
         "tests/e2e/october-migration.spec.ts, which this branch does not change, leaves two records of its own on a reused site ('migration_db_unreachable', whose text also contains \"Table '\", and 'issue395 unrelated'). Within three hours of that spec the chart test fails in the same way. Not changed here; why its own restore step does not remove them was not traced.",
         "custom-db-chart-regression.spec.ts:349 was listed in PR #415 as a failure of this branch at 69257827 without a trace; a leftover record of this kind explains it, but that earlier run was not re-examined."
       ]
+    },
+    "browscap_notice_test": {
+      "source": "003288ed",
+      "ci": "Run 43623692299 on 5eab4b89 (the settings redesign merged into this branch), job \"Tier 2 · standard · E2E · WP 6.4 · PHP 8.2\": issue-14843-browscap-toggle-revert.spec.ts:218 failed on both attempts (978 passed, 1 failed, 3 did not run, 74 skipped). The other lanes passed.",
+      "cause": "Test only. The test looked for the word \"error\" anywhere in the Settings page body. The plugin showed the right notice (\"The downloaded Browscap file is not a valid ZIP archive. Your host may be blocking the download.\"), which does not contain that word. The check had been passing on unrelated help text: the description of external_domains sat on the Tracker tab, and the redesign moved that setting to the Advanced tab. The redesign never ran this lane before the merge, because PR #415 targeted a feature branch.",
+      "fix": "Test code only. The test reads the notices and expects \"not a valid ZIP archive\".",
+      "validation": {
+        "required_red": "On a fresh wp-env site serving this tree the test as committed at 5eab4b89 fails the way CI did. Control: with the blocker in unzip_fail mode the page reports a different failure and the new assertion fails, where the old one passed.",
+        "local": "The corrected spec file passes 7 of 7, including the three tests that did not run in CI.",
+        "ci": "Run 43629102900 on 003288ed: 23 checks passed, 4 not run (CodeRabbit paused, two nightly jobs, and the push run's E2E tier, which runs for the pull request only), none failed. Full lane (WP 6.4, PHP 8.2): 982 passed, 74 skipped. WP 7.1.4 lane with WooCommerce: 67 passed, 5 skipped."
+      },
+      "limits": [
+        "A skipped check is not a pass: the four checks listed did not run."
+      ]
     }
   },
   "review_followups": {
@@ -663,6 +677,72 @@
         "Real Cookie Banner: when a visitor leaves the page within a few tens of milliseconds of clicking 'Continue without consent', the banner does not store that decision. A later 'Accept all' from the privacy settings link stores consent, but Real Cookie Banner did not run the service's opt-in code on that page or the next one, so wp_consent_statistics stayed 'deny' and SlimStat did not track that visitor (it fails closed). Seen only in the test. The cause inside Real Cookie Banner was not investigated and later pages were not followed.",
         "The Complianz, CookieYes, own-banner and with-Pro logs on 8141890e were made before the wait was added to the scenario file. The change only adds a wait; those runs were not repeated with it.",
         "PHPStan, the affected Free browser specs, the banner scenarios, Plugin Check and the snapshot ran on the working tree before it was committed as 8141890e. test:all (leftover-cookie-test-all-8141890e.log), the Pro browser suite and the mutations ran on the commit itself; the Pro site received the five changed production files by copy."
+      ]
+    },
+    "reaudit_followups": {
+      "source": "64b36565",
+      "found_by": "The re-audit of this branch at 5eab4b89 (the open list of the audit page): items marked partly fixed, fixes without a test of their own, and the stated limit that a withdrawal on a cached page could fail.",
+      "rule": "An update changes no saved setting. Everything new for an upgraded site is an action an administrator takes on the Privacy tab, and each action has a test that nothing changes without it.",
+      "items": {
+        "cached_page_withdrawal": {
+          "finding": "C5",
+          "cause": "The consent endpoint required a valid wp_rest nonce for every change. A full-page-cached page carries an expired one, and core answers a present but invalid X-WP-Nonce header with 403 before the handler runs. A visitor who declined on such a page kept the HttpOnly tracking cookie.",
+          "fix": "ConsentChangeRestController accepts a withdrawal without a valid nonce and deletes the cookie. A grant with an invalid nonce is still refused with 403 (rest_forbidden). The tracker sends the X-WP-Nonce header only for a grant.",
+          "tests": "tests/e2e/privacy-audit.spec.ts \"a withdrawal on a cached page with an expired security token removes the tracking cookie; a grant there is refused\"; tests/gdpr-consent-cookie-test.php (37 assertions); tests/privacy-data-wp-test.php (expired-nonce withdrawal and grant on a real site); tests/e2e/consent-followups.spec.ts \"withdrawal reaches REST and removes the HttpOnly tracking cookie\".",
+          "hand_mutations": "4 of 4 killed (always verify, never verify, inverted, any shape). The first run left two alive: a dead fallback was removed and the stale-nonce assertion tightened to the rest_forbidden code."
+        },
+        "opt_in_safe_settings": {
+          "finding": "C1, L1, M8",
+          "cause": "New installs start with stricter privacy values; upgraded sites keep what they saved, and nothing offered them the stricter values.",
+          "fix": "SettingsStatus::SAFE_PRIVACY holds the five new-install values (also used by get_fresh_defaults). The Privacy tab lists the ones that differ on this site and offers one button, \"Apply privacy-safe settings\", that stores exactly those five and marks the review complete. Archive retention is not part of it.",
+          "tests": "tests/settings-request-render-test.php; tests/e2e/settings-ux.spec.ts \"privacy-safe settings change nothing until the button is clicked, then exactly the listed settings\".",
+          "hand_mutations": "8 of 8 killed."
+        },
+        "erasure_by_ip": {
+          "finding": "C4",
+          "cause": "DataEraser::anonymizeByIp() had no caller, so a visitor without an account could not be erased.",
+          "fix": "The Privacy tab takes one complete IPv4 or IPv6 address and clears IP, username, email, fingerprint and visitor hash on the records stored with it, in the live and the archive table; pageviews stay. Up to 40 passes of 500 rows per request; beyond that the notice asks for another run.",
+          "tests": "tests/settings-request-render-test.php; tests/e2e/settings-ux.spec.ts \"an erasure request by IP address clears identity on that address only and refuses an incomplete address\"; tests/Integration/data-eraser-mysql.php (0, 1, 500, 501, 1000 and 1001 rows).",
+          "hand_mutations": "11 of 11 killed."
+        },
+        "evidence_test": {
+          "finding": "H3, M1, M4, M7, L3, L6",
+          "cause": "These six fixes had no test of their own.",
+          "fix": "tests/privacy-audit-evidence-test.php, wired into composer test:source-level.",
+          "hand_mutations": "10 of 10 killed (each mutation undoes one audited fix)."
+        },
+        "fingerprint_vendor_request": {
+          "finding": "H2",
+          "cause": "No test showed that the bundled fingerprint library makes no request to its vendor.",
+          "fix": "Test only: tests/e2e/privacy-audit.spec.ts \"the bundled fingerprint library makes no request to its vendor\". The control inside the test loads the library with monitoring on and sees the request."
+        },
+        "real_cookie_banner_dead_code": {
+          "finding": "C5",
+          "fix": "The unused detectRealCookieBannerConsent function is deleted from the tracker and the bundle rebuilt. The live Real Cookie Banner branches stay for sites with the legacy stored value."
+        },
+        "schema_fixture_cleanup": {
+          "cause": "tests/Integration/schema-online-mysql.php refuses a charset conversion on purpose. The plugin records that as a degradation, which admin screens list for three hours, and the fixture did not put the stored records back: the same shape as ci_followups.review_fixture_degradation_record.",
+          "fix": "Test code only: the fixture restores the stored records and fails itself when they differ afterwards.",
+          "validation": "With the restore removed the self-check fails (schema-online-control.log)."
+        }
+      },
+      "validation": {
+        "required_red": "The six new browser tests on the previous code (003288ed, control-old-code.log): 4 failed (the REST withdrawal test over the wp_consent_api and real_cookie_banner sources, the cached-page test, the safe-settings test), 1 passed (the fingerprint test: behaviour is unchanged, its control is inside the test), 1 did not run (the erasure form test, serial mode after a failure; its red proof is the 11 hand mutations).",
+        "local": "On 64b36565: 725 unit / 2843 assertions, 229 integration / 946 assertions (965 at 3acb8c2e: the redesign commit 6d58bb31 rewrote ReleaseNoticeTest.php), assertion floor, production autoloader, full source suite. PHPStan 160 files, no errors. i18n: template regenerated, catalog, freshness and admin label checks pass.",
+        "mutations": "Registered mutations on targets changed since 003288ed, in the isolated clone: 31 killed, 0 survived, 0 invalid; floor 319 (mutations-64b36565.log).",
+        "real_site_fixtures": "The 17 WordPress-booted fixtures of ci.yml on a disposable site serving 64b36565: 17 of 17 pass (reports escaping 85 assertions; fixtures-64b36565 logs). The stored degradation record is the same before and after.",
+        "browser": "The six new tests: 6 passed. 20 affected Free spec files (146 cases, no retries, WordPress 6.4): 143 passed, 1 skipped (heatmap case, Pro not installed), 2 could not run there (the WooCommerce attribution cases: WooCommerce 10.6.2 needs WordPress 6.8). The same two on WordPress 7.1.4 with WooCommerce 10.6.2: 2 passed (woo-64b36565.log). Full Pro browser suite: 50/50 passed without retries (pro-suite-64b36565 run).",
+        "plugin_check": "A staged build of 64b36565, new and update mode: 0 errors, 1 warning (trademarked_term), unchanged."
+      },
+      "limits": [
+        "The full Free browser suite was not run locally on 64b36565; CI runs it on the PR.",
+        "The real banner-plugin scenarios (Complianz, CookieYes, Real Cookie Banner) were not repeated on 64b36565; the last run is real_consent_plugins on 8141890e. Cookiebot is still untested (needs an account).",
+        "This entry supersedes one limit of real_consent_plugins: a withdrawal on a cached page with an expired token now removes the tracking cookie. A grant there is still refused until the visitor loads an uncached page.",
+        "The admin-ajax call slimstat_consent_revoked still needs a valid nonce; the REST call is the one that removes the cookie.",
+        "WordPress's own erasure and export tools still find people by email only; erasure by IP is the admin form.",
+        "Upgraded sites keep their saved privacy values until an administrator clicks the button; that is the rule, not a gap.",
+        "FingerprintJS stays: the fingerprint column is the first tier of the visitor identifier, so replacing the library would change visitor counts on existing sites.",
+        "Still open, owner decisions: an end date for URL tokens (M5), expiry of archives made before this version and the WP cron dependency (C3), free text in URLs (H4), the two-visit split (H5), the legal reading (L2)."
       ]
     }
   }
