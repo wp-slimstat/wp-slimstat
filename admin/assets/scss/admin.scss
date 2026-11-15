@@ -3625,6 +3625,10 @@ body.slimstat-admin-page {
   .spaced { margin-inline: 8px 4px; }
   .slimstat-delete-entry { margin-inline-start: 8px; }
 }
+// Above the WP admin phone breakpoint the details line ends at the row edge, as before; no float needed.
+@media (min-width: 783px) {
+  .wrap-slimstat #slim_p7_02 p .details { text-align: right; }
+}
 
 @media (max-width: 600px) {
   .wrap-slimstat [id^="slim_"] p.pagination {

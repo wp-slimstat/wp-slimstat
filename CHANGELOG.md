@@ -1,5 +1,6 @@
 = 6.1.1 - 2026-11-12 =
 
+* On wider screens, each Access Log row again lines up its details (time on page, content type, date, delete) on the right edge instead of crowding them under the page title on the left. Phones keep the stacked layout.
 * The Black Friday fallback offer expires at December 1, 2026 23:59:59 UTC, matching the existing BFCM2026 coupon instead of closing 59 seconds early.
 * Website links include campaign and placement attribution, while preserving existing campaign parameters and coupon codes.
 * Notification audiences follow the verified Pro license, including network keys and outage grace. New version-gated tags distinguish plugin activation and invalid licenses, and unsupported tags no longer show targeted messages to everyone.
