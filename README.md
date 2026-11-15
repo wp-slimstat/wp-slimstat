@@ -1,5 +1,5 @@
 # Slimstat Analytics #
-Real-time WordPress analytics that stay on your own server. Track pageviews and outbound links, build WooCommerce funnels, and keep every visitor privacy-first and GDPR-ready, with no data ever shared with Google. Thousands of WordPress sites already trust it to keep their numbers honest, fast, and entirely their own.
+Real-time WordPress analytics that stay on your own server. Track pageviews and outbound links, build WooCommerce funnels, and configure consent and retention controls, with no analytics sent to Google. Thousands of WordPress sites already trust it to keep their numbers honest, fast, and entirely their own.
 
 **v6.1.0** — Turn any report into plain-language findings with AI, follow a country down to its cities, and learn SlimStat from video tutorials. SlimStat 6 brought heatmaps, a WooCommerce revenue dashboard, channels and UTM campaigns, and faster reports. [Full changelog](https://github.com/wp-slimstat/wp-slimstat/blob/master/CHANGELOG.md).
 
@@ -14,7 +14,7 @@ Real-time WordPress analytics that stay on your own server. Track pageviews and 
 * **Outbound links & downloads** — See which external links and files actually earn clicks, so you know what sends traffic off your site and which partnerships pull their weight.
 * **Know your visitors** — Go past pageviews to the people behind them: returning readers, logged-in users, and a full audience breakdown by country, language, browser, OS and screen size. (Pro's User Overview adds per-visitor journeys, time on site and Gravatars.)
 * **Your data, your server** — No third-party cloud, no Google looking over your shoulder. Every byte lives in your WordPress database, and one-way IP hashing lets you count unique visitors without ever storing who they are.
-* **GDPR, sorted** — Anonymize or hash IPs, honor Do Not Track, auto-purge old records on a schedule, and drop in a translatable consent banner that snaps straight into the WP Consent API (WPML and Polylang welcome). Compliance by design, not an afterthought.
+* **Privacy controls** — Anonymize or hash IPs, honor Do Not Track and Global Privacy Control, auto-purge old records on a schedule, and drop in a translatable consent banner that snaps straight into the WP Consent API (WPML and Polylang welcome). Review these controls against your site’s requirements.
 * **Geolocation & world map** — Put a city and country to every visitor, plus their browser and operating system, powered by [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org). Watch your audience light up across the globe, even from your phone (map by [jsVectorMap](https://github.com/themustafaomar/jsvectormap)).
 * **Shortcodes & Shortcode Playground** — Drop any report, live counter or Ecommerce KPI into a post, page or widget. Browse, preview with your own data and copy the shortcode under SlimStat → Shortcodes.
 * **Admin bar stats** — Keep an eye on the numbers without leaving your work. Online visitors, pageviews and top pages sit one glance away in the WordPress admin bar, on every screen.

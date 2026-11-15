@@ -7,10 +7,8 @@
  * Strategy: With javascript_mode=on, ALL tracking happens via JS AJAX/REST.
  * We intercept network requests to verify the consent decision.
  *
- * Note: CookieYes is active as CMP. To isolate tests from CookieYes
- * interference, consent tests use anonymous browser contexts where
- * CookieYes hasn't loaded yet. This lets us test SlimStat's consent
- * guard logic directly against the WP Consent API cookies.
+ * When CookieYes is active, acceptance uses its banner because the CMP owns
+ * the decision and can replace a manually seeded WP Consent API cookie.
  */
 import { test, expect } from '@playwright/test';
 import {
@@ -26,6 +24,7 @@ import * as mysql from 'mysql2/promise';
 
 let db: mysql.Pool;
 let wpConsentApiActive = false;
+let cookieLawInfoActive = false;
 const COOKIE_DOMAIN = new URL(BASE_URL).hostname;
 
 test.beforeAll(async () => {
@@ -38,6 +37,7 @@ test.beforeAll(async () => {
   if (rows.length > 0) {
     const raw: string = rows[0].option_value;
     wpConsentApiActive = raw.includes('wp-consent-api');
+    cookieLawInfoActive = raw.includes('cookie-law-info');
   }
 });
 
@@ -58,13 +58,13 @@ function isSlimstatTrackingRequest(req: import('@playwright/test').Request): boo
 
 /**
  * Create a fresh anonymous browser context with specific cookies pre-set.
- * This avoids CookieYes CMP interference by loading pages in a clean context.
+ * Active consent providers still load and apply their own stored/default choice.
  */
 async function withAnonymousContext(
   page: import('@playwright/test').Page,
   url: string,
   cookies?: { name: string; value: string; domain: string; path: string }[],
-): Promise<{ trackingRequests: string[]; cleanup: () => Promise<void> }> {
+): Promise<{ page: import('@playwright/test').Page; trackingRequests: string[]; cleanup: () => Promise<void> }> {
   const browser = page.context().browser()!;
   const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const newPage = await ctx.newPage();
@@ -84,6 +84,7 @@ async function withAnonymousContext(
   await newPage.waitForTimeout(3000);
 
   return {
+    page: newPage,
     trackingRequests,
     cleanup: async () => {
       await newPage.close();
@@ -97,6 +98,7 @@ test.describe('WP Consent API — JS Tracker Consent Integration', () => {
     await snapshotSlimstatOptions();
     installOptionMutator();
 
+    await setSlimstatOption(page, 'javascript_mode', 'on');
     await setSlimstatOption(page, 'consent_integration', 'wp_consent_api');
     await setSlimstatOption(page, 'consent_level_integration', 'statistics');
     await setSlimstatOption(page, 'gdpr_enabled', 'on');
@@ -113,9 +115,7 @@ test.describe('WP Consent API — JS Tracker Consent Integration', () => {
   test('no tracking when user rejects consent (deny cookie)', async ({ page }) => {
     const testUrl = `${BASE_URL}/?e2e_test=consent-reject-${Date.now()}`;
 
-    // Use anonymous context to avoid CookieYes JS overriding cookies.
-    // With no CMP loaded, consent_type is empty → our optin guard activates
-    // → wp_has_consent checks the deny cookie → returns false → tracking blocked.
+    // Denial remains blocked with the API alone or an active CMP.
     const { trackingRequests, cleanup } = await withAnonymousContext(page, testUrl, [
       { name: 'wp_consent_statistics', value: 'deny', domain: COOKIE_DOMAIN, path: '/' },
     ]);
@@ -156,23 +156,24 @@ test.describe('WP Consent API — JS Tracker Consent Integration', () => {
     const marker = `consent-accept-${Date.now()}`;
     const testUrl = `${BASE_URL}/?e2e_test=${marker}`;
 
-    // Anonymous context with allow cookie → optin guard activates
-    // → wp_has_consent checks the allow cookie → returns true → tracking fires.
-    const { trackingRequests, cleanup } = await withAnonymousContext(page, testUrl, [
+    const visitor = await withAnonymousContext(page, testUrl, cookieLawInfoActive ? undefined : [
       { name: 'wp_consent_statistics', value: 'allow', domain: COOKIE_DOMAIN, path: '/' },
     ]);
 
     try {
-      // Tracking should occur via JS or server-side
-      if (trackingRequests.length === 0) {
+      if (cookieLawInfoActive) {
+        await visitor.page.getByRole('button', { name: 'Accept All', exact: true }).click();
+      }
+      await expect.poll(async () => {
         const [rows] = await db.execute(
           'SELECT id FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1',
           [`%${marker}%`],
         ) as any;
-        expect(rows.length, 'With consent allowed, tracking should occur').toBeGreaterThan(0);
-      }
+        return rows.length;
+      }, { message: 'An accepted visitor must create a stored pageview' }).toBeGreaterThan(0);
+      expect(visitor.trackingRequests.length).toBeGreaterThan(0);
     } finally {
-      await cleanup();
+      await visitor.cleanup();
     }
   });
 

@@ -6,11 +6,12 @@ import {
   restoreAllOptions,
   restoreSlimstatOptions,
   setSlimstatSetting,
+  setSlimstatOptions,
   snapshotOption,
   snapshotSlimstatOptions,
 } from './helpers/setup';
 import { AUTHOR_USER, BASE_URL } from './helpers/env';
-import { requireProBooted } from './helpers/pro-state';
+import { getProState, requireProBooted } from './helpers/pro-state';
 
 let wpNow = 0;
 
@@ -77,6 +78,52 @@ test.describe('author report privacy boundaries', () => {
   });
 
   test.afterAll(async () => { await closeDb(); });
+
+  test('personal-data masking preserves author counts and removes visitor identity from report HTML and CSV', async ({ page }) => {
+    await seedAuthorRows(wpNow);
+    await setSlimstatSetting('capability_can_view', 'read');
+    await setSlimstatOptions({ mask_personal_data: 'on' });
+    await getPool().execute("UPDATE wp_slim_stats SET ip='198.51.100.73', username='private-visitor', email='private@example.test', notes='private-note' WHERE resource='/author-own'");
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, { waitUntil: 'domcontentloaded' });
+    const report = page.locator('#slim_p7_02');
+    await report.scrollIntoViewIfNeeded();
+    await expect(report).toContainText('/author-own');
+    const html = await report.innerHTML();
+    for (const value of ['198.51.100.73', 'private-visitor', 'private@example.test', 'private-note', '/author-secret']) {
+      expect(html).not.toContain(value);
+    }
+    await expect(report).toContainText('Hidden');
+    await expect(report.locator('a.whois')).toHaveCount(0);
+    await expect(report.locator('img[src*="gravatar"]')).toHaveCount(0);
+    // Free CI has no CSV add-on. Keep its HTML and exact-count assertions,
+    // and require the complete export journey whenever Pro is installed.
+    if ((await getProState(page)).pro_installed) {
+      await requireProBooted(page);
+      const exportUrl = await report.locator('.button-export-to-xls').getAttribute('href');
+      expect(exportUrl).toBeTruthy();
+      const exported = await page.request.get(exportUrl!);
+      expect(exported.ok()).toBe(true);
+      expect(exported.headers()['content-type']).toContain('text/csv');
+      const csv = await exported.text();
+      expect(csv).toContain('/author-own');
+      for (const value of ['198.51.100.73', 'private-visitor', 'private@example.test', 'private-note', '/author-secret']) {
+        expect(csv).not.toContain(value);
+      }
+    } else {
+      await expect(report.locator('.button-export-to-xls')).toHaveCount(0);
+    }
+
+    // Author scope still exposes precisely the one owned pageview, even with masking enabled.
+    const nonce = await chartNonce(page);
+    const response = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, { form: {
+      action: 'slimstat_fetch_chart_data', nonce, granularity: 'hourly',
+      args: JSON.stringify({ start: wpNow - 3600, end: wpNow + 1, chart_data: { data1: 'COUNT(id)', data2: 'COUNT(DISTINCT ip)' } }),
+    }});
+    const chart = await response.json();
+    expect(chart.success).toBe(true);
+    expect(chart.data.data.datasets.v1.reduce((sum: number, value: number) => sum + value, 0)).toBe(1);
+  });
+
 
   test('configured capability denies a valid author chart nonce', async ({ page }) => {
     await setSlimstatSetting('capability_can_view', 'read');

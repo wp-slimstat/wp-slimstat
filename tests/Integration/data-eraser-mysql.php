@@ -9,6 +9,8 @@ if (getenv('SLIMSTAT_ERASER_BASELINE')) {
     require getenv('SLIMSTAT_ERASER_BASELINE');
     $eraser = \SlimStat\Tests\BaselinePrivacy\DataEraser::class;
 }
+$heatmapState = get_option(\SlimStat\Heatmap\Store::STATE, []);
+update_option(\SlimStat\Heatmap\Store::STATE, []);
 $originalPrefix = $wpdb->prefix;
 $prefix = 'slimstat_cdb_' . bin2hex(random_bytes(6)) . '_';
 $tables = ['slim_stats', 'slim_stats_archive', 'slim_events', 'slim_events_archive'];
@@ -76,6 +78,7 @@ try {
         }
     }
 } finally {
+    update_option(\SlimStat\Heatmap\Store::STATE, $heatmapState, false);
     $wpdb->prefix = $originalPrefix;
     foreach (array_reverse($tables) as $table) { $run("DROP TABLE IF EXISTS {$prefix}{$table}"); }
 }

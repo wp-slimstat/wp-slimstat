@@ -208,14 +208,8 @@ JS
 	}
 
 	/**
-	 * Whether the consent banner will appear on this request.
-	 *
-	 * The single authority for that question, so the banner's markup and the banner's
-	 * stylesheet cannot disagree. They did: getBannerHtml() has always returned '' once
-	 * the visitor has decided, while enqueue_gdpr_assets() enqueued a 14.8 KB
-	 * render-blocking stylesheet for every visitor regardless — so everyone who had
-	 * already accepted or denied kept downloading it, on every page, to style markup
-	 * that was no longer emitted. (D45)
+	 * Whether consent controls and their stylesheet are needed on this request.
+	 * Decided visitors can reopen the initially hidden banner to change their choice.
 	 *
 	 * @return bool
 	 */
@@ -228,8 +222,21 @@ JS
 		// deliberately remains the narrower one it has always been, because a REST field
 		// publishes it.
 		return 'on' === ($this->settings['gdpr_enabled'] ?? 'off')
-			&& $this->isBannerEnabled()
-			&& !$this->hasConsentDecision();
+			&& $this->isBannerEnabled();
+	}
+
+	/** A reusable, keyboard-accessible way to change an earlier decision. */
+	public static function privacySettingsButton(): string
+	{
+		if ('on' !== (\wp_slimstat::$settings['gdpr_enabled'] ?? 'off') || 'on' !== (\wp_slimstat::$settings['use_slimstat_banner'] ?? 'off')) {
+			return '';
+		}
+		return self::buttonHtml();
+	}
+
+	private static function buttonHtml(): string
+	{
+		return '<button type="button" class="slimstat-privacy-settings" aria-controls="slimstat-gdpr-banner" aria-expanded="false">' . esc_html(__('Privacy settings', 'wp-slimstat')) . '</button>';
 	}
 
 	/**
@@ -239,8 +246,7 @@ JS
 	 */
 	public function getBannerHtml(): string
 	{
-		// Nothing to show once the visitor has decided. Same authority the stylesheet
-		// enqueue consults, so the two cannot drift apart.
+		// The same authority controls markup and the stylesheet.
 		if (!$this->shouldRenderBanner()) {
 			return '';
 		}
@@ -255,7 +261,7 @@ JS
 
 		// If message is empty, use default message
 		if (empty($message)) {
-			$message = __('This website uses cookies to analyze site traffic and improve your experience. By continuing to use this site, you consent to our use of cookies.', 'wp-slimstat');
+			$message = __('We would like to use analytics cookies to understand how you use this site. Accept or decline below. You can change your choice at any time using Privacy settings.', 'wp-slimstat');
 		}
 
 		// Allow only basic HTML tags for formatting while maintaining security
@@ -308,8 +314,8 @@ JS
 		$theme_mode = $this->settings['gdpr_theme_mode'] ?? 'auto';
 		$classes    = in_array( $theme_mode, ['dark', 'light'], true ) ? ' gdpr-' . esc_attr( $theme_mode ) . '-mode' : '';
 
-		return sprintf(
-			'<div id="slimstat-gdpr-banner" class="slimstat-gdpr-banner%s">
+		return self::buttonHtml() . sprintf(
+			'<div id="slimstat-gdpr-banner" class="slimstat-gdpr-banner%s" hidden>
 				<div class="slimstat-gdpr-content">
 					<div class="slimstat-gdpr-message">%s</div>
 					<div class="slimstat-gdpr-buttons">%s%s</div>

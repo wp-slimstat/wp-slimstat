@@ -194,6 +194,9 @@ class HeatmapRestController implements RestControllerInterface
                 if (count($filter) < 2 || !preg_match('/\A[a-z_]+\z/', $filter[0]) || !isset(\wp_slimstat_db::$operator_names[$filter[1]])) {
                     return new \WP_Error('slimstat_heatmap_filters', __('The Heatmaps filter is invalid. Review the selected filters.', 'wp-slimstat'), ['status' => 400]);
                 }
+                if ('on' === (\wp_slimstat::$settings['mask_personal_data'] ?? 'off') && \SlimStat\Reports\ReportPrivacy::enabled() && in_array($filter[0], \SlimStat\Reports\ReportPrivacy::PERSONAL, true)) {
+                    return ['scope' => '1=0', 'ignored' => []];
+                }
                 if (!isset(\wp_slimstat_db::$columns_names[$filter[0]]) || false !== strpos($filter[0], 'addon_') || false !== strpos($filter[0], 'no_filter')) {
                     $ignored[] = $filter[0];
                 } else {

@@ -471,7 +471,7 @@ if ($stopped) {
     // WordPress fires activation once, so a cursor whose only reader is on_activate() would
     // never be read again — the resume has to hang off a hook that fires on later requests.
     $registered = implode(', ', array_map(
-        static function ($action) { return $action[0] . ' => ' . $action[1]; },
+        static function ($action) { return $action[0] . ' => ' . (is_array($action[1]) ? implode('::', $action[1]) : $action[1]); },
         $stopped['actions']
     ));
     nab_check(

@@ -7,6 +7,7 @@ use SlimStat\Migration\Admin\MigrationAdmin;
 use SlimStat\Migration\Migrations\ConvertTablesToUtf8mb4;
 use SlimStat\Migration\Migrations\RepairLegacyColumnWidths;
 use SlimStat\Migration\Migrations\CreateCountryDtIndex;
+use SlimStat\Migration\Migrations\CreatePrivacyEmailIndex;
 use SlimStat\Migration\Migrations\CreateDtBrowserIndex;
 use SlimStat\Migration\Migrations\AddUserAgentDimension;
 use SlimStat\Migration\Migrations\AddVisitIdentity;
@@ -129,6 +130,7 @@ class MigrationService
             $manager->register(new AddUserAgentDimension($analytics, $core));
             $manager->register(new CreateDtOutIndex($analytics, $core));
             $manager->register(new CreateCountryDtIndex($analytics, $core));
+            $manager->register(new CreatePrivacyEmailIndex($analytics, $core));
             $manager->register(new CreateDtScreenIndex($analytics, $core));
             $manager->register(new CreateDtBrowserIndex($analytics, $core));
             $manager->register(new CreateDtPlatformIndex($analytics, $core));

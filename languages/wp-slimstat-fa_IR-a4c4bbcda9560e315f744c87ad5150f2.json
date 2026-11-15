@@ -10,6 +10,12 @@
                 "lang": "fa",
                 "plural-forms": "nplurals=1; plural=0;"
             },
+            "Copy": [
+                ""
+            ],
+            "Copied": [
+                ""
+            ],
             "Upgrade to Pro": [
                 ""
             ],
@@ -31,16 +37,10 @@
             "Report": [
                 ""
             ],
-            "Copy": [
-                ""
-            ],
             "Update SlimStat Pro to use this shortcode.": [
                 ""
             ],
             "This report is unavailable. Activate WooCommerce and set up reporting for Ecommerce.": [
-                ""
-            ],
-            "Copied": [
                 ""
             ],
             "Number": [

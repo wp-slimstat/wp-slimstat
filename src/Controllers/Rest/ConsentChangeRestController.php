@@ -45,8 +45,8 @@ class ConsentChangeRestController implements RestControllerInterface
 			[
 				'methods'             => 'POST',
 				'callback'            => [$this, 'handle_consent_change'],
-				// Security: Public endpoint with nonce verification in handle_consent_change().
-				// Nonce is required and verified via wp_verify_nonce() before any state changes.
+				// Security: public endpoint; handle_consent_change() verifies the nonce before a grant
+				// changes any state. A withdrawal is accepted without a valid nonce (see there).
 				// This endpoint only modifies the current user's own consent state (cookie-based).
 				'permission_callback' => '__return_true',
 				'args'                => [
@@ -146,23 +146,22 @@ class ConsentChangeRestController implements RestControllerInterface
 	{
 		$this->currentRequest = $request;
 
-		// Verify nonce for all users — consent is a state-changing operation.
-		// Without verification, a cross-site POST could force-accept consent,
-		// enabling PII tracking without genuine user action (GDPR violation).
-		// On cached pages with stale nonces, this returns 403 — the JS cookie
-		// still records consent client-side, and tracking works via /hit (PR #235).
-		$nonce = $request->get_param('nonce');
-		if (!wp_verify_nonce($nonce, 'wp_rest')) {
+		$source = $request->get_param('source');
+		$parsed = $request->get_param('parsed');
+		$pageview_id_raw = $request->get_param('pageview_id');
+
+		// Granting consent needs a valid nonce: without it a cross-site POST could force-accept
+		// consent and enable PII tracking without the visitor's action. A withdrawal does not:
+		// it only removes this visitor's tracking cookie, and it has to work on a cached page
+		// whose nonce expired, because the cookie is HttpOnly and only the server can delete it.
+		$withdrawal = is_array($parsed) && 'allow' !== Consent::normalizeConsent($parsed)['statistics'];
+		if (!$withdrawal && !wp_verify_nonce($request->get_param('nonce'), 'wp_rest')) {
 			return new \WP_Error(
 				'rest_forbidden',
 				__('Invalid security token.', 'wp-slimstat'),
 				['status' => 403]
 			);
 		}
-
-		$source = $request->get_param('source');
-		$parsed = $request->get_param('parsed');
-		$pageview_id_raw = $request->get_param('pageview_id');
 
 		if (!is_array($parsed)) {
 			return new \WP_Error(
@@ -189,7 +188,7 @@ class ConsentChangeRestController implements RestControllerInterface
 
 		$pageview_id = null;
 		if (!empty($pageview_id_raw)) {
-			$pageview_id_clean = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw);
+			$pageview_id_clean = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw, 'pageview');
 			if (false !== $pageview_id_clean && $pageview_id_clean > 0) {
 				$pageview_id = intval($pageview_id_clean);
 			}
@@ -332,7 +331,7 @@ class ConsentChangeRestController implements RestControllerInterface
 		$settings = \wp_slimstat::$settings;
 		$is_anonymous = ('on' === ($settings['anonymous_tracking'] ?? 'off'));
 
-		if (!$is_anonymous) {
+		if (!$is_anonymous || !Consent::piiAllowed()) {
 			return;
 		}
 
@@ -348,54 +347,10 @@ class ConsentChangeRestController implements RestControllerInterface
 				$stat['notes']    = '[user:' . $user->data->ID . ']';
 			}
 
-			$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-			$update_data = [];
-
-			if (!empty($stat['ip'])) {
-				$update_data['ip'] = $stat['ip'];
-			}
-
-			if (!empty($stat['other_ip'])) {
-				$update_data['other_ip'] = $stat['other_ip'];
-			}
-
-			if (!empty($stat['username'])) {
-				$update_data['username'] = $stat['username'];
-			}
-
-			if (!empty($stat['email'])) {
-				$update_data['email'] = $stat['email'];
-			}
-
-			if (!empty($update_data)) {
-				$GLOBALS['wpdb']->update(
-					$table,
-					$update_data,
-					['id' => $pageview_id],
-					array_fill(0, count($update_data), '%s'),
-					['%d']
-				);
-			}
-
-			if (!empty($stat['notes'])) {
-				$existing_note = $GLOBALS['wpdb']->get_var(
-					$GLOBALS['wpdb']->prepare(
-						"SELECT notes FROM {$table} WHERE id = %d AND notes LIKE %s LIMIT 1",
-						$pageview_id,
-						'%' . $GLOBALS['wpdb']->esc_like($stat['notes']) . '%'
-					)
-				);
-
-				if (empty($GLOBALS['wpdb']->last_error) && null === $existing_note) {
-					$GLOBALS['wpdb']->query(
-						$GLOBALS['wpdb']->prepare(
-							"UPDATE {$table} SET notes = CONCAT(IFNULL(notes, ''), %s) WHERE id = %d",
-							$stat['notes'],
-							$pageview_id
-						)
-					);
-				}
-			}
+			$visit_id = Session::upgradePageview($pageview_id, $stat);
+			if ($visit_id <= 0) { return; }
+			$stat['visit_id'] = $visit_id;
+			\wp_slimstat::set_stat($stat);
 
 			do_action('slimstat_consent_granted', $pageview_id, $stat);
 		}

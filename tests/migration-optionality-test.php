@@ -65,6 +65,9 @@ $declared = [
     'CreateEventsNotesDtIndex'         => false,
     'CreateFunnelQueriesIndex'         => false,
     'CreateGoalQueriesIndex'           => false,
+    // Privacy erasure otherwise holds a full-table locking scan while deleting heatmaps.
+    // An online index build is explicit on the Migration page, never an update side effect.
+    'CreatePrivacyEmailIndex'          => false,
     // Repairs corrupted rows. Data is wrong until it runs.
     'RecoverCorruptedHeatmapPositions' => false,
 ];

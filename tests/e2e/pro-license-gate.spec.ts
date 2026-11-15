@@ -1,7 +1,8 @@
 /**
  * Pro runs only with a verified license (task 4). Activating the Pro plugin is not entitlement:
- * every locked state detaches Pro and shows one banner that says why and links the fix, on every
- * SlimStat screen, the Dashboard and Plugins (task 5); a confirmed license survives a
+ * every locked state detaches Pro and says why with the fix: in full in License settings, one line
+ * on other SlimStat screens, one line that snoozes for 7 days on the Dashboard and Plugins (task 5);
+ * a confirmed license survives a
  * license-server outage for 3 days, not longer; and locking never touches the site's Pro data
  * (goals stay as they were saved).
  *
@@ -13,22 +14,31 @@ import type { Page, TestInfo } from '@playwright/test';
 import { getProState, requireProBooted, setProLicense } from './helpers/pro-state';
 import type { LicenseFixtureState } from './helpers/pro-state';
 import { seedGoals } from './helpers/goals-funnels';
-import { BASE_URL } from './helpers/env';
+import { ADMIN_USER, BASE_URL } from './helpers/env';
+import { runWordPressFixture } from './helpers/chart';
 import { closeDb, getOptionValue, restoreOption, restoreSlimstatOptions, setOptionValue, setSlimstatSetting, snapshotOption, snapshotSlimstatOptions } from './helpers/setup';
 
 const KEPT = ['slimstat_pro_license_verdict', 'slimstat_e2e_license_state', 'slimstat_goals', 'slimstat_goals_cache_ver'];
-const SCREENS = ['/wp-admin/admin.php?page=slimview2', '/wp-admin/', '/wp-admin/plugins.php'];
+const LICENSE = '/wp-admin/admin.php?page=slimconfig&tab=8';
+const REPORT = '/wp-admin/admin.php?page=slimview2';
+const CORE = ['/wp-admin/', '/wp-admin/plugins.php'];
+const SCREENS = [LICENSE, REPORT, ...CORE];
+/** The banner SlimStat screens print (not dismissible) and the Dashboard and Plugins line. */
+const BANNER = '.slimstat-pro-license-notice:not(.slimstat-custom-db-notice)';
+const LINE = '[data-notice-key="pro-license"]';
+const ANY = `${BANNER}, ${LINE}`;
 const HREF: Record<string, RegExp> = {
   'Activate license': /\/wp-admin\/admin\.php\?page=slimconfig&tab=8$/,
   'Open License settings': /\/wp-admin\/admin\.php\?page=slimconfig&tab=8$/,
   'Find my license': /^https:\/\/my\.wp-slimstat\.com\/account\/\?utm_source=wp-slimstat&utm_medium=link&utm_campaign=license-activation&utm_content=license-banner-find-license$/,
   'View plans': /^https:\/\/wp-slimstat\.com\/pricing\/\?/,
 };
-const LOCKED: [LicenseFixtureState, string, string, string[]][] = [
-  ['invalid', 'invalid', 'expired, revoked or not valid for this site', ['Open License settings', 'Find my license', 'View plans']],
-  ['domain_not_activated', 'domain_not_activated', 'not activated for this site', ['Activate license', 'Find my license']],
-  ['unreachable', 'unverified', 'could not verify your Pro license', ['Open License settings']],
-  ['none', 'none', 'stay locked until you activate a license for this site', ['Activate license', 'Find my license', 'View plans']],
+/** Fixture, recorded state, full text, one-line text, actions in License settings (the first is the fix). */
+const LOCKED: [LicenseFixtureState, string, string, string, string[]][] = [
+  ['invalid', 'invalid', 'expired, revoked or not valid for this site', 'the license is expired or not valid for this site', ['Open License settings', 'Find my license', 'View plans']],
+  ['domain_not_activated', 'domain_not_activated', 'not activated for this site', 'the license is not activated for this site', ['Activate license', 'Find my license']],
+  ['unreachable', 'unverified', 'could not verify your Pro license', 'the license could not be verified', ['Open License settings']],
+  ['none', 'none', 'stay locked until you activate a license for this site', 'no license is activated for this site', ['Activate license', 'Find my license', 'View plans']],
 ];
 
 async function shot(page: Page, testInfo: TestInfo, name: string): Promise<void> {
@@ -43,21 +53,26 @@ const colors = (link: ReturnType<Page['locator']>) => link.evaluate(node => {
   return { background: style.backgroundColor, border: style.borderTopColor, color: style.color };
 });
 
-/** Exactly one banner on the screen, with the state's text and exactly these actions, in order. */
-async function expectBanner(page: Page, text: string, links: string[]): Promise<void> {
-  const notice = page.locator('.slimstat-pro-license-notice:not(.slimstat-custom-db-notice)');
+/** Exactly one license notice on the screen, with the state's text and exactly these actions, in order. */
+async function expectBanner(page: Page, text: string, links: string[], selector = BANNER): Promise<void> {
+  await expect(page.locator(ANY)).toHaveCount(1);
+  const notice = page.locator(selector);
   await expect(notice).toHaveCount(1);
   await expect(notice).toContainText(text);
   await expect(notice).toContainText('Your Pro settings and data are kept.');
-  // "SlimStat Pro" in the text opens the Pro overview in place; only the missing-key text bolds where to find the key.
   const message = notice.locator('p').first();
-  const named = message.getByRole('link', { name: 'SlimStat Pro', exact: true });
-  await expect(named).toHaveCount(text.includes('could not verify') ? 0 : 1);
-  if (await named.count()) {
-    await expect(named).toHaveAttribute('href', /\/wp-admin\/admin\.php\?page=slimpro$/);
-    await expect(named).not.toHaveAttribute('target');
+  if (page.url().includes('tab=8')) {
+    // In full: "SlimStat Pro" opens the Pro overview in place; only the missing-key text bolds where to find the key.
+    const named = message.getByRole('link', { name: 'SlimStat Pro', exact: true });
+    await expect(named).toHaveCount(text.includes('could not verify') ? 0 : 1);
+    if (await named.count()) {
+      await expect(named).toHaveAttribute('href', /\/wp-admin\/admin\.php\?page=slimpro$/);
+      await expect(named).not.toHaveAttribute('target');
+    }
+    await expect(message.locator('strong')).toHaveText(text.includes('until you activate') ? ['find your license key'] : []);
+  } else {
+    await expect(message).toContainText('SlimStat Pro features are locked:');
   }
-  await expect(message.locator('strong')).toHaveText(text.includes('until you activate') ? ['find your license key'] : []);
   const actions = notice.locator('.slimstat-pro-license-notice__actions a');
   await expect(actions).toHaveCount(links.length);
   for (const [i, label] of links.entries()) {
@@ -83,37 +98,57 @@ async function expectBanner(page: Page, text: string, links: string[]): Promise<
 }
 
 test.describe.serial('Pro license gate', () => {
+  /** The administrator's own Dashboard snooze, kept aside so the line shows, then put back. */
+  let snooze = '';
+  const admin = `get_user_by('login', base64_decode('${Buffer.from(ADMIN_USER).toString('base64')}'))->ID`;
+  const meta = "'slimstat_notice_dismissals_' . get_current_blog_id()";
+
   test.beforeAll(async () => {
     await snapshotSlimstatOptions();
     for (const name of KEPT) await snapshotOption(name);
+    snooze = runWordPressFixture(`<?php
+      $records = get_user_meta(${admin}, ${meta}, true);
+      echo base64_encode(serialize(is_array($records) ? ($records['pro-license'] ?? null) : null));
+      if (is_array($records)) { unset($records['pro-license']); update_user_meta(${admin}, ${meta}, $records); }
+    `).trim();
   });
 
   test.afterAll(async () => {
     for (const name of KEPT) await restoreOption(name);
     await restoreSlimstatOptions();
     await closeDb();
+    runWordPressFixture(`<?php
+      $previous = unserialize(base64_decode('${snooze}'));
+      $records = get_user_meta(${admin}, ${meta}, true);
+      $records = is_array($records) ? $records : [];
+      if (null === $previous) unset($records['pro-license']); else $records['pro-license'] = $previous;
+      update_user_meta(${admin}, ${meta}, $records);
+    `);
   });
 
   test.beforeEach(async ({ page }) => {
     await requireProBooted(page);
   });
 
-  for (const [fixture, state, text, links] of LOCKED) {
+  for (const [fixture, state, text, short, links] of LOCKED) {
     test(`${fixture} license locks Pro and links the fix on every screen`, async ({ page }, testInfo) => {
       try {
         expect(await setProLicense(page, fixture)).toBe(state);
         expect((await getProState(page)).pro_booted, 'Pro features must be detached').toBe(false);
-        for (const screen of SCREENS) {
+        await page.goto(LICENSE);
+        await expectBanner(page, text, links);
+        await shot(page, testInfo, `license-${fixture}`);
+        await page.goto(REPORT);
+        await expectBanner(page, short, links.slice(0, 1));
+        await expect(page.locator('.slimstat-header__cta-label')).toHaveText(links[0]);
+        for (const screen of CORE) {
           await page.goto(screen);
-          await expectBanner(page, text, links);
-          if (screen === SCREENS[0]) {
-            await expect(page.locator('.slimstat-header__cta-label')).toHaveText(links[0]);
-            await shot(page, testInfo, `license-${fixture}`);
-          }
+          await expectBanner(page, short, links.slice(0, 1), LINE);
+          await expect(page.locator(LINE)).toHaveAttribute('data-notice-snooze', '604800');
         }
         await shot(page, testInfo, `license-${fixture}-plugins`);
         // From a WordPress screen (Plugins, the last one visited), the fix opens the License section.
-        await page.locator('.slimstat-pro-license-notice:not(.slimstat-custom-db-notice)').getByRole('link', { name: links[0] }).click();
+        await page.locator(LINE).getByRole('link', { name: links[0] }).click();
         await expect(page).toHaveURL(/page=slimconfig&tab=8/);
         await expect(page.getByLabel('License key', { exact: true })).toBeVisible();
       } finally {
@@ -128,9 +163,9 @@ test.describe.serial('Pro license gate', () => {
     expect((await getProState(page)).pro_booted).toBe(true);
     for (const screen of SCREENS) {
       await page.goto(screen);
-      await expect(page.locator('.slimstat-pro-license-notice:not(.slimstat-custom-db-notice)')).toHaveCount(0);
+      await expect(page.locator(ANY)).toHaveCount(0);
     }
-    await page.goto(SCREENS[0]);
+    await page.goto(REPORT);
     await shot(page, testInfo, 'license-valid');
   });
 
@@ -140,13 +175,13 @@ test.describe.serial('Pro license gate', () => {
       expect(await setProLicense(page, 'invalid')).toBe('invalid');
       await setSlimstatSetting('capability_can_view', 'read');
       const view = await author.newPage();
-      await view.goto(`${BASE_URL}${SCREENS[0]}`);
-      const notice = view.locator('.slimstat-pro-license-notice:not(.slimstat-custom-db-notice)');
+      await view.goto(`${BASE_URL}${REPORT}`);
+      const notice = view.locator(BANNER);
       await expect(notice).toHaveCount(1);
       await expect(notice).toContainText('until a site administrator activates the license');
       await expect(notice.locator('a')).toHaveCount(0);
       await view.goto(`${BASE_URL}/wp-admin/`);
-      await expect(view.locator('.slimstat-pro-license-notice:not(.slimstat-custom-db-notice)')).toHaveCount(0);
+      await expect(view.locator(ANY)).toHaveCount(0);
     } finally {
       await author.close();
       await restoreSlimstatOptions().then(snapshotSlimstatOptions);
@@ -175,14 +210,14 @@ test.describe.serial('Pro license gate', () => {
       expect(await setProLicense(page, 'invalid')).toBe('invalid');
       // Renewed on the license server; nothing has asked it again yet.
       await setOptionValue('slimstat_e2e_license_state', 'valid');
-      await page.goto('/wp-admin/admin.php?page=slimconfig&tab=8');
-      const notice = page.locator('.slimstat-pro-license-notice:not(.slimstat-custom-db-notice)');
+      await page.goto(LICENSE);
+      const notice = page.locator(ANY);
       await expect(notice).toBeVisible();
       await Promise.all([page.waitForNavigation(), page.getByRole('button', { name: 'Save Changes' }).first().click()]);
       if (!reports) {
         await expect(notice).toBeVisible();
         expect(await setProLicense(page, 'valid', { keep: true, age: 13 * 3600 })).toBe('valid');
-        await page.goto('/wp-admin/admin.php?page=slimconfig&tab=8');
+        await page.goto(LICENSE);
       }
       await expect(notice).toHaveCount(0);
       expect((await getProState(page)).pro_license).toBe('valid');
@@ -204,7 +239,7 @@ test.describe.serial('Pro license gate', () => {
     try {
       expect(await setProLicense(page, 'invalid')).toBe('invalid');
       await page.goto('/wp-admin/admin.php?page=slimview6');
-      await expect(page.locator('.slimstat-pro-license-notice:not(.slimstat-custom-db-notice)')).toBeVisible();
+      await expect(page.locator(BANNER)).toBeVisible();
       await expect(page.locator('.slimstat-gf-goal').first()).toBeVisible();
       await shot(page, testInfo, 'license-locked-goals');
       expect(await getOptionValue('slimstat_goals'), 'Viewing goals while locked must not rewrite them').toBe(saved);

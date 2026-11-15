@@ -160,7 +160,7 @@ test.describe('Black Friday 2026 strip', () => {
     await expect(releaseNotice(page), 'off, the release bar is back').toHaveCount(1);
     await page.goto(DASHBOARD);
     await expect(strip(page)).toHaveCount(0);
-    await expect(releaseNotice(page)).toHaveCount(1);
+    await expect(releaseNotice(page), 'release news shows only in the SlimStat header since the settings redesign').toHaveCount(0);
   });
 
   test('adds no request and no query; copy sends nothing and dismiss sends one same-origin request', async ({ page, context }) => {
@@ -218,10 +218,11 @@ test.describe('Black Friday 2026 strip', () => {
     expect((await context.cookies()).filter(c => /bf2026|bf26/.test(c.name)), 'no cookie').toEqual([]);
     await page.reload();
     await expect(strip(page)).toHaveCount(0);
-    // The release notice waits only while the strip shows (its 14-day clock never started), so it takes the slot now.
-    await expect(releaseNotice(page), 'the release notice gets its slot back, alone').toHaveCount(1);
+    await expect(releaseNotice(page), 'release news shows only in the SlimStat header since the settings redesign').toHaveCount(0);
     await page.goto(SLIMSTAT[0]);
     await expect(strip(page)).toHaveCount(0);
+    // The release notice waits only while the strip shows (its 14-day clock never started), so it takes the slot now.
+    await expect(releaseNotice(page), 'the release notice gets its slot back, alone').toHaveCount(1);
     const other = await freshContext(browser, 'admin.json');
     const second = await other.newPage();
     await second.clock.install({ time: new Date('2026-11-27T12:00:00Z') });

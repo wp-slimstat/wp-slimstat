@@ -222,6 +222,7 @@ test.describe('Live Analytics — Timezone & Custom DB Scenarios', () => {
     await setSlimstatOption(page, 'track_admin_pages', 'on');
     await setSlimstatOption(page, 'ignore_wp_users', 'off');
     await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'set_tracker_cookie', 'on');
   });
 
   test.afterEach(async () => {

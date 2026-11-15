@@ -90,6 +90,7 @@ test.describe('Users Currently Online — dedup regression (Issue #191)', () => 
     await setSlimstatOption(page, 'ignore_wp_users', 'off');
     await setSlimstatOption(page, 'is_tracking', 'on');
     await setSlimstatOption(page, 'javascript_mode', 'on');
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
   });
 
   test.afterEach(async () => {

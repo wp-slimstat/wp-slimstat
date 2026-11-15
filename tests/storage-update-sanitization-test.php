@@ -77,6 +77,8 @@ namespace SlimStat\Utils {
 }
 
 namespace {
+function apply_filters($hook, $value) { return $value; }
+
     function wp_parse_url($url, $component = -1) { return parse_url($url, $component); }
 
     class wp_slimstat {

@@ -3,6 +3,7 @@
 require __DIR__ . '/lib/source-scan.php';
 define('ABSPATH', '/');
 function update_option($key, $value, $autoload = null) { $GLOBALS['options'][$key] = $value; $GLOBALS['autoload'][$key] = $autoload; return true; }
+function do_action($hook, ...$args) {}
 function apply_filters($hook, $value) { return $value; }
 function get_userdata($id) { return false; }
 $source = file_get_contents(dirname(__DIR__) . '/wp-slimstat.php');

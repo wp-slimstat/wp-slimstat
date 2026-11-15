@@ -47,10 +47,12 @@ class SessionTest extends WpSlimstatTestCase
      * (cookies are PII and require explicit consent in anonymous mode).
      *
      * @test
+     * @dataProvider anonymousModes
      */
-    public function test_ensure_visit_id_anonymous_no_consent_returns_true(): void
+    public function test_ensure_visit_id_anonymous_no_consent_returns_true(string $anonymous, bool $cookie): void
     {
-        \wp_slimstat::$settings['anonymous_tracking'] = 'on';
+        \wp_slimstat::$settings['anonymous_tracking'] = $anonymous;
+        if ($cookie) { $_COOKIE['slimstat_tracking_code'] = '999.old-identified-session'; }
         \wp_slimstat::$settings['gdpr_enabled'] = 'on';
         \wp_slimstat::$settings['consent_integration'] = 'wp_consent_api';
         Functions\stubs(['wp_has_consent' => false, 'wp_get_consent_type' => 'optin']);
@@ -104,12 +106,17 @@ class SessionTest extends WpSlimstatTestCase
             $this->assertSame(42, $stat['visit_id']);
             $this->assertMatchesRegularExpression('/^[0-9a-f]{32}$/', $stat['vid_hash']);
             $this->assertSame(0, $cookieCalls, 'anonymous identity must not attempt a tracking cookie');
-            $this->assertArrayNotHasKey('slimstat_tracking_code', $_COOKIE);
+            if (!$cookie) { $this->assertArrayNotHasKey('slimstat_tracking_code', $_COOKIE); }
         } finally {
             \wp_slimstat::$wpdb = $originalAnalytics;
             if ($hadGlobal) { $GLOBALS['wpdb'] = $originalGlobal; } else { unset($GLOBALS['wpdb']); }
         }
 
+    }
+
+    public static function anonymousModes(): array
+    {
+        return [['on', false], ['on', true], ['off', true]];
     }
 
     /**
@@ -314,14 +321,50 @@ class SessionTest extends WpSlimstatTestCase
             'wp_unslash'          => static fn($v) => is_string($v) ? stripslashes($v) : $v,
         ]);
 
-        // The filter receives false (cookie disabled), so return false.
+        // Even an extension returning true cannot override disabled cookies.
         Functions\expect('apply_filters')
             ->with('slimstat_set_visit_cookie', false)
-            ->once()
-            ->andReturn(false);
+            ->twice()
+            ->andReturn(true);
 
         $result = \SlimStat\Tracker\Session::setTrackingCookie(1, 'visit');
 
         $this->assertFalse($result, 'setTrackingCookie() must return false when cookie setting is disabled');
+        $this->assertFalse(\SlimStat\Tracker\Session::setTrackingCookie(1, 'visit', null, true), 'consent upgrades cannot force a disabled cookie');
+    }
+
+    // -----------------------------------------------------------------------
+    // deleteTrackingCookieWithoutConsent — page-request cleanup
+    // -----------------------------------------------------------------------
+
+    /**
+     * A page request removes the tracking cookie only while identifying analytics is not allowed.
+     *
+     * @test
+     * @dataProvider leftoverCookieCases
+     */
+    public function test_page_request_removes_the_tracking_cookie_only_without_consent(string $gdpr, bool $consent, bool $kept): void
+    {
+        \wp_slimstat::$settings['gdpr_enabled'] = $gdpr;
+        \wp_slimstat::$settings['consent_integration'] = 'wp_consent_api';
+        $_COOKIE['slimstat_tracking_code'] = '999.left-from-an-earlier-page';
+        Functions\stubs([
+            'wp_has_consent' => $consent, 'wp_get_consent_type' => 'optin', 'is_ssl' => false,
+            'sanitize_text_field' => static fn($v) => is_string($v) ? $v : '',
+            'wp_unslash'          => static fn($v) => is_string($v) ? stripslashes($v) : $v,
+        ]);
+
+        \SlimStat\Tracker\Session::deleteTrackingCookieWithoutConsent();
+
+        $this->assertSame($kept, isset($_COOKIE['slimstat_tracking_code']));
+    }
+
+    public static function leftoverCookieCases(): array
+    {
+        return [
+            'consent denied: removed'    => ['on', false, false],
+            'consent given: kept'        => ['on', true, true],
+            'consent not required: kept' => ['off', false, true],
+        ];
     }
 }

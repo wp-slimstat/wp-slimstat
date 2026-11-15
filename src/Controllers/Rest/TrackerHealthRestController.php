@@ -80,6 +80,7 @@ class TrackerHealthRestController implements RestControllerInterface
         $errorCode     = !empty($lastError[0]) ? (int) $lastError[0] : null;
         $errorLabel    = \SlimStat\Tracker\Utils::getTrackerCodeLabel($errorCode);
         $errorTime     = !empty($lastError[1]) ? (int) $lastError[1] : null;
+        \SlimStat\Tracker\Utils::sanitizeStoredErrorDetail();
         $errorDetail   = get_option('slimstat_tracker_error_detail', null);
         $lastWarning   = get_option('slimstat_tracker_warning', []);
         $warningCode   = !empty($lastWarning[0]) ? (int) $lastWarning[0] : null;

@@ -32,6 +32,8 @@ if (!defined('ABSPATH')) {
     define('ABSPATH', __DIR__);
 }
 
+class wp_slimstat { public static $settings = []; }
+
 require_once __DIR__ . '/lib/source-scan.php';
 require_once __DIR__ . '/../admin/view/wp-slimstat-db.php';
 

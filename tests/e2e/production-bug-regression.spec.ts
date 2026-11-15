@@ -117,7 +117,7 @@ test.describe('Production Bug Regressions (v5.4.7 QA)', () => {
     await setSlimstatOptions({
       gdpr_enabled: 'on',
       consent_integration: 'slimstat',
-      use_slimstat_banner: 'off',
+      use_slimstat_banner: 'on',
       set_tracker_cookie: 'on',
       javascript_mode: 'on',
       tracking_request_method: 'rest',
@@ -128,6 +128,7 @@ test.describe('Production Bug Regressions (v5.4.7 QA)', () => {
 
     const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
+    await ctx.addCookies([{ name: 'slimstat_gdpr_consent', value: 'accepted', domain: COOKIE_DOMAIN, path: '/' }]);
     const anonPage = await ctx.newPage();
 
     try {

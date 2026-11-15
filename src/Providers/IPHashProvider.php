@@ -65,88 +65,8 @@ class IPHashProvider
         $isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
         $piiAllowed = Consent::piiAllowed($explicitConsentGiven);
 
-        // Handle consent granted in same request (cookie not set yet or invalid)
-        $hasCmpConsentButNoCookie = false;
-        if ($isAnonymousTracking && !$piiAllowed) {
-            $integrationKey = Consent::getIntegrationKey();
-
-            // Check CMP consent only if integration is configured
-            if (!empty($integrationKey)) {
-                if ('slimstat_banner' === $integrationKey) {
-                    if (Consent::bannerHasConsentSafe(\wp_slimstat::$settings)) {
-                        $hasCmpConsentButNoCookie = true;
-                    }
-                    } elseif ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
-                    $wpConsentCategory = (string) (\wp_slimstat::$settings['consent_level_integration'] ?? 'statistics');
-                    try {
-                        if (\SlimStat\Utils\Consent::wpHasConsentSafe($wpConsentCategory)) {
-                            $hasCmpConsentButNoCookie = true;
-                        }
-                    } catch (\Throwable $e) {
-                        // Ignore errors
-                    }
-                } elseif ('real_cookie_banner' === $integrationKey) {
-                    // Real Cookie Banner fallback: try to read consent from cookie
-                    // This handles race conditions where tracking cookie isn't set yet but RCB cookie is present
-                    $wpConsentCategory = (string) (\wp_slimstat::$settings['consent_level_integration'] ?? 'statistics');
-                    $rcbCookies = ['real_cookie_banner', 'rcb_consent', 'rcb_acceptance', 'real_cookie_consent', 'rcb-consent'];
-
-                    foreach ($_COOKIE as $name => $value) {
-                        $isMatch = false;
-                        foreach ($rcbCookies as $rcbName) {
-                            if (strpos($name, $rcbName) === 0) {
-                                $isMatch = true;
-                                break;
-                            }
-                        }
-
-                        if ($isMatch) {
-                            // Try to decode value: handle both URL encoded and raw JSON
-                            // WP cookies are often slashed, so strip slashes first
-                            $sanitized_value = wp_unslash($value);
-                            $rawJson = stripslashes($sanitized_value);
-                            $data = json_decode($rawJson, true);
-
-                            if (json_last_error() !== JSON_ERROR_NONE) {
-                                // If failed, try urldecode first
-                                $data = json_decode(stripslashes(urldecode($sanitized_value)), true);
-                            }
-
-                            if (is_array($data)) {
-                                // Check various structures based on RCB versions
-
-                                // Structure 1: { "groups": { "statistics": true } }
-                                if (isset($data['groups'][$wpConsentCategory]) && true === $data['groups'][$wpConsentCategory]) {
-                                    $hasCmpConsentButNoCookie = true;
-                                    break;
-                                }
-
-                                // Structure 2: { "decision": { "statistics": true } } OR { "decision": "all" }
-                                if (isset($data['decision'])) {
-                                    if ('all' === $data['decision']) {
-                                        $hasCmpConsentButNoCookie = true;
-                                        break;
-                                    }
-                                    if (is_array($data['decision']) && isset($data['decision'][$wpConsentCategory]) && true === $data['decision'][$wpConsentCategory]) {
-                                        $hasCmpConsentButNoCookie = true;
-                                        break;
-                                    }
-                                }
-
-                                // Structure 3: { "statistics": true } (Legacy/Simplified)
-                                if (isset($data[$wpConsentCategory]) && true === $data[$wpConsentCategory]) {
-                                    $hasCmpConsentButNoCookie = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         // Anonymous mode without consent: hash IP (strictest privacy)
-        if ($isAnonymousTracking && !$piiAllowed && !$hasCmpConsentButNoCookie) {
+        if ($isAnonymousTracking && !$piiAllowed) {
             $stat = self::hashIP($stat, $originalIp, $originalOtherIp);
 
             // Validate hash (39 chars, hex, different from original)
@@ -171,52 +91,6 @@ class IPHashProvider
                     } else {
                         $stat['other_ip'] = '';
                     }
-                }
-            }
-
-            return $stat;
-        }
-
-        // MODE 2: Anonymous tracking mode WITH consent
-        // Consent was granted - but still respect anonymize_ip setting
-        // Also handle case where CMP consent exists but tracking cookie hasn't been set yet
-        if ($isAnonymousTracking && ($piiAllowed || $hasCmpConsentButNoCookie)) {
-            // Check if anonymize_ip setting is enabled
-            $shouldAnonymize = 'on' === (\wp_slimstat::$settings['anonymize_ip'] ?? 'off');
-
-            if ($shouldAnonymize) {
-                // Anonymize IP even with consent if setting is enabled
-                $stat['ip'] = self::anonymizeIP($originalIp);
-                if (!empty($originalOtherIp)) {
-                    $stat['other_ip'] = self::anonymizeIP($originalOtherIp);
-                } else {
-                    $stat['other_ip'] = '';
-                }
-            } else {
-                // Keep original IPs if anonymize_ip is not enabled
-            }
-            // Cookie will be set by ensureVisitId() in the same request
-            return $stat;
-        }
-
-        if ($isAnonymousTracking) {
-            // This should never happen, but as a safety fallback, hash the IP
-            // This ensures GDPR compliance even if there's a logic error
-            $stat = self::hashIP($stat, $originalIp, $originalOtherIp);
-
-            // Validate hash succeeded
-            $hashSucceeded = !empty($stat['ip'])
-                && strlen($stat['ip']) === self::HASH_LENGTH
-                && ctype_xdigit($stat['ip'])
-                && $stat['ip'] !== $originalIp;
-
-            if (!$hashSucceeded) {
-                // Hash failed - anonymize as fallback
-                $stat['ip'] = self::anonymizeIP($originalIp);
-                if (!empty($originalOtherIp)) {
-                    $stat['other_ip'] = self::anonymizeIP($originalOtherIp);
-                } else {
-                    $stat['other_ip'] = '';
                 }
             }
 
@@ -289,15 +163,8 @@ class IPHashProvider
         // Restore the original IP before updating records
         [$stat['ip'], $stat['other_ip']] = \SlimStat\Tracker\Utils::getRemoteIp();
 
-        // Check if anonymize_ip setting is enabled - it should always be respected
-        $shouldAnonymize = 'on' === (\wp_slimstat::$settings['anonymize_ip'] ?? 'off');
-        if ($shouldAnonymize) {
-            // Anonymize IP even after consent upgrade if setting is enabled
-            $stat['ip'] = self::anonymizeIP($stat['ip']);
-            if (!empty($stat['other_ip'])) {
-                $stat['other_ip'] = self::anonymizeIP($stat['other_ip']);
-            }
-        }
+        // Consent never overrides the administrator's IP protection settings.
+        $stat = self::processIp($stat);
 
         // Ensure the anonymous visit ID is carried over to the new cookie-based session
         $anonymousVisitId = \SlimStat\Tracker\Session::getVisitId();
@@ -329,7 +196,7 @@ class IPHashProvider
     }
 
     /**
-     * Hash IP address with daily salt for GDPR-compliant visitor identification.
+     * Hash IP address with daily salt for daily visitor counts.
      *
      * Creates a one-way hash from the original IP address + user agent + daily salt.
      * The hash changes daily, preventing long-term visitor tracking while allowing

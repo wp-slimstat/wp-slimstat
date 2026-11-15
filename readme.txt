@@ -10,14 +10,14 @@ Stable tag: 6.1.1
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Self-hosted, GDPR-ready Google Analytics alternative: cookieless or server-side tracking, visitor statistics, UTM campaigns, goals and funnels.
+Self-hosted analytics with privacy controls, cookieless tracking, visitor statistics, campaigns, goals and funnels.
 
 == Description ==
-SlimStat Analytics is the real-time WordPress analytics plugin that keeps every visitor on your own server. Most analytics tools quietly hand your audience to someone else's cloud. SlimStat doesn't. Every pageview, click and visitor lands in your WordPress database and stays there: yours to read the moment it happens, yours to purge whenever you like, never shipped off to Google or anyone else.
+SlimStat Analytics is the real-time WordPress analytics plugin that keeps every visitor on your own server. Most analytics tools quietly hand your audience to someone else's cloud. SlimStat doesn't. Tracked pageviews and interactions are stored in your WordPress database, with consent, IP protection and retention settings controlled by you.
 
 **SlimStat 6** turns that data into answers. A **WooCommerce revenue dashboard** puts net sales, orders and top products right beside your traffic. **Heatmaps** show which pages and buttons people actually click. **Channels and UTM Campaigns** tell you whether a visit came from search, social, email, paid ads or an AI assistant, and which campaign earned it. Set a **goal** and watch it convert, or chain steps into a **funnel** and see exactly where people slip away. And it is all **faster**: SlimStat 6 reads half as many database rows for its charts and writes far less on every pageview, so your site stays quick while you learn more.
 
-Best of all, privacy isn't a setting you have to hunt for. Anonymized IPs, Do Not Track, a consent banner and scheduled data cleanup are GDPR-ready from the first activation. Thousands of WordPress sites already trust SlimStat to keep their analytics honest, fast and entirely their own.
+New installations use protected IPs, no tracking cookie or browser fingerprint before consent, Do Not Track, and scheduled deletion. Configure a consent integration before enabling identifying analytics. Existing installations retain their saved settings; review them for your site and visitors. Thousands of WordPress sites already trust SlimStat to keep their analytics honest, fast and entirely their own.
 
 See SlimStat 6 in action:
 
@@ -32,9 +32,9 @@ https://www.youtube.com/watch?v=cW3xr-0bMMc
 * **Built for performance** — A light tracker that writes far less per pageview, charts that read half as many database rows, and a choice of client-side tracking for cached sites or server-side to catch every request.
 * **Complete access log** — Every visit in one searchable table. Drill into the full history and break it down by date, country, browser, OS, referrer, search term or content type to answer the questions the summary charts can't.
 * **Outbound links & downloads** — See which external links and files actually earn clicks, so you know what sends traffic off your site and which partnerships pull their weight.
-* **Know your visitors** — Go past pageviews to the people behind them: returning readers, logged-in users, and a full audience breakdown by country, language, browser, OS and screen size. (Pro's User Overview adds per-visitor journeys, time on site and Gravatars.)
-* **Your data, your server** — No third-party cloud, no Google looking over your shoulder. Every byte lives in your WordPress database, and one-way IP hashing lets you count unique visitors without ever storing who they are.
-* **GDPR, sorted** — Anonymize or hash IPs, honor Do Not Track, auto-purge old records on a schedule, and drop in a translatable consent banner that snaps straight into the WP Consent API (WPML and Polylang welcome). Compliance by design, not an afterthought.
+* **Know your visitors** — Go past pageviews to the people behind them: returning readers, logged-in users, and a full audience breakdown by country, language, browser, OS and screen size. (Pro's User Overview adds per-visitor journeys, time on site.)
+* **Your data, your server** — Core analytics is stored in your WordPress database. Daily IP hashing reduces stored identifiers; review the optional services described below.
+* **Privacy controls** — Anonymize or hash IPs, honor Do Not Track and Global Privacy Control, auto-purge old records on a schedule, and drop in a translatable consent banner that snaps straight into the WP Consent API (WPML and Polylang welcome). Review these controls against your site’s requirements.
 * **Geolocation & world map** — Put a city and country to every visitor, plus their browser and operating system, powered by [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org). Watch your audience light up across the globe, even from your phone (map by [jsVectorMap](https://github.com/themustafaomar/jsvectormap)).
 * **Shortcodes & Shortcode Playground** — Drop any report, live counter or Ecommerce KPI into a post, page or widget. Browse, preview with your own data and copy the shortcode under SlimStat → Shortcodes.
 * **Admin bar stats** — Keep an eye on the numbers without leaving your work. Online visitors, pageviews and top pages sit one glance away in the WordPress admin bar, on every screen.
@@ -76,8 +76,8 @@ Love the free plugin? [SlimStat Pro](https://wp-slimstat.com/) is for sites that
 * **Optional video tutorials:** SlimStat → Videos lists tutorials published on wp-slimstat.com, our website. Nothing is requested until you choose **Show videos**, or turn on the new-video marker, on that screen. Your browser then downloads the list (https://wp-slimstat.com/videos/videos.json) and its thumbnails directly from wp-slimstat.com, with no referrer and no analytics or account data, and the list request without cookies; your WordPress server sends nothing. Like any web request, this shows wp-slimstat.com your IP address and browser, and the list request also names this site's address (the browser's standard Origin header). Show videos also turns the marker on, and it can be turned off on the same screen. With the marker on, your browser checks the list at most once a day. Your choices are kept in your browser only, and videos play on wp-slimstat.com in a new tab. See the [wp-slimstat.com privacy policy](https://wp-slimstat.com/privacy-policy/).
 * **SlimStat Pro license check:** Only when SlimStat Pro is active and a license key is saved, SlimStat asks the license server (https://my.wp-slimstat.com) through SlimStat Pro whether the license is valid for this site: about every 12 hours, and at once when an administrator saves License settings. It sends the license key and this site's domain, never analytics data. Without SlimStat Pro, nothing is sent. See the [wp-slimstat.com privacy policy](https://wp-slimstat.com/privacy-policy/).
 * **Your stats survive uninstalling.** Deleting Slimstat Analytics keeps every visit, setting and table in your database, so reinstalling picks up exactly where you left off.
-* If you *want* the data gone — decommissioning a site, or honouring a data-erasure request — turn on **Settings → Maintenance → "Delete Data on Uninstall"** *before* deleting the plugin, then delete it. That is the only one-step option that removes **everything**, archive tables included. Deleting the plugin on its own will not clear the database.
-* **Delete Records** (Settings → Maintenance) clears your live records but **not** the archived ones in `wp_slim_stats_archive` / `wp_slim_events_archive`, which still count as retained data under GDPR. If you are handling an erasure request and want to keep the plugin installed, clear the records *and* empty those archive tables.
+* If you *want* the data gone — decommissioning a site, or honouring a data-erasure request — turn on **Settings → Data & maintenance → "Delete data on uninstall"** *before* deleting the plugin, then delete it. That is the only one-step option that removes **everything**, archive tables included. Deleting the plugin on its own will not clear the database.
+* **Delete Records** (Settings → Data & maintenance) clears your live records but **not** the archived ones in `wp_slim_stats_archive` / `wp_slim_events_archive`, which still count as retained data under GDPR. If you are handling an erasure request and want to keep the plugin installed, clear the records *and* empty those archive tables.
 * Slimstat's browser-detection cache (in `wp-content/uploads/wp-slimstat`) is always removed on uninstall — it is a rebuildable cache, not your analytics. The geolocation database there is removed only if you opted into full deletion, because some hosts require it to be uploaded by hand.
 
 = Report Bugs =
@@ -85,13 +85,23 @@ Found a bug, or want to suggest a feature? Please [open an issue](https://github
 
 For security vulnerabilities, please report them through the [Patchstack Vulnerability Disclosure Program](https://patchstack.com/database/wordpress/plugin/wp-slimstat/vdp). The Patchstack team will validate, triage, and handle any security issues.
 
+== Privacy and external services ==
+
+Tracking cookies and browser fingerprints are collected only when identifying analytics is allowed by the selected consent settings. FingerprintJS monitoring is disabled. The built-in banner provides Privacy settings to change a choice, and the `[slimstat_privacy_settings]` shortcode can place the same control elsewhere. Existing consent preferences use a one-year cookie. Anonymous counts use daily protected IP identifiers; these are not a guarantee of legal anonymization.
+
+After installing the privacy update, clear full-page and CDN caches so visitors receive the current tracker. Pageview tokens now have a separate signature from visit cookies. Pages already open with an old token stop follow-up tracking until navigation; their recorded pageviews remain unchanged and are not replayed. Existing visit cookies remain valid.
+
+Geolocation database downloads can contact DB-IP through jsDelivr or MaxMind. Browscap updates download browser-detection data from GitHub. Enabled news/notification and add-on listings contact SlimStat services, and some requests include the site URL. These maintenance requests do not upload visitor analytics. Default local database geolocation does not make a remote request for each visitor. Review optional Pro email, AI, external database and geolocation features separately.
+
+The Mask personal data setting hides visitor identity from report viewers without administrator settings permission, including CSV exports and scheduled reports. It is enabled on new installations; existing installations keep their saved report access. Aggregate counts are unchanged. Report avatars are off by default. A developer can explicitly enable WordPress avatars using the `slimstat_report_avatars` filter; the selected avatar provider may then receive viewer requests and email hashes. WordPress privacy export/erasure can locate records linked to a verified email address. Anonymous records cannot be located by an email address that was never collected. Archive retention is configured separately from live-data retention; upgrading preserves existing settings and archives until the administrator chooses their lifetime.
+
 == Frequently Asked Questions ==
 
 = Where is my analytics data stored? =
-In your own WordPress database, full stop. Core tracking makes no external calls, so your numbers never go to Google, to us, or to any third-party cloud.
+Core analytics is stored in your WordPress database. FingerprintJS monitoring is disabled. Optional services and Pro features have separate data flows, listed below and in the Pro readme.
 
 = Is SlimStat a good alternative to Google Analytics or Jetpack Stats? =
-Yes, if you care about ownership and timing. Your data never leaves your server, there is no sampling and no 24-hour delay, and you decide how long to keep it. You see visits the moment they happen, with the depth you'd expect from a hosted service.
+Yes, if you care about ownership and timing. Core analytics is self-hosted, with no reporting delay, and you choose how long to keep it. You see visits the moment they happen, with the depth you'd expect from a hosted service.
 
 = Does SlimStat work with WooCommerce? =
 Yes. SlimStat 6 adds a WooCommerce revenue dashboard with net sales, orders, period comparisons, top products and where your buyers came from, all next to your traffic reports. Switch it on in the Ecommerce page; order sync runs in small background jobs and supports HPOS. WooCommerce 8.3 or newer is required.
@@ -130,11 +140,11 @@ Use the URLs in your site's rendered tracker settings, including any site subdir
 
 Apply exclusions before purging cached tracking responses. Then check that an ordinary frontend page still gets a cache HIT and that tracking returns a pageview ID instead of HTML, including when bypass is the only available transport. Plugin no-store headers cannot fix a response already served by an earlier cache. Purge outdated tracker assets when updating; a query parameter alone may not bypass caches configured to ignore it. Compatibility depends on the cache version and configuration.
 
-= Is it really GDPR-ready out of the box? =
-Yes. IP anonymization and hashing, Do Not Track, a translatable consent banner, WP Consent API integration and scheduled data purging are all built in, no extra plugins required.
+= How do I configure analytics privacy? =
+New installations protect IP addresses and do not set analytics cookies or create browser fingerprints before consent. Select a consent integration before enabling identifying analytics. Review the settings and suggested privacy-policy text for your use case; the plugin cannot determine your legal obligations. Existing settings and archives are preserved on upgrade. Use Archive retention under Settings → Privacy & GDPR to set an expiration period for archived records.
 
 = Can SlimStat track without cookies? =
-Yes. Turn off **Set tracking cookie** and turn on **Hash IP addresses** under Settings → Tracker, and SlimStat counts unique visitors with a daily one-way hash instead of a cookie. Prefer server-side tracking? Set **Tracking mode** to Server under Settings → General to record every visit without JavaScript (best on sites without page caching).
+Yes. Turn off **Use cookies to recognize returning visitors** and turn on **Hash IP addresses** under Settings → Privacy & GDPR, and SlimStat counts unique visitors with a daily one-way hash instead of a cookie. Prefer server-side tracking? Set **Tracking mode** to Server under Settings → Tracking to record every visit without JavaScript (best on sites without page caching).
 
 = Is it safe to update to SlimStat 6? =
 Yes, and we designed the update to be boring in the best way. Your settings and data carry over. The database steps only add columns and indexes, remove no rows, and run only when you click them on the new Migration screen. Older versions keep working on the updated tables if you ever go back. As with any major release, back up your database first.
@@ -172,6 +182,12 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 == Changelog ==
 
 = 6.1.1 - 2026-11-12 =
+
+* Settings are grouped by goal, with a Privacy & GDPR tab that sums up what your privacy settings do, an Advanced tab, search and an unsaved-changes bar. Every saved setting keeps its value and old links still work. Notices are quieter, and the privacy review can be marked complete. Reworded labels show in English until translated.
+* Privacy and security: consent gates identifiers, fingerprints and queued events on every request; withdrawal stays available and no longer enriches earlier anonymous history. Sensitive URL parameters and guest comment identities are excluded.
+* Fix: Historical chart buckets retain all views across database timezone and daylight-saving changes.
+* New installations use privacy-focused defaults. Existing settings are preserved; administrators can set archive retention and mask personal data for report viewers. Global Privacy Control is honored alongside Do Not Track, and report avatars are off by default.
+* Privacy exports include additional stored fields; erasure clears heatmap labels and related caches. Tracker diagnostics store error categories without visitor values.
 
 * The Black Friday fallback offer expires at December 1, 2026 23:59:59 UTC, matching the existing BFCM2026 coupon instead of closing 59 seconds early.
 * Website links include campaign and placement attribution, while preserving existing campaign parameters and coupon codes.

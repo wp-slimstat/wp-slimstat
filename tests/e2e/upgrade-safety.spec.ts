@@ -343,7 +343,7 @@ test.describe('Upgrade Safety', () => {
     expect(bodyText).not.toContain('Parse error');
 
     // Load SlimStat settings — all tabs
-    for (const tab of ['1', '2', '3', '4', '5']) {
+    for (const tab of ['1', '9', '2', '3', '4', '5', '6', '10']) {
       const settingsResponse = await page.goto(`/wp-admin/admin.php?page=slimconfig&tab=${tab}`);
       expect(settingsResponse?.status()).toBeLessThan(500);
       bodyText = await page.textContent('body');

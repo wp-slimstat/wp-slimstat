@@ -268,7 +268,7 @@ if ('safety' === $mode) {
 			$same('/receipt/?x=1', $stored['resource'], 'URL updates cannot reintroduce encoded receipt keys');
 			$same(false, strpos($stored['outbound_resource'], 'wc_order_') !== false, 'Outbound append redacts receipt key');
 			\SlimStat\Tracker\Storage::updateRow(['id' => $redactedId, 'resource' => '/search/?key=ordinary&x=1']);
-			$same('/search/?key=ordinary&x=1', $db->get_var($db->prepare("SELECT resource FROM {$stats} WHERE id=%d", $redactedId)), 'Unrelated key parameters remain intact');
+			$same('/search/?x=1', $db->get_var($db->prepare("SELECT resource FROM {$stats} WHERE id=%d", $redactedId)), 'Sensitive key parameters are redacted regardless of their value');
 		} finally { $db->delete($stats, ['id' => $redactedId]); }
 		foreach (['administrator' => true, 'author' => false, 'subscriber' => false] as $role => $allowed) {
 			$account = wp_insert_user(['user_login' => 'ec-permission-' . wp_generate_password(12, false), 'user_pass' => wp_generate_password(), 'role' => $role]);

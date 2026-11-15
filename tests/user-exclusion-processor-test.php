@@ -263,3 +263,38 @@ assert_false(
 // ─── Report ──────────────────────────────────────────────────────
 
 echo "All {$assertions} assertions passed in " . basename(__FILE__) . "\n";
+
+// Execute the production spam branch: both outcomes are bounded, privately keyed caches.
+const MINUTE_IN_SECONDS = 60;
+$GLOBALS['spam_cache'] = [];
+function get_transient($key) { return $GLOBALS['spam_cache'][$key] ?? false; }
+function set_transient($key, $value, $ttl) {
+    assert_true(300 === $ttl && false === strpos($key, '198.51.100.7'), 'spam cache TTL and key privacy');
+    $GLOBALS['spam_cache'][$key] = $value;
+}
+class SpamFixtureQuery { public static function setProcessingTimestamp($value) {} }
+class SpamFixtureUtils { public static function logError($code) { return $code; } }
+$db = new class {
+    public $comments = 'wp_comments'; public $last_error = ''; public $match = null; public $calls = 0;
+    public function prepare($sql, $ip) { assert_true('198.51.100.7' === $ip, 'spam lookup uses actual visitor IP'); return $sql; }
+    public function get_var($sql) { ++$this->calls; return $this->match; }
+};
+$GLOBALS['wpdb'] = $db;
+$processor = file_get_contents(dirname(__DIR__) . '/src/Tracker/Processor.php');
+$start = strpos($processor, '        // Keep the spam exclusion');
+$end = strpos($processor, "        \$stat['language']", $start);
+assert_true(false !== $start && false !== $end, 'actual spam branch located');
+eval('namespace SlimstatPrivacySpam; use \\SpamFixtureQuery as Query; use \\SpamFixtureUtils as Utils; function run($originalIpForGeo) { $user = (object) ["ID" => 0]; ' . substr($processor, $start, $end - $start) . ' return 1; }');
+wp_slimstat::$settings = ['ignore_spammers' => 'on', 'secret' => 'fixture-secret'];
+foreach ([null, 123] as $match) {
+    $db->match = $match; $db->calls = 0; $GLOBALS['spam_cache'] = [];
+    for ($i = 0; $i < 3; $i++) { assert_true(($match ? 317 : 1) === \SlimstatPrivacySpam\run('198.51.100.7'), 'cached spam exclusion preserves outcome'); }
+    assert_true(1 === $db->calls, 'repeat pageviews perform one spam scan');
+    $GLOBALS['spam_cache'] = []; // WordPress expires the bounded transient.
+    \SlimstatPrivacySpam\run('198.51.100.7');
+    assert_true(2 === $db->calls, 'expired result is refreshed');
+}
+$db->last_error = 'lookup failed'; $GLOBALS['spam_cache'] = [];
+\SlimstatPrivacySpam\run('198.51.100.7');
+assert_true([] === $GLOBALS['spam_cache'], 'failed database lookup is not cached');
+echo "PASS: spam exclusion caches hits/misses for five minutes, avoids raw-IP keys and retries lookup errors\n";

@@ -65,7 +65,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     runWordPressFixture("<?php $result=activate_plugin('wp-slimstat-pro/wp-slimstat-pro.php'); if(is_wp_error($result)) throw new RuntimeException($result->get_error_message());");
     // Active without a license: Pro stays locked, and the header sends the administrator to License settings.
     await page.reload();
-    const notice = page.locator('.slimstat-pro-license-notice');
+    const notice = page.locator('.slimstat-pro-license-notice').filter({ hasText: 'its features stay locked until you activate a license for this site' });
     await expect(notice).toContainText('its features stay locked until you activate a license for this site');
     await campaignReport.scrollIntoViewIfNeeded();
     await campaignReport.locator('.slimstat-acquisition__group > summary').filter({ hasText: campaign }).click();
@@ -75,7 +75,7 @@ test('Ecommerce discovery, checkout links and Pro first insights @woocommerce', 
     await expect(page.getByLabel('License key', { exact: true })).toBeVisible();
     expect(await setProLicense(page, 'valid')).toBe('valid');
     await page.goto(`/wp-admin/admin.php?${scope}`);
-    await expect(page.locator('.slimstat-pro-license-notice')).toHaveCount(0);
+    await expect(notice).toHaveCount(0);
     await campaignReport.scrollIntoViewIfNeeded();
     const campaignGroup = campaignReport.locator('.slimstat-acquisition__group').filter({ hasText: campaign });
     await campaignGroup.locator(':scope > summary').click();

@@ -79,6 +79,7 @@ $classification = [
     'CreateEventsNotesDtIndex.php' => 'bounded',
     'CreateFunnelQueriesIndex.php' => 'bounded',
     'CreateGoalQueriesIndex.php'   => 'bounded',
+    'CreatePrivacyEmailIndex.php'  => 'bounded', // one online index build; no row loop
 ];
 
 $files = glob($plugin_root . '/src/Migration/Migrations/*.php') ?: [];

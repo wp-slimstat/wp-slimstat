@@ -1,0 +1,69 @@
+{
+    "fresh_defaults": {
+        "auto_purge_delete": "no",
+        "gdpr_enabled": "on",
+        "anonymize_ip": "on",
+        "hash_ip": "off",
+        "set_tracker_cookie": "off",
+        "do_not_track": "on"
+    },
+    "consent": {
+        "missing": {
+            "off": {
+                "track": true,
+                "pii": false,
+                "forged_upgrade": false
+            },
+            "on": {
+                "track": true,
+                "pii": false,
+                "forged_upgrade": false
+            }
+        },
+        "banner": {
+            "off": {
+                "track": false,
+                "pii": false,
+                "forged_upgrade": false
+            },
+            "on": {
+                "track": true,
+                "pii": false,
+                "forged_upgrade": false
+            }
+        },
+        "rcb": {
+            "off": {
+                "track": false,
+                "pii": false,
+                "forged_upgrade": false
+            },
+            "on": {
+                "track": true,
+                "pii": false,
+                "forged_upgrade": false
+            }
+        }
+    },
+    "forged_ip": "a8f47dc75827bee83c984ad7936128a11d5b686",
+    "export_names": [
+        "Visit Date",
+        "Page Visited",
+        "Username",
+        "Email",
+        "Visit ID",
+        "Forwarded IP Address",
+        "Search Terms",
+        "Notes",
+        "Last Activity Timestamp",
+        "Screen Width",
+        "Screen Height",
+        "Language"
+    ],
+    "pro_unconsented_note": "private note",
+    "privacy_shortcode": true,
+    "banner_implied_consent": false,
+    "fresh_report_masking": "on",
+    "gpc_blocks_tracking": true,
+    "stored_database_diagnostic": "duplicate_key"
+}

@@ -573,6 +573,7 @@ class wp_slimstat_i18n
                 'e-101' => __('Invalid data signature. Try clearing your WordPress cache.', 'wp-slimstat'),
                 'e-102' => __('Invalid content type signature. Try clearing your WordPress cache.', 'wp-slimstat'),
                 'e-103' => __('Invalid content type format. Try clearing your WordPress cache.', 'wp-slimstat'),
+                'e-104' => __('This page uses an older tracking token. Tracking resumes on the next navigation. Clear page caches after updating SlimStat.', 'wp-slimstat'),
                 'e-200' => __('Unspecified error while attempting to add a new record to the table', 'wp-slimstat'),
                 'e-201' => __('Malformed referrer URL', 'wp-slimstat'),
                 'e-202' => __('Pageview not tracked because the IP address format was invalid.', 'wp-slimstat'),

@@ -20,7 +20,7 @@ use SlimStat\Utils\OptionClaim;
  */
 final class Store
 {
-	public const SCHEMA = 1;
+	public const SCHEMA = 2;
 	public const STATE = 'slimstat_heatmap_state';
 	public const GENERATION = 'slimstat_heatmap_generation';
 	public const CLAIM = 'slimstat_heatmap_setup';
@@ -76,11 +76,11 @@ final class Store
 		return 'off' !== self::level() && has_filter('slimstat_heatmap_row_url');
 	}
 
-	/** Both tables were created and verified at the current schema version. */
+	/** Existing tables remain available to privacy and retention during index upgrades. */
 	public static function ready(): bool
 	{
 		$state = get_option(self::STATE, []);
-		return self::SCHEMA === (int) ($state['schema'] ?? 0);
+		return in_array((int) ($state['schema'] ?? 0), [1, self::SCHEMA], true);
 	}
 
 	/**
@@ -92,7 +92,8 @@ final class Store
 		if (wp_doing_ajax() || wp_doing_cron() || (defined('REST_REQUEST') && REST_REQUEST)) {
 			return;
 		}
-		if (!current_user_can('manage_options') || !self::capturing() || self::ready()) {
+		if (!current_user_can('manage_options') || (!self::capturing() && !self::ready())
+			|| self::SCHEMA === (int) (get_option(self::STATE, [])['schema'] ?? 0)) {
 			return;
 		}
 		if ('' !== (string) (get_option(self::STATE, [])['error'] ?? '')) {
@@ -270,26 +271,35 @@ final class Store
 		$values = [];
 		$args   = [];
 		foreach ($rows as [$kind, $seq, $dh, $x, $y, $sel, $rx, $ry, $flags, $vw, $vh]) {
-			$values[] = '(%d, %d, %d, UNHEX(%s), %d, %d, %d, %d, %d, %d, %d, ' . (null === $sel ? 'NULL' : 'UNHEX(%s)') . ', %d, %d, %d)';
+			$values[] = 'SELECT %d id, %d kind, %d seq, UNHEX(%s) page, %d dt, %d device, %d vw, %d vh, %d dh, %d x, %d y, ' . (null === $sel ? 'NULL' : 'UNHEX(%s)') . ' sel, %d rx, %d ry, %d flags';
 			array_push($args, $common[0], $kind, $seq, $common[1], $common[2], Query::DEVICE_CODES[Query::device($vw)] ?? 0, $vw, $vh);
 			array_push($args, $dh, $x, $y, ...(null === $sel ? [] : [$sel]));
 			array_push($args, $rx, $ry, $flags);
 		}
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery -- Table from the manifest; placeholders built above, values prepared.
-		if (false === $db->query($db->prepare("INSERT INTO {$table} (id, kind, seq, page, dt, device, vw, vh, dh, x, y, sel, rx, ry, flags) VALUES " . implode(', ', $values) . ' ON DUPLICATE KEY UPDATE y = GREATEST(y, VALUES(y)), dh = GREATEST(dh, VALUES(dh))', $args))) {
+		$parents = self::table('slim_stats');
+		$args[] = $id;
+		// The earlier resource lookup may precede an erasure. Lock the parent until
+		// this INSERT finishes, including on legacy tables without a foreign key.
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery -- Tables from the manifest; placeholders built above, values prepared.
+		if (false === $db->query($db->prepare("INSERT INTO {$table} (id, kind, seq, page, dt, device, vw, vh, dh, x, y, sel, rx, ry, flags) SELECT incoming.* FROM (" . implode(' UNION ALL ', $values) . ") incoming WHERE EXISTS (SELECT 1 FROM {$parents} WHERE id = %d FOR UPDATE) ON DUPLICATE KEY UPDATE y = GREATEST({$table}.y, VALUES(y)), dh = GREATEST({$table}.dh, VALUES(dh))", $args))) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; the caller records them as a degradation, which escapes on display.
 			throw new \RuntimeException($db->last_error);
 		}
 
 		if ($elements) {
 			$args = [];
+			$selects = [];
 			foreach ($elements as $hex => [$selector, $label]) {
-				array_push($args, $hex, $selector, $label);
+				// A privacy erasure can remove the clicks while this batch is paused.
+				// Lock the live click through this insert, including under READ COMMITTED,
+				// so erasure cannot finish between the existence check and label write.
+				$selects[] = "SELECT UNHEX(%s), %s, %s FROM DUAL WHERE EXISTS (SELECT 1 FROM {$table} WHERE id = %d AND sel = UNHEX(%s) FOR UPDATE)";
+				array_push($args, $hex, $selector, $label, $id, $hex);
 			}
 			$elementsTable = self::table('slim_heatmap_elements');
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery -- Table from the manifest; values prepared.
-			if (false === $db->query($db->prepare("INSERT IGNORE INTO {$elementsTable} (sel, selector, label) VALUES " . implode(', ', array_fill(0, count($elements), '(UNHEX(%s), %s, %s)')), $args))) {
+			if (false === $db->query($db->prepare("INSERT IGNORE INTO {$elementsTable} (sel, selector, label) " . implode(' UNION ALL ', $selects), $args))) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain exception diagnostics, not HTML output; the caller records them as a degradation, which escapes on display.
 				throw new \RuntimeException($db->last_error);
 			}
@@ -324,8 +334,10 @@ final class Store
 			if ($deleted) {
 				self::invalidate();
 			}
-			update_option(self::PURGE_PENDING, 50000 === $deleted, false);
-			if (50000 === $deleted && !wp_next_scheduled(self::PURGE_HOOK)) {
+			$labels = self::SCHEMA === (int) (get_option(self::STATE, [])['schema'] ?? 0) ? self::purgeOrphanedElements() : 0;
+			$pending = 50000 === $deleted || 500 === $labels || $labels < 0;
+			update_option(self::PURGE_PENDING, $pending, false);
+			if ($pending && !wp_next_scheduled(self::PURGE_HOOK)) {
 				$scheduled = wp_schedule_single_event(time() + 60, self::PURGE_HOOK, [], true);
 				if (is_wp_error($scheduled)) {
 					\wp_slimstat::record_degradation('purge (heatmap scheduling)', $scheduled->get_error_message(), \wp_slimstat::DEGRADATION_OPERATIONAL);
@@ -353,15 +365,38 @@ final class Store
 		$db    = Query::db();
 		$table = self::table();
 		$stats = self::table('slim_stats');
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery -- Table names from the prefix; the email is prepared.
-		$deleted = $db->query($db->prepare("DELETE h FROM {$table} h INNER JOIN {$stats} s ON s.id = h.id WHERE s.email = %s", $email));
+		$elements = self::table('slim_heatmap_elements');
+		// Delete labels and clicks in one atomic statement: a pending label insert
+		// must run entirely before or after this deletion, even for shared selectors.
+		// LEFT JOIN also removes scrolls and clicks whose dictionary entry is absent.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery -- Manifest tables, prepared email.
+		$deleted = $db->query($db->prepare("DELETE h, e FROM {$table} h INNER JOIN {$stats} s ON s.id = h.id LEFT JOIN {$elements} e ON e.sel = h.sel WHERE s.email = %s", $email));
 		if (false === $deleted) {
 			throw new \RuntimeException('Heatmap privacy erasure failed.');
 		}
 		if ($deleted) {
 			self::invalidate();
 		}
-		return ['items_removed' => $deleted > 0, 'items_retained' => false, 'messages' => [], 'done' => true];
+		// Also clear labels orphaned by earlier retention or erasure passes.
+		$labels = self::purgeOrphanedElements();
+		if ($labels < 0) { throw new \RuntimeException('Heatmap element erasure failed.'); }
+		return ['items_removed' => $deleted > 0 || $labels > 0, 'items_retained' => false, 'messages' => [], 'done' => $labels < 500];
+	}
+
+	/** Bounded cleanup, using the selector index even on sites with millions of clicks. */
+	private static function purgeOrphanedElements(): int
+	{
+		$db = Query::db();
+		$table = self::table();
+		$elements = self::table('slim_heatmap_elements');
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery -- Fixed manifest table names, fixed batch limit.
+		$deleted = $db->query("DELETE FROM {$elements} WHERE NOT EXISTS (SELECT 1 FROM {$table} h WHERE h.sel = {$elements}.sel) LIMIT 500");
+		if (false === $deleted) {
+			\wp_slimstat::record_degradation('purge (heatmap labels)', $db->last_error, \wp_slimstat::DEGRADATION_OPERATIONAL);
+			return -1;
+		}
+		if ($deleted) { self::invalidate(); }
+		return $deleted;
 	}
 
 	public static function exporters(array $exporters): array

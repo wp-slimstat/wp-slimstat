@@ -130,29 +130,18 @@ check((bool) preg_match("/add_menu_page\([^;]*'dashicons-chart-area',\s*59\s*\);
 check(false !== strpos(read_or_die('wp-slimstat.php'), "\$defaults['notice_latest_news'] = 'no';"), 'Release notice: new installs never see it (get_fresh_defaults sets no)');
 check(false !== strpos(read_or_die('uninstall.php'), "delete_option('slimstat_release_notice_since')"), 'Release notice: uninstall deletes its anchor');
 check((bool) preg_match("/if \(version_compare\([^;]*'6\.0\.0', '<'\)\) \{\s*wp_slimstat::\\\$settings\['notice_latest_news'\] = 'on';/", $admin), 'Release notice: only an upgrade from 5.x turns it on, so a 6.0.x update does not undo a dismissal');
-preg_match("/\/\/ 6\.0 release notice:.*?add_action\('admin_notices', \[self::class, 'show_latest_news'\], 10, 0\);/s", $admin, $gate);
-$gate = $gate[0] ?? '';
-check('' !== $gate, 'Release notice: the gate in init() is present');
-check(false !== strpos($gate, "current_user_can('manage_options')") && false === strpos($gate, 'is_super_admin'), 'Release notice: the gate uses the capability notices_handler() checks, not is_super_admin()');
-preg_match_all("/'([\w-]+\.php)'/", $gate, $pages);
-check(['index.php', 'plugins.php'] === $pages[1] && false === strpos($gate, 'slimview'), 'Release notice: it shows on the Dashboard and Plugins screens only, never on SlimStat\'s own');
+check(false === strpos($admin, "add_action('admin_notices', [self::class, 'show_latest_news']"), 'Release notice: no Dashboard or Plugins card; the SlimStat header bar is its only placement');
 $dismiss = read_or_die('admin/assets/js/promotions.js');
 check(false !== strpos($dismiss, "action: 'slimstat_notice_latest_news'") && false !== strpos($dismiss, 'security: bar.dataset.dismissNonce'), 'Release notice: dismissal posts the shared nonce-protected AJAX action');
 check(false !== strpos($admin, "wp_create_nonce('meta-box-order')") && false !== strpos($admin, 'self::enqueue_promotions();'), 'Release notice: rendered bar has its dismiss nonce and shared script');
 preg_match('/<button[^>]*class="[^"]*slimstat-release-dismiss[^"]*"/', $admin, $release_button);
 check(false !== strpos($dismiss, "closest('.slimstat-release-dismiss')") && !empty($release_button) && false === strpos($release_button[0], 'notice-dismiss'), 'Release notice: its dedicated button cannot trigger core notice handlers');
-check(false !== strpos(read_or_die('admin/view/partials/header.php'), "show_latest_news(null, null, null, 'bar')"), 'Release bar: shared header renders it across SlimStat pages');
+check(false !== strpos(read_or_die('admin/view/partials/header.php'), 'show_latest_news();'), 'Release bar: shared header renders it across SlimStat pages');
 check(false !== strpos(read_or_die('src/Migration/MigrationService.php'), 'public static function manager(): ?MigrationManager'), 'Release notice: MigrationService exposes the manager so the notice can wait for migrations');
 // Plugin Check (WordPress.Security.EscapeOutput) flags `echo $var` even when $var holds escaped
-// pieces, so each placement is assembled first and echoed once through wp_kses_post().
-// Checked per placement: the notice branch returns early, the bar branch is the remainder.
+// pieces, so the bar is assembled first and echoed once through wp_kses_post().
 $notice = slimstat_function_body($admin, 'show_latest_news');
-$split  = (int) strpos($notice, "if ('notice' === \$placement)");
-$end    = (int) strpos($notice, 'return;', $split) + strlen('return;');
-check($split > 0 && $end > $split, 'Release notice: the placement branches are where the guard expects them');
-foreach (['notice' => substr($notice, $split, $end - $split), 'bar' => substr($notice, $end)] as $placement => $branch) {
-    check(1 === preg_match_all('/\becho\b/', $branch) && 1 === substr_count($branch, 'echo wp_kses_post('), "Release {$placement}: echoes once, through wp_kses_post()");
-}
+check(false === strpos($notice, '$placement') && 1 === preg_match_all('/\becho\b/', $notice) && 1 === substr_count($notice, 'echo wp_kses_post('), 'Release bar: one placement, echoed once through wp_kses_post()');
 
 // --- Pro links (tests/Integration/ProLinksTest.php covers Export and the Channels row) ---
 $upgrade = read_or_die('admin/view/upgrade-pro.php');
@@ -185,7 +174,7 @@ check(false === strpos($ecommerce, 'wp-slimstat.com/pricing') && false === strpo
 // Black Friday 2026 strip (delete with the feature after 2026-12-01). It replaces the release bar for that request
 // and is isolated: no queries or outside transport, its one write is the dismissal the admin asks for (user meta, so it
 // holds on every browser), and its CSS/JS reach nothing outside #slimstat-bf-2026.
-check(false !== strpos(read_or_die('admin/view/partials/header.php'), "<?php if (!\\SlimStat\\Services\\BlackFriday2026::render()) { wp_slimstat_admin::show_latest_news(null, null, null, 'bar'); } ?>"), 'Black Friday: the header renders the strip first and the release bar only when it did not print');
+check(false !== strpos(read_or_die('admin/view/partials/header.php'), "<?php if (!\\SlimStat\\Services\\BlackFriday2026::render()) { wp_slimstat_admin::show_latest_news(); } ?>"), 'Black Friday: the header renders the strip first and the release bar only when it did not print');
 $bfAdmin = read_or_die('admin/index.php');
 check(3 === substr_count($bfAdmin, 'BlackFriday2026') && (bool) preg_match("/if \('index\.php' === \(\\\$GLOBALS\['pagenow'\] \?\? ''\)\) \{\s+add_action\('admin_notices', \[\\\\SlimStat\\\\Services\\\\BlackFriday2026::class, 'dashboard_notice'\], 9, 0\);/", $bfAdmin), 'Black Friday: init() hooks dashboard_notice at priority 9, only when pagenow is index.php');
 check(false !== strpos($bfAdmin, "add_action('wp_ajax_' . \\SlimStat\\Services\\BlackFriday2026::ACTION, [\\SlimStat\\Services\\BlackFriday2026::class, 'dismiss']);") && false === strpos($bfAdmin, 'wp_ajax_nopriv_slimstat_bf2026'), 'Black Friday: the dismissal is a logged-in AJAX action only');

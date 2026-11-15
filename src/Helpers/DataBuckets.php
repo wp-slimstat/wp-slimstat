@@ -27,8 +27,6 @@ class DataBuckets
 
     private $gran;
 
-    private $tzOffset;
-
     private $start;
 
     private $end;
@@ -39,24 +37,7 @@ class DataBuckets
 
     private $points;
 
-    /**
-     * The database server's UTC offset in seconds, asked for once per request.
-     *
-     * The single source for this figure. It was issued twice over per chart — once
-     * here, once in Chart — and one DataBuckets is constructed per chart, so a report
-     * screen paid four round trips for a value that changes twice a year.
-     *
-     * Returns the raw signed offset and nothing else. Callers apply their own sign
-     * convention (Chart's is deliberately inverted, to cancel an implicit shift), so
-     * sharing the probe leaves that logic exactly where it is.
-     *
-     * Static rather than a transient: the answer is a property of the database
-     * connection, so caching it across requests would outlive a server timezone change
-     * or a failover to a differently configured replica, and it is far too cheap to be
-     * worth that risk. (D60)
-     *
-     * @return int
-     */
+    /** Legacy offset helper retained for callers; chart buckets are timezone-independent. */
     // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Connection-specific timezone offset is memoized for the request; no WordPress API exposes the external database offset.
     public static function serverTimezoneOffset(): int
     {
@@ -80,14 +61,6 @@ class DataBuckets
         $this->prevStart   = $prevStart;
         $this->prevEnd     = $prevEnd;
         $this->totals      = $totals;
-
-        $offset_seconds = self::serverTimezoneOffset();
-        $sign           = ($offset_seconds < 0) ? '-' : '+';
-        $abs            = abs($offset_seconds);
-        $h              = floor($abs / 3600);
-        $m              = floor(($abs % 3600) / 60);
-        $tzOffset       = sprintf('%s%02d:%02d', $sign, $h, $m);
-        $this->tzOffset = $tzOffset;
 
         $this->initBuckets();
         $currentLabels = $this->labels;
@@ -234,8 +207,6 @@ class DataBuckets
         $base = 'current' === $period ? $this->start : $this->prevStart;
         $base = strtotime(gmdate('Y-m-d H:i:s', $base));
 
-        $dt    = strtotime(wp_date('Y-m-d H:i:s', $dt, new \DateTimeZone($this->tzOffset)));
-        $start = $this->start;
         if ('HOUR' === $this->gran) {
             $dt     = strtotime(gmdate('Y-m-d H:00:00', $dt));
             $offset = floor(($dt - $base) / 3600);
@@ -245,9 +216,7 @@ class DataBuckets
         } elseif ('MONTH' === $this->gran) {
             $start  = new \DateTime('@' . $base);
             $start  = $start->modify('first day of this month')->modify('midnight');
-            // Guard against invalid/empty $dt
-            $safeDt = is_numeric($dt) ? $dt : 0;
-            $target = new \DateTime('@' . $safeDt);
+            $target = new \DateTime('@' . $dt);
             if ($target->getTimestamp() < $start->getTimestamp()) {
                 $offset = -1;
             } else {

@@ -153,7 +153,7 @@ final class AiReport {
 		if ('slim_p10_01' === $id) {
 			$context['ecommerce'] = $ecommerce;
 		}
-		$context['authorization'] = self::fingerprint( array( get_current_blog_id(), get_current_user_id(), \wp_slimstat::report_scope()['cache'] ) );
+		$context['authorization'] = self::fingerprint( array( get_current_blog_id(), get_current_user_id(), \wp_slimstat::report_scope()['cache'], ReportPrivacy::enabled() ) );
 		$context['fingerprint']   = self::fingerprint( array( $context, $args, AiPrompt::VERSION, array_intersect_key( \wp_slimstat::$settings, array_flip( array( 'hash_ip', 'anonymize_ip', 'geolocation_country' ) ) ) ) );
 		return $context;
 	}

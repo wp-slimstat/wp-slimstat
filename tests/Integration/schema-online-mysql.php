@@ -5,6 +5,8 @@ if (!defined('WP_CLI') || !WP_CLI || !preg_match('/^(tests?[-_]|wordpress$)/', D
     throw new RuntimeException('A disposable WordPress test database is required.');
 }
 $table = 'slimstat_ddl_' . bin2hex(random_bytes(6));
+// The refused charset conversion below is recorded as a degradation, which admin screens list for three hours.
+$degradations = get_option(wp_slimstat::DEGRADATION_OPTION, null);
 $db = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
 $holder = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
 $db->suppress_errors(true);
@@ -64,4 +66,6 @@ try {
     $holder->query('ROLLBACK');
     $db->query("DROP TABLE IF EXISTS {$table}");
     $holder->close(); $db->close();
+    if (null === $degradations) { delete_option(wp_slimstat::DEGRADATION_OPTION); } else { update_option(wp_slimstat::DEGRADATION_OPTION, $degradations, false); }
 }
+if (get_option(wp_slimstat::DEGRADATION_OPTION, null) !== $degradations) { throw new RuntimeException('fixture must leave the stored degradation records as it found them'); }

@@ -1,0 +1,260 @@
+{
+  "report": "SlimStat Privacy Audit (Copy).html, master dda4eaf2, 2026-11-13",
+  "reviewed_development": {
+    "wp-slimstat": "39fdd524e2f24842dfda668b5f5661bf4a7a8e5f",
+    "wp-slimstat-pro": "b385916b6fc38da31da975fe8a2a0e6771d98018"
+  },
+  "scope": "Verify all 24 report items; fix every confirmed Critical, High, Medium and Low issue in both editions and similar Pro issues. No merges.",
+  "findings": [
+    {
+      "id": "C1",
+      "severity": "critical",
+      "development_verdict": "confirmed",
+      "resolution_or_remaining_limit": "New installations use consent mode, masked IP, no tracking cookie, DNT and deletion. No identifier/fingerprint is collected without verified consent. Existing settings are preserved with a dismissible review notice. Misleading compliance guarantees removed.",
+      "source": "wp-slimstat.php; src/Utils/Consent.php; wp-slimstat.js"
+    },
+    {
+      "id": "C2",
+      "severity": "critical",
+      "development_verdict": "confirmed",
+      "resolution_or_remaining_limit": "Missing/disabled consent integrations permit anonymous counts only. A missing-source notice explains identifier collection is blocked. Native WP Consent API supplies the RCB server decision.",
+      "source": "src/Utils/Consent.php; wp-slimstat.js"
+    },
+    {
+      "id": "C3",
+      "severity": "critical",
+      "development_verdict": "confirmed",
+      "resolution_or_remaining_limit": "Fresh installs delete old live rows. Archives have an independent age limit and bounded scheduled purge. Existing archives remain preserved until the administrator sets their age limit; policy text explicitly describes this.",
+      "source": "wp-slimstat.php; src/Utils/PurgeArchive.php; admin/config/index.php"
+    },
+    {
+      "id": "C4",
+      "severity": "critical",
+      "development_verdict": "partly already fixed on development",
+      "resolution_or_remaining_limit": "Development already handles archive-only email matches, draining event batches and report cache invalidation. Export now includes additional stored personal fields; Pro caches/AI snapshots and heatmap labels participate in cleanup. The unregistered IP helper is documented as an administrator helper, not a public verified ownership mechanism.",
+      "source": "src/Services/Privacy/DataExporter.php; src/Services/Privacy/DataEraser.php; src/Heatmap/Store.php"
+    },
+    {
+      "id": "C5",
+      "severity": "critical",
+      "development_verdict": "confirmed",
+      "resolution_or_remaining_limit": "Persistent accessible Privacy settings button and shortcode reopen the banner. Requests and queued events recheck consent. Withdrawal deletes the tracking cookie through the AJAX endpoint regardless of the chosen tracking transport, clears device data and prevents retries after a later grant.",
+      "source": "src/Services/GDPRService.php; src/Tracker/Ajax.php; wp-slimstat.js"
+    },
+    {
+      "id": "H1",
+      "severity": "high",
+      "development_verdict": "confirmed",
+      "resolution_or_remaining_limit": "A client consent_upgrade flag cannot grant identifiers. Server checks the active consent source on every request, including Pro login/logout annotations.",
+      "source": "src/Utils/Consent.php; src/Tracker/Ajax.php"
+    },
+    {
+      "id": "H2",
+      "severity": "high",
+      "development_verdict": "confirmed",
+      "resolution_or_remaining_limit": "FingerprintJS only loads/reads after full consent and uses monitoring:false. Consent is rechecked after asynchronous fingerprint collection. Server rejects fingerprints without consent.",
+      "source": "wp-slimstat.js; src/Tracker/Utils.php"
+    },
+    {
+      "id": "H3",
+      "severity": "high",
+      "development_verdict": "confirmed",
+      "resolution_or_remaining_limit": "Default banner asks for an explicit Accept/Decline decision and explains withdrawal; no implied consent by continued browsing.",
+      "source": "src/Services/GDPRService.php"
+    },
+    {
+      "id": "H4",
+      "severity": "high",
+      "development_verdict": "confirmed",
+      "resolution_or_remaining_limit": "Storage insert/update remove sensitive URL parameters and credentials, preserving ordinary/campaign parameters. Guest comment identities and button values are not imported; interaction text is consent-gated and bounded.",
+      "source": "src/Tracker/Storage.php; src/Tracker/Processor.php; src/Tracker/Ajax.php; wp-slimstat.js"
+    },
+    {
+      "id": "H5",
+      "severity": "high",
+      "development_verdict": "confirmed",
+      "resolution_or_remaining_limit": "Only a valid signed current pageview can be upgraded. It moves into the consented session and drops the anonymous identity hash; earlier rows retain their original fields and visit. Removed visit-wide updates and historical IP/visitor-hash lookup. Hash/anonymization/cookieless settings still apply after acceptance.",
+      "source": "src/Tracker/Processor.php; src/Providers/IPHashProvider.php; src/Tracker/Session.php"
+    },
+    {
+      "id": "M1",
+      "severity": "medium",
+      "development_verdict": "confirmed; fixed",
+      "resolution_or_remaining_limit": "Removed the inert custom opt-in/opt-out cookie settings from the UI; legacy stored values are preserved.",
+      "source": "admin/config/index.php"
+    },
+    {
+      "id": "M2",
+      "severity": "medium",
+      "development_verdict": "confirmed; fixed",
+      "resolution_or_remaining_limit": "No interaction or offline persistence before full consent. Withdrawal clears queued device data and invalidates delayed retries.",
+      "source": "wp-slimstat.js; tests/consent-decision.cjs"
+    },
+    {
+      "id": "M3",
+      "severity": "medium",
+      "development_verdict": "partly already fixed; completed",
+      "resolution_or_remaining_limit": "Development already accepts the endpoint settings. Browser now preserves signed pageview IDs; endpoint uses the analytics DB and independently checks consent. Live tests cover REST/AJAX/adblock flows.",
+      "source": "src/Controllers/Rest/ConsentChangeRestController.php; wp-slimstat.js"
+    },
+    {
+      "id": "M4",
+      "severity": "medium",
+      "development_verdict": "confirmed; fixed",
+      "resolution_or_remaining_limit": "Suggested policy describes configured identifiers, consent cookie, interactions, geolocation and both live/archive retention. Pro contributes AI, exports, maps and licensing information.",
+      "source": "wp-slimstat.php; wp-slimstat-pro/src/AI/Analysis.php"
+    },
+    {
+      "id": "M5",
+      "severity": "medium",
+      "development_verdict": "partly already fixed; completed",
+      "resolution_or_remaining_limit": "Username ACL is already exact on development. Public shortcode personal filters are blocked, including IDs; REST accepts Authorization: Bearer and new installs have no token. Explicitly configured legacy query tokens remain compatible.",
+      "source": "src/Shortcodes/Shortcode.php; admin/index.php; wp-slimstat.php"
+    },
+    {
+      "id": "M6",
+      "severity": "medium",
+      "development_verdict": "already fixed on development; regression tested",
+      "resolution_or_remaining_limit": "Banner assets are independent of a server-mode pageview ID. New real-browser test verifies accept/reopen and continued IP hashing/cookieless behavior.",
+      "source": "wp-slimstat.php; tests/e2e/privacy-audit.spec.ts"
+    },
+    {
+      "id": "M7",
+      "severity": "medium",
+      "development_verdict": "confirmed; fixed",
+      "resolution_or_remaining_limit": "All identified Free and Pro report/avatar suggestion paths are off by default behind slimstat_report_avatars. WordPress core account avatars are outside this plugin setting.",
+      "source": "admin/index.php; admin/view/right-now.php; admin/view/wp-slimstat-reports.php; wp-slimstat-pro/src/Addon/Addons/UserOverviewAddon.php"
+    },
+    {
+      "id": "M8",
+      "severity": "medium",
+      "development_verdict": "confirmed; fixed",
+      "resolution_or_remaining_limit": "Optional masking applies after aggregation across Free/Pro HTML, report API, shortcodes, CSV and emailed reports. Personal filter suggestions and named visitor probes are blocked for masked viewers. AI authorization changes with masking, so older analyses cannot reveal previously visible identity. New installations enable masking; upgrades preserve explicit access choices.",
+      "source": "admin/view/right-now.php; admin/index.php; wp-slimstat-pro/src/Addon/Addons/ExportToExcelAddon.php"
+    },
+    {
+      "id": "L1",
+      "severity": "low",
+      "development_verdict": "confirmed; fixed",
+      "resolution_or_remaining_limit": "Sec-GPC and navigator.globalPrivacyControl are honored with the DNT privacy preference on server and browser. Removed the unused CCPA/LGPD stub subsystem; it supplied no working integration.",
+      "source": "src/Utils/Consent.php; src/Services/Compliance"
+    },
+    {
+      "id": "L2",
+      "severity": "info",
+      "development_verdict": "legal conclusion not verified",
+      "resolution_or_remaining_limit": "Software behavior is tested; equivalence of different privacy laws is not established by this change and no legal compliance guarantee is made.",
+      "source": "readme.txt"
+    },
+    {
+      "id": "L3",
+      "severity": "low",
+      "development_verdict": "confirmed; documented",
+      "resolution_or_remaining_limit": "Readme now documents maintenance downloads, notifications/add-on services and Pro optional external flows. Fingerprint monitoring is disabled.",
+      "source": "readme.txt; wp-slimstat-pro/readme.txt"
+    },
+    {
+      "id": "L4",
+      "severity": "low",
+      "development_verdict": "confirmed; fixed",
+      "resolution_or_remaining_limit": "Heatmap retention removes orphaned labels; email erasure removes referenced personal labels before their clicks. Pro heatmap snapshots use the Free data generation so stale erased data cannot be reused.",
+      "source": "src/Heatmap/Store.php; src/Schema/Schema.php; wp-slimstat-pro/src/Heatmap/Viewer.php"
+    },
+    {
+      "id": "L5",
+      "severity": "low",
+      "development_verdict": "confirmed; fixed",
+      "resolution_or_remaining_limit": "Tracker diagnostics store fixed error categories only. Existing raw error details are scrubbed on admin visits and before health endpoint output. A real duplicate-key fixture proves personal values are discarded.",
+      "source": "src/Tracker/Utils.php; wp-slimstat-pro/src/Addon/Addons/EmailReportsAddon.php"
+    },
+    {
+      "id": "L6",
+      "severity": "info",
+      "development_verdict": "confirmed; fixed",
+      "resolution_or_remaining_limit": "Corrected anonymous default comment; consent documentation reflects current/future pageviews rather than session-history enrichment.",
+      "source": "wp-slimstat.php; admin/config/index.php"
+    }
+  ],
+  "before_after": {
+    "before": "before.json",
+    "after": "after.json",
+    "fixture": "Real WordPress 7.1.4 and MySQL 8.4 disposable databases; identical synthetic inputs, both plugins loaded. IP/hash values are fixtures. auto_purge_delete=on is the historical archive mode; no means deletion."
+  },
+  "pro_additional_findings": [
+    {
+      "issue": "Login/logout notes recorded after withdrawal",
+      "fix": "Both handlers require canTrack and piiAllowed. Consented annotations still work."
+    },
+    {
+      "issue": "Cached user/heatmap results can outlive erasure",
+      "fix": "Free data generation participates in cache keys; active request aggregates also clear on data changes, even with an expired license."
+    },
+    {
+      "issue": "CSV attachments persisted under a web-served upload folder",
+      "fix": "Random temporary files outside uploads, permissions 0600 before writing personal data, cleanup on success/failure/exception; old CSV leftovers removed."
+    },
+    {
+      "issue": "Saved AI analyses/labels omitted from privacy tools",
+      "fix": "WordPress export/erasure for account-owned results and snapshots referencing the verified email or exact login label; bounded paging, drain-on-delete and explicit errors on failed queries. Other account unrelated labels are not exported."
+    },
+    {
+      "issue": "Optional external data flows insufficiently documented",
+      "fix": "Suggested policy/readme describe emailed reports, user-enabled AI provider requests, optional Google Maps coordinates, local MaxMind lookup and licensing calls."
+    },
+    {
+      "issue": "Cleanup hooks could break a partially uploaded Pro installation",
+      "fix": "Hooks check optional add-on callbacks before use; interrupted-update browser scenarios pass."
+    }
+  ],
+  "verification": {
+    "new_cases": [
+      "tests/e2e/privacy-audit.spec.ts",
+      "tests/privacy-data-wp-test.php",
+      "tests/privacy-url-redaction-test.php",
+      "tests/consent-decision.cjs",
+      "../wp-slimstat-pro/tests/e2e/privacy-audit.spec.ts",
+      "../wp-slimstat-pro/tests/privacy-audit-wp-test.php"
+    ],
+    "status": "Final local and PR results recorded in the pull request descriptions."
+  },
+  "plugin_check_policy_findings": {
+    "Free": [
+      "trademarked_term: existing registered wp-slimstat slug"
+    ],
+    "Pro": [
+      "trademarked_term: existing wp-slimstat-pro slug",
+      "plugin_updater_detected and update_modification_detected: commercial Pro updater is not intended for WordPress.org hosting"
+    ]
+  },
+  "limits": [
+    "Existing stored analytics are not mass-rewritten or deleted by this update. Administrators choose an archive expiration period before existing archives are removed.",
+    "Email-based privacy requests cannot safely identify an unlinked anonymous visitor by a claimed IP.",
+    "Delivered email attachments and data already sent to configured external providers cannot be recalled by local WordPress erasure.",
+    "Retention relies on WordPress cron or an equivalent server scheduler.",
+    "URL redaction covers named sensitive fields, not arbitrary personal prose in every URL path or campaign value. Sites should avoid embedding personal data in page names, labels and campaign values.",
+    "Accepting consent begins the identifiable session. A session spanning anonymous and consented activity can therefore appear as two visits; pageview totals remain unchanged."
+  ],
+  "additional_report_findings": [
+    {
+      "issue": "Historical charts lost buckets across database daylight-saving changes",
+      "before": {
+        "database_fixture_views": 468,
+        "distinct_search_terms": 24,
+        "daily_plotted": 459,
+        "weekly_plotted": 425
+      },
+      "after": {
+        "database_fixture_views": 468,
+        "distinct_search_terms": 24,
+        "daily_plotted": 468,
+        "weekly_plotted": 468
+      },
+      "fix": "Group stored wall-clock seconds with timezone-independent MySQL date arithmetic; remove current server offset from bucket placement.",
+      "coverage": "Hourly/daily/weekly/monthly/yearly, SYSTEM/UTC/+05:30/-07:00; previous-only corpus and exact distinct-term totals."
+    },
+    {
+      "issue": "Pro WHOIS labels were untranslated and elapsed durations wrapped at 24 hours",
+      "fix": "Translate labels and format elapsed hours explicitly; 111600 seconds displays 31:00:00."
+    }
+  ]
+}

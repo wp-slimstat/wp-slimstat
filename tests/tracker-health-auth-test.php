@@ -20,6 +20,7 @@ declare(strict_types=1);
 namespace SlimStat\Tracker {
     if (!class_exists('SlimStat\Tracker\Utils')) {
         class Utils {
+            public static function sanitizeStoredErrorDetail(): void {}
             public static function getTrackerCodeLabel(?int $code): string
             {
                 return '';

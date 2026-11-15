@@ -35,7 +35,7 @@ namespace SlimStat\Providers {
 
 namespace SlimStat\Tracker {
     class Session {
-        public static function deleteTrackingCookie(): void {}
+        public static function deleteTrackingCookie(): void { $GLOBALS['tracking_cookie_deletions'] = ($GLOBALS['tracking_cookie_deletions'] ?? 0) + 1; }
     }
     class Utils {
         public static function getValueWithoutChecksum($v) { return $v; }
@@ -44,6 +44,8 @@ namespace SlimStat\Tracker {
 
 namespace SlimStat\Utils {
     class Consent {
+        public static function piiAllowed(): bool { return true; }
+        public static function getIntegrationKey(): string { return 'slimstat_banner'; }
         public static function normalizeConsent($c) { return is_array($c) ? $c : ['statistics' => $c]; }
     }
 }
@@ -358,7 +360,7 @@ $service = new GDPRService([
     'opt_out_message'     => 'Test message',
     'gdpr_theme_mode'     => '',
 ]);
-assert_same('', $service->getBannerHtml(), 'getBannerHtml should return empty string when consent exists');
+assert_true(strpos($service->getBannerHtml(), 'slimstat-privacy-settings') !== false, 'decided visitors can reopen privacy controls');
 
 // ─── Test 5: getBannerHtml returns HTML when no consent ──────────
 
@@ -505,6 +507,31 @@ $req = new \WP_REST_Request('POST', '/slimstat/v1/consent-change', [
 $res = $cc->handle_consent_change($req);
 
 assert_true($res instanceof \WP_Error, 'consent-change should return WP_Error for logged-in with bad nonce');
+
+// ─── Test 13b: a withdrawal goes through with a bad nonce; anything else does not ───
+// A cached page carries an expired nonce. Declining there must still delete the HttpOnly
+// tracking cookie, which only the server can do.
+
+foreach ([0, 1] as $_stub_user_id) {
+    $GLOBALS['tracking_cookie_deletions'] = 0;
+    $res = (new \SlimStat\Controllers\Rest\ConsentChangeRestController())->handle_consent_change(new \WP_REST_Request('POST', '/slimstat/v1/consent-change', [
+        'source' => 'slimstat_banner',
+        'parsed' => ['statistics' => 'deny'],
+        'nonce'  => 'stale_nonce',
+    ]));
+    assert_true($res instanceof \WP_REST_Response && 200 === $res->status, 'a withdrawal with a stale nonce should be accepted');
+    assert_same(1, $GLOBALS['tracking_cookie_deletions'], 'a withdrawal with a stale nonce should delete the tracking cookie');
+}
+foreach ([['statistics' => 'allow'], 'deny', null] as $not_a_withdrawal) {
+    $GLOBALS['tracking_cookie_deletions'] = 0;
+    $res = (new \SlimStat\Controllers\Rest\ConsentChangeRestController())->handle_consent_change(new \WP_REST_Request('POST', '/slimstat/v1/consent-change', [
+        'source' => 'slimstat_banner',
+        'parsed' => $not_a_withdrawal,
+        'nonce'  => 'stale_nonce',
+    ]));
+    assert_true($res instanceof \WP_Error && 'rest_forbidden' === $res->code, 'a stale nonce is accepted for a well-formed withdrawal only');
+    assert_same(0, $GLOBALS['tracking_cookie_deletions'], 'a rejected request must not touch the tracking cookie');
+}
 
 // ─── Test 14: malformed tracking cookies cannot reach hashing ───
 

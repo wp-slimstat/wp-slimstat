@@ -25,7 +25,7 @@ import { BASE_URL } from './helpers/env';
 
 /** Helper: get the external tracking snippet text from the settings page. */
 async function getSnippetText(page: import('@playwright/test').Page): Promise<string> {
-  await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=2`, {
+  await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=10`, {
     waitUntil: 'domcontentloaded',
   });
   // Wait for the snippet <pre> to be visible

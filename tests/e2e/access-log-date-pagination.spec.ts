@@ -83,10 +83,9 @@ test.describe('Access Log custom date range — #287', () => {
     const widget = page.locator('#slim_p7_02');
     await expect(widget).toBeVisible({ timeout: 30_000 });
 
-    // Wait for the seeded rows to actually appear in the widget rather than
-    // sleeping. The Access Log is server-rendered for slim_p7_02 (skipped
-    // by the async-load loop because of .refresh-timer), so this is a
-    // condition-based wait on the rendered DOM, not on a fixed timeout.
+    // Historical ranges have no live refresh timer and can load only when
+    // scrolled into view. Notices above the report must not stall this journey.
+    await widget.scrollIntoViewIfNeeded();
     await expect(widget).toContainText(SEED_RESOURCE_PREFIX, { timeout: 15_000 });
 
     cap.reset();
@@ -122,6 +121,7 @@ test.describe('Access Log custom date range — #287', () => {
 
     const widget = page.locator('#slim_p7_02');
     await expect(widget).toBeVisible({ timeout: 30_000 });
+    await widget.scrollIntoViewIfNeeded();
     // Condition-based wait: the seeded rows must be present before we
     // hunt for the pagination link.
     await expect(widget).toContainText(SEED_RESOURCE_PREFIX, { timeout: 15_000 });

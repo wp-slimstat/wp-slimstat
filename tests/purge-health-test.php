@@ -7,6 +7,7 @@ define('HOUR_IN_SECONDS', 3600);
 if (!defined('ARRAY_A')) { define('ARRAY_A', 'ARRAY_A'); }
 function get_option($key, $default = false) { return $GLOBALS['options'][$key] ?? $default; }
 function update_option($key, $value, $autoload = null) { $GLOBALS['options'][$key] = $value; }
+function do_action($hook, ...$args) {}
 function apply_filters($hook, $value) { return $value; }
 function wp_next_scheduled($hook) { return $GLOBALS['purge_followup'] ?? false; }
 function wp_schedule_single_event($when, $hook) { $GLOBALS['purge_followup'] = $when; ++$GLOBALS['purge_scheduled']; }
@@ -61,7 +62,7 @@ class_alias(PurgeHealthBatch::class, 'SlimStat\\Utils\\PurgeArchive');
 
 $source = file_get_contents(dirname(__DIR__) . '/wp-slimstat.php');
 $methods = '';
-foreach (['wp_slimstat_purge', 'purge_is_stale', 'bump_data_version'] as $method) {
+foreach (['purge_expired_archives', 'wp_slimstat_purge', 'purge_is_stale', 'bump_data_version'] as $method) {
     $methods .= 'public static function ' . $method . '(){' . str_replace('microtime(true)', '$GLOBALS["purge_clock"]', slimstat_function_body($source, $method)) . '}';
 }
 eval('class wp_slimstat {

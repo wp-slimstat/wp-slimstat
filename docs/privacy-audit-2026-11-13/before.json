@@ -1,0 +1,62 @@
+{
+    "fresh_defaults": {
+        "auto_purge_delete": "on",
+        "gdpr_enabled": "off",
+        "anonymize_ip": "off",
+        "hash_ip": "off",
+        "set_tracker_cookie": "on",
+        "do_not_track": "off"
+    },
+    "consent": {
+        "missing": {
+            "off": {
+                "track": true,
+                "pii": true,
+                "forged_upgrade": true
+            },
+            "on": {
+                "track": true,
+                "pii": false,
+                "forged_upgrade": true
+            }
+        },
+        "banner": {
+            "off": {
+                "track": false,
+                "pii": false,
+                "forged_upgrade": false
+            },
+            "on": {
+                "track": true,
+                "pii": false,
+                "forged_upgrade": true
+            }
+        },
+        "rcb": {
+            "off": {
+                "track": true,
+                "pii": false,
+                "forged_upgrade": true
+            },
+            "on": {
+                "track": true,
+                "pii": false,
+                "forged_upgrade": true
+            }
+        }
+    },
+    "forged_ip": "198.51.100.123",
+    "export_names": [
+        "Visit Date",
+        "Page Visited",
+        "Username",
+        "Email",
+        "Visit ID"
+    ],
+    "pro_unconsented_note": "private note[loggedin:privacy-audit]",
+    "privacy_shortcode": false,
+    "banner_implied_consent": true,
+    "fresh_report_masking": "unavailable",
+    "gpc_blocks_tracking": false,
+    "stored_database_diagnostic": "Duplicate entry 'fixture@example.test' for key 'email'"
+}

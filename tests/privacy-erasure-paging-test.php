@@ -4,6 +4,7 @@ define('ABSPATH', '/');
 define('ARRAY_A', 'ARRAY_A');
 class EraserCommerce { public static function ready() { return false; } }
 class_alias(EraserCommerce::class, 'SlimStat\\Ecommerce\\Integration');
+class_alias(EraserCommerce::class, 'SlimStat\\Heatmap\\Store');
 function __($text, $domain = '') { return $text; }
 function apply_filters($hook, $value) { return $value; }
 class wp_slimstat {
