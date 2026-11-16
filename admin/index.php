@@ -2836,6 +2836,7 @@ class wp_slimstat_admin
             };
             $rows = [
                 ['admin-links', __('Channels and UTM Campaigns', 'wp-slimstat'), __('Side by side, in one report.', 'wp-slimstat'), 'slimview5', __('Open Traffic Sources', 'wp-slimstat')],
+                ['location-alt', __('Audience Location', 'wp-slimstat'), __('Pageviews by country and city on a world map.', 'wp-slimstat'), 'slimview1#slim_p6_01', __('Open the map', 'wp-slimstat')],
             ];
             if ($commerce) {
                 $rows[] = ['cart', __('Ecommerce', 'wp-slimstat'), __('Net sales, orders and top products.', 'wp-slimstat'), 'slimview7', __('Open Ecommerce', 'wp-slimstat')];
@@ -2860,7 +2861,7 @@ class wp_slimstat_admin
             return;
         }
 
-        $links = ['slimview5' => __('Channels / UTM Campaigns', 'wp-slimstat')];
+        $links = ['slimview5' => __('Channels / UTM Campaigns', 'wp-slimstat'), 'slimview1#slim_p6_01' => __('Audience Location', 'wp-slimstat')];
         if ($commerce) {
             $links['slimview7'] = $is_pro ? __('Open Ecommerce', 'wp-slimstat') : __('Ecommerce: Net sales in Free', 'wp-slimstat');
         }

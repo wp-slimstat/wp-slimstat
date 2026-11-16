@@ -42,11 +42,11 @@ class ReleaseNoticeTest extends IntegrationTestCase
     public function test_core_card_and_report_bar_are_accessible_and_attributed(): void
     {
         $html = $this->render();
-        foreach (['SlimStat 6 is here.', 'page=slimai', 'Turn any report into plain-language findings.', 'slimview5', 'slimview7', 'slimheatmap', 'slimshortcodes', 'slimstat_migration', 'aria-label="Dismiss SlimStat 6 announcement"', 'data-dismiss-nonce="n0nce"', 'role="status"'] as $value) { $this->assertStringContainsString($value, $html); }
+        foreach (['SlimStat 6 is here.', 'page=slimai', 'Turn any report into plain-language findings.', 'slimview5', 'page=slimview1#slim_p6_01', 'Audience Location', 'slimview7', 'slimheatmap', 'slimshortcodes', 'slimstat_migration', 'aria-label="Dismiss SlimStat 6 announcement"', 'data-dismiss-nonce="n0nce"', 'role="status"'] as $value) { $this->assertStringContainsString($value, $html); }
         // Core screens: a div.notice that common.js moves below the title, clear of Screen Options.
         $this->assertSame(1, substr_count($html, '<div id="slimstat-notice-latest-news" class="notice notice-info slimstat-release-notice" role="region"'));
         $this->assertStringNotContainsString('<aside', $html);
-        $this->assertSame(6, substr_count($html, '<a '));
+        $this->assertSame(7, substr_count($html, '<a '));
         $this->assertLessThan(strpos($html, 'slimview5'), strpos($html, 'page=slimai'), 'AI Analysis leads the feature rows');
         $this->assertStringContainsString('class="slimstat-ai-spotlight"', $html);
         $this->assertStringContainsString('Free copies a ready-made prompt for ChatGPT, Claude or Gemini; Pro runs the analysis inside WordPress.', $html);
@@ -58,8 +58,8 @@ class ReleaseNoticeTest extends IntegrationTestCase
         $bar = $this->render(false, false, true, 'bar');
         $this->assertSame(1, substr_count($bar, '<aside id="slimstat-notice-latest-news" class="slimstat-release-bar"'));
         $this->assertStringEndsWith('</aside>', $bar);
-        foreach (['New in SlimStat 6', 'page=slimai', 'AI Analysis: prompts in Free, analysis in Pro', 'page=slimpro', 'utm_campaign=banner', 'utm_content=header-strip', 'aria-label="Dismiss SlimStat 6 announcement"'] as $value) { $this->assertStringContainsString($value, $bar); }
-        $this->assertSame(6, substr_count($bar, '<a '));
+        foreach (['New in SlimStat 6', 'page=slimai', 'AI Analysis: prompts in Free, analysis in Pro', 'page=slimview1#slim_p6_01', '>Audience Location</a>', 'page=slimpro', 'utm_campaign=banner', 'utm_content=header-strip', 'aria-label="Dismiss SlimStat 6 announcement"'] as $value) { $this->assertStringContainsString($value, $bar); }
+        $this->assertSame(7, substr_count($bar, '<a '));
         $this->assertSame(1, substr_count($bar, 'class="slimstat-release-bar__ai"'));
         $this->assertLessThan(strpos($bar, 'slimview5'), strpos($bar, 'slimstat-release-bar__ai'), 'the AI pill leads the bar');
         $this->assertContains('slimstat-promotions', $this->scripts);
