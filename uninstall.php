@@ -558,6 +558,16 @@ function slimstat_uninstall($_wpdb = '')
     delete_option('slimstat_notification_dismissed');
     delete_option('slimstat_purge_optimized_at');
     delete_option('slimstat_pro_license_verdict'); // \SlimStat\Services\ProLicense::OPTION
+    delete_option('widget_slimstat_widget'); // core's store for the SlimStat widget's instances
+    // SlimStat\Tracker\Acquisition::readinessKey(): one marker per analytics database, named by
+    // an md5 this file cannot recompute with the plugin unloaded, so it is found by prefix.
+    $slimstat_markers = $GLOBALS['wpdb']->get_col($GLOBALS['wpdb']->prepare(
+        "SELECT option_name FROM {$GLOBALS['wpdb']->options} WHERE option_name LIKE %s",
+        $GLOBALS['wpdb']->esc_like('slimstat_acquisition_') . '%'
+    ));
+    foreach ((array) $slimstat_markers as $slimstat_marker) {
+        delete_option($slimstat_marker);
+    }
 // Migration runner state. Every option this plugin creates has to be removable — and the
 // run claim especially, since a stranded one is the single thing a user cannot clear from
 // the UI, making reinstall the only remedy that must actually work.

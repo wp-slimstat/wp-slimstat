@@ -190,7 +190,16 @@ if ($case !== false && $case !== '') {
         // Both blogs, as a real network returns. Blog 2 is the one that matters: the strip
         // at the top of uninstall.php already covers whichever blog is current, so only a blog
         // it never stood on can tell the loop's per-blog call from a no-op.
-        public function get_col($sql) { return [1, 2]; }
+        public function get_col($sql)
+        {
+            // The acquisition-marker lookup gets option names; anything else is the blog list.
+            // Matched on the ESCAPED prefix, so an unescaped LIKE finds no marker and reds the
+            // opt-in assertion below.
+            if (false !== strpos($sql, "'slimstat\\_acquisition\\_%'")) {
+                return ['slimstat_acquisition_0123456789abcdef0123456789abcdef'];
+            }
+            return [1, 2];
+        }
         public function esc_like($text)
         {
             // FAITHFUL, not an identity stub. With `return $text;` no gate could tell whether
@@ -860,12 +869,21 @@ foreach ([
     'slimstat_ai_since',
     'slimstat_shortcodes_since',
     'slimstat_release_notice_since',
+    // Core's storage for the SlimStat widget's instances (WP_Widget id_base 'slimstat_widget').
+    'widget_slimstat_widget',
 ] as $literal_option) {
     assert_true(
         in_array($literal_option, $on['deleted'], true),
         "opting in deletes '{$literal_option}' (minted from a bare literal, so no scan finds it)"
     );
 }
+
+// Named by an md5 of the analytics database (SlimStat\Tracker\Acquisition::readinessKey()), so
+// neither the constant scan nor a literal can name it. A real 6.1.2 opt-in uninstall left it behind.
+assert_true(
+    in_array('slimstat_acquisition_0123456789abcdef0123456789abcdef', $on['deleted'], true),
+    'opting in deletes the per-database acquisition readiness marker, found by an escaped prefix lookup'
+);
 
 fwrite(STDOUT, "OK: {$assertions} assertions passed (analytics deleted only on explicit opt-in; cron + browscap cache always cleaned, GeoIP DB preserved)\n");
 exit(0);
