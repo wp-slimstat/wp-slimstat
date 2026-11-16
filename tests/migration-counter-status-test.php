@@ -18,7 +18,7 @@ namespace SlimStat\Tracker {
 }
 namespace {
     define('ABSPATH', __DIR__);
-    define('SLIMSTAT_ANALYTICS_VERSION', '6.1.0');
+    define('SLIMSTAT_ANALYTICS_VERSION', '6.1.2');
     class wp_slimstat {
         public static $settings = ['version' => '6.0.0'], $stored = ['version' => '6.0.0'];
         public static function pro_is_installed() { return false; }

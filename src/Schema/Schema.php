@@ -137,7 +137,7 @@ final class Schema
                 'idx_ecommerce_retention' => 'dt',
             ],
         ],
-        // Heatmap capture (6.1.0). Created only when heatmap tracking is enabled; rows are
+        // Heatmap capture (6.1.2). Created only when heatmap tracking is enabled; rows are
         // purged and erased with their pageview, never archived. One row per click (kind 0)
         // plus one scroll row (kind 1) per captured pageview; (id, kind, seq) collapses retries.
         'slim_heatmap' => [

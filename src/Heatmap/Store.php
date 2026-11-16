@@ -16,7 +16,7 @@ use SlimStat\Utils\OptionClaim;
  * active, so Free-only sites never get them. Rows follow their pageview: FK cascade,
  * the retention purge and the personal-data eraser. They are never archived.
  *
- * @since 6.1.0
+ * @since 6.1.2
  */
 final class Store
 {

@@ -6,10 +6,10 @@ rationale: Extends the current release notice beyond 300 bytes while preserving 
 ---
 --- a/readme.txt
 +++ b/readme.txt
-@@ -165,7 +165,7 @@
+@@ -167,7 +167,7 @@
  == Upgrade Notice ==
  
- = 6.1.0 =
+ = 6.1.2 =
 -Older versions keep working, added columns stay, and it removes no rows. Adds Copy Prompt, AI Analysis (Pro), city drilldown and video tutorials. Fixes privacy exports, tracking, filters, geolocation and RTL layouts. Back up first; repairs wait for your click.
 +Older versions keep working, added columns stay, and it removes no rows. Adds Copy Prompt, AI Analysis (Pro), city drilldown and video tutorials. Fixes privacy exports, tracking, filters, geolocation and RTL layouts. Back up first; repairs wait for your click. Read the full release notes and review every migration step before you begin this update. Keep a separate backup for recovery.
  

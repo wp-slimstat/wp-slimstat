@@ -230,7 +230,7 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         //
         // The old path also made a separate information_schema lookup for the collation that was
         // always discarded; that is still gone. If this number rises again, ask those same two
-        // questions before changing it. 12 to 15 for heatmaps (6.1.0): only on sites that enabled
+        // questions before changing it. 12 to 15 for heatmaps (6.1.2): only on sites that enabled
         // heatmap tracking, on the same two non-per-request paths; ordinary sites keep 10 (below).
         $this->assertCount(
             16,

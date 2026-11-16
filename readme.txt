@@ -6,7 +6,7 @@ Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
 Tested up to: 7.1
-Stable tag: 6.1.0
+Stable tag: 6.1.2
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,7 +77,9 @@ Love the free plugin? [SlimStat Pro](https://wp-slimstat.com/) is for sites that
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
 
 == Please note ==
-* **Optional database downloads:** If an administrator enables or updates browser detection or DB-IP geolocation, SlimStat downloads the Browscap database from GitHub and the DB-IP Lite database from jsDelivr. No analytics data is sent with these requests.
+* **Optional database downloads:** If an administrator enables or updates browser detection or DB-IP geolocation, SlimStat downloads the Browscap database from GitHub and the DB-IP Lite database from jsDelivr. If an administrator chooses MaxMind GeoLite2 instead and enters a MaxMind license key, SlimStat downloads that database from MaxMind (https://download.maxmind.com) with the key. No analytics data is sent with these requests.
+* **Notifications and offers:** While **SlimStat notifications** is on (Settings → General; on by default), your server asks https://connect.wp-slimstat.com, our service, about once an hour for release notes, feature news and offers to show administrators inside SlimStat. The request names only the plugin: no analytics data, settings or site address. Like any web request, it shows our service your server's IP address. Turn the setting off and nothing is requested. See the [wp-slimstat.com privacy policy](https://wp-slimstat.com/privacy-policy/).
+* **Optional Moz rankings:** Only if an administrator enters Mozscape API keys (Settings → Reports), the Rankings report asks Moz (https://lsapi.seomoz.com) for your home page's link metrics, sending your site's address and the access ID. See the [Moz privacy policy](https://moz.com/privacy-policy).
 * **Optional video tutorials:** SlimStat → Videos lists tutorials published on wp-slimstat.com, our website. Nothing is requested until you choose **Show videos**, or turn on the new-video marker, on that screen. Your browser then downloads the list (https://wp-slimstat.com/videos/videos.json) and its thumbnails directly from wp-slimstat.com, with no referrer and no analytics or account data, and the list request without cookies; your WordPress server sends nothing. Like any web request, this shows wp-slimstat.com your IP address and browser, and the list request also names this site's address (the browser's standard Origin header). Show videos also turns the marker on, and it can be turned off on the same screen. With the marker on, your browser checks the list at most once a day. Your choices are kept in your browser only, and videos play on wp-slimstat.com in a new tab. See the [wp-slimstat.com privacy policy](https://wp-slimstat.com/privacy-policy/).
 * **SlimStat Pro license check:** Only when SlimStat Pro is active and a license key is saved, SlimStat asks the license server (https://my.wp-slimstat.com) through SlimStat Pro whether the license is valid for this site: about every 12 hours, and at once when an administrator saves License settings. It sends the license key and this site's domain, never analytics data. Without SlimStat Pro, nothing is sent. See the [wp-slimstat.com privacy policy](https://wp-slimstat.com/privacy-policy/).
 * **Your stats survive uninstalling.** Deleting Slimstat Analytics keeps every visit, setting and table in your database, so reinstalling picks up exactly where you left off.
@@ -164,7 +166,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Upgrade Notice ==
 
-= 6.1.0 =
+= 6.1.2 =
 Older versions keep working, added columns stay, and it removes no rows. Adds Copy Prompt, AI Analysis (Pro), city drilldown and video tutorials. Fixes privacy exports, tracking, filters, geolocation and RTL layouts. Back up first; repairs wait for your click.
 
 = 6.0.0 =
@@ -173,7 +175,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 == Changelog ==
 
-= 6.1.0 - 2026-11-16 =
+= 6.1.2 - 2026-11-16 =
 
 **New**
 

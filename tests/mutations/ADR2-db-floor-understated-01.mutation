@@ -6,7 +6,7 @@ rationale: Put the 5.0.3 claim back. It is impossible on its face - the schema c
 ---
 --- a/readme.txt
 +++ b/readme.txt
-@@ -52,7 +52,7 @@
+@@ -65,7 +65,7 @@
  = Requirements =
  * WordPress 5.6+
  * PHP 7.4+

@@ -44,7 +44,7 @@ $audiences = [
     11 => ['has-addon'],
 ];
 foreach ($audiences as $id => $tags) {
-    $feed['data'][] = ['id' => $id, 'title' => 'Audience ' . $id, 'tags' => array_merge(['is-admin', 'is-version-6.1.0'], $tags)];
+    $feed['data'][] = ['id' => $id, 'title' => 'Audience ' . $id, 'tags' => array_merge(['is-admin', 'is-version-6.1.2'], $tags)];
 }
 $expectAudience = static function (array $expected, string $label) use ($same, &$feed) {
     $same($expected, array_column(NotificationProcessor::filterNotificationsByTags($feed['data']), 'id'), $label . ' filtered IDs');

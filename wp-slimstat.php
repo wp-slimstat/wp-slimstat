@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 6.1.0
+ * Version: 6.1.2
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -57,7 +57,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php') || !file_exists(__DIR__ . '/v
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '6.1.0');
+define('SLIMSTAT_ANALYTICS_VERSION', '6.1.2');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -1304,7 +1304,7 @@ class wp_slimstat
             'auto_purge_delete' => 'on',
             'auto_purge_optimize' => 'no',
 
-            // Heatmaps (6.1.0): off | main | full; rate in 1/10,000 of pageviews; pages is a
+            // Heatmaps (6.1.2): off | main | full; rate in 1/10,000 of pageviews; pages is a
             // wildcard list like the permalink exclusions, empty for all pages.
             'heatmap_capture' => 'off',
             'heatmap_rate'    => 10000,

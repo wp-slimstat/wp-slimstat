@@ -1,14 +1,14 @@
 target:    readme.txt
 gate:      composer test:db-floor-metadata
 kind:      restore-defect
-expect:    has no `= 6.1.0 =` entry under `== Upgrade Notice ==`
+expect:    has no `= 6.1.2 =` entry under `== Upgrade Notice ==`
 rationale: Deletes the current Upgrade Notice entry and leaves a dateless changelog heading; only section-scoped extraction rejects it.
 ---
 --- a/readme.txt
 +++ b/readme.txt
-@@ -166,5 +166,2 @@
+@@ -168,5 +168,2 @@
  
--= 6.1.0 =
+-= 6.1.2 =
 -Older versions keep working, added columns stay, and it removes no rows. Adds Copy Prompt, AI Analysis (Pro), city drilldown and video tutorials. Fixes privacy exports, tracking, filters, geolocation and RTL layouts. Back up first; repairs wait for your click.
 -
  = 6.0.0 =

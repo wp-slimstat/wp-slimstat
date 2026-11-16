@@ -23,11 +23,11 @@ class ConditionTagEvaluator
 		'is-license-active' => '5.4.0',
 		'is-license-inactive' => '5.4.0',
 		'no-license' => '5.4.0',
-		'is-license-invalid' => '6.1.0',
-		'is-free' => '6.1.0',
-		'has-addon' => '6.1.0',
-		'has-addon-wp-slimstat-pro' => '6.1.0',
-		'no-addon-wp-slimstat-pro' => '6.1.0',
+		'is-license-invalid' => '6.1.2',
+		'is-free' => '6.1.2',
+		'has-addon' => '6.1.2',
+		'has-addon-wp-slimstat-pro' => '6.1.2',
+		'no-addon-wp-slimstat-pro' => '6.1.2',
 	];
 
 	/**

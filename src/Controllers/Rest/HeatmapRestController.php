@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
  * GET /slimstat/v1/heatmap/pages: the Heatmaps page list, for anyone who may view reports.
  * GET /slimstat/v1/heatmap/targets: one page's most clicked links and buttons.
  *
- * @since 6.1.0
+ * @since 6.1.2
  */
 class HeatmapRestController implements RestControllerInterface
 {

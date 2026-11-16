@@ -11,7 +11,7 @@ use SlimStat\Schema\SurrogateKey;
  * read in place. Pages match exactly (D4), devices by numeric viewport width (D2),
  * and the "0,0" no-coordinates default is never painted (D3).
  *
- * @since 6.1.0
+ * @since 6.1.2
  */
 final class Query
 {
