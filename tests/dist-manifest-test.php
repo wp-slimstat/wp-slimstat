@@ -126,6 +126,11 @@ $publish  = strpos($deploy, '10up/action-wordpress-plugin-deploy@');
 if (false === $generate || false === $publish || $generate > $publish) {
     $failures[] = 'the wordpress.org workflow must generate the production autoloader before deploy';
 }
+// The default 600 s SVN timeout discarded the 6.1.2 commit twice (PITFALLS 347).
+$timeout = strpos($deploy, 'http-timeout = 3600');
+if (false === $timeout || false === $publish || $timeout > $publish) {
+    $failures[] = 'the wordpress.org workflow must raise the SVN http-timeout before deploy';
+}
 $standard = strpos($ci, 'standard:');
 $ci_generate = false === $standard ? false : strpos($ci, 'composer run build:autoload', $standard);
 $wp_env = false === $standard ? false : strpos($ci, 'npx wp-env start', $standard);
