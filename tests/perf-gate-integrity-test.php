@@ -304,7 +304,8 @@ $workspace_redirects = static function (string $code): array {
             }
             // $RUNNER_TEMP is outside the checkout. The GitHub file commands are runner-owned
             // paths, not workspace paths, and appending to them is how a step exports a value.
-            if (false !== strpos($target, 'RUNNER_TEMP')
+            // ~/ is the runner's home; the checkout is $HOME/work/<repo>/<repo>, below it.
+            if (false !== strpos($target, 'RUNNER_TEMP') || 0 === strpos($target, '~/')
                 || preg_match('/GITHUB_(ENV|OUTPUT|PATH|STEP_SUMMARY)/', $target)) {
                 continue;
             }
@@ -320,6 +321,8 @@ foreach ([
     ['--paginate --slurp > ./expected.txt', true],
     ['> "$GITHUB_WORKSPACE/out.txt"',       true],
     ['> "${RUNNER_TEMP:?}/jobs.json"',      false],
+    ['> ~/.subversion/servers',             false],
+    ['> ./~/servers',                       true],
     ['>> "$GITHUB_ENV"',                    false],
     ['2>&1',                                false],
     ['> /dev/null',                         false],

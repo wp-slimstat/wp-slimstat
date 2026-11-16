@@ -119,6 +119,15 @@ jobs:
     - name: Generate production autoloader
       run: composer run build:autoload
 
+    # wordpress.org takes longer than the SVN client's default 600 s to commit a large
+    # release (6.1.2: ~1,660 changes, applied to trunk and again to the tag copy). The
+    # client hung up at exactly 600 s twice and the server discarded the commit. Written
+    # to ~/.subversion, outside the checkout the deploy packages. PITFALLS 347.
+    - name: Allow a long SVN commit
+      run: |
+        mkdir -p ~/.subversion
+        printf '[global]\nhttp-timeout = 3600\n' > ~/.subversion/servers
+
     - name: WordPress Plugin Deploy
       # 54bd289 is the commit the `stable` BRANCH pointed at when this was pinned, and it is
       # the same commit as tag 2.3.0 — so this froze the action without changing what runs.
