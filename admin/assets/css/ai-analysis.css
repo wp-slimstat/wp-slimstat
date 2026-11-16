@@ -36,7 +36,8 @@
 .ss-ai-toast-offer p { margin-bottom: 0; }
 /* Explore Pro AI, then Close beside it; they wrap only when a translation leaves no room. */
 .ss-ai-toast-actions { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin-top: 16px; }
-.ss-ai-toast-actions .button { max-width: 100%; height: auto; margin: 0; padding-block: 5px; line-height: 1.4; white-space: normal; overflow-wrap: anywhere; }
+/* Flex centers the link's label like the button's; a stretched or min-height <a> otherwise keeps it at the top. */
+.ss-ai-toast-actions .button { display: inline-flex; align-items: center; justify-content: center; text-align: center; max-width: 100%; height: auto; margin: 0; padding-block: 5px; line-height: 1.4; white-space: normal; overflow-wrap: anywhere; }
 @keyframes ss-ai-pulse { to { opacity: .4; } }
 @keyframes ss-ai-enter { from { opacity: 0; transform: translateY(8px); } }
 @media (prefers-reduced-motion: reduce) { .ss-ai-toast, .ss-ai-skeleton { animation: none; } }

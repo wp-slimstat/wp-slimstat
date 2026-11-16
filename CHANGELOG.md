@@ -6,6 +6,7 @@
 * Report scrolling continues onto the page at either boundary. Persian and English layouts now keep arrows, dates, live metrics, notices and report controls aligned on desktop and mobile. Ecommerce chart dates follow the current admin language.
 * Scheduled sale notifications and header offers now follow their UTC start and end times, with a coupon copy action and an expiry countdown. Open or restored admin pages remove expired offers and block expired purchase links.
 * The header groups license and upgrade controls beside the logo, keeps offers next to notifications, and adapts to narrow screens and right-to-left languages.
+* In the AI Prompt Copied message, the Explore Pro AI label is centered in its button, level with Close, on narrow screens too.
 
 = 6.1.0 - 2026-11-08 =
 

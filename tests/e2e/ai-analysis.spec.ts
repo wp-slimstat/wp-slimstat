@@ -69,14 +69,21 @@ for (const native of [false, true]) {
           document.documentElement.dir = d;
           const [a, b] = Array.from(node.querySelectorAll('.ss-ai-toast-actions > *')).map(n => n.getBoundingClientRect());
           const box = node.getBoundingClientRect();
+          // A stretched <a> keeps its label at the top while a <button> centers its own.
+          const centered = Array.from(node.querySelectorAll('.ss-ai-toast-actions > *')).every(n => {
+            const range = document.createRange(); range.selectNodeContents(n);
+            const t = range.getBoundingClientRect(); const r = n.getBoundingClientRect();
+            return Math.abs((t.top + t.bottom) - (r.top + r.bottom)) / 2 < 1;
+          });
           return {
             order: Array.from(node.querySelectorAll('.ss-ai-toast-actions > *'), n => n.textContent),
+            centered,
             sameRow: Math.abs(a.top - b.top) < 1 && Math.abs(a.height - b.height) < 1,
             closeAfter: d === 'rtl' ? b.right <= a.left - 4 : b.left >= a.right + 4,
             inside: box.left >= 0 && box.right <= window.innerWidth && node.scrollWidth <= node.clientWidth,
           };
         }, dir);
-        expect(row, `${variant} ${width} ${dir}`).toEqual({ order: ['Explore Pro AI →', 'Close'], sameRow: true, closeAfter: true, inside: true });
+        expect(row, `${variant} ${width} ${dir}`).toEqual({ order: ['Explore Pro AI →', 'Close'], centered: true, sameRow: true, closeAfter: true, inside: true });
       }
       await page.evaluate(() => { document.documentElement.dir = 'ltr'; });
       await page.setViewportSize({ width: 1440, height: 900 });
