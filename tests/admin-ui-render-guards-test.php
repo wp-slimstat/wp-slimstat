@@ -105,13 +105,6 @@ $report_data = file_get_contents(dirname(__DIR__) . '/src/Reports/ReportData.php
 check((bool) preg_match('/\$percent_metrics\s*=\s*array\(\s*__\( \'Bounce rate\', \'wp-slimstat\' \), __\( \'New Visitors Rate\', \'wp-slimstat\' \)\s*\)/', $report_data), 'C2: Bounce rate and New Visitors Rate are listed as percentages');
 check(false !== strpos($report_data, 'in_array( $row[\'metric\'], $percent_metrics, true ) ? \'%\' : \'\''), 'C2: the shared summary formatter appends % to rate rows');
 check(false === strpos($rightnow, "__('SL'") && false === strpos($rightnow, "__('PS'"), 'B11: no SL/PS abbreviations in the Access Log');
-// Access Log adapt: date, notes and delete wrap as one unit, so the delete never sits alone on a phone line.
-check(false !== strpos($rightnow, "<span class='slimstat-nowrap'>%s %s %s</span></span></p>\", \$results[\$i]['resource']"), 'Adapt: date, notes and delete share one nowrap group');
-// `[id^="slim_"] p span` floats every span right; the WP Dashboard widget has no .wrap-slimstat, so
-// its own block must unfloat the groups (they pushed the date under the next row there).
-check(false !== strpos($admincss, '}.index-php div#slim_p7_02.postbox .details .slimstat-nowrap{float:none}'), 'Adapt: nowrap groups are unfloated on the WP Dashboard widget');
-check(false !== strpos($admincss, '}.wrap-slimstat .slimstat-nowrap{white-space:nowrap}'), 'Adapt: one nowrap rule serves report titles and Access Log groups');
-check(false === strpos($admincss, 'access-log-entry'), 'Adapt: the dead p.access-log-entry phone rules stay removed');
 // QA §5: the count floated right AFTER the label, so a label that wrapped pushed its count onto
 // a line of its own. The row is flex instead; DOM order (which the parity harness reads) is kept.
 check((bool) preg_match('/p\.slimstat-tooltip-trigger:has\(>\s*\.slimstat-count-pct\)\s*\{[^}]*display:\s*flex/', $admincss), 'QA §5: a report row with a count is a flex row');

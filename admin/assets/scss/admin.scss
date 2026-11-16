@@ -1329,9 +1329,6 @@ body.slimstat-admin-page.rtl .ui-datepicker-multi .ui-datepicker-group {
       .spaced {
         margin-left: 0px;
       }
-      .slimstat-nowrap {
-        float: none;
-      }
     }
   }
 }
@@ -1483,6 +1480,40 @@ body.slimstat-admin-page.rtl .ui-datepicker-multi .ui-datepicker-group {
     padding: 4px;
     border-radius: 3px;
   }
+
+  /* Access Log Entry specific styles */
+  [id^="slim_"] p.access-log-entry {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  [id^="slim_"] p.access-log-entry .details {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 4px;
+  }
+
+  /* Responsive improvements for access log entries */
+  [id^="slim_"] p.access-log-entry {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  [id^="slim_"] p.access-log-entry .details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  [id^="slim_"] p.access-log-entry .details > * {
+    margin-bottom: 2px;
+  }
 }
 /* Additional responsive improvements for very small screens */
 @media screen and (max-width: 600px) {
@@ -1523,7 +1554,16 @@ body.slimstat-admin-page.rtl .ui-datepicker-multi .ui-datepicker-group {
   [id^="slim_"] p.header .inline-icon {
     margin-bottom: 2px;
   }
+
+  /* Access Log Entry specific styles for very small screens */
+  [id^="slim_"] p.access-log-entry .details {
+    font-size: 0.8em;
+  }
 }
+
+/* URL truncation and tooltip improvements - moved to media queries */
+
+/* Access Log Entry specific styles - moved to media queries */
 
 /* Fontello - Custom Icon Fonts for SlimStat | Uses Fontelico (C) 2012 by Fontello project, Elusive (C) 2013 by Aristeides Stathopoulos, Font Awesome (C) 2012 by Dave Gandy | https://www.fontello.com */
 @font-face {
@@ -2984,6 +3024,10 @@ body.slimstat-admin-page {
         font-weight: bold;
         letter-spacing: -0.43px;
 
+        .slimstat-nowrap {
+          white-space: nowrap;
+        }
+
         .header-tooltip {
           margin: 0px 5px;
           display: inline-block;
@@ -3580,17 +3624,6 @@ body.slimstat-admin-page {
   > * { position: static !important; float: none !important; }
   .spaced { margin-inline: 8px 4px; }
   .slimstat-delete-entry { margin-inline-start: 8px; }
-}
-// Keeps a report title's last word with its tooltip, and an Access Log icon with its value.
-.wrap-slimstat .slimstat-nowrap { white-space: nowrap; }
-// Above the WP admin phone breakpoint the details line ends at the row edge, as before; no float needed.
-@media (min-width: 783px) {
-  .wrap-slimstat #slim_p7_02 p .details { text-align: right; }
-}
-// The generic report rules shrink these to 10px (details) and 9px (screen size) on phones.
-@media (max-width: 800px) {
-  .wrap-slimstat #slim_p7_02 p .details,
-  .wrap-slimstat #slim_p7_02 p .pageview-screenres { font-size: 12px; }
 }
 
 @media (max-width: 600px) {

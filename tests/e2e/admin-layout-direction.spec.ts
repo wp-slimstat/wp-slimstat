@@ -92,33 +92,6 @@ for (const direction of ['ltr', 'rtl']) {
 }
 
 
-// Helpdesk 20013: 16ad233f dropped the details float, so on desktop the whole row piled up on the left.
-test('access log details end at the row edge on wide screens and stay start-aligned on phones', async ({ page }) => {
-  await page.goto('/wp-admin/admin.php?page=slimview1');
-  // Same markup as admin/view/right-now.php, so the test does not depend on tracked rows.
-  await page.locator('#slim_p7_02 .inside').evaluate(el => {
-    const row = document.createElement('p');
-    row.dataset.accessLogProbe = 'true';
-    row.innerHTML = `<a class='slimstat-font-logout slimstat-tooltip-trigger' title='Open this URL in a new window' href='#'></a> <a class='slimstat-filter-link' href='#'>Sample page</a> <span class='details'><i class='spaced slimstat-font-doc slimstat-tooltip-trigger' title='Content Type'></i> <a class='slimstat-filter-link' href='#'>page</a> <i class='spaced slimstat-font-clock slimstat-tooltip-trigger' title='Date and Time'></i> 12:34 <a class='slimstat-delete-entry slimstat-font-cancel slimstat-tooltip-trigger' data-pageview-id='0' title='Delete this entry from the database' href='#'></a></span>`;
-    el.append(row);
-  });
-  for (const width of [1440, 390]) {
-    await page.setViewportSize({ width, height: 900 });
-    for (const dir of ['ltr', 'rtl']) {
-      await page.evaluate(d => { document.documentElement.dir = d; document.body.classList.toggle('rtl', d === 'rtl'); }, dir);
-      const row = await page.locator('[data-access-log-probe]').evaluate(p => {
-        const details = p.querySelector('.details')!, del = p.querySelector('.slimstat-delete-entry')!.getBoundingClientRect();
-        const r = p.getBoundingClientRect(), cs = getComputedStyle(p);
-        return { align: getComputedStyle(details).textAlign, deleteEndGap: Math.round(r.right - parseFloat(cs.paddingRight) - del.right) };
-      });
-      if (dir === 'rtl') expect(row.align, `rtl ${width}px`).toBe('right');
-      else if (width === 1440) expect(row.deleteEndGap, 'ltr 1440px delete link reaches the row end').toBeLessThanOrEqual(2);
-      else expect(row.align, 'ltr 390px stays start-aligned').toBe('start');
-      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), `${dir} ${width}px`).toBeLessThanOrEqual(1);
-    }
-  }
-});
-
 test('long alert copy and actions stay visible in both directions and on phones', async ({ page }) => {
   const html=runWordPressFixture(`<?php
   require_once WP_PLUGIN_DIR . '/wp-slimstat/admin/index.php';

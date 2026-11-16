@@ -284,14 +284,14 @@ for ($i = 0; $i < $count_page_results; $i++) {
     $performance = '';
     if (!$is_dashboard && (!empty($results[$i]['server_latency']) || !empty($results[$i]['page_performance']))) {
         /* translators: 1: server latency in milliseconds, 2: page load time in milliseconds */
-        $performance = "<span class='slimstat-nowrap'><i class='slimstat-font-gauge spaced slimstat-tooltip-trigger' title='" . esc_attr__('Server Latency and Page Speed in milliseconds', 'wp-slimstat') . "'></i> " . esc_html(sprintf(__('Server %1$s ms · Page %2$s ms', 'wp-slimstat'), (int) $results[$i]['server_latency'], (int) $results[$i]['page_performance'])) . '</span>';
+        $performance = "<i class='slimstat-font-gauge spaced slimstat-tooltip-trigger' title='" . esc_attr__('Server Latency and Page Speed in milliseconds', 'wp-slimstat') . "'></i> " . esc_html(sprintf(__('Server %1$s ms · Page %2$s ms', 'wp-slimstat'), (int) $results[$i]['server_latency'], (int) $results[$i]['page_performance']));
     }
 
     // Time on page
     $time_on_page = '';
     if (!$is_dashboard && !empty($results[$i]['dt_out'])) {
         $duration     = $results[$i]['dt_out'] - $results[$i]['dt'];
-        $time_on_page = "<span class='slimstat-nowrap'><i class='slimstat-font-stopwatch spaced slimstat-tooltip-trigger' title='" . __('Time spent on this page', 'wp-slimstat') . "'></i> " . gmdate(($duration > 3599 ? 'H:i:s' : 'i:s'), $duration) . '</span>';
+        $time_on_page = "<i class='slimstat-font-stopwatch spaced slimstat-tooltip-trigger' title='" . __('Time spent on this page', 'wp-slimstat') . "'></i> " . gmdate(($duration > 3599 ? 'H:i:s' : 'i:s'), $duration);
     }
 
     // Pageview Notes
@@ -312,7 +312,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
         $domain                      = wp_parse_url($results[$i]['referer'] ?: '');
         $domain                      = empty($domain['host']) ? __('Invalid Referrer', 'wp-slimstat') : $domain['host'];
         $results[$i]['referer']      = (!empty($results[$i]['referer']) && empty($results[$i]['searchterms'])) ? "<a class='spaced slimstat-font-login slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this referrer in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . sprintf("' href='%s'></a> %s", esc_url($results[$i]['referer']), esc_html($domain)) : '';
-        $results[$i]['content_type'] = empty($results[$i]['content_type']) ? '' : "<span class='slimstat-nowrap'><i class='spaced slimstat-font-doc slimstat-tooltip-trigger' title='" . __('Content Type', 'wp-slimstat') . "'></i> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('content_type equals ' . $results[$i]['content_type']) . sprintf("'><span dir='auto'>%s</span></a></span> ", esc_html($results[$i]['content_type']));
+        $results[$i]['content_type'] = empty($results[$i]['content_type']) ? '' : "<i class='spaced slimstat-font-doc slimstat-tooltip-trigger' title='" . __('Content Type', 'wp-slimstat') . "'></i> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('content_type equals ' . $results[$i]['content_type']) . sprintf("'><span dir='auto'>%s</span></a> ", esc_html($results[$i]['content_type']));
 
         // The Outbound Links field might contain more than one link
         if (!empty($results[$i]['outbound_resource'])) {
@@ -348,7 +348,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
         $results[$i]['referer'] = $results[$i]['outbound_resource'] = $results[$i]['content_type'] = '';
     }
 
-    $row_output = sprintf("<p>%s <span class='details'>%s %s %s %s %s %s %s <span class='slimstat-nowrap'>%s %s %s</span></span></p>", $results[$i]['resource'], $time_on_page, $login_logout, $results[$i]['searchterms'], $results[$i]['referer'], $results[$i]['outbound_resource'], $results[$i]['content_type'], $performance, $date_time, $notes, $delete_row);
+    $row_output = sprintf("<p>%s <span class='details'>%s %s %s %s %s %s %s %s %s %s</span></p>", $results[$i]['resource'], $time_on_page, $login_logout, $results[$i]['searchterms'], $results[$i]['referer'], $results[$i]['outbound_resource'], $results[$i]['content_type'], $performance, $date_time, $notes, $delete_row);
 
     // Strip all the filter links, if this information is shown on the frontend
     if (!is_admin()) {
