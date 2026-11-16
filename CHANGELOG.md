@@ -7,6 +7,7 @@
 * Scheduled sale notifications and header offers now follow their UTC start and end times, with a coupon copy action and an expiry countdown. Open or restored admin pages remove expired offers and block expired purchase links.
 * The header groups license and upgrade controls beside the logo, keeps offers next to notifications, and adapts to narrow screens and right-to-left languages.
 * In the AI Prompt Copied message, the Explore Pro AI label is centered in its button, level with Close, on narrow screens too.
+* Styles for the Pro saved-analyses empty state: the AI spark in its tile and a picture of the AI Analysis button.
 
 = 6.1.0 - 2026-11-08 =
 

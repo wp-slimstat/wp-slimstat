@@ -80,8 +80,15 @@
 .ss-ai-explainer { margin: 24px 0; color: var(--ss-text-muted); }
 .ss-ai-section-heading { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
 .ss-ai-section-heading p { margin-bottom: 0; }
-.ss-ai-empty { padding: 32px 24px; background: var(--ss-surface); border: 1px solid var(--ss-border); border-radius: 8px; }
-.ss-ai-empty > .dashicons { color: var(--ss-text-muted); font-size: 28px; width: 28px; height: 28px; }
+/* The ✨ in its AI tile beside copy that shows the real report button; the spark turns on hover like the Pro intro's. */
+.ss-ai-empty { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: start; padding: 32px 24px; background: var(--ss-surface); border: 1px solid var(--ss-border); border-radius: 8px; }
+.ss-ai-empty-mark { display: grid; place-items: center; width: 44px; height: 44px; background: oklch(97.5% .025 85); border: 1px solid oklch(87% .07 78); border-radius: 10px; }
+.ss-ai-empty:hover .slimstat-ai-spark { transform: rotate(15deg) scale(1.08); }
+.ss-ai-page-content .ss-ai-empty h3 { margin: 0 0 8px; }
+.ss-ai-empty-body > p { margin: 0 0 8px; }
+/* Looks like the AI Analysis button under a report title, framed so it reads as a picture of it. */
+.ss-ai-trigger-sample { display: inline-block; padding: 0 8px; border: 1px solid var(--ss-border); border-radius: var(--ss-radius-sm, 4px); color: var(--ss-info-fg); font-size: 12px; font-weight: 600; line-height: 22px; white-space: nowrap; }
+.ss-ai-empty-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 16px; }
 .ss-ai-search { display: grid; gap: 8px; max-width: 360px; margin-bottom: 20px; }
 .ss-ai-search label { font-weight: 600; }
 .ss-ai-search input { width: 100%; min-height: 40px; }
