@@ -1,24 +1,4 @@
-= 6.1.1 - 2026-11-12 =
-
-* The Black Friday fallback offer expires at December 1, 2026 23:59:59 UTC, matching the existing BFCM2026 coupon instead of closing 59 seconds early.
-* Website links include campaign and placement attribution, while preserving existing campaign parameters and coupon codes.
-* Notification audiences follow the verified Pro license, including network keys and outage grace. New version-gated tags distinguish plugin activation and invalid licenses, and unsupported tags no longer show targeted messages to everyone.
-* Report scrolling continues onto the page at either boundary. Persian and English layouts now keep arrows, dates, live metrics, notices and report controls aligned on desktop and mobile. Ecommerce chart dates follow the current admin language.
-* Scheduled sale notifications and header offers now follow their UTC start and end times, with a coupon copy action and an expiry countdown. Open or restored admin pages remove expired offers and block expired purchase links.
-* The header groups license and upgrade controls beside the logo, keeps offers next to notifications, and adapts to narrow screens and right-to-left languages.
-* In the AI Prompt Copied message, the Explore Pro AI label is centered in its button, level with Close, on narrow screens too.
-* Styles for the Pro saved-analyses empty state: the AI spark in its tile and a picture of the AI Analysis button.
-
-= 6.1.0 - 2026-11-08 =
-
-**Custom databases and upgrade notices**
-* Compatibility checks cover WordPress 7.1.4.
-* Recognize the original Custom DB 1.5 ZIP directory so its migration guidance appears after installation.
-* JavaScript tracking retries short external-database outages using the existing browser queue. Queued hits expire after 30 minutes; delivery still depends on the visitor returning and is not guaranteed. Server-side tracking has no outage queue.
-* Updates from the retired Custom DB addon keep recording visits in the same external database, including connections with no table prefix. Switching databases safely reseeds the visit counter above existing IDs.
-* Database warnings distinguish interrupted tracking from maintenance problems. Notices can be dismissed separately by each administrator; an ongoing tracking interruption returns after 24 hours.
-* Guidance explains how to move the retired Custom DB addon to Pro, and warns when disabling the database provider sends new visits to WordPress's database. Existing history is never moved.
-
+= 6.1.0 - 2026-11-16 =
 
 **SlimStat 6.1: turn any report into plain-language findings with AI, follow a country down to its cities, and learn SlimStat from video tutorials.** Your settings and data carry over, database repairs wait for your click, and older versions keep working if you ever go back.
 
@@ -37,7 +17,6 @@
 
 **Also new**
 * **Video tutorials:** SlimStat → Videos lists tutorials from wp-slimstat.com, fetched by your browser only when you choose to load them, with an optional menu marker for new videos.
-* **SlimStat Pro needs a valid license:** Pro features, in any Pro version, run only with a license that is valid and activated for this site. Otherwise one banner on SlimStat screens, the Dashboard and Plugins says why and links the fix; Pro settings and data are kept.
 
 **Faster**
 * The WordPress Dashboard loads quickly again on upgraded sites, and SlimStat widgets appear as soon as their data arrives. ([#361](https://github.com/wp-slimstat/wp-slimstat/issues/361), [#408](https://github.com/wp-slimstat/wp-slimstat/issues/408))
@@ -48,6 +27,7 @@
 
 **Dates and filters follow you**
 * Heatmaps keep the report's date range and apply shared filters to clicks and scroll data, and say which filters they cannot apply. AI Analysis, Email Reports, Shortcodes and Settings pass your dates and filters on to the next report.
+* The date picker keeps your chosen preset selected when two presets cover the same dates.
 
 **Numbers you can trust** (some change on purpose, to their true value)
 * Server tracking no longer counts trailing-slash duplicates twice. ([#396](https://github.com/wp-slimstat/wp-slimstat/issues/396))
@@ -65,6 +45,8 @@
 * First pageviews keep recording on older database schemas while the visitor-identity step waits in Migration.
 * The optional online repair covers more legacy column differences without changing recorded values. ([#360](https://github.com/wp-slimstat/wp-slimstat/issues/360))
 * Migrations wait at most five seconds for table locks and leave unsupported online changes pending instead of copying tables.
+* Sites still on the retired Custom DB addon keep recording visits in the same external database, including connections with no table prefix, and switching databases reseeds the visit counter above existing IDs.
+* SlimStat recognizes the original Custom DB 1.5 folder and explains how to move to SlimStat Pro. Turning off the database provider warns that new visits will go to WordPress's database; existing history is never moved.
 
 **Rock-solid reliability**
 * Trackers loaded in the page head capture clicks and form submissions once the page is ready. ([#120](https://github.com/wp-slimstat/wp-slimstat/issues/120))
@@ -73,6 +55,14 @@
 * The Dashboard Access Log widget no longer shows a Pro promotion. ([#388](https://github.com/wp-slimstat/wp-slimstat/issues/388))
 * Deprecated tracker and geolocation helpers are back for code that still calls them. ([#227](https://github.com/wp-slimstat/wp-slimstat/issues/227))
 * Offline tracking survives a failed reconnect and page reload, pagination no longer jumps back to page 1, and Real-time charts keep their history.
+* JavaScript tracking retries short external-database outages from the browser's queue. Queued hits expire after 30 minutes, and delivery depends on the visitor returning, so it is not guaranteed; server-side tracking has no outage queue.
+* Database warnings tell interrupted tracking apart from maintenance problems. Each administrator can dismiss them separately, and an ongoing tracking interruption returns after 24 hours.
+* Tested with WordPress up to 7.1.4. The WordPress.org Plugin Check now passes with the bundled libraries included; only the long-standing note about the plugin's own slug remains.
+
+**Layout and languages**
+* Persian and English layouts keep arrows, dates, live metrics, notices, report icons and report controls aligned on desktop and mobile, and the SlimStat header adapts to narrow screens and right-to-left languages.
+* Scrolling a report continues onto the page at its top or bottom, and Ecommerce chart dates follow the admin language.
+* Sale notices in the SlimStat header follow their start and end times and disappear once they expire. Links to wp-slimstat.com carry campaign attribution and keep existing campaign parameters and coupon codes.
 
 **Security and privacy**
 * Forged proxy headers are rejected: Cloudflare headers count only from Cloudflare's network, and other proxies must be trusted explicitly.
@@ -165,7 +155,6 @@
 * Real-time shows the visitors, pages and countries online and the minute chart as soon as the page opens. In the 6.0.0 beta they read 0 until the first refresh a minute later.
 
 **Security and privacy**
-* Report-access allowlists match complete usernames. Partial usernames no longer grant access.
 * Fixed a SQL injection that any logged-in user could reach on sites with the "Posts and Pages" report column turned on (off by default). Found in-house; no report of it in the wild.
 * Shortcodes show personal data, access logs and user reports only to people allowed to view analytics; visitors see nothing.
 * WooCommerce order-access keys are removed from newly stored page URLs and referrers.
