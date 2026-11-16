@@ -22,7 +22,7 @@ namespace {
 	}
 
 	if (!defined('SLIMSTAT_ANALYTICS_VERSION')) {
-		define('SLIMSTAT_ANALYTICS_VERSION', '6.1.1');
+		define('SLIMSTAT_ANALYTICS_VERSION', '6.1.0');
 	}
 
 	class wp_slimstat
@@ -181,7 +181,7 @@ namespace {
 
 	$modernTags = ['is-free', 'has-addon', 'has-addon-wp-slimstat-pro', 'no-addon-wp-slimstat-pro', 'is-license-invalid'];
 	foreach ($modernTags as $tag) {
-		foreach ([[], ['is-version-5.4.0'], ['is-version-6.1.0'], ['is-version-bad']] as $gate) {
+		foreach ([[], ['is-version-5.4.0'], ['is-version-6.0.0'], ['is-version-bad']] as $gate) {
 			assert_count_is(NotificationProcessor::filterNotificationsByTags([['id' => 20, 'tags' => array_merge([$tag], $gate)]]), 0, $tag . ' requires its introduction version');
 		}
 	}
@@ -191,7 +191,7 @@ namespace {
 	assert_count_is(NotificationProcessor::filterNotificationsByTags([['id' => 23, 'tags' => ['no-premium', 'is-premium']]]), 0, 'Tags combine with AND, not OR');
 	\wp_slimstat::$proInstalled = true;
 	\SlimStat\Services\ProLicense::$verdict = 'invalid';
-	assert_count_is(NotificationProcessor::filterNotificationsByTags([['id' => 24, 'tags' => ['has-addon-wp-slimstat-pro', 'is-license-invalid', 'is-version-6.1.1']]]), version_compare(SLIMSTAT_ANALYTICS_VERSION, '6.1.1', '>=') ? 1 : 0, 'New audiences require a current plugin as well as a valid version tag');
+	assert_count_is(NotificationProcessor::filterNotificationsByTags([['id' => 24, 'tags' => ['has-addon-wp-slimstat-pro', 'is-license-invalid', 'is-version-6.1.0']]]), version_compare(SLIMSTAT_ANALYTICS_VERSION, '6.1.0', '>=') ? 1 : 0, 'New audiences require a current plugin as well as a valid version tag');
 
 	// Bypass constructor to avoid Event::schedule and add_action side-effects
 	// that require WordPress globals not available in this isolated test.
