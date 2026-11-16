@@ -1,7 +1,5 @@
 = 6.1.2 - 2026-11-16 =
 
-6.1.2 is the first public release of SlimStat 6.1. Sites running the 6.1.0 or 6.1.1 test builds are offered it as a normal update.
-
 **SlimStat 6.1: turn any report into plain-language findings with AI, follow a country down to its cities, and learn SlimStat from video tutorials.** Your settings and data carry over, database repairs wait for your click, and older versions keep working if you ever go back.
 
 **New: Copy Prompt and AI Analysis**
