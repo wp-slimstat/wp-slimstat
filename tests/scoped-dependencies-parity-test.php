@@ -86,7 +86,7 @@ function slimstat_dependency_inventory($directory, $root)
 $root = dirname(__DIR__);
 $fixture = __DIR__ . '/fixtures/dependencies-fqcn-3055864f.txt';
 $packageRoot = $root . '/packages/veronalabs-browscap-php/src';
-list($declared, $files) = slimstat_dependency_inventory($root . '/src/Dependencies', $root);
+list($declared, $files) = slimstat_dependency_inventory($root . '/vendor-prefixed', $root);
 list($packageDeclared, $packageFiles) = slimstat_dependency_inventory($packageRoot, $packageRoot);
 
 if (in_array('--write-fixture', $argv, true)) {
@@ -125,7 +125,7 @@ foreach ($lines as $line) {
         $section = $match[1];
     } elseif (('namespaced' === $section || 'global' === $section) && '' !== $line) {
         $expected[$line] = true;
-    } elseif ('files' === $section && preg_match('/^([a-f0-9]{64})  src\/Dependencies\/(.+)$/', $line, $match)) {
+    } elseif ('files' === $section && preg_match('/^([a-f0-9]{64})  vendor-prefixed\/(.+)$/', $line, $match)) {
         $expectedFiles[$match[2]] = $match[1];
     }
 }
@@ -178,7 +178,7 @@ foreach (array_keys($actual) as $name) {
     }
 }
 
-$mapFile = $root . '/src/Dependencies/autoload-classmap.php';
+$mapFile = $root . '/vendor-prefixed/autoload-classmap.php';
 defined('ABSPATH') || define('ABSPATH', $root . '/');
 $map = is_file($mapFile) ? require $mapFile : array();
 if (!is_array($map) || !$map) {

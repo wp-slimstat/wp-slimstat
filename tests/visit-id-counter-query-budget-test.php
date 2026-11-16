@@ -13,6 +13,7 @@
 declare(strict_types=1);
 
 namespace SlimStat\Tracker {
+    class Utils { public static function recordDiagnostic($option, $message) { return true; } }
     // Model the native connection result independently of wpdb's stale insert_id.
     function mysqli_insert_id($dbh) { return $GLOBALS['wpdb']->counter; }
 }
@@ -95,6 +96,9 @@ class VicqbFakeWpdb
             $new = (int) $match[1];
             if (null === $this->counter) {
                 $this->counter = $new;
+            } elseif ($this->counter < 0) {
+                // Casting a negative integer to UNSIGNED wraps; initialization must avoid it.
+                $this->counter = strpos($sql, "LEFT(TRIM(option_value), 1) = '-'") !== false ? $new : PHP_INT_MAX;
             } else {
                 // MySQL semantics, not PHP's. option_value is LONGTEXT, so GREATEST()
                 // compares its arguments as strings unless BOTH are cast to UNSIGNED —
@@ -119,7 +123,7 @@ class VicqbFakeWpdb
 
         if (stripos($sql, 'LAST_INSERT_ID()') !== false) return (string) $this->counter;
         if (stripos($sql, 'MAX(visit_id)') !== false) {
-            return $this->max_read_fails ? null : (string) $this->max_visit_id;
+            return $this->max_read_fails || strpos($sql, '`wp_slim_stats`') === false ? null : (string) $this->max_visit_id;
         }
         if (stripos($sql, 'AUTO_INCREMENT') !== false) {
             return null;
@@ -172,6 +176,7 @@ if (!function_exists('add_option')) {
             return false;
         }
         $GLOBALS['_vicqb_options'][$option] = $value;
+        $GLOBALS['_vicqb_autoload'][$option] = $autoload === true || $autoload === 'yes';
         vicqb_mirror_counter($option, $value);
         return true;
     }
@@ -180,7 +185,7 @@ if (!function_exists('add_option')) {
 if (!function_exists('get_option')) {
     function get_option($option, $default = false)
     {
-        if (isset($GLOBALS['wpdb'])) {
+        if (isset($GLOBALS['wpdb']) && empty($GLOBALS['_vicqb_autoload'][$option])) {
             $GLOBALS['wpdb']->log[] = 'OPTION-READ:' . $option;
         }
         return $GLOBALS['_vicqb_options'][$option] ?? $default;
@@ -191,6 +196,7 @@ if (!function_exists('update_option')) {
     function update_option($option, $value, $autoload = null)
     {
         $GLOBALS['_vicqb_options'][$option] = $value;
+        $GLOBALS['_vicqb_autoload'][$option] = $autoload === true || $autoload === 'yes';
         vicqb_mirror_counter($option, $value);
         return true;
     }
@@ -241,12 +247,39 @@ function vicqb_boot(?int $counter, int $max_visit_id): VicqbFakeWpdb
     \wp_slimstat::$wpdb        = $db;
     $GLOBALS['_vicqb_options'] = null === $counter ? [] : [VisitIdGenerator::OPTION_NAME => $counter];
     $GLOBALS['_vicqb_blog_id'] = 1;
+    $GLOBALS['_vicqb_autoload'] = [];
 
     return $db;
 }
 
+// The Migration screen reads initialization evidence without allocating or writing.
+$db = vicqb_boot(null, 5000);
+vicqb_assert('missing counter is not initialized', !VisitIdGenerator::isInitialized());
+VisitIdGenerator::initializeCounter();
+$db->log = [];
+vicqb_assert('successful initialization is visible', VisitIdGenerator::isInitialized());
+vicqb_assert('status does not allocate or scan history', $db->log === ['OPTION-READ:' . VisitIdGenerator::OPTION_NAME]);
+$GLOBALS['_vicqb_blog_id'] = 2;
+vicqb_assert('another site needs its own initialization', !VisitIdGenerator::isInitialized());
+$GLOBALS['_vicqb_blog_id'] = 1;
+$db->dbname = 'other_dataset';
+vicqb_assert('another dataset needs its own initialization', !VisitIdGenerator::isInitialized());
+$db->dbname = 'analytics';
+foreach ([false, '', -1, 'invalid', [], new \stdClass(), '18446744073709551615', '4294967295'] as $invalid) {
+    $GLOBALS['_vicqb_options'][VisitIdGenerator::OPTION_NAME] = $invalid;
+    vicqb_assert('invalid or missing counter is not healthy', !VisitIdGenerator::isInitialized());
+}
+$GLOBALS['_vicqb_options'][VisitIdGenerator::OPTION_NAME] = 0;
+vicqb_assert('zero is valid for an empty dataset', VisitIdGenerator::isInitialized());
+
+$db = vicqb_boot(-1, 5000);
+vicqb_assert('negative corruption is repaired from history without unsigned wrap', VisitIdGenerator::initializeCounter() === 5000);
+vicqb_assert('repaired negative counter issues the next unused ID', VisitIdGenerator::generateNextVisitId() === 5001);
+
 // ── 1. The steady state costs one query ─────────────────────────────────────
 $db = vicqb_boot(5000, 4999);
+VisitIdGenerator::initializeCounter();
+$db->log = [];
 $id = VisitIdGenerator::generateNextVisitId();
 vicqb_assert('an existing counter issues the next ID', $id === 5001, "got {$id}, expected 5001");
 vicqb_assert(
@@ -318,6 +351,8 @@ vicqb_assert('failed MAX does not execute seed INSERT', !in_array('INSERT', $db-
 
 $db = vicqb_boot(5000, 4999);
 $db->dbh = null;
+VisitIdGenerator::initializeCounter();
+$db->log = [];
 $id = VisitIdGenerator::generateNextVisitId();
 vicqb_assert('non-mysqli drop-in reads the connection ID', $id === 5001);
 vicqb_assert('non-mysqli drop-in uses one documented extra read', $db->log === ['INCREMENT', 'READ-ID']);
@@ -354,8 +389,8 @@ vicqb_assert('successful legacy repair writes a separate marker', isset($GLOBALS
 $db->log = [];
 vicqb_assert('marked legacy allocation stays monotonic', VisitIdGenerator::generateNextVisitId() === 5000002);
 vicqb_assert(
-    'marked legacy hits use two queries without rescanning MAX',
-    $db->log === ['OPTION-READ:' . VisitIdGenerator::REPAIR_MARKER_OPTION, 'INCREMENT'],
+    'marked legacy hits use one query without rescanning MAX',
+    $db->log === ['INCREMENT'],
     'queries: ' . implode(', ', $db->log)
 );
 $db = vicqb_boot(3, 5000000);
@@ -398,6 +433,22 @@ $db->log = [];
 vicqb_assert('same-scope dataset replacement repairs again', VisitIdGenerator::generateNextVisitId() === 5000001);
 vicqb_assert('same-scope replacement re-reads MAX', in_array('SEED-MAX', $db->log, true));
 \wp_slimstat::$settings['version'] = '6.0.0';
+
+// Legacy handles have no prefix; only the WordPress handle owns table names.
+$db = vicqb_boot(12, 12);
+VisitIdGenerator::initializeCounter();
+$external = new VicqbFakeWpdb(null, 9000);
+$external->prefix = '';
+$external->dbname = 'legacy_external';
+\wp_slimstat::$wpdb = $external;
+vicqb_assert('current-version target switch seeds above external history', VisitIdGenerator::generateNextVisitId() === 9001);
+vicqb_assert('empty-prefix legacy handle can initialize', VisitIdGenerator::initializeCounter() === 9001);
+vicqb_assert('repair marker is autoloaded', !empty($GLOBALS['_vicqb_autoload'][VisitIdGenerator::REPAIR_MARKER_OPTION]));
+$external->log = $db->log = [];
+vicqb_assert('external steady state stays consecutive', VisitIdGenerator::generateNextVisitId() === 9002);
+vicqb_assert('external steady state costs one query', $db->log === ['INCREMENT'] && $external->log === []);
+$external->prefix = 'different_';
+vicqb_assert('analytics handle prefix does not change dataset identity', VisitIdGenerator::isInitialized());
 
 // ── Report ──────────────────────────────────────────────────────────────────
 if ($failures !== []) {

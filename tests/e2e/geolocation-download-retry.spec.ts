@@ -8,6 +8,7 @@
 import { test, expect } from '@playwright/test';
 import {
   installOptionMutator,
+  installHeaderInjector, uninstallHeaderInjector, setHeaderOverrides, clearHeaderOverrides,
   uninstallOptionMutator,
   setSlimstatOption,
   snapshotSlimstatOptions,
@@ -25,6 +26,7 @@ test.describe('AC-GEO-004: GeoIP Download Retry Mechanism', () => {
 
   test.beforeAll(async () => {
     installOptionMutator();
+    installHeaderInjector();
   });
 
   test.beforeEach(async ({ page }) => {
@@ -37,10 +39,12 @@ test.describe('AC-GEO-004: GeoIP Download Retry Mechanism', () => {
 
   test.afterEach(async () => {
     await restoreGeoipTimestamp();
+    clearHeaderOverrides();
     await restoreSlimstatOptions();
   });
 
   test.afterAll(async () => {
+    uninstallHeaderInjector();
     uninstallOptionMutator();
     await closeDb();
   });
@@ -71,7 +75,8 @@ test.describe('AC-GEO-004: GeoIP Download Retry Mechanism', () => {
   test('frontend loads without crash after clearing geoip timestamp', async ({ page, context }) => {
     await clearGeoipTimestamp();
 
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-retry-cleared',
       'CF-Connecting-IP': '8.8.8.8',
     });
@@ -97,7 +102,8 @@ test.describe('AC-GEO-004: GeoIP Download Retry Mechanism', () => {
   test('repeated page loads after timestamp clear do not cause infinite retries', async ({ page, context }) => {
     await clearGeoipTimestamp();
 
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-retry-bounded',
       'CF-Connecting-IP': '8.8.8.8',
     });

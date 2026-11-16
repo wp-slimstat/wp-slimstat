@@ -13,6 +13,7 @@
 import { test, expect } from '@playwright/test';
 import {
   installOptionMutator,
+  installHeaderInjector, uninstallHeaderInjector, setHeaderOverrides, clearHeaderOverrides,
   uninstallOptionMutator,
   setSlimstatOption,
   snapshotSlimstatOptions,
@@ -38,6 +39,7 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
 
   test.beforeAll(async () => {
     installOptionMutator();
+    installHeaderInjector();
   });
 
   test.beforeEach(async ({ page }) => {
@@ -50,10 +52,12 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
   });
 
   test.afterEach(async () => {
+    clearHeaderOverrides();
     await restoreSlimstatOptions();
   });
 
   test.afterAll(async () => {
+    uninstallHeaderInjector();
     uninstallOptionMutator();
     await closeDb();
   });
@@ -61,9 +65,10 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
   // ─── Test 1: CF-Connecting-IP used for geolocation with CF-Ray ──
 
   test('dbip provider resolves country from CF-Connecting-IP when CF-Ray present', async ({ page, context }) => {
-    // Inject CF headers: CF-Ray proves we're behind Cloudflare,
+    // Simulate a trusted edge, with its CF headers:
     // CF-Connecting-IP is the visitor's real IP (8.8.8.8 = US)
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-e2e-issue-150-a',
       'CF-Connecting-IP': '8.8.8.8',
     });
@@ -80,11 +85,12 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
 
   // ─── Test 2: CF-Connecting-IP ignored without CF-Ray (anti-spoof) ─
 
-  test('CF-Connecting-IP ignored without CF-Ray header (anti-spoofing)', async ({ page, context }) => {
-    // Spoof attempt: CF-Connecting-IP set WITHOUT CF-Ray
-    // getCfClientIp() should return null → falls back to REMOTE_ADDR (127.0.0.1)
-    await context.setExtraHTTPHeaders({
+  test('forged CF-Ray and client IP ignored on a direct connection', async ({ page, context }) => {
+    // Forged CF headers from a direct connection must be ignored.
+    setHeaderOverrides({
       'CF-Connecting-IP': '8.8.8.8',
+      'CF-Ray': 'forged-ray',
+      'REMOTE_ADDR': '127.0.0.1',
     });
 
     const marker = `cf-spoof-${Date.now()}`;
@@ -93,7 +99,7 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
     await new Promise((r) => setTimeout(r, 3000));
 
     const stat = await getLatestStat(marker);
-    // Without CF-Ray, the CF-Connecting-IP header is not trusted
+    // An untrusted connecting peer cannot authenticate CF headers.
     // REMOTE_ADDR (127.0.0.1) is a private IP → no geolocation match
     if (stat) {
       expect(stat.country).not.toBe('us');
@@ -104,7 +110,8 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
 
   test('CF-Connecting-IP with German IP resolves to DE', async ({ page, context }) => {
     // 5.9.49.12 is a Hetzner IP in Germany
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-e2e-issue-150-de',
       'CF-Connecting-IP': '5.9.49.12',
     });
@@ -120,11 +127,11 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
   // ─── Test 4: IPv6 CF-Connecting-IP resolves country ──────────────
 
   test('IPv6 CF-Connecting-IP resolves country when CF-Ray present', async ({ page, context }) => {
-    // Use a known IPv4 address instead of IPv6, as DB-IP lite may not resolve IPv6 addresses
-    // 1.1.1.1 is Cloudflare DNS (AU/US depending on DB-IP version)
-    await context.setExtraHTTPHeaders({
+    // This public IPv6 resolver is covered by the installed database.
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-e2e-issue-150-ipv6',
-      'CF-Connecting-IP': '1.1.1.1',
+      'CF-Connecting-IP': '2001:4860:4860::8888',
     });
 
     const marker = `cf-ipv6-${Date.now()}`;
@@ -132,20 +139,22 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
 
     const stat = await waitForStat(marker);
     expect(stat).toBeTruthy();
-    // 1.1.1.1 should resolve to a country in DB-IP (exact country depends on DB version)
+    // Exact location depends on the database version.
     expect(stat!.country).toBeTruthy();
     expect(stat!.country).not.toBe('');
   });
 
   // ─── Test 5: Multiple proxy hops — first IP in X-Forwarded-For ──
 
-  test('multiple proxy hops: first IP in X-Forwarded-For used', async ({ page, context }) => {
+  test('multiple proxy hops: verified Cloudflare client wins over forged X-Forwarded-For', async ({ page, context }) => {
     // When behind Cloudflare with multiple proxy hops, X-Forwarded-For
     // contains a chain: original client, proxy1, proxy2, ...
-    // The first public IP (8.8.8.8) should be used for geolocation.
-    await context.setExtraHTTPHeaders({
+    // The trusted CF client address must win over a forged chain.
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-e2e-issue-150-xff',
-      'X-Forwarded-For': '8.8.8.8, 10.0.0.1',
+      'CF-Connecting-IP': '8.8.8.8',
+      'X-Forwarded-For': '1.1.1.1, 10.0.0.1',
     });
 
     const marker = `cf-xff-${Date.now()}`;

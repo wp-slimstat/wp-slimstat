@@ -1,0 +1,17 @@
+target: src/Services/Privacy/DataExporter.php
+gate: composer test:privacy-export-archive
+kind: guard-removal
+expect: failRows must refuse an incomplete export
+rationale: Query errors must stop incomplete privacy exports.
+---
+--- a/src/Services/Privacy/DataExporter.php
++++ b/src/Services/Privacy/DataExporter.php
+@@ -47,7 +47,7 @@
+ 				? "SELECT e.* FROM {$table} e INNER JOIN {$stats_table} s ON e.id = s.id WHERE s.email = %s ORDER BY e.dt DESC, e.event_id DESC LIMIT %d OFFSET %d"
+ 				: "SELECT * FROM {$table} WHERE email = %s ORDER BY dt DESC, id DESC LIMIT %d OFFSET %d";
+ 			$records = $db->get_results($db->prepare($sql, $email_address, $number, $offset));
+-			if ($db->last_error || !is_array($records)) { return new \WP_Error('slimstat_privacy_export_failed', __('An error occurred while fetching data', 'wp-slimstat')); }
++			// mutation: ignore failed row query
+ 			$done = $done && count($records) < $number;
+ 			$id_column = $events ? 'event_id' : 'id';
+ 			foreach ($records as $record) {

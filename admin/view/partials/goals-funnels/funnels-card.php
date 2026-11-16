@@ -88,7 +88,7 @@ if ($locked) :
                 <div class="slimstat-gf-funnel-bar" style="width:12%;"></div>
             </div>
         </div>
-        <strong class="slimstat-gf-upsell__title"><?php esc_html_e('Find the step where visitors leave', 'wp-slimstat'); ?></strong>
+        <strong class="slimstat-gf-upsell__title"><span dir="auto"><?php esc_html_e('Find the step where visitors leave', 'wp-slimstat'); ?></span></strong>
         <?php /* The same titles the Pro picker shows; the steps ride along as a tooltip.
                  Plain list items, not buttons: on Free there is nothing to open. */ ?>
         <ul class="slimstat-gf-upsell__templates" aria-label="<?php esc_attr_e('Funnel templates included with Pro', 'wp-slimstat'); ?>">

@@ -23,6 +23,8 @@ assert [by_metric[name]["counthits"] for name in (
     "5 - 7 minutes", "7 - 10 minutes", "More than 10 minutes",
 )] == [1, 1, 1, 1, 1, 1, 1]
 assert by_metric["0 - 30 seconds"]["value"] == "12.50%"
+# Visit 2 has two pageviews, but contributes one visit to this duration bucket.
+assert by_metric["31 - 60 seconds"]["details"] == "Visits: 1"
 assert by_metric["Average Visit Duration"]["value"] == "05:11"
 assert [item.get("counthits") for item in value[:-1]] == [1] * 7
 assert [item["metric"] for item in value[:4]] == [
@@ -60,7 +62,7 @@ assert bouncing_visits(audience, 10, 20) == 1
 assert pages_per_visit(audience, 10, 20) == [{"avghits": "1.3333", "maxhits": "2"}]
 summary = {row["metric"]: row["value"] for row in visitors_summary(audience, 10, 20)}
 assert summary == {
-    "Bots": "1", "Bounce rate": "66.67", "Known visitors": "2", "Longest visit": "2 hits",
+    "Bots": "1", "Bounce rate": "66.67", "Known visitors": "2", "Longest visit": "2 pageviews",
     "Pageviews per visit": "1.33", "Single-page Visits": "2", "Unique IPs": "1", "Visits": "2",
 }, summary
 assert next(row for row in visitors_summary(audience[:1], 10, 20)

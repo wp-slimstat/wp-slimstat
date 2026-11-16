@@ -95,6 +95,7 @@ async function extractListPercentages(page: Page): Promise<{ name: string; pct: 
 /** Read the shipping Pageviews metric in At a Glance on the Overview page. */
 async function readOverviewPageviews(page: Page): Promise<number> {
   await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, { waitUntil: 'domcontentloaded' });
+  await page.locator('#slim_p1_03').scrollIntoViewIfNeeded();
   const metric = page.locator('#slim_p1_03 .inside p').filter({ hasText: /^Pageviews\s+[\d,]+/ }); // not "Pageviews with a search term"
   await expect(metric).toBeVisible();
   return parseInt((await metric.locator('span').first().innerText()).replace(/,/g, ''), 10);
@@ -128,6 +129,7 @@ test.describe('Country percentage cache fix (#270)', () => {
     });
 
     // Wait for map report to render
+    await page.locator('#slim_p6_01').scrollIntoViewIfNeeded();
     await page.waitForSelector('.country-bar', { timeout: 15000 });
 
     const percentages = await extractMapPercentages(page);
@@ -155,6 +157,7 @@ test.describe('Country percentage cache fix (#270)', () => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'networkidle',
     });
+    await page.locator('#slim_p6_01').scrollIntoViewIfNeeded();
     await page.waitForSelector('.country-bar', { timeout: 15000 });
 
     const initialPcts = await extractMapPercentages(page);
@@ -171,6 +174,7 @@ test.describe('Country percentage cache fix (#270)', () => {
     await clearTransients(); // ensure fresh queries
 
     await page.reload({ waitUntil: 'networkidle' });
+    await page.locator('#slim_p6_01').scrollIntoViewIfNeeded();
     await page.waitForSelector('.country-bar', { timeout: 15000 });
 
     const updatedPcts = await extractMapPercentages(page);
@@ -230,6 +234,7 @@ test.describe('Country percentage cache fix (#270)', () => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'networkidle',
     });
+    await page.locator('#slim_p6_01').scrollIntoViewIfNeeded();
     await page.waitForSelector('.country-bar', { timeout: 15000 });
     const mapPcts = await extractMapPercentages(page);
 
@@ -239,7 +244,8 @@ test.describe('Country percentage cache fix (#270)', () => {
     });
 
     // Wait for Top Countries report
-    await page.waitForSelector('#slim_p1_13', { timeout: 15000 });
+    await page.locator('#slim_p1_13').scrollIntoViewIfNeeded();
+    await expect(page.locator('#slim_p1_13 p.slimstat-tooltip-trigger').first()).toBeVisible();
     const listPcts = await extractListPercentages(page);
 
     // Compare: both should show similar percentages for UK
@@ -296,6 +302,7 @@ test.describe('Country percentage cache fix (#270)', () => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'networkidle',
     });
+    await page.locator('#slim_p6_01').scrollIntoViewIfNeeded();
     await page.waitForSelector('.country-bar', { timeout: 15000 });
 
     const mapPcts = await extractMapPercentages(page);
@@ -329,6 +336,7 @@ test.describe('Country percentage cache fix (#270)', () => {
       });
 
       // Wait for AJAX-loaded map (async reports load after page)
+      await page.locator('#slim_p6_01').scrollIntoViewIfNeeded();
       await page.waitForSelector('.country-bar', { timeout: 20000 });
 
       const percentages = await extractMapPercentages(page);
@@ -363,6 +371,7 @@ test.describe('Country percentage cache fix (#270)', () => {
         waitUntil: 'networkidle',
       });
 
+      await page.locator('#slim_p6_01').scrollIntoViewIfNeeded();
       await page.waitForSelector('.country-bar', { timeout: 15000 });
 
       const percentages = await extractMapPercentages(page);

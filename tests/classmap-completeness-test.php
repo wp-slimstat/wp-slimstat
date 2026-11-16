@@ -32,7 +32,6 @@ function slimstat_generated_source(string $root, string $rel): string
 
 $plugin_root = dirname(__DIR__);
 $src_dir     = $plugin_root . '/src';
-$deps_prefix = $src_dir . '/Dependencies';
 
 // --- load the generated classmap array (FQCN => absolute path; both are used) ---
 $classmap_src = slimstat_generated_source($plugin_root, 'vendor/composer/autoload_classmap.php');
@@ -73,14 +72,11 @@ if (strpos($real_src, 'setClassMapAuthoritative(true)') !== false) {
     exit(1);
 }
 
-// --- walk src/, pruning src/Dependencies/ (third-party, WP-Scoper output) ---
+// --- walk src/ (the WP-Scoper output lives in vendor-prefixed/, outside it) ---
 $files = [];
 if (is_dir($src_dir)) {
     $directory = new RecursiveDirectoryIterator($src_dir, RecursiveDirectoryIterator::SKIP_DOTS);
-    $filtered  = new RecursiveCallbackFilterIterator($directory, function ($file) use ($deps_prefix) {
-        return strpos($file->getPathname(), $deps_prefix . DIRECTORY_SEPARATOR) !== 0;
-    });
-    foreach (new RecursiveIteratorIterator($filtered) as $file) {
+    foreach (new RecursiveIteratorIterator($directory) as $file) {
         if (substr($file->getPathname(), -4) === '.php') {
             $files[] = $file->getPathname();
         }
@@ -158,8 +154,8 @@ foreach ($files as $file) {
 }
 
 // --- assert every first-party SlimStat class is classmapped ---
-// src/Dependencies is already excluded by the file walk, so any remaining
-// SlimStat\ class is first-party.
+// The scoped tree is outside src/, so every
+// SlimStat\ class found here is first-party.
 $missing = [];
 $checked = 0;
 foreach ($declared as $fqcn => $rel) {

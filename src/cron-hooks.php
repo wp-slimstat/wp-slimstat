@@ -21,11 +21,13 @@
 return [
     // Recurring (wp_schedule_event).
     'wp_slimstat_purge',
+    'slimstat_heatmap_purge_continue',
     'wp_slimstat_update_geoip_database',
     // No longer scheduled (W6) — retained so deactivate/uninstall still sweep it off
     // installs that scheduled it before it was retired.
     'wp_slimstat_generate_daily_salt',
     'slimstat_daily_cron_hook',
+    'slimstat_notifications_cron_hook',
     'slimstat_ecommerce_maintenance',
     // Action Scheduler jobs; the same cleanup loops also cancel this integration's group.
     'slimstat_ecommerce_sync',
@@ -34,4 +36,7 @@ return [
     // One-shot (wp_schedule_single_event). Clearing these is idempotent and stops a
     // pending event firing against a plugin that is no longer there.
     'slimstat_initial_notification_fetch',
+    'slimstat_initial_marketing_campaign_fetch',
+    'wp_slimstat_update_browscap',
+    'slimstat_pro_license_refresh', // \SlimStat\Services\ProLicense::HOOK
 ];

@@ -136,6 +136,7 @@ test.describe('Geolocation Provider Pipeline', () => {
     // Inject Cloudflare headers via mu-plugin — distinct city ("Munich") vs region ("Bavaria")
     // to prove the region→subdivision mapping works (city stored as "Munich (Bavaria)")
     setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-e2e-ray-001',
       'CF-IPCountry': 'DE',
       'CF-IPContinent': 'EU',
@@ -194,6 +195,7 @@ test.describe('Geolocation Provider Pipeline', () => {
     await setSlimstatOption(page, 'gdpr_enabled', 'off');
 
     setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-e2e-provider-switch',
       'CF-Connecting-IP': '8.8.8.8',
     });

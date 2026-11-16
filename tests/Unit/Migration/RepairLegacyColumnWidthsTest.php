@@ -30,7 +30,7 @@ class RepairLegacyColumnWidthsTest extends WpSlimstatTestCase
     public function test_unknown_shapes_are_refused_before_ddl(): void
     {
         foreach (['Type' => 'varchar(254)', 'Default' => 'custom', 'Extra' => 'VIRTUAL GENERATED',
-            'Comment' => 'custom comment', 'Collation' => 'unexpected`sql', 'Field' => 'email'] as $field => $value) {
+            'Comment' => 'custom comment', 'Collation' => 'unexpected`sql', 'Field' => 'resource'] as $field => $value) {
             $column = $this->column('city');
             $column[$field] = $value;
             try {
@@ -44,6 +44,14 @@ class RepairLegacyColumnWidthsTest extends WpSlimstatTestCase
 
     private function migration(array &$tables, array &$queries, bool $apply = true, bool $refuse = false, bool $changeAttribute = false, string $engine = 'InnoDB'): RepairLegacyColumnWidths
     {
+        foreach ($tables as &$columns) {
+            foreach (['email', 'fingerprint', 'dt_out', 'tz_offset'] as $field) {
+                if (!in_array($field, array_column($columns, 'Field'), true)) {
+                    $columns[] = $this->column($field, in_array($field, ['email', 'fingerprint'], true) ? 'varchar(256)' : 'int(10)');
+                }
+            }
+        }
+        unset($columns);
         $db = \Mockery::mock(\wpdb::class);
         $db->prefix = 'wp_';
         $db->last_error = '';
@@ -59,6 +67,13 @@ class RepairLegacyColumnWidthsTest extends WpSlimstatTestCase
             $queries[] = $sql;
             if ($refuse && strpos($sql, 'ALTER TABLE') === 0) { return false; }
             if ($apply && preg_match('/ALTER TABLE `([^`]+)`/', $sql, $match)) {
+                if (preg_match_all('/ADD COLUMN (\w+) /', $sql, $added)) {
+                    foreach ($added[1] as $name) {
+                        $definition = Schema::columns('slim_stats_archive')[$name];
+                        $tables[$match[1]][] = ['Field' => $name, 'Type' => strtolower(explode(' DEFAULT ', $definition)[0]),
+                            'Null' => 'YES', 'Default' => strpos($definition, 'DEFAULT 0') !== false ? '0' : null];
+                    }
+                }
                 foreach ($tables[$match[1]] as &$column) {
                     if ('varchar(255)' === $column['Type']) { $column['Type'] = 'varchar(256)'; }
                     if ($changeAttribute) { $column['Collation'] = 'utf8mb4_bin'; }
@@ -157,6 +172,81 @@ class RepairLegacyColumnWidthsTest extends WpSlimstatTestCase
         $this->assertFalse($migration->shouldRun());
         $this->assertFalse($migration->run());
         $this->assertSame([], $queries);
+    }
+
+    public function test_pre_482_email_and_archive_fingerprint_are_repairable_without_rewriting_values(): void
+    {
+        $tables = ['wp_slim_stats' => [$this->column('city', 'varchar(256)'), $this->column('username', 'varchar(256)'), $this->column('email')],
+            'wp_slim_stats_archive' => [$this->column('city', 'varchar(256)'), $this->column('username', 'varchar(256)'), $this->column('fingerprint')]];
+        $queries = [];
+        $migration = $this->migration($tables, $queries);
+        $this->assertTrue($migration->shouldRun());
+        $this->assertSame([], $queries);
+        $this->assertTrue($migration->run());
+        $this->assertStringContainsString('MODIFY COLUMN `email` VARCHAR(256)', implode("\n", $queries));
+        $this->assertStringContainsString('MODIFY COLUMN `fingerprint` VARCHAR(256)', implode("\n", $queries));
+        $this->assertFalse($migration->shouldRun());
+    }
+
+    public function test_known_missing_archive_columns_use_manifest_defaults_and_online_only_ddl(): void
+    {
+        $sql = Schema::widenLegacyColumnsSql('slim_stats_archive', 'wp_', [], ['dt_out', 'email', 'fingerprint', 'tz_offset']);
+        $this->assertStringContainsString('ADD COLUMN dt_out INT(10) UNSIGNED DEFAULT 0', $sql);
+        $this->assertStringContainsString('ADD COLUMN email VARCHAR(256) DEFAULT NULL', $sql);
+        $this->assertStringContainsString('ALGORITHM=INPLACE, LOCK=NONE', $sql);
+        $this->assertStringNotContainsString('DROP', $sql);
+    }
+
+    public function test_missing_live_columns_and_unknown_archive_columns_are_not_automatically_added(): void
+    {
+        foreach ([['slim_stats', 'email'], ['slim_stats_archive', 'resource']] as [$table, $column]) {
+            try {
+                Schema::widenLegacyColumnsSql($table, 'wp_', [], [$column]);
+                $this->fail('Accepted unsupported missing column');
+            } catch (\InvalidArgumentException $e) {
+                $this->assertNotSame('', $e->getMessage());
+            }
+        }
+    }
+
+    public function test_archive_additions_are_verified_and_retry_is_idempotent(): void
+    {
+        $tables = ['wp_slim_stats' => [$this->column('city', 'varchar(256)'), $this->column('username', 'varchar(256)')],
+            'wp_slim_stats_archive' => [$this->column('city', 'varchar(256)'), $this->column('username', 'varchar(256)')]];
+        $queries = [];
+        $migration = $this->migration($tables, $queries);
+        $tables['wp_slim_stats_archive'] = array_values(array_filter($tables['wp_slim_stats_archive'], static fn ($c) => !in_array($c['Field'], ['dt_out', 'tz_offset', 'email'], true)));
+        $this->assertTrue($migration->shouldRun());
+        $this->assertTrue($migration->run());
+        $alters = array_values(array_filter($queries, static fn ($sql) => strpos($sql, 'ALTER TABLE') === 0));
+        $this->assertCount(1, $alters);
+        $this->assertStringContainsString('ADD COLUMN dt_out', $alters[0]);
+        $this->assertFalse($migration->shouldRun());
+        $queries = [];
+        $this->assertTrue($migration->run());
+        $this->assertSame([], $queries);
+    }
+
+    public function test_added_archive_column_must_exist_after_truthy_ddl(): void
+    {
+        $tables = ['wp_slim_stats' => [$this->column('city', 'varchar(256)'), $this->column('username', 'varchar(256)')],
+            'wp_slim_stats_archive' => [$this->column('city', 'varchar(256)'), $this->column('username', 'varchar(256)')]];
+        $queries = [];
+        $migration = $this->migration($tables, $queries, false);
+        $tables['wp_slim_stats_archive'] = array_values(array_filter($tables['wp_slim_stats_archive'], static fn ($c) => 'dt_out' !== $c['Field']));
+        $this->assertFalse($migration->run());
+        $this->assertSame('SET SESSION lock_wait_timeout = 123', end($queries));
+    }
+
+    public function test_physical_column_casing_is_preserved(): void
+    {
+        $tables = ['wp_slim_stats' => [$this->column('City'), $this->column('username')],
+            'wp_slim_stats_archive' => [$this->column('city'), $this->column('username')]];
+        $queries = [];
+        $migration = $this->migration($tables, $queries);
+        $this->assertTrue($migration->shouldRun());
+        $this->assertTrue($migration->run());
+        $this->assertStringContainsString('MODIFY COLUMN `City`', implode("\n", $queries));
     }
 
 }

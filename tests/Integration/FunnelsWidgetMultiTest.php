@@ -20,6 +20,8 @@ use Brain\Monkey\Functions;
  * this proves the public widget branch wires option lookup + Pro gate + DB into
  * that renderer correctly.
  */
+#[\PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses]
+#[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
 class FunnelsWidgetMultiTest extends IntegrationTestCase
 {
     protected function setUp(): void

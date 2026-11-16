@@ -1,0 +1,17 @@
+target: admin/view/wp-slimstat-reports.php
+gate: composer test:chart-query-budget
+kind: restore-defect
+expect: registered Pageviews must count rows even when their IP is NULL
+rationale: Addressless pageviews must be counted by both the registered and default chart.
+---
+--- a/admin/view/wp-slimstat-reports.php
++++ b/admin/view/wp-slimstat-reports.php
+@@ -122,7 +122,7 @@
+                 'callback_args' => [
+                     'id'         => 'slim_p1_01',
+                     'chart_data' => [
+-                        'data1' => 'COUNT( id )',
++                        'data1' => 'COUNT( ip )',
+                         'data2' => 'COUNT( DISTINCT ip )',
+                     ],
+                     'chart_labels' => [

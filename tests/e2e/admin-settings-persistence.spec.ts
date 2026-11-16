@@ -114,7 +114,7 @@ test.describe('Admin Settings Persistence', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // Verify save confirmation message appeared
-    const notice = page.locator('.slimstat-notice.notice-info');
+    const notice = page.locator('.slimstat-notice.notice-info').filter({ hasText: 'Your new settings have been saved' });
     await expect(notice).toBeVisible();
     const noticeText = await notice.innerText();
     expect(noticeText).toContain('saved');
@@ -157,27 +157,18 @@ test.describe('Admin Settings Persistence', () => {
     // Pick a different tracking request method
     const newMethod = currentMethod === 'rest' ? 'ajax' : 'rest';
 
-    // Flip both toggles and change the select
-    if (jsWasChecked) {
-      await setSettingsToggle(jsModeCheckbox, false);
-    } else {
-      await setSettingsToggle(jsModeCheckbox, true);
-    }
-
-    if (dashWasChecked) {
-      await setSettingsToggle(dashWidgetsCheckbox, false);
-    } else {
-      await setSettingsToggle(dashWidgetsCheckbox, true);
-    }
-
+    // The transport field is hidden in server-only mode; choose it while client mode is visible.
+    if (!jsWasChecked) await setSettingsToggle(jsModeCheckbox, true);
     await requestMethodSelect.selectOption(newMethod);
+    if (jsWasChecked) await setSettingsToggle(jsModeCheckbox, false);
+    await setSettingsToggle(dashWidgetsCheckbox, !dashWasChecked);
 
     // Submit
     await page.locator('input.slimstat-settings-button[type="submit"]').click();
     await page.waitForLoadState('domcontentloaded');
 
     // Verify save confirmation
-    await expect(page.locator('.slimstat-notice.notice-info')).toBeVisible();
+    await expect(page.locator('.slimstat-notice.notice-info').filter({ hasText: 'Your new settings have been saved' })).toBeVisible();
 
     // Verify ALL three values in the DB
     const opts = await getSlimstatOptionsFromDb();
@@ -220,7 +211,7 @@ test.describe('Admin Settings Persistence', () => {
     // Submit and wait for confirmation
     await page.locator('input.slimstat-settings-button[type="submit"]').click();
     await page.waitForLoadState('domcontentloaded');
-    await expect(page.locator('.slimstat-notice.notice-info')).toBeVisible();
+    await expect(page.locator('.slimstat-notice.notice-info').filter({ hasText: 'Your new settings have been saved' })).toBeVisible();
 
     // Navigate away to the WP Dashboard
     await page.goto(`${BASE_URL}/wp-admin/`, { waitUntil: 'domcontentloaded' });

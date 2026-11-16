@@ -7,6 +7,13 @@ use SlimStat\Services\Geolocation\AbstractGeoIPProvider;
 
 class DbIpProvider extends AbstractGeoIPProvider
 {
+	private $lastError = '';
+
+	public function getLastError(): string
+	{
+		return $this->lastError;
+	}
+
 	protected function init()
 	{
 		$this->dbType = 'dbip';
@@ -21,10 +28,15 @@ class DbIpProvider extends AbstractGeoIPProvider
 
 	public function locate($ip)
 	{
-		if (!file_exists($this->dbPath)) {
+		if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+			return null;
+		}
+		if (!is_readable($this->dbPath)) {
+			\SlimStat\Tracker\Utils::logGeoIpError(__('The DB-IP database is missing or unreadable. Check file permissions or update the database in SlimStat settings.', 'wp-slimstat'));
 			return null;
 		}
 
+		$reader = null;
 		try {
 			$reader = new Reader($this->dbPath);
 			$ip = sanitize_text_field($ip);
@@ -46,13 +58,19 @@ class DbIpProvider extends AbstractGeoIPProvider
 		}
 
 		return $result;
-		} catch (\Exception $exception) {
+		} catch (\SlimStat\Dependencies\GeoIp2\Exception\AddressNotFoundException $exception) {
 			return null;
+		} catch (\Exception $exception) {
+			\SlimStat\Tracker\Utils::logGeoIpError(__('The DB-IP database could not be read. Check the database in SlimStat settings.', 'wp-slimstat'));
+			return null;
+		} finally {
+			if ($reader) { $reader->close(); }
 		}
 	}
 
 	public function updateDatabase()
 	{
+		$this->lastError = '';
 		// Stream download the DB-IP database (.mmdb.gz), auto-detect gzip, and validate the resulting mmdb
 		$urls = [
 			// Primary npm package via jsDelivr
@@ -63,11 +81,16 @@ class DbIpProvider extends AbstractGeoIPProvider
 		$this->ensureDirExists(dirname($this->dbPath));
 
 		$this->ensureWpFileApiLoaded();
+		if (!wp_is_writable(dirname($this->dbPath))) {
+			$this->lastError = __('The DB-IP database directory is not writable. Ask your host to check its permissions.', 'wp-slimstat');
+			return false;
+		}
 
 		foreach ($urls as $url) {
 			// Prepare a temp file for streaming
 			$tmp = wp_tempnam($url);
 			if (!$tmp) {
+				$this->lastError = __('A temporary file could not be created for the DB-IP download. Check free disk space and temporary-directory permissions.', 'wp-slimstat');
 				continue;
 			}
 
@@ -86,6 +109,7 @@ class DbIpProvider extends AbstractGeoIPProvider
 			$response = wp_remote_get($url, $args);
 			$code     = is_wp_error($response) ? 0 : wp_remote_retrieve_response_code($response);
 			if (is_wp_error($response) || 200 !== $code) {
+				$this->lastError = __('The DB-IP download service could not be reached or refused the download. Check your server connection and try again.', 'wp-slimstat');
 				wp_delete_file($tmp);
 				continue;
 			}
@@ -93,6 +117,7 @@ class DbIpProvider extends AbstractGeoIPProvider
 			// Validate non-empty file
 			$size = @filesize($tmp);
 			if (!$size || $size < 1024 * 1024) { // < 1MB likely an error page
+				$this->lastError = __('The DB-IP download was empty or incomplete. Try updating the database again.', 'wp-slimstat');
 				wp_delete_file($tmp);
 				continue;
 			}
@@ -148,6 +173,7 @@ class DbIpProvider extends AbstractGeoIPProvider
 			wp_delete_file($tmp);
 
 			if (!$ok) {
+				$this->lastError = __('The DB-IP download could not be unpacked or written. Check free disk space, permissions and PHP gzip support.', 'wp-slimstat');
 				wp_delete_file($destTmp);
 				continue;
 			}
@@ -155,6 +181,7 @@ class DbIpProvider extends AbstractGeoIPProvider
 			// Basic sanity: resulting file should be > 5MB
 			$outSize = @filesize($destTmp);
 			if (!$outSize || $outSize < 5 * 1024 * 1024) {
+				$this->lastError = __('The unpacked DB-IP database is incomplete. The previous database has been kept.', 'wp-slimstat');
 				wp_delete_file($destTmp);
 				continue;
 			}
@@ -175,6 +202,9 @@ class DbIpProvider extends AbstractGeoIPProvider
 			if ($valid && @rename($destTmp, $this->dbPath)) {
 				return true;
 			}
+			$this->lastError = $valid
+				? __('The DB-IP database could not be replaced. Check file permissions. The previous database has been kept.', 'wp-slimstat')
+				: __('The downloaded DB-IP database failed validation. The previous database has been kept; try updating again later.', 'wp-slimstat');
 
 			wp_delete_file($destTmp);
 		}

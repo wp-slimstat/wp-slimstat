@@ -1,0 +1,17 @@
+target: wp-slimstat.php
+gate: php tests/purge-health-test.php
+kind: guard-removal
+expect: only one near-term continuation
+rationale: Backlog work must not multiply scheduled followups.
+---
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -1956,7 +1956,7 @@
+         // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
+         if ($remaining) {
+             $next = wp_next_scheduled('wp_slimstat_purge');
+-            if (!$next || $next > time() + 120) { wp_schedule_single_event(time() + 60, 'wp_slimstat_purge'); }
++            if (true) { wp_schedule_single_event(time() + 60, 'wp_slimstat_purge'); }
+             return;
+         }
+ 

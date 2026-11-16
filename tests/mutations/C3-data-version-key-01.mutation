@@ -1,0 +1,17 @@
+target: src/Utils/Query.php
+gate: php tests/query-placeholder-cache-test.php
+kind: construct-removal
+expect: Data deletion invalidates builder cache
+rationale: Identical SQL must change identity when stored rows are erased, for both query entry points.
+---
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -859,7 +859,7 @@
+                 return is_string($value) ? $db->remove_placeholder_escape($value) : $value;
+             }, $args);
+         }
+-        return md5(serialize([(string) ($db->dbhost ?? ''), (string) ($db->dbname ?? ''), $sql, $args, get_option('slimstat_data_ver', '0')]));
++        return md5(serialize([(string) ($db->dbhost ?? ''), (string) ($db->dbname ?? ''), $sql, $args]));
+     }
+ 
+     /**

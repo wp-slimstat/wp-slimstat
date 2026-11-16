@@ -20,7 +20,13 @@ FROM php:${PHP_VERSION}-apache
 # sqlite3 module lives in libpython3.x-stdlib, which only the full package pulls in. Listing both
 # also resolved to the identical 8 packages, since python3 Depends on python3-minimal, so the
 # second name was a no-op sitting under a comment recommending it.
+# PHP 7.4/8.0 use Bullseye, whose packages moved to Debian's signed archive.
 RUN set -eux; \
+    . /etc/os-release; \
+    if [ "$VERSION_CODENAME" = bullseye ]; then \
+        sed -i 's|deb.debian.org/debian|archive.debian.org/debian|g' /etc/apt/sources.list; \
+        echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99qa-archive; \
+    fi; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
         libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
@@ -33,8 +39,11 @@ RUN set -eux; \
 # fileinfo is compiled-in on the official php images — asserted below.
 RUN set -eux; \
     docker-php-ext-configure gd --with-freetype --with-jpeg; \
-    docker-php-ext-install -j"$(nproc)" mysqli gd zip exif intl opcache; \
-    docker-php-ext-enable opcache
+    docker-php-ext-install -j"$(nproc)" mysqli gd zip exif intl; \
+    if ! php -r 'exit(extension_loaded("Zend OPcache") ? 0 : 1);'; then \
+        docker-php-ext-install -j"$(nproc)" opcache; \
+        docker-php-ext-enable opcache; \
+    fi
 
 # Opcache: revalidate every request so host edits to wp-config.php / mu-plugins
 # (done by the E2E setup) are seen immediately. JIT off to avoid 8.x noise in

@@ -69,4 +69,23 @@ $assert(false !== strpos($src, '"$compare_before" "$case_art/after.json"'), 'com
 foreach (['source ', 'lib.sh', 'write_verdict', 'publish_verdict', 'plugin uninstall', 'plugin delete', 'credentials', 'drop-retained', 'retain-deleted', 'fixture_sha256', 'image'] as $needle) {
     $assert(false !== strpos($src, $needle), 'harness contains ' . $needle);
 }
+// Exercise the fixture's actual DDL, including feature tables that activation leaves on demand.
+require_once dirname(__DIR__) . '/src/Schema/Schema.php';
+require_once __DIR__ . '/lib/source-scan.php';
+class_alias(\SlimStat\Schema\Schema::class, 'Schema');
+$probe = slimstat_blank_comments(file_get_contents(__DIR__ . '/docker/probe-uninstall.php'));
+$assert(1 === preg_match('/foreach \(Schema::creationOrder\(\) as \$suffix\) \{(.*?)\}/s', $probe, $creation), 'complete fixture creation loop located');
+$wpdb = (object) ['prefix' => 'ssun_2_'];
+$db = new stdClass();
+$statements = [];
+$execute = static function ($handle, $sql) use (&$statements, $db, $assert): void {
+    $assert($handle === $db, 'fixture uses selected database');
+    $statements[] = $sql;
+};
+eval($creation[0]);
+$assert(count(Schema::tables()) === count($statements), 'every declared table has a fixture');
+foreach (Schema::tables() as $suffix) {
+    $matching = array_filter($statements, static fn ($sql) => false !== strpos($sql, '`ssun_2_' . $suffix . '`'));
+    $assert([] !== $matching, 'fixture includes ' . $suffix);
+}
 echo "PASS: uninstall rehearsal oracle and controls ($checks checks)\n";

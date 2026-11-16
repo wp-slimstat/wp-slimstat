@@ -5,7 +5,7 @@ function current_user_can($capability) { return $GLOBALS['allowed']; }
 function is_network_admin() { return false; }
 function wp_verify_nonce($nonce, $action) { return $nonce === 'valid'; }
 function wp_unslash($value) { return stripslashes($value); }
-class wp_slimstat { public static $wpdb; public static $settings = ['capability_can_admin' => 'manage_options']; }
+class wp_slimstat { public static $bumps = 0; public static function bump_data_version() { ++self::$bumps; } public static $wpdb; public static $settings = ['capability_can_admin' => 'manage_options']; }
 $GLOBALS['wpdb'] = new class {
     public $prefix = 'wp_', $queries = [];
     public $bound = [];

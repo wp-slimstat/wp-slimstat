@@ -100,6 +100,9 @@ final class SlimStat_Bench_QLog
     /** @var string[] */
     private static $sql = [];
 
+    /** Optional query-duration samples; never SQL text or bound values. */
+    private static $timings = [];
+
     public static function boot(): void
     {
         $label = $_SERVER['HTTP_X_SLIMSTAT_BENCH'] ?? getenv('SLIMSTAT_BENCH_LABEL');
@@ -108,6 +111,15 @@ final class SlimStat_Bench_QLog
         self::$sample_sql = strtolower((string) $sql);
         self::$label      = substr(preg_replace('/[^\w.\-]/', '', (string) $label), 0, 64);
         self::$started    = microtime(true);
+
+        // Separate instrumented runs from normal HTTP latency runs. WordPress's
+        // timer surrounds mysqli_query; SAVEQUERIES also adds call-stack overhead.
+        if ('1' === ($_SERVER['HTTP_X_SLIMSTAT_BENCH_TIMING'] ?? '')) {
+            if (!defined('SAVEQUERIES')) {
+                define('SAVEQUERIES', true);
+            }
+            add_filter('log_query_custom_data', [self::class, 'timeQuery'], 10, 3);
+        }
 
         add_filter('query', [self::class, 'tally'], 0);
         add_action('shutdown', [self::class, 'flush'], PHP_INT_MAX);
@@ -201,8 +213,21 @@ final class SlimStat_Bench_QLog
         if (self::$sql_truncated > 0) {
             $row['sql_truncated'] = self::$sql_truncated;
         }
+        if (self::$timings) {
+            $row['query_ms'] = self::$timings;
+        }
 
         file_put_contents($file, json_encode($row) . "\n", FILE_APPEND | LOCK_EX);
+    }
+
+    public static function timeQuery(array $data, string $query, float $seconds): array
+    {
+        $table = preg_quote($GLOBALS['wpdb']->prefix . 'slim_stats', '/');
+        if (preg_match('/^\s*INSERT\s+(?:IGNORE\s+)?INTO\s+`?' . $table . '`?\s/i', $query)) {
+            self::$timings['stats_insert'][] = $seconds * 1000;
+        }
+        self::$timings['all'][] = $seconds * 1000;
+        return $data;
     }
 
     /** Where the ledger lives. Never under the docroot. */

@@ -14,7 +14,7 @@
  */
 
 import http from 'k6/http';
-import { check, sleep } from 'k6';
+import { check, fail, sleep } from 'k6';
 import { Counter, Trend } from 'k6/metrics';
 import { BASE_URL, credentials } from './lib/env.js';
 
@@ -49,6 +49,7 @@ export const options = {
     },
   },
   thresholds: {
+    checks: ['rate==1'],
     http_req_failed: ['rate<0.05'],          // < 5% error rate
     http_req_duration: ['p(95)<5000'],       // p95 < 5s
     admin_page_duration: ['p(99)<8000'],     // p99 < 8s
@@ -67,6 +68,7 @@ const ADMIN_PAGES = [
   '/wp-admin/tools.php',
 ];
 
+/** Verify the test site and pass authenticated cookies explicitly to every VU. */
 export function setup() {
   // Authenticate by POSTing to wp-login.php
   const loginPage = http.get(`${BASE_URL}/wp-login.php`);
@@ -81,25 +83,30 @@ export function setup() {
     redirects: 0, // Don't follow redirect, just capture cookies
   });
 
-  // Verify login succeeded (302 redirect to admin)
-  const loginOk = loginRes.status === 302 || loginRes.status === 200;
-  if (!loginOk) {
-    console.error(`Login failed with status ${loginRes.status}`);
+  // setup() cookies must be passed explicitly to each virtual user.
+  const cookies = {};
+  for (const [name, values] of Object.entries(loginRes.cookies)) {
+    cookies[name] = values[0].value;
   }
-
-  return { loginOk };
+  if (!Object.keys(cookies).some(name => name.startsWith('wordpress_logged_in_'))) {
+    fail(`Login failed with status ${loginRes.status}`);
+  }
+  return { cookies };
 }
 
-export default function (_data) {
+/** Exercise tracker and report paths while checking that report access remains authenticated. */
+export default function (data) {
   // Pick a random admin page
   const page = ADMIN_PAGES[Math.floor(Math.random() * ADMIN_PAGES.length)];
 
   const res = http.get(`${BASE_URL}${page}`, {
+    cookies: data.cookies, // setup() has a separate cookie jar from the virtual users.
     tags: { page_type: 'admin', page_name: page },
   });
 
   const ok = check(res, {
     'status is 200': (r) => r.status === 200,
+    'still authenticated': (r) => !r.url.includes('/wp-login.php'),
     'not 500 error': (r) => r.status < 500,
     'body is not empty': (r) => r.body && r.body.length > 100,
     'contains wp-admin content': (r) => r.body && r.body.includes('wp-admin'),
@@ -117,7 +124,9 @@ export default function (_data) {
 
 export function teardown(_data) {
   // Try to read the AJAX log via direct HTTP (if accessible)
-  const logRes = http.get(`${BASE_URL}/wp-content/geoip-ajax-calls.log`);
+  const logRes = http.get(`${BASE_URL}/wp-content/geoip-ajax-calls.log`, {
+    responseCallback: http.expectedStatuses(200, 404), // The optional logger may be absent.
+  });
   if (logRes.status === 200 && logRes.body) {
     const lines = logRes.body.trim().split('\n').filter((l) => l.length > 0);
     console.log(`\n========================================`);

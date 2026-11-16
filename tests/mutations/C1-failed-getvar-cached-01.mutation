@@ -1,0 +1,17 @@
+target:    src/Utils/Query.php
+gate:      php tests/query-failed-query-cache-test.php
+kind:      guard-removal
+expect:    getVar: a failed statement must not be cached
+rationale: wpdb reports a failed get_var() as last_error plus null, the same shape as an empty table. Without the queryFailed() guard the null is written under the report's cache key and the next hour of renders shows 0 for a total that has rows. The gate fails the database once, then asserts no transient was written and the next call queries again.
+---
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -1514,7 +1514,7 @@
+         $result = $this->db->get_var($query);
+         self::recordSqlDebug($query, $this->db->last_error ?? '');
+         $this->lastQueryFailed = $this->queryFailed();
+-        if ($useCache && !$this->lastQueryFailed) {
++        if ($useCache) {
+             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
+         }
+ 

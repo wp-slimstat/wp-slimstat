@@ -27,10 +27,14 @@ final class Money
 	/** Current net sales of an order cohort; totals already contain discounts. */
 	public static function net(string $total, string $tax, string $shipping, array $refunds): int
 	{
-		$net = self::units($total) - self::units($tax) - self::units($shipping);
+		$totalAmount = self::units($total);
+		$net = $totalAmount - self::units($tax) - self::units($shipping);
+		$refunded = 0;
 		foreach ($refunds as $refund) {
+			$refunded += self::units($refund['amount']);
 			$net -= self::units($refund['amount']) - self::units($refund['tax']) - self::units($refund['shipping']);
 		}
-		return $net;
+		// Amount-only full refunds need not carry separate tax/shipping refund lines.
+		return $totalAmount > 0 && $refunded === $totalAmount ? 0 : $net;
 	}
 }

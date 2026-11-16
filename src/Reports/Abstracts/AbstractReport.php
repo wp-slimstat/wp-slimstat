@@ -185,7 +185,9 @@ abstract class AbstractReport implements ReportInterface, RenderableInterface {
 	 */
 	public function can_view(): bool {
 		// Check if user is whitelisted
-		if ( false !== strpos( ( \wp_slimstat::$settings['can_view'] ?? '' ), (string) $GLOBALS['current_user']->user_login ) ) {
+		$login = (string) ( $GLOBALS['current_user']->user_login ?? '' );
+		$whitelist = array_map('trim', preg_split( '/[\r\n,]+/', (string) ( \wp_slimstat::$settings['can_view'] ?? '' ), -1, PREG_SPLIT_NO_EMPTY ));
+		if ( '' !== $login && in_array( $login, $whitelist, true ) ) {
 			return current_user_can( 'read' );
 		}
 

@@ -1,0 +1,17 @@
+target: src/Migration/AbstractMigration.php
+gate: php tests/schema-online-safety-test.php
+kind: guard-removal
+expect: migration must refuse copying fallback
+rationale: Required migrations must not silently fall back to a blocking copy.
+---
+--- a/src/Migration/AbstractMigration.php
++++ b/src/Migration/AbstractMigration.php
+@@ -308,7 +308,7 @@
+ 	 */
+ 	protected function alterOnline(string $sql)
+ 	{
+-		return \SlimStat\Schema\Schema::alterOnline($this->wpdb, $sql, false);
++		return \SlimStat\Schema\Schema::alterOnline($this->wpdb, $sql, true);
+ 	}
+ 
+ 	/** Add one manifest column online; record a refusal without a blocking fallback. */

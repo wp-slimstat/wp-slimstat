@@ -15,7 +15,7 @@
  * in the "Mar 7" bucket and inflating its count.
  */
 import { test, expect } from '@playwright/test';
-import { getPool, snapshotOption, restoreOption } from './helpers/setup';
+import { getPool, snapshotOption, restoreOption, snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOptions } from './helpers/setup';
 import {
   fetchChartData, insertRows, clearTestData,
   getV1, getV1Prev, getLabels, getPrevLabels, sumArr, utcMidnight,
@@ -27,11 +27,14 @@ test.describe('Weekly bucketing sow=6: Mar 7-14 bucket validation', () => {
   test.setTimeout(90_000);
 
   test.beforeAll(async () => {
+    await snapshotSlimstatOptions();
+    await setSlimstatOptions({ comparison_chart: 'on' });
     await snapshotOption('start_of_week');
     await getPool().execute("UPDATE wp_options SET option_value = '6' WHERE option_name = 'start_of_week'");
   });
 
   test.afterAll(async () => {
+    await restoreSlimstatOptions();
     await restoreOption('start_of_week');
     await clearTestData();
   });

@@ -17,14 +17,18 @@
 .slimstat-date-range-btn {
     background: transparent;
     border: none;
-    padding: 4px 8px;
+    padding: 6px 4px;
+    min-height: 36px;
+    line-height: 1.5;
     color: var(--slimstat-text);
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 14px;
-    min-width: 200px;
+    min-width: 0;
+    max-width: 100%;
+    text-align: start;
     justify-content: space-between;
     text-decoration: none;
     outline: none;
@@ -49,7 +53,7 @@
     border-right: 5px solid transparent;
     border-top: 5px solid;
     transition: transform 0.2s ease;
-    margin-right: 5px;
+    margin: 0;
     flex-shrink: 0;
 
 }
@@ -238,10 +242,13 @@
 }
 .datepicker-badge-elements{
     display: flex;
-    align-content: center;
-    flex-wrap: wrap-reverse;
+    align-items: center;
+    min-width: 0;
+    gap: 6px;
     color: white;
 }
+.slimstat-date-range-btn .date-label { min-width: 0; overflow-wrap: anywhere; }
+.slimstat-date-range-btn:focus-visible { outline: 2px solid #292d32; outline-offset: 3px; }
 #slimstat-date-filters{
     display: flex;
     align-items: center;

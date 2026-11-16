@@ -10,6 +10,7 @@ class Query
 
     /** Set by probeVar(): true when that probe could not run, as opposed to finding nothing. */
     private $lastProbeFailed = false;
+    private $lastQueryFailed = false;
 
     private $operation;
 
@@ -41,11 +42,17 @@ class Query
 
     private $insertValues = [];
 
+    private $insertHexColumns = [];
+
     private $ignore = false;
 
     private $allowCaching = false;
 
+    private $allowHistoricalCaching = false;
+
     private $cacheExpiration = 3600;
+
+    private $cacheResultType = 'all';
 
     protected $db;
 
@@ -200,15 +207,17 @@ class Query
     }
 
     /**
-     * Sets the values for an insert operation.
+     * Sets insert values; named hex-encoded binary columns use bound UNHEX(%s).
      *
      * @return $this
      */
-    public function values(array $values)
+    public function values(array $values, array $hexColumns = [])
     {
         if ($values === []) {
             return $this;
         }
+
+        $this->insertHexColumns = $hexColumns;
 
         // Check if it's an array of arrays for bulk insert
         if (isset($values[0]) && is_array($values[0])) {
@@ -299,10 +308,13 @@ class Query
         }
 
         if (is_array($value)) {
-            $value = array_filter(array_values($value));
+            $value = array_values(array_filter($value, static function ($item) {
+                return null !== $item && '' !== $item && false !== $item;
+            }));
         }
 
-        if (!is_numeric($value) && empty($value)) {
+        $nullComparison = null === $value && in_array($operator, ['IS', 'IS NOT'], true);
+        if (!$nullComparison && !is_numeric($value) && empty($value)) {
             return $this;
         }
 
@@ -518,6 +530,7 @@ class Query
     public function allowCaching($flag = true, $expiration = 3600)
     {
         $this->allowCaching    = $flag;
+        $this->allowHistoricalCaching = $flag;
         $this->cacheExpiration = $expiration;
         return $this;
     }
@@ -540,6 +553,7 @@ class Query
             $this->allowCaching(true, $this->cacheExpiration);
         } else {
             $this->allowCaching(false);
+            $this->allowHistoricalCaching = true;
         }
     }
 
@@ -743,11 +757,12 @@ class Query
 
                 $valueSets = [];
                 foreach ($this->insertValues as $row) {
-                    $placeholders  = implode(', ', array_fill(0, count($row), '%s'));
-                    $valueSets[]   = '(' . $placeholders . ')';
-                    foreach ($row as $value) {
+                    $placeholders = [];
+                    foreach ($row as $column => $value) {
+                        $placeholders[] = in_array($column, $this->insertHexColumns, true) ? 'UNHEX(%s)' : '%s';
                         $this->valuesToPrepare[] = $value;
                     }
+                    $valueSets[] = '(' . implode(', ', $placeholders) . ')';
                 }
 
                 $query .= implode(', ', $valueSets);
@@ -838,15 +853,20 @@ class Query
      */
     protected function getCacheKeyForQuery($query, $args = [])
     {
-        $data = [
-            // Identical table names and SQL can refer to different analytics databases.
-            // wpdb exposes connection metadata without a query; credentials are excluded.
-            'connection' => [(string) ($this->db->dbhost ?? ''), (string) ($this->db->dbname ?? '')],
-            'query' => $query,
-            'args'  => $args,
-        ];
-        $hash = substr(md5(serialize($data)), 0, 16);
-        return 'wp_slimstat_query_' . $hash;
+        // The same SQL can return a scalar, object, column or row list.
+        return 'wp_slimstat_query_' . substr(self::cacheHash($this->db, $query, $args), 0, 16) . '_' . $this->cacheResultType;
+    }
+
+    /** Cache SQL as wpdb executes it, scoped to its analytics connection. */
+    public static function cacheHash($db, string $sql, array $args = []): string
+    {
+        if (method_exists($db, 'remove_placeholder_escape')) {
+            $sql = $db->remove_placeholder_escape($sql);
+            $args = array_map(static function ($value) use ($db) {
+                return is_string($value) ? $db->remove_placeholder_escape($value) : $value;
+            }, $args);
+        }
+        return md5(serialize([(string) ($db->dbhost ?? ''), (string) ($db->dbname ?? ''), $sql, $args, get_option('slimstat_data_ver', '0')]));
     }
 
     /**
@@ -911,6 +931,13 @@ class Query
      */
     protected function setCachedResultForQuery($query, $args, $result, $expiration = 300)
     {
+        if ($this->extractDateRangesFromWhere()) {
+            $now = self::$processingTimestamp ?? \wp_slimstat::now();
+            $graceRemaining = $this->getTodayDate() + 1800 - $now;
+            if ($graceRemaining > 0) {
+                $expiration = min($expiration, $graceRemaining);
+            }
+        }
         $cacheKey = $this->getCacheKeyForQuery($query, $args);
         // Use JSON encode instead of serialize for security
         $data     = wp_json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -1412,11 +1439,51 @@ class Query
      */
     public function getVar(string $networkAggregate = '')
     {
+        $this->cacheResultType = 'var';
+        $this->lastQueryFailed = false;
+        // Pageview IDs and their insertion dates are immutable. Filtered counts and SUMs
+        // can change on a late heartbeat, so they must stay as fresh as grouped reports.
+        $canSplit = $this->allowHistoricalCaching && !$this->_isLiveQuery
+            && '' === $networkAggregate && !NetworkMerge::isMerging()
+            && $this->table === $GLOBALS['wpdb']->prefix . 'slim_stats'
+            && count($this->whereClauses) === 1 && !$this->rawWhereClause && !$this->joinClauses
+            && !$this->groupByClause && !$this->havingClauses && !$this->limitClause
+            && preg_match('/^COUNT\s*\(\s*(?:\*|id)\s*\)(?:\s+(?:AS\s+)?[a-zA-Z_][a-zA-Z0-9_]*)?$/i', trim($this->fields));
+        if ($canSplit) {
+            [$split, $histFrom, $histTo, $liveFrom, $liveTo, $dtIdx] = $this->getSplitDateRanges();
+            $now = self::$processingTimestamp ?? \wp_slimstat::now();
+            if ($split && $now >= $this->getTodayDate() + 1800) {
+                $history = clone $this;
+                $history->valuesToPrepare[$dtIdx] = $histFrom;
+                $history->valuesToPrepare[$dtIdx + 1] = $histTo;
+                $history->allowCaching(true, $this->cacheExpiration);
+                $live = clone $this;
+                $live->valuesToPrepare[$dtIdx] = $liveFrom;
+                $live->valuesToPrepare[$dtIdx + 1] = $liveTo;
+                $live->_isLiveQuery = true;
+                $live->allowCaching(false);
+                $h = $history->getVar();
+                $l = $live->getVar();
+                if (!$history->lastQueryFailed && !$live->lastQueryFailed
+                    && ctype_digit((string) $h) && ctype_digit((string) $l)
+                    && (float) $h <= min(PHP_INT_MAX / 2, 4503599627370495)
+                    && (float) $l <= min(PHP_INT_MAX / 2, 4503599627370495)) {
+                    return (string) ((int) $h + (int) $l);
+                }
+                // One failed half or an unsafe integer must never become a partial/rounded total.
+                $full = clone $this;
+                $full->_isLiveQuery = true;
+                $full->allowCaching(false);
+                $result = $full->getVar();
+                $this->lastQueryFailed = $full->lastQueryFailed;
+                return $result;
+            }
+        }
         // When caching is enabled and the date range includes today, skip cache
         // to stay consistent with getAll() which always fetches fresh live data.
         // Without this, cached scalar values (e.g. $pageviews) become stale while
         // getAll() returns fresh grouped data, causing percentage calculations >100%.
-        $useCache = $this->allowCaching;
+        $useCache = $this->allowCaching && !$this->_isLiveQuery;
         if ($useCache) {
             [$split] = $this->getSplitDateRanges();
             if ($split) {
@@ -1446,12 +1513,15 @@ class Query
         if ($useCache) {
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
+                self::recordSqlDebug($query, '', true);
                 return $cachedResult;
             }
         }
 
         $result = $this->db->get_var($query);
-        if ($useCache) {
+        self::recordSqlDebug($query, $this->db->last_error ?? '');
+        $this->lastQueryFailed = $this->queryFailed();
+        if ($useCache && !$this->lastQueryFailed) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
 
@@ -1521,14 +1591,25 @@ class Query
     }
 
     /**
+     * Whether the statement this builder just ran failed.
+     *
+     * wpdb reports a failure as last_error plus an EMPTY result — null from get_var(), [] from
+     * get_results() — which is exactly what "no rows" looks like. The cache writers ask this
+     * and not the result, or one lost connection becomes "0 visits" for the next hour. (C-1)
+     */
+    private function queryFailed(): bool
+    {
+        return '' !== (string) ($this->db->last_error ?? '');
+    }
+
+    /**
      * Execute the query and return a single row
      *
-     * This is a shortcut for `getAll()[0]`
-     *
-     * @return array The row, or false/null if no rows are returned
+     * @return \stdClass|null The row object, or null when no row is returned.
      */
     public function getRow()
     {
+        $this->cacheResultType = 'row';
         $useCache = $this->allowCaching;
         if ($useCache) {
             [$split] = $this->getSplitDateRanges();
@@ -1542,12 +1623,14 @@ class Query
         if ($useCache) {
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
-                return $cachedResult;
+                self::recordSqlDebug($query, '', true);
+                return null === $cachedResult ? null : (object) $cachedResult;
             }
         }
 
         $result = $this->db->get_row($query);
-        if ($useCache) {
+        self::recordSqlDebug($query, $this->db->last_error ?? '');
+        if ($useCache && !$this->queryFailed()) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
 
@@ -1563,6 +1646,7 @@ class Query
      */
     public function getCol()
     {
+        $this->cacheResultType = 'col';
         $useCache = $this->allowCaching;
         if ($useCache) {
             [$split] = $this->getSplitDateRanges();
@@ -1576,12 +1660,14 @@ class Query
         if ($useCache) {
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
+                self::recordSqlDebug($query, '', true);
                 return $cachedResult;
             }
         }
 
         $result = $this->db->get_col($query);
-        if ($useCache) {
+        self::recordSqlDebug($query, $this->db->last_error ?? '');
+        if ($useCache && !$this->queryFailed()) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
 
@@ -1700,6 +1786,21 @@ class Query
         return $result;
     }
 
+    /** Append report-only diagnostics without changing SQL, result caching or wpdb state. */
+    public static function recordSqlDebug($sql, $error = '', $cached = false)
+    {
+        if ('on' !== (\wp_slimstat::$settings['show_sql_debug'] ?? '') || !class_exists('wp_slimstat_db', false)) {
+            return;
+        }
+        $message = (string) $sql;
+        if ($cached) {
+            $message .= "\n" . __('Cached result', 'wp-slimstat');
+        } elseif ('' !== (string) $error) {
+            $message .= "\n" . $error;
+        }
+        \wp_slimstat_db::$debug_message .= "<p class='debug'>" . esc_html($message) . '</p>';
+    }
+
     public function getSqlQuery()
     {
         $query = $this->buildQuery();
@@ -1728,6 +1829,7 @@ class Query
      */
     public function getAll(string $networkIntent = '', string $selectNoAggregate = '', string $groupBy = '', string $orderBy = '', string $extraAggregate = '', int $outerLimit = 0)
     {
+        $this->cacheResultType = 'all';
         // D22 — a network-wide read is ONE query over a union of blogs, and it takes this path
         // instead of the live/historical partitioning below.
         //
@@ -1765,34 +1867,27 @@ class Query
                 $sql .= ' LIMIT ' . $outerLimit;
             }
 
-            return (array) $this->db->get_results($sql, ARRAY_A);
+            $result = (array) $this->db->get_results($sql, ARRAY_A);
+            self::recordSqlDebug($sql, $this->db->last_error ?? '');
+            return $result;
         }
 
         if (null !== $this->_isLiveQuery && $this->_isLiveQuery) {
             $query = $this->buildQuery();
             $query = $this->prepareQuery($query, $this->valuesToPrepare);
-            return $this->db->get_results($query, ARRAY_A);
+            $result = $this->db->get_results($query, ARRAY_A);
+            self::recordSqlDebug($query, $this->db->last_error ?? '');
+            $this->lastQueryFailed = $this->queryFailed();
+            return $result;
         }
 
         $ranges = $this->extractDateRangesFromWhere();
         if (count($ranges) > 1) {
-            $results = [];
-            foreach ($ranges as $range) {
-                if (empty($range['from']) || empty($range['to'])) {
-                    continue;
-                }
-
-                $baseWhereClauses    = $this->whereClauses;
-                $baseValuesToPrepare = $this->valuesToPrepare;
-                array_splice($baseWhereClauses, $range['clauseIdx'], 1);
-                array_splice($baseValuesToPrepare, $range['valueIdx'], 2);
-                $data = $this->processDateRange($range['from'], $range['to'], $baseWhereClauses, $baseValuesToPrepare);
-                if (is_array($data)) {
-                    $results = array_merge($results, $data);
-                }
-            }
-
-            return $results;
+            // Multiple predicates describe one SQL intersection. Splitting each in turn
+            // duplicates rows and can recursively reprocess the other date predicate.
+            $full = clone $this;
+            $full->_isLiveQuery = true;
+            return $full->getAll();
         }
 
         [$split, $histFrom, $histTo, $liveFrom, $liveTo, $dtIdx, $dtClauseIdx] = $this->getSplitDateRanges();
@@ -1804,7 +1899,18 @@ class Query
         // exact opposite of what the report is for. No merge can undo that, because the rows
         // that should have been excluded were already selected. Run one query instead and
         // give up only the historical half's cache entry. (D5)
-        if ($split && !empty($this->havingClauses)) {
+        //
+        // DISTINCT and AVG cannot survive it either: a visitor seen before and after midnight
+        // is one visitor but one per half, and the mean of two means is not the mean. The
+        // merge has no rule that undoes either, so it kept the first half's value. (C-2)
+        //
+        // A refused split is a full range that reaches today, so it is not cached — the same
+        // rule as the live half.
+        // A grouped split cannot preserve SQL collation, and a top-K threshold read in
+        // separate statements can miss a winner inserted between those reads. Keep native
+        // grouping, ranking and pagination in one full-range statement (C-4).
+        $splitRefused = $split && (!empty($this->groupByClause) || !empty($this->havingClauses) || preg_match('/\bDISTINCT\b|\bAVG\s*\(/i', (string) $this->fields));
+        if ($splitRefused) {
             $split = false;
         }
 
@@ -1845,10 +1951,13 @@ class Query
             if ($subLimit > 0) {
                 $histQuery->limit($subLimit);
             }
+            $histFailed = true;
             try {
                 $historical = $histQuery->getAll();
-            } catch (Exception $e) {
+                $histFailed = $histQuery->lastQueryFailed;
+            } catch (\Throwable $e) {
                 $historical = [];
+                $histFailed = true;
             }
 
             // Clone for live
@@ -1860,10 +1969,23 @@ class Query
             if ($subLimit > 0) {
                 $liveQuery->limit($subLimit);
             }
+            $liveFailed = true;
             try {
-                $live = $liveQuery->getAll();
-            } catch (Exception $e) {
+                $live       = $liveQuery->getAll();
+                $liveFailed = $liveQuery->lastQueryFailed;
+            } catch (\Throwable $e) {
                 $live = [];
+                $liveFailed = true;
+            }
+
+            // A failed half is an empty array, and merging it would hand the caller the other
+            // half as the whole answer (a today-only "top pages" after a lost connection). Ask
+            // once over the full range instead — uncached, as any range reaching today is. (C-1)
+            if ($histFailed || $liveFailed) {
+                $full               = clone $this;
+                $full->_isLiveQuery = true;
+
+                return $full->getAll();
             }
 
             if (is_array($live)) {
@@ -1897,30 +2019,36 @@ class Query
             return $merged;
         }
 
-        $query = $this->buildQuery();
-        $query = $this->prepareQuery($query, $this->valuesToPrepare);
-        if ($this->allowCaching) {
+        $this->lastQueryFailed = false;
+        $useCache              = $this->allowCaching && !$splitRefused;
+        $query                 = $this->buildQuery();
+        $query                 = $this->prepareQuery($query, $this->valuesToPrepare);
+        if ($useCache) {
             try {
                 $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
-            } catch (Exception $e) {
+            } catch (\Throwable $e) {
                 $cachedResult = false;
             }
 
             if (false !== $cachedResult) {
+                self::recordSqlDebug($query, '', true);
                 return $cachedResult;
             }
         }
 
         try {
-            $result = $this->db->get_results($query, ARRAY_A);
-        } catch (Exception $exception) {
-            $result = [];
+            $result                = $this->db->get_results($query, ARRAY_A);
+            self::recordSqlDebug($query, $this->db->last_error ?? '');
+            $this->lastQueryFailed = $this->queryFailed();
+        } catch (\Throwable $exception) {
+            $result                = [];
+            $this->lastQueryFailed = true;
         }
 
-        if ($this->allowCaching) {
+        if ($useCache && !$this->lastQueryFailed) {
             try {
                 $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
-            } catch (Exception $exception) {
+            } catch (\Throwable $exception) {
                 // ignore
             }
         }

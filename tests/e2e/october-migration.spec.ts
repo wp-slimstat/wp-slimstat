@@ -31,20 +31,134 @@ test('Task 22: pending banner, failed request, retry, completion and optional-on
   await expect(page.locator('#slimstat-status-note')).toContainText('request failed');
   await expect(page.locator('#slimstat-start-migration')).toBeEnabled();
   fail=false; await page.locator('#slimstat-start-migration').click();
-  await expect(page.locator('#slimstat-status-note')).toContainText('Database is up to date');
+  await expect(page.locator('#slimstat-status-note')).toContainText('Required migrations are complete');
   await expect(page.locator('#slimstat-status-note')).toHaveClass(/notice-success/);
   await expect(page.locator('#slimstat-start-migration')).toBeHidden();
   expect(settingsHash()).toBe(before);
   await page.screenshot({path:info.outputPath('migration-complete.png'),fullPage:true});
   await page.goto('/wp-admin/admin.php?page=slimview1'); await expect(banner).toHaveCount(0);
-  // A freshly reconciled fixture may have no optional work. Offer a real registered
-  // optional step through its normal cache, without converting tables during this UI test.
-  runWordPressFixture("<?php set_transient('slimstat_migration_offered',['convert-tables-to-utf8mb4'],60);");
+  // The screen refreshes physical state rather than trusting a stale optional-step cache.
   await page.goto('/wp-admin/admin.php?page=slimstat_migration');
   await expect(page.locator('#slimstat-status-note')).toContainText('Database is up to date');
-  await expect(page.getByText('Advanced (optional)',{exact:true})).toBeVisible();
+
  } finally {
   runWordPressFixture(`<?php global $wpdb; $m=new \\SlimStat\\Migration\\Migrations\\CreateDtOutIndex($wpdb,$wpdb); if ($m->shouldRun()) $m->run(); delete_transient('slimstat_migration_probe'); delete_transient('slimstat_migration_offered');`);
   await restoreSlimstatOptions(); await closeDb();
+ }
+});
+
+test('issue 360: legacy drift offers an explicit repair and clears only after verification', async ({page}, info) => {
+ test.setTimeout(90000);
+ const fixture = (body:string) => runWordPressFixture(`<?php
+  if (DB_NAME !== 'tests-wordpress') throw new RuntimeException('Disposable DB required');
+  global $wpdb;
+  ${body}
+ `).trim();
+ const before = fixture(`
+  if ((int)$wpdb->get_var('SELECT MAX(CHAR_LENGTH(email)) FROM '.$wpdb->prefix.'slim_stats') > 254) throw new RuntimeException('Fixture would truncate values');
+  echo hash('sha256',serialize($wpdb->get_results('SELECT * FROM '.$wpdb->prefix.'slim_stats ORDER BY id',ARRAY_A)));
+ `);
+ try {
+  fixture(`
+   if (false === $wpdb->query('ALTER TABLE '.$wpdb->prefix.'slim_stats MODIFY email VARCHAR(254) DEFAULT NULL')) throw new RuntimeException($wpdb->last_error);
+   set_transient('slimstat_migration_offered',[],3600);
+  `);
+  await page.goto('/wp-admin/admin.php?page=slimstat_migration');
+  await expect(page.locator('#slimstat-status-note')).toContainText('Database columns still differ');
+  await expect(page.locator('.slimstat-column-drift')).toContainText('slim_stats.email (254, declared 256)');
+  await expect(page.locator('[data-migration="repair-legacy-column-widths"]')).toHaveCount(0);
+  fixture(`if (false === $wpdb->query('ALTER TABLE '.$wpdb->prefix.'slim_stats MODIFY email VARCHAR(255) DEFAULT NULL')) throw new RuntimeException($wpdb->last_error);`);
+  await page.reload();
+  const repair = page.locator('[data-migration="repair-legacy-column-widths"]');
+  await expect(repair).toBeVisible();
+  await expect(page.locator('#slimstat-status-note')).not.toContainText('Database is up to date');
+  await page.screenshot({path:info.outputPath('issue360-before-repair.png'),fullPage:true});
+  await repair.click();
+  await expect(repair.locator('..').locator('.status')).toContainText(/complete|done/i);
+  await page.reload();
+  await expect(page.locator('.slimstat-column-drift')).toHaveCount(0);
+  await expect(page.locator('#slimstat-status-note')).toContainText('Database is up to date');
+  expect(fixture(`echo hash('sha256',serialize($wpdb->get_results('SELECT * FROM '.$wpdb->prefix.'slim_stats ORDER BY id',ARRAY_A)));`)).toBe(before);
+  await page.screenshot({path:info.outputPath('issue360-after-repair.png'),fullPage:true});
+  const fault = Buffer.from(`<?php
+   add_filter('query', static function($sql) {
+    if (($_GET['page'] ?? '') === 'slimstat_migration' && stripos($sql, 'SHOW INDEX') === 0) {
+     return 'SHOW INDEX FROM nonexistent_issue360_probe';
+    }
+    return $sql;
+   });
+  `).toString('base64');
+  fixture(`
+   $file=WP_CONTENT_DIR.'/mu-plugins/slimstat-issue360-query-fixture.php';
+   if (file_exists($file)) throw new RuntimeException('Fault fixture already exists');
+   wp_mkdir_p(dirname($file)); file_put_contents($file,base64_decode('${fault}'));
+  `);
+  await page.reload();
+  await expect(page.locator('#slimstat-status-note')).toContainText('could not verify the database structure');
+  await expect(page.locator('#slimstat-status-note')).not.toContainText('Database is up to date');
+ } finally {
+  fixture(`
+   $file=WP_CONTENT_DIR.'/mu-plugins/slimstat-issue360-query-fixture.php'; if (file_exists($file)) unlink($file);
+   $wpdb->query('ALTER TABLE '.$wpdb->prefix.'slim_stats MODIFY email VARCHAR(256) DEFAULT NULL');
+   delete_transient('slimstat_migration_probe'); delete_transient('slimstat_migration_offered'); delete_transient('slimstat_column_drift_checked');
+  `);
+  await closeDb();
+ }
+});
+
+test('issue 395: visible counter retry survives failure and verifies recovery', async ({page}, info) => {
+ test.setTimeout(90000);
+ const fixture = (body:string) => runWordPressFixture(`<?php
+  if (DB_NAME !== 'tests-wordpress') throw new RuntimeException('Disposable DB required');
+  global $wpdb;
+  ${body}
+ `).trim();
+ const before = JSON.parse(fixture(`echo wp_json_encode([
+  'settings'=>get_option('slimstat_options'), 'degradations'=>get_option('slimstat_degradations',[]),
+  'counter'=>get_option('slimstat_visit_id_counter'), 'marker'=>get_option('slimstat_visit_id_repair_marker'),
+  'max'=>(int)$wpdb->get_var('SELECT COALESCE(MAX(id),0) FROM '.$wpdb->prefix.'slim_stats')
+ ]);`));
+ const history = () => fixture(`echo hash('sha256',serialize($wpdb->get_results('SELECT id,visit_id,resource FROM '.$wpdb->prefix.'slim_stats WHERE id<=${before.max} ORDER BY id',ARRAY_A)));`);
+ const hash = history();
+ const fault = Buffer.from(`<?php
+  add_filter('query', static function($sql) {
+   if (strpos($sql,'COALESCE(MAX(visit_id), 0)') !== false) return 'SELECT * FROM issue395_missing_table';
+   return $sql;
+  });
+ `).toString('base64');
+ try {
+  fixture(`
+   $file=WP_CONTENT_DIR.'/mu-plugins/slimstat-issue395-query-fixture.php';
+   if (file_exists($file)) throw new RuntimeException('Fault fixture already exists');
+   wp_mkdir_p(dirname($file)); file_put_contents($file,base64_decode('${fault}'));
+   delete_option('slimstat_visit_id_repair_marker');
+   wp_slimstat::record_degradation('issue395 unrelated','Preserve this warning',wp_slimstat::DEGRADATION_OPERATIONAL);
+  `);
+  await page.goto('/wp-admin/admin.php?page=slimstat_migration');
+  const retry=page.getByRole('button',{name:'Retry database upgrade',exact:true});
+  await expect(retry).toBeVisible();
+  await expect(page.locator('#slimstat-status-note')).not.toContainText('Database is up to date');
+  await page.screenshot({path:info.outputPath('issue395-incomplete.png'),fullPage:true});
+  const refused=await page.request.post('/wp-admin/admin.php?page=slimstat_migration',{form:{slimstat_retry_upgrade:'1',_wpnonce:'invalid'}});
+  expect(refused.status()).toBe(403);
+  await retry.click();
+  await expect(retry).toBeVisible();
+  expect(fixture(`echo isset(get_option('slimstat_degradations',[])['schema upgrade'])?'failure':'missing';`)).toBe('failure');
+  expect(history()).toBe(hash);
+  fixture(`unlink(WP_CONTENT_DIR.'/mu-plugins/slimstat-issue395-query-fixture.php');`);
+  await retry.click();
+  await expect(retry).toHaveCount(0);
+  await expect(page.locator('#slimstat-status-note')).toContainText('Database is up to date');
+  expect(fixture(`$d=get_option('slimstat_degradations',[]); echo !isset($d['schema upgrade'])&&isset($d['issue395 unrelated'])?'recovered':'wrong';`)).toBe('recovered');
+  expect(Number(fixture(`echo SlimStat\\Tracker\\VisitIdGenerator::getCurrentCounter();`))).toBeGreaterThanOrEqual(Number(before.counter));
+  expect(history()).toBe(hash);
+  await page.screenshot({path:info.outputPath('issue395-recovered.png'),fullPage:true});
+ } finally {
+  fixture(`
+   $file=WP_CONTENT_DIR.'/mu-plugins/slimstat-issue395-query-fixture.php'; if (file_exists($file)) unlink($file);
+   $before=json_decode(base64_decode('${Buffer.from(JSON.stringify(before)).toString('base64')}'),true);
+   update_option('slimstat_options',$before['settings']); update_option('slimstat_degradations',$before['degradations'],false);
+   if (false === $before['marker']) delete_option('slimstat_visit_id_repair_marker'); else update_option('slimstat_visit_id_repair_marker',$before['marker'],false);
+  `);
  }
 });

@@ -72,6 +72,7 @@ if (!class_exists('wpdb')) {
 
         public function query($sql)
         {
+            if (strpos($sql, 'SET SESSION lock_wait_timeout') === 0) { return 0; }
             $this->lastQuery = $sql;
             return $this->queryReturn;
         }
@@ -93,6 +94,7 @@ if (!class_exists('wpdb')) {
 
         public function get_var($sql)
         {
+            if ($sql === 'SELECT @@SESSION.lock_wait_timeout') { $this->last_error = ''; return '600'; }
             return $this->getVarReturn;
         }
 

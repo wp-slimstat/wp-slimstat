@@ -1,0 +1,17 @@
+target: src/Services/Privacy/DataExporter.php
+gate: composer test:privacy-export-archive
+kind: guard-removal
+expect: Absent optional archives must not break export
+rationale: A site without archives must still export live data.
+---
+--- a/src/Services/Privacy/DataExporter.php
++++ b/src/Services/Privacy/DataExporter.php
+@@ -36,7 +36,7 @@
+ 			if ($suffix) {
+ 				$exists = $db->get_var($db->prepare('SHOW TABLES LIKE %s', $db->esc_like($table)));
+ 				if ($db->last_error) { return new \WP_Error('slimstat_privacy_export_failed', __('An error occurred while fetching data', 'wp-slimstat')); }
+-				if (!$exists) { continue; }
++				// mutation: query absent optional archive
+ 			}
+ 			// Legacy tables without an email column contain no email-linked records.
+ 			$email_column = $db->get_var("SHOW COLUMNS FROM {$stats_table} LIKE 'email'");

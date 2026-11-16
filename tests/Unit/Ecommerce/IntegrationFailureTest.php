@@ -76,6 +76,10 @@ class IntegrationFailureTest extends WpSlimstatTestCase
     public function test_a_refused_online_build_is_retried_once_without_the_hint(): void
     {
         $db = \Mockery::mock(\wpdb::class);
+        $db->last_error = '';
+        $db->shouldReceive('get_var')->with('SELECT @@SESSION.lock_wait_timeout')->andReturn('600');
+        $db->shouldReceive('query')->with('SET SESSION lock_wait_timeout = 5')->once()->andReturn(0);
+        $db->shouldReceive('query')->with('SET SESSION lock_wait_timeout = 600')->once()->andReturn(0);
         $db->shouldReceive('query')->once()->with('ALTER TABLE t ADD INDEX x (a), ALGORITHM=INPLACE, LOCK=NONE')->andReturn(false);
         $db->shouldReceive('query')->once()->with('ALTER TABLE t ADD INDEX x (a)')->andReturn(0);
 
@@ -85,6 +89,10 @@ class IntegrationFailureTest extends WpSlimstatTestCase
     public function test_an_accepted_online_build_is_not_repeated(): void
     {
         $db = \Mockery::mock(\wpdb::class);
+        $db->last_error = '';
+        $db->shouldReceive('get_var')->with('SELECT @@SESSION.lock_wait_timeout')->andReturn('600');
+        $db->shouldReceive('query')->with('SET SESSION lock_wait_timeout = 5')->once()->andReturn(0);
+        $db->shouldReceive('query')->with('SET SESSION lock_wait_timeout = 600')->once()->andReturn(0);
         $db->shouldReceive('query')->once()->with('ALTER TABLE t ADD INDEX x (a), ALGORITHM=INPLACE, LOCK=NONE')->andReturn(0);
 
         self::assertNotFalse(Schema::alterOnline($db, 'ALTER TABLE t ADD INDEX x (a)'));
@@ -93,7 +101,11 @@ class IntegrationFailureTest extends WpSlimstatTestCase
     public function test_both_attempts_failing_reports_failure(): void
     {
         $db = \Mockery::mock(\wpdb::class);
-        $db->shouldReceive('query')->twice()->andReturn(false);
+        $db->last_error = '';
+        $db->shouldReceive('get_var')->with('SELECT @@SESSION.lock_wait_timeout')->andReturn('600');
+        $db->shouldReceive('query')->with('SET SESSION lock_wait_timeout = 5')->once()->andReturn(0);
+        $db->shouldReceive('query')->with('SET SESSION lock_wait_timeout = 600')->once()->andReturn(0);
+        $db->shouldReceive('query')->with(\Mockery::pattern('/^ALTER TABLE /'))->twice()->andReturn(false);
 
         self::assertFalse(Schema::alterOnline($db, 'ALTER TABLE t ADD INDEX x (a)'));
     }

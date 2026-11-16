@@ -11,7 +11,7 @@ namespace SlimStat\Schema {
 namespace {
     if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') { http_response_code(403); exit(1); }
     function __($text, $domain) { return $text; }
-    class wp_slimstat { public static $wpdb; public static $settings; }
+    class wp_slimstat { public static $wpdb; public static $settings; public static $bumps = 0; public static function bump_data_version() { self::$bumps++; } }
     class wp_slimstat_admin {
         public static $message;
         public static function show_message($message, $type = 'updated') { self::$message = [$message, $type]; }
@@ -29,10 +29,13 @@ namespace {
     $end = strpos($source, "\n                break;", $start);
     check($start !== false && $end !== false, 'maintenance case exists');
     $truncate = substr($source, $start + strlen("            case 'truncate-table':"), $end - $start - strlen("            case 'truncate-table':"));
-    foreach ([[false], [0, false], [0, 0, 0, 0]] as $results) {
+    foreach ([[false], [0, false], [0, 0, 0, 0], [2, false], [2, 0, 3, 0], [0, 1, 0, 0]] as $results) {
         $GLOBALS['wpdb'] = wp_slimstat::$wpdb = $db = new MaintenanceDb();
         $db->results = $results;
+        wp_slimstat::$bumps = 0;
         eval($truncate);
+        $changed = ($results[0] ?? 0) > 0 || ($results[2] ?? 0) > 0;
+        check((wp_slimstat::$bumps > 0) === $changed, 'maintenance cache version follows every positive partial deletion');
         $failed = in_array(false, $results, true);
         check((wp_slimstat_admin::$message[1] === 'error') === $failed, 'failed delete/optimize never claims success');
         check(count($db->queries) === count($results), 'maintenance stops after first failure and accepts zero affected rows');

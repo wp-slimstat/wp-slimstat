@@ -1,0 +1,17 @@
+target: src/Tracker/VisitIdGenerator.php
+gate: php tests/cross-database-handle-test.php
+kind: guard-removal
+expect: analytics handles must not supply table prefixes
+rationale: Counter seeding must use the WordPress table prefix even when the analytics handle prefix is empty.
+---
+--- a/src/Tracker/VisitIdGenerator.php
++++ b/src/Tracker/VisitIdGenerator.php
+@@ -194,7 +194,7 @@
+         $stats_db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+ 
+-        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
++        $table = $stats_db->prefix . 'slim_stats';
+ 
+         $max_visit_id = $stats_db->get_var("SELECT COALESCE(MAX(visit_id), 0) FROM `{$table}`");
+         if (null === $max_visit_id || !ctype_digit((string) $max_visit_id)) {
+             return -1;

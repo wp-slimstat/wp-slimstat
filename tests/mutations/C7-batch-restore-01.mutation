@@ -1,0 +1,17 @@
+target: admin/view/wp-slimstat-reports.php
+gate: php tests/batch-reports-test.php
+kind: guard-removal
+expect: state leaked
+rationale: Restore state even after a throwing renderer.
+---
+--- a/admin/view/wp-slimstat-reports.php
++++ b/admin/view/wp-slimstat-reports.php
+@@ -1335,7 +1335,7 @@
+                 self::$batch_rendering = $previousBatch;
+                 wp_slimstat_db::$filters_normalized = $filters;
+                 wp_slimstat_db::$sql_where = $where;
+-                wp_slimstat_db::$pageviews = $pageviews;
++                // mutation: omit state restoration
+                 wp_slimstat_db::$debug_message = $debug;
+                 wp_slimstat::$settings = $settings;
+                 $db->last_error = $lastError;

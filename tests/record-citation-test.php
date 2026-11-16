@@ -333,7 +333,7 @@ if (!$standalone) {
 
     $files = slimstat_own_php_files(
         [$plugin_root . '/tests', $plugin_root . '/src', $plugin_root . '/admin'],
-        $plugin_root . '/src/Dependencies'
+        $plugin_root . '/vendor-prefixed'
     );
 
     foreach ($files as $file) {

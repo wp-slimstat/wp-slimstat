@@ -59,12 +59,12 @@ if ('' !== $declared && SLIMSTAT_FREE_TEXT_DOMAIN !== $declared) {
 $sources = array_merge(
     [$plugin_root . '/wp-slimstat.php'],
     // ABSOLUTE prefix. slimstat_own_php_files() compares against getPathname(), which is
-    // absolute, so a relative 'src/Dependencies' never matches and 493 vendored files were
+    // absolute, so a relative 'vendor-prefixed' never matches and 493 vendored files were
     // scanned. Harmless today — no dependency calls gettext — but the day one does, this gate
     // would fail on code this plugin cannot fix.
     slimstat_own_php_files(
         [$plugin_root . '/src', $plugin_root . '/admin', $plugin_root . '/views'],
-        $plugin_root . '/src/Dependencies'
+        $plugin_root . '/vendor-prefixed'
     )
 );
 

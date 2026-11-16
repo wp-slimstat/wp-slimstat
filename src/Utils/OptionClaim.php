@@ -25,6 +25,17 @@ namespace SlimStat\Utils;
  */
 final class OptionClaim
 {
+    /** Take a free or expired lease; release only this token with delete(). */
+    public static function acquire(string $name, int $seconds, string $suffix = ''): ?string
+    {
+        $now = time();
+        $token = (string) ($now + $seconds) . $suffix;
+        $old = get_option($name, null);
+        $won = null === $old ? self::insert($name, $token)
+            : ((int) $old < $now && self::compareAndSwap($name, (string) $old, $token));
+        return $won ? $token : null;
+    }
+
     /**
      * Create the row, or lose.
      *

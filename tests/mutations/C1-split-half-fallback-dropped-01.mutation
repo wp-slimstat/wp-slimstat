@@ -1,0 +1,22 @@
+target:    src/Utils/Query.php
+gate:      php tests/query-failed-query-cache-test.php
+kind:      guard-removal
+expect:    split: a failed historical half must not yield a today-only answer
+rationale: A failed historical half returns [] and the merge then hands today's half back as the whole range: a plausible, complete-looking top list with every past visit missing. The fallback replaces the merge with one full-range statement. Removing it brings the today-only answer back, which the gate detects by the merged rows' range keys.
+---
+diff --git a/src/Utils/Query.php b/src/Utils/Query.php
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -1924,12 +1924,6 @@
+             // A failed half is an empty array, and merging it would hand the caller the other
+             // half as the whole answer (a today-only "top pages" after a lost connection). Ask
+             // once over the full range instead — uncached, as any range reaching today is. (C-1)
+-            if ($histFailed || $liveFailed) {
+-                $full               = clone $this;
+-                $full->_isLiveQuery = true;
+-
+-                return $full->getAll();
+-            }
+ 
+             if (is_array($live)) {
+                 $dtList = array_map(fn ($row) => $row['dt'] ?? null, $live);

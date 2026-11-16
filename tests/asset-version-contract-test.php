@@ -51,8 +51,8 @@ $vendor_pins = [
     'admin/assets/js/daterangepicker/moment.min.js'         => '2.30.2', // Moment.js
     'admin/assets/js/daterangepicker/daterangepicker.min.js' => '3.1.0',  // daterangepicker
     'admin/assets/css/daterangepicker/daterangepicker.css'  => '3.1.0',  // daterangepicker
-    'admin/assets/js/jqvmap/jquery.vmap.min.js'             => '1.5.1',  // jqvmap
-    'admin/assets/js/jqvmap/jquery.vmap.world.min.js'       => '1.5.1',  // jqvmap world map
+    'admin/assets/js/jsvectormap/jsvectormap.min.js'        => '1.7.0',  // jsVectorMap
+    'admin/assets/js/jsvectormap/world.js'                  => '1.7.0',  // jsVectorMap world map
 ];
 
 $calls_of_interest = [

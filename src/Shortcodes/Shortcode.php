@@ -14,6 +14,19 @@ if (!defined('ABSPATH')) { exit; }
 /** The shortcode's SQL boundary, report catalog and rendering contract. */
 final class Shortcode
 {
+    public const PERSONAL_COLUMNS = ['ip', 'other_ip', 'hostname', 'username', 'display_name', 'email', 'fingerprint', 'user_agent'];
+    public const PRO_REPORTS = ['slim_p9_02', 'slim_heatmap_01', 'slim_p8_01', 'slim_p8_02'];
+    private const STAFF_REPORTS = ['slim_p7_02', 'slim_p1_04', 'slim_p1_11', 'slim_p1_18', 'slim_p2_20', 'slim_p2_21', 'slim_p4_27', 'slim_p6_01', 'slim_p8_01', 'slim_p8_02'];
+
+    /** Reports or columns that list individual visitors are for the analytics team only. */
+    public static function isStaff(string $id, array $args): bool
+    {
+        // A registered report may expose a personal column even when its title sounds aggregate.
+        $columns = array_map('trim', explode(',', (string) ($args['columns'] ?? '')));
+        return in_array($id, self::PERSONAL_COLUMNS, true) || in_array($id, self::STAFF_REPORTS, true) || 'slim_p10_01' === $id
+            || (bool) array_intersect(self::PERSONAL_COLUMNS, $columns) || (bool) array_intersect(['*', 'id'], $columns);
+    }
+
     public static function allowed(string $w): bool
     {
         return in_array($w, ['*', 'count', 'display_name', 'hostname', 'post_link', 'post_link_no_qs', 'dt', 'username', 'ip', 'id', 'searchterms', 'resource', 'country', 'browser', 'platform', 'language', 'slim_p1_01', 'slim_p1_03', 'slim_p1_04', 'slim_p1_06', 'slim_p1_08', 'slim_p1_10', 'slim_p1_11', 'slim_p1_12', 'slim_p1_13', 'slim_p1_15', 'slim_p1_17', 'slim_p1_18', 'slim_p1_19_01', 'slim_p2_01', 'slim_p2_02', 'slim_p2_03', 'slim_p2_04', 'slim_p2_05', 'slim_p2_06', 'slim_p2_07', 'slim_p2_08', 'slim_p2_12', 'slim_p2_13', 'slim_p2_14', 'slim_p2_15', 'slim_p2_16', 'slim_p2_17', 'slim_p2_18', 'slim_p2_19', 'slim_p2_20', 'slim_p2_21', 'slim_p2_22_01', 'slim_p2_24', 'slim_p2_25', 'slim_p3_01', 'slim_p3_02', 'slim_p3_03', 'slim_p3_04', 'traffic_channel', 'traffic_source', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'utm_id', 'slim_p4_01', 'slim_p4_02', 'slim_p4_04', 'slim_p4_05', 'slim_p4_06', 'slim_p4_07', 'slim_p4_09', 'slim_p4_10', 'slim_p4_11', 'slim_p4_12', 'slim_p4_13', 'slim_p4_15', 'slim_p4_16', 'slim_p4_18', 'slim_p4_19', 'slim_p4_20', 'slim_p4_21', 'slim_p4_22', 'slim_p4_23', 'slim_p4_24', 'slim_p4_25', 'slim_p4_26_01', 'slim_p4_27', 'slim_p6_01', 'slim_p9_01', 'slim_p9_02', 'slim_p2_23', 'other_ip', 'email', 'fingerprint', 'user_agent', 'visit_id', 'slim_p7_02', 'slim_p8_01', 'slim_p8_02', 'slim_heatmap_01', 'slim_p10_01', 'users', 'pages', 'countries'], true);
@@ -72,20 +85,13 @@ final class Shortcode
         ];
         foreach (wp_slimstat_db::$all_columns_names as $id => $info) { $labels[$id] = $labels[$id] ?? $info[0]; }
         foreach (wp_slimstat_reports::$reports as $id => $info) { $labels[$id] = $labels[$id] ?? $info['title']; }
-        $personal = ['ip', 'other_ip', 'hostname', 'username', 'display_name', 'email', 'fingerprint', 'user_agent'];
-        $staffReports = ['slim_p7_02', 'slim_p1_04', 'slim_p1_11', 'slim_p1_18', 'slim_p2_20', 'slim_p2_21', 'slim_p4_27', 'slim_p6_01', 'slim_p8_01', 'slim_p8_02'];
-        $pro = ['slim_p9_02', 'slim_heatmap_01', 'slim_p8_01', 'slim_p8_02'];
         $catalog = [];
         $order = [];
         foreach ($labels as $id => $label) {
             if (!self::allowed($id)) { continue; }
             $report = 0 === strpos($id, 'slim_');
             $live = in_array($id, ['users', 'pages', 'countries'], true);
-            $args = wp_slimstat_reports::$reports[$id]['callback_args'] ?? [];
-            $staff = in_array($id, $personal, true) || in_array($id, $staffReports, true) || 'slim_p10_01' === $id;
-            // A registered report may expose a personal column even when its title sounds aggregate.
-            $reportColumns = array_map('trim', explode(',', (string) ($args['columns'] ?? '')));
-            $staff = $staff || (bool) array_intersect($personal, $reportColumns) || (bool) array_intersect(['*', 'id'], $reportColumns);
+            $staff = self::isStaff($id, wp_slimstat_reports::$reports[$id]['callback_args'] ?? []);
             $group = $live ? 0 : (0 === strpos($id, 'utm_') || 0 === strpos($id, 'traffic_') || 0 === strpos($id, 'slim_p3_') ? 2 : (0 === strpos($id, 'slim_p4_') || in_array($id, ['resource', 'post_link', 'post_link_no_qs', 'searchterms'], true) ? 3 : (0 === strpos($id, 'slim_p2_') || in_array($id, ['country', 'browser', 'platform', 'language'], true) ? 4 : 1)));
             if ($staff) { $group = 8; }
             if ('slim_p10_01' === $id) { $group = 5; }
@@ -96,7 +102,7 @@ final class Shortcode
             if ($live) { $description = __('Activity on your site in the last 30 minutes, refreshed each minute.', 'wp-slimstat'); }
             $catalog[$id] = ['id' => $id, 'label' => wp_strip_all_tags($label), 'description' => $description, 'group' => $groups[$group],
                 'modes' => $live ? ['live'] : ($report ? ['widget'] : ['count', 'top', 'recent', 'count-all', 'top-all', 'recent-all']),
-                'tier' => in_array($id, $pro, true) ? 'pro' : 'free', 'privacy' => $staff ? 'staff' : 'public',
+                'tier' => in_array($id, self::PRO_REPORTS, true) ? 'pro' : 'free', 'privacy' => $staff ? 'staff' : 'public',
                 'available' => !$report || isset(wp_slimstat_reports::$reports[$id]),
             ];
             $order[$id] = $group;

@@ -16,6 +16,8 @@ namespace WpSlimstat\Tests\Integration;
  * Covers the Architectural decisions 6-7 from the 5.5.0 redesign: capability
  * gating, nonce reuse, and the paused-goal limit-count fix.
  */
+#[\PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses]
+#[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
 class GoalsFunnelsAjaxTest extends IntegrationTestCase
 {
     private const VALID_GOAL_POST = [

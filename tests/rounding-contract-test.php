@@ -933,7 +933,7 @@ $controls[] = [
 
 // ── The ratchet: no seventh site, anywhere in shipped PHP ────────────────────────────────────
 
-$deps_prefix = $plugin_root . '/src/Dependencies';
+$deps_prefix = $plugin_root . '/vendor-prefixed';
 $files       = slimstat_own_php_files(
     [$plugin_root . '/admin', $plugin_root . '/src', $plugin_root . '/views', $plugin_root . '/wp-slimstat.php'],
     $deps_prefix

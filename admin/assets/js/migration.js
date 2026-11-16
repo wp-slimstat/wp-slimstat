@@ -291,12 +291,5 @@
             });
         });
 
-        // Notice dismissal
-        $(document).on("click", ".slimstat-migration-notice .notice-dismiss", function () {
-            $.post(ajaxurl, {
-                action: "slimstat_migration_dismiss",
-                _ajax_nonce: $(this).closest(".slimstat-migration-notice").data("nonce"),
-            });
-        });
     });
 })(jQuery);

@@ -22,6 +22,7 @@ $day      = 'custom' === $range['preset'] ? 'gmdate' : 'wp_date';
 
 wp_localize_script('slimstat-heatmaps', 'SlimStatHeatmaps', [
     'route' => '/slimstat/v1/heatmap/pages',
+    'filters' => implode('&&&', array_map(static function ($column, $rule) { return $column . ' ' . $rule[0] . ' ' . rawurlencode($rule[1]); }, array_keys(wp_slimstat_db::$filters_normalized['columns']), wp_slimstat_db::$filters_normalized['columns'])),
     // Free: rows open a preview of the page's clicks. Pro without the row filter is an older Pro: ask to update.
     'mode'  => $viewer ? 'pro' : ($is_pro ? 'update' : 'free'),
     'home'  => home_url('/'),
@@ -63,6 +64,14 @@ if ('' !== $error) {
             : __('See which pages get clicks, from the link and button clicks SlimStat already records. SlimStat Pro opens each page\'s click and scroll heatmap.', 'wp-slimstat')) : '',
     ]);
     ?>
+    <?php wp_slimstat_admin::get_template('report-filters', ['show_date' => false]); ?>
+    <?php $filters_html = wp_slimstat_reports::get_filters_html(wp_slimstat_db::$filters_normalized['columns']); ?>
+    <?php if (!empty($filters_html)) : ?>
+    <div id="slimstat-current-filters">
+        <?php echo wp_kses_post($filters_html); ?>
+    </div>
+    <?php endif; ?>
+    <p class="ss-hm-filter-notice" role="status" hidden></p>
     <div class="ss-hm">
 
         <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only notice after the nonce-checked delete redirect. ?>
@@ -93,7 +102,12 @@ if ('' !== $error) {
             </div>
         <?php endif; ?>
 
+        <?php if ($is_admin && get_option(Store::PURGE_PENDING, false)) : ?>
+            <p role="status"><?php esc_html_e('Expired heatmap data is being removed in batches. Cleanup continues through scheduled tasks, even when recording is off.', 'wp-slimstat'); ?></p>
+        <?php endif; ?>
+
         <?php if ('' !== $page_key) : ?>
+            <?php echo \SlimStat\Reports\AiPromptButton::html('slimheatmap', ['title' => __('Page heatmap', 'wp-slimstat'), 'tooltip' => __('The selected page and device, with recorded click and scroll summaries, top elements and data notes. The visual heatmap is not included. Top elements count all clicks, regardless of the selected overlay.', 'wp-slimstat')], wp_slimstat_db::$filters_normalized['columns'] ?? [], $is_pro); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- AiPromptButton escapes its output. ?>
             <?php
             /**
              * Renders one page's heatmap. Pro hooks it; the list below is skipped.
@@ -108,6 +122,7 @@ if ('' !== $error) {
 
         <?php if ($is_admin && $is_pro) : ?><p><a class="button" href="<?php echo esc_url(admin_url('admin.php?page=slimconfig&tab=7#heatmap_capture')); ?>"><?php esc_html_e('Heatmap settings', 'wp-slimstat'); ?></a></p><?php endif; ?>
         <form class="ss-hm-toolbar" role="search" onsubmit="return false">
+            <?php echo \SlimStat\Reports\AiPromptButton::html('slimheatmap', ['title' => __('Heatmaps', 'wp-slimstat'), 'tooltip' => __('Recorded clicks on the pages shown. Missing or locked metrics are unavailable, not zero. This list does not show the position of clicks on a page.', 'wp-slimstat')], wp_slimstat_db::$filters_normalized['columns'] ?? [], $is_pro); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- AiPromptButton escapes its output. ?>
             <label>
                 <span class="screen-reader-text"><?php esc_html_e('Device', 'wp-slimstat'); ?></span>
                 <select name="device" <?php disabled(!$is_pro); ?> aria-describedby="ss-hm-device-access">

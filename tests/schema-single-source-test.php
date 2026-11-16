@@ -86,7 +86,7 @@ foreach (['tables', 'columns', 'indexes', 'engine', 'createTableSql', 'ensure'] 
 // let the other five through.
 $own_files = slimstat_own_php_files(
     [$plugin_root . '/admin', $plugin_root . '/src'],
-    $plugin_root . '/src/Dependencies'
+    $plugin_root . '/vendor-prefixed'
 );
 $own_files[] = $plugin_root . '/wp-slimstat.php';
 $own_files[] = $plugin_root . '/uninstall.php';

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0febd3ad4346d8343975e8a89967f274",
+    "content-hash": "9ec3c6b716bc6a8465c35049858f1fca",
     "packages": [
         {
             "name": "veronalabs/browscap-php",

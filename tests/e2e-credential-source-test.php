@@ -24,6 +24,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/lib/source-scan.php';
+
 if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {
     http_response_code(403);
     exit(1);
@@ -101,6 +103,36 @@ foreach ($files as $path) {
                 . 'credential must come from a constant — from env.ts, or from one the spec '
                 . 'provisions itself with ensureWpUser()', $rel, $hit[1], $hit[2], $hit[1]);
         }
+    }
+}
+
+// The standard CI job starts from a fresh wp-env site. Its admin exists by default, but the
+// author account does not; global setup authenticates both before any spec can run. Pin the
+// provisioning contract so a missing author is reported here instead of as a 60-second browser
+// navigation timeout in every matrix lane.
+$ci_source    = slimstat_yaml_strip_comments((string) file_get_contents($plugin_root . '/.github/workflows/ci.yml'));
+$standard_job = slimstat_ci_job_blocks($ci_source)['standard'] ?? null;
+if (null === $standard_job) {
+    $failures[] = 'cannot find the Tier 2 standard job in .github/workflows/ci.yml';
+} else {
+    foreach (['WP_AUTHOR_USER:', 'WP_AUTHOR_PASS:'] as $fragment) {
+        if (false === strpos($standard_job, $fragment)) {
+            $failures[] = "Tier 2 does not provision the configured author account: missing `{$fragment}`";
+        }
+    }
+
+    // One step must create the configured user AS an author WITH the configured password.
+    // Needles rather than a one-line regex: the command wraps with a `\` continuation today,
+    // and flag order or line wrapping is not the contract.
+    $author_steps = slimstat_ci_steps_containing(
+        slimstat_ci_steps($standard_job),
+        'wp user create "$WP_AUTHOR_USER"',
+        '--role=author',
+        '--user_pass="$WP_AUTHOR_PASS"'
+    );
+    if ([] === $author_steps) {
+        $failures[] = 'Tier 2 has no step running `wp user create "$WP_AUTHOR_USER" … --role=author '
+            . '--user_pass="$WP_AUTHOR_PASS"`, so the author login fails as a navigation timeout';
     }
 }
 

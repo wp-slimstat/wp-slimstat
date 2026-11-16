@@ -1,0 +1,17 @@
+target: admin/view/wp-slimstat-reports.php
+gate: php tests/batch-reports-test.php
+kind: guard-removal
+expect: duplicates, Pro, overrides or unknown
+rationale: Only unchanged Free-owned callbacks may share a request.
+---
+--- a/admin/view/wp-slimstat-reports.php
++++ b/admin/view/wp-slimstat-reports.php
+@@ -1276,7 +1276,7 @@
+     {
+         return array_keys(array_filter(self::$free_reports, static function ($report, $id) {
+             // An extension may replace a built-in ID as well as register its own.
+-            return 'slim_p10_01' !== $id && isset(self::$reports[$id]) && self::$reports[$id] === $report;
++            return true;
+         }, ARRAY_FILTER_USE_BOTH));
+     }
+ 

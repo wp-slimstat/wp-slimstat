@@ -5,9 +5,9 @@
  * future component that adopts the layer. All colors, radii, shadows, spacing
  * and motion values for new CSS reference --ss-* tokens exclusively.
  *
- * LEGACY ALIASES (--slimstat-*, --gdpr-*) are preserved at their exact existing
- * values so the datepicker (admin/assets/css/daterangepicker/slimstat-datepicker-styles.css)
- * and GDPR banner (assets/css/gdpr-banner.css) keep their current appearance.
+ * LEGACY ALIASES (--slimstat-*) are preserved at their exact existing values so the
+ * datepicker (admin/assets/css/daterangepicker/slimstat-datepicker-styles.css) keeps
+ * its current appearance. The GDPR banner declares its own --gdpr-* on the front end.
  * Do NOT "unify" those values with the modern brand palette — regression risk.
  *
  * @since 5.5.0
@@ -134,8 +134,7 @@
 
     /* ================================================================= */
     /* LEGACY ALIASES — must preserve exact values. Do NOT refactor.      */
-    /* Consumers: admin/assets/css/daterangepicker/slimstat-datepicker-styles.css */
-    /*            assets/css/gdpr-banner.css                              */
+    /* Consumer: admin/assets/css/daterangepicker/slimstat-datepicker-styles.css */
     /* ================================================================= */
     --slimstat-primary: #dc3232;
     --slimstat-primary-hover: #b32d2e;
@@ -143,10 +142,6 @@
     --slimstat-background: #fff;
     --slimstat-text: #333;
     --slimstat-light-bg: #f8f8f8;
-
-    --gdpr-border: #dee2e6;
-    --gdpr-shadow: rgba(0, 0, 0, 0.1);
-    --gdpr-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -175,28 +170,29 @@
    Tertiary   .button-link                       WordPress's text link, unchanged
    Destructive .button-link .button-link-delete  red text, always behind a confirm step
    `body` outranks .wp-core-ui and the admin colour schemes, which load after this file;
-   WordPress's disabled styles are !important, so they still win. */
-body .wrap-slimstat .button-primary {
+   WordPress's disabled styles are !important, so they still win.
+   The locked-Pro banner takes the same roles on the Dashboard and Plugins screen. */
+body :is(.wrap-slimstat, .slimstat-pro-license-notice) .button-primary {
     background: var(--ss-brand-700);
     border-color: var(--ss-brand-700);
     border-radius: var(--ss-radius-2xs);
     color: #fff;
 }
-body .wrap-slimstat .button-primary:hover,
-body .wrap-slimstat .button-primary:focus {
+body :is(.wrap-slimstat, .slimstat-pro-license-notice) .button-primary:hover,
+body :is(.wrap-slimstat, .slimstat-pro-license-notice) .button-primary:focus {
     background: var(--ss-brand-900);
     border-color: var(--ss-brand-900);
     color: #fff;
 }
-body .wrap-slimstat .button:not(.button-primary),
-body .wrap-slimstat .button-secondary {
+body :is(.wrap-slimstat, .slimstat-pro-license-notice) .button:not(.button-primary),
+body :is(.wrap-slimstat, .slimstat-pro-license-notice) .button-secondary {
     background: var(--ss-surface);
     border-color: var(--ss-border-control);
     border-radius: var(--ss-radius-2xs);
     color: var(--ss-text-body);
 }
-body .wrap-slimstat .button:not(.button-primary):hover,
-body .wrap-slimstat .button-secondary:hover {
+body :is(.wrap-slimstat, .slimstat-pro-license-notice) .button:not(.button-primary):hover,
+body :is(.wrap-slimstat, .slimstat-pro-license-notice) .button-secondary:hover {
     background: var(--ss-surface-tint);
     border-color: var(--ss-text-body);
     color: var(--ss-text-strong);

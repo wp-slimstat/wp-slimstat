@@ -11,10 +11,15 @@ use SlimStat\Services\Admin\Notification\NotificationFactory;
 $displayNotifications = (wp_slimstat::$settings['display_notifications'] == 'on');
 $hasUpdatedNotifications = false;
 $newNotificationCount = 0;
+$notificationBadge = [];
+$promoBanner = \SlimStat\Services\Admin\MarketingCampaign::banner();
+$hasPromoNotification = false;
 
 if ($displayNotifications && class_exists(NotificationFactory::class)) {
     $hasUpdatedNotifications = NotificationFactory::hasUpdatedNotifications();
     $newNotificationCount    = NotificationFactory::getNewNotificationCount();
+    $notificationBadge       = NotificationFactory::getBadge();
+    $hasPromoNotification    = NotificationFactory::hasPromoNotification($promoBanner ? $promoBanner->getCampaign() : '');
 }
 
 
@@ -22,16 +27,18 @@ if ($displayNotifications && class_exists(NotificationFactory::class)) {
 $online_visitors = class_exists('wp_slimstat_db') ? wp_slimstat_admin::online_count() : 0;
 $formatted_online_visitors = number_format_i18n($online_visitors);
 
-$support_url   = 'https://wp-slimstat.com/contact/?utm_source=plugin&utm_medium=header&utm_campaign=support';
-$docs_url      = 'https://wp-slimstat.com/resources/?utm_source=plugin&utm_medium=header&utm_campaign=docs';
+$support_url   = \SlimStat\Utils\ProLinks::tag('https://wp-slimstat.com/contact/', 'header', 'support');
+$docs_url      = \SlimStat\Utils\ProLinks::tag('https://wp-slimstat.com/resources/', 'header', 'docs');
 $settings_url  = admin_url('admin.php?page=slimconfig');
 $upgrade_url   = \SlimStat\Utils\ProLinks::url('header', 'cta');
+// Pro is active but its license is not verified: the header button sends administrators to the fix.
+$license_action = \SlimStat\Services\ProLicense::action();
 $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-logo.png';
 ?>
 
 <div class="slimstat-header slimstat-header--modern">
     <div class="slimstat-header__brand">
-        <div class="slimstat-header__brand-copy">
+        <div class="slimstat-header__brand-copy" role="img" aria-label="SlimStat">
             <svg width="118" height="30" viewBox="0 0 118 30" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <g clip-path="url(#clip0_1213_2675)">
                     <path fill-rule="evenodd" clip-rule="evenodd" d="M0 15C0 6.71582 6.7069 0 14.9801 0C20.2546 0 24.8865 2.72788 27.5572 6.84316L19.371 15.1743H19.3643V15.1877C19.0765 15.4893 18.5946 15.496 18.2934 15.2011C18.2599 15.1743 18.2331 15.1408 18.2064 15.1005L15.9239 11.9638C13.9627 9.27614 10.047 9.03485 7.77787 11.4678L0.589029 19.1756C0.194112 17.8217 0 16.4142 0 15ZM2.69079 23.5858C5.40167 27.4665 9.89302 30.0067 14.9801 30.0067C23.2533 30.0067 29.9602 23.2909 29.9602 15.0067C29.9602 13.7399 29.8062 12.5134 29.5117 11.3405L22.604 18.3646C20.3148 20.7172 16.466 20.4424 14.5316 17.7949L12.2491 14.6582C12.0015 14.3231 11.5329 14.2426 11.1916 14.4906C11.1514 14.5174 11.1179 14.5509 11.0845 14.5845L2.69079 23.5858Z" fill="#F22F46"/>
@@ -63,6 +70,37 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
                 </defs>
             </svg>
         </div>
+        <div class="slimstat-header__account">
+        <?php if (isset($is_pro) && $is_pro): ?>
+            <span class="slimstat-header__status-pill" aria-label="<?php esc_attr_e('SlimStat Pro plugin is active', 'wp-slimstat'); ?>" title="<?php esc_attr_e('License status is shown in SlimStat License settings.', 'wp-slimstat'); ?>">
+                <span class="slimstat-header__status-icon" aria-hidden="true">
+                    <svg width="12" height="14" viewBox="0 0 12 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M0.251677 2.05494C0 2.41352 0 3.47938 0 5.6111V6.66091C0 10.4196 2.82597 12.2437 4.59904 13.0182C5.08001 13.2283 5.32049 13.3333 6 13.3333C6.67951 13.3333 6.91999 13.2283 7.40096 13.0182C9.17402 12.2437 12 10.4196 12 6.66091V5.6111C12 3.47938 12 2.41352 11.7483 2.05494C11.4966 1.69636 10.4945 1.3533 8.49006 0.667195L8.10819 0.536478C7.06335 0.178826 6.54093 0 6 0C5.45907 0 4.93666 0.178826 3.89182 0.536478L3.50994 0.667195C1.50555 1.3533 0.503354 1.69636 0.251677 2.05494ZM8.03964 5.66634C8.22355 5.46036 8.20566 5.14428 7.99967 4.96036C7.79369 4.77645 7.47761 4.79434 7.2937 5.00033L5.28571 7.24927L4.7063 6.60033C4.52239 6.39434 4.20631 6.37645 4.00033 6.56036C3.79434 6.74428 3.77645 7.06036 3.96036 7.26634L4.91275 8.33301C5.00761 8.43925 5.14328 8.5 5.28571 8.5C5.42815 8.5 5.56382 8.43925 5.65868 8.33301L8.03964 5.66634Z" fill="#18A456"/>
+                    </svg>
+                </span>
+                <span class="slimstat-header__status-text"><?php esc_html_e('Pro', 'wp-slimstat'); ?></span>
+            </span>
+        <?php endif; ?>
+        <?php if (empty($is_pro) && current_user_can('manage_options')): ?>
+            <a href="<?php echo esc_url($license_action[1] ?? $upgrade_url); ?>" class="slimstat-header__cta slimstat-upgrade-pro"<?php echo $license_action ? '' : ' target="_blank" rel="noopener noreferrer"'; ?>>
+                <span class="slimstat-header__cta-icon" aria-hidden="true">
+                    <svg width="11" height="13" viewBox="0 0 11 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7.50106 5.79266C6.8433 5.00565 6.51443 4.61214 6.13637 4.67275C5.75831 4.73336 5.58144 5.20795 5.22771 6.15713L5.1362 6.40269C5.03568 6.67242 4.98542 6.80728 4.88763 6.90662C4.78984 7.00597 4.65559 7.05855 4.38709 7.16371L4.14264 7.25945C3.19778 7.62952 2.72535 7.81455 2.67147 8.19275C2.61759 8.57094 3.01794 8.89184 3.81865 9.53363L4.0258 9.69967C4.25334 9.88205 4.3671 9.97324 4.43296 10.0981C4.49881 10.2229 4.5093 10.3672 4.53027 10.6558L4.54936 10.9186C4.62316 11.9343 4.66006 12.4422 5.00482 12.6153C5.34958 12.7885 5.77388 12.5122 6.62247 11.9597L6.84201 11.8167C7.08316 11.6597 7.20373 11.5812 7.34222 11.559C7.48071 11.5368 7.62144 11.5734 7.9029 11.6466L8.15915 11.7133C9.14962 11.971 9.64485 12.0998 9.91181 11.8286C10.1788 11.5574 10.0406 11.0658 9.76439 10.0825L9.69292 9.82816C9.61442 9.54874 9.57517 9.40903 9.59491 9.27049C9.61465 9.13195 9.69114 9.01026 9.84412 8.76688L9.98339 8.5453C10.5217 7.68883 10.7909 7.2606 10.6111 6.91986C10.4314 6.57912 9.9217 6.55154 8.90238 6.49637L8.63867 6.4821C8.34901 6.46642 8.20418 6.45858 8.07789 6.39516C7.9516 6.33174 7.85814 6.21992 7.67123 5.99627L7.50106 5.79266Z" fill="#202224"/>
+                        <path d="M7.25194 2.11148L7.37396 2.45937C7.50798 2.84147 7.575 3.03253 7.70538 3.17327C7.83577 3.31401 8.01477 3.3885 8.37276 3.53748L8.6987 3.67311C9.95851 4.19737 10.5884 4.4595 10.6603 4.99528C10.6902 5.2183 10.6151 5.42726 10.4403 5.66079C10.3813 5.6448 10.3244 5.63177 10.2709 5.6209C9.92016 5.54958 9.47401 5.52554 9.01929 5.50104L8.6928 5.48338C8.63001 5.47998 8.58119 5.47732 8.53937 5.47461C8.51166 5.44219 8.47975 5.40403 8.43861 5.35481L8.2282 5.10303C7.93462 4.75159 7.64737 4.40773 7.38024 4.16902C7.09537 3.91444 6.61917 3.58241 5.97815 3.68518C5.33031 3.78904 4.98475 4.26042 4.79831 4.59686C4.62558 4.90857 4.47024 5.32575 4.31295 5.74812L4.19924 6.0533C4.18002 6.10486 4.16461 6.14617 4.15104 6.1817C4.11549 6.19596 4.07414 6.21217 4.02248 6.2324L3.71883 6.35132C3.29825 6.51592 2.88328 6.67832 2.5743 6.85611C2.24181 7.04742 1.77426 7.40077 1.68155 8.05153C1.58972 8.69609 1.93301 9.16663 2.19286 9.44567C2.38653 9.65363 2.64674 9.87301 2.92456 10.0978C1.87885 10.3815 1.32261 10.4874 1.00648 10.1461C0.650544 9.76194 0.834708 9.06545 1.20303 7.67249L1.29833 7.31211C1.40299 6.91627 1.45533 6.71835 1.42901 6.52209C1.40269 6.32582 1.30071 6.15342 1.09673 5.80863L0.91103 5.49473C0.193236 4.2814 -0.165661 3.67474 0.0740371 3.19202C0.313735 2.70931 0.993282 2.67023 2.35238 2.59208L2.70399 2.57186C3.09021 2.54965 3.28331 2.53855 3.4517 2.4487C3.62009 2.35886 3.7447 2.20044 3.99392 1.88361L4.22081 1.59516C5.09782 0.480225 5.53632 -0.0772439 6.0404 0.00862086C6.54448 0.0944856 6.7803 0.766818 7.25194 2.11148Z" fill="#202224"/>
+                    </svg>
+                </span>
+                <span class="slimstat-header__cta-label"><?php echo esc_html($license_action[0] ?? __('Upgrade to Pro', 'wp-slimstat')); ?></span>
+                <span class="slimstat-header__cta-arrow" aria-hidden="true">
+                <svg width="4" height="8" viewBox="0 0 4 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M0.13096 0.0902856C0.288207 -0.0444977 0.524945 -0.0262872 0.659728 0.13096L3.65973 3.63096C3.7801 3.77139 3.7801 3.97862 3.65973 4.11905L0.659728 7.61905C0.524945 7.7763 0.288207 7.79451 0.13096 7.65973C-0.0262872 7.52494 -0.0444977 7.28821 0.0902856 7.13096L2.8811 3.87501L0.0902856 0.619053C-0.0444977 0.461806 -0.0262872 0.225069 0.13096 0.0902856Z" fill="#202224"/>
+                </svg>
+                </span>
+            </a>
+        <?php endif; ?>
+        <?php if (!\wp_slimstat::pro_plugin_active() && current_user_can('manage_options')): ?>
+            <a class="slimstat-header__license-link" dir="auto" href="<?php echo esc_url(\SlimStat\Utils\ProLinks::tag(\SlimStat\Services\ProLicense::ACCOUNT, 'header', 'find-license')); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Have a license?', 'wp-slimstat'); ?></a>
+        <?php endif; ?>
+        </div>
     </div>
 
     <div class="slimstat-header__meta" role="presentation">
@@ -73,18 +111,25 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
                 <ellipse cx="9" cy="12.75" rx="5.25" ry="3" fill="#676E74"/>
                 </svg>
             </span>
-            <span class="slimstat-header__online-label"><?php esc_html_e('Visitors online (last 30 min)', 'wp-slimstat'); ?></span>
+            <span class="slimstat-header__online-label slimstat-header__online-label--full"><?php esc_html_e('Visitors online (last 30 min)', 'wp-slimstat'); ?></span>
+            <span class="slimstat-header__online-label slimstat-header__online-label--compact"><?php esc_html_e('Online (30 min)', 'wp-slimstat'); ?></span>
             <span id="slimstat-online-visitors-count" class="slimstat-header__online-value"><?php echo esc_html($formatted_online_visitors); ?></span>
         </div>
     </div>
 
     <div class="slimstat-header__actions">
+        <?php if ($promoBanner): ?>
+            <a class="slimstat-header__promo<?php echo $hasPromoNotification ? ' slimstat-header__promo--in-panel' : ''; ?>" href="<?php echo esc_url($promoBanner->getUrl()); ?>" title="<?php echo esc_attr($promoBanner->getTooltip()); ?>" style="--slimstat-promo-bg:<?php echo esc_attr($promoBanner->getBackgroundColor()); ?>;--slimstat-promo-text:<?php echo esc_attr($promoBanner->getTextColor()); ?>" data-campaign="<?php echo esc_attr($promoBanner->getCampaign()); ?>" data-ends-at="<?php echo esc_attr($promoBanner->getEndsAt()); ?>" target="_blank" rel="noopener noreferrer">
+                <?php if ($promoBanner->getIcon()): ?><span aria-hidden="true"><?php echo esc_html($promoBanner->getIcon()); ?></span><?php endif; ?>
+                <span><?php echo esc_html($promoBanner->getTitle()); ?></span>
+            </a>
+        <?php endif; ?>
         <div class="slimstat-header__icon-bar">
             <?php if ($displayNotifications): ?>
-                <a href="#" class="slimstat-header__icon slimstat-header__icon--notifications slimstat-notifications js-slimstat-open-notification <?php echo $hasUpdatedNotifications ? esc_attr('slimstat-notifications--has-items') : ''; ?>" title="<?php esc_attr_e('Notifications', 'wp-slimstat'); ?>" aria-label="<?php esc_attr_e('Notifications', 'wp-slimstat'); ?>">
+                <a href="#" class="slimstat-header__icon slimstat-header__icon--notifications slimstat-notifications js-slimstat-open-notification <?php echo $hasUpdatedNotifications ? esc_attr('slimstat-notifications--has-items') : ''; ?>" aria-controls="slimstat-notification-panel" aria-expanded="false" title="<?php esc_attr_e('Notifications', 'wp-slimstat'); ?>" aria-label="<?php esc_attr_e('Notifications', 'wp-slimstat'); ?>">
                     <span class="dashicons dashicons-bell" aria-hidden="true"></span>
                     <?php if ($newNotificationCount > 0): ?>
-                        <span class="slimstat-header__badge"><?php echo esc_html(number_format_i18n($newNotificationCount)); ?></span>
+                        <span class="slimstat-header__badge<?php echo !empty($notificationBadge['urgent']) ? ' slimstat-header__badge--urgent' : ''; ?>" dir="ltr"><?php echo esc_html(number_format_i18n($newNotificationCount)); ?></span>
                     <?php endif; ?>
                 </a>
             <?php endif; ?>
@@ -101,42 +146,19 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
             </a>
         </div>
 
-        <?php if (isset($is_pro) && $is_pro): ?>
-            <span class="slimstat-header__status-pill" aria-label="<?php esc_attr_e('Pro is active', 'wp-slimstat'); ?>">
-                <span class="slimstat-header__status-icon" aria-hidden="true">
-                    <svg width="12" height="14" viewBox="0 0 12 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M0.251677 2.05494C0 2.41352 0 3.47938 0 5.6111V6.66091C0 10.4196 2.82597 12.2437 4.59904 13.0182C5.08001 13.2283 5.32049 13.3333 6 13.3333C6.67951 13.3333 6.91999 13.2283 7.40096 13.0182C9.17402 12.2437 12 10.4196 12 6.66091V5.6111C12 3.47938 12 2.41352 11.7483 2.05494C11.4966 1.69636 10.4945 1.3533 8.49006 0.667195L8.10819 0.536478C7.06335 0.178826 6.54093 0 6 0C5.45907 0 4.93666 0.178826 3.89182 0.536478L3.50994 0.667195C1.50555 1.3533 0.503354 1.69636 0.251677 2.05494ZM8.03964 5.66634C8.22355 5.46036 8.20566 5.14428 7.99967 4.96036C7.79369 4.77645 7.47761 4.79434 7.2937 5.00033L5.28571 7.24927L4.7063 6.60033C4.52239 6.39434 4.20631 6.37645 4.00033 6.56036C3.79434 6.74428 3.77645 7.06036 3.96036 7.26634L4.91275 8.33301C5.00761 8.43925 5.14328 8.5 5.28571 8.5C5.42815 8.5 5.56382 8.43925 5.65868 8.33301L8.03964 5.66634Z" fill="#18A456"/>
-                    </svg>
-                </span>
-                <span class="slimstat-header__status-text"><?php esc_html_e('Pro', 'wp-slimstat'); ?></span>
-            </span>
-        <?php elseif (current_user_can('manage_options')): ?>
-            <a href="<?php echo esc_url($upgrade_url); ?>" class="slimstat-header__cta slimstat-upgrade-pro" target="_blank" >
-                <span class="slimstat-header__cta-icon" aria-hidden="true">
-                    <svg width="11" height="13" viewBox="0 0 11 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M7.50106 5.79266C6.8433 5.00565 6.51443 4.61214 6.13637 4.67275C5.75831 4.73336 5.58144 5.20795 5.22771 6.15713L5.1362 6.40269C5.03568 6.67242 4.98542 6.80728 4.88763 6.90662C4.78984 7.00597 4.65559 7.05855 4.38709 7.16371L4.14264 7.25945C3.19778 7.62952 2.72535 7.81455 2.67147 8.19275C2.61759 8.57094 3.01794 8.89184 3.81865 9.53363L4.0258 9.69967C4.25334 9.88205 4.3671 9.97324 4.43296 10.0981C4.49881 10.2229 4.5093 10.3672 4.53027 10.6558L4.54936 10.9186C4.62316 11.9343 4.66006 12.4422 5.00482 12.6153C5.34958 12.7885 5.77388 12.5122 6.62247 11.9597L6.84201 11.8167C7.08316 11.6597 7.20373 11.5812 7.34222 11.559C7.48071 11.5368 7.62144 11.5734 7.9029 11.6466L8.15915 11.7133C9.14962 11.971 9.64485 12.0998 9.91181 11.8286C10.1788 11.5574 10.0406 11.0658 9.76439 10.0825L9.69292 9.82816C9.61442 9.54874 9.57517 9.40903 9.59491 9.27049C9.61465 9.13195 9.69114 9.01026 9.84412 8.76688L9.98339 8.5453C10.5217 7.68883 10.7909 7.2606 10.6111 6.91986C10.4314 6.57912 9.9217 6.55154 8.90238 6.49637L8.63867 6.4821C8.34901 6.46642 8.20418 6.45858 8.07789 6.39516C7.9516 6.33174 7.85814 6.21992 7.67123 5.99627L7.50106 5.79266Z" fill="#202224"/>
-                        <path d="M7.25194 2.11148L7.37396 2.45937C7.50798 2.84147 7.575 3.03253 7.70538 3.17327C7.83577 3.31401 8.01477 3.3885 8.37276 3.53748L8.6987 3.67311C9.95851 4.19737 10.5884 4.4595 10.6603 4.99528C10.6902 5.2183 10.6151 5.42726 10.4403 5.66079C10.3813 5.6448 10.3244 5.63177 10.2709 5.6209C9.92016 5.54958 9.47401 5.52554 9.01929 5.50104L8.6928 5.48338C8.63001 5.47998 8.58119 5.47732 8.53937 5.47461C8.51166 5.44219 8.47975 5.40403 8.43861 5.35481L8.2282 5.10303C7.93462 4.75159 7.64737 4.40773 7.38024 4.16902C7.09537 3.91444 6.61917 3.58241 5.97815 3.68518C5.33031 3.78904 4.98475 4.26042 4.79831 4.59686C4.62558 4.90857 4.47024 5.32575 4.31295 5.74812L4.19924 6.0533C4.18002 6.10486 4.16461 6.14617 4.15104 6.1817C4.11549 6.19596 4.07414 6.21217 4.02248 6.2324L3.71883 6.35132C3.29825 6.51592 2.88328 6.67832 2.5743 6.85611C2.24181 7.04742 1.77426 7.40077 1.68155 8.05153C1.58972 8.69609 1.93301 9.16663 2.19286 9.44567C2.38653 9.65363 2.64674 9.87301 2.92456 10.0978C1.87885 10.3815 1.32261 10.4874 1.00648 10.1461C0.650544 9.76194 0.834708 9.06545 1.20303 7.67249L1.29833 7.31211C1.40299 6.91627 1.45533 6.71835 1.42901 6.52209C1.40269 6.32582 1.30071 6.15342 1.09673 5.80863L0.91103 5.49473C0.193236 4.2814 -0.165661 3.67474 0.0740371 3.19202C0.313735 2.70931 0.993282 2.67023 2.35238 2.59208L2.70399 2.57186C3.09021 2.54965 3.28331 2.53855 3.4517 2.4487C3.62009 2.35886 3.7447 2.20044 3.99392 1.88361L4.22081 1.59516C5.09782 0.480225 5.53632 -0.0772439 6.0404 0.00862086C6.54448 0.0944856 6.7803 0.766818 7.25194 2.11148Z" fill="#202224"/>
-                    </svg>
-                </span>
-                <span class="slimstat-header__cta-label"><?php esc_html_e('Upgrade to Pro', 'wp-slimstat'); ?></span>
-                <span class="slimstat-header__cta-arrow" aria-hidden="true">
-                <svg width="4" height="8" viewBox="0 0 4 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fill-rule="evenodd" clip-rule="evenodd" d="M0.13096 0.0902856C0.288207 -0.0444977 0.524945 -0.0262872 0.659728 0.13096L3.65973 3.63096C3.7801 3.77139 3.7801 3.97862 3.65973 4.11905L0.659728 7.61905C0.524945 7.7763 0.288207 7.79451 0.13096 7.65973C-0.0262872 7.52494 -0.0444977 7.28821 0.0902856 7.13096L2.8811 3.87501L0.0902856 0.619053C-0.0444977 0.461806 -0.0262872 0.225069 0.13096 0.0902856Z" fill="#202224"/>
-                </svg>
-                </span>
-            </a>
-        <?php endif; ?>
     </div>
 </div>
 
-<?php wp_slimstat_admin::show_latest_news(null, null, null, 'bar'); ?>
+<?php if (!\SlimStat\Services\BlackFriday2026::render()) { wp_slimstat_admin::show_latest_news(null, null, null, 'bar'); } ?>
 
 <?php if (!empty($title)) : // One page heading on every screen, directly under the brand bar (audit A6). ?>
 <div class="slimstat-pageintro">
     <h1 class="slimstat-pageintro__title"><?php echo esc_html($title); ?></h1>
-    <?php if (!empty($lead)) : ?><p class="slimstat-pageintro__lead"><?php echo esc_html($lead); ?></p><?php endif; ?>
+    <?php if (!empty($lead)) : ?><p class="slimstat-pageintro__lead" dir="auto"><?php echo esc_html($lead); ?></p><?php endif; ?>
 </div>
 <?php endif; ?>
+
+<?php \SlimStat\Services\ProLicense::render(); // Says why Pro is locked; nothing while it is licensed. ?>
 
 <?php
 if ($displayNotifications && class_exists(NotificationFactory::class)) {

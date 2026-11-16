@@ -1,0 +1,17 @@
+target: src/Services/Privacy/DataExporter.php
+gate: composer test:privacy-export-archive
+kind: guard-removal
+expect: live 0 exportPageviews
+rationale: External analytics data must be read through the analytics connection.
+---
+--- a/src/Services/Privacy/DataExporter.php
++++ b/src/Services/Privacy/DataExporter.php
+@@ -24,7 +24,7 @@
+ 	/** Read one bounded, uncached page from each applicable storage table. */
+ 	private static function getExportRows($email_address, $page, $events)
+ 	{
+-		$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
++		$db = $GLOBALS['wpdb'];
+ 		$prefix = $GLOBALS['wpdb']->prefix;
+ 		$number = 500;
+ 		$offset = (max(1, (int) $page) - 1) * $number;

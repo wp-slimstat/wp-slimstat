@@ -24,10 +24,7 @@ class CloudflareGeolocationProvider implements GeoServiceProviderInterface
 			$server[strtolower($k)] = $v;
 		}
 
-		// Validate that the request is actually from Cloudflare by checking for CF-Ray header
-		// CF-Ray is a unique identifier that Cloudflare adds to every request
-		if (!isset($server['http_cf_ray']) || empty($server['http_cf_ray'])) {
-			// Not a Cloudflare request - return null to indicate geolocation is not available
+		if (!\SlimStat\Tracker\Utils::isCloudflareRequest()) {
 			return null;
 		}
 

@@ -263,10 +263,6 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
         $collation = $this->targetCollation();
         $ok        = true;
 
-        // A rebuild of a large table can sit behind an open report query. Fail fast rather
-        // than inheriting whatever the host's default lock wait is.
-        $this->wpdb->query('SET SESSION lock_wait_timeout = 30');
-
         // Evaluated BEFORE the budget is armed, deliberately. pendingTables() costs one
         // information_schema aggregate per declared table, and on a server with a large
         // information_schema that probe alone can outlast the budget — which would break the loop
@@ -297,10 +293,12 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
             }
             $first = false;
 
-            // No ALGORITHM clause: INPLACE is refused for a charset change and naming COPY
-            // explicitly buys nothing over the server's own choice.
-            $result = $this->wpdb->query(
-                "ALTER TABLE `{$table}` CONVERT TO CHARACTER SET utf8mb4 COLLATE {$collation}"
+            // This optional, explicitly requested conversion permits a copy. The shared
+            // helper bounds lock_wait_timeout and restores the connection after each table.
+            $result = Schema::alterOnline(
+                $this->wpdb,
+                "ALTER TABLE `{$table}` CONVERT TO CHARACTER SET utf8mb4 COLLATE {$collation}",
+                true
             );
 
             if (false === $result) {

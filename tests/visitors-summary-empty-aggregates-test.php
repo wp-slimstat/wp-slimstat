@@ -11,6 +11,7 @@ class wp_slimstat_db {
     public static function count_records(...$args) { return 0; }
     public static function count_records_having(...$args) { return 0; }
     public static function get_max_and_average_pages_per_visit() { return self::$metrics; }
+    protected static function summary_counts($counts) { return array_fill_keys(array_keys($counts), 0); }
 }
 function __($text, $domain = '') { return $text; }
 function number_format_i18n($number, $decimals = 0) {
@@ -21,7 +22,7 @@ function number_format_i18n($number, $decimals = 0) {
 }
 
 $source = file_get_contents(dirname(__DIR__) . '/admin/view/wp-slimstat-db.php');
-eval('class SummaryProbe { public static function run() {' . slimstat_function_body($source, 'get_visitors_summary') . '} }');
+eval('class SummaryProbe extends wp_slimstat_db { public static function run() {' . slimstat_function_body($source, 'get_visitors_summary') . '} }');
 
 $cases = [
     'no visits yet (row of NULLs)' => [[['avghits' => null, 'maxhits' => null]], '0.00', '0 pageviews'],

@@ -27,80 +27,49 @@ class DataEraser
 	 *
 	 * @param string $email_address The user's email address
 	 * @param int    $page          Page number for pagination
-	 * @return array WordPress Privacy API formatted erase response
+	 * @return array|\WP_Error WordPress Privacy API formatted erase response
 	 */
 	public static function erasePageviews($email_address, $page = 1)
 	{
-		$number    = 500; // Process 500 records per page
-		$page      = (int) $page;
-		$offset    = ($page - 1) * $number;
+		$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
 		$items_removed = false;
-		$items_retained = false;
 		$messages = [];
+		$done = true;
+		$tables = [$GLOBALS['wpdb']->prefix . 'slim_stats'];
+		$archive = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
+		$exists = $db->get_var($db->prepare('SHOW TABLES LIKE %s', $db->esc_like($archive)));
+		$failed = '' !== (string) $db->last_error;
+		if ($exists) {
+			$tables[] = $archive;
+		}
 
-		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-
-		// Get total count before deletion
-		$total = Query::select('COUNT(*)')
-			->from($table)
-			->where('email', '=', $email_address)
-			->getVar();
-
-		if ($total > 0) {
-			// Delete pageviews for this email (main table)
-			$deleted = Query::delete($table)
-				->where('email', '=', $email_address)
-				->limit($number)
-				->execute();
-
+		// Each call drains the first batch; archives may outlive every live pageview.
+		foreach ($tables as $table) {
+			$deleted = Query::delete($table)->where('email', '=', $email_address)->limit(500)->execute();
+			$failed = $failed || false === $deleted;
 			if ($deleted > 0) {
 				$items_removed = true;
+				\wp_slimstat::bump_data_version();
 				$messages[] = sprintf(
 					/* translators: %d: number of pageview records removed. */
 					__('Removed %d pageview record(s) from SlimStat.', 'wp-slimstat'),
 					$deleted
 				);
 			}
-
-			// Also check archive table if it exists
-			$archive_table = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
-			$archive_exists = $GLOBALS['wpdb']->get_var(
-				$GLOBALS['wpdb']->prepare(
-					"SHOW TABLES LIKE %s",
-					$archive_table
-				)
-			);
-
-			if ($archive_exists) {
-				$deleted_archive = Query::delete($archive_table)
-					->where('email', '=', $email_address)
-					->limit($number)
-					->execute();
-
-				if ($deleted_archive > 0) {
-					$items_removed = true;
-					$messages[] = sprintf(
-						/* translators: %d: number of archived pageview records removed. */
-						__('Removed %d archived pageview record(s) from SlimStat.', 'wp-slimstat'),
-						$deleted_archive
-					);
-				}
-			}
+			$remaining = Query::select('COUNT(*)')->from($table)->where('email', '=', $email_address)->getVar();
+			$failed = $failed || '' !== (string) $db->last_error;
+			$done = $done && 0 === (int) $remaining;
 		}
 
-		// Check if there are more pages to process
-		$remaining = Query::select('COUNT(*)')
-			->from($table)
-			->where('email', '=', $email_address)
-			->getVar();
-
-		$done = ($remaining == 0);
+		if ($failed) {
+			return new \WP_Error('slimstat_erasure_failed', __('SlimStat could not finish erasing the data. Please try again.', 'wp-slimstat'));
+		}
 
 		return [
-			'items_removed'  => $items_removed,
-			'items_retained' => $items_retained,
-			'messages'       => $messages,
-			'done'           => $done,
+			'items_removed' => $items_removed,
+			'items_retained' => $failed,
+			'messages' => $messages,
+			'done' => $done,
 		];
 	}
 
@@ -109,122 +78,62 @@ class DataEraser
 	 *
 	 * @param string $email_address The user's email address
 	 * @param int    $page          Page number for pagination
-	 * @return array WordPress Privacy API formatted erase response
+	 * @return array|\WP_Error WordPress Privacy API formatted erase response
 	 */
 	public static function eraseEvents($email_address, $page = 1)
 	{
-		$number    = 500; // Process 500 records per page
-		$page      = (int) $page;
-		$offset    = ($page - 1) * $number;
+		$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+		$prefix = $GLOBALS['wpdb']->prefix;
 		$items_removed = false;
-		$items_retained = false;
 		$messages = [];
-
-		$stats_table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-		$events_table = $GLOBALS['wpdb']->prefix . 'slim_events';
-
-		$events_archive_table = $GLOBALS['wpdb']->prefix . 'slim_events_archive';
-		$stats_archive_table  = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
-		$archive_exists       = (bool) $GLOBALS['wpdb']->get_var(
-			$GLOBALS['wpdb']->prepare('SHOW TABLES LIKE %s', $events_archive_table)
-		);
-
-		// Delete events by joining with stats table to filter by email
-		// Get IDs first, then delete (safer than direct join delete)
-		//
-		// The archived pair is searched as well as the live one. An event is attributable
-		// to a person only through its parent pageview, so once retention moves a pageview
-		// into the archive its events are reachable ONLY via the archived parent — looking
-		// in the live tables alone would leave that person's notes, event descriptions and
-		// click positions in the archive forever. This mattered from the moment archiving
-		// began working: before that the archive tables were always empty. (D1)
-		$id_sql = "SELECT e.id FROM {$events_table} e
-				INNER JOIN {$stats_table} s ON e.id = s.id
-				WHERE s.email = %s";
-
-		if ($archive_exists) {
-			$id_sql .= " UNION SELECT a.id FROM {$events_archive_table} a
-				INNER JOIN {$stats_archive_table} sa ON a.id = sa.id
-				WHERE sa.email = %s";
+		$done = true;
+		$suffixes = [''];
+		$archive = $prefix . 'slim_events_archive';
+		$exists = $db->get_var($db->prepare('SHOW TABLES LIKE %s', $db->esc_like($archive)));
+		$failed = '' !== (string) $db->last_error;
+		if ($exists) {
+			$suffixes[] = '_archive';
 		}
 
-		$id_args = $archive_exists
-			? [$email_address, $email_address, $number, $offset]
-			: [$email_address, $number, $offset];
-
-		$event_ids = $GLOBALS['wpdb']->get_col(
-			$GLOBALS['wpdb']->prepare($id_sql . ' LIMIT %d OFFSET %d', ...$id_args)
-		);
-
-		if (!empty($event_ids)) {
-			$placeholders = implode(',', array_fill(0, count($event_ids), '%d'));
-			$deleted = $GLOBALS['wpdb']->query(
-				$GLOBALS['wpdb']->prepare(
-					"DELETE FROM {$events_table} WHERE id IN ({$placeholders})",
-					...$event_ids
-				)
-			);
-
-			if ($deleted > 0) {
-				$items_removed = true;
-				$messages[] = sprintf(
-					/* translators: %d: number of event records removed. */
-					__('Removed %d event record(s) from SlimStat.', 'wp-slimstat'),
-					$deleted
-				);
-			}
-
-			if ($archive_exists) {
-				$deleted_archive = $GLOBALS['wpdb']->query(
-					$GLOBALS['wpdb']->prepare(
-						"DELETE FROM {$events_archive_table} WHERE id IN ({$placeholders})",
-						...$event_ids
-					)
-				);
-
-				if ($deleted_archive > 0) {
+		// Live and archived IDs can belong to different people after an ID reset.
+		foreach ($suffixes as $suffix) {
+			$stats_table = $prefix . 'slim_stats' . $suffix;
+			$events_table = $prefix . 'slim_events' . $suffix;
+			$ids = $db->get_col($db->prepare(
+				"SELECT e.event_id FROM {$events_table} e INNER JOIN {$stats_table} s ON e.id = s.id
+				 WHERE s.email = %s ORDER BY e.event_id LIMIT 500",
+				$email_address
+			));
+			$failed = $failed || '' !== (string) $db->last_error;
+			if ($ids) {
+				$placeholders = implode(',', array_fill(0, count($ids), '%d'));
+				$deleted = $db->query($db->prepare("DELETE FROM {$events_table} WHERE event_id IN ({$placeholders})", ...$ids));
+				$failed = $failed || false === $deleted;
+				if ($deleted > 0) {
 					$items_removed = true;
+					\wp_slimstat::bump_data_version();
 					$messages[] = sprintf(
-						/* translators: %d: number of archived event records removed. */
-						__('Removed %d archived event record(s) from SlimStat.', 'wp-slimstat'),
-						$deleted_archive
+						/* translators: %d: number of event records removed. */
+						__('Removed %d event record(s) from SlimStat.', 'wp-slimstat'),
+						$deleted
 					);
 				}
 			}
-		}
-
-		// Check if there are more pages.
-		//
-		// Counted across the archive too. Reporting done=true while archived events for
-		// this person remain would stop WordPress calling back, and the erasure request
-		// would be marked complete with the data still there.
-		$remaining = (int) $GLOBALS['wpdb']->get_var(
-			$GLOBALS['wpdb']->prepare(
-				"SELECT COUNT(*) FROM {$events_table} e
-				INNER JOIN {$stats_table} s ON e.id = s.id
-				WHERE s.email = %s",
+			$remaining = $db->get_var($db->prepare(
+				"SELECT COUNT(*) FROM {$events_table} e INNER JOIN {$stats_table} s ON e.id = s.id WHERE s.email = %s",
 				$email_address
-			)
-		);
-
-		if ($archive_exists) {
-			$remaining += (int) $GLOBALS['wpdb']->get_var(
-				$GLOBALS['wpdb']->prepare(
-					"SELECT COUNT(*) FROM {$events_archive_table} a
-					INNER JOIN {$stats_archive_table} sa ON a.id = sa.id
-					WHERE sa.email = %s",
-					$email_address
-				)
-			);
+			));
+			$failed = $failed || '' !== (string) $db->last_error;
+			$done = $done && 0 === (int) $remaining;
 		}
-
-		$done = (0 === $remaining);
-
+		if ($failed) {
+			return new \WP_Error('slimstat_erasure_failed', __('SlimStat could not finish erasing the data. Please try again.', 'wp-slimstat'));
+		}
 		return [
-			'items_removed'  => $items_removed,
-			'items_retained' => $items_retained,
-			'messages'       => $messages,
-			'done'           => $done,
+			'items_removed' => $items_removed,
+			'items_retained' => false,
+			'messages' => $messages,
+			'done' => $done,
 		];
 	}
 
@@ -237,86 +146,77 @@ class DataEraser
 	 *
 	 * @param string $ip_address The IP address to anonymize
 	 * @param int    $page       Page number for pagination
-	 * @return array WordPress Privacy API formatted erase response
+	 * @return array|\WP_Error WordPress Privacy API formatted erase response
 	 */
 	public static function anonymizeByIp($ip_address, $page = 1)
 	{
+        if (!filter_var($ip_address, FILTER_VALIDATE_IP)) {
+            return new \WP_Error('slimstat_erasure_failed', __('SlimStat could not finish erasing the data. Please try again.', 'wp-slimstat'));
+        }
 		if (\SlimStat\Ecommerce\Integration::ready()) {
 			$commerce = \SlimStat\Ecommerce\Integration::erase($ip_address, $page, 'ip');
 			if (!$commerce['done']) {
 				return $commerce;
 			}
 		}
-		$number    = 500; // Process 500 records per page
-		$page      = (int) $page;
-		$offset    = ($page - 1) * $number;
-		$items_removed = false;
-		$items_retained = false;
-		$messages = [];
-
-		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-
-		// Anonymize IP addresses (set to '0.0.0.0' as anonymous marker)
-		// Also clear username, email, fingerprint — and vid_hash, which is DERIVED from
-		// the fingerprint (or ip + user agent): clearing the inputs while keeping the
-		// value computed from them would leave the "anonymized" row carrying a visitor
-		// identifier this same UPDATE just promised to erase. visit_id stays: it is a
-		// sequential session number and carries nothing about the person.
-		//
-		// The column is probed first because an upgraded install may not have run the
-		// AddVisitIdentity migration yet — and naming a column the table lacks fails the
-		// WHOLE statement, which here means a GDPR erasure request silently erasing
-		// nothing. A schema that predates vid_hash has nothing to clear. Asked through
-		// the manifest's own read model (Schema::hasColumn) rather than a third
-		// hand-rolled probe; its conservative failure mode — unreadable table answers
-		// false — is safe here, because a table this connection cannot read will fail
-		// the UPDATE below loudly anyway.
-		$has_vid_hash = \SlimStat\Schema\Schema::hasColumn(
-			$GLOBALS['wpdb'],
-			'slim_stats',
-			$GLOBALS['wpdb']->prefix,
-			'vid_hash'
-		);
-
-		$updated = $GLOBALS['wpdb']->query(
-			$GLOBALS['wpdb']->prepare(
-				"UPDATE {$table}
-				SET ip = '0.0.0.0',
-				    other_ip = '',
-				    username = '',
-				    email = '',
-				    fingerprint = ''" . ($has_vid_hash ? ', vid_hash = NULL' : '') . '
-				WHERE ip = %s
-				LIMIT %d',
-				$ip_address,
-				$number
-			)
-		);
-
-		if ($updated > 0) {
-			$items_removed = true; // Technically anonymized, not removed
-			$messages[] = sprintf(
-				/* translators: 1: anonymized record count, 2: IP address. */
-				__('Anonymized %1$d record(s) with IP %2$s in SlimStat.', 'wp-slimstat'),
-				$updated,
-				$ip_address
-			);
-		}
-
-		// Check if there are more pages
-		$remaining = Query::select('COUNT(*)')
-			->from($table)
-			->where('ip', '=', $ip_address)
-			->getVar();
-
-		$done = ($remaining == 0);
-
-		return [
-			'items_removed'  => $items_removed,
-			'items_retained' => $items_retained,
-			'messages'       => $messages,
-			'done'           => $done,
-		];
+        $db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+        $prefix = $GLOBALS['wpdb']->prefix;
+        $tables = [$prefix . 'slim_stats'];
+        $archive = $prefix . 'slim_stats_archive';
+        $exists = $db->get_var($db->prepare('SHOW TABLES LIKE %s', $db->esc_like($archive)));
+        $failed = '' !== (string) $db->last_error;
+        if ($exists) { $tables[] = $archive; }
+        $items_removed = false;
+        $done = true;
+        $messages = [];
+        foreach ($tables as $table) {
+            // Older archives may predate identity columns or store IPv4 as an integer.
+            // Read the actual schema so a missing optional field cannot disable erasure.
+            $columns = $db->get_results("SHOW COLUMNS FROM {$table}", ARRAY_A);
+            $query_error = (string) $db->last_error;
+            if ('' !== $query_error || !$columns) { $failed = true; break; }
+            $types = array_column($columns, 'Type', 'Field');
+            if (!isset($types['ip'])) { $failed = true; break; }
+            $anonymous = preg_match('/int/i', $types['ip']) ? '0' : '0.0.0.0';
+            $set = ['ip = %s'];
+            $personal = ['CAST(ip AS CHAR) <> %s'];
+            foreach (['other_ip', 'username', 'email', 'fingerprint'] as $column) {
+                if (isset($types[$column])) {
+                    $empty = preg_match('/int/i', $types[$column]) ? '0' : "''";
+                    $set[] = "{$column} = {$empty}";
+                    $personal[] = "COALESCE({$column}, {$empty}) <> {$empty}";
+                }
+            }
+            if (isset($types['vid_hash'])) {
+                $set[] = 'vid_hash = NULL';
+                $personal[] = 'vid_hash IS NOT NULL';
+            }
+            $ips = [(string) $ip_address];
+            if (filter_var($ip_address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                $ips[] = sprintf('%u', ip2long($ip_address));
+            }
+            $where = 'CAST(ip AS CHAR) IN (' . implode(',', array_fill(0, count($ips), '%s')) . ') AND (' . implode(' OR ', $personal) . ')';
+            $params = array_merge($ips, [$anonymous]);
+            $updated = $db->query($db->prepare("UPDATE {$table} SET " . implode(', ', $set) . " WHERE {$where} LIMIT 500", array_merge([$anonymous], $params)));
+            if (false === $updated) { $failed = true; break; }
+            if ($updated > 0) {
+                $items_removed = true;
+                \wp_slimstat::bump_data_version();
+                $messages[] = sprintf(
+                    /* translators: 1: anonymized record count, 2: IP address. */
+                    __('Anonymized %1$d record(s) with IP %2$s in SlimStat.', 'wp-slimstat'),
+                    $updated, $ip_address
+                );
+            }
+            $remaining = $db->get_var($db->prepare("SELECT COUNT(*) FROM {$table} WHERE {$where}", $params));
+            $query_error = (string) $db->last_error;
+            $failed = $failed || '' !== $query_error;
+            $done = $done && 0 === (int) $remaining;
+        }
+        if ($failed) {
+            return new \WP_Error('slimstat_erasure_failed', __('SlimStat could not finish erasing the data. Please try again.', 'wp-slimstat'));
+        }
+        return ['items_removed' => $items_removed, 'items_retained' => false, 'messages' => $messages, 'done' => $done];
 	}
 
 	/**

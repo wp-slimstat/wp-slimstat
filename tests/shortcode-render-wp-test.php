@@ -13,6 +13,7 @@ $core = $GLOBALS['wpdb'];
 $prefix = $core->prefix;
 $analytics = wp_slimstat::$wpdb;
 $settings = wp_slimstat::$settings;
+$verdict = get_option(\SlimStat\Services\ProLicense::OPTION, null);
 $user = get_current_user_id();
 $testPrefix = 'test_shortcode_' . bin2hex(random_bytes(4)) . '_';
 $check = static function ($ok, $message) { if (!$ok) { throw new RuntimeException($message); } };
@@ -94,6 +95,13 @@ try {
     remove_filter('option_active_plugins', $free);
     $pro = static function ($plugins) { $plugins[] = 'wp-slimstat-pro/wp-slimstat-pro.php'; return $plugins; };
     add_filter('option_active_plugins', $pro);
+    $licensed = static function ($options) { return ['slimstat_pro_license_key' => 'wp-test-license'] + (array) $options; };
+    // The test's own license writes are not rendering writes.
+    $unwatched = static function (callable $write) use ($watch) { remove_filter('query', $watch); $write(); add_filter('query', $watch); };
+    add_filter('option_slimstat_options', $licensed);
+    $unwatched(static function () { delete_option(\SlimStat\Services\ProLicense::OPTION); });
+    $check(strpos(Shortcode::render(['f' => 'widget', 'w' => 'slim_heatmap_01']), 'needs SlimStat Pro') !== false, 'Unverified Pro license stays locked');
+    $unwatched(static function () { \SlimStat\Services\ProLicense::record('wp-test-license', 'valid'); });
     $reports = wp_slimstat_reports::$reports;
     unset(wp_slimstat_reports::$reports['slim_heatmap_01']);
     $check(strpos(Shortcode::render(['f' => 'widget', 'w' => 'slim_heatmap_01']), 'Update SlimStat Pro') !== false, 'Outdated Pro gets update guidance');
@@ -105,6 +113,7 @@ try {
     $heatmap = Shortcode::render(['f' => 'widget', 'w' => 'slim_heatmap_01']);
     $check(strpos($heatmap, '<table') !== false && strpos($heatmap, '/heatmap-shortcode-fixture') !== false && strpos($heatmap, number_format_i18n(1234)) !== false, 'Empty display callback uses escaped raw table');
     wp_slimstat_reports::$reports = $reports;
+    remove_filter('option_slimstat_options', $licensed);
     remove_filter('option_active_plugins', $pro);
     $core->prefix = $prefix;
     $check(is_string(Shortcode::render(['f' => 'widget', 'w' => 'slim_heatmap_01'])), 'Raw heatmap has no fatal');
@@ -150,6 +159,7 @@ try {
     $core->prefix = $prefix;
     wp_slimstat::$wpdb = $analytics;
     wp_slimstat::$settings = $settings;
+    null === $verdict ? delete_option(\SlimStat\Services\ProLicense::OPTION) : update_option(\SlimStat\Services\ProLicense::OPTION, $verdict);
     wp_set_current_user($user);
     $core->query("DROP TABLE IF EXISTS `$table`");
 }

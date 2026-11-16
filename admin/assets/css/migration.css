@@ -5,6 +5,10 @@ body.slimstat_page_migration .error,
 body.slimstat_page_migration .updated {
     display: none !important;
 }
+/* Report widget forms are hidden by admin.css; this recovery control must remain visible. */
+.slimstat-migration .meta-box-sortables .slimstat-retry-upgrade {
+    display: block;
+}
 .slimstat-migration .slimstat-status-header {
     display: flex;
     align-items: center;

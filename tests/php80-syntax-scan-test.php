@@ -7,7 +7,7 @@
  * (which scans 8.0+ *stdlib calls*); this one scans 8.0+ *language constructs*
  * and 8.0-*removed* functions.
  *
- * Scope: wp-slimstat.php, admin/, src/ — excludes src/Dependencies/.
+ * Scope: wp-slimstat.php, admin/, src/ — excludes vendor-prefixed/.
  * Allow-marker: /​* php80-syntax: ok *​/ on the comment line above a site.
  */
 
@@ -16,7 +16,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/lib/source-scan.php';
 
 $plugin_root  = dirname(__DIR__);
-$deps_prefix  = $plugin_root . '/src/Dependencies';
+$deps_prefix  = $plugin_root . '/vendor-prefixed';
 $allow_marker = 'php80-syntax: ok';
 // tests/docker/report-answers.php is in scope for a reason that is NOT "it ships" — it does not.
 // tests/answer-envelope-classes-test.php `require`s it to gate the real classifier, and that test

@@ -3,7 +3,7 @@
  *
  * - Opening one of the reports it lists retires it on the next visit.
  * - Dismiss retires it at once, and it stays retired.
- * - The license note it carried survives it.
+ * - A stale Pro license flag adds no license note: Free's verified license decides, and it is valid here.
  *
  * Needs Pro and WooCommerce; seeds its own orders and restores the admin's user setting and the options it sets.
  */
@@ -55,7 +55,7 @@ test('the Pro reports panel retires once opened or dismissed @woocommerce', asyn
     await expect(ready).toHaveCount(0);
     await load();
     await expect(ready).toHaveCount(0);
-    await expect(dashboard.getByRole('link', { name: 'Check your update license' })).toBeVisible();
+    await expect(dashboard.getByRole('link', { name: 'Check your update license' })).toHaveCount(0);
   } finally {
     fixture('cleanup');
     // The setting syncs to user meta on the next admin load, so it would outlive this test.

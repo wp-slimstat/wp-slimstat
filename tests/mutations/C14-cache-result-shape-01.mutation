@@ -1,0 +1,17 @@
+target: src/Utils/Query.php
+gate: php tests/query-result-contract-test.php
+kind: guard-removal
+expect: getVar then getRow: result shape or values changed
+rationale: Cached results must preserve the executor contract across new or reused query builders.
+---
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -854,7 +854,7 @@
+     protected function getCacheKeyForQuery($query, $args = [])
+     {
+         // The same SQL can return a scalar, object, column or row list.
+-        return 'wp_slimstat_query_' . substr(self::cacheHash($this->db, $query, $args), 0, 16) . '_' . $this->cacheResultType;
++        return 'wp_slimstat_query_' . substr(self::cacheHash($this->db, $query, $args), 0, 16);
+     }
+ 
+     /** Cache SQL as wpdb executes it, scoped to its analytics connection. */

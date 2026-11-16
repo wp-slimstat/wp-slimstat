@@ -22,6 +22,7 @@ namespace {
         public static $settings = [];
         public static function get_fresh_defaults() { return ['version' => '6.0.0', 'geolocation_provider' => 'dbip', 'notice_latest_news' => 'no']; }
         public static function record_degradation(...$args) {}
+        public static function clear_degradation($key) {}
         public static function update_option($name, $value) {}
     }
     function apply_filters($hook, $value) { return $value; }

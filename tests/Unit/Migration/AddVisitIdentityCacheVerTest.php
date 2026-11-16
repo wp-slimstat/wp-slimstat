@@ -40,8 +40,8 @@ class AddVisitIdentityCacheVerTest extends WpSlimstatTestCase
     public function test_a_failed_run_does_not_rotate_the_cache_version(): void
     {
         $wpdb = $this->addVisitIdentityDb(false, ['PRIMARY']);
-        // Both the INPLACE attempt and the bare retry refuse: run() must fail.
-        $wpdb->shouldReceive('query')->andReturn(false);
+        // The online ALTER attempts refuse: run() must fail.
+        $wpdb->shouldReceive('query')->with(\Mockery::pattern('/^ALTER TABLE /'))->andReturn(false);
 
         Functions\expect('update_option')->never();
 

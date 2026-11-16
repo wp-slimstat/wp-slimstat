@@ -57,28 +57,29 @@ def pageviews_chart(rows, capture_end, duration_days, granularity, start_of_week
 
     end = capture_end // DAY * DAY - 1
     start = end - duration_days * DAY + 1
-    span = end - start
+    span = end - start + 1
     bounds = {
         "current": (start, end),
-        "previous": (start - span, end - span),
+        "previous": (start - span, start - 1),
     }
 
-    if granularity == "DAY":
-        labels = [_date(start + i * DAY).strftime("'%Y/%m/%d'") for i in range(duration_days)]
-    else:
-        first = _date(start)
-        labels = [first.strftime("'%Y/%m/%d'")]
-        next_week = _week_start(start, start_of_week)
-        if int(next_week.timestamp()) <= start:
+    def calendar_labels(low, high):
+        if granularity == "DAY":
+            return [_date(low + i * DAY).strftime("%Y/%m/%d")
+                    for i in range((high - low) // DAY + 1)]
+        labels = [_date(low).strftime("%Y/%m/%d")]
+        next_week = _week_start(low, start_of_week) + timedelta(days=7)
+        while int(next_week.timestamp()) <= high:
+            labels.append(next_week.strftime("%Y/%m/%d"))
             next_week += timedelta(days=7)
-        while int(next_week.timestamp()) <= end:
-            labels.append(next_week.strftime("'%Y/%m/%d'"))
-            next_week += timedelta(days=7)
+        return labels
+
+    period_labels = {period: calendar_labels(*window) for period, window in bounds.items()}
 
     second_column = metric2_column or metric_column
     empty_v1 = (lambda: set()) if distinct_v1 else (lambda: 0)
     datasets = {period: {"v1": [empty_v1() for _ in labels], "v2": [set() for _ in labels]}
-                for period in bounds}
+                for period, labels in period_labels.items()}
     totals = {period: {"v1": empty_v1(), "v2": set()} for period in bounds}
     for index, row in enumerate(rows):
         if not isinstance(row, dict) or "dt" not in row \
@@ -105,21 +106,26 @@ def pageviews_chart(rows, capture_end, duration_days, granularity, start_of_week
                 totals[period][series].add(value)
             else:
                 totals[period][series] += value
-            if 0 <= offset < len(labels):
+            if 0 <= offset < len(datasets[period][series]):
                 if distinct:
                     datasets[period][series][offset].add(value)
                 else:
                     datasets[period][series][offset] += value
 
-    previous_start = bounds["previous"][0]
-    prev_labels = [(_date(previous_start) + timedelta(days=i * (1 if granularity == "DAY" else 7)))
-                   .strftime("%Y/%m/%d") for i in range(len(labels))]
     def sized(bucket):
         return len(bucket) if isinstance(bucket, set) else bucket
 
     values = {period: {"v1": [sized(bucket) for bucket in data["v1"]],
                        "v2": [len(bucket) for bucket in data["v2"]]}
               for period, data in datasets.items()}
+    points = max(map(len, period_labels.values()))
+    for period, data in values.items():
+        missing = points - len(period_labels[period])
+        for series in data:
+            data[series] += [None] * missing
+    labels = ["'%s'" % label for label in period_labels["current"]]
+    labels += [''] * (points - len(labels))
+    prev_labels = period_labels["previous"] + [''] * (points - len(period_labels["previous"]))
     total_rows = [{"v1": sized(totals[period]["v1"]), "v2": len(totals[period]["v2"]),
                    "period": period}
                   for period in ("current", "previous")]
@@ -129,6 +135,8 @@ def pageviews_chart(rows, capture_end, duration_days, granularity, start_of_week
              else _date(capture_day).strftime("%Y/%m/%d"))
     return {
         "labels": labels,
+        "period_end": end,
+        "previous_end": start - 1,
         "totals": total_rows,
         "prev_labels": prev_labels,
         "datasets": values["current"],

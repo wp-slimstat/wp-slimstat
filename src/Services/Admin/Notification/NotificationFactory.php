@@ -4,6 +4,28 @@ namespace SlimStat\Services\Admin\Notification;
 
 class NotificationFactory
 {
+	public static function hasPromoNotification(string $campaign): bool
+	{
+		if ('' === $campaign) return false;
+		foreach (self::getAllNotifications() as $notification) {
+			if ($notification->isPromo() && $notification->getCampaign() === $campaign) return true;
+		}
+		return false;
+	}
+
+	/** A danger badge wins when several unread notices carry a label. */
+	public static function getBadge(): array
+	{
+		$badge = [];
+		foreach (self::getAllNotifications() as $notification) {
+			if ($notification->getDismiss() || '' === $notification->getBadge()) continue;
+			$urgent = 'slimstat-notification-sidebar__danger' === $notification->backgroundColor();
+			if (!$badge || $urgent) $badge = ['label' => $notification->getBadge(), 'urgent' => $urgent, 'ends_at' => $notification->getEndsAt()];
+			if ($urgent) break;
+		}
+		return $badge;
+	}
+
 	public static function getRawNotificationsData()
 	{
 		return \get_option('wp_slimstat_notifications', []);

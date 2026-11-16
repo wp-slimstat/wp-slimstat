@@ -6,12 +6,12 @@ rationale: Stop reading the severity the call site recorded and hard-code LOAD, 
 ---
 --- a/admin/index.php
 +++ b/admin/index.php
-@@ -4195,7 +4195,7 @@
+@@ -5147,7 +5147,7 @@
              // at runtime. record_degradation() is told which it is at the catch block that
              // knows. Legacy records written before that parameter existed default to LOAD,
              // which is what they all were; they age out within DEGRADATION_TTL anyway.
 -            $severity = isset($record['severity']) ? (string) $record['severity'] : wp_slimstat::DEGRADATION_LOAD;
 +            $severity = wp_slimstat::DEGRADATION_LOAD;
  
-             if (wp_slimstat::DEGRADATION_OPERATIONAL === $severity) {
-                 $operational_items .= $item;
+             $occurrences[$severity][$step] = $record['since'] ?? $record['time'] ?? 0;
+             if (wp_slimstat::DEGRADATION_TRACKING === $severity) {

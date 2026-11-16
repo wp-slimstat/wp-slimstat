@@ -1,0 +1,17 @@
+target: src/Utils/Query.php
+gate: php tests/query-failed-query-cache-test.php
+kind: guard-removal
+expect: thrown live failure uses full range
+rationale: Thrown live-query failures must cause full-range fallback rather than escape.
+---
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -1968,7 +1968,7 @@
+             try {
+                 $live       = $liveQuery->getAll();
+                 $liveFailed = $liveQuery->lastQueryFailed;
+-            } catch (\Throwable $e) {
++            } catch (Exception $e) {
+                 $live = [];
+                 $liveFailed = true;
+             }

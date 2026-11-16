@@ -15,8 +15,8 @@ import urllib.request
 
 root = Path(__file__).resolve().parents[1]
 files = [
-    'src/Dependencies/veronalabs/browscap-php/src/Symfony/Component/String/Slugger/AsciiSlugger.php',
-    'src/Dependencies/veronalabs/browscap-php/src/Symfony/Contracts/Service/ServiceSubscriberTrait.php',
+    'vendor-prefixed/veronalabs/browscap-php/src/Symfony/Component/String/Slugger/AsciiSlugger.php',
+    'vendor-prefixed/veronalabs/browscap-php/src/Symfony/Contracts/Service/ServiceSubscriberTrait.php',
 ]
 guard = "\n\n// Scoped SlimStat module: allow plugin/CLI autoload, deny direct web execution.\nif (!defined('ABSPATH') && PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {\n    http_response_code(403);\n    exit;\n}\n"
 proof = {'php': subprocess.check_output(['php', '-v'], text=True), 'source_files': {}}

@@ -1,3 +1,19 @@
+function SlimStatReportBody(id) {
+    return jQuery("#" + id + " .inside");
+}
+
+/** Encode selected filters before navigation so reload and history can restore them. */
+function SlimStatFilterUrl(url, form) {
+    const target = new URL(url, window.location.href);
+    Array.from(target.searchParams.keys()).forEach(name => {
+        if (name.startsWith('fs[')) target.searchParams.delete(name);
+    });
+    form.querySelectorAll('input[name]').forEach(input => {
+        if (input.name.startsWith('fs[')) target.searchParams.set(input.name, input.value);
+    });
+    return target;
+}
+
 if (typeof SlimStatAdminParams == "undefined") {
     SlimStatAdminParams = {
         async_load: "no",
@@ -33,6 +49,238 @@ jQuery(document).on("click", "#slimstat-clear-cache", function (e) {
             $btn.next(".loading").remove();
         });
 });
+
+/**
+ * Check the viewer's saved segment against the server-provided personal-field list.
+ * @param {Element} body Heatmaps report container.
+ * @returns {boolean} Whether this selection must stay out of copied AI prompts.
+ */
+function SlimStatHeatmapPersonalFilter(body) {
+    const who = body.querySelector('.ss-hmv [name="who"]');
+    const button = body.querySelector('.slimstat-ai-prompt');
+    if (!who || !button || !who.value.startsWith("fs:")) return false;
+    const personal = (button.dataset.personalFilters || "").split(",");
+    return who.value.slice(3).split("&&&").some((filter) => personal.includes(filter.trim().split(/\s+/)[0]));
+}
+
+jQuery(function () {
+    const body = document.querySelector(".ss-hm");
+    const who = body && body.querySelector('.ss-hmv [name="who"]');
+    const button = body && body.querySelector('.slimstat-ai-prompt');
+    if (!who || !button) return;
+    body.querySelector('.ss-hmv-bar').append(button);
+    const analysis = body.querySelector('.slimstat-ai-analyze');
+    if (analysis) body.querySelector('.ss-hmv-bar').append(analysis);
+    const update = () => { button.hidden = SlimStatHeatmapPersonalFilter(body); if (analysis) analysis.hidden = button.hidden; };
+    who.addEventListener("change", update);
+    window.addEventListener("popstate", update);
+    update();
+});
+
+/**
+ * Extract displayed aggregate data, including active chart series and report filters.
+ * Locked previews, loading states and personal heatmap segments produce no rows.
+ * @param {Element|null} body Report body, Ecommerce dashboard or Heatmaps container.
+ * @returns {string[]} Clipboard rows formatted as "cell | cell" lines.
+ */
+function SlimStatReportRows(body) {
+    const { __, sprintf } = window.wpSlimstatI18n;
+    if (!body || body.querySelector(".slimstat-empty")) return [];
+    const text = (node) => node.textContent.trim().replace(/\s+/g, " ");
+    const visible = (node) => !node.closest("[hidden]") && getComputedStyle(node).visibility !== "hidden";
+    const cells = (row) => Array.from(row.cells).filter((cell) => !cell.hidden).map(text).join(" | ");
+    if (body.matches(".ss-hm")) {
+        const viewer = body.querySelector(".ss-hmv");
+        if (viewer) {
+            const status = viewer.querySelector(".ss-hmv-state");
+            // A blocked preview still has aggregate data; a failed data request does not.
+            const failed = !status.hidden && status.querySelector("button") && !status.querySelector("a");
+            if (SlimStatHeatmapPersonalFilter(body) || failed || viewer.querySelector('.ss-hmv-frame.is-loading, .ss-hmv-frame[aria-busy="true"]')) return [];
+            const scope = viewer.querySelector(".ss-hmv-scope");
+            if (!scope || !text(scope)) return [];
+            const rows = [text(viewer.querySelector(".ss-hmv-title")), text(scope)];
+            const device = viewer.querySelector('[data-device][aria-selected="true"]');
+            /* translators: %s: selected device, such as Mobile or All devices. */
+            if (device) rows.push(sprintf(__("Device: %s", "wp-slimstat"), device.firstChild.textContent.trim()));
+            if (viewer.querySelector('[name="range"]').value === "custom") {
+                /* translators: 1: first day (YYYY-MM-DD), 2: last day (YYYY-MM-DD). */
+                rows.push(sprintf(__("Period: %1$s – %2$s", "wp-slimstat"), viewer.querySelector('[name="from"]').value, viewer.querySelector('[name="to"]').value));
+            }
+            /* translators: %s: selected visitor segment or saved filter. */
+            rows.push(sprintf(__("Visitors: %s", "wp-slimstat"), text(viewer.querySelector('[name="who"] option:checked'))));
+            const show = viewer.querySelector('[name="show"]:checked');
+            /* translators: %s: selected heatmap overlay (clicks or scroll depth). */
+            rows.push(sprintf(__("View: %s", "wp-slimstat"), text(show.closest("label"))));
+            if (show.value === "clicks") rows.push(text(viewer.querySelector('[name="type"] option:checked')));
+            viewer.querySelectorAll(".ss-hmv-side section").forEach((section) => {
+                rows.push(text(section.querySelector("h2")));
+                rows.push(...Array.from(section.querySelectorAll("li"), (item) => item.innerText.trim().split(/\s*\n\s*/).join(" | ")));
+            });
+            return rows;
+        }
+        const table = body.querySelector(".ss-hm-table");
+        if (table.hidden || table.getAttribute("aria-busy") === "true") return [];
+        const rows = Array.from(table.tBodies[0].rows).filter((row) => row.querySelector(".ss-hm-page"));
+        if (!rows.length) return [];
+        return [table.tHead.rows[0], ...rows].map((row) => Array.from(row.cells).slice(0, -1).filter((cell) => !cell.hidden).map((cell) => cell.querySelector(".ss-hm-device-locked") ? __("Available with Pro", "wp-slimstat") : cell.innerText.trim().replace(/\s*\n\s*/g, " | ")).join(" | "));
+    }
+    if (body.matches("[data-ecommerce]")) {
+        const performance = body.querySelector("[data-series]");
+        if (!performance || body.getAttribute("aria-busy") === "true") return [];
+        const rows = Array.from(body.querySelectorAll(".ss-ec-kpi:not([data-pro-locked])"), (kpi) => Array.from(kpi.children).filter(visible).map(text).join(" | "));
+        rows.push(text(body.querySelector(".ss-ec-currency summary")), text(body.querySelector("[data-chart-description]")));
+        // The exact-values table represents the active chart even while its disclosure is closed.
+        rows.push(...Array.from(body.querySelectorAll(".ss-ec-exact tr"), cells));
+        const comparison = body.querySelector(".ss-ec-comparison");
+        if (comparison && !comparison.hidden) rows.push(text(comparison));
+        body.querySelectorAll(".ss-ec-report").forEach((panel) => {
+            if (!visible(panel)) return;
+            rows.push(text(panel.querySelector(".ss-ec-report-question")));
+            rows.push(...Array.from(panel.querySelectorAll(".ss-ec-rankings > li")).filter(visible).map((row) => row.innerText.trim().split(/\s*\n\s*/).join(" | ")));
+            rows.push(...Array.from(panel.querySelectorAll(".ss-ec-footnote, .ss-ec-report-info p"), text));
+        });
+        rows.push(...Array.from(body.querySelectorAll(".ss-ec-quality summary, .ss-ec-quality-body p, .ss-ec-scope, .ss-ec-definitions dt, .ss-ec-definitions dd"), text));
+        return rows;
+    }
+    const chart = body.querySelector("[data-data]");
+    if (chart) {
+        // Series hidden from the legend stay out; the previous period comes in while it is shown.
+        const live = window.Chart && window.Chart.getChart(body.querySelector("canvas"));
+        const shown = live ? live.data.datasets.filter((ds, i) => !ds.skipLegend && live.isDatasetVisible(i)) : [];
+        if (!shown.length) return [];
+        const data = JSON.parse(chart.dataset.data || "{}");
+        const total = (ds) => ((data.totals || []).find((row) => row.period === (ds.isPrevious ? "previous" : "current")) || {})[ds.key];
+        // Previous-period values line up by position, so each row also names the day they are from.
+        const prev = shown.some((ds) => ds.isPrevious) ? data.prev_labels || [] : null;
+        const dates = (current, previous) => (prev ? [current, previous] : [current]);
+        return [
+            [...dates(__("Date", "wp-slimstat"), __("Previous date", "wp-slimstat")), ...shown.map((ds) => ds.label)],
+            ...live.data.labels.map((label, i) => [...dates(String(label).replace(/'/g, ""), prev && prev[i]), ...shown.map((ds) => ds.data[i])]),
+            [...dates(__("Total", "wp-slimstat"), ""), ...shown.map(total)],
+        ].map((cells) => cells.join(" | "));
+    }
+    const rows = Array.from(body.querySelectorAll("p"), (p) => p.innerText.trim().split(/\s*\n\s*/).join(" | ")).filter(Boolean);
+    return rows.length ? rows : body.innerText.split("\n").map((line) => line.trim()).filter(Boolean);
+}
+
+// ✨ Copy Prompt: the report's rows plus the site's name, tagline and address. It goes to the
+// clipboard only; the user decides which AI tool, if any, receives it. Period and filters are
+// read from the picker and filter list on screen, so the prompt describes the rows it carries.
+jQuery(document).on("click", "button.slimstat-ai-prompt", async function (e) {
+    e.preventDefault();
+    const { __, sprintf } = window.wpSlimstatI18n;
+    const button = this;
+    const box = button.closest("[data-ecommerce], .ss-hm, .postbox");
+    const body = box.matches(".postbox") ? SlimStatReportBody(box.id)[0] : box;
+    const rows = SlimStatReportRows(body);
+    const label = button.innerHTML;
+    // Busy, not disabled: a disabled button drops keyboard focus, and the toast's Close returns it here.
+    if (button.getAttribute("aria-disabled") === "true") return;
+    const show = (text) => {
+        button.setAttribute("aria-disabled", "true");
+        button.textContent = text;
+        setTimeout(() => { button.innerHTML = label; button.removeAttribute("aria-disabled"); }, 2500);
+    };
+    if (button.dataset.report === 'slim_p10_01') {
+        const feedback = box.querySelector('.ss-ec-copy-feedback');
+        if (feedback) { feedback.textContent = ''; feedback.hidden = true; }
+        try {
+            const selection = window.SlimStatAiContext(button);
+            button.setAttribute("aria-disabled", "true");
+            const data = await wp.apiFetch({ path: '/slimstat/v1/ai/prompt', method: 'POST', data: selection });
+            if (JSON.stringify(window.SlimStatAiContext(button)) !== JSON.stringify(selection)) throw new Error(__('The report selection changed. Try copying again.', 'wp-slimstat'));
+            const copied = await window.SlimStatCopyText(data.prompt);
+            show(copied ? '✓ ' + __('Copied', 'wp-slimstat') : __('Copy failed', 'wp-slimstat'));
+            document.dispatchEvent(new CustomEvent('slimstat:ai-copy', { detail: { copied, trigger: button } }));
+        } catch (error) {
+            show(__('Copy failed', 'wp-slimstat'));
+            if (feedback) { feedback.textContent = error?.message || __('The report could not be prepared. Try again.', 'wp-slimstat'); feedback.hidden = false; }
+        }
+        return;
+    }
+    if (!rows.length) return show(__("No data to copy", "wp-slimstat"));
+
+    // Visitor text cannot open or close a section of the prompt.
+    const inert = (text) => text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const range = box.querySelector(".ss-hmv") ? null : document.querySelector(".slimstat-date-range-input");
+    const filters = Array.from(document.querySelectorAll(".slimstat-filter-list li"), (li) => inert(li.innerText.trim())).filter(Boolean);
+    if (box.matches(".ss-hm") && !box.querySelector(".ss-hmv")) {
+        const device = box.querySelector('[name="device"]');
+        const search = box.querySelector('[name="q"]');
+        /* translators: %s: selected device, such as Mobile or All devices. */
+        filters.push(sprintf(__("Device: %s", "wp-slimstat"), inert(device.selectedOptions[0].textContent)));
+        /* translators: %s: text used to search page addresses. */
+        if (search.value.trim()) filters.push(sprintf(__("Search: %s", "wp-slimstat"), inert(search.value.trim())));
+    }
+    const pagination = box.querySelector(".pagination, .ss-hm-pager:not([hidden]) span");
+    const prompt = [
+        SlimStatAdminParams.ai_instructions.intro,
+        "",
+        "<website_context>",
+        /* translators: 1: site title, 2: site address. */
+        sprintf(__("Site: %1$s (%2$s)", "wp-slimstat"), SlimStatAdminParams.site_name, SlimStatAdminParams.site_url),
+        /* translators: %s: site tagline. */
+        SlimStatAdminParams.site_description ? sprintf(__("Description: %s", "wp-slimstat"), SlimStatAdminParams.site_description) : null,
+        "</website_context>",
+        "",
+        "<report>",
+        /* translators: %s: report title. */
+        sprintf(__("Report: %s", "wp-slimstat"), button.dataset.title),
+        /* translators: %s: what the report shows. */
+        button.dataset.about ? sprintf(__("About: %s", "wp-slimstat"), button.dataset.about) : null,
+        /* translators: 1: first day (YYYY-MM-DD), 2: last day (YYYY-MM-DD). */
+        range ? sprintf(__("Period: %1$s – %2$s", "wp-slimstat"), range.dataset.start, range.dataset.end) : null,
+        /* translators: %s: the active filters, separated by semicolons, or "none". */
+        sprintf(__("Filters: %s", "wp-slimstat"), filters.length ? filters.join("; ") : __("none", "wp-slimstat")),
+        /* translators: %s: the pagination text, such as "1–20 of 45". */
+        pagination ? sprintf(__("Rows shown: %s", "wp-slimstat"), pagination.innerText.trim()) : null,
+        body.querySelector(".slimstat-pct") ? __("Percentages in brackets are SlimStat’s: each row’s share of the period total, not of this list.", "wp-slimstat") : null,
+        "</report>",
+        "",
+        "<data>",
+        ...rows.map(inert),
+        "</data>",
+        "",
+        "<task>",
+        ...SlimStatAdminParams.ai_instructions.tasks,
+        "</task>",
+        "",
+        "<rules>",
+        ...SlimStatAdminParams.ai_instructions.rules,
+        "</rules>",
+    ].filter((line) => line !== null).join("\n");
+
+    const copied = await window.SlimStatCopyText(prompt);
+    show(copied ? "✓ " + __("Copied", "wp-slimstat") : __("Copy failed", "wp-slimstat"));
+    document.dispatchEvent(new CustomEvent('slimstat:ai-copy', { detail: { copied, trigger: button } }));
+});
+
+/**
+ * Copy text with a selection fallback for plain HTTP or denied clipboard permissions.
+ *
+ * @param {string} text Plain text to copy.
+ * @returns {Promise<boolean>} True only when a clipboard method succeeds.
+ */
+window.SlimStatCopyText = async function (text) {
+    let copied = false;
+    try {
+        if (navigator.clipboard) {
+            await navigator.clipboard.writeText(text);
+            copied = true;
+        }
+    } catch (_) { /* Plain HTTP and denied clipboard permissions use a selection below. */ }
+    if (!copied) {
+        const area = document.createElement("textarea");
+        area.value = text;
+        area.setAttribute("readonly", "");
+        area.style.cssText = "position:fixed;opacity:0";
+        (document.querySelector('dialog[open]') || document.body).appendChild(area);
+        area.select();
+        try { copied = document.execCommand("copy"); } catch (_) { /* Reported below. */ }
+        area.remove();
+    }
+    return copied;
+};
 
 // ----- TABLE OF CONTENTS -----------------------------------------------------------
 //
@@ -458,14 +706,57 @@ jQuery(function () {
 
     // Asynchronous reports are loaded dynamically after the page loads
     if (SlimStatAdminParams.async_load == "on") {
-        var base = jQuery.when({});
+        var pendingReports = [];
+        var activeReports = 0;
+        function loadReports() {
+            while (activeReports < 3 && pendingReports.length) {
+                var reportId = pendingReports.shift();
+                // Pagination or a manual refresh may have loaded this queued report already.
+                if (jQuery("#" + reportId).data("slimstat-refresh")) continue;
+                var batchIds = [];
+                var freeIds = SlimStatAdminParams.batch_report_ids || [];
+                if (freeIds.indexOf(reportId) !== -1) {
+                    batchIds.push(reportId);
+                    pendingReports = pendingReports.filter(function (id) {
+                        if (jQuery('#' + id).data('slimstat-refresh')) return false;
+                        if (batchIds.length < 25 && freeIds.indexOf(id) !== -1) {
+                            batchIds.push(id);
+                            return false;
+                        }
+                        return true;
+                    });
+                }
+                activeReports++;
+                var loading = batchIds.length ? SlimStatAdmin.refresh_reports(batchIds) : SlimStatAdmin.refresh_report(reportId)();
+                jQuery.when(loading).always(function () {
+                    activeReports--;
+                    loadReports();
+                });
+            }
+        }
+        var reportObserver = window.IntersectionObserver ? new window.IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    reportObserver.unobserve(entry.target);
+                    pendingReports.push(entry.target.id);
+                }
+            });
+            loadReports();
+        }, { rootMargin: '200px' }) : null;
         jQuery("div[id^=slim_p]").each(function () {
+            // Customize uses report IDs for layout placeholders, without a report body.
+            if (!SlimStatReportBody(this.id).length) return;
             // Skip Charts
             if (jQuery(this).find(".chart-placeholder, .refresh-timer").length == 0) {
-                jQuery("#" + jQuery(this).attr("id") + " .inside").html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
-                base = base.then(SlimStatAdmin.refresh_report(jQuery(this).attr("id")));
+                SlimStatReportBody(jQuery(this).attr("id")).html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
+                if (reportObserver) {
+                    reportObserver.observe(this);
+                } else {
+                    pendingReports.push(this.id);
+                }
             }
         });
+        loadReports();
     }
 
     //
@@ -1094,9 +1385,16 @@ jQuery(function () {
             from: '',
             to: ''
         };
+        // The picker shows the window the reports queried; tab links carry it as fs[...], never as type.
+        var picker = document.querySelector('.slimstat-date-range-input[data-start][data-end]');
 
-        // First, check URL parameters
-        if (urlParams.has('type')) {
+        if (picker) {
+            timeRange.type = 'custom';
+            timeRange.from = picker.getAttribute('data-start');
+            timeRange.to = picker.getAttribute('data-end');
+        }
+        // Then, check URL parameters
+        else if (urlParams.has('type')) {
             var typeParam = urlParams.get('type');
             if (typeParam === 'custom' && urlParams.has('from') && urlParams.has('to')) {
                 timeRange.type = 'custom';
@@ -1378,13 +1676,30 @@ jQuery(function () {
         });
     });
 
-    // Since we handle all "filter links" as POST requests (see code here above), we need to add dummy form tag to the dashboard,
-    // for when our reports are displayed on that page
-    if (!jQuery("#slimstat-filters-form").length) {
-        jQuery('<form id="slimstat-filters-form" method="post"/>').appendTo("body");
+    // Keep POST-selected filters when the browser restores a report with a GET request.
+    if (jQuery("#slimstat-filters-form").length) {
+        var currentUrl = SlimStatFilterUrl(window.location.href, document.getElementById('slimstat-filters-form'));
+        window.history.replaceState(window.history.state, '', currentUrl);
     }
 
+    // Since we handle all "filter links" as POST requests (see code here above), we need to add dummy form tag to the dashboard,
+    // for when our reports are displayed on that page
+    // Pages without the filter bar (AI Analysis, Email Report, Settings) pass the shared dates and filters they arrived with on to the next report.
+    if (!jQuery("#slimstat-filters-form").length) {
+        jQuery('<form id="slimstat-filters-form" method="post"/>').appendTo("body");
+        SlimStatAdmin.add_url_filters_to_form(window.location.href);
+    }
+
+    jQuery('#slimstat-filters-form').on('submit', function () {
+        this.action = SlimStatFilterUrl(this.action, this).href;
+    });
+
     jQuery(document).on("click", ".slimstat-filter-link, #toplevel_page_slimview1 a, #wp-admin-bar-slimstat-header li a:not([target='_blank'])", function (e) {
+        // Another handler claimed this click (the country-to-city drilldown opens a dialog).
+        if (e.isDefaultPrevented()) {
+            return true;
+        }
+
         url = jQuery(this).attr("href");
 
         // If this link doesn't have a valid HREF attribute, bail
@@ -1699,14 +2014,62 @@ var SlimStatAdmin = {
     // could fire well within refresh_interval seconds of the manual refresh.
     _resetAutoRefreshSchedule: null,
 
+    refresh_reports: function (ids) {
+        var requests = [];
+        var pending = ids.map(function (id) {
+            var response = jQuery.Deferred();
+            var item = { id: id, response: response };
+            // Reuse the single-report renderer, including charts, pagination and stale-response guards.
+            var loaded = SlimStatAdmin.refresh_report(id, { request: function (data) {
+                item.data = data;
+                return response.promise();
+            } })();
+            item.token = jQuery('#' + id).data('slimstat-refresh');
+            requests.push(item);
+            return loaded;
+        });
+        if (!requests.length) return jQuery.Deferred().resolve().promise();
+        var data = jQuery.extend({}, requests[0].data, { action: 'slimstat_load_reports', report_ids: ids, granularities: {} });
+        delete data.report_id;
+        delete data.granularity;
+        requests.forEach(function (item) { data.granularities[item.id] = item.data.granularity || ''; });
+        var fallback = [];
+        function retryNext() {
+            var item = fallback.shift();
+            if (!item) return;
+            if (jQuery('#' + item.id).data('slimstat-refresh') !== item.token) {
+                item.response.reject();
+                retryNext();
+                return;
+            }
+            // One fallback per batch at a time keeps the outer three-request bound intact.
+            jQuery.ajax({ method: 'POST', url: ajaxurl, data: item.data })
+                .done(function (html) { item.response.resolve(html); })
+                .fail(function () { item.response.reject(); })
+                .always(retryNext);
+        }
+        jQuery.ajax({ method: 'POST', url: ajaxurl, data: data, dataType: 'json' })
+            .done(function (payload) {
+                requests.forEach(function (item) {
+                    var html = payload && payload.success && payload.data && payload.data[item.id];
+                    if (typeof html === 'string') item.response.resolve(html);
+                    else fallback.push(item);
+                });
+            })
+            .fail(function () { fallback = requests.slice(); })
+            .always(retryNext);
+        return jQuery.when.apply(jQuery, pending);
+    },
+
     refresh_report: function (id, opts) {
         opts = opts || {};
         if (id === 'slim_p10_01' && window.SlimStatEcommerce) {
             return function () { return window.SlimStatEcommerce.refresh(opts); };
         }
         return function () {
-            var inner_content = "#" + id + " .inside";
             var defer = jQuery.Deferred();
+            var report = jQuery("#" + id);
+            report.data("slimstat-refresh", defer);
             var granularity = jQuery("#" + id + " .slimstat-granularity-select").val();
             // Fallback to localStorage when the select is missing or about to be destroyed
             if (!granularity && jQuery("#" + id).hasClass("chart")) {
@@ -1715,13 +2078,13 @@ var SlimStatAdmin = {
             // #258 B3 — Skip the spinner injection for the Access Log so the user's
             // scroll position is not destroyed before the AJAX even returns.
             if (id != SlimStatAdmin.ACCESS_LOG_REPORT_ID) {
-                jQuery("#" + id + " .inside").html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
+                SlimStatReportBody(id).html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
             }
 
-            data = {
+            var data = {
                 action: "slimstat_load_report",
                 security: jQuery("#meta-box-order-nonce").val(),
-                page: SlimStatAdmin.get_current_tab(),
+                page: SlimStatAdmin.get_current_tab() || (jQuery("body").hasClass("index-php") ? "dashboard" : ""),
                 report_id: id,
                 granularity: granularity,
             };
@@ -1736,8 +2099,8 @@ var SlimStatAdmin = {
             }
 
             // Append the data from the hidden form
-            filters_input = jQuery("#slimstat-filters-form .slimstat-post-filter").toArray();
-            for (i in filters_input) {
+            var filters_input = jQuery("#slimstat-filters-form .slimstat-post-filter").toArray();
+            for (var i in filters_input) {
                 data[filters_input[i]["name"]] = filters_input[i]["value"];
             }
 
@@ -1766,19 +2129,22 @@ var SlimStatAdmin = {
                 SlimStatAdmin._isAccessLogInFlight = true;
             }
 
-            jQuery
-                .ajax({ method: "POST", url: ajaxurl, data: data })
+            var request = opts.request ? opts.request(data) : jQuery.ajax({ method: "POST", url: ajaxurl, data: data });
+            request
                 .done(function (response) {
+                    if (report.data("slimstat-refresh") !== defer) return;
                     var filteredResponse = jQuery("<div>").html(response);
 
                     if (id !== "slim_p8_02" && id !== "slim_p8_01") {
-                        filteredResponse.find(".pagination").remove();
-                        var paginationHtml = jQuery(response).last().html();
-                        jQuery("#" + id + " .pagination").html(paginationHtml);
+                        // Async shells have no footer yet. Keep it outside the replaceable body
+                        // so a spinner or a delayed content animation cannot erase navigation.
+                        var pagination = filteredResponse.find(".pagination").detach();
+                        report.find(".pagination").remove();
+                        report.append(pagination);
                     }
 
-                    if (jQuery("#" + id).hasClass("chart")) {
-                        jQuery(inner_content).html(filteredResponse.html());
+                    if (jQuery("#" + id).hasClass("chart") || filteredResponse.find('[id^="slimstat_chart_data_"]').length) {
+                        SlimStatReportBody(id).html(filteredResponse.html());
                         // Re-initialize chart after DOM insertion — inline scripts
                         // from the AJAX response may have run in a detached context
                         if (typeof window.reinitializeSlimStatCharts === "function") {
@@ -1795,9 +2161,9 @@ var SlimStatAdmin = {
                         // of the new page without a visible mid-AJAX jump.
                         var savedScrollTop = opts.scrollToTop
                             ? 0
-                            : (jQuery(inner_content).scrollTop() || 0);
-                        jQuery(inner_content).html(filteredResponse.html());
-                        jQuery(inner_content).scrollTop(savedScrollTop);
+                            : (jQuery("#" + id + " .inside").scrollTop() || 0);
+                        SlimStatReportBody(id).html(filteredResponse.html());
+                        jQuery("#" + id + " .inside").scrollTop(savedScrollTop);
                         SlimStatAdmin._lastManualRefreshTime = Date.now();
                         // #258 — Rearm the auto-refresh scheduler so the next tick
                         // is `refresh_interval` seconds AFTER this refresh, not
@@ -1807,22 +2173,14 @@ var SlimStatAdmin = {
                             SlimStatAdmin._resetAutoRefreshSchedule();
                         }
                     } else {
-                        jQuery(inner_content).fadeOut(500, function () {
-                            jQuery(this).html(filteredResponse.html()).fadeIn(500, function () {
-                                // #156 — for non-Access-Log reports, reset
-                                // scrollTop AFTER fadeIn completes so the
-                                // pagination "next page" lands at the top
-                                // without a visible mid-AJAX jump.
-                                if (opts.scrollToTop) {
-                                    jQuery(this).scrollTop(0);
-                                }
-                            });
-                        });
+                        // Direct swap like the chart branch: a fade held every widget ~1 s after its data arrived (#408).
+                        var body = SlimStatReportBody(id).html(filteredResponse.html());
+                        if (opts.scrollToTop) body.scrollTop(0); // #156: pagination lands at the top
                     }
                 })
                 .always(function () {
                     // Clear in-flight guard for Access Log requests
-                    if (id == SlimStatAdmin.ACCESS_LOG_REPORT_ID) {
+                    if (id == SlimStatAdmin.ACCESS_LOG_REPORT_ID && report.data("slimstat-refresh") === defer) {
                         SlimStatAdmin._isAccessLogInFlight = false;
                     }
                     defer.resolve();

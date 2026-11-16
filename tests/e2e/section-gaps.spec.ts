@@ -13,12 +13,18 @@ import { BASE_URL } from './helpers/env';
 
 test('Heatmaps content starts one standard gap below the intro', async ({ page }) => {
   await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimheatmap`);
-  const gap = await page.locator('.ss-hm').evaluate((list) => {
+  await expect(page.locator('#slimstat-current-filters')).toHaveCount(0);
+  const gaps = await page.locator('.ss-hm').evaluate((list) => {
     const first = [...list.children].find((c) => (c as HTMLElement).offsetHeight > 0)!;
-    return first.getBoundingClientRect().top - document.querySelector('.slimstat-pageintro')!.getBoundingClientRect().bottom;
+    const filters = document.querySelector('#slimstat-filters-form')!.getBoundingClientRect();
+    return {
+      intro: filters.top - document.querySelector('.slimstat-pageintro')!.getBoundingClientRect().bottom,
+      content: first.getBoundingClientRect().top - filters.bottom,
+    };
   });
-  // The intro's bottom margin (--ss-space-5) is the gap; nothing below it adds to it.
-  expect(gap).toBeLessThanOrEqual(21);
+  // The shared filter controls now sit between the intro and the list.
+  expect(gaps.intro).toBeLessThanOrEqual(21);
+  expect(gaps.content).toBeLessThanOrEqual(21);
 });
 
 test('Ecommerce: the hidden status region takes no space', async ({ page }) => {

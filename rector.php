@@ -45,7 +45,6 @@ return static function (RectorConfig $rectorConfig): void {
         __DIR__ . '/node_modules',
         __DIR__ . '/phpstan-cache',
         __DIR__ . '/languages',
-        __DIR__ . '/src/Dependencies',
         __DIR__ . '/rector.php',
     ]);
 };

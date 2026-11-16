@@ -1,0 +1,17 @@
+target: src/Services/Privacy/DataEraser.php
+gate: php tests/privacy-erasure-paging-test.php
+kind: guard-removal
+expect: archive 1 erasePageviews
+rationale: Erasure must drain shrinking live and archive batches and stop the parent eraser when child data cannot be erased.
+---
+--- a/src/Services/Privacy/DataEraser.php
++++ b/src/Services/Privacy/DataEraser.php
+@@ -40,7 +40,7 @@
+ 		$exists = $db->get_var($db->prepare('SHOW TABLES LIKE %s', $db->esc_like($archive)));
+ 		$failed = '' !== (string) $db->last_error;
+ 		if ($exists) {
+-			$tables[] = $archive;
++			// Archived-only records are skipped.
+ 		}
+ 
+ 		// Each call drains the first batch; archives may outlive every live pageview.

@@ -10,10 +10,76 @@
                 "lang": "fa",
                 "plural-forms": "nplurals=1; plural=0;"
             },
+            "Available with Pro": [
+                ""
+            ],
+            "Total": [
+                ""
+            ],
+            "Date": [
+                ""
+            ],
             "Cache cleared!": [
                 ""
             ],
             "Cache clear failed!": [
+                ""
+            ],
+            "Device: %s": [
+                ""
+            ],
+            "Period: %1$s \u2013 %2$s": [
+                ""
+            ],
+            "Visitors: %s": [
+                ""
+            ],
+            "View: %s": [
+                ""
+            ],
+            "Previous date": [
+                ""
+            ],
+            "The report selection changed. Try copying again.": [
+                ""
+            ],
+            "Copied": [
+                ""
+            ],
+            "Copy failed": [
+                ""
+            ],
+            "The report could not be prepared. Try again.": [
+                ""
+            ],
+            "No data to copy": [
+                ""
+            ],
+            "Search: %s": [
+                ""
+            ],
+            "Site: %1$s (%2$s)": [
+                ""
+            ],
+            "Description: %s": [
+                ""
+            ],
+            "Report: %s": [
+                ""
+            ],
+            "About: %s": [
+                ""
+            ],
+            "Filters: %s": [
+                ""
+            ],
+            "none": [
+                ""
+            ],
+            "Rows shown: %s": [
+                ""
+            ],
+            "Percentages in brackets are SlimStat\u2019s: each row\u2019s share of the period total, not of this list.": [
                 ""
             ],
             "Select value...": [

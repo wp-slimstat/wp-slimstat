@@ -29,7 +29,7 @@ if (!$is_pro) {
             <input type="hidden" name="action" value="slimstat_email_sample">
             <?php wp_nonce_field('slimstat_email_sample'); ?>
             <button type="submit" class="button"><?php esc_html_e('Send me a sample', 'wp-slimstat'); ?></button>
-            <span><?php /* translators: %s: the current user's email address */ echo esc_html(sprintf(__('Goes to %s.', 'wp-slimstat'), wp_get_current_user()->user_email)); ?></span>
+            <span dir="auto"><?php /* translators: %s: the current user's email address */ echo esc_html(sprintf(__('Goes to %s.', 'wp-slimstat'), wp_get_current_user()->user_email)); ?></span>
         </form>
         <?php
         wp_slimstat_admin::get_template('pro-adds', [

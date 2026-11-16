@@ -30,8 +30,8 @@ $summaryContracts = [
     'get_traffic_sources_summary'           => ['traffic_sources_summary', 'get_traffic_sources_summary'],
 ];
 $chartContracts = [
-    'chart_daily'                    => ['ip', 5, 'DAY'],
-    'chart_weekly'                   => ['ip', 60, 'WEEK'],
+    'chart_daily'                    => ['id', 5, 'DAY'],
+    'chart_weekly'                   => ['id', 60, 'WEEK'],
     'chart_searchterms_pinned'       => ['searchterms', 30, 'WEEK'],
     'chart_users_pinned'             => ['username', 30, 'WEEK'],
     'slim_p4_26_01_chart_daily'      => ['outbound_resource', 5, 'DAY'],

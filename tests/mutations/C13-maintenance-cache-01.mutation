@@ -1,0 +1,17 @@
+target: admin/config/index.php
+gate: php tests/settings-maintenance-result-test.php
+kind: guard-removal
+expect: maintenance cache version follows every positive partial deletion
+rationale: Manual maintenance must invalidate history after a partial deletion too.
+---
+--- a/admin/config/index.php
++++ b/admin/config/index.php
+@@ -835,7 +835,7 @@
+                     // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Trusted core table prefix and schema-manifest identifiers; dynamic values are bound on the analytics connection.
+                     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Nonce/capability-protected maintenance uses core-prefix and manifest identifiers; schema probes and mutations require fresh state.
+                     $slimstat_result = wp_slimstat::$wpdb->query(sprintf($slimstat_statement, $GLOBALS['wpdb']->prefix));
+-                    if ($slimstat_result > 0 && 0 === strpos($slimstat_statement, 'DELETE ')) { wp_slimstat::bump_data_version(); }
++                    if (false) { wp_slimstat::bump_data_version(); }
+                     if (false === $slimstat_result) {
+                         $slimstat_deleted = false;
+                     // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared

@@ -1,0 +1,17 @@
+target: src/Schema/Schema.php
+gate: php tests/schema-online-safety-test.php
+kind: guard-removal
+expect: set timeout before DDL
+rationale: Metadata locks must not inherit the host default or a longer timeout.
+---
+--- a/src/Schema/Schema.php
++++ b/src/Schema/Schema.php
+@@ -976,7 +976,7 @@
+             $db->last_error = 'Could not read the metadata-lock timeout; no schema change was attempted. ' . $db->last_error;
+             return false;
+         }
+-        $timeout = min(5, (int) $oldTimeout);
++        $timeout = min(50, (int) $oldTimeout);
+         if (false === $db->query('SET SESSION lock_wait_timeout = ' . $timeout)) {
+             return false;
+         }

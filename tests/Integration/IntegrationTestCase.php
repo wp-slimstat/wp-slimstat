@@ -19,6 +19,12 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
         parent::setUp();
         $this->bootstrapAdminClassOnce();
         $this->stubWpFunctions();
+        \wp_slimstat::$settings = [
+            'capability_can_admin' => 'manage_options',
+            'capability_can_view' => 'read',
+            'can_view' => '',
+        ];
+        $GLOBALS['wpdb'] = null;
     }
 
     protected function tearDown(): void
@@ -57,6 +63,7 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
                 ];
                 public static $wpdb = null;
                 public static function pro_is_installed() { return false; }
+                public static function pro_plugin_active() { return false; }
             }
             PHP);
         }
@@ -93,6 +100,7 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
             'wp_kses_post'        => static fn($v) => $v,
             'number_format_i18n'  => static fn($n) => number_format((float) $n),
             'wp_has_consent'      => static fn() => true,
+            'wp_using_ext_object_cache' => static fn() => false,
             // 'U' returns the current epoch (used by resolve_requested_date_range()'s
             // end clamp); other formats fall through to PHP date().
             'date_i18n'           => static fn($format, $timestamp = null) => 'U' === $format ? (string) time() : date($format, $timestamp ?? time()),
@@ -141,6 +149,21 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
         Functions\when('get_transient')->justReturn(false);
         Functions\when('set_transient')->justReturn(true);
         Functions\when('delete_transient')->justReturn(true);
+    }
+
+    protected static function adminSource(): string
+    {
+        $source = file_get_contents(dirname(__DIR__, 2) . '/admin/index.php');
+        self::assertNotFalse($source, 'Could not read admin/index.php');
+        return $source;
+    }
+
+    /** The $screens_info entry for $screen, up to the next screen key. $screens_info is built in init(), which this harness does not boot. */
+    protected static function screenEntry(string $source, string $screen): string
+    {
+        $found = preg_match("/^\s+'" . preg_quote($screen, '/') . "'\s*=>\s*\[((?:(?!^\s+'\w+'\s*=>\s*\[\s*$).)*)/ms", $source, $m);
+        self::assertSame(1, $found, "$screen is not a key in \$screens_info");
+        return $m[1];
     }
 
     protected function setGoals(array $goals): void

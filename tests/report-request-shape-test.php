@@ -16,7 +16,7 @@ eval('class wp_slimstat_db {
  public static $queries = []; public static function count_records(...$args) { self::$queries[] = $args; return 7; }
  public static function count_records_having(...$args) { return 1; }
  public static function count_bouncing_pages() { return 1; }
- public static function init($_filters = "", bool $_use_request = true) {' . $body . '}
+ public static function init($_filters = "", bool $_use_request = true, bool $_load_data = true) {' . $body . '}
 }');
 $GLOBALS['current_user'] = (object) ['user_login' => 'author-fixture'];
 set_error_handler(static function ($severity, $message) { throw new RuntimeException($message); });
@@ -43,6 +43,17 @@ foreach (['hour equals 0', "browser equals O'Brien", 'country equals gb', 'resou
 wp_slimstat_db::init('resource contains news', false);
 if ('resource contains news&&&author equals author-fixture' !== wp_slimstat_db::$filters_normalized) { throw new RuntimeException('Explicit-only initialization must ignore request fields but retain author isolation'); }
 if (7 !== wp_slimstat_db::$pageviews) { throw new RuntimeException('Report initialization skipped'); }
+$query_count = count(wp_slimstat_db::$queries);
+wp_slimstat_db::init('resource contains news', false, false);
+if ($query_count !== count(wp_slimstat_db::$queries) || 'resource contains news&&&author equals author-fixture' !== wp_slimstat_db::$filters_normalized) {
+ throw new RuntimeException('Catalog-only initialization must preserve authorization without querying analytics');
+}
+// Deferred Dashboard widgets post page=dashboard; without the total every share there read 0%.
+foreach (['dashboard' => 7, 'slimview4' => 7, 'slimconfig' => 0] as $page => $expected) {
+ $_GET = $_POST = []; $_REQUEST = ['page' => $page]; wp_slimstat_db::$pageviews = 0;
+ wp_slimstat_db::init();
+ if ($expected !== wp_slimstat_db::$pageviews) { throw new RuntimeException("Pageviews total for page={$page} is " . wp_slimstat_db::$pageviews . ", expected {$expected}"); }
+}
 echo "PASS: malformed request shapes ignored without fatal errors; valid zero, custom, author and explicit filters preserved\n";
 
 // Run the shared date parser too: valid wall-clock dates survive, malformed dates do not become 1970.
@@ -68,7 +79,13 @@ $GLOBALS['wpdb'] = new class { public function esc_like($value) { return addcsla
 function get_option($name, $default = false) { return 'k' === $name && !empty($GLOBALS['slimstat_attribution_ready']) ? '1' : $default; }
 eval('namespace SlimStat\\Tracker; class Acquisition { public static function readinessKey(): string { return "k"; } }');
 $summary_body = slimstat_function_body(file_get_contents(dirname(__DIR__) . '/admin/view/wp-slimstat-db.php'), 'get_traffic_sources_summary');
-eval('class TrafficSummary extends wp_slimstat_db { public static function summary() {' . $summary_body . '} }');
+eval('class TrafficSummary extends wp_slimstat_db {
+    protected static function summary_counts($counts) {
+        $out = [];
+        foreach ($counts as $key => $spec) { $out[$key] = self::count_records($spec[0], $spec[1] ?? "", true, $spec[2] ?? []); }
+        return $out;
+    }
+    public static function summary() {' . $summary_body . '} }');
 unset($_SERVER['SERVER_NAME']);
 TrafficSummary::summary();
 $referrer_query = array_values(array_filter(wp_slimstat_db::$queries, static function ($args) { return ($args[0] ?? null) === 'referer'; }));

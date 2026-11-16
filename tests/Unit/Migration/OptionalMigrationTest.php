@@ -230,6 +230,7 @@ class OptionalMigrationTest extends WpSlimstatTestCase
         $this->assertSame(1, get_transient($key));
         $this->assertSame([], $manager->runAll());
         $manager->forgetProbe();
+        \Brain\Monkey\Functions\stubs(['get_current_blog_id' => 1, 'get_current_user_id' => 1, 'get_user_meta' => [], 'update_user_meta' => true]);
         $manager->dismissNotice();
         $manager->resetDismissal();
         $this->assertSame(1, get_transient($key));
@@ -243,7 +244,7 @@ class OptionalMigrationTest extends WpSlimstatTestCase
             $db->last_error = '';
             $db->shouldReceive('suppress_errors')->andReturn(false);
             $columns = [];
-            foreach (['city', 'username'] as $field) {
+            foreach (['city', 'username', 'email', 'fingerprint', 'dt_out', 'tz_offset'] as $field) {
                 $columns[] = ['Field' => $field, 'Type' => $shape, 'Collation' => 'utf8mb4_unicode_ci',
                     'Null' => 'YES', 'Default' => null, 'Extra' => '', 'Comment' => ''];
             }

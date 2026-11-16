@@ -23,6 +23,7 @@ class MenuNewBadgeTest extends IntegrationTestCase
         'slimview6'      => 'slimstat_goals_funnels_since',
         'slimview7'      => 'slimstat_ecommerce_since',
         'slimheatmap'    => 'slimstat_heatmaps_since',
+        'slimai'         => 'slimstat_ai_since',
         'slimshortcodes' => 'slimstat_shortcodes_since',
     ];
 
@@ -51,21 +52,6 @@ class MenuNewBadgeTest extends IntegrationTestCase
     private static function heatmaps(): array
     {
         return ['title' => 'Heatmaps', 'new_badge' => 'slimstat_heatmaps_since'];
-    }
-
-    private static function adminSource(): string
-    {
-        $source = file_get_contents(dirname(__DIR__, 2) . '/admin/index.php');
-        self::assertNotFalse($source, 'Could not read admin/index.php');
-        return $source;
-    }
-
-    /** The $screens_info entry for $screen, up to the next screen key. */
-    private static function screenEntry(string $source, string $screen): string
-    {
-        $found = preg_match("/^\s+'" . preg_quote($screen, '/') . "'\s*=>\s*\[((?:(?!^\s+'\w+'\s*=>\s*\[\s*$).)*)/ms", $source, $m);
-        self::assertSame(1, $found, "$screen is not a key in \$screens_info");
-        return $m[1];
     }
 
     public static function badgedScreens(): array

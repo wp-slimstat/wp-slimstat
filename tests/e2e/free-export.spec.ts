@@ -16,7 +16,7 @@ import { runWordPressFixture } from './helpers/chart';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
-const exportIn = (id: string) => `${id} > .slimstat-header-buttons .button-export-to-xls`;
+const exportIn = (id: string) => `${id} > .slimstat-report-head > .slimstat-header-buttons .button-export-to-xls`;
 
 test.afterAll(async () => { await closeDb(); });
 

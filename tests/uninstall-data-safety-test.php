@@ -190,7 +190,16 @@ if ($case !== false && $case !== '') {
         // Both blogs, as a real network returns. Blog 2 is the one that matters: the strip
         // at the top of uninstall.php already covers whichever blog is current, so only a blog
         // it never stood on can tell the loop's per-blog call from a no-op.
-        public function get_col($sql) { return [1, 2]; }
+        public function get_col($sql)
+        {
+            // The acquisition-marker lookup gets option names; anything else is the blog list.
+            // Matched on the ESCAPED prefix, so an unescaped LIKE finds no marker and reds the
+            // opt-in assertion below.
+            if (false !== strpos($sql, "'slimstat\\_acquisition\\_%'")) {
+                return ['slimstat_acquisition_0123456789abcdef0123456789abcdef'];
+            }
+            return [1, 2];
+        }
         public function esc_like($text)
         {
             // FAITHFUL, not an identity stub. With `return $text;` no gate could tell whether
@@ -288,6 +297,7 @@ if ($case !== false && $case !== '') {
     // str_replace is a no-op and the artifact assertions are unchanged.
     function is_main_network() { return true; }
     function is_main_site() { return true; }
+    function delete_metadata($type, $id, $key, $value = '', $all = false) { $GLOBALS['__deleted'][] = $key; return true; }
     function get_current_blog_id() { return (int) ($GLOBALS['__current_blog'] ?? 1); }
     function switch_to_blog($blog_id)
     {
@@ -511,12 +521,11 @@ foreach (['absent', 'no'] as $case) {
         "no option is written back when there is no credential to remove, key '{$case}'"
     );
 
-    // Exactly one filesystem delete, and it must be the browscap cache — NOT the
-    // parent directory, which also holds a hand-uploaded GeoIP database.
-    assert_same(1, $result['fsDeletes'], "one artifact removed when the key is '{$case}'");
-    assert_true(
-        substr((string) $result['fsDeleted'][0], -22) === '/browscap-cache-master',
-        "only the browscap cache is removed when the key is '{$case}', got: " . $result['fsDeleted'][0]
+    // Only regenerable Browscap artifacts, never the parent or a hand-uploaded GeoIP DB.
+    assert_same(
+        ['browscap-cache-master', 'browscap-cache-backup', 'browscap-staging', 'browscap-update.lock'],
+        array_map('basename', $result['fsDeleted']),
+        "only Browscap artifacts are removed when the key is '{$case}'"
     );
 }
 
@@ -816,7 +825,7 @@ $plugin_root    = dirname(__DIR__);
 $minted_options = [];
 foreach (slimstat_own_php_files(
     [$plugin_root . '/src', $plugin_root . '/admin', $plugin_root . '/wp-slimstat.php'],
-    $plugin_root . '/src/Dependencies'
+    $plugin_root . '/vendor-prefixed'
 ) as $path) {
     $body = slimstat_blank_comments((string) file_get_contents($path));
     // Both spellings are in use: OPTION_NAME (prefix) and SALT_OPTION (suffix).
@@ -852,18 +861,29 @@ foreach ($minted_options as $option_name => $declared_in) {
 foreach ([
     'wp_slimstat_notifications',
     'slimstat_purge_optimized_at',
+    'slimstat_data_ver',
     'slimstat_channels_since',
     'slimstat_goals_funnels_since',
     'slimstat_ecommerce_since',
     'slimstat_heatmaps_since',
+    'slimstat_ai_since',
     'slimstat_shortcodes_since',
     'slimstat_release_notice_since',
+    // Core's storage for the SlimStat widget's instances (WP_Widget id_base 'slimstat_widget').
+    'widget_slimstat_widget',
 ] as $literal_option) {
     assert_true(
         in_array($literal_option, $on['deleted'], true),
         "opting in deletes '{$literal_option}' (minted from a bare literal, so no scan finds it)"
     );
 }
+
+// Named by an md5 of the analytics database (SlimStat\Tracker\Acquisition::readinessKey()), so
+// neither the constant scan nor a literal can name it. A real 6.1.2 opt-in uninstall left it behind.
+assert_true(
+    in_array('slimstat_acquisition_0123456789abcdef0123456789abcdef', $on['deleted'], true),
+    'opting in deletes the per-database acquisition readiness marker, found by an escaped prefix lookup'
+);
 
 fwrite(STDOUT, "OK: {$assertions} assertions passed (analytics deleted only on explicit opt-in; cron + browscap cache always cleaned, GeoIP DB preserved)\n");
 exit(0);

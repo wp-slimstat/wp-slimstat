@@ -45,6 +45,19 @@ try {
     }
     wp_slimstat::$settings['restrict_authors_view'] = 'off';
     $check(2 === count(Query::cachedPages(1, 200)['rows']), 'Unrestricted cache contains both authors');
+    foreach (['alice', 'bob'] as $author) {
+        $scope = $db->prepare('t1.author = %s', $author);
+        $filtered = Query::cachedPages(1, 200, '', false, $scope)['rows'];
+        $check(['/' . $author] === array_column($filtered, 'page'), 'Shared filter scopes full capture and uses its own cache: ' . $author);
+        $check(1 === $filtered[0]['pageviews'] && 1 === $filtered[0]['clicks'] && 25 === $filtered[0]['scroll'], 'Filtered counts and denominator agree');
+    }
+    $check([] === Query::cachedPages(1, 200, '', false, "t1.author = 'nobody'")['rows'], 'Empty filtered list cannot reuse an unfiltered cache');
+    $notReady = static function () { return ['schema' => 0]; };
+    remove_filter('pre_option_' . Store::STATE, $state);
+    add_filter('pre_option_' . Store::STATE, $notReady);
+    $check(['/alice'] === array_column(Query::pages(1, 200, '', "t1.author = 'alice'"), 'page'), 'Legacy list honors the same shared filter');
+    remove_filter('pre_option_' . Store::STATE, $notReady);
+    add_filter('pre_option_' . Store::STATE, $state);
     wp_slimstat::$settings['restrict_authors_view'] = 'on';
     add_filter('user_has_cap', $denyAdmin);
     foreach (['alice', 'bob'] as $author) {

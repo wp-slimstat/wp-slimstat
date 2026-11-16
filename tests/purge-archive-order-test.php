@@ -57,124 +57,73 @@ if ($purge === '') {
     exit(1);
 }
 
-/** Offset of the first match, or null. */
-$at = static function (string $pattern) use ($purge): ?int {
-    return preg_match($pattern, $purge, $m, PREG_OFFSET_CAPTURE) ? $m[0][1] : null;
+// Execute the shared batch rather than infer statement order from its old inline layout.
+if (!defined('ABSPATH')) { define('ABSPATH', dirname(__DIR__) . '/'); }
+require_once $plugin_root . '/src/Utils/PurgeArchive.php';
+class PurgeOrderDb {
+    public $last_error = '';
+    public $queries = [];
+    public $probe = 0;
+    public $refuseProbe = 0;
+    public $errorProbe = 0;
+    public $deleted = 1;
+    public $keys = ['18446744073709551615'];
+    public function suppress_errors($value = true) { return false; }
+    public function prepare($sql, ...$args) { return vsprintf(str_replace('%d', '%s', $sql), $args); }
+    public function get_col($sql) { $this->queries[] = $sql; return $this->keys; }
+    public function get_var($sql) {
+        $this->queries[] = $sql;
+        ++$this->probe;
+        $this->last_error = $this->errorProbe === $this->probe ? 'read failed' : '';
+        return $this->refuseProbe === $this->probe ? '1' : null;
+    }
+    public function query($sql) { $this->queries[] = $sql; return strpos($sql, 'DELETE') === 0 ? $this->deleted : 1; }
+}
+$eventCols = ['event_id', 'id', 'dt', 'notes'];
+$statsCols = ['id', 'dt', 'resource'];
+$execute = static function ($db, $archive = true) use ($eventCols, $statsCols) {
+    return \SlimStat\Utils\PurgeArchive::purgeBatch($db, 'test_', 100, 200, $archive, $eventCols, $statsCols);
 };
-
-// ── 1. Everything touching events happens before the parent rows are deleted ─
-$statsDelete   = $at('/delete\s*\(\s*\$table_stats\s*\)/');
-$eventsArchive = $at('/INSERT[^;]*\$table_events_archive/s');
-// Both interpolation spellings: "DELETE e FROM {$table_events}" and the builder form.
-$eventsDelete  = $at('/DELETE\s+\w+\s+FROM\s+\{?\$table_events\}?|delete\s*\(\s*\$table_events\s*\)/s');
-
-if ($statsDelete === null) {
-    $failures[] = 'no DELETE against $table_stats found — if the purge was restructured, '
-        . 're-anchor these assertions rather than deleting them';
-} else {
-    if ($eventsArchive === null) {
-        $failures[] = 'the events archive INSERT was not found';
-    } elseif ($eventsArchive > $statsDelete) {
-        $failures[] = 'the events are archived AFTER the stats DELETE. wp_slim_events.id is '
-            . 'a FOREIGN KEY ... ON DELETE CASCADE, so the parent DELETE destroys the event '
-            . 'rows first and the archive receives nothing';
-    }
-    if ($eventsDelete === null) {
-        $failures[] = 'no explicit DELETE against $table_events found — relying on the FK '
-            . 'cascade makes the deleted set differ from the archived set, and does nothing '
-            . 'at all on an install whose tables are MyISAM';
-    } elseif ($eventsDelete > $statsDelete) {
-        $failures[] = 'the events are deleted AFTER the stats DELETE, so the cascade gets '
-            . 'there first';
-    }
+$check = static function ($ok, $message) use (&$failures) { if (!$ok) { $failures[] = $message; } };
+$db = new PurgeOrderDb(); $result = $execute($db);
+$writes = array_values(array_filter($db->queries, static function ($sql) { return preg_match('/^(INSERT|DELETE)/', $sql); }));
+$check($result === ['stats' => 1, 'events' => 1, 'error' => ''], 'successful exact-key batch must report both removals');
+$check(count($writes) === 4 && strpos($writes[0], 'INSERT IGNORE INTO test_slim_events_archive') === 0
+    && strpos($writes[1], 'DELETE e FROM test_slim_events') === 0
+    && strpos($writes[2], 'INSERT IGNORE INTO test_slim_stats_archive') === 0
+    && strpos($writes[3], 'DELETE s FROM test_slim_stats') === 0, 'events must be archived and deleted before parent deletion');
+foreach ([$writes[0], $writes[1], $writes[2], $writes[3]] as $sql) {
+    $check(strpos($sql, 'IN (18446744073709551615)') !== false, 'every write must retain exact unsigned keys without integer overflow');
 }
-
-// ── 2. Archiving is idempotent, so an interrupted run cannot wedge retention ─
-if (!preg_match('/INSERT\s+IGNORE\s+INTO/i', $purge)) {
-    $failures[] = 'the archive INSERTs are not INSERT IGNORE — a run interrupted between '
-        . 'archiving and deleting leaves rows in the archive, the next run dies on a '
-        . 'duplicate primary key, the guard skips the DELETE, and retention stops working '
-        . 'permanently and silently';
-}
-// That the list carries event_id, and that the INSERT is generated from it, are pinned by
-// §2c below and by tests/Unit/PurgeArchiveCollisionGuardTest.php against the real constant.
-
-// ── 2b. A key collision must stop the purge, not delete through it ──────────
-//
-// INSERT IGNORE cannot tell "already archived" — the replay case it exists for — from
-// "a DIFFERENT row already owns this primary key", and reports the second as a silent
-// no-op. Deleting afterwards destroys live rows that were never archived. Reachable:
-// DELETE does not reset AUTO_INCREMENT, but MariaDB and MySQL 5.7 re-derive it as
-// MAX(id)+1 on restart, so clearing records and later rebooting hands out ids from 1
-// again. Proven on scratch tables: without this guard, rows the admin asked to ARCHIVE
-// were deleted and never copied — data loss where the old code merely stopped working.
-if (!preg_match('/PurgeArchive::sameRow\(/', $purge)) {
-    $failures[] = 'nothing compares the rows about to be archived against what the archive '
-        . 'already holds under those keys — INSERT IGNORE will silently skip a colliding row '
-        . 'and the DELETE will then destroy the live copy';
-}
-if (!preg_match('/record_degradation/', $purge)) {
-    $failures[] = 'the purge can abandon a run without recording a degradation — retention '
-        . 'would stop silently and the tables would simply keep growing';
-}
-
-// ── 2c. The guard is wired to the same column lists the INSERT copies ───────
-//
-// A guard narrower than the INSERT it protects has false negatives, and every one of them
-// is a live row that INSERT IGNORE silently declined to copy and the DELETE then destroyed.
-// Measured: an archive row agreeing with the live row on only (id, dt, notes) passed a
-// three-column discriminator, live events went 1 -> 0, the archive kept the stale payload,
-// and nothing was recorded in slimstat_degradations.
-//
-// The guard's own behaviour — every copied column compared, only the join key skipped,
-// NULL-safe — is pinned directly in tests/Unit/PurgeArchiveCollisionGuardTest.php against
-// the real builder. What can only be checked here is the WIRING: that both statements are
-// generated from one shared column list, so they cannot drift apart again.
-$guardTargets = [
-    ['$table_events_archive', 'EVENT_COLUMNS', 'event_id', 'events'],
-    ['$table_stats_archive', 'STATS_COLUMNS', 'id', 'pageviews'],
-];
-
-foreach ($guardTargets as [$archiveVar, $constant, $joinKey, $label]) {
-    $quoted = preg_quote($archiveVar, '/');
-
-    if (!preg_match(
-        '/INSERT\s+IGNORE\s+INTO\s+\{?' . $quoted . '\}?\s*\(\s*"\s*\.\s*implode\(/s',
-        $purge,
-        $ins,
-        PREG_OFFSET_CAPTURE
-    )) {
-        $failures[] = "the {$label} archive INSERT does not build its column list by imploding "
-            . 'a shared list — a hand-written list is free to drift from the guard, and the '
-            . 'guard is what stops the DELETE removing rows IGNORE never copied';
-        continue;
-    }
-
-    $before = substr($purge, 0, $ins[0][1]);
-
-    // Re-anchored, not relaxed. The property is still "one shared source, never a hand-written
-    // list" — but the source is now PurgeArchive::copyableColumns(), which reads the constants
-    // itself and intersects them against the live tables. Naming the constant here again would
-    // FORBID that indirection, and the indirection is the fix: on an upgraded install the
-    // archive does not have every column the constant declares, and naming one stopped
-    // retention permanently. Section 2 above still pins the constants to the manifest, and
-    // section 2b below pins that the purge routes through the intersection.
-    if (!preg_match('/copyableColumns\s*\(/', $before)) {
-        $failures[] = "the {$label} columns do not come from PurgeArchive::copyableColumns(), so "
-            . 'they are not a shared source and are free to drift from the collision guard';
-    }
-    if (!preg_match('/PurgeArchive::sameRow\([^,]+,\s*\'' . $joinKey . '\'/', $before)) {
-        $failures[] = "the {$label} archive INSERT is not preceded by a PurgeArchive::sameRow() "
-            . "collision guard joined on '{$joinKey}'";
+$check(strpos($writes[0], '(event_id, id, dt, notes)') !== false && strpos($writes[2], '(id, dt, resource)') !== false,
+    'archive INSERT must use the same supplied column list as verification');
+$check(strpos($writes[1], 'CAST(a.notes AS BINARY) <=> CAST(e.notes AS BINARY)') !== false
+    && strpos($writes[3], 'CAST(a.resource AS BINARY) <=> CAST(s.resource AS BINARY)') !== false,
+    'DELETE must recheck every archived value as bytes, not collated text');
+$check(strpos($writes[3], 'LEFT JOIN test_slim_events e ON e.id = s.id') !== false
+    && strpos($writes[3], 'e.event_id IS NULL') !== false, 'parent DELETE must refuse a concurrent child');
+$check(strpos($db->queries[0], 's.dt >=') !== false, 'future events on expired parents must be selected');
+$check(strpos($writes[1], 'p.dt >= 100') !== false && strpos($writes[3], 's.dt >= 100') !== false,
+    'DELETE must recheck retention dates after concurrent edits');
+$check(substr_count(implode(' ', $db->queries), 'LIMIT 500') === 4, 'both union arms and both selections must be bounded');
+$check(strpos($db->queries[0], 'STRAIGHT_JOIN test_slim_events') !== false && strpos($db->queries[0], 'UNION') !== false, 'event selection must use separate date ranges instead of scanning retained events');
+$check(substr_count(implode(' ', $db->queries), 'IS NULL OR NOT') === 2, 'both copies must be verified before deletion');
+foreach ([1, 2, 3, 4] as $probe) {
+    foreach (['refuseProbe', 'errorProbe'] as $mode) {
+        $db = new PurgeOrderDb(); $db->$mode = $probe; $result = $execute($db);
+        $deletes = array_values(array_filter($db->queries, static function ($sql) { return strpos($sql, 'DELETE') === 0; }));
+        $check($result['error'] !== '' && $result['stats'] === 0, 'unreadable, colliding or missing archive must stop parent deletion');
+        $check(count($deletes) === ($probe <= 2 ? 0 : 1), 'no DELETE may pass a failed archive check');
     }
 }
-
-// Nothing may hand-roll a comparison chain beside the shared builder: that is exactly how
-// the three-column discriminator got here, and in review it looks like a working guard.
-if (preg_match('/<=>/', $purge)) {
-    $failures[] = 'the purge contains a literal <=> comparison — collision guards must come '
-        . 'from PurgeArchive::sameRow(), which compares every column the INSERT copies';
-}
+$db = new PurgeOrderDb(); $db->deleted = 0; $result = $execute($db);
+$check($result['error'] !== '' && $result['stats'] === 0, 'deleted count mismatch must stop the batch');
+$db = new PurgeOrderDb(); $db->keys = ['1 OR 1=1']; $result = $execute($db);
+$check($result['error'] !== '' && count($db->queries) === 1, 'invalid database key must never be interpolated');
+$db = new PurgeOrderDb(); $execute($db, false);
+$check(!preg_grep('/archive/', $db->queries), 'delete-only must not read or write archives');
+$check(strpos($purge, 'PurgeArchive::purgeBatch(') !== false, 'cron must invoke the verified batch');
+$check(strpos($purge, 'record_degradation') !== false, 'a refused purge must report its failure');
 
 // ── 2d. The archived column lists still match the tables the installer creates ──
 //
@@ -272,28 +221,6 @@ if (!preg_match("/\\['usable'\\]/", $purge)) {
         . 'primary key would build a statement that cannot identify a row and delete through it';
 }
 
-// ── 3. The parent DELETE only runs if the events were safely dealt with ─────
-// Fail closed. Deleting pageviews whose events could not be archived is the data loss
-// this whole file exists to prevent, and it must not be reachable through an error path.
-if ($statsDelete !== null) {
-    $before = substr($purge, 0, $statsDelete);
-    if (!preg_match('/(false\s*===|!==\s*false|if\s*\(\s*false)/', $before)) {
-        $failures[] = 'nothing checks whether the events step succeeded before the stats '
-            . 'DELETE runs — on any archive failure the cascade destroys the events anyway';
-    }
-}
-
-// ── 4. Events are selected by their parent too, not only their own dt ───────
-// The cascade keys on the PARENT id while the archive filter keys on the event's own dt.
-// An event still inside the retention window whose parent has aged out is cascaded away
-// without ever being eligible for archiving: 900 such rows at a 60-day cutoff on the
-// reference dataset, where the observed event-to-parent lag reaches 43 days.
-if (!preg_match('/\bs\.dt\s*<|stats.*\bdt\s*<[^;]*\bOR\b|\bOR\b[^;]*\bs\.dt/is', $purge)) {
-    $failures[] = 'the events are selected only by their own dt — an event whose parent '
-        . 'pageview has aged out is cascade-deleted without being archived, because the '
-        . 'cascade keys on the parent while the filter keys on the child';
-}
-
 // ── 5. OPTIMIZE TABLE is not on a schedule ──────────────────────────────────
 $optimizes = preg_match_all('/OPTIMIZE\s+TABLE/i', $purge);
 if ($optimizes > 0) {
@@ -328,38 +255,6 @@ if (!preg_match('/LIMIT\s+1|get_var/i', $purge)) {
         . 'to purge and should cost two indexed lookups';
 }
 
-// ── Report ─────────────────────────────────────────────────────────────────
-// ── The collision probe must be tri-state at BOTH call sites (C25) ─────────
-// The helper answering "could not tell" buys nothing if the purge reads that as
-// "clean". Measured: with the helper correct and these branches removed, every
-// behavioural test still passed — the call sites had no coverage at all.
-//
-// Reachable, not hypothetical: ConvertTablesToUtf8mb4 continues past a table it could
-// not convert, so an install can hold slim_stats on utf8mb4 and slim_stats_archive on
-// utf8mb3. sameRow() then compares 33 columns across the two, raising
-// ER_CANT_AGGREGATE_2COLLATIONS, and get_var() answers null for that exactly as it
-// does for "no colliding row".
-$probe_calls = preg_match_all('/PurgeArchive::probeForCollision\s*\(/', $purge);
-
-if ($probe_calls < 2) {
-    $failures[] = sprintf(
-        'the purge makes %d tri-state collision probe(s), expected 2 (events and pageviews). '
-            . 'A bare get_var() cannot tell "no collision" from "the comparison failed", and it '
-            . 'archived with INSERT IGNORE and then deleted on the strength of that',
-        $probe_calls
-    );
-}
-
-$unknown_branches = preg_match_all('/if\s*\(\s*null\s*===\s*\$\w*_collision\s*\)/', $purge);
-
-if ($unknown_branches < 2) {
-    $failures[] = sprintf(
-        'only %d of the 2 collision probes stop on "could not tell". Treating an unreadable '
-            . 'probe as clean is the fail-open this guard exists to close',
-        $unknown_branches
-    );
-}
-
 // The probe is a question, not a failure: a mid-conversion install should get a
 // recorded degradation and a skipped purge, not a red admin on every page load.
 $helper = (string) @file_get_contents(dirname(__DIR__) . '/src/Utils/PurgeArchive.php');
@@ -380,6 +275,23 @@ if ('' === $probe) {
         $failures[] = 'probeForCollision() does not consult last_error, so it cannot tell a failed '
             . 'comparison from a clean one';
     }
+}
+
+// Actual schema probes must not hide fields outside the archive manifest.
+define('ARRAY_A', 'ARRAY_A');
+class wpdb {
+    public $last_error = '';
+    public function suppress_errors($value) { return false; }
+    public function get_results($sql, $format) {
+        return array_map(static function ($name) { return ['Field' => $name, 'Type' => 'varchar(255)']; },
+            array_merge(array_keys(\SlimStat\Schema\Schema::columns('slim_stats')), ['custom_payload']));
+    }
+}
+require_once $plugin_root . '/src/Schema/Schema.php';
+require_once $plugin_root . '/src/Utils/PurgeArchive.php';
+$customPlan = \SlimStat\Utils\PurgeArchive::copyableColumns(new wpdb(), 'wp_', 'slim_stats');
+if (!in_array('custom_payload', $customPlan['lost'], true)) {
+    $failures[] = 'undeclared custom column must refuse archive-mode deletion';
 }
 
 if ($failures !== []) {

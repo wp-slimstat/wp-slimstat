@@ -75,6 +75,8 @@ export function removeWpConfigLine(line: string): void {
  */
 export function deployMuPlugin(src: string, dest: string): void {
   fs.mkdirSync(path.dirname(dest), { recursive: true });
+  // Keep an unchanged fixture present while WordPress enumerates MU-plugins.
+  if (fs.existsSync(dest) && fs.readFileSync(dest).equals(fs.readFileSync(src))) return;
   fs.rmSync(dest, { force: true });
   fs.copyFileSync(src, dest);
 }
@@ -101,6 +103,8 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
   { sourceFile: 'fileinfo-disabler-mu-plugin.php', deployedFile: 'fileinfo-disabler-mu-plugin.php' },
   { sourceFile: 'google-maps-key-mu-plugin.php', deployedFile: 'google-maps-key-mu-plugin.php' },
   { sourceFile: 'ecommerce-gateway-mu-plugin.php', deployedFile: 'ecommerce-gateway-mu-plugin.php' },
+  { sourceFile: 'license-fixture-mu-plugin.php', deployedFile: 'license-fixture-mu-plugin.php' },
+  { sourceFile: 'black-friday-2026-mu-plugin.php', deployedFile: 'black-friday-2026-mu-plugin.php' },
 ];
 
 // ─── Generic MU-Plugin install/uninstall by name ──────────────────
@@ -626,6 +630,10 @@ export async function clearStatsTable(): Promise<void> {
   await pool.execute("TRUNCATE TABLE wp_slim_events");
   await clearHeatmapTable(pool);
   await pool.execute("SET FOREIGN_KEY_CHECKS = 1");
+  await clearStatsCaches();
+}
+
+export async function clearStatsCaches(): Promise<void> {
   // Every cache derived from wp_slim_stats must go with the rows, or a spec that
   // truncates and re-seeds reads the pre-truncate answer. admin/index.php:3276
   // online_count() caches to the next minute boundary, so a `0` written while the
@@ -640,7 +648,7 @@ export async function clearStatsTable(): Promise<void> {
   // `slimstat_query_*` (admin/view/wp-slimstat-db.php:551) and
   // `wp_slimstat_query_*` (src/Utils/Query.php:847) exist; the earlier pattern
   // matched only the second.
-  await pool.execute(
+  await getPool().execute(
     "DELETE FROM wp_options WHERE option_name REGEXP '^_transient_(timeout_)?(wp_)?slimstat_(adminbar_|chart_data_|query_|resource_titles)'"
   );
 }

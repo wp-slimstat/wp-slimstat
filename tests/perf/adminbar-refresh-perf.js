@@ -18,6 +18,7 @@ const ajaxDuration = new Trend('adminbar_ajax_duration_ms', true);
 const cacheHits = new Counter('transient_cache_hits');
 
 export const options = {
+  noCookiesReset: true, // Login and its nonce are retained once per virtual user.
   scenarios: {
     // Smoke: 1 user, verify endpoint works
     smoke: {

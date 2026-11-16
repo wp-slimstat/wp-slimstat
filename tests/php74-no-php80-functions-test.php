@@ -47,7 +47,7 @@ if (false === $boot) {
     fwrite(STDERR, "FAIL: cannot read wp-slimstat.php\n");
     exit(1);
 }
-if (false === strpos($boot, "/src/Dependencies/veronalabs/browscap-php/src/Symfony/Polyfill/")
+if (false === strpos($boot, "/vendor-prefixed/veronalabs/browscap-php/src/Symfony/Polyfill/")
     || !preg_match('#require_once\s+\$slimstat_dependency_root\s*\.\s*[\'"]Php80/bootstrap\.php[\'"]#', $boot)) {
     fwrite(STDERR, "FAIL: wp-slimstat.php must load the generated Symfony/Polyfill/Php80 bootstrap.\n");
     fwrite(STDERR, "      Without it, str_contains/str_starts_with/etc. fatal on PHP 7.4.\n");
@@ -78,7 +78,7 @@ $forbidden_functions = [
 ];
 
 $allow_marker = 'php-polyfill: ok';
-$deps_prefix  = $plugin_root . '/src/Dependencies';
+$deps_prefix  = $plugin_root . '/vendor-prefixed';
 
 $paths = [
     $plugin_root . '/wp-slimstat.php',
@@ -93,7 +93,7 @@ foreach ($paths as $path) {
         continue;
     }
     if (!is_dir($path)) continue;
-    // Prune src/Dependencies/ at descent — saves walking ~500 scoped vendor files.
+    // Prune vendor-prefixed/ at descent — saves walking ~500 scoped vendor files.
     $directory = new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS);
     $filtered  = new RecursiveCallbackFilterIterator($directory, function ($file) use ($deps_prefix) {
         return 0 !== strpos($file->getPathname(), $deps_prefix . DIRECTORY_SEPARATOR);

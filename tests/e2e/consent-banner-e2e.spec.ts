@@ -15,19 +15,9 @@ import {
   installOptionMutator,
   uninstallOptionMutator,
   setSlimstatOption,
-  installMuPluginByName,
-  uninstallMuPluginByName,
-  installCronFrontendShim,
-  cleanupFixtureFiles,
 } from './helpers/setup';
 import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
 import * as mysql from 'mysql2/promise';
-import * as fs from 'fs';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 let db: mysql.Pool;
 let wpConsentApiActive = false;
@@ -240,13 +230,16 @@ test.describe('AC-CNS-004: CookieYes (cookie-law-info) Accept/Reject Flows', () 
   test.setTimeout(60_000);
 
   test.beforeEach(async ({ page }) => {
-    test.skip(!cookieLawInfoActive, 'cookie-law-info plugin is not installed — skipping CookieYes tests');
+    test.skip(!cookieLawInfoActive || !wpConsentApiActive, 'CookieYes and WP Consent API are required for this integration');
 
     await snapshotSlimstatOptions();
     installOptionMutator();
 
-    // Configure SlimStat for CookieYes/cookie-law-info integration
-    await setSlimstatOption(page, 'consent_integration', 'cookie_law_info');
+    // CookieYes integrates through the supported WP Consent API setting.
+    // A consent change on the current page requires the client-side tracker.
+    await setSlimstatOption(page, 'javascript_mode', 'on');
+    await setSlimstatOption(page, 'consent_integration', 'wp_consent_api');
+    await setSlimstatOption(page, 'consent_level_integration', 'statistics');
     await setSlimstatOption(page, 'gdpr_enabled', 'on');
     await setSlimstatOption(page, 'anonymous_tracking', 'off');
     await setSlimstatOption(page, 'set_tracker_cookie', 'on');
@@ -258,87 +251,52 @@ test.describe('AC-CNS-004: CookieYes (cookie-law-info) Accept/Reject Flows', () 
     await restoreSlimstatOptions();
   });
 
-  test('CookieYes: accept cookie allows tracking to fire', async ({ page }) => {
+  test('CookieYes: accepting analytics through the banner records a pageview', async ({ page }) => {
     const marker = `cli-accept-${Date.now()}`;
-    const testUrl = `${BASE_URL}/?e2e_marker=${marker}`;
-
-    // cookie-law-info uses `cookielawinfo-checkbox-analytics` cookie
-    const { trackingRequests, cleanup } = await withAnonymousContext(page, testUrl, [
-      { name: 'cookielawinfo-checkbox-analytics', value: 'yes', domain: COOKIE_DOMAIN, path: '/' },
-      { name: 'cookielawinfo-checkbox-necessary', value: 'yes', domain: COOKIE_DOMAIN, path: '/' },
-    ]);
-
+    const ctx = await withAnonymousContext(page, `${BASE_URL}/?e2e_marker=${marker}`);
     try {
-      if (trackingRequests.length === 0) {
-        // Server-side tracking may fire without JS — check DB
-        const [rows] = await db.execute(
-          'SELECT id FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1',
-          [`%${marker}%`]
-        ) as any;
-        // At least one path (JS or server-side) should have tracked
-        if (rows.length === 0) {
-          console.warn('CookieYes accept: no JS or DB row — consent integration may not be configured');
-        }
-      }
-    } finally {
-      await cleanup();
-    }
+      expect(ctx.trackingRequests).toHaveLength(0);
+      await ctx.page.getByRole('button', { name: 'Accept All', exact: true }).click();
+      await expect.poll(async () => {
+        const [rows] = await db.execute('SELECT COUNT(*) AS n FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]) as any;
+        return Number(rows[0].n);
+      }).toBe(1);
+    } finally { await ctx.cleanup(); }
   });
 
-  test('CookieYes: reject cookie blocks JS tracking requests', async ({ page }) => {
+  test('CookieYes: rejecting analytics blocks tracking and database writes', async ({ page }) => {
     const marker = `cli-reject-${Date.now()}`;
-    const testUrl = `${BASE_URL}/?e2e_marker=${marker}`;
-
-    const { trackingRequests, cleanup } = await withAnonymousContext(page, testUrl, [
-      { name: 'cookielawinfo-checkbox-analytics', value: 'no', domain: COOKIE_DOMAIN, path: '/' },
-      { name: 'cookielawinfo-checkbox-necessary', value: 'yes', domain: COOKIE_DOMAIN, path: '/' },
-    ]);
-
+    const ctx = await withAnonymousContext(page, `${BASE_URL}/?e2e_marker=${marker}`);
     try {
-      // No JS tracking requests should be sent when analytics cookie is rejected
-      expect(trackingRequests).toHaveLength(0);
-    } finally {
-      await cleanup();
-    }
+      await ctx.page.getByRole('button', { name: 'Reject All', exact: true }).click();
+      await ctx.page.waitForTimeout(2000);
+      expect(ctx.trackingRequests).toHaveLength(0);
+      const [rows] = await db.execute('SELECT COUNT(*) AS n FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]) as any;
+      expect(Number(rows[0].n)).toBe(0);
+    } finally { await ctx.cleanup(); }
   });
 
-  test('CookieYes: no analytics cookie present — no JS tracking (default deny)', async ({ page }) => {
+  test('CookieYes: no decision defaults to no tracking', async ({ page }) => {
     const marker = `cli-nodecision-${Date.now()}`;
-    const testUrl = `${BASE_URL}/?e2e_marker=${marker}`;
-
-    // No CookieYes cookies at all — undecided state
-    const { trackingRequests, cleanup } = await withAnonymousContext(page, testUrl);
-
+    const ctx = await withAnonymousContext(page, `${BASE_URL}/?e2e_marker=${marker}`);
     try {
-      // Without explicit consent, tracking JS should be blocked
-      expect(trackingRequests).toHaveLength(0);
-    } finally {
-      await cleanup();
-    }
+      expect(ctx.trackingRequests).toHaveLength(0);
+      const [rows] = await db.execute('SELECT COUNT(*) AS n FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]) as any;
+      expect(Number(rows[0].n)).toBe(0);
+    } finally { await ctx.cleanup(); }
   });
 
   test('CookieYes: reject persists across page navigation', async ({ page }) => {
-    const browser = page.context().browser()!;
-    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-    await ctx.addCookies([
-      { name: 'cookielawinfo-checkbox-analytics', value: 'no', domain: COOKIE_DOMAIN, path: '/' },
-      { name: 'cookielawinfo-checkbox-necessary', value: 'yes', domain: COOKIE_DOMAIN, path: '/' },
-    ]);
-
-    const newPage = await ctx.newPage();
-    const trackingRequests: string[] = [];
-    newPage.on('request', (req) => {
-      if (isSlimstatTrackingRequest(req)) trackingRequests.push(req.url());
-    });
-
-    for (const slug of ['', '?p=1']) {
-      await newPage.goto(`${BASE_URL}/${slug}`, { waitUntil: 'domcontentloaded' });
-      await newPage.waitForTimeout(2000);
-    }
-
-    expect(trackingRequests).toHaveLength(0);
-
-    await newPage.close();
-    await ctx.close();
+    const marker = `cli-persist-${Date.now()}`;
+    const ctx = await withAnonymousContext(page, `${BASE_URL}/?e2e_marker=${marker}`);
+    try {
+      await ctx.page.getByRole('button', { name: 'Reject All', exact: true }).click();
+      await expect.poll(async () => (await ctx.page.context().cookies()).find(cookie => cookie.name === 'wp_consent_statistics')?.value).toBe('deny');
+      await ctx.page.goto(`${BASE_URL}/?p=1&e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
+      await ctx.page.waitForTimeout(2000);
+      expect(ctx.trackingRequests).toHaveLength(0);
+      const [rows] = await db.execute('SELECT COUNT(*) AS n FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]) as any;
+      expect(Number(rows[0].n)).toBe(0);
+    } finally { await ctx.cleanup(); }
   });
 });

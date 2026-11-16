@@ -133,7 +133,7 @@ def visitors_summary(rows, start, end):
         "Single-page Visits": formatted(singles),
         "Bots": formatted(sum(row["id"] is not None for row in selected if row["browser_type"] == 1)),
         "Pageviews per visit": formatted(page_metrics["avghits"] or 0, 2),
-        "Longest visit": formatted(page_metrics["maxhits"] or 0) + " hits",
+        "Longest visit": formatted(page_metrics["maxhits"] or 0) + " pageviews",
     }
     result = [{"metric": metric, "value": value} for metric, value in values.items()]
     for row in result:
@@ -173,7 +173,7 @@ def visit_duration(rows, start, end):
     for (metric, _, _, weight), count in zip(_DURATION_BUCKETS, counts):
         percent = ("%.2f" % (Decimal(100 * count) / total).quantize(
             Decimal("0.01"), ROUND_HALF_UP)) if total else "0"
-        result.append({"counthits": count, "details": "Hits: %d" % count,
+        result.append({"counthits": count, "details": "Visits: %d" % count,
                        "metric": metric, "value": percent + "%"})
 
     seconds = sum(bucket[3] * count for bucket, count in zip(_DURATION_BUCKETS, counts)) // total \

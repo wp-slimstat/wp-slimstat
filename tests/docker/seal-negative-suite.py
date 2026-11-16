@@ -279,6 +279,23 @@ with tempfile.TemporaryDirectory(prefix="slimstat-seal-negative-") as temp:
     check("T18",command([str(HERE/"build-packet.sh"),str(run),str(art),REF_A,REF_A]),3,
           "a null control's arms must share every identity field")
 
+    # Different commits can legitimately publish the same plugin version.
+    for case,code,needle in [("valid",0,"blind packet built"),
+                             ("leak",5,"seal-literal"),
+                             ("missing",3,"carries no _arm_fingerprint"),
+                             ("same-fingerprint",3,"the two arms share an identity field")]:
+        run,art=fixture(root/("same-version-"+case),reports=False,build=False)
+        values=json.load((art/"after.json").open())
+        values["_arm_version"]="5.5.1"
+        if case=="leak": values["top_resource"][0]["resource"]="/5.5.1/"
+        if case=="missing": values.pop("_arm_fingerprint")
+        if case=="same-fingerprint": values["_arm_fingerprint"]="fingerprint-a"
+        (art/"after.json").write_text(json.dumps(values)+"\n")
+        result=command([str(HERE/"build-packet.sh"),str(run),str(art),REF_A,REF_B])
+        if result.returncode!=code or needle not in result.stdout+result.stderr:
+            raise RuntimeError((case,result.returncode,result.stdout,result.stderr))
+    print("PASS: same-version distinct commits; missing/swapped identity and shared-version leak refused")
+
     # ── T19: a run below the sampling floor it prints a separation verdict at ────────────────
     # Run 58's null control ran at 1 rep x 1 block against a comparison at 5 x 4. At one sample
     # `min..max` is a point, so "the two ranges are disjoint" holds for any two unequal numbers --
@@ -312,7 +329,8 @@ with tempfile.TemporaryDirectory(prefix="slimstat-seal-negative-") as temp:
                              ("missing",1,"missing or unexpected rendered captures"),
                              ("partial",1,"rendered report population incomplete"),
                              ("error",1,"rendered report did not answer"),
-                             ("leak",5,"seal-literal")]:
+                             ("leak",5,"seal-literal"),
+                             ("context-leak",5,"forbidden class 'capability'")]:
         run,art=fixture(root/("rendered-"+case),reports=False,build=False)
         (art/"artifacts.json").write_text('{}')
         (art/"run.json").write_text(json.dumps({"blocks":4,"timing_reps":5}))
@@ -327,13 +345,17 @@ with tempfile.TemporaryDirectory(prefix="slimstat-seal-negative-") as temp:
                         "historical-unfiltered","historical-filtered","straddling-unfiltered","straddling-filtered")}
                     if case=="partial": cells["historical-filtered"]={}
                     if case=="missing" and block==3 and rep==4: continue
-                    (directory/f"block-{block}-rep-{rep}.json").write_text(json.dumps({"report_ids":["report"],"cells":cells}))
+                    context="live_window_end" if case=="context-leak" else 1793730600
+                    (directory/f"block-{block}-rep-{rep}.json").write_text(json.dumps({
+                        "report_ids":["report"],"cells":cells,"requested_live_window_end":context}))
         result=command([str(HERE/"build-packet.sh"),str(run),str(art),REF_A,REF_B])
         if result.returncode!=code or needle not in result.stdout+result.stderr:
             raise AssertionError((case,result.returncode,result.stdout,result.stderr))
         if case=="complete":
             public=(run/"packet/arm-1/rendered-reports.json").read_text()
             assert 'raw_html' not in public and len(json.loads(public))==20
+            assert 'requested_live_window_end' not in public
+            assert all(row['requested_end_epoch']==1793730600 for row in json.loads(public).values())
     print("PASS: complete rendered sealed captures, missing/partial/error refusals and literal-leak control")
 
 expected=["T1","T2-ii","T2b","T2c","T3","T3b","T3c","T4","T4b","T4c","T5a","T5b","T6","T6b","T6c","T7a","T7b","T7c","T8","T9","T10","T10b","T11","T12","T14","T15","T17","T18","T19","T19b"]

@@ -711,6 +711,17 @@ class QueryBuilderTest extends WpSlimstatTestCase
      * assertions and an absent ORDER BY cannot make substr() hand back the whole
      * statement as the "clause".
      */
+    public function test_get_top_sql_debug_contains_the_executed_grouping(): void
+    {
+        Functions\when('esc_html')->alias(static fn($value) => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'));
+        \wp_slimstat::$settings['show_sql_debug'] = 'on';
+        \wp_slimstat_db::$debug_message = '';
+        $sql = $this->captureGetTopSql(['columns' => 'referer']);
+        $this->assertNotEmpty($sql);
+        $this->assertStringContainsString('GROUP BY', \wp_slimstat_db::$debug_message);
+        $this->assertStringContainsString(esc_html($sql[0]), \wp_slimstat_db::$debug_message);
+    }
+
     private function getTopOrderClause(array $args): string
     {
         $captured = $this->captureGetTopSql($args);

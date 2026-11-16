@@ -200,6 +200,7 @@ test.describe('Chart browser AJAX', () => {
     // Seed known data
     await insertRows(utcMidnight('2026-03-10'), 10, 'ajax1-mar10');
     await insertRows(utcMidnight('2026-03-15'), 20, 'ajax1-mar15');
+    await getPool().execute("UPDATE wp_slim_stats SET ip = NULL WHERE resource LIKE '/chart-ajax1-mar10-%'");
 
     const rangeStart = utcMidnight('2026-02-18');
     const rangeEnd = utcMidnight('2026-03-17') + 86399;

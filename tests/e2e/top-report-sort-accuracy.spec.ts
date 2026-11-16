@@ -68,6 +68,9 @@ async function getReportRows(
   page: any,
   panelId: string,
 ): Promise<{ label: string; count: number }[]> {
+  const panel = page.locator(`#${panelId}`);
+  await panel.scrollIntoViewIfNeeded();
+  await expect(panel.locator('.slimstat-count-pct').first()).toBeVisible();
   return page.evaluate((id: string) => {
     const rows: { label: string; count: number }[] = [];
     jQuery(`#${id} .inside p:not(.pagination):not(.loading):not(.nodata)`).each(function () {
@@ -141,7 +144,6 @@ test.describe('Top report sort accuracy after split-query merge', () => {
   }) => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`);
     await page.locator('#slim_p1_08').waitFor({ state: 'visible', timeout: 15000 });
-    await page.waitForTimeout(3000);
 
     const rows = await getReportRows(page, 'slim_p1_08');
 
@@ -164,7 +166,6 @@ test.describe('Top report sort accuracy after split-query merge', () => {
   test('slim_p1_08 rows are monotonically decreasing', async ({ page }) => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`);
     await page.locator('#slim_p1_08').waitFor({ state: 'visible', timeout: 15000 });
-    await page.waitForTimeout(3000);
 
     const rows = await getReportRows(page, 'slim_p1_08');
 
@@ -176,7 +177,6 @@ test.describe('Top report sort accuracy after split-query merge', () => {
   test('slim_p2_21 (Top Users) rows are sorted by hit count descending', async ({ page }) => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview3`);
     await page.locator('#slim_p2_21').waitFor({ state: 'visible', timeout: 15000 });
-    await page.waitForTimeout(3000);
 
     const rows = await getReportRows(page, 'slim_p2_21');
 
@@ -203,7 +203,6 @@ test.describe('Top report sort accuracy after split-query merge', () => {
   test('slim_p2_21 rows are monotonically decreasing', async ({ page }) => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview3`);
     await page.locator('#slim_p2_21').waitFor({ state: 'visible', timeout: 15000 });
-    await page.waitForTimeout(3000);
 
     const rows = await getReportRows(page, 'slim_p2_21');
 

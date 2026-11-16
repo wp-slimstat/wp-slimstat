@@ -4,6 +4,7 @@ Validated 2026-09-27 against Free development `2f4ab919` and Pro development `fb
 
 - [Full validation report](v6-qa-validation-report.md)
 - [Implementation plan](001-v6-known-identity-reports.md)
+- [6.0.1 human smoke test](release-6.0.1-smoke-qa.md) — plain-language checklist and risks for PR #378
 
 | Order | Plan | Status | Dependencies |
 |---|---|---|---|

@@ -10,10 +10,76 @@
                 "lang": "ru",
                 "plural-forms": "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);"
             },
+            "Available with Pro": [
+                ""
+            ],
+            "Total": [
+                ""
+            ],
+            "Date": [
+                "\u0414\u0430\u0442\u0430"
+            ],
             "Cache cleared!": [
                 ""
             ],
             "Cache clear failed!": [
+                ""
+            ],
+            "Device: %s": [
+                ""
+            ],
+            "Period: %1$s \u2013 %2$s": [
+                ""
+            ],
+            "Visitors: %s": [
+                ""
+            ],
+            "View: %s": [
+                ""
+            ],
+            "Previous date": [
+                ""
+            ],
+            "The report selection changed. Try copying again.": [
+                ""
+            ],
+            "Copied": [
+                ""
+            ],
+            "Copy failed": [
+                ""
+            ],
+            "The report could not be prepared. Try again.": [
+                ""
+            ],
+            "No data to copy": [
+                ""
+            ],
+            "Search: %s": [
+                ""
+            ],
+            "Site: %1$s (%2$s)": [
+                ""
+            ],
+            "Description: %s": [
+                ""
+            ],
+            "Report: %s": [
+                ""
+            ],
+            "About: %s": [
+                ""
+            ],
+            "Filters: %s": [
+                ""
+            ],
+            "none": [
+                ""
+            ],
+            "Rows shown: %s": [
+                ""
+            ],
+            "Percentages in brackets are SlimStat\u2019s: each row\u2019s share of the period total, not of this list.": [
                 ""
             ],
             "Select value...": [

@@ -48,7 +48,7 @@ $db_src  = (string) file_get_contents($db_path);
 // reintroduction would arrive with the defect attached.
 $own_files = slimstat_own_php_files(
     [$plugin_root . '/admin', $plugin_root . '/src'],
-    $plugin_root . '/src/Dependencies'
+    $plugin_root . '/vendor-prefixed'
 );
 $own_files[] = $plugin_root . '/wp-slimstat.php';
 

@@ -1,4 +1,5 @@
 <?php
+function get_option($key, $default = false) { return $default; }
 /**
  * @package wp-slimstat
  * @license GPL-2.0-or-later

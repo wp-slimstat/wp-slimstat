@@ -107,13 +107,18 @@
    min-height); the subtitle sits under the title text, on the h3's 15px inset. */
 .postbox .slimstat-gf-postbox-subtitle {
     min-height: 0;
-    margin: calc(-1 * var(--ss-space-2)) 0 0;
+    margin: 0 0 var(--ss-space-4);
     padding: 0 15px;
     border-bottom: 0;
     font-size: var(--ss-text-base);
     font-weight: normal;
     color: var(--ss-text-secondary);
     line-height: 1.4;
+    text-align: start;
+}
+
+.postbox .slimstat-gf-postbox-subtitle > span[dir] {
+    float: none;
 }
 
 /* The empty state already says what a goal is; the subtitle above it repeated the same sentence. */
@@ -1557,3 +1562,6 @@
 #slim_p9_02 .slimstat-gf-step__head { flex-wrap: wrap; gap: var(--ss-space-2); }
 #slim_p9_02 .slimstat-gf-step__count { margin-inline-start: auto; }
 #slim_p9_02 .slimstat-gf-funnel-panel__actions { flex-wrap: wrap; }
+
+/* Keep counts and percentages readable while their parent layout follows the locale. */
+.slimstat-gf-step__count, .slimstat-gf-metric__value { direction: ltr; unicode-bidi: isolate; }

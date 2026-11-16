@@ -44,7 +44,7 @@ $sources = slimstat_own_php_files([
     $plugin_root . '/admin',
     $plugin_root . '/wp-slimstat.php',
     $plugin_root . '/uninstall.php',
-], $plugin_root . '/src/Dependencies');
+], $plugin_root . '/vendor-prefixed');
 
 $name_types = slimstat_name_token_types();
 $sites      = [];
@@ -90,7 +90,7 @@ foreach ($sources as $file) {
     }
 }
 
-$expected_sites = 5;
+$expected_sites = 4;
 
 if (count($sites) !== $expected_sites) {
     $failures[] = sprintf(

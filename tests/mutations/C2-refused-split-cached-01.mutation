@@ -1,0 +1,18 @@
+target:    src/Utils/Query.php
+gate:      php tests/query-split-non-additive-test.php
+kind:      guard-removal
+expect:    a refused split reaches today and must not be cached
+rationale: A refused split (HAVING, DISTINCT, AVG) runs one statement over a range that includes today. Callers enable caching after setting the range, so without the splitRefused term that answer is cached like history and today's numbers freeze for the cache lifetime. The gate asserts no transient is written for each refused shape while the additive control still caches its historical half.
+---
+diff --git a/src/Utils/Query.php b/src/Utils/Query.php
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -1971,7 +1971,7 @@
+         }
+ 
+         $this->lastQueryFailed = false;
+-        $useCache              = $this->allowCaching && !$splitRefused;
++        $useCache              = $this->allowCaching;
+         $query                 = $this->buildQuery();
+         $query                 = $this->prepareQuery($query, $this->valuesToPrepare);
+         if ($useCache) {

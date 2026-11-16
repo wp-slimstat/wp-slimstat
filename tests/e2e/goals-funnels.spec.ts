@@ -36,6 +36,13 @@ async function gotoSlimview6(page: Page): Promise<void> {
     await page.goto(SLIMVIEW6, { waitUntil: 'domcontentloaded' });
 }
 
+async function waitForGoalsReload(page: Page): Promise<void> {
+    const filteredUrl = page.url();
+    // A same-URL reload must complete and retain the shared report filters.
+    await page.waitForEvent('domcontentloaded', { timeout: 15_000 });
+    await expect(page).toHaveURL(filteredUrl);
+}
+
 /**
  * Type a value into the goal drawer's Value field the way a user does.
  *
@@ -89,9 +96,9 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await forceLimits(1, 0, WP_CONTENT);
         await gotoSlimview6(page);
 
-        // Goals hero + empty teach card. Title is the postbox <h3>; usage pill
-        // and CTA were moved into the postbox header (.slimstat-header-buttons).
-        await expect(page.locator('#slim_p9_01 > h3')).toContainText('Goals');
+        // Goals hero + empty teach card. Title is the <h3> in the title row; usage pill
+        // and CTA sit beside it in the header (.slimstat-header-buttons).
+        await expect(page.locator('#slim_p9_01 > .slimstat-report-head > h3')).toContainText('Goals');
         await expect(page.locator('#slim_p9_01 [data-role="usage"]')).toContainText('0 of 1');
         await expect(page.locator('[data-role="goals-empty"]')).toBeVisible();
 
@@ -102,6 +109,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slim_p9_01 .slimstat-gf-empty .slimstat-gf-cta')).toHaveCount(1);
 
         // Funnels: locked preview, brand CTA, no Add button.
+        await page.locator('#slim_p9_02').scrollIntoViewIfNeeded();
         await expect(page.locator('.slimstat-gf-funnels--locked')).toBeVisible();
         const funnelCtas = page.locator('.slimstat-gf-funnels .slimstat-upgrade-action');
         await expect(funnelCtas).toHaveCount(1);
@@ -131,6 +139,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slim_p9_01 .slimstat-gf-upsell')).toBeVisible();
 
         // Locked funnel preview still present.
+        await page.locator('#slim_p9_02').scrollIntoViewIfNeeded();
         await expect(page.locator('.slimstat-gf-funnels--locked')).toBeVisible();
     });
 
@@ -263,6 +272,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slim_p9_02 [data-role="usage"]')).toContainText('2 of 3');
 
         // Pill-segmented tab bar appears with 2 tabs.
+        await page.locator('#slim_p9_02').scrollIntoViewIfNeeded();
         await expect(page.locator('.slimstat-gf-tabs')).toBeVisible();
         await expect(page.locator('.slimstat-gf-tab')).toHaveCount(2);
         await expect(page.locator('.slimstat-gf-tab.is-active')).toHaveCount(1);
@@ -427,7 +437,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await page.fill('[data-role="goal-name"]', 'E2E Test Goal');
         await fillGoalValue(page, '/e2e');
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="save-goal"]'),
         ]);
 
@@ -454,7 +464,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         expect(nativeConfirmInvoked).toBe(false);
 
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="confirm-destructive"]'),
         ]);
         await expect(page.locator('.slimstat-gf-goal')).toHaveCount(0);
@@ -478,7 +488,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await fillStepValue(rows.nth(1), '/pricing');
 
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="save-funnel"]'),
         ]);
 
@@ -652,7 +662,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await fillGoalValue(page, '/totally-custom-xyz');
 
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="save-goal"]'),
         ]);
 
@@ -684,7 +694,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         // The committed value still round-trips on save.
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="save-goal"]'),
         ]);
         await expect(page.locator('.slimstat-gf-rule-chip code')).toContainText('https://metricet.com');
@@ -727,7 +737,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await page.selectOption('[data-role="goal-operator"]', 'is_empty');
 
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="save-goal"]'),
         ]);
         await expect(page.locator('.slimstat-gf-goal__name')).toContainText('Empty Ref Goal');
@@ -958,7 +968,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         await page.fill('[data-role="goal-name"]', 'After Edit');
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="save-goal"]'),
         ]);
 
@@ -986,7 +996,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         expect(nativeConfirmInvoked).toBe(false);
 
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="confirm-destructive"]'),
         ]);
         await expect(page.locator('.slimstat-gf-funnel-panel')).toHaveCount(0);
@@ -1007,7 +1017,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         await page.fill('[data-role="funnel-name"]', 'New Funnel Name');
         await Promise.all([
-            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            waitForGoalsReload(page),
             page.click('[data-action="save-funnel"]'),
         ]);
 

@@ -121,33 +121,7 @@ class Tracker
 
     public static function _get_remote_ip()
     {
-        $ip_array = ['', ''];
-
-        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
-        $remote_addr = $_SERVER['REMOTE_ADDR'] ?? '';
-        $remote_addr = is_string($remote_addr) ? sanitize_text_field(wp_unslash($remote_addr)) : '';
-        if (false !== filter_var($remote_addr, FILTER_VALIDATE_IP)) {
-            $ip_array[0] = $remote_addr;
-        }
-
-        // CF-Connecting-IP is handled separately via Utils::getCfClientIp() with CF-Ray validation.
-        $originating_ip_headers = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
-        foreach ($originating_ip_headers as $a_header) {
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Input shape is checked before unslashing and context-specific sanitization below.
-            $header_value = $_SERVER[$a_header] ?? '';
-            if (is_string($header_value) && '' !== $header_value) {
-                $header_value = sanitize_text_field(wp_unslash($header_value));
-                foreach (explode(',', $header_value) as $a_ip) {
-                    $a_ip = trim($a_ip);
-                    if (false !== filter_var($a_ip, FILTER_VALIDATE_IP) && $a_ip != $ip_array[0]) {
-                        $ip_array[1] = $a_ip;
-                        break 2;
-                    }
-                }
-            }
-        }
-
-        return apply_filters('slimstat_filter_ip_address', $ip_array);
+        return Utils::getRemoteIp();
     }
 
     public static function _get_language()
@@ -383,6 +357,13 @@ class Tracker
     public static function _get_value_with_checksum($_value = 0)
     {
         return Utils::getValueWithChecksum($_value);
+    }
+
+    /** @deprecated Use SlimStat\Tracker\Utils::getValueWithoutChecksum(). */
+    public static function _get_value_without_checksum($_value = '')
+    {
+        _deprecated_function(__METHOD__, '6.0.0', 'SlimStat\\Tracker\\Utils::getValueWithoutChecksum()');
+        return Utils::getValueWithoutChecksum($_value);
     }
 
 

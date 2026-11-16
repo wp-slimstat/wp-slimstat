@@ -1,0 +1,17 @@
+target: src/Utils/Query.php
+gate: php tests/query-split-scalar-test.php
+kind: guard-removal
+expect: additive count must split
+rationale: Pageview totals must reuse only their immutable history, while reading today again.
+---
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -1445,7 +1445,7 @@
+             && count($this->whereClauses) === 1 && !$this->rawWhereClause && !$this->joinClauses
+             && !$this->groupByClause && !$this->havingClauses && !$this->limitClause
+             && preg_match('/^COUNT\s*\(\s*(?:\*|id)\s*\)(?:\s+(?:AS\s+)?[a-zA-Z_][a-zA-Z0-9_]*)?$/i', trim($this->fields));
+-        if ($canSplit) {
++        if (false) {
+             [$split, $histFrom, $histTo, $liveFrom, $liveTo, $dtIdx] = $this->getSplitDateRanges();
+             $now = self::$processingTimestamp ?? \wp_slimstat::now();
+             if ($split && $now >= $this->getTodayDate() + 1800) {

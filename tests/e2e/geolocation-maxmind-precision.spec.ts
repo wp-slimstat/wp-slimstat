@@ -11,6 +11,7 @@
 import { test, expect } from '@playwright/test';
 import {
   installOptionMutator,
+  installHeaderInjector, uninstallHeaderInjector, setHeaderOverrides, clearHeaderOverrides,
   uninstallOptionMutator,
   setSlimstatOption,
   snapshotSlimstatOptions,
@@ -36,6 +37,7 @@ test.describe('AC-GEO-004: MaxMind Provider Precision', () => {
 
   test.beforeAll(async () => {
     installOptionMutator();
+    installHeaderInjector();
   });
 
   test.beforeEach(async ({ page }) => {
@@ -46,10 +48,12 @@ test.describe('AC-GEO-004: MaxMind Provider Precision', () => {
   });
 
   test.afterEach(async () => {
+    clearHeaderOverrides();
     await restoreSlimstatOptions();
   });
 
   test.afterAll(async () => {
+    uninstallHeaderInjector();
     uninstallOptionMutator();
     await closeDb();
   });
@@ -59,7 +63,8 @@ test.describe('AC-GEO-004: MaxMind Provider Precision', () => {
   test('MaxMind provider processes 8.8.8.8 without crashing', async ({ page, context }) => {
     await setSlimstatOption(page, 'geolocation_provider', 'maxmind');
 
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-maxmind-us',
       'CF-Connecting-IP': '8.8.8.8',
     });
@@ -81,7 +86,8 @@ test.describe('AC-GEO-004: MaxMind Provider Precision', () => {
   test('MaxMind provider processes German IP without crashing', async ({ page, context }) => {
     await setSlimstatOption(page, 'geolocation_provider', 'maxmind');
 
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-maxmind-de',
       'CF-Connecting-IP': '5.9.49.12',
     });
@@ -103,7 +109,8 @@ test.describe('AC-GEO-004: MaxMind Provider Precision', () => {
     // Set an invalid license key — should not cause a fatal error
     await setSlimstatOption(page, 'maxmind_license_key', 'INVALID_KEY_12345');
 
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-maxmind-invalid-key',
       'CF-Connecting-IP': '8.8.8.8',
     });

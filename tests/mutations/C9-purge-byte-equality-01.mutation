@@ -1,0 +1,17 @@
+target: src/Utils/PurgeArchive.php
+gate: php tests/purge-archive-order-test.php
+kind: guard-removal
+expect: as bytes
+rationale: Collation equality must not pass a different archived spelling.
+---
+--- a/src/Utils/PurgeArchive.php
++++ b/src/Utils/PurgeArchive.php
+@@ -239,7 +239,7 @@
+                 continue;
+             }
+ 
+-            $tests[] = sprintf('CAST(a.%s AS BINARY) <=> CAST(%s.%s AS BINARY)', $column, $live_alias, $column);
++            $tests[] = sprintf('a.%s <=> %s.%s', $column, $live_alias, $column);
+         }
+ 
+         return implode(' AND ', $tests);

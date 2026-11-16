@@ -116,6 +116,7 @@ function css_split_selectors(string $sel): array
     return $out;
 }
 
+/** Selectors in $css that carry no Slimstat token (slimstat, slim-, slim_, ss-), so they could restyle other screens. */
 function css_unscoped_selectors(string $css): array
 {
     $token = '/slimstat|slim-|slim_|(?<![\w-])ss-|^:root$/i';
@@ -163,10 +164,14 @@ function css_unscoped_selectors(string $css): array
 
 // ponytail: count cap for the two files with pre-existing legacy selectors;
 // a swap (one removed, one added) slips past — tighten to 0 once they are cleaned.
-$legacyCap = ['admin.css' => 90, 'live-analytics.css' => 95];
+$legacyCap = ['admin.css' => 67, 'live-analytics.css' => 95];
+// The Audience Location map's class names are generic; unscoped, they restyled the WordPress Dashboard.
+$mapClasses = '/\.(map-container|top-countries|country-bar|country-flag|bar-container|bar-fill)\b/';
 foreach (glob(dirname(__DIR__) . '/admin/assets/css/*.css') as $file) {
     $name = basename($file);
     $bad = css_unscoped_selectors((string) file_get_contents($file));
+    $leakedMap = preg_grep($mapClasses, $bad);
+    css_assert(!$leakedMap, "{$name}: no unscoped Audience Location class" . ($leakedMap ? ' (' . implode(' | ', $leakedMap) . ')' : ''), $failures);
     $cap = $legacyCap[$name] ?? 0;
     $label = "{$name}: unscoped selectors " . count($bad) . " <= {$cap}";
     if ($cap === 0 && $bad) {

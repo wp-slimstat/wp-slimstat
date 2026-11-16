@@ -26,6 +26,8 @@ namespace SlimStat\Services\Geolocation\Provider {
 }
 namespace {
     if (PHP_SAPI !== 'cli') { exit(1); }
+    function wp_is_writable($path) { return is_writable($path); }
+function __($message, $domain = '') { return $message; }
     function wp_tempnam($path) { return tempnam($GLOBALS['dbip_test_dir'], 'download'); }
     function wp_remote_get($url, $args) { copy($GLOBALS['dbip_test_gzip'], $args['filename']); return []; }
     function is_wp_error($response) { return false; }
@@ -44,6 +46,7 @@ namespace {
             $GLOBALS['dbip_test_failure'] = $failure;
             file_put_contents($database, 'last valid database');
             $updated = $provider->updateDatabase();
+            if (!$updated && '' === $provider->getLastError()) { throw new \RuntimeException('Failed update must explain recovery'); }
             if ($updated !== ('none' === $failure) || file_get_contents($database) !== ('none' === $failure ? $bytes : 'last valid database')) {
                 throw new \RuntimeException('GeoIP replacement or result incorrect after ' . $failure);
             }

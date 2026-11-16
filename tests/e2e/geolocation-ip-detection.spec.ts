@@ -3,7 +3,7 @@
  *
  * Validates that WP SlimStat's IP detection loop respects the correct
  * header priority order:
- *   CF-Connecting-IP (with CF-Ray) > X-Forwarded-For > REMOTE_ADDR
+ *   Verified Cloudflare client > explicitly trusted proxy > connecting peer
  *
  * Uses the header-injector mu-plugin to set headers at the PHP level
  * (Playwright's setExtraHTTPHeaders doesn't reach PHP through Local by Flywheel nginx).
@@ -16,7 +16,6 @@ import {
   snapshotSlimstatOptions,
   restoreSlimstatOptions,
   clearStatsTable,
-  getLatestStat,
   closeDb,
   installHeaderInjector,
   uninstallHeaderInjector,
@@ -60,6 +59,7 @@ test.describe('AC-GEO-005/006: IP Detection Header Priority', () => {
   test('CF-Connecting-IP used when CF-Ray is present (highest priority)', async ({ page }) => {
     // CF-Connecting-IP (US) should win over X-Forwarded-For (DE)
     setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-ip-priority-cf',
       'CF-Connecting-IP': '8.8.8.8',         // US
       'X-Forwarded-For': '5.9.49.12',        // DE
@@ -76,10 +76,10 @@ test.describe('AC-GEO-005/006: IP Detection Header Priority', () => {
 
   // ─── Test 2: X-Forwarded-For used when no CF-Ray ──────────────
 
-  test('X-Forwarded-For used when CF-Ray is absent', async ({ page }) => {
-    // Without CF-Ray, CF-Connecting-IP should be ignored
-    // X-Forwarded-For should be used
+  test('X-Forwarded-For is ignored on a direct connection', async ({ page }) => {
+    // Neither client-supplied header establishes a trusted proxy.
     setHeaderOverrides({
+      'REMOTE_ADDR': '127.0.0.1',
       'X-Forwarded-For': '5.9.49.12',        // DE
     });
 
@@ -87,18 +87,16 @@ test.describe('AC-GEO-005/006: IP Detection Header Priority', () => {
     await page.goto(`/?p=${marker}`);
 
     const stat = await waitForStat(marker);
-    // X-Forwarded-For (5.9.49.12 → DE) should be used
-    if (stat && stat.country) {
-      expect(stat.country).toBe('de');
-    }
+    expect(stat).toBeTruthy();
+    expect(stat!.country ?? '').toBe('');
   });
 
   // ─── Test 3: Multiple proxy hops in X-Forwarded-For ────────────
 
-  test('X-Forwarded-For with multiple IPs uses first public IP', async ({ page }) => {
-    // Comma-separated list: private, public (DE), public (US)
-    // Should use the first public IP in the chain
+  test('a forged multi-hop chain is ignored on a direct connection', async ({ page }) => {
+    // The entire chain is untrusted when the connecting peer is untrusted.
     setHeaderOverrides({
+      'REMOTE_ADDR': '127.0.0.1',
       'X-Forwarded-For': '10.0.0.1, 5.9.49.12, 8.8.8.8',
     });
 
@@ -106,20 +104,20 @@ test.describe('AC-GEO-005/006: IP Detection Header Priority', () => {
     await page.goto(`/?p=${marker}`);
 
     const stat = await waitForStat(marker);
-    if (stat && stat.country) {
-      // First public IP is 5.9.49.12 (DE) — private 10.0.0.1 should be skipped
-      expect(stat.country).toBe('de');
-    }
+    expect(stat).toBeTruthy();
+    expect(stat!.country ?? '').toBe('');
   });
 
   // ─── Test 4: CF-Connecting-IP with CF-Ray resolves correct IP ──
 
   test('CF-Connecting-IP controls geolocation while storage retains the connection IP', async ({ page }) => {
+    setHeaderOverrides({ REMOTE_ADDR: '173.245.48.1' });
     const baselineMarker = `ip-origin-${Date.now()}`;
     await page.goto(`/?p=${baselineMarker}`);
     const baseline = await waitForStatWithIp(baselineMarker);
     expect(baseline).toBeTruthy();
     setHeaderOverrides({
+      'REMOTE_ADDR': '173.245.48.1',
       'CF-Ray': 'test-ip-detection-record',
       'CF-Connecting-IP': '1.0.16.0',        // JP
     });
@@ -131,24 +129,22 @@ test.describe('AC-GEO-005/006: IP Detection Header Priority', () => {
     expect(stat).toBeTruthy();
     expect(stat!.country).toBe('jp');
     // Geolocation uses the validated CF header; getRemoteIp stores the connection
-    // address separately. Compare the actual host origin instead of assuming loopback.
+    // address separately; both visits use the same edge peer.
     expect(stat!.ip).toBe(baseline!.ip);
   });
 
   // ─── Test 5: No proxy headers falls back to REMOTE_ADDR ───────
 
   test('no proxy headers falls back to REMOTE_ADDR (local dev = private IP)', async ({ page }) => {
-    // No header overrides → REMOTE_ADDR is 127.0.0.1 on local dev
+    // Pin the connecting peer: a container gateway is not necessarily loopback.
+    setHeaderOverrides({ REMOTE_ADDR: '127.0.0.1' });
     const marker = `ip-remoteaddr-${Date.now()}`;
     await page.goto(`/?p=${marker}`);
 
-    await new Promise((r) => setTimeout(r, 3000));
-
-    const stat = await getLatestStat(marker);
+    const stat = await waitForStat(marker);
+    expect(stat).toBeTruthy();
     // REMOTE_ADDR (127.0.0.1) is private → no country
-    if (stat) {
-      expect(!stat.country || stat.country === '').toBeTruthy();
-    }
+    expect(stat!.country ?? '').toBe('');
   });
 
   // ─── Test 6: CF-Connecting-IP ignored without CF-Ray ───────────
@@ -162,13 +158,10 @@ test.describe('AC-GEO-005/006: IP Detection Header Priority', () => {
     const marker = `ip-spoof-nocfray-${Date.now()}`;
     await page.goto(`/?p=${marker}`);
 
-    await new Promise((r) => setTimeout(r, 3000));
-
-    const stat = await getLatestStat(marker);
+    const stat = await waitForStat(marker);
+    expect(stat).toBeTruthy();
     // Without CF-Ray, CF-Connecting-IP is not trusted
     // Falls back to REMOTE_ADDR (127.0.0.1) → no country
-    if (stat) {
-      expect(stat.country).not.toBe('us');
-    }
+    expect(stat!.country).not.toBe('us');
   });
 });

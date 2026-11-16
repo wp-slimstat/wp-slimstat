@@ -1,0 +1,17 @@
+target: src/Tracker/VisitIdGenerator.php
+gate: php tests/cross-database-handle-test.php
+kind: guard-removal
+expect: analytics handles must not supply table prefixes
+rationale: A legacy handle can have no prefix, and changing targets requires seeding even on the current version.
+---
+--- a/src/Tracker/VisitIdGenerator.php
++++ b/src/Tracker/VisitIdGenerator.php
+@@ -141,7 +141,7 @@
+     private static function repairMarker(): string
+     {
+         $db    = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+-        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
++        $table = $db->prefix . 'slim_stats';
+ 
+         return hash('sha256', implode('|', [
+             'v2', // Refresh old non-autoloaded markers once.

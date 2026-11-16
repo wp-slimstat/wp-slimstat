@@ -62,7 +62,7 @@ function slimstat_normalize_scoped_constants($target)
 
 if (isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) {
     try {
-        $target = isset($argv[1]) ? $argv[1] : dirname(__DIR__) . '/src/Dependencies';
+        $target = isset($argv[1]) ? $argv[1] : dirname(__DIR__) . '/vendor-prefixed';
         $changed = slimstat_normalize_scoped_constants($target);
         echo "SCOPER-EXT-CONSTANTS-COMPLETE changed={$changed}\n";
     } catch (Throwable $error) {

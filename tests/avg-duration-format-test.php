@@ -58,6 +58,11 @@ assert_true(false !== $src, 'wp-slimstat-db.php readable');
 assert_true(false === strpos($src, "date('m:s'"), "wp-slimstat-db.php no longer uses date('m:s', ...)");
 assert_true(false !== strpos($src, "gmdate(\$average_time >= 3600 ? 'H:i:s' : 'i:s'"), 'wp-slimstat-db.php uses gmdate i:s / H:i:s');
 
+$duration_start = strpos($src, 'public static function get_visits_duration()');
+$duration_end = strpos($src, 'public static function ', $duration_start + 1);
+$duration_source = substr($src, $duration_start, $duration_end - $duration_start);
+assert_same(7, substr_count($duration_source, "__('Visits', 'wp-slimstat') . (': ' . \$count_results)"), 'all duration buckets name their counted visits');
+
 if ($failures > 0) {
     fwrite(STDERR, "{$failures} assertion(s) failed in avg-duration-format-test.php\n");
     exit(1);

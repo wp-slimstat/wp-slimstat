@@ -4,7 +4,7 @@
  * S05: Negative control — textdomain loads on correct hook
  * S06: Deactivate/reactivate plugin — textdomain still loads correctly
  * S07: WP-CLI context — plugin loads without errors (simulated via AJAX)
- * S08: @known-issue WP Consent API interaction
+ * S08: Settings render with the configured WP Consent API active
  */
 import { test, expect } from '@playwright/test';
 import {
@@ -15,6 +15,7 @@ import {
   uninstallOptionMutator,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
+import { runWordPressFixture } from './helpers/chart';
 
 /**
  * Switch back on every SlimStat plugin this spec's deactivation took down.
@@ -68,7 +69,8 @@ test.describe('Suite 06: Textdomain Edge Cases', () => {
   });
 
   test('S05: textdomain loads on correct hook (not too late)', async ({ page }) => {
-    await page.goto('/wp-admin/admin.php?page=slimstat', { waitUntil: 'domcontentloaded' });
+    await page.goto('/wp-admin/admin.php?page=slimconfig', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('form[id^="slimstat-options-"]')).toBeVisible();
     const html = await page.content();
     expect(html).not.toContain('Fatal error');
     expect(html).not.toContain('_doing_it_wrong');
@@ -128,10 +130,15 @@ test.describe('Suite 06: Textdomain Edge Cases', () => {
     expect(response.ok()).toBe(true);
   });
 
-  test.fixme('S08: WP Consent API interaction (@known-issue)', async ({ page }) => {
-    // Known issue: WP Consent API may interfere with textdomain loading
-    await page.goto('/wp-admin/admin.php?page=slimstat', { waitUntil: 'domcontentloaded' });
+  test('S08: Settings render without translation timing warnings with WP Consent API', async ({ page }) => {
+    const hasConsentApi = JSON.parse(runWordPressFixture("<?php echo wp_json_encode(function_exists('wp_has_consent'));"));
+    expect(hasConsentApi, 'The configured WP Consent API fixture must be active').toBe(true);
+    const response = await page.goto('/wp-admin/admin.php?page=slimconfig', { waitUntil: 'domcontentloaded' });
+    expect(response?.ok()).toBe(true);
+    await expect(page.locator('form[id^="slimstat-options-"]')).toBeVisible();
     const html = await page.content();
     expect(html).not.toContain('Fatal error');
+    expect(html).not.toContain('_load_textdomain_just_in_time');
+    expect(html).not.toContain('_doing_it_wrong');
   });
 });

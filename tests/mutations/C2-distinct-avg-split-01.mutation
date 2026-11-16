@@ -1,0 +1,17 @@
+target:    src/Utils/Query.php
+gate:      php tests/query-split-non-additive-test.php
+kind:      guard-removal
+expect:    COUNT(DISTINCT) must not split
+rationale: COUNT(DISTINCT) and AVG are not additive across the midnight halves, and the merge keeps the first half's value for both. Without the fields check the split runs again and a range ending today reports one half as the whole. The gate counts statements: a split issues two, the refused query one over the full range.
+---
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -1865,7 +1865,7 @@
+         // A grouped split cannot preserve SQL collation, and a top-K threshold read in
+         // separate statements can miss a winner inserted between those reads. Keep native
+         // grouping, ranking and pagination in one full-range statement (C-4).
+-        $splitRefused = $split && (!empty($this->groupByClause) || !empty($this->havingClauses) || preg_match('/\bDISTINCT\b|\bAVG\s*\(/i', (string) $this->fields));
++        $splitRefused = $split && (!empty($this->groupByClause) || !empty($this->havingClauses));
+         if ($splitRefused) {
+             $split = false;
+         }

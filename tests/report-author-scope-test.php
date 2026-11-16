@@ -24,7 +24,7 @@ $GLOBALS['wpdb'] = new class {
     public function get_row($sql) { $this->sql[] = $sql; return (object) []; }
 };
 $main = file_get_contents(dirname(__DIR__) . '/wp-slimstat.php');
-eval('class wp_slimstat { public static $wpdb, $settings = ["restrict_authors_view" => "on"]; public static function now() { return 1760000041; } public static function pro_is_installed() { return true; } public static function report_scope(): array {' . slimstat_function_body($main, 'report_scope') . '} }');
+eval('class wp_slimstat { public static $wpdb, $settings = ["restrict_authors_view" => "on"]; public static function now() { return 1760000041; } public static function pro_is_installed() { return true; } public static function pro_plugin_active() { return true; } public static function report_scope(): array {' . slimstat_function_body($main, 'report_scope') . '} }');
 wp_slimstat::$wpdb = $GLOBALS['wpdb'];
 $admin_source = file_get_contents(dirname(__DIR__) . '/admin/index.php');
 $class = 'class ScopedAdmin {';
@@ -44,7 +44,10 @@ foreach (['alice', 'bob'] as $author) {
     ScopedAdmin::adminbar_today_stats(); ScopedAdmin::online_count(); (new ScopedLive())->count(1800); (new ScopedLive())->chart();
     if (count($GLOBALS['wpdb']->sql) !== 5) { throw new RuntimeException('Cross-author cache reused or expected SQL missing'); }
     foreach ($GLOBALS['wpdb']->sql as $sql) {
-        if (strpos($sql, "WHERE (author = '$author')") === false) { throw new RuntimeException('Report SQL omitted enforced author: ' . $sql); }
+        if (!preg_match("/WHERE \\(+author = '$author'\\)/", $sql)) { throw new RuntimeException('Report SQL omitted enforced author: ' . $sql); }
+        if (strpos(substr($sql, strpos($sql, 'WHERE')), 'AND visit_id > 0') !== false && strpos($sql, '(browser_type IS NULL OR browser_type <> 1)') === false) {
+            throw new RuntimeException('Live session SQL omitted the human filter: ' . $sql);
+        }
     }
     $keys[] = ScopedAdmin::build_filter_options_cache_key('country', 100, 200, '', 20);
 }

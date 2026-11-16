@@ -12,6 +12,7 @@ add_action('muplugins_loaded', function() {
     $overrides = json_decode(file_get_contents($file), true);
     if (!is_array($overrides)) return;
     foreach ($overrides as $key => $value) {
-        $_SERVER['HTTP_' . strtoupper(str_replace('-', '_', $key))] = $value;
+        // Only fixture data on this explicitly gated test installation can set the peer.
+        $_SERVER['REMOTE_ADDR' === $key ? $key : 'HTTP_' . strtoupper(str_replace('-', '_', $key))] = $value;
     }
 }, 1);

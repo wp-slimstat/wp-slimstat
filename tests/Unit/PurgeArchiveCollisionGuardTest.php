@@ -52,7 +52,7 @@ class PurgeArchiveCollisionGuardTest extends WpSlimstatTestCase
             }
 
             $this->assertStringContainsString(
-                sprintf('a.%s <=> %s.%s', $column, $alias, $column),
+                sprintf('CAST(a.%s AS BINARY) <=> CAST(%s.%s AS BINARY)', $column, $alias, $column),
                 $sql,
                 sprintf(
                     '%s is copied into the archive but never compared. A colliding archive row '
@@ -76,7 +76,7 @@ class PurgeArchiveCollisionGuardTest extends WpSlimstatTestCase
         $sql = $this->guard($columns, $key, $alias);
 
         $this->assertSame(count($columns) - 1, substr_count($sql, '<=>'));
-        $this->assertStringNotContainsString(sprintf('a.%s <=>', $key), $sql);
+        $this->assertStringNotContainsString(sprintf('CAST(a.%s AS BINARY) <=>', $key), $sql);
     }
 
     /**
@@ -101,7 +101,7 @@ class PurgeArchiveCollisionGuardTest extends WpSlimstatTestCase
     {
         $sql = $this->guard(['id', 'a', 'b'], 'id', 'e');
 
-        $this->assertSame('a.a <=> e.a AND a.b <=> e.b', $sql);
+        $this->assertSame('CAST(a.a AS BINARY) <=> CAST(e.a AS BINARY) AND CAST(a.b AS BINARY) <=> CAST(e.b AS BINARY)', $sql);
     }
 
     /** A single-column archive has nothing left to compare once the key is skipped. */

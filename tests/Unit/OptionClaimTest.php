@@ -68,8 +68,41 @@ class OptionClaimTest extends WpSlimstatTestCase
 
     protected function tearDown(): void
     {
+        unset($GLOBALS['slimstat_test_options']['acquire-test']);
         $GLOBALS['wpdb'] = $this->originalWpdb;
         parent::tearDown();
+    }
+
+    public function test_acquire_preserves_expiry_and_atomic_write_outcomes(): void
+    {
+        foreach ([
+            'free' => [null, 1, true],
+            'lost insert' => [null, false, false],
+            'active' => [(string) (time() + 600), 1, false],
+            'expired' => [(string) (time() - 600) . ':old-owner', 1, true],
+            'lost takeover' => [(string) (time() - 600), 0, false],
+            'failed takeover' => [(string) (time() - 600), false, false],
+        ] as $label => [$old, $writeResult, $expected]) {
+            $GLOBALS['slimstat_test_options']['acquire-test'] = $old;
+            $this->statements = $this->flushed = [];
+            $this->writeResult = $writeResult;
+            $before = time();
+            $token = OptionClaim::acquire('acquire-test', 300, ':new-owner');
+            $this->assertSame($expected, null !== $token, $label);
+            if ($expected) {
+                $this->assertGreaterThanOrEqual($before + 300, (int) $token);
+                $this->assertLessThanOrEqual(time() + 300, (int) $token);
+                $this->assertStringEndsWith(':new-owner', $token);
+                $this->assertStringContainsString($token, $this->statements[0]);
+            } else {
+                $this->assertSame([], $this->flushed, $label);
+            }
+            if ('active' === $label) {
+                $this->assertSame([], $this->statements, 'active lease is never written');
+            } elseif (null !== $old) {
+                $this->assertStringContainsString('|acquire-test|' . $old, $this->statements[0], 'takeover matches the observed owner');
+            }
+        }
     }
 
     // ── insert() ────────────────────────────────────────────────────────────

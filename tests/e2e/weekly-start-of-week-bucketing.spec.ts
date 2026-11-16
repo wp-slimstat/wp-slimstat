@@ -53,7 +53,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
     const todayTs = liveSafeTodayTs(now);
     const lastWeekTs = now - 7 * day;
 
-    await insertRows(todayTs, 5, 'sow0-today');
+    await insertRows(todayTs, 5, 'sow0-today', 'chart-e2e', 0);
     await insertRows(lastWeekTs, 8, 'sow0-lastweek');
 
     const json = fetchChartData(rangeStart, rangeEnd, 'weekly');
@@ -78,7 +78,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
     const todayTs = liveSafeTodayTs(now);
     const lastWeekTs = now - 7 * day;
 
-    await insertRows(todayTs, 4, 'sow1-today');
+    await insertRows(todayTs, 4, 'sow1-today', 'chart-e2e', 0);
     await insertRows(lastWeekTs, 6, 'sow1-lastweek');
 
     const json = fetchChartData(rangeStart, rangeEnd, 'weekly');
@@ -103,7 +103,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
     const todayTs = liveSafeTodayTs(now);
     const twoWeeksAgoTs = now - 14 * day;
 
-    await insertRows(todayTs, 3, 'sow6-today');
+    await insertRows(todayTs, 3, 'sow6-today', 'chart-e2e', 0);
     await insertRows(twoWeeksAgoTs, 5, 'sow6-2wago');
 
     const json = fetchChartData(rangeStart, rangeEnd, 'weekly');
@@ -129,7 +129,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
     const lastWeekTs = now - 7 * day;
     const twoWeeksAgoTs = now - 14 * day;
 
-    await insertRows(todayTs, 3, 'xgran-today');
+    await insertRows(todayTs, 3, 'xgran-today', 'chart-e2e', 0);
     await insertRows(lastWeekTs, 5, 'xgran-lastweek');
     await insertRows(twoWeeksAgoTs, 4, 'xgran-2wago');
 
@@ -152,7 +152,8 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
   // ─── Test 5: Sunday record buckets correctly for sow=0 vs sow=1 ──────────
 
   test('Sunday records land in correct week bucket for sow=0 vs sow=1', async () => {
-    const sundayTs = mostRecentDayOfWeek(0, now);
+    // Use a completed day: today's noon would be outside a Sunday-morning range.
+    const sundayTs = mostRecentDayOfWeek(0, now - day);
     const saturdayTs = sundayTs - day;
 
     await insertRows(saturdayTs, 4, 'boundary-sat');
@@ -165,6 +166,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
     const v1Sow0 = getV1(jsonSow0);
     const sumSow0 = sumV1(jsonSow0);
     expect(sumSow0).toBe(7);
+    expect(v1Sow0.filter(value => value > 0).sort((a, b) => a - b)).toEqual([3, 4]);
 
     // With sow=1 (Monday): Sunday is the LAST day of the week
     setStartOfWeek(1);
@@ -173,6 +175,7 @@ test.describe('Weekly chart start_of_week bucketing (PR #235)', () => {
     const v1Sow1 = getV1(jsonSow1);
     const sumSow1 = sumV1(jsonSow1);
     expect(sumSow1).toBe(7);
+    expect(v1Sow1.filter(value => value > 0)).toEqual([7]);
 
     expect(sumSow0).toBe(sumSow1);
 

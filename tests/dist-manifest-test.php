@@ -148,17 +148,17 @@ if ($leaks) {
 
 // WordPress does not expose the private vendor Windows password prompt. Keep PHP classes,
 // omit its executable, and fail if a first-party caller is later introduced.
-$console_binary = 'src/Dependencies/veronalabs/browscap-php/src/Symfony/Component/Console/Resources/bin/hiddeninput.exe';
+$console_binary = 'vendor-prefixed/veronalabs/browscap-php/src/Symfony/Component/Console/Resources/bin/hiddeninput.exe';
 $console_source = 'packages/veronalabs-browscap-php/src/Symfony/Component/Console/Resources/bin/hiddeninput.exe';
 if (!is_file($plugin_root . '/' . $console_source) || isset($package_set[$console_binary])) {
     $failures[] = 'private Windows console binary must remain in source but never ship';
 }
-$question_helper = 'src/Dependencies/veronalabs/browscap-php/src/Symfony/Component/Console/Helper/QuestionHelper.php';
+$question_helper = 'vendor-prefixed/veronalabs/browscap-php/src/Symfony/Component/Console/Helper/QuestionHelper.php';
 if (!is_file($plugin_root . '/' . $question_helper)) {
     $failures[] = 'omit only the private executable, not Symfony PHP classes';
 }
 foreach ($package as $path) {
-    if (substr($path, -4) !== '.php' || strpos($path, 'src/Dependencies/') === 0 || strpos($path, 'vendor/') === 0) {
+    if (substr($path, -4) !== '.php' || strpos($path, 'vendor-prefixed/') === 0 || strpos($path, 'vendor/') === 0) {
         continue;
     }
     $code = (string) file_get_contents($plugin_root . '/' . $path);

@@ -142,6 +142,8 @@ class wp_slimstat
     public static $settings = ['show_sql_debug' => 'no'];
 
     public static $wpdb;
+
+    public static function now() { return time(); }
 }
 
 $plugin_root = dirname(__DIR__);

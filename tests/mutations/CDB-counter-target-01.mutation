@@ -1,0 +1,17 @@
+target: src/Tracker/VisitIdGenerator.php
+gate: php tests/visit-id-counter-query-budget-test.php
+kind: guard-removal
+expect: current-version target switch seeds above external history
+rationale: A legacy handle can have no prefix, and changing targets requires seeding even on the current version.
+---
+--- a/src/Tracker/VisitIdGenerator.php
++++ b/src/Tracker/VisitIdGenerator.php
+@@ -35,7 +35,7 @@
+     public static function generateNextVisitId(): int
+     {
+         // A database switch needs a new seed even when the plugin is up to date.
+-        if (self::repairMarker() !== get_option(self::REPAIR_MARKER_OPTION)
++        if (false && self::repairMarker() !== get_option(self::REPAIR_MARKER_OPTION)
+             && self::initializeCounter() < 0) {
+             return 0;
+         }

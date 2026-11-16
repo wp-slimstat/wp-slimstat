@@ -1,0 +1,17 @@
+target: src/Utils/PurgeArchive.php
+gate: php tests/purge-archive-order-test.php
+kind: guard-removal
+expect: every write must retain exact unsigned keys
+rationale: A batch DELETE may remove only its selected verified keys.
+---
+--- a/src/Utils/PurgeArchive.php
++++ b/src/Utils/PurgeArchive.php
+@@ -304,7 +304,7 @@
+                     $archiveGuard = ' AND (' . (self::sameRow($columns, $key, $alias) ?: '1=1') . ')';
+                 }
+                 $deleted = $db->query($db->prepare("DELETE {$alias} FROM {$table} {$alias}{$archiveJoin}{$children}
+-                    WHERE {$alias}.{$key} IN ({$keys}){$archiveGuard}{$childGuard} AND ({$ageGuard})", ...$dates));
++                    WHERE 1=1{$archiveGuard}{$childGuard} AND ({$ageGuard})", ...$dates));
+                 if (false !== $deleted) { $result[$kind] += (int) $deleted; }
+                 if (false === $deleted || (int) $deleted !== count($ids)) {
+                     $result['error'] = 'Retention stopped because the selected rows changed or could not be deleted: ' . $db->last_error;

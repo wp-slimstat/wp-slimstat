@@ -45,14 +45,14 @@ $checked     = 0;
 // Every own PHP file under admin/ and src/ (not tests, not deps). The exclusion is the
 // ABSOLUTE dependency path — the helper matches it at offset 0 against the absolute file
 // path, so a relative `/Dependencies/` literal silently excludes nothing (the shape every
-// other caller passes as `$plugin_root . '/src/Dependencies'`).
+// other caller passes as `$plugin_root . '/vendor-prefixed'`).
 // wp-slimstat.php is scanned too. It was outside this list, and it holds a live builder
 // chain — `\SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)` at the
 // purge path — that no cross-database check had ever examined. The routing rule this gate
 // enforces applies to the root file exactly as it applies to admin/ and src/.
 $files = slimstat_own_php_files(
     [$plugin_root . '/admin', $plugin_root . '/src', $plugin_root . '/wp-slimstat.php'],
-    $plugin_root . '/src/Dependencies'
+    $plugin_root . '/vendor-prefixed'
 );
 
 foreach ($files as $file) {
@@ -70,6 +70,16 @@ foreach ($files as $file) {
     // fragment-sniff pass (a third full token_get_all just to recompute a fact we know).
     $tokens = token_get_all(slimstat_blank_comments($source, true));
     $count  = count($tokens);
+
+    // Table identifiers always come from WordPress, including legacy empty-prefix handles.
+    $code = slimstat_blank_comments($source, true);
+    $code = preg_replace('/\$GLOBALS\[\s*[\'"]wpdb[\'"]\s*\]\s*->\s*prefix/', '', $code);
+    $code = preg_replace('/(?<!::)\$wpdb\s*->\s*prefix/', '', $code);
+    $code = preg_replace('/\$this->coreWpdb\s*->\s*prefix/', '', $code);
+    if (preg_match('/->\s*prefix\b/', $code)) {
+        $failures[] = $rel . ': analytics handles must not supply table prefixes';
+    }
+
 
     $query_entry_types = slimstat_name_token_types();
 

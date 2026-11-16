@@ -1,0 +1,17 @@
+target: src/Services/Privacy/DataExporter.php
+gate: composer test:privacy-export-archive
+kind: guard-removal
+expect: live/archive IDs collide
+rationale: Live and archive IDs must not overwrite each other in the WordPress export.
+---
+--- a/src/Services/Privacy/DataExporter.php
++++ b/src/Services/Privacy/DataExporter.php
+@@ -52,7 +52,7 @@
+ 			$id_column = $events ? 'event_id' : 'id';
+ 			foreach ($records as $record) {
+ 				// After an ID reset, live and archived IDs can identify different visits.
+-				$rows[] = ['row' => $record, 'id' => ($events ? 'event' : 'pageview') . ($suffix ? '-archive' : '') . '-' . $record->$id_column];
++				$rows[] = ['row' => $record, 'id' => ($events ? 'event' : 'pageview') . '' . '-' . $record->$id_column];
+ 			}
+ 		}
+ 		return ['rows' => $rows, 'done' => $done];

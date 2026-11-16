@@ -62,3 +62,52 @@ with tempfile.TemporaryDirectory() as temp:
         put('core-incompatibility.json', dict(kind='plugin-free-core-fatal', phase='core-install', log_sha256=hashlib.sha256(raw).hexdigest()))
         run(valid, 'core versus plugin fatal origin')
 print('PASS: complete enumeration, availability, runtime completion and independently checked core evidence required')
+
+# Execute the artifact scan staging function with a local Docker transport substitute.
+# Required helpers/configs must arrive; missing tests cannot silently shrink the suite.
+source = (helper.parent / 'run-cell.sh').read_text()
+scan = source.split('run_scan_suite() {', 1)[1].split('\n}\n', 1)[0]
+transport = r'''
+dc() {
+  local action="$1"; shift
+  if [ "$action" = cp ]; then
+    cp "$1" "${2#wp:}"
+  else
+    while [ "$1" != wp ]; do shift; done
+    shift
+    if [[ "$*" == *chown* ]]; then mkdir -p "$SCAN_DEST/tests"; return 0; fi
+    "$@"
+  fi
+}
+fail() { echo "FAIL: $*"; return 1; }
+log() { echo "$*"; }
+'''
+with tempfile.TemporaryDirectory() as temp:
+    root = pathlib.Path(temp)
+    src, dest = root / 'source', root / 'installed'
+    dest.mkdir()
+    (dest / 'header.php').write_text('shipping bytes')
+    support = ['tests/lib/source-scan.php', '.github/workflows/ci.yml',
+               'tests/docker/report-answers.php', '.wp-env.json', 'rector.php', 'pint.json']
+    for relative in support:
+        path = src / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('<?php // helper' if relative.endswith('.php') else 'fixture')
+    (src / 'tests/probe.php').write_text('''<?php
+require __DIR__ . '/lib/source-scan.php';
+foreach (['.github/workflows/ci.yml', '.wp-env.json', 'rector.php', 'pint.json', 'tests/docker/report-answers.php'] as $file) {
+    if (!is_file(dirname(__DIR__) . '/' . $file)) { exit(1); }
+}
+if (file_get_contents(dirname(__DIR__) . '/header.php') !== 'shipping bytes') { exit(1); }
+echo "PASS: instrument support present and shipping bytes unchanged\\n";
+''')
+    script = transport + '\nrun_scan_suite() {' + scan + '\n}\nrun_scan_suite free "$1/tests" "$2" "$3" probe.php ${SCAN_EXTRA:-}'
+    for missing, extra, expected in [(False, '', True), (False, 'absent.php', False), (True, '', False)]:
+        if missing:
+            (src / 'tests/lib/source-scan.php').unlink()
+        result = subprocess.run(['bash', '-u', '-c', script, 'test', str(src), str(dest), str(root / 'scan.log')],
+                                env=dict(os.environ, CELL='fixture', SCAN_DEST=str(dest), SCAN_EXTRA=extra), capture_output=True)
+        assert (result.returncode == 0) == expected, (missing, extra, result.stdout, result.stderr, (root / 'scan.log').read_text())
+        assert (dest / 'header.php').read_text() == 'shipping bytes'
+        assert not any((dest / name).exists() for name in support), 'instrumentation left in artifact'
+print('PASS: runtime scans stage helper/config dependencies, preserve shipping files and refuse missing tests/support')

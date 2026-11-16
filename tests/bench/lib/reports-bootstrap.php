@@ -18,6 +18,23 @@
 //
 // No declare(strict_types=1): callers are eval()'d by `wp eval-file`.
 
+/** Use the actual widget request identity and one explicit window in both artifact eras. */
+function slimstat_bench_prepare_report(string $report_id, string $filters, int $end = 0): void
+{
+    $_POST['report_id'] = $report_id;
+    $_POST['security'] = $_REQUEST['security'] = wp_create_nonce('meta-box-order');
+    wp_slimstat_db::init($filters);
+    if ($end > 0) {
+        $start = (int) wp_slimstat_db::$filters_normalized['utime']['start'];
+        if ($end < $start) {
+            throw new RuntimeException('Pinned report end precedes its start');
+        }
+        wp_slimstat_db::$filters_normalized['utime']['end'] = $end;
+        wp_slimstat_db::$filters_normalized['utime']['range'] = $end - $start;
+        wp_slimstat_db::$pageviews = wp_slimstat_db::count_records();
+    }
+}
+
 if (!function_exists('slimstat_bench_bootstrap_reports')) {
     /**
      * @return array<string, array<string, mixed>> the merged report registry

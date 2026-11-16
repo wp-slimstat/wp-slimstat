@@ -68,8 +68,21 @@ $walk('test:all');
 // Standalone by design. Each entry states WHY, because "it is in the list" is not a reason, and
 // a list anyone may append to without argument is not a gate.
 $standalone = [
+    'test:live-country-scope-wp' => 'requires disposable WordPress tables; runs in the Tier 2 CI lane beside Heatmaps scope',
+    'test:privacy-export-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',
+    'test:data-version-mysql' => 'requires a disposable WordPress database with WooCommerce; runs in the Tier 2 WooCommerce lane',
+    'test:ecommerce-full-refund-mysql' => 'requires real WooCommerce orders; runs on disposable data in the Tier 2 WooCommerce lane',
+    'test:purge-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',
+    'test:schema-online-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',
+    'test:query-topn-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',
+    'test:privacy-erasure-mysql' => 'requires a disposable WordPress database; runs in the Tier 2 wp-env CI lane',
+    'test:report-summary-counts-wp' => 'requires real WordPress and isolated analytics temporary tables; runs in Tier 2 CI on WordPress 6.4, 7.0 and 7.1.4',
+    'test:horizon-campaign-wp' => 'Requires a disposable WordPress database and runs in minimum-compatibility CI beside notification delivery.',
     'test:notification-delivery-wp' => 'requires a disposable WordPress database and runs in minimum-compatibility CI',
+    'test:notification-targeting-wp' => 'requires real WordPress license verdicts and an administrator; runs in minimum-compatibility CI beside notification delivery',
     'test:shortcode-render-wp' => 'requires real WordPress, analytics tables and an administrator; runs via WP-CLI in the Tier 2 CI lane',
+    'test:pro-license-wp' => 'requires real WordPress options, hooks and an administrator; runs via WP-CLI in the Tier 2 and minimum-compatibility CI lanes',
+    'test:pro-license-network-wp' => 'requires a multisite network; runs via WP-CLI in the Pro CI Native AI Multisite isolation gate',
     'test:acquisition-network' => 'requires a disposable two-site WordPress network and the private '
         . 'Pro plugin, unavailable in public CI; run with WP-CLI during paired Free/Pro qualification',
     'test:pot-freshness' => 'runs in the dedicated catalog CI job with pinned WP-CLI 2.12.0; '

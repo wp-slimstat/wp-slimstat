@@ -22,7 +22,7 @@ import { test, expect, Page, Locator } from '@playwright/test';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { BASE_URL, WP_ROOT } from './helpers/env';
-import { closeDb, clearStatsTable, getPool } from './helpers/setup';
+import { closeDb, clearStatsTable, getPool, snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOption } from './helpers/setup';
 import {
     seedFunnels,
     seedStats,
@@ -62,7 +62,8 @@ async function seedBrowserFunnelData(): Promise<void> {
 }
 
 async function gotoSlimview6(page: Page, query = ''): Promise<void> {
-    await page.goto(SLIMVIEW6 + query, { waitUntil: 'domcontentloaded' });
+    const response = await page.goto(SLIMVIEW6 + query, { waitUntil: 'domcontentloaded' });
+    expect(await response!.text(), 'The first funnel is server-rendered; later tabs load through AJAX').toContain('slimstat-gf-funnel-panel');
 }
 
 /** First step's unique-visitor count from a funnel panel (text is "N (P%)"). */
@@ -76,9 +77,15 @@ async function firstStepCount(panel: Locator): Promise<number> {
 test.describe('Funnels respect global report filters (#22)', () => {
     test.setTimeout(60_000);
 
-    test.beforeEach(async () => {
+    test.beforeEach(async ({ page }) => {
+        await snapshotSlimstatOptions();
+        await setSlimstatOption(page, 'async_load', 'off'); // These cases assert the first funnel's server-rendered counts.
         await clearAll();
         await forceLimits(5, 3, WP_CONTENT);
+    });
+
+    test.afterEach(async () => {
+        await restoreSlimstatOptions();
     });
 
     test.afterAll(async () => {

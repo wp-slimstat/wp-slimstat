@@ -135,7 +135,7 @@ class PagesTest extends WpSlimstatTestCase
 		self::assertNull($rows[2]['dead']);
 
 		// After capture began, legacy rows of a pageview that has heatmap rows are skipped.
-		self::assertStringContainsString('te.dt < 100 OR NOT EXISTS (SELECT 1 FROM wp_slim_heatmap h WHERE h.id = te.id)', $this->query('slim_events te'));
+		self::assertStringContainsString('AND NOT EXISTS (SELECT 1 FROM wp_slim_heatmap h WHERE h.id = te.id AND h.dt = t1.dt AND h.page = UNHEX(LEFT(MD5(', $this->query('slim_events te'));
 		self::assertStringContainsString('WHERE id IN (7,9)', $this->query('SELECT id, resource'));
 	}
 
@@ -151,7 +151,7 @@ class PagesTest extends WpSlimstatTestCase
 				['page' => 'AAAA', 'id' => '4', 'clicks' => '2', 'desktop' => '2', 'tablet' => '0', 'mobile' => '0', 'dead' => '0', 'rage' => '0', 'last' => '300'],
 			],
 			'SELECT id, resource' => [['id' => '3', 'resource' => '/checkout/?e2e_run=1'], ['id' => '4', 'resource' => '/gone']],
-			'MD5('                => [['page' => $home, 'resource' => '/?utm_source=x']],
+			'SELECT HEX(h.page)'  => [['page' => $home, 'resource' => '/?utm_source=x']],
 		];
 
 		self::assertSame(['/'], array_column(Query::pages(1, 999), 'page'), 'a group no pageview hashes to is not shown under another page');
@@ -218,5 +218,34 @@ class PagesTest extends WpSlimstatTestCase
 		$count = count($this->queries);
 		Query::cachedPages(1, 999, 'mobile');
 		self::assertGreaterThan($count, count($this->queries), 'device is part of the key');
+	}
+
+	public function test_a_like_filter_hits_the_cache_in_the_next_request(): void
+	{
+		// PITFALLS 257: wpdb wraps every prepared LIKE value in a per-request marker.
+		$store = [];
+		Functions\when('get_current_blog_id')->justReturn(1);
+		Functions\when('wp_json_encode')->alias('json_encode');
+		Functions\when('get_transient')->alias(static function ($key) use (&$store) {
+			return $store[$key] ?? false;
+		});
+		Functions\when('set_transient')->alias(static function ($key, $value) use (&$store) {
+			$store[$key] = $value;
+			return true;
+		});
+		// Queries run on wp_slimstat::$wpdb; the global handle prepares LIKEs and supplies the prefix.
+		$GLOBALS['wpdb'] = new class {
+			public $prefix = 'wp_';
+			public $marker = '{a}';
+			public function remove_placeholder_escape($sql) { return str_replace($this->marker, '%', $sql); }
+		};
+
+		Query::cachedPages(1, 999, '', false, "t1.resource LIKE '{a}about{a}'");
+		$count = count($this->queries);
+		$GLOBALS['wpdb']->marker = '{b}';
+		Query::cachedPages(1, 999, '', false, "t1.resource LIKE '{b}about{b}'");
+		self::assertCount($count, $this->queries, 'the same filter under a new marker is a hit');
+		Query::cachedPages(1, 999, '', false, "t1.resource LIKE '{b}pricing{b}'");
+		self::assertGreaterThan($count, count($this->queries), 'a different filter misses');
 	}
 }

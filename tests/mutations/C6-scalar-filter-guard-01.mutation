@@ -1,0 +1,17 @@
+target: src/Utils/Query.php
+gate: php tests/query-split-scalar-test.php
+kind: guard-removal
+expect: unsafe or explicitly uncached shape must not split: raw
+rationale: Late metadata updates can change membership in a filtered historical count.
+---
+--- a/src/Utils/Query.php
++++ b/src/Utils/Query.php
+@@ -1442,7 +1442,7 @@
+         $canSplit = $this->allowHistoricalCaching && !$this->_isLiveQuery
+             && '' === $networkAggregate && !NetworkMerge::isMerging()
+             && $this->table === $GLOBALS['wpdb']->prefix . 'slim_stats'
+-            && count($this->whereClauses) === 1 && !$this->rawWhereClause && !$this->joinClauses
++            && count($this->whereClauses) === 1 && !$this->joinClauses
+             && !$this->groupByClause && !$this->havingClauses && !$this->limitClause
+             && preg_match('/^COUNT\s*\(\s*(?:\*|id)\s*\)(?:\s+(?:AS\s+)?[a-zA-Z_][a-zA-Z0-9_]*)?$/i', trim($this->fields));
+         if ($canSplit) {
