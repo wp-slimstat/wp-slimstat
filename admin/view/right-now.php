@@ -94,6 +94,7 @@ if (!$is_dashboard) {
 
 // Loop through the results
 for ($i = 0; $i < $count_page_results; $i++) {
+    $results[$i]['notes'] = (string) ($results[$i]['notes'] ?? '');
     $date_time = "<i class='spaced slimstat-font-clock slimstat-tooltip-trigger' title='" . __('Date and Time', 'wp-slimstat') . "'></i> " . date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true);
 
     // Print visit header?

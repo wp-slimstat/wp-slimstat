@@ -33,6 +33,9 @@ const cookieSetRate = new Rate('cookie_set_rate');
 const sessionErrors = new Counter('session_errors');
 
 export const options = {
+  // Close idle sockets so simulated think time does not exhaust wp-env's
+  // prefork Apache workers.
+  noConnectionReuse: true,
   userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
   noCookiesReset: true, // Only the explicit new-visitor branch clears a session.
   scenarios: {
