@@ -263,6 +263,15 @@ class StoreTest extends WpSlimstatTestCase
 			'space inside a path, line list' => ["/shop/\n/search/big sale/*", '/search/big sale/now/', true],
 			'space inside a path is not a separator' => ['/my page/', '/my', false],
 			'a URL inside a path is not an origin' => ['/go/https://example.com/x', '/go/https://example.com/x', true],
+			// A star after a space belongs to its entry unless it starts a pattern of its own.
+			'lone star after a space is not match-all' => ['/report *', '/members/', false],
+			'lone star after a space stays in its entry' => ['/report *', '/report 2026', true],
+			'star-led entry after a space still splits' => ['/one/* *checkout*', '/my-checkout-page/', true],
+			// 6.1.2 matched a wildcard post id; keyed like a visited page it became the home page.
+			'wildcard plain permalink' => ['/?p=*', '/?p=12&ref=nav', true],
+			'wildcard plain permalink is not the home page' => ['/?p=*', '/', false],
+			'wildcard plain permalink, other parameter' => ["/?page_id=1*\n/shop/", '/?p=12', false],
+			'pasted wildcard plain permalink' => ['https://example.com/?page_id=*', '/?page_id=34', true],
 			'48 paths' => [implode("\n", array_map(static fn($n) => '/page-' . $n . '/', range(1, 48))), '/page-48/', true],
 		];
 	}

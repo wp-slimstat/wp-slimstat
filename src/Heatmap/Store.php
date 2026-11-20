@@ -186,10 +186,17 @@ final class Store
 		// A pasted URL counts as its path.
 		$pages = (string) preg_replace('~(?<![^\s,])https?://[^/\s,?#]+/?~i', '/', $pages);
 		// Commas and line breaks separate entries, and so do the spaces older saves collapsed
-		// line breaks into. A space inside a path (/my page/) is kept: every entry starts with / or *.
-		$entries = preg_split('~\R+|,|\s+(?=[/*])~', $pages) ?: [];
+		// line breaks into. A space inside a path (/my page/, /report *) is kept: an entry starts
+		// with / or with a * that has more after it.
+		$entries = preg_split('~\R+|,|\s+(?=/|\*[^\s,])~', $pages) ?: [];
 		// Key each entry the way a visited page is keyed, so /my%20page/?ref=nav matches its page.
-		return Utils::isBlacklisted($page, implode(',', array_map([Query::class, 'pageKeyFromUrl'], $entries)));
+		// A wildcard post id (/?p=*) keeps its query: keyed, it would mean the page without one.
+		$keys = array_map(static function (string $entry): string {
+			return preg_match('~^([^?#]*)(\?(?:p|page_id)=[0-9]*\*[0-9*]*)~', $entry, $m)
+				? Query::pageKeyFromUrl($m[1]) . $m[2]
+				: Query::pageKeyFromUrl($entry);
+		}, $entries);
+		return Utils::isBlacklisted($page, implode(',', $keys));
 	}
 
 	/** Spread new batches across sequential pageviews; accept the old cached-client sampling rule. */

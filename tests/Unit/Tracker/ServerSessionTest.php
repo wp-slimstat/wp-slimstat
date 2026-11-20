@@ -19,41 +19,41 @@ class ServerSessionTest extends WpSlimstatTestCase
         $server = $_SERVER;
         $cookie = $_COOKIE;
         $options = $GLOBALS['slimstat_test_options'] ?? [];
-        $this->stubCommonWpFunctions();
-        \Brain\Monkey\Functions\stubs(['apply_filters' => static fn($tag, $value) => $value]);
-        \wp_slimstat::$settings = array_merge($settings, [
-            'anonymous_tracking' => 'off', 'gdpr_enabled' => 'off',
-            'javascript_mode' => $mode, 'set_tracker_cookie' => $cookies,
-            'consent_integration' => '', 'session_duration' => 1800,
-        ]);
-        $_SERVER['REMOTE_ADDR'] = '192.0.2.17';
-        $_SERVER['HTTP_USER_AGENT'] = 'ExampleBrowser/1.0';
-        unset($_COOKIE['slimstat_tracking_code']);
-        if (null !== $cookieVisit) {
-            $_COOKIE['slimstat_tracking_code'] = Utils::getValueWithChecksum($cookieVisit);
-        }
-        $GLOBALS['slimstat_test_options']['slimstat_daily_salt'] = ['date' => gmdate('Y-m-d'), 'salt' => 'server-session-test'];
-        \wp_slimstat::set_data_js($data);
-        \wp_slimstat::set_stat(['dt' => 1700000000, 'fingerprint' => 'enriched-later']);
-
-        class_exists(Session::class);
-        class_exists(VisitIdGenerator::class);
-        $probes = [];
-        \Patchwork\redefine(Session::class . '::findExistingAnonymousVisitId', static function ($hash, $dt) use (&$probes, $existingVisit) {
-            $probes[] = [$hash, $dt];
-            return $existingVisit;
-        });
-        $allocations = 0;
-        \Patchwork\redefine(VisitIdGenerator::class . '::generateNextVisitId', static function () use (&$allocations) {
-            $allocations++;
-            return 123;
-        });
-        $cookieVisits = [];
-        \Patchwork\redefine(Session::class . '::setTrackingCookie', static function ($visit) use (&$cookieVisits) {
-            $cookieVisits[] = $visit;
-            return true;
-        });
         try {
+            $this->stubCommonWpFunctions();
+            \Brain\Monkey\Functions\stubs(['apply_filters' => static fn($tag, $value) => $value]);
+            \wp_slimstat::$settings = array_merge($settings, [
+                'anonymous_tracking' => 'off', 'gdpr_enabled' => 'off',
+                'javascript_mode' => $mode, 'set_tracker_cookie' => $cookies,
+                'consent_integration' => '', 'session_duration' => 1800,
+            ]);
+            $_SERVER['REMOTE_ADDR'] = '192.0.2.17';
+            $_SERVER['HTTP_USER_AGENT'] = 'ExampleBrowser/1.0';
+            unset($_COOKIE['slimstat_tracking_code']);
+            if (null !== $cookieVisit) {
+                $_COOKIE['slimstat_tracking_code'] = Utils::getValueWithChecksum($cookieVisit);
+            }
+            $GLOBALS['slimstat_test_options']['slimstat_daily_salt'] = ['date' => gmdate('Y-m-d'), 'salt' => 'server-session-test'];
+            \wp_slimstat::set_data_js($data);
+            \wp_slimstat::set_stat(['dt' => 1700000000, 'fingerprint' => 'enriched-later']);
+
+            class_exists(Session::class);
+            class_exists(VisitIdGenerator::class);
+            $probes = [];
+            \Patchwork\redefine(Session::class . '::findExistingAnonymousVisitId', static function ($hash, $dt) use (&$probes, $existingVisit) {
+                $probes[] = [$hash, $dt];
+                return $existingVisit;
+            });
+            $allocations = 0;
+            \Patchwork\redefine(VisitIdGenerator::class . '::generateNextVisitId', static function () use (&$allocations) {
+                $allocations++;
+                return 123;
+            });
+            $cookieVisits = [];
+            \Patchwork\redefine(Session::class . '::setTrackingCookie', static function ($visit) use (&$cookieVisits) {
+                $cookieVisits[] = $visit;
+                return true;
+            });
             $new = Session::ensureVisitId($force);
             $stat = \wp_slimstat::get_stat();
             self::assertSame($expectedVisit, (int) ($stat['visit_id'] ?? 0));
