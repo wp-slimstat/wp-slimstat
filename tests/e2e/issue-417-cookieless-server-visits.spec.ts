@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
 import {
   snapshotSlimstatOptions, restoreSlimstatOptions, setSlimstatOption, setSlimstatOptions,
   getPool, closeDb, waitForPageviewRow,
 } from './helpers/setup';
-import { BASE_URL } from './helpers/env';
+import { BASE_URL, WP_ROOT } from './helpers/env';
 
 async function readVisit(marker: string) {
   expect(await waitForPageviewRow(marker)).not.toBeNull();
@@ -26,7 +28,13 @@ test.describe('Cookieless server visits — #417 @compat', () => {
       ignore_ips: '', ignore_users: '', do_not_track: 'off',
     });
   });
-  test.afterEach(async () => {
+  test.afterEach(async ({}, testInfo) => {
+    const tracePath = path.join(WP_ROOT, 'wp-content/e2e-session-trace.jsonl');
+    if (testInfo.status !== testInfo.expectedStatus && fs.existsSync(tracePath)) {
+      const trace = fs.readFileSync(tracePath, 'utf8').split('\n').filter(line => line.includes(marker)).join('\n');
+      await testInfo.attach('session-database-trace', { body: trace, contentType: 'application/json' });
+      console.error(trace);
+    }
     try {
       await getPool().execute('DELETE FROM wp_slim_stats WHERE resource LIKE ?', [`%${marker}%`]);
     } finally { await restoreSlimstatOptions(); }

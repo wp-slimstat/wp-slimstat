@@ -1105,6 +1105,15 @@ jobs:
             echo "init_environment() completed\n";
           '
           npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
+          npx wp-env run tests-cli -- wp eval '
+            $options = get_option("slimstat_options");
+            $options["javascript_mode"] = "off";
+            $options["set_tracker_cookie"] = "on";
+            $options["gdpr_enabled"] = "off";
+            $options["anonymous_tracking"] = "off";
+            $options["enable_browscap"] = "on";
+            update_option("slimstat_options", $options);
+          '
 
       - name: Run k6 performance tests
         if: ${{ matrix.php == '8.2' }}

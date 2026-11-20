@@ -33,6 +33,7 @@ const cookieSetRate = new Rate('cookie_set_rate');
 const sessionErrors = new Counter('session_errors');
 
 export const options = {
+  userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
   noCookiesReset: true, // Only the explicit new-visitor branch clears a session.
   scenarios: {
     // Scenario 1: Steady-state returning visitor traffic
@@ -64,15 +65,15 @@ export const options = {
     http_req_duration: ['p(95)<3000'],         // p95 < 3s
     page_load_duration: ['p(95)<2000'],        // p95 < 2s
     cookie_set_rate: ['rate>0.80'],            // 80%+ requests should get cookies
+    session_errors: ['count==0'],
   },
 };
 
 
-// Frontend pages to simulate real browsing
+// Query URLs also work on a fresh plain-permalink install.
 const PAGES = [
   '/',
   '/?p=1',
-  '/sample-page/',
   '/?page_id=2',
 ];
 

@@ -105,6 +105,7 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
   { sourceFile: 'ecommerce-gateway-mu-plugin.php', deployedFile: 'ecommerce-gateway-mu-plugin.php' },
   { sourceFile: 'license-fixture-mu-plugin.php', deployedFile: 'license-fixture-mu-plugin.php' },
   { sourceFile: 'black-friday-2026-mu-plugin.php', deployedFile: 'black-friday-2026-mu-plugin.php' },
+  { sourceFile: 'session-trace-mu-plugin.php', deployedFile: 'session-trace-mu-plugin.php' },
 ];
 
 // ─── Generic MU-Plugin install/uninstall by name ──────────────────
