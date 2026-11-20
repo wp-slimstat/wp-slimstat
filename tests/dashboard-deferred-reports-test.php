@@ -58,3 +58,24 @@ $GLOBALS['queries'] = 0;
 wp_slimstat_reports::callback_wrapper([]);
 check($GLOBALS['queries'] === 0, 'unauthorized report executed');
 echo "Dashboard deferral, saved settings, AJAX dispatch and authorization passed.\n";
+
+// #418: Dashboard is a widget context, not a registered admin.php page.
+function is_admin() { return true; }
+function admin_url($path) { return 'https://example.org/wp-admin/' . $path; }
+function esc_url($url) { return $url; }
+function absint($value) { return abs((int) $value); }
+require __DIR__ . '/../admin/view/wp-slimstat-db.php';
+wp_slimstat_db::$all_columns_names = array_fill_keys(['ip', 'username', 'browser', 'day', 'start_from'], []);
+foreach (['dashboard' => 'slimview1', 'slimview1' => 'slimview1', 'slimview2' => 'slimview2', 'slimview3' => 'slimview3'] as $screen => $target) {
+    wp_slimstat_admin::$current_screen = $screen;
+    foreach (['ip' => '192.0.2.18', 'username' => 'Visitor With Spaces', 'browser' => 'Firefox'] as $column => $value) {
+        $url = wp_slimstat_reports::fs_url($column . ' equals ' . $value . '&&&day equals 18&&&start_from equals 20');
+        parse_str(parse_url(html_entity_decode($url), PHP_URL_QUERY), $query);
+        check($query['page'] === $target, $screen . ' filter must open ' . $target . ', got ' . $query['page']);
+        check($query['fs'] === [$column => 'equals ' . $value, 'day' => 'equals 18', 'start_from' => 'equals 20'], 'filter values, dates and pagination must survive');
+        check(wp_slimstat_admin::$current_screen === $screen, 'link generation must not change the rendering context');
+    }
+    parse_str(parse_url(wp_slimstat_reports::fs_url(), PHP_URL_QUERY), $query);
+    check($query === ['page' => $target], 'unfiltered link must use the same destination');
+}
+echo "Dashboard filter destinations, report screens and filter values passed.\n";

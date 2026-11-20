@@ -15,7 +15,8 @@ function esc_attr__($text, $domain = '') { return esc_attr($text); }
 function esc_textarea($text) { return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8'); }
 function esc_url($text) { return esc_attr($text); }
 function wp_kses_post($text) { return strip_tags($text, '<li><a><strong><p>'); }
-function sanitize_text_field($text) { return strip_tags($text); }
+function sanitize_text_field($text) { return trim(preg_replace('/[\r\n\t ]+/', ' ', strip_tags($text))); }
+function sanitize_textarea_field($text) { return trim(strip_tags($text)); }
 function sanitize_key($text) { return preg_replace('/[^a-z0-9_-]/', '', strtolower($text)); }
 function wp_unslash($value) { return is_array($value) ? array_map('wp_unslash', $value) : stripslashes($value); }
 function wp_verify_nonce($nonce, $action) { return $nonce === 'valid'; }
@@ -39,6 +40,20 @@ class wp_slimstat_admin {
 wp_slimstat::$wpdb = new class { public $prefix = 'wp_'; public function query($sql) { $GLOBALS['writes']++; } };
 $GLOBALS['wpdb'] = wp_slimstat::$wpdb;
 $source = file_get_contents(__DIR__ . '/../admin/config/index.php');
+// Execute the real save loop: only the heatmap page list should preserve line separators.
+$save_start = strpos($source, '        // All other options');
+$save_end = strpos($source, '        // Keep legacy banner toggle', $save_start);
+check(false !== $save_start && false !== $save_end, 'settings save loop disappeared');
+$save_loop = substr($source, $save_start, $save_end - $save_start);
+$current_tab = 7;
+$settings = [7 => ['rows' => ['heatmap_pages' => ['type' => 'textarea'], 'other_text' => ['type' => 'textarea']]]];
+foreach (["\n", "\r\n", "\r"] as $separator) {
+    $pages = '/product-range-1/*' . $separator . '/product-range-2/*';
+    $posted_options = ['heatmap_pages' => '<b>' . $pages . '</b>', 'other_text' => "one\ntwo"];
+    eval($save_loop);
+    check($pages === wp_slimstat::$settings['heatmap_pages'], 'heatmap page list lost line breaks or kept HTML');
+    check('one two' === wp_slimstat::$settings['other_text'], 'unrelated textarea sanitation changed');
+}
 $start = strpos($source, '// Save options');
 $end = strpos($source, '    // Some of them require extra processing', $start);
 check($start !== false && $end !== false, 'settings boundary disappeared');

@@ -1,10 +1,15 @@
 = 6.1.3 - Unreleased =
 
+**Fixed**
+
+* Heatmaps keep line breaks in Pages to track and match every listed path, including lists collapsed into spaces by earlier saves. Comma-separated lists keep working. ([#420](https://github.com/wp-slimstat/wp-slimstat/issues/420))
+
 **Security**
 - Access Log: with "Show user agent" on, the browser icon's tooltip now shows the visitor's user agent as plain text.
 
-**Fixes**
-- Server tracking: fixed inflated Human Visits when tracking cookies are blocked or disabled, and improved detection of automated HTTP clients. ([#417](https://github.com/wp-slimstat/wp-slimstat/issues/417))
+**Fixed**
+* Visitor IP, username and other filter links in WordPress Dashboard widgets now open the filtered Real-time report instead of a "not allowed" page. ([#418](https://github.com/wp-slimstat/wp-slimstat/issues/418))
+* Server tracking: fixed inflated Human Visits when tracking cookies are blocked or disabled, and improved detection of automated HTTP clients. ([#417](https://github.com/wp-slimstat/wp-slimstat/issues/417))
 
 = 6.1.2 - 2026-11-16 =
 
