@@ -215,6 +215,44 @@ class StoreTest extends WpSlimstatTestCase
 		return json_encode(['v' => 1, 'vw' => 1280, 'vh' => 720, 's' => $selectors, 'r' => $rows] + (null === $scroll ? [] : ['sc' => $scroll]));
 	}
 
+	/** @dataProvider pageListCases */
+	public function test_page_lists_gate_both_tracker_params_and_ingestion(string $pages, string $page, bool $matches): void
+	{
+		$this->readyToIngest();
+		\wp_slimstat::$settings['heatmap_pages'] = $pages;
+		$this->view = ['resource' => $page, 'dt' => 1700000000];
+		self::assertSame($matches ? ['l' => 'full', 'r' => 10000] : null, Store::params($page));
+		self::assertSame($matches ? 1 : 0, Store::ingest(42, $this->batch([[0, 1, 0, 1, 1, 1, 1]])));
+		if (!$matches) {
+			self::assertSame([], $this->heatmapQueries(), 'excluded pages must not write heatmap data');
+		}
+	}
+
+	public static function pageListCases(): array
+	{
+		$cases = [];
+		foreach (["\n", "\r\n", "\r", ', ', ' ', "\t", " ,\r\n\t, "] as $separator) {
+			$pages = '/product-range-1/*' . $separator . '/product-range-2/*';
+			foreach (['/product-range-1/song/', '/product-range-2/song/'] as $page) {
+				$cases[json_encode($separator) . $page] = [$pages, $page, true];
+			}
+			$cases[json_encode($separator) . 'excluded'] = [$pages, '/members/', false];
+		}
+		return $cases + [
+			'empty means all pages' => ['', '/members/', true],
+			'blank lines mean all pages' => [" \r\n\t ", '/members/', true],
+			'separators alone do not enable all pages' => [",\n,", '/members/', false],
+			'wildcard includes section root' => ['/section/*', '/section/', true],
+			'wildcard requires slash' => ['/section/*', '/section', false],
+			'wildcard includes descendants' => ['/section/*', '/section/one/two/', true],
+			'case insensitive, query and fragment ignored' => ['/SECTION/*', '/section/?ref=nav#top', true],
+			'plain permalink' => ["/?p=12\n/?page_id=34", '/?page_id=34&ref=nav', true],
+			'plain permalink excluded' => ["/?p=12\n/?page_id=34", '/?p=56', false],
+			'full URLs are not paths' => ['https://example.com/section/*', '/section/', false],
+			'48 paths' => [implode("\n", array_map(static fn($n) => '/page-' . $n . '/', range(1, 48))), '/page-48/', true],
+		];
+	}
+
 	/** Each gate the tracker applies is applied again here: a cached page can carry a stale hm. */
 	public function test_new_sampling_spreads_visits_and_keeps_cached_v1_trackers_compatible(): void
 	{

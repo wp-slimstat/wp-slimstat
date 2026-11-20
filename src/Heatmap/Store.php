@@ -171,11 +171,17 @@ final class Store
 		if (0 === $rate || self::isPreview() || !self::capturing() || !self::ready()) {
 			return null;
 		}
-		$pages = trim((string) (\wp_slimstat::$settings['heatmap_pages'] ?? ''));
-		if ('' !== $pages && !Utils::isBlacklisted(Query::pageKeyFromUrl($requestUri), $pages)) {
+		if (!self::matchesPage(Query::pageKeyFromUrl($requestUri))) {
 			return null;
 		}
 		return ['l' => self::level(), 'r' => $rate];
+	}
+
+	private static function matchesPage(string $page): bool
+	{
+		$pages = trim((string) (\wp_slimstat::$settings['heatmap_pages'] ?? ''));
+		// Accept line breaks and spaces left by older settings saves, as well as commas.
+		return '' === $pages || Utils::isBlacklisted($page, preg_replace('/\s+/', ',', $pages));
 	}
 
 	/** Spread new batches across sequential pageviews; accept the old cached-client sampling rule. */
@@ -225,8 +231,7 @@ final class Store
 			throw new \RuntimeException($db->last_error);
 		}
 		$page  = Query::pageKey((string) ($view['resource'] ?? ''));
-		$pages = trim((string) (\wp_slimstat::$settings['heatmap_pages'] ?? ''));
-		if ('' === $page || ('' !== $pages && !Utils::isBlacklisted($page, $pages))) {
+		if ('' === $page || !self::matchesPage($page)) {
 			return 0;
 		}
 
