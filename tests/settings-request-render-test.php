@@ -16,7 +16,8 @@ function esc_textarea($text) { return htmlspecialchars((string) $text, ENT_QUOTE
 function esc_url($text) { return esc_attr($text); }
 function wp_kses_post($text) { return strip_tags($text, '<li><a><strong><p>'); }
 function sanitize_text_field($text) { return trim(preg_replace('/[\r\n\t ]+/', ' ', strip_tags($text))); }
-function sanitize_textarea_field($text) { return trim(strip_tags($text)); }
+function sanitize_textarea_field($text) { return trim(preg_replace('/%[a-f0-9]{2}/i', '', strip_tags($text))); }
+function wp_check_invalid_utf8($text) { return $text; }
 function sanitize_key($text) { return preg_replace('/[^a-z0-9_-]/', '', strtolower($text)); }
 function wp_unslash($value) { return is_array($value) ? array_map('wp_unslash', $value) : stripslashes($value); }
 function wp_verify_nonce($nonce, $action) { return $nonce === 'valid'; }
@@ -53,6 +54,11 @@ foreach (["\n", "\r\n", "\r"] as $separator) {
     eval($save_loop);
     check($pages === wp_slimstat::$settings['heatmap_pages'], 'heatmap page list lost line breaks or kept HTML');
     check('one two' === wp_slimstat::$settings['other_text'], 'unrelated textarea sanitation changed');
+}
+foreach (['https://example.com/caf%C3%A9/', '/my%20page/', '/c++/', '/c%2B%2B/'] as $pages) {
+    $posted_options = ['heatmap_pages' => '<script>bad()</script><b>' . $pages . '</b>'];
+    eval($save_loop);
+    check($pages === wp_slimstat::$settings['heatmap_pages'], 'encoded path changed or HTML survived the settings save');
 }
 $start = strpos($source, '// Save options');
 $end = strpos($source, '    // Some of them require extra processing', $start);

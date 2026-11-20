@@ -6,7 +6,7 @@ rationale: Use the probe form and throw its verdict away. probeVar() is still ca
 ---
 --- a/src/Tracker/Session.php
 +++ b/src/Tracker/Session.php
-@@ -302,16 +302,7 @@
+@@ -312,15 +312,6 @@
  
  		$existing_visit_id = $probe->probeVar();
  
@@ -16,10 +16,9 @@ rationale: Use the probe form and throw its verdict away. probeVar() is still ca
 -			// pageview mints a fresh visit_id — so visits inflate to roughly pageviews for
 -			// the whole pre-migration window, silently. Say so once per request instead.
 -			self::recordIdentityProbeFailure();
- 
+-
 -			return -1;
 -		}
--
- 		return $existing_visit_id > 0 ? intval($existing_visit_id) : 0;
- 	}
  
+ 		if ($existing_visit_id > 0 && 'on' !== (\wp_slimstat::$settings['extend_session'] ?? 'off')) {
+ 			// The last hit bounds idle time; a fixed visit also expires from its first hit.

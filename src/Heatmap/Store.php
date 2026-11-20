@@ -183,20 +183,23 @@ final class Store
 		if ('' === $pages) {
 			return true;
 		}
-		// A pasted URL counts as its path.
-		$pages = (string) preg_replace('~(?<![^\s,])https?://[^/\s,?#]+/?~i', '/', $pages);
-		// Commas and line breaks separate entries, and so do the spaces older saves collapsed
-		// line breaks into. A space inside a path (/my page/, /report *) is kept: an entry starts
-		// with / or with a * that has more after it.
-		$entries = preg_split('~\R+|,|\s+(?=/|\*[^\s,])~', $pages) ?: [];
-		// Key each entry the way a visited page is keyed, so /my%20page/?ref=nav matches its page.
-		// A wildcard post id (/?p=*) keeps its query: keyed, it would mean the page without one.
+		// Explicit separators own their entries. Recover only legacy wildcard paths and
+		// pasted URL lists; a space before * must never create a broader standalone pattern.
+		$separator = preg_match('~\R|,~', $pages)
+			? '~\R+|,~'
+			: '~(?<=/\*)\h+(?=/)|\h+(?=https?://)~i';
+		$entries = preg_split($separator, $pages) ?: [];
 		$keys = array_map(static function (string $entry): string {
-			return preg_match('~^([^?#]*)(\?(?:p|page_id)=[0-9]*\*[0-9*]*)~', $entry, $m)
-				? Query::pageKeyFromUrl($m[1]) . $m[2]
-				: Query::pageKeyFromUrl($entry);
+			$entry = (string) preg_replace('~^https?://[^/\s,?#]+/?~i', '/', trim($entry));
+			// Patterns are paths, not form-encoded values: a literal + stays a +.
+			$entry = \SlimStat\Tracker\Processor::sanitizeResource(str_replace('+', '%2B', $entry));
+			// Plain-permalink wildcards must survive the page-key normalizer.
+			return preg_match('~^([^?#]*)(\?(?:p|page_id)=[^&#]*[*!][^&#]*)~', $entry, $m)
+				? $m[1] . $m[2]
+				: Query::pageKey($entry);
 		}, $entries);
-		return Utils::isBlacklisted($page, implode(',', $keys));
+		// A decoded %2C belongs to its path, not to the list's separators.
+		return Utils::isBlacklisted($page, $keys);
 	}
 
 	/** Spread new batches across sequential pageviews; accept the old cached-client sampling rule. */
