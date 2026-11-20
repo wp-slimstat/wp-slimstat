@@ -60,7 +60,8 @@ export const options = {
         { duration: '1m', target: 30 },
         { duration: '15s', target: 5 },
       ],
-      preAllocatedVUs: 200,
+      // Allocate before the spike: starting extra VUs mid-run drops arrivals.
+      preAllocatedVUs: 360,
       maxVUs: 360,
       startTime: '2m30s', // starts after scenario 1 + 30s gap
     },
