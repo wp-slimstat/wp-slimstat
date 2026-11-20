@@ -3,6 +3,9 @@
 **Security**
 - Access Log: with "Show user agent" on, the browser icon's tooltip now shows the visitor's user agent as plain text.
 
+**Fixes**
+- Server tracking: fixed inflated Human Visits when tracking cookies are blocked or disabled, and improved detection of automated HTTP clients. ([#417](https://github.com/wp-slimstat/wp-slimstat/issues/417))
+
 = 6.1.2 - 2026-11-16 =
 
 **SlimStat 6.1: turn any report into plain-language findings with AI, follow a country down to its cities, and learn SlimStat from video tutorials.** Your settings and data carry over, database repairs wait for your click, and older versions keep working if you ever go back.

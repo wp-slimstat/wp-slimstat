@@ -129,11 +129,20 @@ class UADetectorBotTest extends WpSlimstatTestCase
     {
         $browser = \SlimStat\Utils\UADetector::get_browser($ua);
         $this->assertSame(1, $browser['browser_type'], "{$label} must be browser_type=1");
+        $browser['browser_type'] = 0;
+        $corrected = \SlimStat\Services\Browscap::apply_bot_safety_net($browser);
+        $this->assertSame(1, $corrected['browser_type'], "{$label} must also be caught by the Browscap safety net");
     }
 
     public static function vendorBotProvider(): array
     {
         return [
+            'Go HTTP client'               => ['Go HTTP client', 'Go-http-client/2.0'],
+            'Python requests'              => ['Python requests', 'python-requests/2.32.3'],
+            'curl'                         => ['curl', 'curl/8.11.0'],
+            'Wget'                         => ['Wget', 'Wget/1.21.4'],
+            'Java'                         => ['Java', 'Java/21.0.1'],
+            'OkHttp'                       => ['OkHttp', 'okhttp/4.12.0'],
             'Mediapartners-Google'          => ['Mediapartners-Google', 'Mediapartners-Google'],
             'Google-InspectionTool desktop' => ['Google-InspectionTool desktop', 'Mozilla/5.0 (compatible; Google-InspectionTool/1.0)'],
             'Google-InspectionTool mobile'  => ['Google-InspectionTool mobile', 'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.117 Mobile Safari/537.36 (compatible; Google-InspectionTool/1.0)'],
