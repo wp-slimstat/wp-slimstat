@@ -248,7 +248,21 @@ class StoreTest extends WpSlimstatTestCase
 			'case insensitive, query and fragment ignored' => ['/SECTION/*', '/section/?ref=nav#top', true],
 			'plain permalink' => ["/?p=12\n/?page_id=34", '/?page_id=34&ref=nav', true],
 			'plain permalink excluded' => ["/?p=12\n/?page_id=34", '/?p=56', false],
-			'full URLs are not paths' => ['https://example.com/section/*', '/section/', false],
+			'pasted URL counts as its path' => ['https://example.com/section/*', '/section/', true],
+			'pasted URL, other page' => ['https://example.com/section/*', '/members/', false],
+			'pasted URLs, one per line' => ["https://example.com/a/\nHTTP://example.com/b/", '/b/', true],
+			'pasted URLs collapsed into spaces' => ['https://example.com/a/ https://example.com/b/', '/b/', true],
+			'bare origin is the home page' => ['https://example.com', '/', true],
+			'bare origin is only the home page' => ['https://example.com', '/members/', false],
+			'pasted plain permalink' => ['https://example.com?p=12', '/?p=12', true],
+			'entry query and fragment ignored' => ['https://example.com/pricing/?ref=nav#plans', '/pricing/', true],
+			'encoded entry matches stored path' => ['/my%20page/', '/my page/', true],
+			// 6.1.2 matched these; splitting on every space lost them.
+			'space inside a path, single entry' => ['/my page/', '/my page/', true],
+			'space inside a path, comma list' => ['/shop/, /my page/', '/my page/', true],
+			'space inside a path, line list' => ["/shop/\n/search/big sale/*", '/search/big sale/now/', true],
+			'space inside a path is not a separator' => ['/my page/', '/my', false],
+			'a URL inside a path is not an origin' => ['/go/https://example.com/x', '/go/https://example.com/x', true],
 			'48 paths' => [implode("\n", array_map(static fn($n) => '/page-' . $n . '/', range(1, 48))), '/page-48/', true],
 		];
 	}

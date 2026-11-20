@@ -182,7 +182,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 **Fixed**
 
-* Heatmaps keep line breaks in Pages to track and match every listed path, including lists collapsed into spaces by earlier saves. Comma-separated lists keep working. ([#420](https://github.com/wp-slimstat/wp-slimstat/issues/420))
+* Heatmaps keep line breaks in Pages to track and match every listed path, including lists collapsed into spaces by earlier saves. Comma-separated lists keep working, and a full URL pasted into the list counts as its path. ([#420](https://github.com/wp-slimstat/wp-slimstat/issues/420))
 * Dashboard widget filter links for visitor IP, username and more open the filtered Real-time report instead of a "not allowed" page. ([#418](https://github.com/wp-slimstat/wp-slimstat/issues/418))
 * Server tracking: fixed inflated Human Visits when tracking cookies are blocked or disabled, and improved detection of automated HTTP clients. ([#417](https://github.com/wp-slimstat/wp-slimstat/issues/417))
 

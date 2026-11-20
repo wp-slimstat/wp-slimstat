@@ -180,8 +180,16 @@ final class Store
 	private static function matchesPage(string $page): bool
 	{
 		$pages = trim((string) (\wp_slimstat::$settings['heatmap_pages'] ?? ''));
-		// Accept line breaks and spaces left by older settings saves, as well as commas.
-		return '' === $pages || Utils::isBlacklisted($page, preg_replace('/\s+/', ',', $pages));
+		if ('' === $pages) {
+			return true;
+		}
+		// A pasted URL counts as its path.
+		$pages = (string) preg_replace('~(?<![^\s,])https?://[^/\s,?#]+/?~i', '/', $pages);
+		// Commas and line breaks separate entries, and so do the spaces older saves collapsed
+		// line breaks into. A space inside a path (/my page/) is kept: every entry starts with / or *.
+		$entries = preg_split('~\R+|,|\s+(?=[/*])~', $pages) ?: [];
+		// Key each entry the way a visited page is keyed, so /my%20page/?ref=nav matches its page.
+		return Utils::isBlacklisted($page, implode(',', array_map([Query::class, 'pageKeyFromUrl'], $entries)));
 	}
 
 	/** Spread new batches across sequential pageviews; accept the old cached-client sampling rule. */
