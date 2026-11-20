@@ -191,8 +191,7 @@ final class Store
 		$entries = preg_split($separator, $pages) ?: [];
 		$keys = array_map(static function (string $entry): string {
 			$entry = (string) preg_replace('~^https?://[^/\s,?#]+/?~i', '/', trim($entry));
-			// Patterns are paths, not form-encoded values: a literal + stays a +.
-			$entry = \SlimStat\Tracker\Processor::sanitizeResource(str_replace('+', '%2B', $entry));
+			$entry = \SlimStat\Tracker\Processor::sanitizeResource($entry);
 			// Plain-permalink wildcards must survive the page-key normalizer.
 			return preg_match('~^([^?#]*)(\?(?:p|page_id)=[^&#]*[*!][^&#]*)~', $entry, $m)
 				? $m[1] . $m[2]

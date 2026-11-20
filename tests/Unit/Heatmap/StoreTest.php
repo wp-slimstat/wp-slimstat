@@ -273,6 +273,7 @@ class StoreTest extends WpSlimstatTestCase
 			'single wildcard suffix never broadens capture' => ['/report *2026*', '/private/2026/', false],
 			'explicit entry keeps space before slash' => ["/report /private/*\n/shop/*", '/private/item/', false],
 			'literal plus path' => ['/c++/', '/c++/', true, '/c%2B%2B/'],
+			'unescaped plus path' => ['/c++/', '/c++/', true],
 			'literal plus is not a space' => ['/c++/', '/c /', false, '/c%20/'],
 			'encoded plus URL' => ['https://example.com/c%2B%2B/', '/c++/', true, '/c%2B%2B/'],
 			'encoded non-ASCII URL' => ['https://example.com/caf%C3%A9/', '/caf%c3%a9/', true, '/caf%C3%A9/'],
