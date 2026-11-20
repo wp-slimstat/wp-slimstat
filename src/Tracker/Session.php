@@ -29,7 +29,8 @@ class Session
 
 		// Check if this is a consent upgrade request
 		$data_js = \wp_slimstat::get_data_js();
-		$isConsentUpgrade = !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
+		$isConsentUpgrade = 'on' === (\wp_slimstat::$settings['gdpr_enabled'] ?? 'off')
+			&& !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
 
 		// Check if we need to upgrade from anonymous to PII tracking
 		$hasCmpConsent = false;

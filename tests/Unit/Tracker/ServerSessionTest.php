@@ -13,7 +13,7 @@ class ServerSessionTest extends WpSlimstatTestCase
     /** @dataProvider sessionProvider */
     public function test_cookieless_server_session(
         string $mode, string $cookies, array $data, ?int $cookieVisit,
-        int $existingVisit, bool $force, int $expectedVisit, int $expectedProbes
+        int $existingVisit, bool $force, int $expectedVisit, int $expectedProbes, string $gdpr = 'off'
     ): void {
         $settings = \wp_slimstat::$settings;
         $server = $_SERVER;
@@ -23,7 +23,7 @@ class ServerSessionTest extends WpSlimstatTestCase
             $this->stubCommonWpFunctions();
             \Brain\Monkey\Functions\stubs(['apply_filters' => static fn($tag, $value) => $value]);
             \wp_slimstat::$settings = array_merge($settings, [
-                'anonymous_tracking' => 'off', 'gdpr_enabled' => 'off',
+                'anonymous_tracking' => 'off', 'gdpr_enabled' => $gdpr,
                 'javascript_mode' => $mode, 'set_tracker_cookie' => $cookies,
                 'consent_integration' => '', 'session_duration' => 1800,
             ]);
@@ -91,7 +91,9 @@ class ServerSessionTest extends WpSlimstatTestCase
             'pending token, identity column unreadable' => ['on', 'on', ['sid' => str_repeat('b', 32)], null, -1, true, 123, 1],
             'server enrichment with pending token' => ['off', 'on', ['sid' => str_repeat('b', 32)], null, 91, true, 91, 1],
             'valid cookie wins' => ['off', 'on', [], 42, 91, true, 42, 0],
-            'consent upgrade starts cookie session' => ['off', 'on', ['consent_upgrade' => '1'], null, 91, true, 123, 0],
+            'consent upgrade starts cookie session' => ['off', 'on', ['consent_upgrade' => '1'], null, 91, true, 123, 0, 'on'],
+            'irrelevant consent event preserves server visit' => ['off', 'on', ['consent_upgrade' => '1'], null, 91, true, 91, 1],
+            'irrelevant consent event without cookies preserves server visit' => ['off', 'off', ['consent_upgrade' => '1'], null, 91, true, 91, 1],
             'client without pending token' => ['on', 'on', [], null, 91, true, 123, 0],
             'client pending token preserved' => ['on', 'on', ['sid' => str_repeat('b', 32)], null, 91, true, 91, 1],
             'unforced server caller unchanged' => ['off', 'on', [], null, 91, false, 0, 0],
