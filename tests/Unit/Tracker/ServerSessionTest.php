@@ -18,7 +18,7 @@ class ServerSessionTest extends WpSlimstatTestCase
         $settings = \wp_slimstat::$settings;
         $server = $_SERVER;
         $cookie = $_COOKIE;
-        $options = $GLOBALS['slimstat_test_options'];
+        $options = $GLOBALS['slimstat_test_options'] ?? [];
         $this->stubCommonWpFunctions();
         \Brain\Monkey\Functions\stubs(['apply_filters' => static fn($tag, $value) => $value]);
         \wp_slimstat::$settings = array_merge($settings, [
