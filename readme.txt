@@ -175,6 +175,12 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 == Changelog ==
 
+= 6.1.3 - Unreleased =
+
+**Fixed**
+
+* Heatmaps keep line breaks in Pages to track and match every listed path, including lists collapsed into spaces by earlier saves. Comma-separated lists keep working. ([#420](https://github.com/wp-slimstat/wp-slimstat/issues/420))
+
 = 6.1.2 - 2026-11-16 =
 
 **New**

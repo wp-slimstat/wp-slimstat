@@ -1,5 +1,9 @@
 = 6.1.3 - Unreleased =
 
+**Fixed**
+
+* Heatmaps keep line breaks in Pages to track and match every listed path, including lists collapsed into spaces by earlier saves. Comma-separated lists keep working. ([#420](https://github.com/wp-slimstat/wp-slimstat/issues/420))
+
 **Security**
 - Access Log: with "Show user agent" on, the browser icon's tooltip now shows the visitor's user agent as plain text.
 
