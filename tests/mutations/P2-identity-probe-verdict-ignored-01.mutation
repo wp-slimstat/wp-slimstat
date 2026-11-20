@@ -17,7 +17,7 @@ rationale: Use the probe form and throw its verdict away. probeVar() is still ca
 -			// the whole pre-migration window, silently. Say so once per request instead.
 -			self::recordIdentityProbeFailure();
  
--			return 0;
+-			return -1;
 -		}
 -
  		return $existing_visit_id > 0 ? intval($existing_visit_id) : 0;

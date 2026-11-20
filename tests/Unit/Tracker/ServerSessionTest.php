@@ -60,7 +60,8 @@ class ServerSessionTest extends WpSlimstatTestCase
             self::assertSame(123 === $expectedVisit, $new);
             self::assertSame(123 === $expectedVisit ? 1 : 0, $allocations);
             self::assertCount($expectedProbes, $probes);
-            if ($expectedProbes) {
+            self::assertSame($existingVisit < 0, $expectedProbes > 0 && !isset($stat['vid_hash']), 'An identity column that could not be read must not be written.');
+            if ($expectedProbes && $existingVisit >= 0) {
                 self::assertSame(1700000000, $probes[0][1]);
                 self::assertSame($probes[0][0], $stat['vid_hash']);
                 if ('off' === $mode) {
@@ -86,6 +87,8 @@ class ServerSessionTest extends WpSlimstatTestCase
             'cookies blocked' => ['off', 'on', [], null, 91, true, 91, 1],
             'cookies disabled' => ['off', 'off', [], null, 91, true, 91, 1],
             'first server hit' => ['off', 'on', [], null, 0, true, 123, 1],
+            'identity column unreadable' => ['off', 'on', [], null, -1, true, 123, 1],
+            'pending token, identity column unreadable' => ['on', 'on', ['sid' => str_repeat('b', 32)], null, -1, true, 123, 1],
             'server enrichment with pending token' => ['off', 'on', ['sid' => str_repeat('b', 32)], null, 91, true, 91, 1],
             'valid cookie wins' => ['off', 'on', [], 42, 91, true, 42, 0],
             'consent upgrade starts cookie session' => ['off', 'on', ['consent_upgrade' => '1'], null, 91, true, 123, 0],

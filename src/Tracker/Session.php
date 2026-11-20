@@ -82,6 +82,13 @@ class Session
 				return false; // Same person within the session window: same visit.
 			}
 
+			if ($existing_visit_id < 0) {
+				// The identity column could not be read, so naming it in the INSERT would
+				// fail and be retried on every hit until the migration has run.
+				// ponytail: any failed probe drops the identity for this hit, not only a missing column.
+				unset($stat['vid_hash']);
+			}
+
 			// New session: a sequential id, exactly like the cookie branch. Deriving the
 			// id from the identity hash is what made two strangers one visitor (32 bits)
 			// and seeded VisitIdGenerator's counter next to the INT UNSIGNED ceiling
@@ -122,6 +129,9 @@ class Session
 				\wp_slimstat::set_stat($stat);
 				self::setTrackingCookie($existing_visit_id, 'visit');
 				return false;
+			}
+			if ($existing_visit_id < 0) {
+				unset($stat['vid_hash']); // Unreadable column: see the anonymous branch above.
 			}
 			\wp_slimstat::set_stat($stat);
 		}
@@ -270,7 +280,7 @@ class Session
 	 *
 	 * @param string $vid_hash          32 hex chars, as generateAnonymousVidHash() returns.
 	 * @param int    $current_timestamp The hit's own dt.
-	 * @return int Visit ID if found, 0 otherwise
+	 * @return int Visit ID if found, 0 if there is none, -1 if the identity column could not be read
 	 */
 	private static function findExistingAnonymousVisitId(string $vid_hash, int $current_timestamp): int
 	{
@@ -309,7 +319,7 @@ class Session
 			// the whole pre-migration window, silently. Say so once per request instead.
 			self::recordIdentityProbeFailure();
 
-			return 0;
+			return -1;
 		}
 
 		return $existing_visit_id > 0 ? intval($existing_visit_id) : 0;
