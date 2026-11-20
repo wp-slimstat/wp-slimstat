@@ -68,7 +68,8 @@ function buildPayload(iter) {
   // src/Controllers/Rest/TrackingRestController.php — `res` (resource URL),
   // `ref` (referer), `bw/bh/sw/sh` (browser/screen viewport).
   return JSON.stringify({
-    res: encoding.b64encode(`${BASE_URL}/perf-303-${SCENARIO_LABEL}-${iter}`, 'rawurl'),
+    res: encoding.b64encode(`${BASE_URL}/perf-303-${SCENARIO_LABEL}-${iter}`, 'std')
+      .replace(/\+/g, '.').replace(/\//g, '_').replace(/=/g, '-'),
     ref: '',
     bw: 1280,
     bh: 720,

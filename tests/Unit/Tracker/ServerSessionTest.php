@@ -13,7 +13,8 @@ class ServerSessionTest extends WpSlimstatTestCase
     /** @dataProvider sessionProvider */
     public function test_cookieless_server_session(
         string $mode, string $cookies, array $data, ?int $cookieVisit,
-        int $existingVisit, bool $force, int $expectedVisit, int $expectedProbes, string $gdpr = 'off'
+        int $existingVisit, bool $force, int $expectedVisit, int $expectedProbes, string $gdpr = 'off',
+        ?int $remainingLifetime = 600, int $processingSeconds = 0, ?int $expectedLifetime = 600
     ): void {
         $settings = \wp_slimstat::$settings;
         $server = $_SERVER;
@@ -40,9 +41,10 @@ class ServerSessionTest extends WpSlimstatTestCase
             class_exists(Session::class);
             class_exists(VisitIdGenerator::class);
             $probes = [];
-            \Patchwork\redefine(Session::class . '::findExistingAnonymousVisitId', static function ($hash, $dt, &$remaining = null) use (&$probes, $existingVisit) {
+            \Patchwork\redefine('wp_slimstat::now', static fn() => 1700000000 + $processingSeconds);
+            \Patchwork\redefine(Session::class . '::findExistingAnonymousVisitId', static function ($hash, $dt, &$remaining = null) use (&$probes, $existingVisit, $remainingLifetime) {
                 $probes[] = [$hash, $dt];
-                $remaining = 600;
+                $remaining = $remainingLifetime;
                 return $existingVisit;
             });
             $allocations = 0;
@@ -71,7 +73,7 @@ class ServerSessionTest extends WpSlimstatTestCase
                     self::assertNotSame(Session::generateAnonymousVidHash([]), $stat['vid_hash'], 'Client pending sessions keep their browser token.');
                 }
             }
-            self::assertSame(null !== $cookieVisit || 0 === $expectedVisit ? [] : [[$expectedVisit, 91 === $expectedVisit ? 600 : null]], $cookieVisits);
+            self::assertSame(null !== $cookieVisit || 0 === $expectedVisit ? [] : [[$expectedVisit, 91 === $expectedVisit ? $expectedLifetime : null]], $cookieVisits);
         } finally {
             \wp_slimstat::$settings = $settings;
             \wp_slimstat::set_data_js([]);
@@ -98,6 +100,11 @@ class ServerSessionTest extends WpSlimstatTestCase
             'client without pending token' => ['on', 'on', [], null, 91, true, 123, 0],
             'client pending token preserved' => ['on', 'on', ['sid' => str_repeat('b', 32)], null, 91, true, 91, 1],
             'unforced server caller unchanged' => ['off', 'on', [], null, 91, false, 0, 0],
+            'processing time consumes fixed lifetime' => ['off', 'on', [], null, 91, true, 91, 1, 'off', 600, 20, 580],
+            'processing reaches fixed deadline' => ['off', 'on', [], null, 91, true, 91, 1, 'off', 600, 600, 0],
+            'processing exceeds fixed deadline' => ['off', 'on', [], null, 91, true, 91, 1, 'off', 600, 620, 0],
+            'clock adjustment never extends fixed lifetime' => ['off', 'on', [], null, 91, true, 91, 1, 'off', 600, -20, 600],
+            'idle expiry retains full cookie duration' => ['off', 'on', [], null, 91, true, 91, 1, 'off', null, 20, null],
         ];
     }
 

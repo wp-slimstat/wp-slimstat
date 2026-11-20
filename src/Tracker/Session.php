@@ -129,6 +129,10 @@ class Session
 			if ($existing_visit_id > 0) {
 				$stat['visit_id'] = $existing_visit_id;
 				\wp_slimstat::set_stat($stat);
+				if (null !== $remaining_duration) {
+					// Processing time must not move a recovered visit's fixed deadline.
+					$remaining_duration = max(0, $remaining_duration - max(0, \wp_slimstat::now() - $current_timestamp));
+				}
 				self::setTrackingCookie($existing_visit_id, 'visit', $remaining_duration);
 				return false;
 			}

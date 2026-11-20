@@ -31,12 +31,14 @@ const returningSessionRate = new Rate('returning_session_rate');
 const pageLoadDuration = new Trend('page_load_duration', true);
 const cookieSetRate = new Rate('cookie_set_rate');
 const sessionErrors = new Counter('session_errors');
+const browserUserAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+let visitorIdentity = '';
 
 export const options = {
   // Close idle sockets so simulated think time does not exhaust wp-env's
   // prefork Apache workers.
   noConnectionReuse: true,
-  userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+  userAgent: browserUserAgent,
   noCookiesReset: true, // Only the explicit new-visitor branch clears a session.
   scenarios: {
     // Scenario 1: Steady-state returning visitor traffic
@@ -70,19 +72,12 @@ export const options = {
     http_req_failed: ['rate<0.05'],            // < 5% error rate
     http_req_duration: ['p(95)<3000'],         // p95 < 3s
     page_load_duration: ['p(95)<2000'],        // p95 < 2s
-    cookie_set_rate: ['rate>0.80'],            // 80%+ requests should get cookies
+    cookie_set_rate: ['rate==1'],              // Every simulated visitor must receive the enabled cookie.
     session_errors: ['count==0'],
     dropped_iterations: ['count==0'],       // The requested traffic must actually run.
   },
 };
 
-
-// Query URLs also work on a fresh plain-permalink install.
-const PAGES = [
-  '/',
-  '/?p=1',
-  '/?page_id=2',
-];
 
 export function setup() {
   // Verify the site is reachable
@@ -93,7 +88,22 @@ export function setup() {
   });
 
   if (!ok) {
-    console.error(`Site at ${BASE_URL} is not reachable or returned an error.`);
+    throw new Error(`Site at ${BASE_URL} is not reachable or returned an error.`);
+  }
+
+  // Discover published content instead of assuming the initial post/page IDs.
+  // Query URLs also work with plain permalinks.
+  const pages = ['/'];
+  for (const [type, parameter] of [['posts', 'p'], ['pages', 'page_id']]) {
+    const response = http.get(`${BASE_URL}/?rest_route=/wp/v2/${type}&status=publish&per_page=1&_fields=id`);
+    const records = response.json();
+    if (response.status !== 200 || !Array.isArray(records)) {
+      throw new Error(`Cannot discover published ${type} at ${BASE_URL}`);
+    }
+    for (const record of records) {
+      if (!Number.isInteger(record.id) || record.id <= 0) throw new Error(`Invalid published ${type} ID`);
+      pages.push(`/?${parameter}=${record.id}`);
+    }
   }
 
   // Verify SlimStat tracking is active (server-side mode)
@@ -109,17 +119,19 @@ export function setup() {
   console.log(`SlimStat detected in page: ${!!bodyHasSlimstat}`);
   console.log(`========================================\n`);
 
-  return { siteOk: ok };
+  return { pages };
 }
 
-export default function (_data) {
+export default function (data) {
   // 70% returning visitors (reuse cookies), 30% new (clear cookies)
-  const isReturning = Math.random() > 0.3;
+  const isReturning = visitorIdentity !== '' && Math.random() > 0.3;
 
   if (!isReturning) {
     // Simulate new visitor — clear the cookie jar
     const jar = http.cookieJar();
     jar.clear(BASE_URL);
+    // All VUs share an IP; separate visitors need distinct cookieless identities.
+    visitorIdentity = `${__VU}-${__ITER}-${Date.now()}`;
   }
 
   // Each visitor browses 2-4 pages
@@ -130,11 +142,12 @@ export default function (_data) {
   let firstCookieValue = null;
 
   for (let i = 0; i < numPages; i++) {
-    const pagePath = PAGES[Math.floor(Math.random() * PAGES.length)];
+    const pagePath = data.pages[Math.floor(Math.random() * data.pages.length)];
     const url = `${BASE_URL}${pagePath}${pagePath.includes('?') ? '&' : '?'}k6_marker=${marker}-p${i}`;
 
     const res = http.get(url, {
       tags: { type: 'pageview', page_num: String(i) },
+      headers: { 'User-Agent': `${browserUserAgent} ReviewVisitor/${visitorIdentity}` },
     });
 
     pageLoadDuration.add(res.timings.duration);
