@@ -6,7 +6,7 @@ Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
 Tested up to: 7.1
-Stable tag: 6.1.2
+Stable tag: 6.1.3
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -166,6 +166,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Upgrade Notice ==
 
+= 6.1.3 =
+Older versions keep working, added columns stay, and it removes no rows. Fixes inflated Human Visits from server tracking, Dashboard filter links, multi-line Heatmaps page lists, and a security issue in the Access Log user-agent tooltip.
+
 = 6.1.2 =
 Older versions keep working, added columns stay, and it removes no rows. Adds Copy Prompt, AI Analysis (Pro), city drilldown and video tutorials. Fixes privacy exports, tracking, filters, geolocation and RTL layouts. Back up first; repairs wait for your click.
 
@@ -175,12 +178,17 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 == Changelog ==
 
-= 6.1.3 - Unreleased =
+= 6.1.3 - 2026-11-20 =
 
 **Fixed**
 
 * Heatmaps keep line breaks in Pages to track and match every listed path, including lists collapsed into spaces by earlier saves. Comma-separated lists keep working. ([#420](https://github.com/wp-slimstat/wp-slimstat/issues/420))
+* Dashboard widget filter links for visitor IP, username and more open the filtered Real-time report instead of a "not allowed" page. ([#418](https://github.com/wp-slimstat/wp-slimstat/issues/418))
 * Server tracking: fixed inflated Human Visits when tracking cookies are blocked or disabled, and improved detection of automated HTTP clients. ([#417](https://github.com/wp-slimstat/wp-slimstat/issues/417))
+
+**Security**
+
+* Access Log: with "Show user agent" on, the browser icon's tooltip shows the visitor's user agent as plain text.
 
 = 6.1.2 - 2026-11-16 =
 
