@@ -7,6 +7,9 @@
 **Security**
 - Access Log: with "Show user agent" on, the browser icon's tooltip now shows the visitor's user agent as plain text.
 
+**Fixed**
+* Visitor IP, username and other filter links in WordPress Dashboard widgets now open the filtered Real-time report instead of a "not allowed" page. ([#418](https://github.com/wp-slimstat/wp-slimstat/issues/418))
+
 = 6.1.2 - 2026-11-16 =
 
 **SlimStat 6.1: turn any report into plain-language findings with AI, follow a country down to its cities, and learn SlimStat from video tutorials.** Your settings and data carry over, database repairs wait for your click, and older versions keep working if you ever go back.
