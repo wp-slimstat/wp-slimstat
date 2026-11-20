@@ -98,4 +98,25 @@ test.describe('Cookieless server visits — #417 @compat', () => {
       } finally { await client.dispose(); }
     });
   }
+
+  for (const extend of ['off', 'on']) {
+    test(`Extend duration ${extend}: an intermediate page ${extend === 'on' ? 'extends' : 'does not extend'} the visit`, async ({ browser }) => {
+      await setSlimstatOptions({ set_tracker_cookie: 'off', extend_session: extend });
+      const context = await browser.newContext({ userAgent: `${browserUA} ${marker}`, javaScriptEnabled: false });
+      try {
+        const visitor = await context.newPage();
+        await visitor.goto(`${BASE_URL}/?e2e=${marker}-start`);
+        const first = await readVisit(`${marker}-start`);
+        await getPool().execute('UPDATE wp_slim_stats SET dt = dt - 1200 WHERE id = ?', [first.id]);
+        await visitor.goto(`${BASE_URL}/?e2e=${marker}-middle`);
+        const middle = await readVisit(`${marker}-middle`);
+        expect(middle.visit_id).toBe(first.visit_id);
+        await getPool().execute('UPDATE wp_slim_stats SET dt = dt - 1200 WHERE id IN (?, ?)', [first.id, middle.id]);
+        await visitor.goto(`${BASE_URL}/?e2e=${marker}-end`);
+        const last = await readVisit(`${marker}-end`);
+        expect(Number(last.visit_id)).toBeGreaterThan(0);
+        expect(last.visit_id === first.visit_id).toBe(extend === 'on');
+      } finally { await context.close(); }
+    });
+  }
 });

@@ -357,7 +357,7 @@ class Utils
 			$needles = [$needles];
 		}
 
-		foreach (\wp_slimstat::string_to_array($haystackString) as $item) {
+		foreach (is_array($haystackString) ? $haystackString : \wp_slimstat::string_to_array($haystackString) as $item) {
 			$pattern = str_replace(['\\*', '\\!'], ['(.*)', '.'], preg_quote($item, '@'));
 
 			foreach ($needles as $needle) {

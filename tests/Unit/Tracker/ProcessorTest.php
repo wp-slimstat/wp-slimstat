@@ -16,6 +16,15 @@ use WpSlimstat\Tests\Unit\WpSlimstatTestCase;
  */
 class ProcessorTest extends WpSlimstatTestCase
 {
+    public function test_resource_paths_preserve_plus_while_query_values_keep_form_decoding(): void
+    {
+        Functions\when('sanitize_text_field')->returnArg();
+        foreach (['/c++/', '/c%2B%2B/'] as $path) {
+            self::assertSame('/c++/?q=a b+c', \SlimStat\Tracker\Processor::sanitizeResource($path . '?q=a+b%2Bc'));
+        }
+        self::assertSame('/c /', \SlimStat\Tracker\Processor::sanitizeResource('/c%20/'));
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

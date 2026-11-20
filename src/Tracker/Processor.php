@@ -51,9 +51,12 @@ class Processor
     /** A request URI as stored in `resource`: decoded, sanitised, non-ASCII bytes as lowercase %xx. */
     public static function sanitizeResource(string $uri): string
     {
+        // A plus is literal in a URL path; only query values use form decoding.
+        $parts = explode('?', $uri, 2);
+        $decoded = rawurldecode($parts[0]) . (isset($parts[1]) ? '?' . urldecode($parts[1]) : '');
         return (string) preg_replace_callback('/[^\x20-\x7E]/', static function ($m) {
             return '%' . bin2hex($m[0]);
-        }, sanitize_text_field(urldecode($uri)));
+        }, sanitize_text_field($decoded));
     }
 
     /**

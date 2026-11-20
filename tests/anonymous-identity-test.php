@@ -256,7 +256,7 @@ if (null === $probe_body) {
             . 'the vid_hash migration runs that is every hit, and visits inflate to pageviews';
     }
 
-    if (false === strpos($probe_body, 'probeFailed')) {
+    if (false === strpos($probe_body, '$probe->probeFailed')) {
         $failures[] = 'nothing checks probeFailed() after the lookup, so the null is still read '
             . 'as "not found" — using the probe form and ignoring its verdict changes nothing';
     }

@@ -369,7 +369,7 @@ class Ajax
                         // Remove any path traversal attempts
                         $path = str_replace(['../', '..\\', '%2e%2e', '%2E%2E'], '', $path);
                         // Validate path contains only safe characters
-                        if (!preg_match('#^[/\w\-\.~!*\'();:@&=+$,?#\[\]%]*$#', $path)) {
+                        if (!preg_match('#^[/\w\-\.~!*\'();:@&=+$,?\#\[\]%]*$#', $path)) {
                             // Invalid path format - reject request
                             return Utils::logError(203);
                         }
@@ -377,10 +377,7 @@ class Ajax
                         // Extract path from resource URL
                         $stat['resource'] = $path . (empty($parsed_resource['query']) ? '' : '?' . $parsed_resource['query']);
                         $stat['resource'] = Utils::normalizeResourceParameters($stat['resource']);
-                        $stat['resource'] = sanitize_text_field(urldecode($stat['resource']));
-                        $stat['resource'] = preg_replace_callback('/[^\x20-\x7E]/', function ($m) {
-                            return '%' . bin2hex($m[0]);
-                        }, $stat['resource']);
+                        $stat['resource'] = Processor::sanitizeResource($stat['resource']);
 
                         // Security: Limit resource length to prevent DoS
                         if (strlen($stat['resource']) > 2048) {

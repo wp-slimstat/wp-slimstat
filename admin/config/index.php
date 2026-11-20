@@ -992,7 +992,8 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
                     // Rich text editor: use wp_kses_post to sanitize HTML
                     wp_slimstat::$settings[$a_post_slug] = wp_kses_post($a_post_value);
                 } elseif ('heatmap_pages' === $a_post_slug) {
-                    wp_slimstat::$settings[$a_post_slug] = sanitize_textarea_field($a_post_value);
+                    // Text sanitizers delete percent-encoded path bytes from pasted URLs.
+                    wp_slimstat::$settings[$a_post_slug] = wp_strip_all_tags(wp_check_invalid_utf8($a_post_value));
                 } elseif (empty($settings[$current_tab]['rows'][$a_post_slug]['use_code_editor'])) {
                     wp_slimstat::$settings[$a_post_slug] = sanitize_text_field($a_post_value);
                 } else {

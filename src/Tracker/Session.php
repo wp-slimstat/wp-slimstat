@@ -29,7 +29,8 @@ class Session
 
 		// Check if this is a consent upgrade request
 		$data_js = \wp_slimstat::get_data_js();
-		$isConsentUpgrade = !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
+		$isConsentUpgrade = 'on' === (\wp_slimstat::$settings['gdpr_enabled'] ?? 'off')
+			&& !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
 
 		// Check if we need to upgrade from anonymous to PII tracking
 		$hasCmpConsent = false;
@@ -320,6 +321,26 @@ class Session
 			self::recordIdentityProbeFailure();
 
 			return -1;
+		}
+
+		if ($existing_visit_id > 0 && 'on' !== (\wp_slimstat::$settings['extend_session'] ?? 'off')) {
+			// The last hit bounds idle time; a fixed visit also expires from its first hit.
+			// Keep the identity predicate so idx_vid_hash_dt serves this oldest-row lookup.
+			$start_probe = Query::select('dt')
+				->from($GLOBALS['wpdb']->prefix . 'slim_stats')
+				->whereRaw('vid_hash = UNHEX(%s)', [$vid_hash])
+				->where('visit_id', '=', intval($existing_visit_id))
+				->where('dt', '<=', $current_timestamp)
+				->orderBy('dt', 'ASC')
+				->limit(1);
+			$started = $start_probe->probeVar();
+			if ($start_probe->probeFailed()) {
+				self::recordIdentityProbeFailure();
+				return -1;
+			}
+			if (null === $started || intval($started) <= $current_timestamp - $session_duration) {
+				return 0;
+			}
 		}
 
 		return $existing_visit_id > 0 ? intval($existing_visit_id) : 0;
