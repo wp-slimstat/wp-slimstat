@@ -3,7 +3,7 @@
  * Seeds, renders every registered SlimStat report with query capture on, then
  * EXPLAINs everything captured and reports a verdict.
  *
- * Run via tests/perf/explain-gate.sh, or directly against any WP install:
+ * Run via tests/perf/explain-gate.sh, or directly against a disposable WP install:
  *
  *     wp eval-file tests/perf/lib/explain-run.php 100000
  *
@@ -22,6 +22,11 @@
 if (!defined('ABSPATH')) {
     fwrite(STDERR, "must run inside WordPress (wp eval-file)\n");
     exit(2);
+}
+
+if (!defined('WP_CLI') || !WP_CLI || !preg_match('/^(tests?[-_]|wordpress$)/', DB_NAME)) {
+    echo "ERROR: a disposable database is required for synthetic seeding\nVERDICT: ERROR\n";
+    return;
 }
 
 $threshold = isset($args[0]) ? (int) $args[0] : 100000;
@@ -48,9 +53,6 @@ if (!$raw_wpdb instanceof wpdb) {
 }
 wp_slimstat::$wpdb = new SlimStat_Explain_Capture_WPDB($raw_wpdb);
 
-$stats_table  = $raw_wpdb->prefix . 'slim_stats';
-$events_table = $raw_wpdb->prefix . 'slim_events';
-
 // ── Seed ───────────────────────────────────────────────────────────────────
 // A plan is only meaningful on a table big enough that the optimiser stops
 // preferring a scan for trivial cardinality.
@@ -73,13 +75,17 @@ try {
 }
 
 $row_counts = [];
-foreach ([$stats_table, $events_table] as $table) {
+$tables = $raw_wpdb->get_col($raw_wpdb->prepare('SHOW TABLES LIKE %s', $raw_wpdb->esc_like($raw_wpdb->prefix . 'slim_') . '%'));
+foreach ($tables as $table) {
     $row_counts[$table] = (int) $raw_wpdb->get_var("SELECT COUNT(*) FROM `{$table}`");
     printf("table %-28s %10s rows\n", $table, number_format($row_counts[$table]));
 }
 echo "\n";
 
 // ── Render every registered report ─────────────────────────────────────────
+// Capture cold SQL on reruns too; a cached report otherwise disappears from the gate.
+WP_CLI::runcommand('transient delete --all');
+wp_cache_flush();
 require_once dirname(__DIR__, 2) . '/bench/lib/reports-bootstrap.php';
 
 $reports = slimstat_bench_bootstrap_reports();
@@ -139,6 +145,7 @@ if ($captured === []) {
 
 $offenders = [];
 $checked   = 0;
+$plan_errors = [];
 
 foreach ($captured as $entry) {
     $sql = $entry['sql'];
@@ -146,22 +153,10 @@ foreach ($captured as $entry) {
     // EXPLAIN through the raw handle so the plan queries aren't self-captured.
     $plan = $raw_wpdb->get_results('EXPLAIN ' . $sql, ARRAY_A);
     if (!$plan) {
-        continue; // statement shape MySQL won't plan; nothing to assert
-    }
-    $checked++;
-
-    // EXPLAIN reports the *alias* ("t1", "te"), not the table, so per-row name
-    // lookup silently treats every joined scan as unknown-and-therefore-fine.
-    // Size the statement by the largest table it actually names instead.
-    $max_rows = 0;
-    foreach ($row_counts as $table => $count) {
-        if (strpos($sql, $table) !== false) {
-            $max_rows = max($max_rows, $count);
-        }
-    }
-    if ($max_rows <= $threshold) {
+        $plan_errors[] = $entry['context'] . ': ' . $raw_wpdb->last_error;
         continue;
     }
+    $checked++;
 
     foreach ($plan as $row) {
         if (!slimstat_plan_row_is_full_scan($row)) {
@@ -174,11 +169,21 @@ foreach ($captured as $entry) {
             continue;
         }
 
+        $physical_table = slimstat_plan_table($sql, $table, array_keys($row_counts));
+        if ($physical_table === null) {
+            $plan_errors[] = $entry['context'] . ': cannot resolve scan alias ' . $table;
+            continue;
+        }
+        if ($row_counts[$physical_table] <= $threshold) {
+            continue;
+        }
+
         $offenders[] = [
+            'table'    => $physical_table,
             'context'  => $entry['context'],
             'alias'    => $table,
             'type'     => (string) ($row['type'] ?? ''),
-            'rows'     => $max_rows,
+            'rows'     => $row_counts[$physical_table],
             'examined' => (int) ($row['rows'] ?? 0),
             'key'      => $row['key'] ?? null,
             'key_len'  => $row['key_len'] ?? null,
@@ -215,7 +220,13 @@ echo wp_json_encode([
     'shapes'        => $checked,
     'offenders'     => $offenders,
     'render_errors' => $render_errors,
+    'plan_errors'   => $plan_errors,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n\n";
+
+if ($render_errors !== [] || $plan_errors !== []) {
+    echo "VERDICT: ERROR — report rendering or plan inspection failed\n";
+    return;
+}
 
 if ($offenders !== []) {
     printf("VERDICT: FAIL — %d full scan(s) over %s rows\n",

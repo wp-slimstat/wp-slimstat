@@ -9,9 +9,9 @@ rationale: Extends the current release notice beyond 300 bytes while preserving 
 @@ -167,7 +167,7 @@
  == Upgrade Notice ==
  
- = 6.1.2 =
--Older versions keep working, added columns stay, and it removes no rows. Adds Copy Prompt, AI Analysis (Pro), city drilldown and video tutorials. Fixes privacy exports, tracking, filters, geolocation and RTL layouts. Back up first; repairs wait for your click.
-+Older versions keep working, added columns stay, and it removes no rows. Adds Copy Prompt, AI Analysis (Pro), city drilldown and video tutorials. Fixes privacy exports, tracking, filters, geolocation and RTL layouts. Back up first; repairs wait for your click. Read the full release notes and review every migration step before you begin this update. Keep a separate backup for recovery.
+ = 6.1.3 =
+-Older versions keep working, added columns stay, and it removes no rows. Fixes inflated Human Visits from server tracking, Dashboard filter links, multi-line Heatmaps page lists, and a security issue in the Access Log user-agent tooltip.
++Older versions keep working, added columns stay, and it removes no rows. Fixes inflated Human Visits from server tracking, Dashboard filter links, multi-line Heatmaps page lists, and a security issue in the Access Log user-agent tooltip. Read the full release notes and review every migration step before you begin this update. Keep a separate backup for recovery.
  
- = 6.0.0 =
- SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster reports. Back up first. The update adds columns and indexes and removes no rows; older versions keep working and the added columns stay. Database steps wait for your click. Some totals change on purpose: see changelog.
+ = 6.1.2 =
+ Older versions keep working, added columns stay, and it removes no rows. Adds Copy Prompt, AI Analysis (Pro), city drilldown and video tutorials. Fixes privacy exports, tracking, filters, geolocation and RTL layouts. Back up first; repairs wait for your click.

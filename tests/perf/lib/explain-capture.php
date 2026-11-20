@@ -43,6 +43,28 @@ if (!function_exists('slimstat_plan_row_is_full_scan')) {
     }
 }
 
+/** Resolve a plan alias to its physical table; never borrow a joined table's size. */
+function slimstat_plan_table(string $sql, string $alias, array $tables): ?string
+{
+    $matches = [];
+    foreach ($tables as $table) {
+        $name = preg_quote($table, '/');
+        if (!preg_match_all('/\b(?:FROM|JOIN)\s+`?' . $name . '`?(?![a-zA-Z0-9_])(?:\s+(?:AS\s+)?`?([a-zA-Z_][a-zA-Z0-9_]*)`?)?/i', $sql, $found, PREG_SET_ORDER)) {
+            continue;
+        }
+        foreach ($found as $reference) {
+            $candidate = $reference[1] ?? '';
+            if ($candidate === '' || in_array(strtoupper($candidate), ['WHERE', 'INNER', 'LEFT', 'RIGHT', 'CROSS', 'JOIN', 'ON', 'GROUP', 'ORDER', 'LIMIT', 'UNION', 'HAVING', 'FORCE', 'USE', 'IGNORE'], true)) {
+                $candidate = $table;
+            }
+            if ($candidate === $alias) {
+                $matches[$table] = true;
+            }
+        }
+    }
+    return count($matches) === 1 ? (string) key($matches) : null;
+}
+
 if (!class_exists('SlimStat_Explain_Capture_WPDB')) {
     /**
      * Delegating wpdb wrapper that records SlimStat SELECTs.

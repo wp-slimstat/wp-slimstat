@@ -1919,7 +1919,9 @@ jQuery(function () {
         tooltip_content = jQuery(this).find(".slimstat-tooltip-content:not(.expanded)");
 
         if (typeof tooltip_content == "undefined" || tooltip_content == null || tooltip_content.length == 0) {
-            tooltip_content = jQuery(this).attr("title");
+            // A title attribute is plain text, and attr() returns it entity-decoded.
+            // qTip inserts content.text as HTML, so escape it first.
+            tooltip_content = jQuery("<div>").text(jQuery(this).attr("title") || "").html();
         } else {
             tooltip_content = tooltip_content[0].innerHTML;
         }
