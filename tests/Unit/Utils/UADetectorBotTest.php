@@ -138,7 +138,9 @@ class UADetectorBotTest extends WpSlimstatTestCase
     {
         return [
             'Go HTTP client'               => ['Go HTTP client', 'Go-http-client/2.0'],
+            'Go HTTP client with product'  => ['Go HTTP client with product', 'Go-http-client MyApp/1.0'],
             'Python requests'              => ['Python requests', 'python-requests/2.32.3'],
+            'Python requests with product' => ['Python requests with product', 'python-requests MyApp/1.0'],
             'curl'                         => ['curl', 'curl/8.11.0'],
             'Wget'                         => ['Wget', 'Wget/1.21.4'],
             'Java'                         => ['Java', 'Java/21.0.1'],
