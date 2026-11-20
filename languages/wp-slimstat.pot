@@ -1165,7 +1165,6 @@ msgid "Copy"
 msgstr ""
 
 #: admin/index.php:88
-#: src/Services/BlackFriday2026.php:63
 #: admin/assets/js/admin.js:193
 #: admin/assets/js/admin.js:254
 #: admin/assets/js/shortcodes.js:185
@@ -1472,7 +1471,6 @@ msgstr ""
 #: admin/view/ai-analysis.php:75
 #: admin/view/videos.php:17
 #: src/Services/Admin/VideoTutorials.php:62
-#: src/Services/BlackFriday2026.php:66
 #: src/Services/ProLicense.php:218
 msgid "(opens in a new tab)"
 msgstr ""
@@ -1492,7 +1490,6 @@ msgstr ""
 
 #: admin/index.php:2690
 #: admin/index.php:2799
-#: src/Services/BlackFriday2026.php:55
 msgid "Could not save dismissal. Try again."
 msgstr ""
 
@@ -10177,48 +10174,6 @@ msgstr ""
 
 #: src/Services/Admin/VideoTutorials.php:85
 msgid "Advanced features"
-msgstr ""
-
-#. translators: date format for the offer's last day, see https://www.php.net/manual/datetime.format.php
-#: src/Services/BlackFriday2026.php:53
-msgid "F j"
-msgstr ""
-
-#: src/Services/BlackFriday2026.php:55
-msgid "Black Friday offer"
-msgstr ""
-
-#. translators: %s: discount with its percent sign, e.g. 30%
-#: src/Services/BlackFriday2026.php:57
-#, php-format
-msgid "Black Friday: %s off SlimStat Pro"
-msgstr ""
-
-#. translators: %s: last day of the offer, e.g. December 1
-#: src/Services/BlackFriday2026.php:58
-#, php-format
-msgid "Pro adds funnels, heatmaps for every page, email reports and data export. The discount covers your first payment. Ends %s at 23:59 UTC."
-msgstr ""
-
-#: src/Services/BlackFriday2026.php:61
-msgctxt "discount code label"
-msgid "Code"
-msgstr ""
-
-#: src/Services/BlackFriday2026.php:63
-msgid "Code selected"
-msgstr ""
-
-#: src/Services/BlackFriday2026.php:63
-msgid "Copy code"
-msgstr ""
-
-#: src/Services/BlackFriday2026.php:66
-msgid "See Black Friday pricing"
-msgstr ""
-
-#: src/Services/BlackFriday2026.php:67
-msgid "Dismiss Black Friday offer"
 msgstr ""
 
 #: src/Services/Browscap.php:25

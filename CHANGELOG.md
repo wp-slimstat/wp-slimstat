@@ -1,5 +1,9 @@
 = 6.1.3 - 2026-11-20 =
 
+**Improved**
+
+* Sale offers now come only from Horizon; the built-in Black Friday strip is removed.
+
 **Fixed**
 
 * Heatmaps keep line breaks in Pages to track and match every listed path, including lists collapsed into spaces by earlier saves. Comma-separated lists keep working, and a full URL pasted into the list counts as its path. ([#420](https://github.com/wp-slimstat/wp-slimstat/issues/420))
