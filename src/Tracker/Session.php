@@ -124,11 +124,12 @@ class Session
 				: bin2hex(substr(hash_hmac('sha256', 'pending-session|' . $pending_session, self::getSecureKey(), true), 0, 16));
 			$stat['vid_hash'] = $vid_hash;
 			$current_timestamp = !empty($stat['dt']) ? intval($stat['dt']) : intval(\wp_slimstat::date_i18n('U'));
-			$existing_visit_id = self::findExistingAnonymousVisitId($vid_hash, $current_timestamp);
+			$remaining_duration = null;
+			$existing_visit_id = self::findExistingAnonymousVisitId($vid_hash, $current_timestamp, $remaining_duration);
 			if ($existing_visit_id > 0) {
 				$stat['visit_id'] = $existing_visit_id;
 				\wp_slimstat::set_stat($stat);
-				self::setTrackingCookie($existing_visit_id, 'visit');
+				self::setTrackingCookie($existing_visit_id, 'visit', $remaining_duration);
 				return false;
 			}
 			if ($existing_visit_id < 0) {
@@ -281,10 +282,12 @@ class Session
 	 *
 	 * @param string $vid_hash          32 hex chars, as generateAnonymousVidHash() returns.
 	 * @param int    $current_timestamp The hit's own dt.
+	 * @param int|null $remaining_duration Remaining fixed lifetime for a recovered cookie; null uses idle expiry.
 	 * @return int Visit ID if found, 0 if there is none, -1 if the identity column could not be read
 	 */
-	private static function findExistingAnonymousVisitId(string $vid_hash, int $current_timestamp): int
+	private static function findExistingAnonymousVisitId(string $vid_hash, int $current_timestamp, ?int &$remaining_duration = null): int
 	{
+		$remaining_duration = null;
 		if ('' === $vid_hash) {
 			return 0;
 		}
@@ -341,6 +344,7 @@ class Session
 			if (null === $started || intval($started) <= $current_timestamp - $session_duration) {
 				return 0;
 			}
+			$remaining_duration = intval($started) + $session_duration - $current_timestamp;
 		}
 
 		return $existing_visit_id > 0 ? intval($existing_visit_id) : 0;

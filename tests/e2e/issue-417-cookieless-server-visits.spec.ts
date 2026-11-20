@@ -100,6 +100,27 @@ test.describe('Cookieless server visits — #417 @compat', () => {
   }
 
   for (const extend of ['off', 'on']) {
+    test(`Extend duration ${extend}: a recovered cookie keeps the correct expiry`, async ({ browser }) => {
+      await setSlimstatOptions({ set_tracker_cookie: 'off', extend_session: extend });
+      const context = await browser.newContext({ userAgent: `${browserUA} ${marker}`, javaScriptEnabled: false });
+      try {
+        const visitor = await context.newPage();
+        await visitor.goto(`${BASE_URL}/?e2e=${marker}-start`);
+        const first = await readVisit(`${marker}-start`);
+        expect((await context.cookies()).some(cookie => cookie.name === 'slimstat_tracking_code')).toBe(false);
+        await getPool().execute('UPDATE wp_slim_stats SET dt = dt - 1200 WHERE id = ?', [first.id]);
+        await setSlimstatOptions({ set_tracker_cookie: 'on' });
+        await visitor.goto(`${BASE_URL}/?e2e=${marker}-recovered`);
+        expect((await readVisit(`${marker}-recovered`)).visit_id).toBe(first.visit_id);
+        const cookie = (await context.cookies()).find(cookie => cookie.name === 'slimstat_tracking_code');
+        expect(cookie).toBeDefined();
+        const remaining = cookie!.expires - Date.now() / 1000;
+        const expected = extend === 'on' ? 1800 : 600;
+        expect(remaining).toBeGreaterThan(expected - 60);
+        expect(remaining).toBeLessThanOrEqual(expected + 5);
+      } finally { await context.close(); }
+    });
+
     test(`Extend duration ${extend}: an intermediate page ${extend === 'on' ? 'extends' : 'does not extend'} the visit`, async ({ browser }) => {
       await setSlimstatOptions({ set_tracker_cookie: 'off', extend_session: extend });
       const context = await browser.newContext({ userAgent: `${browserUA} ${marker}`, javaScriptEnabled: false });

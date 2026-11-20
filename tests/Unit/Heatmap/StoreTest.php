@@ -280,6 +280,13 @@ class StoreTest extends WpSlimstatTestCase
 			'encoded URL is not a truncated path' => ['https://example.com/caf%C3%A9/', '/caf/', false],
 			'encoded comma stays in its path' => ['/report%2C*', '/report,2026', true, '/report%2C2026'],
 			'encoded comma never creates match-all' => ['/report%2C*', '/members/', false],
+			'encoded fragment cannot select a shorter path' => ['/pricing%23draft/', '/pricing', false],
+			'encoded query cannot select a shorter path' => ['/pricing%3Fdraft/', '/pricing', false],
+			'pasted encoded delimiter is rejected' => ['https://example.com/pricing%3fdraft/', '/pricing', false],
+			'encoded delimiter cannot select home' => ['/%23draft/', '/', false],
+			'repeated encoding of a delimiter is rejected' => ['/pricing%2523draft/', '/pricingdraft/', false],
+			'rejected entry does not disable another entry' => ["/pricing%23draft/\n/shop/", '/shop/', true],
+			'encoded delimiters in query values do not affect the path' => ['/pricing/?ref=%23draft%3F', '/pricing/', true],
 			// 6.1.2 matched a wildcard post id; keyed like a visited page it became the home page.
 			'wildcard plain permalink' => ['/?p=*', '/?p=12&ref=nav', true],
 			'wildcard plain permalink is not the home page' => ['/?p=*', '/', false],

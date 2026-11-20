@@ -40,8 +40,9 @@ class ServerSessionTest extends WpSlimstatTestCase
             class_exists(Session::class);
             class_exists(VisitIdGenerator::class);
             $probes = [];
-            \Patchwork\redefine(Session::class . '::findExistingAnonymousVisitId', static function ($hash, $dt) use (&$probes, $existingVisit) {
+            \Patchwork\redefine(Session::class . '::findExistingAnonymousVisitId', static function ($hash, $dt, &$remaining = null) use (&$probes, $existingVisit) {
                 $probes[] = [$hash, $dt];
+                $remaining = 600;
                 return $existingVisit;
             });
             $allocations = 0;
@@ -50,8 +51,8 @@ class ServerSessionTest extends WpSlimstatTestCase
                 return 123;
             });
             $cookieVisits = [];
-            \Patchwork\redefine(Session::class . '::setTrackingCookie', static function ($visit) use (&$cookieVisits) {
-                $cookieVisits[] = $visit;
+            \Patchwork\redefine(Session::class . '::setTrackingCookie', static function ($visit, $type = 'visit', $expires = null) use (&$cookieVisits) {
+                $cookieVisits[] = [$visit, $expires];
                 return true;
             });
             $new = Session::ensureVisitId($force);
@@ -70,7 +71,7 @@ class ServerSessionTest extends WpSlimstatTestCase
                     self::assertNotSame(Session::generateAnonymousVidHash([]), $stat['vid_hash'], 'Client pending sessions keep their browser token.');
                 }
             }
-            self::assertSame(null !== $cookieVisit || 0 === $expectedVisit ? [] : [$expectedVisit], $cookieVisits);
+            self::assertSame(null !== $cookieVisit || 0 === $expectedVisit ? [] : [[$expectedVisit, 91 === $expectedVisit ? 600 : null]], $cookieVisits);
         } finally {
             \wp_slimstat::$settings = $settings;
             \wp_slimstat::set_data_js([]);
@@ -102,7 +103,7 @@ class ServerSessionTest extends WpSlimstatTestCase
 
     /** @dataProvider durationProvider */
     public function test_reuse_honors_the_fixed_deadline_and_fails_soft(
-        string $extend, ?int $existing, ?int $started, bool $startFails, int $expected, int $queryCount
+        string $extend, ?int $existing, ?int $started, bool $startFails, int $expected, int $queryCount, ?int $expectedRemaining = null
     ): void {
         $settings = \wp_slimstat::$settings;
         $globalDb = $GLOBALS['wpdb'] ?? null;
@@ -129,7 +130,9 @@ class ServerSessionTest extends WpSlimstatTestCase
             \wp_slimstat::$settings = ['session_duration' => 1800, 'extend_session' => $extend];
             $probe = new \ReflectionMethod(Session::class, 'findExistingAnonymousVisitId');
             $probe->setAccessible(true);
-            self::assertSame($expected, $probe->invoke(null, str_repeat('a', 32), 1700002400));
+            $remaining = null;
+            self::assertSame($expected, $probe->invokeArgs(null, [str_repeat('a', 32), 1700002400, &$remaining]));
+            self::assertSame($expectedRemaining, $remaining, 'A recovered cookie must retain the fixed deadline.');
             self::assertCount($queryCount, $queries);
             foreach ($queries as $sql) {
                 self::assertStringContainsString("vid_hash = UNHEX('" . str_repeat('a', 32) . "')", $sql);
@@ -151,7 +154,9 @@ class ServerSessionTest extends WpSlimstatTestCase
     {
         return [
             'fixed expired despite an intermediate hit' => ['off', 91, 1700000000, false, 0, 2],
-            'fixed still open' => ['off', 91, 1700001200, false, 91, 2],
+            'fixed still open' => ['off', 91, 1700001200, false, 91, 2, 600],
+            'fixed last second' => ['off', 91, 1700000601, false, 91, 2, 1],
+            'fixed just started' => ['off', 91, 1700002400, false, 91, 2, 1800],
             'fixed exact boundary' => ['off', 91, 1700000600, false, 0, 2],
             'legacy no means fixed' => ['no', 91, 1700000000, false, 0, 2],
             'extend uses only the last-hit lookup' => ['on', 91, 1700000000, false, 91, 1],
