@@ -511,11 +511,11 @@ class IPHashProvider
         $suppressed = $wpdb->suppress_errors(true);
 
         if (false === $seen) {
-            // No row yet. A bare INSERT, so the unique index picks the winner.
+            // IGNORE makes a concurrent first insert return 0, not a hard-error fallback salt.
             // autoload stays 'yes': this is read on every page load, and moving it out
             // of alloptions trades one write a day for a SELECT on every request.
             $won = $wpdb->query($wpdb->prepare(
-                "INSERT INTO `{$wpdb->options}` (`option_name`, `option_value`, `autoload`) VALUES (%s, %s, 'yes')",
+                "INSERT IGNORE INTO `{$wpdb->options}` (`option_name`, `option_value`, `autoload`) VALUES (%s, %s, 'yes')",
                 self::SALT_OPTION,
                 $candidate
             ));

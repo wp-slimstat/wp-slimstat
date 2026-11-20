@@ -12,6 +12,7 @@ async function readVisit(marker: string) {
 }
 
 const browserUA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+test.use({ trace: 'retain-on-failure' });
 
 test.describe('Cookieless server visits — #417 @compat', () => {
   let marker: string;
@@ -48,11 +49,11 @@ test.describe('Cookieless server visits — #417 @compat', () => {
           expect(await waitForPageviewRow(`${marker}-${i}`)).not.toBeNull();
         }
         const [rows] = await getPool().query<any[]>(
-          'SELECT visit_id, browser_type FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id', [`%${marker}%`],
+          'SELECT id, visit_id, browser_type, dt, HEX(vid_hash) AS identity_hash, resource FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id', [`%${marker}%`],
         );
         expect(rows).toHaveLength(4);
         expect(rows.every(row => Number(row.visit_id) > 0 && Number(row.browser_type) !== 1)).toBe(true);
-        expect(new Set(rows.map(row => Number(row.visit_id))).size).toBe(1);
+        expect(new Set(rows.map(row => Number(row.visit_id))).size, JSON.stringify(rows)).toBe(1);
         if (scenario === 'tracking cookies disabled') {
           expect((await context.cookies()).some(cookie => cookie.name === 'slimstat_tracking_code')).toBe(false);
         }

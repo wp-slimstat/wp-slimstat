@@ -185,6 +185,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 * Heatmaps preserve line breaks, spaces within patterns, plus signs and encoded paths in Pages to track. Pasted URLs match their paths; older collapsed wildcard and URL lists are recovered without turning path fragments into separate wildcards. Entries with encoded query or fragment delimiters are ignored to keep capture within the selected pages. ([#420](https://github.com/wp-slimstat/wp-slimstat/issues/420))
 * JavaScript URL updates preserve plus signs and accept valid paths. Late consent events keep cookieless visits together when GDPR mode is disabled.
 * Dashboard widget filter links for visitor IP, username and more open the filtered Real-time report instead of a "not allowed" page. ([#418](https://github.com/wp-slimstat/wp-slimstat/issues/418))
+* Simultaneous first visits now share the same daily visitor salt, keeping cookieless identities consistent.
 * Server tracking: fixed inflated Human Visits when tracking cookies are blocked or disabled, and improved detection of automated HTTP clients. Cookieless visits now honour Extend duration, including when the browser starts accepting tracking cookies during a visit. On a site upgraded from 5.x this starts once "Add the anonymous visitor identity column" has run under SlimStat → Migration; until then visits are counted as before. ([#417](https://github.com/wp-slimstat/wp-slimstat/issues/417))
 
 **Security**
