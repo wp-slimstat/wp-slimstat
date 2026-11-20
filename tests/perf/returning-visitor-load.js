@@ -42,8 +42,10 @@ export const options = {
       rate: 10,
       timeUnit: '1s',
       duration: '2m',
-      preAllocatedVUs: 20,
-      maxVUs: 40,
+      // Each iteration browses 2–4 pages with think time; 10 arrivals/s needs
+      // more than 40 simultaneous visitors even when the server is fast.
+      preAllocatedVUs: 80,
+      maxVUs: 120,
     },
     // Scenario 2: Mixed traffic spike (returning + new visitors)
     mixed_traffic: {
@@ -55,8 +57,8 @@ export const options = {
         { duration: '1m', target: 30 },
         { duration: '15s', target: 5 },
       ],
-      preAllocatedVUs: 40,
-      maxVUs: 80,
+      preAllocatedVUs: 200,
+      maxVUs: 360,
       startTime: '2m30s', // starts after scenario 1 + 30s gap
     },
   },
@@ -66,6 +68,7 @@ export const options = {
     page_load_duration: ['p(95)<2000'],        // p95 < 2s
     cookie_set_rate: ['rate>0.80'],            // 80%+ requests should get cookies
     session_errors: ['count==0'],
+    dropped_iterations: ['count==0'],       // The requested traffic must actually run.
   },
 };
 
