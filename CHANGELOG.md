@@ -1,7 +1,8 @@
-= 6.1.3 - Unreleased =
+= 6.1.3 - 2026-11-21 =
 
 **Security**
-- Access Log: with "Show user agent" on, the browser icon's tooltip now shows the visitor's user agent as plain text.
+
+* Access Log: with "Show user agent" on, the browser icon's tooltip now shows the visitor's user agent as plain text.
 
 = 6.1.2 - 2026-11-16 =
 
