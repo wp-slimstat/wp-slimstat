@@ -592,6 +592,9 @@ jobs:
           npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/heatmap-author-scope-wp-test.php
           npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/live-country-scope-wp-test.php
 
+      - name: First daily-salt race
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/daily-salt-mysql.php
+
       - name: Pretty permalinks, and prove /wp-json/ actually routes
         # WordPress installs with an EMPTY permalink_structure, so /wp-json/ is not rewritten
         # at all and the obfuscated /request/{hash}/ endpoint cannot exist. The tracker builds
@@ -969,11 +972,8 @@ jobs:
       - name: Install k6
         if: ${{ matrix.php == '8.2' }}
         run: |
-          sudo gpg -k
-          sudo gpg --no-default-keyring \
-            --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
-            --keyserver hkp://keyserver.ubuntu.com:80 \
-            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          curl -fsSL https://dl.k6.io/key.gpg \
+            | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
           echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
             | sudo tee /etc/apt/sources.list.d/k6.list
           sudo apt-get update && sudo apt-get install -y k6
@@ -1105,6 +1105,15 @@ jobs:
             echo "init_environment() completed\n";
           '
           npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
+          npx wp-env run tests-cli -- wp eval '
+            $options = get_option("slimstat_options");
+            $options["javascript_mode"] = "off";
+            $options["set_tracker_cookie"] = "on";
+            $options["gdpr_enabled"] = "off";
+            $options["anonymous_tracking"] = "off";
+            $options["enable_browscap"] = "on";
+            update_option("slimstat_options", $options);
+          '
 
       - name: Run k6 performance tests
         if: ${{ matrix.php == '8.2' }}
