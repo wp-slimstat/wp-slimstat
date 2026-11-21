@@ -6,7 +6,7 @@ Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
 Tested up to: 7.1
-Stable tag: 6.1.2
+Stable tag: 6.1.3
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -166,6 +166,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Upgrade Notice ==
 
+= 6.1.3 =
+Older versions keep working, added columns stay, and it removes no rows. Security fix only: the Access Log user-agent tooltip shows plain text. Update promptly.
+
 = 6.1.2 =
 Older versions keep working, added columns stay, and it removes no rows. Adds Copy Prompt, AI Analysis (Pro), city drilldown and video tutorials. Fixes privacy exports, tracking, filters, geolocation and RTL layouts. Back up first; repairs wait for your click.
 
@@ -174,6 +177,12 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 
 == Changelog ==
+
+= 6.1.3 - 2026-11-21 =
+
+**Security**
+
+* Access Log: with "Show user agent" on, the browser icon's tooltip now shows the visitor's user agent as plain text.
 
 = 6.1.2 - 2026-11-16 =
 
