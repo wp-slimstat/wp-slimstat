@@ -1,10 +1,10 @@
 <?php
-/** Capture only the synthetic #417 visitor when an E2E assertion needs diagnosis. */
-if (!defined('SLIMSTAT_E2E_TESTING') || !SLIMSTAT_E2E_TESTING
-    || !preg_match('/issue417-\d+/', $_SERVER['HTTP_USER_AGENT'] ?? '', $match)) {
+/** Test-only trace: a changed/missing UA must not hide the request rewriting a visit. */
+if (!defined('SLIMSTAT_E2E_TESTING') || !SLIMSTAT_E2E_TESTING) {
     return;
 }
-$marker = $match[0];
+preg_match('/issue417-\d+/', $_SERVER['HTTP_USER_AGENT'] ?? '', $match);
+$marker = $match[0] ?? '';
 $queries = [];
 add_filter('query', static function ($sql) use (&$queries) {
     if (strpos($sql, 'slim_stats') !== false || strpos($sql, 'slimstat_daily_salt') !== false) {
@@ -13,10 +13,14 @@ add_filter('query', static function ($sql) use (&$queries) {
     return $sql;
 });
 register_shutdown_function(static function () use ($marker, &$queries) {
+    if ($queries === []) { return; }
     file_put_contents(WP_CONTENT_DIR . '/e2e-session-trace.jsonl', json_encode([
         'marker' => $marker,
         'time' => microtime(true),
         'uri' => $_SERVER['REQUEST_URI'],
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+        'remote_addr' => $_SERVER['REMOTE_ADDR'] ?? '',
+        'tracking_cookie' => $_COOKIE['slimstat_tracking_code'] ?? '',
         'stat' => wp_slimstat::get_stat(),
         'data_js' => wp_slimstat::get_data_js(),
         'settings' => array_intersect_key(wp_slimstat::$settings, array_flip([

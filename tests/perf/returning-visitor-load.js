@@ -119,7 +119,9 @@ export function setup() {
   console.log(`SlimStat detected in page: ${!!bodyHasSlimstat}`);
   console.log(`========================================\n`);
 
-  return { pages };
+  const runId = String(Date.now());
+  console.log(`SLIMSTAT_RUN ${runId}`);
+  return { pages, runId };
 }
 
 export default function (data) {
@@ -136,7 +138,7 @@ export default function (data) {
 
   // Each visitor browses 2-4 pages
   const numPages = Math.floor(Math.random() * 3) + 2;
-  const marker = `k6-${__VU}-${__ITER}-${Date.now()}`;
+  const marker = `k6-${data.runId}-${__VU}-${__ITER}-${Date.now()}`;
   let firstPageHadCookie = false;
   let sessionConsistent = true;
   let firstCookieValue = null;
@@ -161,6 +163,9 @@ export default function (data) {
       sessionErrors.add(1);
       continue;
     }
+
+    // Persist accepted resources outside request timing for exact DB reconciliation.
+    console.log(`SLIMSTAT_ACCEPTED ${url.slice(BASE_URL.length)}`);
 
     // Check cookie state after each page
     const jar = http.cookieJar();

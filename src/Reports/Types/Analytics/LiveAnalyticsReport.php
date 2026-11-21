@@ -164,8 +164,6 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * @return array{users: int, pages: int, countries: int}
 	 */
 	public function get_all_live_counts(): array {
-		$wpdb = \wp_slimstat::$wpdb;
-
 		if ( ! $this->is_tracking_enabled() ) {
 			return [
 				'users'     => 0,
@@ -179,11 +177,9 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 
 		// 2) pages and countries in last 30 minutes (unique)
 		$threshold_30 = (int) floor($now / 60) * 60 - (29 * 60);
+		$activity     = $this->recent_activity_sql('resource, country', $threshold_30);
 		$row          = Query::select( "COUNT(DISTINCT NULLIF(resource,'')) AS pages_count, COUNT(DISTINCT CASE WHEN country REGEXP '^[a-zA-Z]{2}$' AND LOWER(country) <> 'xx' THEN LOWER(country) END) AS countries_count" )
-			->from( "{$GLOBALS['wpdb']->prefix}slim_stats" )
-			->whereRaw($wpdb->prepare('(dt >= %d OR (dt_out >= dt AND dt_out >= %d))', $threshold_30, $threshold_30))
-			->where('visit_id', '>', 0)
-			->whereRaw( \wp_slimstat::report_scope()['humans'] )
+			->from( "({$activity}) live_pages" )
 			->getRow();
 
 		return [
@@ -191,6 +187,20 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			'pages'     => (int) ( $row->pages_count ?? 0 ),
 			'countries' => (int) ( $row->countries_count ?? 0 ),
 		];
+	}
+
+	/** Two disjoint indexed ranges retain long reads without an OR across indexes. */
+	private function recent_activity_sql(string $columns, int $start): string {
+		$table = "{$GLOBALS['wpdb']->prefix}slim_stats";
+		$scope = \wp_slimstat::report_scope();
+		return \wp_slimstat::$wpdb->prepare(
+			"SELECT {$columns} FROM {$table}
+			 WHERE ({$scope['humans']}) AND visit_id > 0 AND dt >= %d
+			 UNION ALL
+			 SELECT {$columns} FROM {$table}
+			 WHERE ({$scope['humans']}) AND visit_id > 0 AND dt < %d AND dt_out >= %d",
+			$start, $start, $start
+		);
 	}
 
 	/**
@@ -202,10 +212,8 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Core-prefix table and prepared report_scope predicate; live counts are memoized by get_data for this report instance and scope.
 	private function get_sessions_count_within_window( int $window_seconds ): int {
 		$wpdb = \wp_slimstat::$wpdb;
-		$scope = \wp_slimstat::report_scope();
 
 		$window_seconds = max( 60, $window_seconds );
-		$table          = "{$GLOBALS['wpdb']->prefix}slim_stats";
 
 		$current_minute_start = (int) floor( \wp_slimstat::now() / 60 ) * 60;
 		$window_minutes       = (int) ceil( $window_seconds / 60 );
@@ -213,6 +221,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			$window_minutes = 1;
 		}
 		$window_start = $current_minute_start - ( ( $window_minutes - 1 ) * 60 );
+		$activity = $this->recent_activity_sql('visit_id, dt, dt_out', $window_start);
 
 		$sql = $wpdb->prepare(
 			"
@@ -223,18 +232,11 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 						ELSE dt
 					END
 				) AS last_activity
-				FROM {$table}
-				WHERE ({$scope['humans']}) AND visit_id > 0
-					AND (
-						dt >= %d
-						OR ( dt_out IS NOT NULL AND dt_out >= %d )
-					)
+				FROM ({$activity}) recent_activity
 				GROUP BY visit_id
 				HAVING (FLOOR(last_activity / 60) * 60 + 59) >= %d
 			) live_sessions
 			",
-			$window_start,
-			$window_start,
 			$window_start
 		);
 
