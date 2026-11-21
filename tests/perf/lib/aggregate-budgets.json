@@ -1,0 +1,476 @@
+[
+  {
+    "report": "slim_p1_01",
+    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) AS dt, MIN(dt) AS sort_dt, COUNT( id ) AS v1, COUNT( DISTINCT ip ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) WITH ROLLUP",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_03",
+    "sql": "SELECT COUNT(CASE WHEN (searchterms IS NOT NULL) THEN id END) AS searches, COUNT(DISTINCT ip) AS ips FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (1=1)",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_03",
+    "sql": "SELECT COUNT(id) as counthits FROM {prefix}slim_stats WHERE (dt > {timestamp})",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_03",
+    "sql": "SELECT COUNT(id) as counthits FROM {prefix}slim_stats WHERE (dt BETWEEN {timestamp} AND {timestamp})",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_04",
+    "sql": "SELECT ip, COUNT(*) AS counthits, MAX(dt) AS dt FROM {prefix}slim_stats WHERE ((dt_out > {timestamp}) OR (dt > {timestamp})) GROUP BY ip ORDER BY MAX(dt) DESC, ip ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_04",
+    "sql": "SELECT MAX(dt) FROM {prefix}slim_stats",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_08",
+    "sql": "SELECT resource, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY resource ORDER BY counthits DESC, resource ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_10",
+    "sql": "SELECT REPLACE( SUBSTRING_INDEX( ( SUBSTRING_INDEX( ( SUBSTRING_INDEX( referer, \"://\", -1 ) ), \"/\", 1 ) ), \".\", -5 ), \"www.\", \"\" ) AS referer, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((referer NOT LIKE '%{host}%') AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY REPLACE( SUBSTRING_INDEX( ( SUBSTRING_INDEX( ( SUBSTRING_INDEX( referer, \"://\", -1 ) ), \"/\", 1 ) ), \".\", -5 ), \"www.\", \"\" ) ORDER BY counthits DESC, referer ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_11",
+    "sql": "SELECT username, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((username IS NOT NULL AND username <> '') AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY username ORDER BY counthits DESC, username ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_12",
+    "sql": "SELECT searchterms, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((searchterms <> \"_\" AND searchterms <> \"\" AND searchterms IS NOT NULL) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY searchterms ORDER BY counthits DESC, searchterms ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_13",
+    "sql": "SELECT country, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY country ORDER BY counthits DESC, country ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_17",
+    "sql": "SELECT SUBSTRING( language, 1, 2 ) AS language, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY SUBSTRING( language, 1, 2 ) ORDER BY counthits DESC, language ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_18",
+    "sql": "SELECT username, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE (((dt_out > {timestamp}) OR (dt > {timestamp})) AND username <> \"\" AND username IS NOT NULL) GROUP BY username ORDER BY counthits DESC, username ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_19_01",
+    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) AS dt, MIN(dt) AS sort_dt, COUNT( searchterms ) AS v1, COUNT( DISTINCT searchterms ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) AND ((searchterms <> \"_\" AND searchterms IS NOT NULL AND searchterms <> \"\")) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) WITH ROLLUP",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_01",
+    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) AS dt, MIN(dt) AS sort_dt, COUNT( DISTINCT visit_id ) AS v1, COUNT( DISTINCT ip ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) AND (((visit_id > 0 AND browser_type <> 1))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) WITH ROLLUP",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_02",
+    "sql": "SELECT COUNT(DISTINCT CASE WHEN (browser_type <> 1) THEN visit_id END) AS total, COUNT(DISTINCT CASE WHEN (visit_id > 0 AND browser_type <> 1) THEN visit_id END) AS visits, COUNT(DISTINCT CASE WHEN (visit_id > 0 AND browser_type <> 1) THEN ip END) AS ips, COUNT(DISTINCT username) AS known, COUNT(CASE WHEN (browser_type = 1) THEN id END) AS bots FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (1=1)",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_02",
+    "sql": "SELECT COUNT(*) as counthits FROM ( SELECT DISTINCT visit_id FROM {prefix}slim_stats WHERE visit_id <> 0 AND ((browser_type <> 1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY visit_id HAVING COUNT(id) = 1 ) AS ts1",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_02",
+    "sql": "SELECT AVG(ts1.counthits) AS avghits, MAX(ts1.counthits) AS maxhits FROM (SELECT count(*) counthits, visit_id FROM {prefix}slim_stats WHERE (visit_id > 0) AND dt BETWEEN {timestamp} AND {timestamp} GROUP BY visit_id) AS ts1",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_03",
+    "sql": "SELECT language, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY language ORDER BY counthits DESC, language ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_04",
+    "sql": "SELECT browser, browser_version, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY browser, browser_version ORDER BY counthits DESC, browser, browser_version ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_05",
+    "sql": "SELECT ip, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY ip ORDER BY counthits DESC, ip ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_06",
+    "sql": "SELECT platform, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY platform ORDER BY counthits DESC, platform ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_07",
+    "sql": "SELECT screen_width, screen_height, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((screen_width <> 0 AND screen_height <> 0) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY screen_width, screen_height ORDER BY counthits DESC, screen_width, screen_height ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_08",
+    "sql": "SELECT resolution, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY resolution ORDER BY counthits DESC, resolution ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_12",
+    "sql": "SELECT COUNT(DISTINCT visit_id) as counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (visit_id > 0 AND browser_type <> 1)",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_12",
+    "sql": "SELECT COUNT(*) as counthits FROM ( SELECT DISTINCT visit_id FROM {prefix}slim_stats WHERE visit_id <> 0 AND ((visit_id > 0 AND browser_type <> 1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY visit_id HAVING GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) >= 0 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 30 ) AS ts1",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_12",
+    "sql": "SELECT COUNT(*) as counthits FROM ( SELECT DISTINCT visit_id FROM {prefix}slim_stats WHERE visit_id <> 0 AND ((visit_id > 0 AND browser_type <> 1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY visit_id HAVING GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 30 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 60 ) AS ts1",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_12",
+    "sql": "SELECT COUNT(*) as counthits FROM ( SELECT DISTINCT visit_id FROM {prefix}slim_stats WHERE visit_id <> 0 AND ((visit_id > 0 AND browser_type <> 1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY visit_id HAVING GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 60 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 180 ) AS ts1",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_12",
+    "sql": "SELECT COUNT(*) as counthits FROM ( SELECT DISTINCT visit_id FROM {prefix}slim_stats WHERE visit_id <> 0 AND ((visit_id > 0 AND browser_type <> 1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY visit_id HAVING GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 180 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 300 ) AS ts1",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_12",
+    "sql": "SELECT COUNT(*) as counthits FROM ( SELECT DISTINCT visit_id FROM {prefix}slim_stats WHERE visit_id <> 0 AND ((visit_id > 0 AND browser_type <> 1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY visit_id HAVING GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 300 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 420 ) AS ts1",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_12",
+    "sql": "SELECT COUNT(*) as counthits FROM ( SELECT DISTINCT visit_id FROM {prefix}slim_stats WHERE visit_id <> 0 AND ((visit_id > 0 AND browser_type <> 1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY visit_id HAVING GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 420 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 600 ) AS ts1",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_12",
+    "sql": "SELECT COUNT(*) as counthits FROM ( SELECT DISTINCT visit_id FROM {prefix}slim_stats WHERE visit_id <> 0 AND ((visit_id > 0 AND browser_type <> 1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY visit_id HAVING GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 600 ) AS ts1",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_13",
+    "sql": "SELECT country, COUNT(*) AS counthits, MAX(dt) AS dt FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY country ORDER BY MAX(dt) DESC, country ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_14",
+    "sql": "SELECT resolution, COUNT(*) AS counthits, MAX(dt) AS dt FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY resolution ORDER BY MAX(dt) DESC, resolution ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_15",
+    "sql": "SELECT platform, COUNT(*) AS counthits, MAX(dt) AS dt FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY platform ORDER BY MAX(dt) DESC, platform ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_16",
+    "sql": "SELECT browser, browser_version, COUNT(*) AS counthits, MAX(dt) AS dt FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY browser, browser_version ORDER BY MAX(dt) DESC, browser, browser_version ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_17",
+    "sql": "SELECT language, COUNT(*) AS counthits, MAX(dt) AS dt FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY language ORDER BY MAX(dt) DESC, language ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_18",
+    "sql": "SELECT browser, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY browser ORDER BY counthits DESC, browser ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_19",
+    "sql": "SELECT CONCAT( \"p-\", SUBSTRING( platform, 1, 3 ) ) AS platform, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY CONCAT( \"p-\", SUBSTRING( platform, 1, 3 ) ) ORDER BY counthits DESC, platform ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_20",
+    "sql": "SELECT username, COUNT(*) AS counthits, MAX(dt) AS dt FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((notes LIKE \"%user:%\") AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY username ORDER BY MAX(dt) DESC, username ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_21",
+    "sql": "SELECT username, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((notes LIKE \"%user:%\") AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY username ORDER BY counthits DESC, username ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_22_01",
+    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) AS dt, MIN(dt) AS sort_dt, COUNT( username ) AS v1, COUNT( DISTINCT username ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) WITH ROLLUP",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_24",
+    "sql": "SELECT browser, browser_version, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((browser_type = 1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY browser, browser_version ORDER BY counthits DESC, browser, browser_version ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_25",
+    "sql": "SELECT browser, browser_version, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((browser_type != 1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY browser, browser_version ORDER BY counthits DESC, browser, browser_version ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p3_02",
+    "sql": "SELECT COUNT(*) as counthits FROM ( SELECT DISTINCT ip FROM {prefix}slim_stats WHERE ip IS NOT NULL AND ((visit_id > 0) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY ip HAVING COUNT(visit_id) = 1 ) AS ts1",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p3_02",
+    "sql": "SELECT COUNT(CASE WHEN (visit_id > 0 AND browser_type <> 1) THEN id END) AS human, COUNT(DISTINCT CASE WHEN (referer NOT LIKE '%{host}%') THEN referer END) AS referrers, COUNT(CASE WHEN ((traffic_channel = 'direct' OR (traffic_channel IS NULL AND referer IS NULL))) THEN id END) AS direct, COUNT(CASE WHEN ((traffic_channel = 'organic_search' OR (traffic_channel IS NULL AND searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE '%http://{host}:9778%'))) THEN id END) AS searches, COUNT(DISTINCT resource) AS resources FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (1=1)",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p3_02",
+    "sql": "SELECT * FROM ( SELECT COUNT(*) counthits FROM ( SELECT resource FROM {prefix}slim_stats WHERE resource IS NOT NULL AND ((visit_id > 0 AND content_type <> \"404\") AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY resource HAVING COUNT(visit_id) = 1 ) as ts1) as sub",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p3_02",
+    "sql": "SELECT COUNT(id) as counthits FROM {prefix}slim_stats WHERE ((traffic_channel = 'organic_search' OR (traffic_channel IS NULL AND searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE '%http://{host}:9778%')) AND dt > UNIX_TIMESTAMP() - 300)",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p3_03",
+    "sql": "SELECT traffic_channel, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (1=1) GROUP BY traffic_channel ORDER BY counthits DESC, traffic_channel LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p3_04",
+    "sql": "SELECT utm_campaign, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (COALESCE(traffic_channel, '') NOT IN ('ai_crawler', 'ai_fetcher', 'bot') AND ((utm_source IS NOT NULL AND utm_source <> '') OR (utm_medium IS NOT NULL AND utm_medium <> '') OR (utm_campaign IS NOT NULL AND utm_campaign <> '') OR (utm_content IS NOT NULL AND utm_content <> '') OR (utm_term IS NOT NULL AND utm_term <> '') OR (utm_id IS NOT NULL AND utm_id <> ''))) GROUP BY utm_campaign ORDER BY counthits DESC, utm_campaign LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p3_04",
+    "sql": "SELECT COUNT(id) as counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (COALESCE(traffic_channel, '') NOT IN ('ai_crawler', 'ai_fetcher', 'bot') AND ((utm_source IS NOT NULL AND utm_source <> '') OR (utm_medium IS NOT NULL AND utm_medium <> '') OR (utm_campaign IS NOT NULL AND utm_campaign <> '') OR (utm_content IS NOT NULL AND utm_content <> '') OR (utm_term IS NOT NULL AND utm_term <> '') OR (utm_id IS NOT NULL AND utm_id <> '')))",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p3_01",
+    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) AS dt, MIN(dt) AS sort_dt, COUNT( DISTINCT referer ) AS v1, COUNT( DISTINCT ip ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) AND (((referer IS NOT NULL AND referer NOT LIKE \"%http://{host}:9778%\"))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) WITH ROLLUP",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_02",
+    "sql": "SELECT TRIM( TRAILING \"/\" FROM resource ) AS resource, COUNT(*) AS counthits, MAX(dt) AS dt FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((content_type = \"post\") AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY TRIM( TRAILING \"/\" FROM resource ) ORDER BY MAX(dt) DESC, resource ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_05",
+    "sql": "SELECT resource, COUNT(*) AS counthits, MAX(dt) AS dt FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (((resource LIKE \"[404]%\" OR content_type LIKE \"%404%\")) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY resource ORDER BY MAX(dt) DESC, resource ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_07",
+    "sql": "SELECT category, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((content_type LIKE \"%category%\") AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY category ORDER BY counthits DESC, category ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_09",
+    "sql": "SELECT resource, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((content_type = \"download\") AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY resource ORDER BY counthits DESC, resource ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_11",
+    "sql": "SELECT TRIM( TRAILING \"/\" FROM resource ) AS resource, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((content_type = \"post\") AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY TRIM( TRAILING \"/\" FROM resource ) ORDER BY counthits DESC, resource ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_12",
+    "sql": "SELECT te.notes, COUNT(*) as counthits FROM {prefix}slim_events te WHERE (notes IS NOT NULL AND ((notes NOT LIKE \"type:click%\") AND dt BETWEEN {timestamp} AND {timestamp})) GROUP BY te.notes ORDER BY counthits DESC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_13",
+    "sql": "SELECT searchterms, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((content_type LIKE '%search%' AND searchterms <> \"\" AND searchterms IS NOT NULL) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY searchterms ORDER BY counthits DESC, searchterms ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_15",
+    "sql": "SELECT TRIM( TRAILING \"/\" FROM resource ) AS resource, COUNT(*) AS counthits, MAX(dt) AS dt FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (((content_type = \"category\")) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY TRIM( TRAILING \"/\" FROM resource ) ORDER BY MAX(dt) DESC, resource ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_152",
+    "sql": "SELECT TRIM( TRAILING \"/\" FROM resource ) AS resource, COUNT(*) AS counthits, MAX(dt) AS dt FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (((content_type = \"tag\")) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY TRIM( TRAILING \"/\" FROM resource ) ORDER BY MAX(dt) DESC, resource ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_16",
+    "sql": "SELECT resource, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((content_type LIKE \"%404%\") AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY resource ORDER BY counthits DESC, resource ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_18",
+    "sql": "SELECT author, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((author IS NOT NULL AND author <> '') AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY author ORDER BY counthits DESC, author ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_19",
+    "sql": "SELECT category, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (((content_type LIKE \"%tag%\")) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY category ORDER BY counthits DESC, category ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_20",
+    "sql": "SELECT resource, COUNT(*) AS counthits, MAX(dt) AS dt FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((content_type = \"download\") AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY resource ORDER BY MAX(dt) DESC, resource ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_22",
+    "sql": "SELECT AVG(server_latency) FROM {prefix}slim_stats WHERE server_latency != '0'",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_23",
+    "sql": "SELECT TRIM( TRAILING \"/\" FROM resource ) AS resource, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND ((content_type <> \"404\") AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY TRIM( TRAILING \"/\" FROM resource ) HAVING COUNT(visit_id) = 1 ORDER BY counthits DESC, resource ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_24",
+    "sql": "SELECT resource, ts1.aggrid as visit_id, COUNT(*) as counthits FROM (SELECT visit_id, MAX(id) as aggrid FROM {prefix}slim_stats WHERE visit_id <> 0 AND (((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY visit_id) AS ts1 INNER JOIN {prefix}slim_stats t1 ON ts1.aggrid = t1.id GROUP BY resource ORDER BY counthits DESC, resource ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_25",
+    "sql": "SELECT resource, ts1.aggrid as visit_id, COUNT(*) as counthits FROM (SELECT visit_id, MIN(id) as aggrid FROM {prefix}slim_stats WHERE visit_id <> 0 AND (((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY visit_id) AS ts1 INNER JOIN {prefix}slim_stats t1 ON ts1.aggrid = t1.id GROUP BY resource ORDER BY counthits DESC, resource ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_26_01",
+    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) AS dt, MIN(dt) AS sort_dt, COUNT( outbound_resource ) AS v1, COUNT( DISTINCT outbound_resource ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) WITH ROLLUP",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_27",
+    "sql": "SELECT resource, COUNT(*) AS counthits, GROUP_CONCAT( DISTINCT username SEPARATOR ';;;' ) as column_group FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND resource IS NOT NULL GROUP BY resource ORDER BY counthits DESC, resource ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p6_01",
+    "sql": "SELECT country, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' GROUP BY country ORDER BY counthits DESC, country ASC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_01",
+    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) AS dt, MIN(dt) AS sort_dt, COUNT( id ) AS v1, COUNT( DISTINCT ip ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) WITH ROLLUP",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p1_19_01",
+    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) AS dt, MIN(dt) AS sort_dt, COUNT( searchterms ) AS v1, COUNT( DISTINCT searchterms ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) AND ((searchterms <> \"_\" AND searchterms IS NOT NULL AND searchterms <> \"\")) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) WITH ROLLUP",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_01",
+    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) AS dt, MIN(dt) AS sort_dt, COUNT( DISTINCT visit_id ) AS v1, COUNT( DISTINCT ip ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) AND (((visit_id > 0 AND browser_type <> 1))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) WITH ROLLUP",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p2_22_01",
+    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) AS dt, MIN(dt) AS sort_dt, COUNT( username ) AS v1, COUNT( DISTINCT username ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) WITH ROLLUP",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p3_01",
+    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) AS dt, MIN(dt) AS sort_dt, COUNT( DISTINCT referer ) AS v1, COUNT( DISTINCT ip ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) AND (((referer IS NOT NULL AND referer NOT LIKE \"%http://{host}:9778%\"))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) WITH ROLLUP",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_04",
+    "sql": "SELECT COUNT(id) as counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (((resource LIKE '%/feed%' OR resource LIKE '%?feed=>%' OR resource LIKE '%&feed=>%' OR content_type LIKE '%feed%')) AND dt BETWEEN {timestamp} AND {timestamp})",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p4_26_01",
+    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) AS dt, MIN(dt) AS sort_dt, COUNT( outbound_resource ) AS v1, COUNT( DISTINCT outbound_resource ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) WITH ROLLUP",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  }
+]

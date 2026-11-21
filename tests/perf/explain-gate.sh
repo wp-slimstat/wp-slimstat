@@ -38,7 +38,7 @@ command -v npx >/dev/null 2>&1 || die "npx not found — cannot reach wp-env"
 # Same form as ci.yml's other wp-env calls.
 wp() { npx wp-env run "$CONTAINER" -- wp "$@"; }
 
-log "threshold: type=ALL is a failure on tables over ${THRESHOLD} rows"
+log "threshold: unbudgeted ALL/index scans fail over ${THRESHOLD} rows; reviewed aggregates must satisfy measured work/time budgets"
 
 PLUGIN_DIR="$(wp eval 'echo defined("SLIMSTAT_ANALYTICS_DIR") ? SLIMSTAT_ANALYTICS_DIR : "";' 2>/dev/null | tr -d '\r\n')"
 
@@ -60,11 +60,11 @@ printf '%s\n' "$RESULT"
 # of `wp eval-file`, which is 0 even when the payload reports failures.
 case "$RESULT" in
   *"VERDICT: FAIL"*)
-    log "FAIL — at least one report query full-scans a table over ${THRESHOLD} rows"
+    log "FAIL — unexpected scan, query budget, or cumulative report budget exceeded"
     exit 1
     ;;
   *"VERDICT: PASS"*)
-    log "PASS — no full table scans over ${THRESHOLD} rows"
+    log "PASS — no unexpected or over-budget scans over ${THRESHOLD} rows"
     exit 0
     ;;
   *)

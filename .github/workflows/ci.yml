@@ -1126,6 +1126,10 @@ jobs:
           WP_PASS: password
         run: npm run test:perf
 
+      - name: Reconcile accepted and stored pageviews
+        if: ${{ matrix.php == '8.2' && always() }}
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/perf/lib/verify-delivery.php
+
       # ── EXPLAIN gate ─────────────────────────────────────────────────────
       # Seeds the configured row threshold, captures every SlimStat query via
       # the slimstat_custom_wpdb filter, runs EXPLAIN on each, and fails on
@@ -1143,7 +1147,18 @@ jobs:
         if: ${{ matrix.php == '8.2' && always() }}
         env:
           EXPLAIN_ROW_THRESHOLD: "100000"
-        run: bash tests/perf/explain-gate.sh
+        run: |
+          set -o pipefail
+          mkdir -p tests/perf/results
+          bash tests/perf/explain-gate.sh 2>&1 | tee tests/perf/results/explain.log
+
+      - name: Upload performance evidence
+        if: ${{ matrix.php == '8.2' && always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: performance-evidence
+          path: tests/perf/results/
+          if-no-files-found: error
 
       - name: Stop wp-env
         if: ${{ matrix.php == '8.2' && always() }}
@@ -1198,3 +1213,4 @@ jobs:
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/notification-delivery-wp-test.php" --path="$WP_DIR"
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/horizon-campaign-wp-test.php" --path="$WP_DIR"
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/notification-targeting-wp-test.php" --path="$WP_DIR"
+          wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/session-live-regressions-wp-test.php" --path="$WP_DIR"

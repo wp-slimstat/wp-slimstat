@@ -4,6 +4,7 @@ namespace SlimStat\Tracker;
 
 use SlimStat\Services\Browscap;
 use SlimStat\Utils\Consent;
+use SlimStat\Utils\Query;
 
 class Ajax
 {
@@ -407,8 +408,19 @@ class Ajax
                 // See: https://github.com/wp-slimstat/wp-slimstat/issues/242
                 \wp_slimstat::set_stat($stat);
 
-                // Security: Ensure visit ID is generated successfully
-                $visitIdAssigned = Session::ensureVisitId(true);
+                // A signed update belongs to the original pageview, even after its
+                // cookie expires or the request identity changes. Consent merges
+                // use Processor above; only unassigned rows need a session here.
+                $existingVisit = (int) Query::select('visit_id')
+                    ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
+                    ->where('id', '=', $stat['id'])
+                    ->getVar();
+                if ($existingVisit > 0) {
+                    $stat['visit_id'] = $existingVisit;
+                    \wp_slimstat::set_stat($stat);
+                } else {
+                    Session::ensureVisitId(true);
+                }
                 $stat = \wp_slimstat::get_stat();
 
                 // Security: Validate visit_id exists - return error if generation failed
