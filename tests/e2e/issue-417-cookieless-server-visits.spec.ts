@@ -120,12 +120,14 @@ test.describe('Cookieless server visits — #417 @compat', () => {
             await newer.get(`${BASE_URL}/?e2e=${marker}-next`);
             const next = await readVisit(`${marker}-next`);
             expect(next.visit_id).not.toBe(original.visit_id);
+            const beforeUpdate = await newer.storageState();
             const response = await newer.post(`${BASE_URL}${endpoint}`, {
               form: { action: 'slimtrack', id: signed!, fv: 'beforeunload' },
             });
             expect((await response.text()).trim()).toBe(signed);
             expect((await readVisit(`${marker}-first`)).visit_id).toBe(original.visit_id);
             expect((await readVisit(`${marker}-next`)).visit_id).toBe(next.visit_id);
+            expect(await newer.storageState()).toEqual(beforeUpdate);
           } finally { await newer.dispose(); }
 
           const invalid = await update(`${original.id}.invalid`);
@@ -137,6 +139,39 @@ test.describe('Cookieless server visits — #417 @compat', () => {
           expect((await (await update(signed!)).text()).trim()).toBe(signed);
           expect(Number((await readVisit(`${marker}-first`)).visit_id)).toBeGreaterThan(0);
         } finally { await client.dispose(); }
+      });
+    }
+  }
+
+  for (const extend of ['off', 'on']) {
+    for (const endpoint of ['/wp-admin/admin-ajax.php', '/?rest_route=/slimstat/v1/hit']) {
+      test(`concurrent first assignment returns the winning cookie: extend ${extend}, ${endpoint}`, async ({ playwright }) => {
+        await setSlimstatOptions({ set_tracker_cookie: 'on', extend_session: extend });
+        const seed = await playwright.request.newContext({ userAgent: `${browserUA} ${marker}-seed` });
+        const client = await playwright.request.newContext({ userAgent: `${browserUA} ${marker}-contender` });
+        try {
+          const response = await seed.get(`${BASE_URL}/?e2e=${marker}-winner`);
+          const signed = (await response.text()).match(/"id":"(\d+\.[a-f0-9]+)"/)?.[1];
+          expect(signed).toBeTruthy();
+          const original = await readVisit(`${marker}-winner`);
+          await seed.get(`${BASE_URL}/?e2e=${marker}-anchor`);
+          await getPool().execute('UPDATE wp_slim_stats SET dt = dt - 1200 WHERE visit_id = ?', [original.visit_id]);
+          await getPool().execute('UPDATE wp_slim_stats SET visit_id = 0 WHERE id = ?', [original.id]);
+          const updated = await client.post(`${BASE_URL}${endpoint}`, {
+            headers: { 'X-Slimstat-E2E-Assignment': `${original.id}:${original.visit_id}` },
+            form: { action: 'slimtrack', id: signed!, fv: 'beforeunload' },
+          });
+          expect((await updated.text()).trim()).toBe(signed);
+          expect((await readVisit(`${marker}-winner`)).visit_id).toBe(original.visit_id);
+          const cookie = (await client.storageState()).cookies.find(c => c.name === 'slimstat_tracking_code');
+          expect(Number(cookie?.value.split('.')[0])).toBe(Number(original.visit_id));
+          const remaining = cookie!.expires - Date.now() / 1000;
+          const expected = extend === 'on' ? 1800 : 600;
+          expect(remaining).toBeGreaterThan(expected - 30);
+          expect(remaining).toBeLessThanOrEqual(expected + 2);
+          await client.get(`${BASE_URL}/?e2e=${marker}-after-race`);
+          expect((await readVisit(`${marker}-after-race`)).visit_id).toBe(original.visit_id);
+        } finally { await seed.dispose(); await client.dispose(); }
       });
     }
   }

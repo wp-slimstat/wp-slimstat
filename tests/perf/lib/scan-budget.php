@@ -2,9 +2,11 @@
 declare(strict_types=1);
 
 /** Normalize fixture identity and timestamps only; predicates and limits remain significant. */
-function slimstat_scan_shape(string $sql, string $prefix, string $host): string
+function slimstat_scan_shape(string $sql, string $prefix, string $home): string
 {
     $sql = str_replace($prefix . 'slim_', '{prefix}slim_', $sql);
+    $host = (string) parse_url($home, PHP_URL_HOST);
+    if ($home !== '') { $sql = str_replace($home, '{home}', $sql); }
     if ($host !== '') { $sql = str_replace($host, '{host}', $sql); }
     $sql = (string) preg_replace('/\b[0-9]{10}\b/', '{timestamp}', $sql);
     return trim((string) preg_replace('/\s+/', ' ', $sql));
@@ -21,9 +23,12 @@ function slimstat_scan_budget(array $budgets, string $shape, string $context): ?
 }
 
 /** No retry/median can hide a slow sample or excess work. */
-function slimstat_scan_within_budget(array $samples, int $rows, array $budget): bool
+function slimstat_scan_within_budget(array $samples, int $rows, array $budget, ?int $recentRows = null): bool
 {
     if (count($samples) !== 3 || $rows <= 0) { return false; }
+    // A dense recent window can legitimately scan; a sparse live query still must use indexes.
+    if (isset($budget['min_recent_fraction']) && ($recentRows === null || $recentRows > $rows
+        || $recentRows < $rows * $budget['min_recent_fraction'])) { return false; }
     foreach ($samples as $sample) {
         if (!isset($sample['ms'], $sample['reads']) || !is_finite((float) $sample['ms'])
             || $sample['ms'] < 0 || $sample['reads'] < 0

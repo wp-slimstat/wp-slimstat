@@ -32,29 +32,35 @@ try {
     $check(44 === (int) $db->get_var("SELECT visit_id FROM {$table} WHERE id = {$id}"), 'An in-flight update must not undo a consent merge');
     $db->query("DELETE FROM {$table}");
 
-    $start = (int) floor(wp_slimstat::now() / 60) * 60 - 29 * 60;
-    // [visit, resource, country, start offset, exit offset or null, browser type]
-    $fixtures = [
-        [1, '/recent', 'US', 1, null, 0],
-        [1, '/recent', 'us', 2, 3, 0],
-        [2, '/long-read', 'DE', -3600, 1, 0],
-        [3, '/invalid-exit', 'fr', -3600, -3601, 0],
-        [4, '/expired', 'fr', -10, -1, 0],
-        [5, '/bot', 'fr', 1, 2, 1],
-        [0, '/unassigned', 'fr', 1, 2, 0],
-        [6, '', 'CA', 0, null, 0],
-        [7, '/unknown-country', 'xx', 1, 2, 0],
-        [8, '/bad-country', '123', 1, -100, 0],
-        [9, '/boundary', 'de', -100, 0, 0],
-    ];
-    foreach ($fixtures as [$visit, $resource, $country, $dt, $out, $browser]) {
-        $check(false !== $db->insert($table, [
-            'visit_id' => $visit, 'resource' => $resource, 'country' => $country,
-            'dt' => $start + $dt, 'dt_out' => null === $out ? null : $start + $out, 'browser_type' => $browser,
-        ]), 'Seed live activity: ' . $db->last_error);
+    // Reseed only if the clock crosses a minute while constructing boundary rows.
+    for ($attempt = 0; $attempt < 3; $attempt++) {
+        $db->query("DELETE FROM {$table}");
+        $start = (int) floor(wp_slimstat::now() / 60) * 60 - 29 * 60;
+        // [visit, resource, country, start offset, exit offset or null, browser type]
+        $fixtures = [
+            [1, '/recent', 'US', 1, null, 0],
+            [1, '/recent', 'us', 2, 3, 0],
+            [2, '/long-read', 'DE', -3600, 1, 0],
+            [3, '/invalid-exit', 'fr', -3600, -3601, 0],
+            [4, '/expired', 'fr', -10, -1, 0],
+            [5, '/bot', 'fr', 1, 2, 1],
+            [0, '/unassigned', 'fr', 1, 2, 0],
+            [6, '', 'CA', 0, null, 0],
+            [7, '/unknown-country', 'xx', 1, 2, 0],
+            [8, '/bad-country', '123', 1, -100, 0],
+            [9, '/boundary', 'de', -100, 0, 0],
+        ];
+        foreach ($fixtures as [$visit, $resource, $country, $dt, $out, $browser]) {
+            $check(false !== $db->insert($table, [
+                'visit_id' => $visit, 'resource' => $resource, 'country' => $country,
+                'dt' => $start + $dt, 'dt_out' => null === $out ? null : $start + $out, 'browser_type' => $browser,
+            ]), 'Seed live activity: ' . $db->last_error);
+        }
+        $report = new LiveAnalyticsReport();
+        $counts = $report->get_all_live_counts();
+        if ($start === (int) floor(wp_slimstat::now() / 60) * 60 - 29 * 60) { break; }
     }
-    $report = new LiveAnalyticsReport();
-    $counts = $report->get_all_live_counts();
+    $check($attempt < 3, "Clock rolled over during all three fixture attempts");
     $check(['users' => 6, 'pages' => 5, 'countries' => 3] === $counts, 'Live counts must retain long reads, boundaries, human and country rules: ' . json_encode($counts));
     echo "PASS: existing-session writes, concurrent assignment/merge, and live activity counts\n";
 } finally {

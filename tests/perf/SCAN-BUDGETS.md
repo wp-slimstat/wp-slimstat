@@ -4,7 +4,14 @@ The gate still rejects `ALL` and `index` access on tables above 100,000 rows.
 An exact query/report pair in `lib/aggregate-budgets.json` may instead pass a
 measured aggregate budget. Unknown queries, changed predicates/limits, unresolved
 aliases, incomplete captures, rendering errors, and failed measurements fail.
-Live Analytics' selective queries have no aggregate exemption.
+The two exact Live Analytics aggregates receive a budget only when at least 10%
+of the physical rows fall in their recent-activity window. A sparse live window
+still rejects full scans, even if they happen to be fast on the test machine.
+On the same post-load fixture, MySQL 8 chose range access while MariaDB 12.3
+chose a full scan for the recent-page branch (about 15,600 of 120,000 rows).
+Both produced identical counts. Forcing an index reduced handler reads but did
+not consistently improve elapsed time; production keeps the optimizer's choice.
+The disjoint union still lets sparse windows use dt and dt_out indexes.
 
 Each listed query computes a count, distinct count, grouped summary, or average
 over its requested history. For a wide date range, scanning can be the correct
@@ -22,7 +29,7 @@ rejecting repeated full-table joins or slower queries. The time limit stays
 fixed when the fixture grows. These are release test budgets, not a guarantee
 for arbitrary production hardware or data sizes.
 
-Only fixture hostname, table prefix, whitespace and ten-digit timestamps are
+Only fixture home URL/hostname, table prefix, whitespace and ten-digit timestamps are
 normalized. Every range is still captured and measured separately. The file
 also pins aggregate shapes that currently use a range/index lookup, so an
 optimizer's decision to scan a broad date range receives the same cost test.

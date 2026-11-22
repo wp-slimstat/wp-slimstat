@@ -154,6 +154,7 @@ $checked   = 0;
 $plan_errors = [];
 $budgeted_scans = [];
 $report_costs = [];
+$recent_counts = [];
 
 foreach ($captured as $entry) {
     $sql = $entry['sql'];
@@ -199,7 +200,7 @@ foreach ($captured as $entry) {
             'extra'    => $row['Extra'] ?? '',
             'sql'      => $sql,
         ];
-        $shape = slimstat_scan_shape($raw_wpdb->remove_placeholder_escape($sql), $raw_wpdb->prefix, (string) wp_parse_url(home_url(), PHP_URL_HOST));
+        $shape = slimstat_scan_shape($raw_wpdb->remove_placeholder_escape($sql), $raw_wpdb->prefix, home_url());
         $budget = slimstat_scan_budget($budgets, $shape, $entry['context']);
         if ($budget !== null) {
             try {
@@ -209,7 +210,26 @@ foreach ($captured as $entry) {
                 }
                 $scan['samples'] = $samples;
                 $scan['budget'] = $budget;
-                if (slimstat_scan_within_budget($samples, $row_counts[$physical_table], $budget)) {
+                $recent_rows = null;
+                if (isset($budget['min_recent_fraction'])) {
+                    if (!preg_match('/\bdt >= ([0-9]{10})\b/', $sql, $window)) {
+                        throw new RuntimeException('Cannot identify live window');
+                    }
+                    $start = (int) $window[1];
+                    $cache_key = $physical_table . ':' . $start;
+                    if (!isset($recent_counts[$cache_key])) {
+                        $recent_counts[$cache_key] = (int) $raw_wpdb->get_var($raw_wpdb->prepare(
+                            "SELECT (SELECT COUNT(*) FROM `{$physical_table}` WHERE dt >= %d)
+                                + (SELECT COUNT(*) FROM `{$physical_table}` WHERE dt < %d AND dt_out >= %d)",
+                            $start, $start, $start
+                        ));
+                        if ($raw_wpdb->last_error) { throw new RuntimeException($raw_wpdb->last_error); }
+                    }
+                    $recent_rows = $recent_counts[$cache_key];
+                    $scan['recent_rows'] = $recent_rows;
+                    $scan['window_start'] = $start;
+                }
+                if (slimstat_scan_within_budget($samples, $row_counts[$physical_table], $budget, $recent_rows)) {
                     $budgeted_scans[] = $scan;
                     continue;
                 }

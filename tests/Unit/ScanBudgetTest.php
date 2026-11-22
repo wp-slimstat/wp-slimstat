@@ -7,6 +7,20 @@ require_once dirname(__DIR__) . '/perf/lib/scan-budget.php';
 
 class ScanBudgetTest extends WpSlimstatTestCase
 {
+    public function test_home_url_normalization_preserves_predicates_across_ports_and_install_paths(): void
+    {
+        $shapes = [];
+        foreach (['http://localhost:8889', 'http://127.0.0.1:9778', 'https://example.test/wordpress'] as $home) {
+            $host = parse_url($home, PHP_URL_HOST);
+            $sql = "SELECT COUNT(*) FROM wp_slim_stats WHERE referer NOT LIKE '{$home}%' AND domain = '{$host}'";
+            $shapes[] = \slimstat_scan_shape($sql, 'wp_', $home);
+        }
+        self::assertSame($shapes[0], $shapes[1]);
+        self::assertSame($shapes[0], $shapes[2]);
+        self::assertStringContainsString("referer NOT LIKE '{home}%'", $shapes[0]);
+        self::assertStringContainsString("domain = '{host}'", $shapes[0]);
+    }
+
     public function test_only_reviewed_query_and_report_pairs_receive_a_budget(): void
     {
         $sql = 'SELECT COUNT(*) FROM wp_slim_stats WHERE dt >= 1795000000';
@@ -29,5 +43,10 @@ class ScanBudgetTest extends WpSlimstatTestCase
         }
         self::assertFalse(\slimstat_scan_within_budget([], 120009, $budget));
         self::assertFalse(\slimstat_scan_within_budget($good, 0, $budget));
+        $live = $budget + ['min_recent_fraction' => 0.1];
+        self::assertFalse(\slimstat_scan_within_budget($good, 120009, $live));
+        self::assertFalse(\slimstat_scan_within_budget($good, 120009, $live, 12000));
+        self::assertTrue(\slimstat_scan_within_budget($good, 120009, $live, 12001));
+        self::assertFalse(\slimstat_scan_within_budget($good, 120009, $live, 120010));
     }
 }

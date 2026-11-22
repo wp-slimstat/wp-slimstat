@@ -503,6 +503,27 @@ class Ajax
                 }
 
                 $id = Storage::updateRow($stat)->id();
+                if ($id > 0 && $existingVisit <= 0) {
+                    // Another first assignment can win after our read. Its session
+                    // must also win in the response cookie, or the next page splits.
+                    $winner = (int) Query::select('visit_id')
+                        ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
+                        ->where('id', '=', $id)->getVar();
+                    if ($winner > 0 && $winner !== (int) $stat['visit_id']) {
+                        $stat['visit_id'] = $winner;
+                        \wp_slimstat::set_stat($stat);
+                        $remaining = null;
+                        if ('on' !== (\wp_slimstat::$settings['extend_session'] ?? 'off')) {
+                            $started = (int) Query::select('dt')
+                                ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
+                                ->where('visit_id', '=', $winner)
+                                ->orderBy('dt', 'ASC')->limit(1)->getVar();
+                            $duration = (int) (\wp_slimstat::$settings['session_duration'] ?: 1800);
+                            $remaining = max(0, $started + $duration - \wp_slimstat::now());
+                        }
+                        Session::setTrackingCookie($winner, 'visit', $remaining);
+                    }
+                }
             } else {
                 // Security: Validate and sanitize event position (x,y coordinates)
                 $position = self::sanitizePosition($data_js['pos'] ?? '');

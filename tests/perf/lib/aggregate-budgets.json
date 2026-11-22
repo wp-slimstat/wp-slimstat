@@ -271,7 +271,7 @@
   },
   {
     "report": "slim_p3_02",
-    "sql": "SELECT COUNT(CASE WHEN (visit_id > 0 AND browser_type <> 1) THEN id END) AS human, COUNT(DISTINCT CASE WHEN (referer NOT LIKE '%{host}%') THEN referer END) AS referrers, COUNT(CASE WHEN ((traffic_channel = 'direct' OR (traffic_channel IS NULL AND referer IS NULL))) THEN id END) AS direct, COUNT(CASE WHEN ((traffic_channel = 'organic_search' OR (traffic_channel IS NULL AND searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE '%http://{host}:9778%'))) THEN id END) AS searches, COUNT(DISTINCT resource) AS resources FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (1=1)",
+    "sql": "SELECT COUNT(CASE WHEN (visit_id > 0 AND browser_type <> 1) THEN id END) AS human, COUNT(DISTINCT CASE WHEN (referer NOT LIKE '%{host}%') THEN referer END) AS referrers, COUNT(CASE WHEN ((traffic_channel = 'direct' OR (traffic_channel IS NULL AND referer IS NULL))) THEN id END) AS direct, COUNT(CASE WHEN ((traffic_channel = 'organic_search' OR (traffic_channel IS NULL AND searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE '%{home}%'))) THEN id END) AS searches, COUNT(DISTINCT resource) AS resources FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (1=1)",
     "max_ms": 500,
     "max_reads_per_row": 2
   },
@@ -283,7 +283,7 @@
   },
   {
     "report": "slim_p3_02",
-    "sql": "SELECT COUNT(id) as counthits FROM {prefix}slim_stats WHERE ((traffic_channel = 'organic_search' OR (traffic_channel IS NULL AND searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE '%http://{host}:9778%')) AND dt > UNIX_TIMESTAMP() - 300)",
+    "sql": "SELECT COUNT(id) as counthits FROM {prefix}slim_stats WHERE ((traffic_channel = 'organic_search' OR (traffic_channel IS NULL AND searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE '%{home}%')) AND dt > UNIX_TIMESTAMP() - 300)",
     "max_ms": 500,
     "max_reads_per_row": 2
   },
@@ -307,7 +307,7 @@
   },
   {
     "report": "slim_p3_01",
-    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) AS dt, MIN(dt) AS sort_dt, COUNT( DISTINCT referer ) AS v1, COUNT( DISTINCT ip ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) AND (((referer IS NOT NULL AND referer NOT LIKE \"%http://{host}:9778%\"))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) WITH ROLLUP",
+    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) AS dt, MIN(dt) AS sort_dt, COUNT( DISTINCT referer ) AS v1, COUNT( DISTINCT ip ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) AND (((referer IS NOT NULL AND referer NOT LIKE \"%{home}%\"))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), '%Y-%m-%d %H:00:00')) WITH ROLLUP",
     "max_ms": 500,
     "max_reads_per_row": 2
   },
@@ -457,7 +457,7 @@
   },
   {
     "report": "slim_p3_01",
-    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) AS dt, MIN(dt) AS sort_dt, COUNT( DISTINCT referer ) AS v1, COUNT( DISTINCT ip ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) AND (((referer IS NOT NULL AND referer NOT LIKE \"%http://{host}:9778%\"))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) WITH ROLLUP",
+    "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) AS dt, MIN(dt) AS sort_dt, COUNT( DISTINCT referer ) AS v1, COUNT( DISTINCT ip ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) AND (((referer IS NOT NULL AND referer NOT LIKE \"%{home}%\"))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) WITH ROLLUP",
     "max_ms": 500,
     "max_reads_per_row": 2
   },
@@ -472,5 +472,19 @@
     "sql": "SELECT UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) AS dt, MIN(dt) AS sort_dt, COUNT( outbound_resource ) AS v1, COUNT( DISTINCT outbound_resource ) AS v2, CASE WHEN dt BETWEEN {timestamp} AND {timestamp} THEN 'current' ELSE 'previous' END AS period FROM {prefix}slim_stats WHERE (((dt BETWEEN {timestamp} AND {timestamp}) OR (dt BETWEEN {timestamp} AND {timestamp}))) GROUP BY period, UNIX_TIMESTAMP(DATE_FORMAT(DATE_SUB(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00'), INTERVAL ((DAYOFWEEK(CONVERT_TZ(FROM_UNIXTIME(dt), '+00:00', '-00:00')) - 1 - 1 + 7) % 7) DAY), '%Y-%m-%d')) WITH ROLLUP",
     "max_ms": 500,
     "max_reads_per_row": 2
+  },
+  {
+    "report": "unknown",
+    "sql": "SELECT COUNT(*) FROM ( SELECT visit_id, MAX( CASE WHEN dt_out IS NOT NULL AND dt_out > 0 AND dt_out >= dt THEN dt_out ELSE dt END ) AS last_activity FROM (SELECT visit_id, dt, dt_out FROM {prefix}slim_stats WHERE ((1=1) AND (browser_type IS NULL OR browser_type <> 1)) AND visit_id > 0 AND dt >= {timestamp} UNION ALL SELECT visit_id, dt, dt_out FROM {prefix}slim_stats WHERE ((1=1) AND (browser_type IS NULL OR browser_type <> 1)) AND visit_id > 0 AND dt < {timestamp} AND dt_out >= {timestamp}) recent_activity GROUP BY visit_id HAVING (FLOOR(last_activity / 60) * 60 + 59) >= {timestamp} ) live_sessions",
+    "max_ms": 500,
+    "max_reads_per_row": 2,
+    "min_recent_fraction": 0.1
+  },
+  {
+    "report": "unknown",
+    "sql": "SELECT COUNT(DISTINCT NULLIF(resource,'')) AS pages_count, COUNT(DISTINCT CASE WHEN country REGEXP '^[a-zA-Z]{2}$' AND LOWER(country) <> 'xx' THEN LOWER(country) END) AS countries_count FROM (SELECT resource, country FROM {prefix}slim_stats WHERE ((1=1) AND (browser_type IS NULL OR browser_type <> 1)) AND visit_id > 0 AND dt >= {timestamp} UNION ALL SELECT resource, country FROM {prefix}slim_stats WHERE ((1=1) AND (browser_type IS NULL OR browser_type <> 1)) AND visit_id > 0 AND dt < {timestamp} AND dt_out >= {timestamp}) live_pages",
+    "max_ms": 500,
+    "max_reads_per_row": 2,
+    "min_recent_fraction": 0.1
   }
 ]

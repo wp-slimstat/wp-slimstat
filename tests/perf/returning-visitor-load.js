@@ -165,7 +165,7 @@ export default function (data) {
     }
 
     // Persist accepted resources outside request timing for exact DB reconciliation.
-    console.log(`SLIMSTAT_ACCEPTED ${url.slice(BASE_URL.length)}`);
+    console.log(`SLIMSTAT_ACCEPTED ${res.url.replace(/^https?:\/\/[^/]+/, '').split('#')[0] || '/'}`);
 
     // Check cookie state after each page
     const jar = http.cookieJar();

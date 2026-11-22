@@ -2,6 +2,8 @@
 set -euo pipefail
 if [ "$#" -eq 0 ]; then echo 'Pass the k6 scripts to run' >&2; exit 2; fi
 results=tests/perf/results
+# A failed early stage must never leave a previous run's delivery evidence usable.
+rm -rf "$results"
 mkdir -p "$results"
 docker info --format '{{json .}}' > "$results/docker-info.json"
 docker stats --format '{{json .}}' > "$results/resources.jsonl" &
