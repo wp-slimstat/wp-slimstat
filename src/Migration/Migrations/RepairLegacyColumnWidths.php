@@ -125,8 +125,12 @@ class RepairLegacyColumnWidths extends AbstractMigration
                             $reasons[] = sprintf(__('Column %s is missing. Ask your database host to review the table definition before adding it.', 'wp-slimstat'), $name);
                         } elseif ('varchar(255)' === strtolower((string) ($column['Type'] ?? ''))
                             && (isset($column['Default']) || '' !== ($column['Comment'] ?? '') || '' !== ($column['Extra'] ?? ''))) {
-                            /* translators: %s: database column name. */
-                            $reasons[] = sprintf(__('Column %s has a custom default, comment or extra attribute. Ask your database host to widen it to VARCHAR(256), preserving all existing attributes and values. SlimStat does not generate SQL that could overwrite these attributes.', 'wp-slimstat'), $name);
+                            $attributes = [];
+                            if (isset($column['Default'])) { $attributes[] = 'DEFAULT'; }
+                            if ('' !== ($column['Comment'] ?? '')) { $attributes[] = 'COMMENT'; }
+                            if ('' !== ($column['Extra'] ?? '')) { $attributes[] = 'EXTRA'; }
+                            /* translators: 1: database column name, 2: SQL attribute names (DEFAULT, COMMENT, EXTRA). */
+                            $reasons[] = sprintf(__('Column %1$s has custom attributes: %2$s. Ask your database host to widen it to VARCHAR(256), preserving all existing attributes and values. SlimStat does not generate SQL that could overwrite these attributes.', 'wp-slimstat'), $name, implode(', ', $attributes));
                         } else {
                             /* translators: %s: database column name. */
                             $reasons[] = sprintf(__('Column %s has an unsupported type or incomplete definition. Ask your database host to review its type, width, nullability and collation against VARCHAR(256) before changing it.', 'wp-slimstat'), $name);

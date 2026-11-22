@@ -12017,12 +12017,6 @@ msgid "Column %s is missing. Ask your database host to review the table definiti
 msgstr ""
 
 #. translators: %s: database column name.
-#: src/Migration/Migrations/RepairLegacyColumnWidths.php:129
-#, php-format
-msgid "Column %s has a custom default, comment or extra attribute. Ask your database host to widen it to VARCHAR(256), preserving all existing attributes and values. SlimStat does not generate SQL that could overwrite these attributes."
-msgstr ""
-
-#. translators: %s: database column name.
 #: src/Migration/Migrations/RepairLegacyColumnWidths.php:132
 #, php-format
 msgid "Column %s has an unsupported type or incomplete definition. Ask your database host to review its type, width, nullability and collation against VARCHAR(256) before changing it."
@@ -12058,4 +12052,10 @@ msgstr ""
 
 #: src/view/migration-page.php:116
 msgid "Inspection SQL for your database host"
+msgstr ""
+
+#. translators: 1: database column name, 2: SQL attribute names (DEFAULT, COMMENT, EXTRA).
+#: src/Migration/Migrations/RepairLegacyColumnWidths.php:133
+#, php-format
+msgid "Column %1$s has custom attributes: %2$s. Ask your database host to widen it to VARCHAR(256), preserving all existing attributes and values. SlimStat does not generate SQL that could overwrite these attributes."
 msgstr ""

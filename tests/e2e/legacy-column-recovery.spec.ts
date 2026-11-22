@@ -71,7 +71,10 @@ test('issue 429: hidden repairs explain custom attributes and unsupported widths
       await expect(page.locator('[data-migration="repair-legacy-column-widths"]')).toHaveCount(0);
       const recovery = page.locator('#slimstat-manual-column-repair');
       await expect(recovery).toContainText('Column city');
-      await expect(recovery).toContainText(definition.includes('254') ? 'unsupported type' : 'custom default, comment or extra attribute');
+      await expect(recovery).toContainText(definition.includes('254') ? 'unsupported type' : 'custom attributes');
+      if (!definition.includes('254')) {
+        await expect(recovery).toContainText(definition.includes('COMMENT') ? 'COMMENT' : 'DEFAULT');
+      }
       await expect(recovery.locator('textarea')).toHaveValue('SHOW CREATE TABLE `wp_slim_stats`;');
       expect(await page.evaluate(() => (window as any).issue429Injected)).toBeUndefined();
       expect(fixture(`echo hash('sha256',serialize($wpdb->get_results('SHOW FULL COLUMNS FROM '.$wpdb->prefix.'slim_stats',ARRAY_A)));`)).toBe(before);

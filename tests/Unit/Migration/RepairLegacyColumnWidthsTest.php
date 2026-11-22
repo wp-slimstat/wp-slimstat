@@ -286,6 +286,9 @@ class RepairLegacyColumnWidthsTest extends WpSlimstatTestCase
             $this->assertCount(1, $guidance);
             $this->assertSame('', $guidance[0]['sql'], 'Do not offer a partial repair for a table requiring review');
             $this->assertStringContainsString('city', implode(' ', $guidance[0]['reasons']));
+            if ('Type' !== $field) {
+                $this->assertStringContainsString(strtoupper($field), implode(' ', $guidance[0]['reasons']));
+            }
             $this->assertStringContainsString('SHOW CREATE TABLE `wp_slim_stats`;', $guidance[0]['inspect']);
             $this->assertSame([], $queries);
         }
