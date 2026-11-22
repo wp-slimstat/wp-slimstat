@@ -248,7 +248,7 @@ class MigrationAdmin
 		$has_required_migrations = !empty($required_migrations);
         $column_drift = wp_slimstat_admin::observe_column_drift();
         $manual_column_repairs = [];
-        if (!empty($column_drift)) {
+        if (null === $column_drift || !empty($column_drift)) {
             $repair = new RepairLegacyColumnWidths(MigrationService::analyticsConnection(), $GLOBALS['wpdb']);
             $manual_column_repairs = $repair->getManualRepairGuidance();
         }

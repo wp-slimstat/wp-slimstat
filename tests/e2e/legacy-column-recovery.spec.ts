@@ -7,6 +7,38 @@ global $wpdb;
 ${body}
 `).trim();
 
+test('issue 429: unavailable column inspection shows host guidance until inspection recovers', async ({ page }) => {
+  const fault = Buffer.from(`<?php
+    add_filter('query', static function($sql) {
+      if (($_GET['page'] ?? '') === 'slimstat_migration'
+          && preg_match('/^SHOW (?:FULL )?COLUMNS FROM /i', $sql)) {
+        return 'SHOW COLUMNS FROM nonexistent_issue429_probe';
+      }
+      return $sql;
+    });
+  `).toString('base64');
+  fixture(`
+    $file=WP_CONTENT_DIR.'/mu-plugins/slimstat-issue429-query-fixture.php';
+    if (file_exists($file)) throw new RuntimeException('Fault fixture already exists');
+    wp_mkdir_p(dirname($file)); file_put_contents($file,base64_decode('${fault}'));
+  `);
+  try {
+    await page.goto('/wp-admin/admin.php?page=slimstat_migration');
+    await expect(page.locator('#slimstat-status-note')).not.toContainText('Database is up to date');
+    const recovery = page.locator('#slimstat-manual-column-repair');
+    await expect(recovery).toContainText('SlimStat could not read this table');
+    await expect(recovery.locator('textarea')).toHaveCount(2);
+    await expect(recovery.locator('textarea').nth(0)).toHaveValue('SHOW CREATE TABLE `wp_slim_stats`;');
+    await expect(recovery.locator('textarea').nth(1)).toHaveValue('SHOW CREATE TABLE `wp_slim_stats_archive`;');
+    await expect(page.locator('[data-migration="repair-legacy-column-widths"]')).toHaveCount(0);
+  } finally {
+    fixture(`unlink(WP_CONTENT_DIR.'/mu-plugins/slimstat-issue429-query-fixture.php');`);
+  }
+  await page.reload();
+  await expect(page.locator('#slimstat-status-note')).toContainText('Database is up to date');
+  await expect(page.locator('#slimstat-manual-column-repair')).toHaveCount(0);
+});
+
 test('issue 429: latin1 online refusal has a usable manual repair and clears the warning', async ({ page }, info) => {
   test.setTimeout(90000);
   const before = fixture(`
