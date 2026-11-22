@@ -1135,7 +1135,7 @@ jobs:
           docker cp /tmp/slimstat-perf-workers.conf "$web":/etc/apache2/mods-available/mpm_prefork.conf
           docker exec "$web" apache2ctl -t
           docker restart "$web"
-          curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 http://localhost:8889/ -o /dev/null
+          curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 1 --max-time 10 http://localhost:8889/ -o /dev/null
 
       - name: Run k6 performance tests
         if: ${{ matrix.php == '8.2' }}
