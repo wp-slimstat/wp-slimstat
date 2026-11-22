@@ -1,3 +1,9 @@
+= 6.1.3 - 2026-11-21 =
+
+**Security**
+
+* Access Log: with "Show user agent" on, the browser icon's tooltip now shows the visitor's user agent as plain text.
+
 = 6.1.2 - 2026-11-16 =
 
 **SlimStat 6.1: turn any report into plain-language findings with AI, follow a country down to its cities, and learn SlimStat from video tutorials.** Your settings and data carry over, database repairs wait for your click, and older versions keep working if you ever go back.
