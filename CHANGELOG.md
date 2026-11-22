@@ -1,9 +1,3 @@
-= Unreleased =
-
-**Fixed**
-
-* Geolocation downloads begin shortly after activation instead of waiting a week. Missing databases are scheduled from admin visits and settings saves, and repeated GeoIP errors respect the 15-minute throttle after sanitization. ([#430](https://github.com/wp-slimstat/wp-slimstat/issues/430))
-
 = 6.1.4 - 2026-11-22 =
 
 **Fixed**
@@ -14,6 +8,8 @@
 * Simultaneous first visits now share the same daily visitor salt, keeping cookieless identities consistent.
 * Access Log handles historical visitor rows with missing notes without PHP deprecation warnings.
 * Server tracking: fixed inflated Human Visits when tracking cookies are blocked or disabled, and improved detection of automated HTTP clients. Cookieless visits now honour Extend duration, including when the browser starts accepting tracking cookies during a visit. On a site upgraded from 5.x this starts once "Add the anonymous visitor identity column" has run under SlimStat → Migration; until then visits are counted as before. ([#417](https://github.com/wp-slimstat/wp-slimstat/issues/417))
+* Geolocation downloads begin shortly after activation instead of waiting a week. Missing databases are scheduled from admin visits and settings saves, and repeated GeoIP errors respect the 15-minute throttle after sanitization. ([#430](https://github.com/wp-slimstat/wp-slimstat/issues/430))
+* SlimStat → Migration offers a way out when the database refuses to widen older text columns: it shows repair SQL for your host to review and run during maintenance, or inspection steps for customized columns, and the database warning clears once a reload confirms the repair. ([#429](https://github.com/wp-slimstat/wp-slimstat/issues/429))
 
 = 6.1.3 - 2026-11-21 =
 
