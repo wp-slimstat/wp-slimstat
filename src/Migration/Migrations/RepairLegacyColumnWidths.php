@@ -92,6 +92,76 @@ class RepairLegacyColumnWidths extends AbstractMigration
         return !$state['blocked'] && [] !== $state['pending'];
     }
 
+    /** Read-only recovery guidance, including when the online step cannot be offered. */
+    public function getManualRepairGuidance(): array
+    {
+        $guidance = [];
+        foreach (self::TABLES as $suffix) {
+            $table = $this->tablePrefix() . $suffix;
+            $columns = $this->readColumns($suffix);
+            $widen = $missing = $reasons = [];
+            $blocked = false;
+            if (null === $columns) {
+                $blocked = true;
+                $reasons[] = __('SlimStat could not read this table. Ask your database host to check that it exists and that the analytics database account can read its definition.', 'wp-slimstat');
+            } else {
+                foreach ($this->columnsFor($suffix) as $name) {
+                    $column = $columns[$name] ?? null;
+                    if (null === $column && 'slim_stats_archive' === $suffix) {
+                        $missing[] = $name;
+                        continue;
+                    }
+                    if (in_array($name, self::ARCHIVE_COLUMNS, true)
+                        || (is_array($column) && preg_match('/^varchar\((\d+)\)$/i', (string) ($column['Type'] ?? ''), $width) && (int) $width[1] >= 256)) {
+                        continue;
+                    }
+                    try {
+                        Schema::widenLegacyColumnsSql($suffix, $this->tablePrefix(), [$column ?? []]);
+                        $widen[] = $column;
+                    } catch (\InvalidArgumentException $e) {
+                        $blocked = true;
+                        if (null === $column) {
+                            /* translators: %s: database column name. */
+                            $reasons[] = sprintf(__('Column %s is missing. Ask your database host to review the table definition before adding it.', 'wp-slimstat'), $name);
+                        } elseif ('varchar(255)' === strtolower((string) ($column['Type'] ?? ''))
+                            && (isset($column['Default']) || '' !== ($column['Comment'] ?? '') || '' !== ($column['Extra'] ?? ''))) {
+                            $attributes = [];
+                            if (isset($column['Default'])) { $attributes[] = 'DEFAULT'; }
+                            if ('' !== ($column['Comment'] ?? '')) { $attributes[] = 'COMMENT'; }
+                            if ('' !== ($column['Extra'] ?? '')) { $attributes[] = 'EXTRA'; }
+                            /* translators: 1: database column name, 2: SQL attribute names (DEFAULT, COMMENT, EXTRA). */
+                            $reasons[] = sprintf(__('Column %1$s has custom attributes: %2$s. Ask your database host to widen it to VARCHAR(256), preserving all existing attributes and values. SlimStat does not generate SQL that could overwrite these attributes.', 'wp-slimstat'), $name, implode(', ', $attributes));
+                        } else {
+                            /* translators: %s: database column name. */
+                            $reasons[] = sprintf(__('Column %s has an unsupported type or incomplete definition. Ask your database host to review its type, width, nullability and collation against VARCHAR(256) before changing it.', 'wp-slimstat'), $name);
+                        }
+                    }
+                }
+            }
+            if (!$blocked && [] === $widen && [] === $missing) { continue; }
+            // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared -- Fixed metadata query; table name is a prepared value.
+            $engine = $this->wpdb->get_var($this->wpdb->prepare(
+                'SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', $table
+            ));
+            // phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter,WordPress.DB.PreparedSQL.NotPrepared
+            if ($this->probeFailed() || !in_array(strtolower((string) $engine), ['innodb', 'myisam'], true)) {
+                $blocked = true;
+                $reasons[] = __('The table engine is unsupported or could not be read. Ask your database host to review it before attempting a repair.', 'wp-slimstat');
+            } elseif ('myisam' === strtolower((string) $engine)) {
+                $reasons[] = __('This table uses MyISAM, which cannot perform the online repair without blocking writes.', 'wp-slimstat');
+            }
+            $sql = '';
+            if (!$blocked) {
+                $reasons[] = __('If the online repair fails, the server may need to rebuild this table to widen its columns. The SQL below permits that rebuild and must be reviewed and run by your database host during a maintenance window.', 'wp-slimstat');
+                $sql = str_replace('ALGORITHM=INPLACE, LOCK=NONE', 'ALGORITHM=COPY',
+                    Schema::widenLegacyColumnsSql($suffix, $this->tablePrefix(), $widen, $missing)) . ';';
+            }
+            $guidance[] = ['table' => $table, 'reasons' => $reasons, 'sql' => $sql,
+                'inspect' => 'SHOW CREATE TABLE `' . str_replace('`', '``', $table) . '`;'];
+        }
+        return $guidance;
+    }
+
     private function fail(string $message): bool
     {
         \wp_slimstat::record_degradation('legacy_column_width_repair', $message, \wp_slimstat::DEGRADATION_OPERATIONAL);

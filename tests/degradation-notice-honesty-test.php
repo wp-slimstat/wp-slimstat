@@ -429,10 +429,10 @@ $persistBody = slimstat_find_function_body($adminRaw, 'persist_column_drift');
 eval('class DriftPersistenceProbe { const COLUMN_DRIFT_OPTION = "slimstat_schema_column_drift"; public static function run(array $drift) {' . $persistBody . '} }');
 $GLOBALS['drift_options'] = [
     'slimstat_schema_column_drift' => ['still narrow'],
-    'slimstat_degradations' => ['schema column drift' => ['message' => 'old drift'], 'purge' => ['message' => 'keep']],
+    'slimstat_degradations' => ['schema column drift' => ['message' => 'old drift'], 'legacy_column_width_repair' => ['message' => 'online repair failed'], 'purge' => ['message' => 'keep']],
 ];
 DriftPersistenceProbe::run(['still narrow']);
-if (!isset($GLOBALS['drift_options']['slimstat_degradations']['schema column drift'])) {
+if (!isset($GLOBALS['drift_options']['slimstat_degradations']['schema column drift'], $GLOBALS['drift_options']['slimstat_degradations']['legacy_column_width_repair'])) {
     $failures[] = 'unresolved drift must retain its degradation';
 }
 DriftPersistenceProbe::run([]);
@@ -470,6 +470,19 @@ DriftRefreshProbe::$observed = [];
 DriftRefreshProbe::run();
 if (get_option('slimstat_schema_column_drift', []) !== []) {
     $failures[] = 'successful empty observations must clear repaired drift';
+}
+
+// An older version may already have cleared the drift option after an external repair.
+$GLOBALS['drift_options']['slimstat_degradations'] = ['legacy_column_width_repair' => ['message' => 'old failure'], 'purge' => ['message' => 'keep']];
+DriftRefreshProbe::$observed = null;
+DriftRefreshProbe::run();
+if (!isset(get_option('slimstat_degradations')['legacy_column_width_repair'])) {
+    $failures[] = 'an unavailable observation must retain an orphaned repair failure';
+}
+DriftRefreshProbe::$observed = [];
+DriftRefreshProbe::run();
+if (get_option('slimstat_degradations') !== ['purge' => ['message' => 'keep']]) {
+    $failures[] = 'a verified clean schema must clear an orphaned repair failure only';
 }
 
 if ($failures) {

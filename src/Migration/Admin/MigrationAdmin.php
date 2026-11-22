@@ -5,6 +5,7 @@ namespace SlimStat\Migration\Admin;
 
 use SlimStat\Migration\MigrationManager;
 use SlimStat\Migration\MigrationService;
+use SlimStat\Migration\Migrations\RepairLegacyColumnWidths;
 use SlimStat\Schema\Schema;
 use SlimStat\Tracker\VisitIdGenerator;
 use wp_slimstat_admin;
@@ -77,6 +78,9 @@ class MigrationAdmin
 		global $parent_file, $submenu_file;
         // Refresh only on the explicit Migration screen; old cached offers can hide a new repair.
         $this->manager->forgetProbe();
+        // A host may have repaired the columns outside the migration runner.
+        delete_transient(Schema::COLUMN_DRIFT_CHECK_TRANSIENT);
+        wp_slimstat_admin::refresh_column_drift_notice();
 		if (!empty(wp_slimstat_admin::$main_menu_slug)) {
 			$parent_file = wp_slimstat_admin::$main_menu_slug;
 			$submenu_file = 'slimstat_migration'; // highlight Migration submenu
@@ -243,6 +247,11 @@ class MigrationAdmin
 		$offered_migrations = $this->manager->getOfferedMigrations();
 		$has_required_migrations = !empty($required_migrations);
         $column_drift = wp_slimstat_admin::observe_column_drift();
+        $manual_column_repairs = [];
+        if (null === $column_drift || !empty($column_drift)) {
+            $repair = new RepairLegacyColumnWidths(MigrationService::analyticsConnection(), $GLOBALS['wpdb']);
+            $manual_column_repairs = $repair->getManualRepairGuidance();
+        }
         foreach ($this->manager->getMigrations() as $migration) {
             if (!$migration->isOptional() && method_exists($migration, 'probeUnavailable') && $migration->probeUnavailable()) {
                 $column_drift = null;
