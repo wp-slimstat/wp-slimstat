@@ -1115,6 +1115,28 @@ jobs:
             update_option("slimstat_options", $options);
           '
 
+      - name: Bound Apache workers for the four-CPU load runner
+        if: ${{ matrix.php == '8.2' }}
+        # 150 prefork workers exhaust this runner under the returning-visitor spike.
+        # Same-runner master/candidate controls pass unchanged thresholds with 16.
+        run: |
+          web=$(docker ps --filter label=com.docker.compose.service=tests-wordpress --format '{{.ID}}')
+          test -n "$web"
+          cat > /tmp/slimstat-perf-workers.conf <<'APACHE'
+          <IfModule mpm_prefork_module>
+          StartServers 5
+          MinSpareServers 5
+          MaxSpareServers 10
+          ServerLimit 16
+          MaxRequestWorkers 16
+          MaxConnectionsPerChild 0
+          </IfModule>
+          APACHE
+          docker cp /tmp/slimstat-perf-workers.conf "$web":/etc/apache2/mods-available/mpm_prefork.conf
+          docker exec "$web" apache2ctl -t
+          docker restart "$web"
+          curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 http://localhost:8889/ -o /dev/null
+
       - name: Run k6 performance tests
         if: ${{ matrix.php == '8.2' }}
         env:

@@ -59,7 +59,7 @@ try {
         $report = new LiveAnalyticsReport();
         $counts = $report->get_all_live_counts();
         // The chart shares the activity predicate and must still exclude future rows.
-        $db->insert($table, ['visit_id' => 10, 'dt' => $start + 1800, 'resource' => '/future']);
+        $check(false !== $db->insert($table, ['visit_id' => 10, 'dt' => $start + 1800, 'resource' => '/future']), 'Seed future activity: ' . $db->last_error);
         LiveAnalyticsReport::clear_cache();
         $chart = $report->get_users_chart_data();
         if ($start === (int) floor(wp_slimstat::now() / 60) * 60 - 29 * 60) { break; }
