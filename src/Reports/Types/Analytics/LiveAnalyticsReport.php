@@ -190,6 +190,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	}
 
 	/** Two disjoint indexed ranges retain long reads without an OR across indexes. */
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Column list is a literal from this class's private callers, the table is core-prefixed and the report_scope predicate is prepared; values use placeholders.
 	private function recent_activity_sql(string $columns, int $start): string {
 		$table = "{$GLOBALS['wpdb']->prefix}slim_stats";
 		$scope = \wp_slimstat::report_scope();
@@ -202,6 +203,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			$start, $start, $start
 		);
 	}
+	// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 	/**
 	 * Count sessions that had activity within the provided time window.
