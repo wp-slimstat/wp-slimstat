@@ -1,0 +1,252 @@
+name: Load CPU baseline diagnostic
+on:
+  push:
+    branches: [qa/load-cpu-9977]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      matrix:
+        php: ["8.2"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, xml, dom, curl, json
+          coverage: none
+
+      - name: Cache Composer dependencies
+        # The 7.4/8.0 exclusion this step carried went with those lanes (see the matrix
+        # above). The ignored vendor tree is rebuilt and checked before use.
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: vendor
+          key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            composer-${{ matrix.php }}-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Verify generated dependencies, then enable the dev autoloader
+        run: |
+          composer run build:autoload
+          git diff --exit-code -- vendor-prefixed
+          test -z "$(git ls-files --others --exclude-standard -- vendor-prefixed)"
+          composer dump-autoload
+
+      - name: Install k6
+        if: ${{ matrix.php == '8.2' }}
+        run: |
+          curl -fsSL https://dl.k6.io/key.gpg \
+            | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+            | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update && sudo apt-get install -y k6
+
+      - name: Set up Node.js (for wp-env + k6 tests)
+        if: ${{ matrix.php == '8.2' }}
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "20"
+
+      - name: Cache npm dependencies
+        if: ${{ matrix.php == '8.2' }}
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package.json') }}
+          restore-keys: npm-
+
+      - name: Install npm dependencies
+        if: ${{ matrix.php == '8.2' }}
+        # Retry transient registry blips (ECONNRESET/ETIMEDOUT/EAI_AGAIN/socket
+        # hang up) up to 3x with backoff. Loop is set -e safe (attempt guarded by
+        # `if`; final failure exits 1). --no-audit/--no-fund only cut noise.
+        run: |
+          npm config set fetch-retries 3
+          npm config set fetch-retry-mintimeout 10000
+          npm config set fetch-retry-maxtimeout 60000
+          npm config set fetch-timeout 120000
+          n=0
+          until [ "$n" -ge 3 ]; do
+            n=$((n + 1))
+            if npm install --no-progress --no-audit --no-fund; then
+              exit 0
+            fi
+            if [ "$n" -lt 3 ]; then
+              echo "::warning::npm install failed (attempt ${n}/3) — likely a transient network error; retrying in $((n * 15))s"
+              sleep $((n * 15))
+            fi
+          done
+          echo "::error::npm install failed after 3 attempts"
+          exit 1
+
+      - name: Clear stale Docker Hub credentials
+        if: ${{ matrix.php == '8.2' }}
+        run: docker logout docker.io 2>/dev/null || true
+
+      # The committed .wp-env.json pins phpVersion 7.4, which broke this lane in
+      # two ways: PHPUnit 10.5 (installed above, needed by test:unit) registers
+      # Framework/Assert/Functions.php through Composer's files-autoload, which
+      # vendor/autoload.php require()s at boot — and its union types are a parse
+      # error on 7.4, so the container never came up. That cost 10 consecutive
+      # nightly runs (2026-07-18 → 07-27). It also meant a job labelled "PHP 8.2"
+      # was measuring a 7.4 runtime.
+      #
+      # Pinning the runtime to the lane's PHP fixes both at the root, and reuses
+      # the override pattern Tier 2 already established above.
+      #
+      # plugins is "." here DELIBERATELY, and no longer for the reason Tier 2 used
+      # to give. This lane measures query plans and per-request cost; a consent
+      # banner or a second analytics plugin in the same install would be noise in
+      # the only numbers it produces. Tier 2 installs the consent pair because its
+      # subject is behaviour; this one does not because its subject is cost.
+      # Enforced by tests/perf-gate-integrity-test.php.
+      - name: Create wp-env override (CI — pin runtime PHP to this lane)
+        if: ${{ matrix.php == '8.2' }}
+        run: |
+          printf '{"phpVersion":"%s","plugins":["."]}\n' "${{ matrix.php }}" > .wp-env.override.json
+          echo "--- .wp-env.override.json ---"; cat .wp-env.override.json
+
+      - name: Restore the production autoloader before wp-env mounts the plugin
+        # WHY THE NIGHTLY HAS BEEN RED EVERY NIGHT. The dev autoload step above
+        # rebuilds the autoloader on a tree that HAS dev dependencies installed, so the
+        # checkout now carries a dev autoloader. wp-env mounts that checkout, WordPress loads
+        # the plugin, and the container's PHP fatals parsing a union type in the dev
+        # dependency's source:
+        #
+        #   Parse error: syntax error, unexpected '|', expecting variable (T_VARIABLE)
+        #
+        # `wp-env start` exits 255, so k6 and the EXPLAIN gate — the only performance verdicts
+        # this pipeline produces — never run. Measured across five consecutive nightlies, all
+        # red here, all with both skipped.
+        #
+        # Rebuild the ignored vendor tree in its production form before wp-env mounts it.
+        if: ${{ matrix.php == '8.2' }}
+        run: |
+          composer run build:autoload
+          # Assert rather than print, and check the BOOT path (autoload_real/autoload_static),
+          # not the classmap, which is only consulted lazily. Patterns are capitalised because
+          # that is how the namespaces appear — and because a lowercase spelling here would be
+          # a `composer test:`-adjacent literal inside an inclusion-gated step, which is the
+          # exact input that fools a per-step CI-coverage scan.
+          if grep -qE "PHPUnit|Mockery|PhpParser" \
+               vendor/composer/autoload_static.php vendor/composer/autoload_real.php; then
+            echo "::error::dev autoloader is still on the boot path after restore"
+            exit 1
+          fi
+          echo "committed (--no-dev) autoloader restored and verified off the boot path"
+
+      - name: Start wp-env (for k6 target)
+        if: ${{ matrix.php == '8.2' }}
+        run: npx wp-env start
+        timeout-minutes: 5
+
+      # ── THE STEP THAT WAS MISSING, AND WHY EVERY k6 RUN FAILED ───────────
+      #
+      # Tier 2 carries this and Tier 3 did not. Its own comment there says why it
+      # is needed: wp-env auto-activates the plugin, but activation alone never
+      # fires `admin_init`, and `admin_init` is what creates the tables.
+      #
+      # So k6 measured a WordPress where SlimStat's tables do not exist. The first
+      # ever Tier 3 dispatch (2026-09-02) reported 81.79% request failures —
+      # 301 of 368 — with `has online data` and `has sessions data` at 3%. Root
+      # cause was not the thresholds and not the credentials, which are passed
+      # correctly and which tests/perf/lib/env.js throws rather than defaulting
+      # for: adminbar-refresh-perf.js could not find the localized
+      # SlimStatAdminBar nonce, because the admin bar had no data to localize.
+      #
+      # Same defect class as the mu-plugin mapping fixed in 9ea64d94: the harness
+      # could not deliver the state its assertions require, and reported the
+      # shortfall as a product failure.
+      - name: Activate plugin and create database tables (k6 needs a real install)
+        if: ${{ matrix.php == '8.2' }}
+        run: |
+          npx wp-env run tests-cli -- wp plugin deactivate wp-slimstat 2>/dev/null || true
+          npx wp-env run tests-cli -- wp plugin activate wp-slimstat
+          npx wp-env run tests-cli -- wp eval '
+            include_once WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php";
+            wp_slimstat_admin::init_environment();
+            echo "init_environment() completed\n";
+          '
+          npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
+          npx wp-env run tests-cli -- wp eval '
+            $options = get_option("slimstat_options");
+            $options["javascript_mode"] = "off";
+            $options["set_tracker_cookie"] = "on";
+            $options["gdpr_enabled"] = "off";
+            $options["anonymous_tracking"] = "off";
+            $options["enable_browscap"] = "on";
+            update_option("slimstat_options", $options);
+          '
+
+      - name: Compare fixed Browscap fixture on master and candidate
+        env:
+          BASE_URL: http://localhost:8889
+          WP_USER: admin
+          WP_PASS: password
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/load-diagnostic .qa-harness
+          cp -R tests/perf .qa-harness/perf
+          lscpu > /tmp/load-diagnostic/cpu.txt
+          docker info --format '{{json .}}' > /tmp/load-diagnostic/docker-info.json
+          web=$(docker ps --filter label=com.docker.compose.service=tests-wordpress --format '{{.ID}}')
+          test -n "$web"
+          npx wp-env run tests-cli -- wp config set DISABLE_WP_CRON true --raw
+          npx wp-env run tests-cli -- wp eval '
+            $r=SlimStat\Services\Browscap::update_browscap_database(true);
+            if (!is_readable(wp_slimstat::$upload_dir."/browscap-cache-master/version.txt")) throw new RuntimeException(wp_json_encode($r));
+            echo "Browscap fixture: ".file_get_contents(wp_slimstat::$upload_dir."/browscap-cache-master/version.txt");
+          ' | tee /tmp/load-diagnostic/browscap-install.txt
+          npx wp-env run tests-cli -- wp db export wp-content/plugins/wp-slimstat/.qa-baseline.sql
+          docker exec "$web" sh -c 'find /var/www/html/wp-content/uploads/wp-slimstat/browscap-cache-master -type f -exec sha256sum {} \;' > /tmp/load-diagnostic/browscap-sha256.txt
+          (while true; do date -u +%FT%TZ; docker stats --no-stream --format '{{json .}}'; sleep 2; done) > /tmp/load-diagnostic/resources.log 2>&1 &
+          stats_pid=$!
+          trap 'kill "$stats_pid" 2>/dev/null || true' EXIT
+          for arm in candidate-on master-on candidate-off; do
+            ref=9977ed0a8887e235e048cdcd74e7347a8845c2f8
+            setting=on
+            if [ "$arm" = master-on ]; then ref=dd17c36960bb03a67ba1aa8cd94f23531c8ebd69; fi
+            if [ "$arm" = candidate-off ]; then setting=off; fi
+            git checkout --detach --quiet "$ref"
+            composer dump-autoload --no-dev -o
+            git diff --exit-code -- vendor-prefixed
+            npx wp-env run tests-cli -- wp db import wp-content/plugins/wp-slimstat/.qa-baseline.sql
+            npx wp-env run tests-cli -- wp eval "\$s=(array)get_option('slimstat_options');\$s['enable_browscap']='$setting';update_option('slimstat_options',\$s);"
+            docker restart "$web"
+            sleep 2
+            for warm in 1 2 3 4 5; do curl -fsS "$BASE_URL/" -o /dev/null; done
+            npx wp-env run tests-cli -- wp eval 'echo wp_json_encode(["version"=>SLIMSTAT_ANALYTICS_VERSION,"browscap"=>wp_slimstat::$settings["enable_browscap"],"browscap_version"=>SlimStat\Services\Browscap::$browscap_local_version,"active"=>get_option("active_plugins")]);' > "/tmp/load-diagnostic/$arm-state.txt"
+            date -u +%FT%TZ > "/tmp/load-diagnostic/$arm.started"
+            status=0
+            k6 run --summary-export "/tmp/load-diagnostic/$arm.json" .qa-harness/perf/returning-visitor-load.js > "/tmp/load-diagnostic/$arm.log" 2>&1 || status=$?
+            date -u +%FT%TZ > "/tmp/load-diagnostic/$arm.finished"
+            echo "$arm $ref exit=$status" | tee -a /tmp/load-diagnostic/exit-status.txt
+            mkdir -p .qa-harness/perf/results
+            cp "/tmp/load-diagnostic/$arm.log" .qa-harness/perf/results/returning-visitor-load.log
+            cp "/tmp/load-diagnostic/$arm.json" .qa-harness/perf/results/returning-visitor-load.json
+            npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/.qa-harness/perf/lib/verify-delivery.php > "/tmp/load-diagnostic/$arm-delivery.txt"
+            tail -55 "/tmp/load-diagnostic/$arm.log"
+          done
+      - name: Preserve comparison evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: load-cpu-comparison
+          path: /tmp/load-diagnostic/
+          retention-days: 7
+      - name: Stop wp-env
+        if: always()
+        run: npx wp-env stop
