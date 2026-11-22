@@ -13,6 +13,9 @@ namespace SlimStat\Services\Geolocation {
     }
 }
 namespace SlimStat\Services\Geolocation\Provider {
+    function chmod($path, $mode) {
+        return 'permissions' === $GLOBALS['dbip_test_failure'] ? false : \chmod($path, $mode);
+    }
     function tempnam($dir, $prefix) {
         if ('stage' === $GLOBALS['dbip_test_failure']) { return false; }
         if ('fallback' === $GLOBALS['dbip_test_failure']) {
@@ -31,6 +34,8 @@ namespace SlimStat\Services\Geolocation\Provider {
         return 'read' === $GLOBALS['dbip_test_failure'] ? false : \gzread($stream, $size);
     }
     function rename($from, $to) {
+        clearstatcache(true, $from);
+        if (0644 !== (fileperms($from) & 0777)) { throw new \RuntimeException('Published database must be readable by a different web worker user'); }
         if ('overlap' === $GLOBALS['dbip_test_failure']) {
             // A second updater fails after the first validated its staging file.
             $GLOBALS['dbip_test_failure'] = 'write';
@@ -65,7 +70,7 @@ function __($message, $domain = '') { return $message; }
     $database = $GLOBALS['dbip_test_dir'] . '/dbip-city-lite.mmdb';
     $provider = new \SlimStat\Services\Geolocation\Provider\DbIpProvider();
     try {
-        foreach (['write', 'short', 'read', 'empty', 'rename', 'none', 'overlap', 'stage', 'unreserved', 'fallback'] as $failure) {
+        foreach (['write', 'short', 'read', 'empty', 'rename', 'none', 'overlap', 'stage', 'unreserved', 'fallback', 'permissions'] as $failure) {
             $GLOBALS['dbip_test_failure'] = $failure;
             if ('unreserved' === $failure) {
                 // wp_tempnam can return a path it failed to reserve, subsequently owned by another attempt.
