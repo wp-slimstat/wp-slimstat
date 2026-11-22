@@ -216,11 +216,13 @@ foreach ($captured as $entry) {
                         throw new RuntimeException('Cannot identify live window');
                     }
                     $start = (int) $window[1];
-                    $cache_key = $physical_table . ':' . $start;
+                    $end = preg_match('/\bWHERE dt <= ([0-9]{10})\b/', $sql, $upper) ? (int) $upper[1] : 0;
+                    $upper_sql = $end > 0 ? $raw_wpdb->prepare(' AND dt <= %d', $end) : '';
+                    $cache_key = $physical_table . ':' . $start . ':' . $end;
                     if (!isset($recent_counts[$cache_key])) {
                         $recent_counts[$cache_key] = (int) $raw_wpdb->get_var($raw_wpdb->prepare(
-                            "SELECT (SELECT COUNT(*) FROM `{$physical_table}` WHERE dt >= %d)
-                                + (SELECT COUNT(*) FROM `{$physical_table}` WHERE dt < %d AND dt_out >= %d)",
+                            "SELECT (SELECT COUNT(*) FROM `{$physical_table}` WHERE dt >= %d{$upper_sql})
+                                + (SELECT COUNT(*) FROM `{$physical_table}` WHERE dt < %d AND dt_out >= %d{$upper_sql})",
                             $start, $start, $start
                         ));
                         if ($raw_wpdb->last_error) { throw new RuntimeException($raw_wpdb->last_error); }
@@ -228,6 +230,7 @@ foreach ($captured as $entry) {
                     $recent_rows = $recent_counts[$cache_key];
                     $scan['recent_rows'] = $recent_rows;
                     $scan['window_start'] = $start;
+                    $scan['window_end'] = $end;
                 }
                 if (slimstat_scan_within_budget($samples, $row_counts[$physical_table], $budget, $recent_rows)) {
                     $budgeted_scans[] = $scan;
@@ -284,5 +287,5 @@ if ($offenders !== [] || ($report_costs !== [] && max($report_costs) > 2000)) {
     return;
 }
 
-printf("Measured %d reviewed aggregate scans; each query <=500ms and <=2 table-equivalents of reads, each report/range <=2000ms\n", count($budgeted_scans));
+printf("Measured %d reviewed report scans within their query time/work budgets; each report/range <=2000ms\n", count($budgeted_scans));
 echo "VERDICT: PASS\n";

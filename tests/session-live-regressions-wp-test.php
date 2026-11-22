@@ -58,12 +58,18 @@ try {
         }
         $report = new LiveAnalyticsReport();
         $counts = $report->get_all_live_counts();
+        // The chart shares the activity predicate and must still exclude future rows.
+        $db->insert($table, ['visit_id' => 10, 'dt' => $start + 1800, 'resource' => '/future']);
+        LiveAnalyticsReport::clear_cache();
+        $chart = $report->get_users_chart_data();
         if ($start === (int) floor(wp_slimstat::now() / 60) * 60 - 29 * 60) { break; }
     }
     $check($attempt < 3, "Clock rolled over during all three fixture attempts");
     $check(['users' => 6, 'pages' => 5, 'countries' => 3] === $counts, 'Live counts must retain long reads, boundaries, human and country rules: ' . json_encode($counts));
+    $check(array_merge([6], array_fill(0, 29, 0)) === $chart['data'], 'Live chart must retain activity boundaries and exclude future rows');
     echo "PASS: existing-session writes, concurrent assignment/merge, and live activity counts\n";
 } finally {
+    LiveAnalyticsReport::clear_cache();
     $db->prefix = $prefix;
     wp_slimstat::$wpdb = $analytics;
     wp_slimstat::$settings = $settings;

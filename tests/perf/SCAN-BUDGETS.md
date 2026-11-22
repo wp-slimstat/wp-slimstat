@@ -2,9 +2,9 @@
 
 The gate still rejects `ALL` and `index` access on tables above 100,000 rows.
 An exact query/report pair in `lib/aggregate-budgets.json` may instead pass a
-measured aggregate budget. Unknown queries, changed predicates/limits, unresolved
+measured report budget. Unknown queries, changed predicates/limits, unresolved
 aliases, incomplete captures, rendering errors, and failed measurements fail.
-The two exact Live Analytics aggregates receive a budget only when at least 10%
+The three exact Live Analytics aggregates receive a budget only when at least 10%
 of the physical rows fall in their recent-activity window. A sparse live window
 still rejects full scans, even if they happen to be fast on the test machine.
 On the same post-load fixture, MySQL 8 chose range access while MariaDB 12.3
@@ -13,15 +13,26 @@ Both produced identical counts. Forcing an index reduced handler reads but did
 not consistently improve elapsed time; production keeps the optimizer's choice.
 The disjoint union still lets sparse windows use dt and dt_out indexes.
 
-Each listed query computes a count, distinct count, grouped summary, or average
-over its requested history. For a wide date range, scanning can be the correct
+The reviewed shapes compute counts, distinct counts, grouped summaries, averages,
+or Pro's bounded 200-row activity list over requested history. For a wide date range, scanning can be the correct
 plan. The original rule rejected those plans regardless of their actual cost.
 On the common 120,009-row fixture, the 53 rejected scans read at most 168,972
 handler rows and took at most 188ms per raw-connection sample on OrbStack.
 Both master and development contain these aggregate query shapes.
 
-The replacement budgets are 500ms per query sample and twice the input table's
-row count plus 100 handler reads (including index and temporary-table work).
+Paired Free/Pro qualification also covers five unchanged User Overview/Pages
+by User shapes in Pro master and development. Their worst sample on the 120,006-row
+fixture was 135ms and 120,012 handler reads. The activity list keeps its exact
+columns, username/date predicates, ordering and 200-row limit; broader variants
+do not inherit its budget.
+
+The replacement budgets are 500ms per query sample and, normally, twice the input
+table's row count plus 100 handler reads (including index and temporary-table work).
+The two exact entry/exit-page grouped joins allow four table-equivalents. MariaDB
+reads their aggregate, primary-key join and temporary results separately: doubling
+the fixture from 120,006 to 240,012 rows changed reads from 395,288 to 790,372,
+with all three samples below 254ms. This is measured linear work, not a repeated
+full-table join. All other shapes retain the two-equivalent limit.
 All three samples must pass; retries and medians cannot discard a failure.
 The sum of maximum sampled scan costs for each report/date-range must also stay
 under 2 seconds. These limits allow the measured linear aggregates while

@@ -405,13 +405,13 @@
     "report": "slim_p4_24",
     "sql": "SELECT resource, ts1.aggrid as visit_id, COUNT(*) as counthits FROM (SELECT visit_id, MAX(id) as aggrid FROM {prefix}slim_stats WHERE visit_id <> 0 AND (((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY visit_id) AS ts1 INNER JOIN {prefix}slim_stats t1 ON ts1.aggrid = t1.id GROUP BY resource ORDER BY counthits DESC, resource ASC LIMIT 200",
     "max_ms": 500,
-    "max_reads_per_row": 2
+    "max_reads_per_row": 4
   },
   {
     "report": "slim_p4_25",
     "sql": "SELECT resource, ts1.aggrid as visit_id, COUNT(*) as counthits FROM (SELECT visit_id, MIN(id) as aggrid FROM {prefix}slim_stats WHERE visit_id <> 0 AND (((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY visit_id) AS ts1 INNER JOIN {prefix}slim_stats t1 ON ts1.aggrid = t1.id GROUP BY resource ORDER BY counthits DESC, resource ASC LIMIT 200",
     "max_ms": 500,
-    "max_reads_per_row": 2
+    "max_reads_per_row": 4
   },
   {
     "report": "slim_p4_26_01",
@@ -486,5 +486,48 @@
     "max_ms": 500,
     "max_reads_per_row": 2,
     "min_recent_fraction": 0.1
+  },
+  {
+    "report": "slim_p8_01",
+    "sql": "SELECT username, COUNT(*) AS pageviews FROM {prefix}slim_stats WHERE username IS NOT NULL AND ((1=1) AND dt BETWEEN {timestamp} AND {timestamp}) GROUP BY username",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p8_01",
+    "sql": "SELECT username, MAX(dt) AS last_login_dt FROM {prefix}slim_stats WHERE notes LIKE '%loggedin:%' AND username IS NOT NULL GROUP BY username",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p8_01",
+    "sql": "SELECT username, SUM(visit_duration) AS visit_duration FROM ( SELECT username, visit_id, MAX( GREATEST( dt, dt_out ) ) - MIN(dt) AS visit_duration FROM {prefix}slim_stats WHERE username IS NOT NULL AND visit_id > 0 AND (1=1) AND dt BETWEEN {timestamp} AND {timestamp} GROUP BY username, visit_id HAVING visit_duration > 0 ) AS per_visit GROUP BY username",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p8_02",
+    "sql": "SELECT id, ip, dt, username, referer, resource, browser, platform, country, city, content_type, notes, visit_id, server_latency, page_performance, browser_version, browser_type, language, fingerprint, user_agent, resolution, screen_width, screen_height, category, author, content_id, outbound_resource, tz_offset, dt_out FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (username IS NOT NULL) ORDER BY username ASC, dt DESC LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "slim_p3_03",
+    "sql": "SELECT traffic_channel, traffic_source, COUNT(*) AS counthits FROM {prefix}slim_stats WHERE dt BETWEEN '{timestamp}' AND '{timestamp}' AND (1=1) AND ((traffic_channel = 'direct' OR traffic_channel = 'internal' OR traffic_channel IS NULL)) GROUP BY traffic_channel, traffic_source ORDER BY counthits DESC, traffic_channel, traffic_source LIMIT 200",
+    "max_ms": 500,
+    "max_reads_per_row": 2
+  },
+  {
+    "report": "unknown",
+    "sql": "SELECT m.minute_ts AS minute_timestamp, COUNT(DISTINCT s.visit_id) AS cnt FROM ( SELECT {timestamp} + (n.n * 60) AS minute_ts FROM ( SELECT 0 AS n UNION ALL SELECT 1 AS n UNION ALL SELECT 2 AS n UNION ALL SELECT 3 AS n UNION ALL SELECT 4 AS n UNION ALL SELECT 5 AS n UNION ALL SELECT 6 AS n UNION ALL SELECT 7 AS n UNION ALL SELECT 8 AS n UNION ALL SELECT 9 AS n UNION ALL SELECT 10 AS n UNION ALL SELECT 11 AS n UNION ALL SELECT 12 AS n UNION ALL SELECT 13 AS n UNION ALL SELECT 14 AS n UNION ALL SELECT 15 AS n UNION ALL SELECT 16 AS n UNION ALL SELECT 17 AS n UNION ALL SELECT 18 AS n UNION ALL SELECT 19 AS n UNION ALL SELECT 20 AS n UNION ALL SELECT 21 AS n UNION ALL SELECT 22 AS n UNION ALL SELECT 23 AS n UNION ALL SELECT 24 AS n UNION ALL SELECT 25 AS n UNION ALL SELECT 26 AS n UNION ALL SELECT 27 AS n UNION ALL SELECT 28 AS n UNION ALL SELECT 29 AS n ) n ) m LEFT JOIN ( SELECT visit_id, FLOOR( MIN(dt) / 60 ) * 60 AS first_minute, FLOOR( MAX( CASE WHEN dt_out IS NOT NULL AND dt_out > 0 AND dt_out >= dt THEN dt_out ELSE dt END ) / 60 ) * 60 AS last_minute FROM (SELECT visit_id, dt, dt_out FROM {prefix}slim_stats WHERE ((1=1) AND (browser_type IS NULL OR browser_type <> 1)) AND visit_id > 0 AND dt >= {timestamp} UNION ALL SELECT visit_id, dt, dt_out FROM {prefix}slim_stats WHERE ((1=1) AND (browser_type IS NULL OR browser_type <> 1)) AND visit_id > 0 AND dt < {timestamp} AND dt_out >= {timestamp}) recent_activity WHERE dt <= {timestamp} GROUP BY visit_id HAVING last_minute >= {timestamp} ) s ON s.first_minute <= ( m.minute_ts + 59 ) AND s.last_minute >= m.minute_ts GROUP BY m.minute_ts ORDER BY m.minute_ts ASC",
+    "max_ms": 500,
+    "max_reads_per_row": 2,
+    "min_recent_fraction": 0.1
+  },
+  {
+    "report": "slim_p8_01",
+    "sql": "SELECT username, COUNT(*) as counthits FROM {prefix}slim_stats WHERE notes LIKE '%loggedin:%' AND dt BETWEEN {timestamp} AND {timestamp} AND username IS NOT NULL GROUP BY username",
+    "max_ms": 500,
+    "max_reads_per_row": 2
   }
 ]

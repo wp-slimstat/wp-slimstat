@@ -363,7 +363,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		$start_minute = $end_minute - ( ( $bucket_count - 1 ) * $bucket_size );
 		$window_start = $start_minute;
 		$window_end   = $end_minute + ( $bucket_size - 1 );
-		$table        = "{$GLOBALS['wpdb']->prefix}slim_stats";
+		$activity     = $this->recent_activity_sql('visit_id, dt, dt_out', $window_start);
 
 		$numbers = [];
 		for ( $i = 0; $i < $bucket_count; $i++ ) {
@@ -389,13 +389,8 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 							ELSE dt
 						END
 					) / 60 ) * 60 AS last_minute
-				FROM {$table}
-				WHERE ({$scope['humans']}) AND visit_id > 0
-					AND dt <= %d
-					AND (
-						dt >= %d
-						OR ( dt_out IS NOT NULL AND dt_out > 0 AND dt_out >= %d )
-					)
+				FROM ({$activity}) recent_activity
+				WHERE dt <= %d
 				GROUP BY visit_id
 				HAVING last_minute >= %d
 			) s ON s.first_minute <= ( m.minute_ts + 59 ) AND s.last_minute >= m.minute_ts
@@ -404,8 +399,6 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			",
 			$start_minute,
 			$window_end,
-			$window_start,
-			$window_start,
 			$window_start
 		);
 
