@@ -472,6 +472,19 @@ if (get_option('slimstat_schema_column_drift', []) !== []) {
     $failures[] = 'successful empty observations must clear repaired drift';
 }
 
+// An older version may already have cleared the drift option after an external repair.
+$GLOBALS['drift_options']['slimstat_degradations'] = ['legacy_column_width_repair' => ['message' => 'old failure'], 'purge' => ['message' => 'keep']];
+DriftRefreshProbe::$observed = null;
+DriftRefreshProbe::run();
+if (!isset(get_option('slimstat_degradations')['legacy_column_width_repair'])) {
+    $failures[] = 'an unavailable observation must retain an orphaned repair failure';
+}
+DriftRefreshProbe::$observed = [];
+DriftRefreshProbe::run();
+if (get_option('slimstat_degradations') !== ['purge' => ['message' => 'keep']]) {
+    $failures[] = 'a verified clean schema must clear an orphaned repair failure only';
+}
+
 if ($failures) {
     fwrite(STDERR, 'FAIL: degradation notice honesty (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {

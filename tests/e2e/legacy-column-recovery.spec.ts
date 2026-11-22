@@ -42,10 +42,18 @@ test('issue 429: latin1 online refusal has a usable manual repair and clears the
     expect(fixture(`echo hash('sha256',serialize($wpdb->get_results('SELECT id,city FROM '.$wpdb->prefix.'slim_stats ORDER BY id',ARRAY_A)));`)).toBe(before);
     await page.goto('/wp-admin/admin.php?page=slimview1');
     await expect(page.getByText('Database columns differ from this version', { exact: true })).toHaveCount(0);
+    fixture(`
+      delete_option('slimstat_schema_column_drift');
+      wp_slimstat::record_degradation('legacy_column_width_repair','Old failed repair',wp_slimstat::DEGRADATION_OPERATIONAL);
+      wp_slimstat::record_degradation('issue429 unrelated','Keep this warning',wp_slimstat::DEGRADATION_OPERATIONAL);
+    `);
+    await page.goto('/wp-admin/admin.php?page=slimstat_migration');
+    expect(fixture(`$d=get_option('slimstat_degradations',[]); echo !isset($d['legacy_column_width_repair']) && isset($d['issue429 unrelated']) ? 'recovered' : 'wrong';`)).toBe('recovered');
   } finally {
     fixture(`
       $wpdb->query('ALTER TABLE '.$wpdb->prefix.'slim_stats MODIFY city VARCHAR(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL');
       delete_transient('slimstat_column_drift_checked');
+      wp_slimstat::clear_degradation('issue429 unrelated');
     `);
   }
 });
