@@ -473,6 +473,10 @@ class wp_slimstat_admin
             wp_schedule_event(time() + $nextRunInterval, 'weekly', 'wp_slimstat_update_geoip_database');
         }
 
+        if (!wp_doing_ajax() && current_user_can(\wp_slimstat::$settings['capability_can_admin'])) {
+            \SlimStat\Services\GeoService::scheduleMissingDatabaseUpdate();
+        }
+
         // Fallback: if WP-Cron is disabled or scheduling failed, trigger a non-blocking direct update
         // This ensures environments with DISABLE_WP_CRON still receive GeoIP database updates
         $cron_disabled = (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON) || !wp_next_scheduled('wp_slimstat_update_geoip_database');
@@ -839,7 +843,9 @@ class wp_slimstat_admin
         // and apply upgrade defaults: no DB-IP, heatmaps off with Pro, the 6.0 release notice.
         // Store the new-install defaults while the database still shows a new site.
         if (false === get_option('slimstat_options') && \SlimStat\Migration\MissingSettingsRecovery::isFresh($my_wpdb, $GLOBALS['wpdb']->prefix)) {
-            add_option('slimstat_options', wp_slimstat::get_fresh_defaults());
+            if (add_option('slimstat_options', wp_slimstat::get_fresh_defaults())) {
+                \SlimStat\Services\GeoService::scheduleDatabaseUpdate();
+            }
         }
 
         // Create the tables and reconcile every index in the manifest. The five probe-and-create

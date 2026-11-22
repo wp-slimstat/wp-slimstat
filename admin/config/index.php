@@ -945,14 +945,12 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
                         'license'   => $license,
                         'precision' => $precision,
                     ]);
-                    $dbExists = file_exists($service->getProvider()->getDbPath());
+                    $dbExists = is_readable($service->getProvider()->getDbPath());
 
                     if (!$dbExists || $provider !== $prevProvider) {
-                        // Schedule a single-run background job shortly after save
-                        if (!wp_next_scheduled('wp_slimstat_update_geoip_database')) {
-                            wp_schedule_single_event(time() + 10, 'wp_slimstat_update_geoip_database');
-                        }
-                        $save_messages[] = __('The geolocation database update has been scheduled in the background. You can also use the Update Database button below to start it now.', 'wp-slimstat');
+                        $save_messages[] = \SlimStat\Services\GeoService::scheduleDatabaseUpdate()
+                            ? __('The geolocation database update has been scheduled in the background. You can also use the Update Database button below to start it now.', 'wp-slimstat')
+                            : __('The geolocation database update could not be scheduled. Use the Update Database button below to try again.', 'wp-slimstat');
                     }
                 } catch (\Exception $e) {
                     $save_messages[] = $e->getMessage();
