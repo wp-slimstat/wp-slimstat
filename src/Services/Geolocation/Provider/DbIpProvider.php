@@ -134,7 +134,13 @@ class DbIpProvider extends AbstractGeoIPProvider
 
 			$isGz = ("\x1f\x8b" === $magic);
 
-			$destTmp = $this->dbPath . '.tmp';
+			// Keep each validated staging file private to its attempt, on the destination filesystem.
+			$destTmp = wp_tempnam($this->dbName, trailingslashit(dirname($this->dbPath)));
+			if (!$destTmp) {
+				wp_delete_file($tmp);
+				$this->lastError = __('A temporary file could not be created for the DB-IP download. Check free disk space and temporary-directory permissions.', 'wp-slimstat');
+				continue;
+			}
 			$ok      = false;
 
 			if ($isGz && function_exists('gzopen')) {

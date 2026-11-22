@@ -23,7 +23,18 @@ namespace {
         public static function log($message, $level) { throw new \RuntimeException($message); }
     }
     function wp_next_scheduled($hook) { return empty($GLOBALS['events']) ? false : min(array_column($GLOBALS['events'], 'time')); }
-    function wp_schedule_event($time, $schedule, $hook) { $GLOBALS['events'][] = compact('time', 'schedule'); return true; }
+    function _get_cron_array() {
+        $cron = [];
+        foreach ($GLOBALS['events'] as $event) {
+            $cron[$event['time']]['wp_slimstat_update_geoip_database'][] = ['schedule' => $event['schedule'], 'args' => []];
+        }
+        return $cron;
+    }
+    function wp_schedule_event($time, $schedule, $hook) {
+        if ($GLOBALS['weekly_failure']) { return false; }
+        $GLOBALS['events'][] = compact('time', 'schedule');
+        return true;
+    }
     function wp_schedule_single_event($time, $hook) {
         if ($GLOBALS['schedule_failure']) { return false; }
         $GLOBALS['events'][] = ['time' => $time, 'schedule' => false];
@@ -37,6 +48,7 @@ namespace {
         $GLOBALS['events'] = [];
         $GLOBALS['options'] = [];
         $GLOBALS['schedule_failure'] = false;
+        $GLOBALS['weekly_failure'] = false;
         $GLOBALS['db_path'] = __DIR__ . '/missing-geoip-test.mmdb';
         $GLOBALS['downloads'] = 0;
         $GLOBALS['download_ok'] = true;
@@ -57,6 +69,14 @@ namespace {
     reset_geo();
     $GLOBALS['schedule_failure'] = true;
     check(!\SlimStat\Services\GeoService::scheduleDatabaseUpdate(), 'scheduling failure is reported');
+    reset_geo();
+    $GLOBALS['weekly_failure'] = true;
+    check(!\SlimStat\Services\GeoService::scheduleDatabaseUpdate(), 'weekly failure is reported even when the prompt event succeeds');
+    check(count($GLOBALS['events']) === 1 && false === $GLOBALS['events'][0]['schedule'], 'weekly failure preserves the accepted prompt event');
+    $prompt = $GLOBALS['events'][0];
+    $GLOBALS['weekly_failure'] = false;
+    check(\SlimStat\Services\GeoService::scheduleDatabaseUpdate(), 'retry repairs the weekly schedule while the prompt event is pending');
+    check(count($GLOBALS['events']) === 2 && $GLOBALS['events'][0] === $prompt, 'retry preserves the original prompt event without duplicating it');
     foreach (['dbip', 'maxmind', 'cloudflare', false] as $provider) {
         reset_geo();
         wp_slimstat::$provider = $provider;

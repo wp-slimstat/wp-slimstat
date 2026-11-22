@@ -178,6 +178,12 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 == Changelog ==
 
+= Unreleased =
+
+**Fixed**
+
+* Geolocation downloads begin shortly after activation instead of waiting a week. Missing databases are scheduled from admin visits and settings saves, and repeated GeoIP errors respect the 15-minute throttle after sanitization. ([#430](https://github.com/wp-slimstat/wp-slimstat/issues/430))
+
 = 6.1.3 - 2026-11-20 =
 
 **Fixed**

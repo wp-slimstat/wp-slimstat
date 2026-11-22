@@ -179,15 +179,25 @@ class GeoService
     {
         $now = time();
         $next = wp_next_scheduled('wp_slimstat_update_geoip_database');
-        if (!$next) {
+        $weeklyScheduled = false;
+        foreach (_get_cron_array() as $events) {
+            foreach ($events['wp_slimstat_update_geoip_database'] ?? [] as $event) {
+                if ('weekly' === $event['schedule'] && [] === $event['args']) {
+                    $weeklyScheduled = true;
+                    break 2;
+                }
+            }
+        }
+        if (!$weeklyScheduled) {
             $interval = \wp_slimstat::get_schedule_interval('weekly');
-            wp_schedule_event($now + $interval, 'weekly', 'wp_slimstat_update_geoip_database');
+            $weeklyScheduled = (bool) wp_schedule_event($now + $interval, 'weekly', 'wp_slimstat_update_geoip_database');
         }
         // WordPress rejects duplicate single events within ten minutes of any event.
         if ($next && $next <= $now + 11 * MINUTE_IN_SECONDS) {
-            return true;
+            return $weeklyScheduled;
         }
-        return (bool) wp_schedule_single_event($now + MINUTE_IN_SECONDS, 'wp_slimstat_update_geoip_database');
+        $promptScheduled = (bool) wp_schedule_single_event($now + MINUTE_IN_SECONDS, 'wp_slimstat_update_geoip_database');
+        return $weeklyScheduled && $promptScheduled;
     }
 
     /** Repair the initial download on existing installs, from an admin request only. */
