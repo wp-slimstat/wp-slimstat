@@ -174,6 +174,39 @@ class GeoService
         return $response;
     }
 
+    /** Queue a prompt download without displacing the weekly refresh. */
+    public static function scheduleDatabaseUpdate(): bool
+    {
+        $now = time();
+        $next = wp_next_scheduled('wp_slimstat_update_geoip_database');
+        if (!$next) {
+            $interval = \wp_slimstat::get_schedule_interval('weekly');
+            wp_schedule_event($now + $interval, 'weekly', 'wp_slimstat_update_geoip_database');
+        }
+        // WordPress rejects duplicate single events within ten minutes of any event.
+        if ($next && $next <= $now + 11 * MINUTE_IN_SECONDS) {
+            return true;
+        }
+        return (bool) wp_schedule_single_event($now + MINUTE_IN_SECONDS, 'wp_slimstat_update_geoip_database');
+    }
+
+    /** Repair the initial download on existing installs, from an admin request only. */
+    public static function scheduleMissingDatabaseUpdate(): void
+    {
+        $provider = \wp_slimstat::resolve_geolocation_provider();
+        if (!in_array($provider, self::DB_PROVIDERS, true)) {
+            return;
+        }
+        try {
+            $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
+            if (!is_readable($service->getProvider()->getDbPath())) {
+                self::scheduleDatabaseUpdate();
+            }
+        } catch (\Throwable $e) {
+            \wp_slimstat::log('Geolocation database scheduling failed: ' . $e->getMessage(), 'error');
+        }
+    }
+
     public function clearScheduledEvent()
     {
         wp_clear_scheduled_hook('wp_slimstat_update_geoip_database');

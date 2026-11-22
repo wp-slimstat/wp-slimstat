@@ -1073,6 +1073,10 @@ msgstr ""
 msgid "The geolocation database update has been scheduled in the background. You can also use the Update Database button below to start it now."
 msgstr ""
 
+#: admin/config/index.php:953
+msgid "The geolocation database update could not be scheduled. Use the Update Database button below to try again."
+msgstr ""
+
 #: admin/config/index.php:973
 msgid "The Browscap data file has been uninstalled from your server."
 msgstr ""

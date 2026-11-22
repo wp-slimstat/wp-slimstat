@@ -6,6 +6,9 @@
 namespace SlimStat\Tracker {
     class VisitIdGenerator { public static function initializeCounter() { return 1; } }
 }
+namespace SlimStat\Services {
+    class GeoService { public static function scheduleDatabaseUpdate() { $GLOBALS['geoip_scheduled'] = true; } }
+}
 namespace {
     require __DIR__ . '/lib/source-scan.php';
     require dirname(__DIR__) . '/src/Migration/MissingSettingsRecovery.php';
@@ -50,12 +53,16 @@ namespace {
         $GLOBALS['options'] = false === $stored ? [] : ['slimstat_options' => $stored];
         $GLOBALS['added'] = [];
         $GLOBALS['created'] = false;
+        $GLOBALS['geoip_scheduled'] = false;
         if (true !== ActivationProbe::init_environment() || !$GLOBALS['created']) {
             throw new \RuntimeException("$name: activation did not complete");
         }
         $seeded = isset($GLOBALS['added']['slimstat_options']);
         if ($seeded !== $expectSeed) {
             throw new \RuntimeException("$name: new-install defaults " . ($seeded ? 'stored' : 'not stored'));
+        }
+        if ($GLOBALS['geoip_scheduled'] !== $expectSeed) {
+            throw new \RuntimeException("$name: first GeoIP download was not scheduled with fresh defaults");
         }
         if ($seeded && 'dbip' !== $GLOBALS['added']['slimstat_options']['geolocation_provider']) {
             throw new \RuntimeException("$name: stored something other than the new-install defaults");
