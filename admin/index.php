@@ -993,7 +993,9 @@ class wp_slimstat_admin
     {
         $stored = get_option(self::COLUMN_DRIFT_OPTION, []);
 
-        if (!is_array($stored) || [] === $stored) {
+        // Older versions could clear the drift entry but leave a failed repair behind.
+        if (!is_array($stored) || ([] === $stored
+            && !isset(get_option(wp_slimstat::DEGRADATION_OPTION, [])['legacy_column_width_repair']))) {
             return;
         }
 
@@ -1032,6 +1034,7 @@ class wp_slimstat_admin
             // The physical observation also resolves the notice recorded before repair.
             // Preserve every unrelated degradation and never clear on a failed probe.
             wp_slimstat::clear_degradation('schema column drift');
+            wp_slimstat::clear_degradation('legacy_column_width_repair');
 
             return [];
         }
