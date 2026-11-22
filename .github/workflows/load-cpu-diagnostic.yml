@@ -7,7 +7,7 @@ permissions:
 jobs:
   compare:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     strategy:
       matrix:
         php: ["8.2"]
@@ -190,7 +190,7 @@ jobs:
             update_option("slimstat_options", $options);
           '
 
-      - name: Compare fixed Browscap fixture on master and candidate
+      - name: Compare WordPress and bounded workers on current release heads
         env:
           BASE_URL: http://localhost:8889
           WP_USER: admin
@@ -200,10 +200,40 @@ jobs:
           set -euo pipefail
           mkdir -p /tmp/load-diagnostic .qa-harness
           cp -R tests/perf .qa-harness/perf
+          cat > .qa-harness/cpu-probe.php <<'PHP'
+          <?php
+          if (!isset($_SERVER['HTTP_X_RELEASE_CPU'])) { return; }
+          $start = microtime(true); $usage = getrusage(); $phases = [];
+          foreach (['plugins_loaded', 'init', 'template_redirect'] as $hook) {
+              foreach ([19, 21] as $priority) {
+                  add_action($hook, static function () use (&$phases, $start, $hook, $priority) {
+                      $phases[$hook . '-' . $priority] = 1000 * (microtime(true) - $start);
+                  }, $priority);
+              }
+          }
+          register_shutdown_function(static function () use ($start, $usage, &$phases) {
+              $end = getrusage(); $cpu = 0;
+              foreach (['utime', 'stime'] as $kind) {
+                  $cpu += 1000 * ($end['ru_' . $kind . '.tv_sec'] - $usage['ru_' . $kind . '.tv_sec']);
+                  $cpu += ($end['ru_' . $kind . '.tv_usec'] - $usage['ru_' . $kind . '.tv_usec']) / 1000;
+              }
+              $opcache = function_exists('opcache_get_status') ? opcache_get_status(false) : false;
+              file_put_contents('/tmp/release-cpu-probes.jsonl', json_encode([
+                  'pid' => getmypid(), 'php' => PHP_VERSION,
+                  'free' => defined('SLIMSTAT_ANALYTICS_VERSION') ? SLIMSTAT_ANALYTICS_VERSION : null,
+                  'wall_ms' => 1000 * (microtime(true) - $start), 'cpu_ms' => $cpu,
+                  'phases_ms' => $phases, 'opcache' => $opcache,
+                  'opcache_enable' => ini_get('opcache.enable'), 'pcre_jit' => ini_get('pcre.jit'),
+                  'extensions' => get_loaded_extensions(),
+              ]) . "\n", FILE_APPEND | LOCK_EX);
+          });
+          PHP
           lscpu > /tmp/load-diagnostic/cpu.txt
           docker info --format '{{json .}}' > /tmp/load-diagnostic/docker-info.json
           web=$(docker ps --filter label=com.docker.compose.service=tests-wordpress --format '{{.ID}}')
           test -n "$web"
+          docker exec "$web" mkdir -p /var/www/html/wp-content/mu-plugins
+          docker cp .qa-harness/cpu-probe.php "$web":/var/www/html/wp-content/mu-plugins/release-cpu-probe.php
           npx wp-env run tests-cli -- wp config set DISABLE_WP_CRON true --raw
           npx wp-env run tests-cli -- wp eval '
             $r=SlimStat\Services\Browscap::update_browscap_database(true);
@@ -215,20 +245,28 @@ jobs:
           (while true; do date -u +%FT%TZ; docker stats --no-stream --format '{{json .}}'; sleep 2; done) > /tmp/load-diagnostic/resources.log 2>&1 &
           stats_pid=$!
           trap 'kill "$stats_pid" 2>/dev/null || true' EXIT
-          for arm in candidate-on master-on candidate-off; do
-            ref=9977ed0a8887e235e048cdcd74e7347a8845c2f8
-            setting=on
-            if [ "$arm" = master-on ]; then ref=dd17c36960bb03a67ba1aa8cd94f23531c8ebd69; fi
-            if [ "$arm" = candidate-off ]; then setting=off; fi
+          for arm in core-default candidate-default candidate-limited master-limited; do
+            ref=36b22238650c63ac5e4732b119a9bca232eaa9e0
+            workers=150
+            if [ "$arm" = master-limited ]; then ref=cbb56769fc2bddf301e601ea896add80c66780b3; fi
+            if [[ "$arm" = *-limited ]]; then workers=16; fi
             git checkout --detach --quiet "$ref"
             composer dump-autoload --no-dev -o
             git diff --exit-code -- vendor-prefixed
             npx wp-env run tests-cli -- wp db import wp-content/plugins/wp-slimstat/.qa-baseline.sql
-            npx wp-env run tests-cli -- wp eval "\$s=(array)get_option('slimstat_options');\$s['enable_browscap']='$setting';update_option('slimstat_options',\$s);"
+            if [ "$arm" = core-default ]; then npx wp-env run tests-cli -- wp plugin deactivate wp-slimstat; fi
+            printf '<IfModule mpm_prefork_module>\nStartServers 5\nMinSpareServers 5\nMaxSpareServers 10\nServerLimit %s\nMaxRequestWorkers %s\nMaxConnectionsPerChild 0\n</IfModule>\n' "$workers" "$workers" > .qa-harness/workers.conf
+            docker cp .qa-harness/workers.conf "$web":/etc/apache2/mods-available/mpm_prefork.conf
+            docker exec "$web" rm -f /tmp/release-cpu-probes.jsonl
             docker restart "$web"
             sleep 2
-            for warm in 1 2 3 4 5; do curl -fsS "$BASE_URL/" -o /dev/null; done
-            npx wp-env run tests-cli -- wp eval 'echo wp_json_encode(["version"=>SLIMSTAT_ANALYTICS_VERSION,"browscap"=>wp_slimstat::$settings["enable_browscap"],"browscap_version"=>SlimStat\Services\Browscap::$browscap_local_version,"active"=>get_option("active_plugins")]);' > "/tmp/load-diagnostic/$arm-state.txt"
+            for probe in $(seq 1 20); do
+              curl -fsS "$BASE_URL/" -H 'X-Release-Cpu: 1' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 ReviewVisitor/control' -o /dev/null
+            done
+            docker cp "$web":/tmp/release-cpu-probes.jsonl "/tmp/load-diagnostic/$arm-profiles.jsonl"
+            docker exec "$web" php -i > "/tmp/load-diagnostic/$arm-php-cli.txt"
+            docker exec "$web" apache2ctl -t -D DUMP_RUN_CFG > "/tmp/load-diagnostic/$arm-apache.txt" 2>&1
+            npx wp-env run tests-cli -- wp eval 'echo wp_json_encode(["version"=>defined("SLIMSTAT_ANALYTICS_VERSION")?SLIMSTAT_ANALYTICS_VERSION:null,"settings"=>array_intersect_key((array)get_option("slimstat_options"),array_flip(["javascript_mode","set_tracker_cookie","enable_browscap","gdpr_enabled","anonymous_tracking"])),"active"=>get_option("active_plugins")]);' > "/tmp/load-diagnostic/$arm-state.txt"
             date -u +%FT%TZ > "/tmp/load-diagnostic/$arm.started"
             status=0
             k6 run --summary-export "/tmp/load-diagnostic/$arm.json" .qa-harness/perf/returning-visitor-load.js > "/tmp/load-diagnostic/$arm.log" 2>&1 || status=$?
@@ -237,14 +275,16 @@ jobs:
             mkdir -p .qa-harness/perf/results
             cp "/tmp/load-diagnostic/$arm.log" .qa-harness/perf/results/returning-visitor-load.log
             cp "/tmp/load-diagnostic/$arm.json" .qa-harness/perf/results/returning-visitor-load.json
-            npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/.qa-harness/perf/lib/verify-delivery.php > "/tmp/load-diagnostic/$arm-delivery.txt"
+            if [ "$arm" != core-default ]; then
+              npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/.qa-harness/perf/lib/verify-delivery.php > "/tmp/load-diagnostic/$arm-delivery.txt"
+            fi
             tail -55 "/tmp/load-diagnostic/$arm.log"
           done
       - name: Preserve comparison evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: load-cpu-comparison
+          name: load-worker-comparison
           path: /tmp/load-diagnostic/
           retention-days: 7
       - name: Stop wp-env
