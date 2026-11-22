@@ -13,6 +13,14 @@ namespace SlimStat\Services\Geolocation {
     }
 }
 namespace SlimStat\Services\Geolocation\Provider {
+    function tempnam($dir, $prefix) {
+        if ('stage' === $GLOBALS['dbip_test_failure']) { return false; }
+        if ('fallback' === $GLOBALS['dbip_test_failure']) {
+            $GLOBALS['dbip_fallback'] = \tempnam(sys_get_temp_dir(), $prefix);
+            return $GLOBALS['dbip_fallback'];
+        }
+        return \tempnam($dir, $prefix);
+    }
     function fwrite($stream, $chunk) {
         if ('write' === $GLOBALS['dbip_test_failure']) { return false; }
         if ('short' === $GLOBALS['dbip_test_failure']) { return \fwrite($stream, substr($chunk, 0, 1)); }
@@ -41,6 +49,7 @@ function __($message, $domain = '') { return $message; }
     function wp_tempnam($path, $dir = '') {
         if ('' !== $dir && $dir !== $GLOBALS['dbip_test_dir'] . '/') { throw new \RuntimeException('Staging must stay on the destination filesystem'); }
         if ('' !== $dir && 'stage' === $GLOBALS['dbip_test_failure']) { return false; }
+        if ('' !== $dir && 'unreserved' === $GLOBALS['dbip_test_failure']) { return $GLOBALS['dbip_unreserved']; }
         return tempnam($GLOBALS['dbip_test_dir'], 'download');
     }
     function wp_remote_get($url, $args) { copy($GLOBALS['dbip_test_gzip'], $args['filename']); return []; }
@@ -56,15 +65,27 @@ function __($message, $domain = '') { return $message; }
     $database = $GLOBALS['dbip_test_dir'] . '/dbip-city-lite.mmdb';
     $provider = new \SlimStat\Services\Geolocation\Provider\DbIpProvider();
     try {
-        foreach (['write', 'short', 'read', 'empty', 'rename', 'none', 'overlap', 'stage'] as $failure) {
+        foreach (['write', 'short', 'read', 'empty', 'rename', 'none', 'overlap', 'stage', 'unreserved', 'fallback'] as $failure) {
             $GLOBALS['dbip_test_failure'] = $failure;
+            if ('unreserved' === $failure) {
+                // wp_tempnam can return a path it failed to reserve, subsequently owned by another attempt.
+                $GLOBALS['dbip_unreserved'] = $GLOBALS['dbip_test_dir'] . '/other-attempt.tmp';
+                file_put_contents($GLOBALS['dbip_unreserved'], 'another validated download');
+            }
             file_put_contents($database, 'last valid database');
             $updated = $provider->updateDatabase();
             if (!$updated && '' === $provider->getLastError()) { throw new \RuntimeException('Failed update must explain recovery'); }
-            $success = in_array($failure, ['none', 'overlap'], true);
+            $success = in_array($failure, ['none', 'overlap', 'unreserved'], true);
             if ($updated !== $success || file_get_contents($database) !== ($success ? $bytes : 'last valid database')) {
                 throw new \RuntimeException('GeoIP replacement or result incorrect after ' . $failure);
             }
+            if ('unreserved' === $failure) {
+                if (!is_file($GLOBALS['dbip_unreserved']) || file_get_contents($GLOBALS['dbip_unreserved']) !== 'another validated download') {
+                    throw new \RuntimeException('An unreserved filename overwrote or removed another attempt');
+                }
+                unlink($GLOBALS['dbip_unreserved']);
+            }
+            if ('fallback' === $failure && file_exists($GLOBALS['dbip_fallback'])) { throw new \RuntimeException('Fallback staging file leaked'); }
             if (count(glob($GLOBALS['dbip_test_dir'] . '/*')) !== 2) { throw new \RuntimeException('Temporary download files leaked after ' . $failure); }
         }
         echo "PASS: failed, partial, overlapping and successful GeoIP streams preserve atomic replacement without temporary-file leaks\n";

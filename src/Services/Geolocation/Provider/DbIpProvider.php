@@ -135,8 +135,10 @@ class DbIpProvider extends AbstractGeoIPProvider
 			$isGz = ("\x1f\x8b" === $magic);
 
 			// Keep each validated staging file private to its attempt, on the destination filesystem.
-			$destTmp = wp_tempnam($this->dbName, trailingslashit(dirname($this->dbPath)));
-			if (!$destTmp) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_tempnam -- wp_tempnam may return an unreserved path; native tempnam creates the file exclusively.
+			$destTmp = @tempnam(dirname($this->dbPath), 'dbip-');
+			if (!$destTmp || dirname($destTmp) !== realpath(dirname($this->dbPath))) {
+				if ($destTmp) { wp_delete_file($destTmp); }
 				wp_delete_file($tmp);
 				$this->lastError = __('A temporary file could not be created for the DB-IP download. Check free disk space and temporary-directory permissions.', 'wp-slimstat');
 				continue;
