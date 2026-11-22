@@ -178,7 +178,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 == Changelog ==
 
-= 6.1.3 - 2026-11-20 =
+= 6.1.3 - 2026-11-21 =
 
 **Fixed**
 
