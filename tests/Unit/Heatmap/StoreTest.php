@@ -216,12 +216,12 @@ class StoreTest extends WpSlimstatTestCase
 	}
 
 	/** @dataProvider pageListCases */
-	public function test_page_lists_gate_both_tracker_params_and_ingestion(string $pages, string $page, bool $matches): void
+	public function test_page_lists_gate_both_tracker_params_and_ingestion(string $pages, string $page, bool $matches, ?string $requestUri = null): void
 	{
 		$this->readyToIngest();
 		\wp_slimstat::$settings['heatmap_pages'] = $pages;
 		$this->view = ['resource' => $page, 'dt' => 1700000000];
-		self::assertSame($matches ? ['l' => 'full', 'r' => 10000] : null, Store::params($page));
+		self::assertSame($matches ? ['l' => 'full', 'r' => 10000] : null, Store::params($requestUri ?? $page));
 		self::assertSame($matches ? 1 : 0, Store::ingest(42, $this->batch([[0, 1, 0, 1, 1, 1, 1]])));
 		if (!$matches) {
 			self::assertSame([], $this->heatmapQueries(), 'excluded pages must not write heatmap data');
@@ -263,6 +263,37 @@ class StoreTest extends WpSlimstatTestCase
 			'space inside a path, line list' => ["/shop/\n/search/big sale/*", '/search/big sale/now/', true],
 			'space inside a path is not a separator' => ['/my page/', '/my', false],
 			'a URL inside a path is not an origin' => ['/go/https://example.com/x', '/go/https://example.com/x', true],
+			// A star after a space belongs to its entry; only explicit separators may split it.
+			'lone star after a space is not match-all' => ['/report *', '/members/', false],
+			'lone star after a space stays in its entry' => ['/report *', '/report 2026', true],
+			'ambiguous star-led entry never broadens capture' => ['/one/* *checkout*', '/my-checkout-page/', false],
+			'explicit star-led entry' => ['/one/*, *checkout*', '/my-checkout-page/', true],
+			'space before wildcard suffix stays in its path' => ['/report *2026*, /shop/*', '/report 2026', true],
+			'wildcard suffix never captures an unlisted path' => ['/report *2026*, /shop/*', '/private/2026/', false],
+			'single wildcard suffix never broadens capture' => ['/report *2026*', '/private/2026/', false],
+			'explicit entry keeps space before slash' => ["/report /private/*\n/shop/*", '/private/item/', false],
+			'literal plus path' => ['/c++/', '/c++/', true, '/c%2B%2B/'],
+			'unescaped plus path' => ['/c++/', '/c++/', true],
+			'literal plus is not a space' => ['/c++/', '/c /', false, '/c%20/'],
+			'encoded plus URL' => ['https://example.com/c%2B%2B/', '/c++/', true, '/c%2B%2B/'],
+			'encoded non-ASCII URL' => ['https://example.com/caf%C3%A9/', '/caf%c3%a9/', true, '/caf%C3%A9/'],
+			'encoded URL is not a truncated path' => ['https://example.com/caf%C3%A9/', '/caf/', false],
+			'encoded comma stays in its path' => ['/report%2C*', '/report,2026', true, '/report%2C2026'],
+			'encoded comma never creates match-all' => ['/report%2C*', '/members/', false],
+			'encoded fragment cannot select a shorter path' => ['/pricing%23draft/', '/pricing', false],
+			'encoded query cannot select a shorter path' => ['/pricing%3Fdraft/', '/pricing', false],
+			'pasted encoded delimiter is rejected' => ['https://example.com/pricing%3fdraft/', '/pricing', false],
+			'encoded delimiter cannot select home' => ['/%23draft/', '/', false],
+			'repeated encoding of a delimiter is rejected' => ['/pricing%2523draft/', '/pricingdraft/', false],
+			'rejected entry does not disable another entry' => ["/pricing%23draft/\n/shop/", '/shop/', true],
+			'encoded delimiters in query values do not affect the path' => ['/pricing/?ref=%23draft%3F', '/pricing/', true],
+			// 6.1.2 matched a wildcard post id; keyed like a visited page it became the home page.
+			'wildcard plain permalink' => ['/?p=*', '/?p=12&ref=nav', true],
+			'wildcard plain permalink is not the home page' => ['/?p=*', '/', false],
+			'wildcard plain permalink, other parameter' => ["/?page_id=1*\n/shop/", '/?p=12', false],
+			'pasted wildcard plain permalink' => ['https://example.com/?page_id=*', '/?page_id=34', true],
+			'single-character post wildcard' => ['/?p=!', '/?p=7', true],
+			'encoded wildcard post ID' => ['/?p=%2A', '/?p=12', true],
 			'48 paths' => [implode("\n", array_map(static fn($n) => '/page-' . $n . '/', range(1, 48))), '/page-48/', true],
 		];
 	}

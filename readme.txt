@@ -6,7 +6,7 @@ Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
 Tested up to: 7.1
-Stable tag: 6.1.3
+Stable tag: 6.1.4
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -166,8 +166,11 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Upgrade Notice ==
 
+= 6.1.4 =
+Older versions keep working, added columns stay, and it removes no rows. Fixes cookieless sessions, delayed pageview updates, Dashboard filter links, Heatmaps page lists, geolocation downloads on new sites and stuck column-width warnings; reduces Real-time database work.
+
 = 6.1.3 =
-Older versions keep working, added columns stay, and it removes no rows. Fixes inflated Human Visits from server tracking, Dashboard filter links, multi-line Heatmaps page lists, and a security issue in the Access Log user-agent tooltip.
+Older versions keep working, added columns stay, and it removes no rows. Security fix only: the Access Log user-agent tooltip shows plain text. Update promptly.
 
 = 6.1.2 =
 Older versions keep working, added columns stay, and it removes no rows. Adds Copy Prompt, AI Analysis (Pro), city drilldown and video tutorials. Fixes privacy exports, tracking, filters, geolocation and RTL layouts. Back up first; repairs wait for your click.
@@ -178,7 +181,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 == Changelog ==
 
-= 6.1.3 - 2026-11-20 =
+= 6.1.4 - 2026-11-22 =
 
 **Improved**
 
@@ -186,13 +189,22 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 **Fixed**
 
-* Heatmaps keep line breaks in Pages to track and match every listed path, including lists collapsed into spaces by earlier saves. Comma-separated lists keep working, and a full URL pasted into the list counts as its path. ([#420](https://github.com/wp-slimstat/wp-slimstat/issues/420))
+* Delayed pageview updates preserve their original visit, including after cookie expiry and concurrent consent changes.
+* Real-time page, country and visitor counts use less database work while keeping long reads included.
+* Heatmaps preserve line breaks, spaces within patterns, plus signs and encoded paths in Pages to track. Pasted URLs match their paths; older collapsed wildcard and URL lists are recovered without turning path fragments into separate wildcards. Entries with encoded query or fragment delimiters are ignored to keep capture within the selected pages. ([#420](https://github.com/wp-slimstat/wp-slimstat/issues/420))
+* JavaScript URL updates preserve plus signs and accept valid paths. Late consent events keep cookieless visits together when GDPR mode is disabled.
 * Dashboard widget filter links for visitor IP, username and more open the filtered Real-time report instead of a "not allowed" page. ([#418](https://github.com/wp-slimstat/wp-slimstat/issues/418))
-* Server tracking: fixed inflated Human Visits when tracking cookies are blocked or disabled, and improved detection of automated HTTP clients. ([#417](https://github.com/wp-slimstat/wp-slimstat/issues/417))
+* Simultaneous first visits now share the same daily visitor salt, keeping cookieless identities consistent.
+* Access Log handles historical visitor rows with missing notes without PHP deprecation warnings.
+* Server tracking: fixed inflated Human Visits when tracking cookies are blocked or disabled, and improved detection of automated HTTP clients. Cookieless visits now honour Extend duration, including when the browser starts accepting tracking cookies during a visit. On a site upgraded from 5.x this starts once "Add the anonymous visitor identity column" has run under SlimStat → Migration; until then visits are counted as before. ([#417](https://github.com/wp-slimstat/wp-slimstat/issues/417))
+* Geolocation downloads begin shortly after activation instead of waiting a week. Missing databases are scheduled from admin visits and settings saves, and repeated GeoIP errors respect the 15-minute throttle after sanitization. ([#430](https://github.com/wp-slimstat/wp-slimstat/issues/430))
+* SlimStat → Migration offers a way out when the database refuses to widen older text columns: it shows repair SQL for your host to review and run during maintenance, or inspection steps for customized columns, and the database warning clears once a reload confirms the repair. ([#429](https://github.com/wp-slimstat/wp-slimstat/issues/429))
+
+= 6.1.3 - 2026-11-21 =
 
 **Security**
 
-* Access Log: with "Show user agent" on, the browser icon's tooltip shows the visitor's user agent as plain text.
+* Access Log: with "Show user agent" on, the browser icon's tooltip now shows the visitor's user agent as plain text.
 
 = 6.1.2 - 2026-11-16 =
 

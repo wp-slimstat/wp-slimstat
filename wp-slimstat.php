@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 6.1.3
+ * Version: 6.1.4
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -57,7 +57,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php') || !file_exists(__DIR__ . '/v
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '6.1.3');
+define('SLIMSTAT_ANALYTICS_VERSION', '6.1.4');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -2035,6 +2035,11 @@ class wp_slimstat
 
     public static function wp_slimstat_update_geoip_database()
     {
+        $provider = self::resolve_geolocation_provider();
+        if (!in_array($provider, \SlimStat\Services\GeoService::DB_PROVIDERS, true)) {
+            return;
+        }
+
         // Calculate the most recent "first Tuesday + 2 days" that has already passed
         $this_month_update = strtotime('first Tuesday of this month') + (86400 * 2);
         $current_time = time();
@@ -2047,25 +2052,17 @@ class wp_slimstat
         }
 
         $last_update = get_option('slimstat_last_geoip_dl', 0);
-        if ($last_update < $this_update) {
-
-            // Determine which geolocation provider to use
-            $provider = self::resolve_geolocation_provider();
-            if (false === $provider) {
-                return;
-            }
-
-            try {
-                $geographicProvider = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
+        try {
+            $geographicProvider = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
+            if ($last_update < $this_update || !is_readable($geographicProvider->getProvider()->getDbPath())) {
                 $ok = $geographicProvider->updateDatabase();
 
                 if ($ok) {
                     update_option('slimstat_last_geoip_dl', time());
                 }
-
-            } catch (\Throwable $e) {
-                wp_slimstat::log('Geolocation database update failed: ' . $e->getMessage(), 'error');
             }
+        } catch (\Throwable $e) {
+            wp_slimstat::log('Geolocation database update failed: ' . $e->getMessage(), 'error');
         }
     }
 

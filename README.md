@@ -1,7 +1,7 @@
 # Slimstat Analytics #
 Real-time WordPress analytics that stay on your own server. Track pageviews and outbound links, build WooCommerce funnels, and keep every visitor privacy-first and GDPR-ready, with no data ever shared with Google. Thousands of WordPress sites already trust it to keep their numbers honest, fast, and entirely their own.
 
-**v6.1.2** — Turn any report into plain-language findings with AI, follow a country down to its cities, and learn SlimStat from video tutorials. SlimStat 6 brought heatmaps, a WooCommerce revenue dashboard, channels and UTM campaigns, and faster reports. [Full changelog](https://github.com/wp-slimstat/wp-slimstat/blob/master/CHANGELOG.md).
+**v6.1.4** — Fixes cookieless sessions, delayed pageview updates, Dashboard filter links, Heatmaps page lists, geolocation downloads on new sites and stuck column-width warnings, and reduces Real-time report database work. Includes the Access Log security fix released in 6.1.3. [Full changelog](https://github.com/wp-slimstat/wp-slimstat/blob/master/CHANGELOG.md).
 
 ### Main features ###
 * **Real-time analytics** — Your site's pulse, live. Watch each visit land the instant it happens: the page, the spot on the map, the search or link that sent them, how quickly your server replied, human or bot. No sampling, no 24-hour delay.

@@ -102,6 +102,22 @@ if (!function_exists('slimstat_plan_row_is_full_scan')) {
     }
 }
 
+$tables = ['wp_slim_stats', 'wp_slim_events', 'wp_slim_stats_archive', 'wp_slim_meta'];
+foreach ([
+    ['SELECT * FROM wp_slim_events te INNER JOIN wp_slim_stats t1 ON te.id = t1.id', 'te', 'wp_slim_events'],
+    ['SELECT * FROM wp_slim_events te INNER JOIN wp_slim_stats t1 ON te.id = t1.id', 't1', 'wp_slim_stats'],
+    ['SELECT * FROM `wp_slim_stats` AS `s` WHERE s.dt > 1', 's', 'wp_slim_stats'],
+    ['SELECT * FROM wp_slim_stats WHERE dt > 1', 'wp_slim_stats', 'wp_slim_stats'],
+    ['SELECT * FROM wp_slim_stats_archive', 'wp_slim_stats_archive', 'wp_slim_stats_archive'],
+    ['SELECT * FROM wp_slim_meta m', 'm', 'wp_slim_meta'],
+    ['SELECT * FROM wp_slim_stats s UNION SELECT * FROM wp_slim_events s', 's', null],
+    ['SELECT * FROM wp_slim_stats', 'unknown', null],
+] as [$sql, $alias, $expected]) {
+    if (slimstat_plan_table($sql, $alias, $tables) !== $expected) {
+        $failures[] = 'Incorrect physical table for ' . $alias . ' in ' . $sql;
+    }
+}
+
 if ([] !== $failures) {
     fwrite(STDERR, 'FAIL: explain gate strength (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {

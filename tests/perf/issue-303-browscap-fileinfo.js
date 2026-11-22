@@ -20,6 +20,7 @@
  */
 
 import http from 'k6/http';
+import encoding from 'k6/encoding';
 import { check } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
 import { BASE_URL } from './lib/env.js';
@@ -32,7 +33,7 @@ const SCENARIO_LABEL = FILEINFO_MISSING ? 'fallback' : 'baseline';
 
 const TRACKER_USER_AGENT =
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 k6-perf/issue-303';
-const REST_TRACKER_PATH = '/wp-json/slimstat/v1/hit';
+const REST_TRACKER_PATH = '/?rest_route=/slimstat/v1/hit';
 const PAYLOAD_HEADERS = {
   'Content-Type': 'application/json',
   // SlimStat reads the visitor UA from this header (not from a JSON field),
@@ -58,6 +59,7 @@ export const options = {
     'http_req_failed{variant:baseline}': ['rate<0.001'],
     'http_req_failed{variant:fallback}': ['rate<0.001'],
     tracker_fatal_500_rate: ['rate<0.001'],
+    checks: ['rate==1'],
   },
 };
 
@@ -66,7 +68,8 @@ function buildPayload(iter) {
   // src/Controllers/Rest/TrackingRestController.php — `res` (resource URL),
   // `ref` (referer), `bw/bh/sw/sh` (browser/screen viewport).
   return JSON.stringify({
-    res: `/perf-303-${SCENARIO_LABEL}-${iter}`,
+    res: encoding.b64encode(`${BASE_URL}/perf-303-${SCENARIO_LABEL}-${iter}`, 'std')
+      .replace(/\+/g, '.').replace(/\//g, '_').replace(/=/g, '-'),
     ref: '',
     bw: 1280,
     bh: 720,
@@ -87,6 +90,7 @@ export default function () {
 
   check(res, {
     'status 200': (r) => r.status === 200,
+    'pageview recorded': (r) => /^"?[1-9][0-9]*\.[a-f0-9]+"?$/.test(r.body.trim()),
     'no Class "finfo" not found': (r) => !r.body.includes('Class "finfo" not found'),
     'no PHP Fatal': (r) => !r.body.includes('PHP Fatal error'),
   });

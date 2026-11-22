@@ -139,8 +139,13 @@ class Utils
 	 */
 	public static function logGeoIpError(string $message): void
 	{
+		$message = sanitize_text_field($message);
+		if ('' === $message) {
+			return;
+		}
+
 		$stored      = \get_option('slimstat_geoip_error', []);
-		$sameMessage = !empty($stored['error']) && $stored['error'] === $message;
+		$sameMessage = isset($stored['error']) && $stored['error'] === $message;
 		// A plain UTC clock here, not date_i18n('U'): a dozen call sites across the
 		// GeoIP providers write this record with time(), so the stored value has to
 		// stay comparable with theirs.
@@ -152,7 +157,7 @@ class Utils
 
 		\wp_slimstat::update_option('slimstat_geoip_error', [
 			'time'  => $now,
-			'error' => sanitize_text_field($message),
+			'error' => $message,
 		], self::DIAGNOSTIC_AUTOLOAD);
 	}
 
@@ -357,7 +362,7 @@ class Utils
 			$needles = [$needles];
 		}
 
-		foreach (\wp_slimstat::string_to_array($haystackString) as $item) {
+		foreach (is_array($haystackString) ? $haystackString : \wp_slimstat::string_to_array($haystackString) as $item) {
 			$pattern = str_replace(['\\*', '\\!'], ['(.*)', '.'], preg_quote($item, '@'));
 
 			foreach ($needles as $needle) {

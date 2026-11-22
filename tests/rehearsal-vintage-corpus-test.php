@@ -696,9 +696,10 @@ $admin_src = is_file($plugin_root . '/admin/index.php')
     ? (string) file_get_contents($plugin_root . '/admin/index.php')
     : '';
 $check(
-    'the premise still holds: the notice refresh returns early when there is no record',
+    'the premise still holds: the notice refresh returns early when there is no drift or failed repair record',
     false !== strpos($admin_src, '$stored = get_option(self::COLUMN_DRIFT_OPTION, []);')
-        && false !== strpos($admin_src, 'if (!is_array($stored) || [] === $stored) {')
+        && false !== strpos($admin_src, 'if (!is_array($stored) || ([] === $stored')
+        && false !== strpos($admin_src, "!isset(get_option(wp_slimstat::DEGRADATION_OPTION, [])['legacy_column_width_repair'])")
 );
 // Stored against live. This is the check that catches the stale snapshot on its own terms —
 // it fails whether or not the drift the record describes has since healed.

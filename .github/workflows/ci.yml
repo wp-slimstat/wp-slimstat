@@ -592,6 +592,9 @@ jobs:
           npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/heatmap-author-scope-wp-test.php
           npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/live-country-scope-wp-test.php
 
+      - name: First daily-salt race
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/Integration/daily-salt-mysql.php
+
       - name: Pretty permalinks, and prove /wp-json/ actually routes
         # WordPress installs with an EMPTY permalink_structure, so /wp-json/ is not rewritten
         # at all and the obfuscated /request/{hash}/ endpoint cannot exist. The tracker builds
@@ -969,11 +972,8 @@ jobs:
       - name: Install k6
         if: ${{ matrix.php == '8.2' }}
         run: |
-          sudo gpg -k
-          sudo gpg --no-default-keyring \
-            --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
-            --keyserver hkp://keyserver.ubuntu.com:80 \
-            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          curl -fsSL https://dl.k6.io/key.gpg \
+            | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
           echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
             | sudo tee /etc/apt/sources.list.d/k6.list
           sudo apt-get update && sudo apt-get install -y k6
@@ -1105,6 +1105,37 @@ jobs:
             echo "init_environment() completed\n";
           '
           npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
+          npx wp-env run tests-cli -- wp eval '
+            $options = get_option("slimstat_options");
+            $options["javascript_mode"] = "off";
+            $options["set_tracker_cookie"] = "on";
+            $options["gdpr_enabled"] = "off";
+            $options["anonymous_tracking"] = "off";
+            $options["enable_browscap"] = "on";
+            update_option("slimstat_options", $options);
+          '
+
+      - name: Bound Apache workers for the four-CPU load runner
+        if: ${{ matrix.php == '8.2' }}
+        # 150 prefork workers exhaust this runner under the returning-visitor spike.
+        # Same-runner master/candidate controls pass unchanged thresholds with 16.
+        run: |
+          web=$(docker ps --filter label=com.docker.compose.service=tests-wordpress --format '{{.ID}}')
+          test -n "$web"
+          cat > /tmp/slimstat-perf-workers.conf <<'APACHE'
+          <IfModule mpm_prefork_module>
+          StartServers 5
+          MinSpareServers 5
+          MaxSpareServers 10
+          ServerLimit 16
+          MaxRequestWorkers 16
+          MaxConnectionsPerChild 0
+          </IfModule>
+          APACHE
+          docker cp /tmp/slimstat-perf-workers.conf "$web":/etc/apache2/mods-available/mpm_prefork.conf
+          docker exec "$web" apache2ctl -t
+          docker restart "$web"
+          curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 1 --max-time 10 http://localhost:8889/ -o /dev/null
 
       - name: Run k6 performance tests
         if: ${{ matrix.php == '8.2' }}
@@ -1116,6 +1147,10 @@ jobs:
           WP_USER: admin
           WP_PASS: password
         run: npm run test:perf
+
+      - name: Reconcile accepted and stored pageviews
+        if: ${{ matrix.php == '8.2' && always() }}
+        run: npx wp-env run tests-cli -- wp eval-file wp-content/plugins/wp-slimstat/tests/perf/lib/verify-delivery.php
 
       # ── EXPLAIN gate ─────────────────────────────────────────────────────
       # Seeds the configured row threshold, captures every SlimStat query via
@@ -1134,7 +1169,18 @@ jobs:
         if: ${{ matrix.php == '8.2' && always() }}
         env:
           EXPLAIN_ROW_THRESHOLD: "100000"
-        run: bash tests/perf/explain-gate.sh
+        run: |
+          set -o pipefail
+          mkdir -p tests/perf/results
+          bash tests/perf/explain-gate.sh 2>&1 | tee tests/perf/results/explain.log
+
+      - name: Upload performance evidence
+        if: ${{ matrix.php == '8.2' && always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: performance-evidence
+          path: tests/perf/results/
+          if-no-files-found: error
 
       - name: Stop wp-env
         if: ${{ matrix.php == '8.2' && always() }}
@@ -1189,3 +1235,4 @@ jobs:
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/notification-delivery-wp-test.php" --path="$WP_DIR"
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/horizon-campaign-wp-test.php" --path="$WP_DIR"
           wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/notification-targeting-wp-test.php" --path="$WP_DIR"
+          wp eval-file "$GITHUB_WORKSPACE/wp-slimstat/tests/session-live-regressions-wp-test.php" --path="$WP_DIR"

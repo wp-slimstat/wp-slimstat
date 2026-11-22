@@ -29,7 +29,8 @@ class Session
 
 		// Check if this is a consent upgrade request
 		$data_js = \wp_slimstat::get_data_js();
-		$isConsentUpgrade = !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
+		$isConsentUpgrade = 'on' === (\wp_slimstat::$settings['gdpr_enabled'] ?? 'off')
+			&& !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
 
 		// Check if we need to upgrade from anonymous to PII tracking
 		$hasCmpConsent = false;
@@ -82,6 +83,13 @@ class Session
 				return false; // Same person within the session window: same visit.
 			}
 
+			if ($existing_visit_id < 0) {
+				// The identity column could not be read, so naming it in the INSERT would
+				// fail and be retried on every hit until the migration has run.
+				// ponytail: any failed probe drops the identity for this hit, not only a missing column.
+				unset($stat['vid_hash']);
+			}
+
 			// New session: a sequential id, exactly like the cookie branch. Deriving the
 			// id from the identity hash is what made two strangers one visitor (32 bits)
 			// and seeded VisitIdGenerator's counter next to the INT UNSIGNED ceiling
@@ -116,12 +124,20 @@ class Session
 				: bin2hex(substr(hash_hmac('sha256', 'pending-session|' . $pending_session, self::getSecureKey(), true), 0, 16));
 			$stat['vid_hash'] = $vid_hash;
 			$current_timestamp = !empty($stat['dt']) ? intval($stat['dt']) : intval(\wp_slimstat::date_i18n('U'));
-			$existing_visit_id = self::findExistingAnonymousVisitId($vid_hash, $current_timestamp);
+			$remaining_duration = null;
+			$existing_visit_id = self::findExistingAnonymousVisitId($vid_hash, $current_timestamp, $remaining_duration);
 			if ($existing_visit_id > 0) {
 				$stat['visit_id'] = $existing_visit_id;
 				\wp_slimstat::set_stat($stat);
-				self::setTrackingCookie($existing_visit_id, 'visit');
+				if (null !== $remaining_duration) {
+					// Processing time must not move a recovered visit's fixed deadline.
+					$remaining_duration = max(0, $remaining_duration - max(0, \wp_slimstat::now() - $current_timestamp));
+				}
+				self::setTrackingCookie($existing_visit_id, 'visit', $remaining_duration);
 				return false;
+			}
+			if ($existing_visit_id < 0) {
+				unset($stat['vid_hash']); // Unreadable column: see the anonymous branch above.
 			}
 			\wp_slimstat::set_stat($stat);
 		}
@@ -270,10 +286,12 @@ class Session
 	 *
 	 * @param string $vid_hash          32 hex chars, as generateAnonymousVidHash() returns.
 	 * @param int    $current_timestamp The hit's own dt.
-	 * @return int Visit ID if found, 0 otherwise
+	 * @param int|null $remaining_duration Remaining fixed lifetime for a recovered cookie; null uses idle expiry.
+	 * @return int Visit ID if found, 0 if there is none, -1 if the identity column could not be read
 	 */
-	private static function findExistingAnonymousVisitId(string $vid_hash, int $current_timestamp): int
+	private static function findExistingAnonymousVisitId(string $vid_hash, int $current_timestamp, ?int &$remaining_duration = null): int
 	{
+		$remaining_duration = null;
 		if ('' === $vid_hash) {
 			return 0;
 		}
@@ -309,7 +327,28 @@ class Session
 			// the whole pre-migration window, silently. Say so once per request instead.
 			self::recordIdentityProbeFailure();
 
-			return 0;
+			return -1;
+		}
+
+		if ($existing_visit_id > 0 && 'on' !== (\wp_slimstat::$settings['extend_session'] ?? 'off')) {
+			// The last hit bounds idle time; a fixed visit also expires from its first hit.
+			// Keep the identity predicate so idx_vid_hash_dt serves this oldest-row lookup.
+			$start_probe = Query::select('dt')
+				->from($GLOBALS['wpdb']->prefix . 'slim_stats')
+				->whereRaw('vid_hash = UNHEX(%s)', [$vid_hash])
+				->where('visit_id', '=', intval($existing_visit_id))
+				->where('dt', '<=', $current_timestamp)
+				->orderBy('dt', 'ASC')
+				->limit(1);
+			$started = $start_probe->probeVar();
+			if ($start_probe->probeFailed()) {
+				self::recordIdentityProbeFailure();
+				return -1;
+			}
+			if (null === $started || intval($started) <= $current_timestamp - $session_duration) {
+				return 0;
+			}
+			$remaining_duration = intval($started) + $session_duration - $current_timestamp;
 		}
 
 		return $existing_visit_id > 0 ? intval($existing_visit_id) : 0;

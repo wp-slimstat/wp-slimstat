@@ -28,6 +28,10 @@
 
 declare(strict_types=1);
 
+namespace SlimStat\Tracker {
+    function time(): int { return $GLOBALS['_towb_now']; }
+}
+
 namespace {
 
 use SlimStat\Tracker\Utils;
@@ -61,7 +65,7 @@ if (!function_exists('do_action')) {
 if (!function_exists('sanitize_text_field')) {
     function sanitize_text_field($str)
     {
-        return is_string($str) ? trim(strip_tags($str)) : '';
+        return is_string($str) ? trim(preg_replace('/[\r\n\t ]+/', ' ', preg_replace('/%[a-f0-9]{2}/i', '', strip_tags($str)))) : '';
     }
 }
 
@@ -292,6 +296,29 @@ towb_assert(
     towb_writes_to('slimstat_tracker_error_detail') === [],
     'slimstat_tracker_error_detail was written again while already empty'
 );
+
+// GeoIP compares the sanitized identity and keeps its existing UTC clock.
+foreach (['database missing', 'database  missing', "database\nmissing", 'database missing ', '<b>database missing</b>', 'database%20 missing', '0'] as $message) {
+    towb_reset();
+    towb_repeat(static fn() => Utils::logGeoIpError($message), 5);
+    towb_assert('GeoIP repeated sanitized message writes once: ' . $message, count(towb_writes_to('slimstat_geoip_error')) === 1);
+    $GLOBALS['_towb_now'] = 1700000899;
+    Utils::logGeoIpError($message);
+    towb_assert('GeoIP does not refresh before 900 seconds', count(towb_writes_to('slimstat_geoip_error')) === 1);
+    $GLOBALS['_towb_now']++;
+    Utils::logGeoIpError($message);
+    towb_assert('GeoIP refreshes at 900 seconds', count(towb_writes_to('slimstat_geoip_error')) === 2);
+    Utils::logGeoIpError('another error');
+    towb_assert('GeoIP changed message writes immediately', count(towb_writes_to('slimstat_geoip_error')) === 3);
+}
+towb_reset();
+foreach (['', '  ', '<b></b>', '%20'] as $message) {
+    towb_repeat(static fn() => Utils::logGeoIpError($message), 5);
+}
+towb_assert('GeoIP empty sanitized messages do not write', towb_writes_to('slimstat_geoip_error') === []);
+towb_reset(true);
+towb_repeat(static fn() => Utils::logGeoIpError('database  missing'), 5);
+towb_assert('GeoIP debug still refreshes each second', count(towb_writes_to('slimstat_geoip_error')) === 5);
 
 // ─── Report ─────────────────────────────────────────────────────────────────
 if ($failures !== []) {

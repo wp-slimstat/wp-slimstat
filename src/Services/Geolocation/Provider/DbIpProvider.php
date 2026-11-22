@@ -134,7 +134,15 @@ class DbIpProvider extends AbstractGeoIPProvider
 
 			$isGz = ("\x1f\x8b" === $magic);
 
-			$destTmp = $this->dbPath . '.tmp';
+			// Keep each validated staging file private to its attempt, on the destination filesystem.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_tempnam -- wp_tempnam may return an unreserved path; native tempnam creates the file exclusively.
+			$destTmp = @tempnam(dirname($this->dbPath), 'dbip-');
+			if (!$destTmp || dirname($destTmp) !== realpath(dirname($this->dbPath))) {
+				if ($destTmp) { wp_delete_file($destTmp); }
+				wp_delete_file($tmp);
+				$this->lastError = __('A temporary file could not be created for the DB-IP download. Check free disk space and temporary-directory permissions.', 'wp-slimstat');
+				continue;
+			}
 			$ok      = false;
 
 			if ($isGz && function_exists('gzopen')) {
@@ -198,8 +206,9 @@ class DbIpProvider extends AbstractGeoIPProvider
 			}
 
 			// A refused replacement must leave the previous database intact and report failure.
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- bounded local binary stream and atomic replacement; WP_Filesystem has no streaming API.
-			if ($valid && @rename($destTmp, $this->dbPath)) {
+			// The public database must remain readable when cron and web workers use different users.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod, WordPress.WP.AlternativeFunctions.rename_rename -- set readable permissions before atomic replacement of the local data file.
+			if ($valid && @chmod($destTmp, 0644) && @rename($destTmp, $this->dbPath)) {
 				return true;
 			}
 			$this->lastError = $valid
