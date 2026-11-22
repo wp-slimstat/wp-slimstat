@@ -429,10 +429,10 @@ $persistBody = slimstat_find_function_body($adminRaw, 'persist_column_drift');
 eval('class DriftPersistenceProbe { const COLUMN_DRIFT_OPTION = "slimstat_schema_column_drift"; public static function run(array $drift) {' . $persistBody . '} }');
 $GLOBALS['drift_options'] = [
     'slimstat_schema_column_drift' => ['still narrow'],
-    'slimstat_degradations' => ['schema column drift' => ['message' => 'old drift'], 'purge' => ['message' => 'keep']],
+    'slimstat_degradations' => ['schema column drift' => ['message' => 'old drift'], 'legacy_column_width_repair' => ['message' => 'online repair failed'], 'purge' => ['message' => 'keep']],
 ];
 DriftPersistenceProbe::run(['still narrow']);
-if (!isset($GLOBALS['drift_options']['slimstat_degradations']['schema column drift'])) {
+if (!isset($GLOBALS['drift_options']['slimstat_degradations']['schema column drift'], $GLOBALS['drift_options']['slimstat_degradations']['legacy_column_width_repair'])) {
     $failures[] = 'unresolved drift must retain its degradation';
 }
 DriftPersistenceProbe::run([]);

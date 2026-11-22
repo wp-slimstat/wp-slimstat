@@ -24,6 +24,7 @@ $has_required_migrations = isset($has_required_migrations) ? $has_required_migra
 $offered_migrations      = (isset($offered_migrations) && is_array($offered_migrations)) ? $offered_migrations : [];
 $analytics_myisam        = !empty($analytics_myisam);
 $column_drift = isset($column_drift) && is_array($column_drift) ? $column_drift : null;
+$manual_column_repairs = isset($manual_column_repairs) && is_array($manual_column_repairs) ? $manual_column_repairs : [];
 $counter_initialized = !empty($counter_initialized);
 $upgrade_pending = !empty($upgrade_pending);
 
@@ -103,6 +104,19 @@ $upgrade_pending = !empty($upgrade_pending);
 
                     <?php if (is_array($column_drift) && [] !== $column_drift): ?>
                         <ul class="slimstat-column-drift"><?php foreach ($column_drift as $column): ?><li><?php echo esc_html($column); ?></li><?php endforeach; ?></ul>
+                    <?php endif; ?>
+                    <?php if ($manual_column_repairs): ?>
+                        <details id="slimstat-manual-column-repair" class="slimstat-details" open>
+                            <summary><?php esc_html_e('If the legacy column repair fails or is unavailable', 'wp-slimstat'); ?></summary>
+                            <p><?php esc_html_e('Share the details below with your database host. Back up the analytics database first. A table rebuild can pause tracking writes for its entire duration and may need additional disk space; large tables can take a long time. SlimStat never runs this SQL automatically.', 'wp-slimstat'); ?></p>
+                            <p><?php esc_html_e('Use the database that contains these analytics tables, which may be separate from WordPress. Reload this page after the repair to verify the columns. Newly added archive fields cannot recover previously unrecorded data.', 'wp-slimstat'); ?></p>
+                            <?php foreach ($manual_column_repairs as $repair_index => $repair): ?>
+                                <h4><?php echo esc_html($repair['table']); ?></h4>
+                                <ul><?php foreach ($repair['reasons'] as $reason): ?><li><?php echo esc_html($reason); ?></li><?php endforeach; ?></ul>
+                                <p><label for="slimstat-column-sql-<?php echo esc_attr($repair_index); ?>"><?php echo $repair['sql'] ? esc_html__('Repair SQL for your database host to review', 'wp-slimstat') : esc_html__('Inspection SQL for your database host', 'wp-slimstat'); ?></label></p>
+                                <textarea id="slimstat-column-sql-<?php echo esc_attr($repair_index); ?>" class="large-text code" rows="4" readonly spellcheck="false"><?php echo esc_textarea($repair['sql'] ?: $repair['inspect']); ?></textarea>
+                            <?php endforeach; ?>
+                        </details>
                     <?php endif; ?>
                     <?php // Open when the steps inside it are the only way to act on this page. ?>
                     <details class="slimstat-details" style="margin:10px 0;">

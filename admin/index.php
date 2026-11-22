@@ -1026,6 +1026,7 @@ class wp_slimstat_admin
             // The physical observation also resolves the notice recorded before repair.
             // Preserve every unrelated degradation and never clear on a failed probe.
             wp_slimstat::clear_degradation('schema column drift');
+            wp_slimstat::clear_degradation('legacy_column_width_repair');
 
             return [];
         }
