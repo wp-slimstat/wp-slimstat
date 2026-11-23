@@ -148,7 +148,7 @@ class ServerSessionTest extends WpSlimstatTestCase
             if (2 === $queryCount) {
                 self::assertStringContainsString("visit_id = '91'", $queries[1]);
                 self::assertStringContainsString('ORDER BY dt ASC', $queries[1]);
-                self::assertStringNotContainsString('dt >=', $queries[1], 'The session start may be outside the idle window.');
+                self::assertStringContainsString("dt >= '1699998800'", $queries[1], 'The start lookup is bounded to two session lengths.');
             }
         } finally {
             \wp_slimstat::$settings = $settings;

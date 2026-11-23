@@ -333,10 +333,15 @@ class Session
 		if ($existing_visit_id > 0 && 'on' !== (\wp_slimstat::$settings['extend_session'] ?? 'off')) {
 			// The last hit bounds idle time; a fixed visit also expires from its first hit.
 			// Keep the identity predicate so idx_vid_hash_dt serves this oldest-row lookup.
+			// Consecutive hits of one visit are at most session_duration apart, so a visit
+			// with a hit in the idle window has a hit within 2x session_duration: either its
+			// start, or one old enough to read as expired. The bound only stops the range
+			// walking the identity's whole history; it never changes the verdict.
 			$start_probe = Query::select('dt')
 				->from($GLOBALS['wpdb']->prefix . 'slim_stats')
 				->whereRaw('vid_hash = UNHEX(%s)', [$vid_hash])
 				->where('visit_id', '=', intval($existing_visit_id))
+				->where('dt', '>=', $current_timestamp - 2 * $session_duration)
 				->where('dt', '<=', $current_timestamp)
 				->orderBy('dt', 'ASC')
 				->limit(1);
