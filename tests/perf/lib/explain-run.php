@@ -33,6 +33,12 @@ $threshold = isset($args[0]) ? (int) $args[0] : 100000;
 $seed_rows = (int) ($threshold + intdiv($threshold, 5));
 
 require_once __DIR__ . '/explain-capture.php';
+require_once __DIR__ . '/scan-budget.php';
+$budgets = json_decode((string) file_get_contents(__DIR__ . '/aggregate-budgets.json'), true);
+if (!is_array($budgets) || $budgets === []) {
+    echo "ERROR: aggregate budgets missing or invalid\nVERDICT: ERROR\n";
+    return;
+}
 
 if (!class_exists('wp_slimstat')) {
     echo "ERROR: wp_slimstat is not loaded — is the plugin active?\n";
@@ -146,6 +152,9 @@ if ($captured === []) {
 $offenders = [];
 $checked   = 0;
 $plan_errors = [];
+$budgeted_scans = [];
+$report_costs = [];
+$recent_counts = [];
 
 foreach ($captured as $entry) {
     $sql = $entry['sql'];
@@ -157,6 +166,7 @@ foreach ($captured as $entry) {
         continue;
     }
     $checked++;
+    $samples = null;
 
     foreach ($plan as $row) {
         if (!slimstat_plan_row_is_full_scan($row)) {
@@ -178,7 +188,7 @@ foreach ($captured as $entry) {
             continue;
         }
 
-        $offenders[] = [
+        $scan = [
             'table'    => $physical_table,
             'context'  => $entry['context'],
             'alias'    => $table,
@@ -190,6 +200,47 @@ foreach ($captured as $entry) {
             'extra'    => $row['Extra'] ?? '',
             'sql'      => $sql,
         ];
+        $shape = slimstat_scan_shape($raw_wpdb->remove_placeholder_escape($sql), $raw_wpdb->prefix, home_url());
+        $budget = slimstat_scan_budget($budgets, $shape, $entry['context']);
+        if ($budget !== null) {
+            try {
+                if ($samples === null) {
+                    $samples = slimstat_measure_scan($raw_wpdb, $sql);
+                    $report_costs[$entry['context']] = ($report_costs[$entry['context']] ?? 0) + max(array_column($samples, 'ms'));
+                }
+                $scan['samples'] = $samples;
+                $scan['budget'] = $budget;
+                $recent_rows = null;
+                if (isset($budget['min_recent_fraction'])) {
+                    if (!preg_match('/\bdt >= ([0-9]{10})\b/', $sql, $window)) {
+                        throw new RuntimeException('Cannot identify live window');
+                    }
+                    $start = (int) $window[1];
+                    $end = preg_match('/\bWHERE dt <= ([0-9]{10})\b/', $sql, $upper) ? (int) $upper[1] : 0;
+                    $upper_sql = $end > 0 ? $raw_wpdb->prepare(' AND dt <= %d', $end) : '';
+                    $cache_key = $physical_table . ':' . $start . ':' . $end;
+                    if (!isset($recent_counts[$cache_key])) {
+                        $recent_counts[$cache_key] = (int) $raw_wpdb->get_var($raw_wpdb->prepare(
+                            "SELECT (SELECT COUNT(*) FROM `{$physical_table}` WHERE dt >= %d{$upper_sql})
+                                + (SELECT COUNT(*) FROM `{$physical_table}` WHERE dt < %d AND dt_out >= %d{$upper_sql})",
+                            $start, $start, $start
+                        ));
+                        if ($raw_wpdb->last_error) { throw new RuntimeException($raw_wpdb->last_error); }
+                    }
+                    $recent_rows = $recent_counts[$cache_key];
+                    $scan['recent_rows'] = $recent_rows;
+                    $scan['window_start'] = $start;
+                    $scan['window_end'] = $end;
+                }
+                if (slimstat_scan_within_budget($samples, $row_counts[$physical_table], $budget, $recent_rows)) {
+                    $budgeted_scans[] = $scan;
+                    continue;
+                }
+            } catch (\Throwable $e) {
+                $plan_errors[] = $entry['context'] . ': ' . $e->getMessage();
+            }
+        }
+        $offenders[] = $scan;
     }
 }
 
@@ -221,6 +272,8 @@ echo wp_json_encode([
     'offenders'     => $offenders,
     'render_errors' => $render_errors,
     'plan_errors'   => $plan_errors,
+    'budgeted_scans' => $budgeted_scans,
+    'report_scan_ms' => $report_costs,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n\n";
 
 if ($render_errors !== [] || $plan_errors !== []) {
@@ -228,10 +281,11 @@ if ($render_errors !== [] || $plan_errors !== []) {
     return;
 }
 
-if ($offenders !== []) {
-    printf("VERDICT: FAIL — %d full scan(s) over %s rows\n",
-        count($offenders), number_format($threshold));
+if ($offenders !== [] || ($report_costs !== [] && max($report_costs) > 2000)) {
+    printf("VERDICT: FAIL — %d unbudgeted/over-budget full scan(s) over %s rows; maximum report scan cost %.2fms (limit 2000ms)\n",
+        count($offenders), number_format($threshold), $report_costs === [] ? 0 : max($report_costs));
     return;
 }
 
+printf("Measured %d reviewed report scans within their query time/work budgets; each report/range <=2000ms\n", count($budgeted_scans));
 echo "VERDICT: PASS\n";

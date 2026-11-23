@@ -226,6 +226,14 @@ class Storage
 		$query = Query::update($table_name)->ignore()->where('id', '=', $id);
 		$hasUpdates = false;
 
+		if (!empty($data['visit_id'])) {
+			// Concurrent enrichment must not undo a session assigned or merged
+			// since the caller read this row. Explicit consent merges use their own UPDATE.
+			$query->setRaw('visit_id', 'IF(visit_id > 0, visit_id, %d)', [(int) $data['visit_id']]);
+			unset($data['visit_id']);
+			$hasUpdates = true;
+		}
+
 		if (!empty($data['notes']) && is_array($data['notes'])) {
 			$notes_to_append = '[' . implode('][', $data['notes']) . ']';
 			$query->setRaw('notes', "CONCAT(IFNULL(notes, ''), %s)", [$notes_to_append]);

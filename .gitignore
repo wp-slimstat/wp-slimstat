@@ -79,3 +79,5 @@ tests/verify/results/*.json
 __pycache__/
 *.pyc
 tests/e2e/.tmp/
+
+/tests/perf/results/

@@ -31,7 +31,10 @@ test.describe('Cookieless server visits — #417 @compat', () => {
   test.afterEach(async ({}, testInfo) => {
     const tracePath = path.join(WP_ROOT, 'wp-content/e2e-session-trace.jsonl');
     if (testInfo.status !== testInfo.expectedStatus && fs.existsSync(tracePath)) {
-      const trace = fs.readFileSync(tracePath, 'utf8').split('\n').filter(line => line.includes(marker)).join('\n');
+      const since = Number(marker.replace('issue417-', '')) / 1000;
+      const trace = fs.readFileSync(tracePath, 'utf8').split('\n').filter(line => {
+        try { return JSON.parse(line).time >= since; } catch { return false; }
+      }).join('\n');
       await testInfo.attach('session-database-trace', { body: trace, contentType: 'application/json' });
       console.error(trace);
     }
@@ -91,6 +94,87 @@ test.describe('Cookieless server visits — #417 @compat', () => {
       } finally { await other.close(); }
     } finally { await context.close(); }
   });
+
+  for (const cookies of ['off', 'on']) {
+    for (const endpoint of ['/wp-admin/admin-ajax.php', '/?rest_route=/slimstat/v1/hit']) {
+      test(`signed updates preserve the original session: cookies ${cookies}, ${endpoint}`, async ({ playwright }) => {
+        await setSlimstatOptions({ set_tracker_cookie: cookies, extend_session: 'off' });
+        const client = await playwright.request.newContext({ userAgent: `${browserUA} ${marker}` });
+        try {
+          const first = await client.get(`${BASE_URL}/?e2e=${marker}-first`);
+          const signed = (await first.text()).match(/"id":"(\d+\.[a-f0-9]+)"/)?.[1];
+          expect(signed).toBeTruthy();
+          const original = await readVisit(`${marker}-first`);
+          const update = async (token: string, changed = false) => client.post(`${BASE_URL}${endpoint}`, {
+            headers: { 'User-Agent': `${browserUA} ${marker}${changed ? '-changed' : ''}` },
+            form: { action: 'slimtrack', id: token, fv: 'beforeunload' },
+          });
+          // A follow-up request can have a different identity, but it still updates this pageview.
+          expect((await (await update(signed!, true)).text()).trim()).toBe(signed);
+          expect((await readVisit(`${marker}-first`)).visit_id).toBe(original.visit_id);
+
+          // A delayed update from an expired page must not adopt the next visit's cookie.
+          await getPool().execute('UPDATE wp_slim_stats SET dt = dt - 1801 WHERE id = ?', [original.id]);
+          const newer = await playwright.request.newContext({ userAgent: `${browserUA} ${marker}` });
+          try {
+            await newer.get(`${BASE_URL}/?e2e=${marker}-next`);
+            const next = await readVisit(`${marker}-next`);
+            expect(next.visit_id).not.toBe(original.visit_id);
+            const beforeUpdate = await newer.storageState();
+            const response = await newer.post(`${BASE_URL}${endpoint}`, {
+              form: { action: 'slimtrack', id: signed!, fv: 'beforeunload' },
+            });
+            expect((await response.text()).trim()).toBe(signed);
+            expect((await readVisit(`${marker}-first`)).visit_id).toBe(original.visit_id);
+            expect((await readVisit(`${marker}-next`)).visit_id).toBe(next.visit_id);
+            expect(await newer.storageState()).toEqual(beforeUpdate);
+          } finally { await newer.dispose(); }
+
+          const invalid = await update(`${original.id}.invalid`);
+          expect((await invalid.text()).trim()).toBe('-101');
+          expect((await readVisit(`${marker}-first`)).visit_id).toBe(original.visit_id);
+
+          // Legacy unassigned pageviews must still acquire their first positive session.
+          await getPool().execute('UPDATE wp_slim_stats SET visit_id = 0 WHERE id = ?', [original.id]);
+          expect((await (await update(signed!)).text()).trim()).toBe(signed);
+          expect(Number((await readVisit(`${marker}-first`)).visit_id)).toBeGreaterThan(0);
+        } finally { await client.dispose(); }
+      });
+    }
+  }
+
+  for (const extend of ['off', 'on']) {
+    for (const endpoint of ['/wp-admin/admin-ajax.php', '/?rest_route=/slimstat/v1/hit']) {
+      test(`concurrent first assignment returns the winning cookie: extend ${extend}, ${endpoint}`, async ({ playwright }) => {
+        await setSlimstatOptions({ set_tracker_cookie: 'on', extend_session: extend });
+        const seed = await playwright.request.newContext({ userAgent: `${browserUA} ${marker}-seed` });
+        const client = await playwright.request.newContext({ userAgent: `${browserUA} ${marker}-contender` });
+        try {
+          const response = await seed.get(`${BASE_URL}/?e2e=${marker}-winner`);
+          const signed = (await response.text()).match(/"id":"(\d+\.[a-f0-9]+)"/)?.[1];
+          expect(signed).toBeTruthy();
+          const original = await readVisit(`${marker}-winner`);
+          await seed.get(`${BASE_URL}/?e2e=${marker}-anchor`);
+          await getPool().execute('UPDATE wp_slim_stats SET dt = dt - 1200 WHERE visit_id = ?', [original.visit_id]);
+          await getPool().execute('UPDATE wp_slim_stats SET visit_id = 0 WHERE id = ?', [original.id]);
+          const updated = await client.post(`${BASE_URL}${endpoint}`, {
+            headers: { 'X-Slimstat-E2E-Assignment': `${original.id}:${original.visit_id}` },
+            form: { action: 'slimtrack', id: signed!, fv: 'beforeunload' },
+          });
+          expect((await updated.text()).trim()).toBe(signed);
+          expect((await readVisit(`${marker}-winner`)).visit_id).toBe(original.visit_id);
+          const cookie = (await client.storageState()).cookies.find(c => c.name === 'slimstat_tracking_code');
+          expect(Number(cookie?.value.split('.')[0])).toBe(Number(original.visit_id));
+          const remaining = cookie!.expires - Date.now() / 1000;
+          const expected = extend === 'on' ? 1800 : 600;
+          expect(remaining).toBeGreaterThan(expected - 30);
+          expect(remaining).toBeLessThanOrEqual(expected + 2);
+          await client.get(`${BASE_URL}/?e2e=${marker}-after-race`);
+          expect((await readVisit(`${marker}-after-race`)).visit_id).toBe(original.visit_id);
+        } finally { await seed.dispose(); await client.dispose(); }
+      });
+    }
+  }
 
   for (const exclude of ['off', 'on']) {
     test(`Go HTTP client is ${exclude === 'on' ? 'excluded' : 'recorded as a bot'}`, async ({ page, playwright }) => {

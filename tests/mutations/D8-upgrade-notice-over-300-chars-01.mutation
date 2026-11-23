@@ -10,8 +10,8 @@ rationale: Extends the current release notice beyond 300 bytes while preserving 
  == Upgrade Notice ==
  
  = 6.1.4 =
--Older versions keep working, added columns stay, and it removes no rows. Fixes inflated Human Visits from server tracking, Dashboard filter links, multi-line Heatmaps page lists, geolocation downloads on new sites and stuck column-width warnings.
-+Older versions keep working, added columns stay, and it removes no rows. Fixes inflated Human Visits from server tracking, Dashboard filter links, multi-line Heatmaps page lists, geolocation downloads on new sites and stuck column-width warnings. Read the full release notes and review every migration step before you begin this update. Keep a separate backup for recovery.
+-Older versions keep working, added columns stay, and it removes no rows. Fixes cookieless sessions, delayed pageview updates, Dashboard filter links, Heatmaps page lists, geolocation downloads on new sites and stuck column-width warnings; reduces Real-time database work.
++Older versions keep working, added columns stay, and it removes no rows. Fixes cookieless sessions, delayed pageview updates, Dashboard filter links, Heatmaps page lists, geolocation downloads on new sites and stuck column-width warnings; reduces Real-time database work. Read the full release notes and review every migration step before you begin this update. Keep a separate backup for recovery.
  
  = 6.1.3 =
  Older versions keep working, added columns stay, and it removes no rows. Security fix only: the Access Log user-agent tooltip shows plain text. Update promptly.

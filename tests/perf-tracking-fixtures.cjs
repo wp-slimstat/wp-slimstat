@@ -48,14 +48,17 @@ assert.throws(discovered, /Invalid published pages ID/);
 pages = { code: 'rest_forbidden' };
 assert.throws(discovered, /Cannot discover published pages/);
 const agents = [];
+const accepted = [];
+let redirected = false;
 let clears = 0;
 const visitor = load('returning-visitor-load.js', {
+  console: { log(line) { if (line.startsWith('SLIMSTAT_ACCEPTED ')) accepted.push(line.slice('SLIMSTAT_ACCEPTED '.length)); } },
   __VU: 1, __ITER: 0, sleep() {},
   http: {
     cookieJar: () => ({ clear() { clears++; }, cookiesForURL: () => ({ slimstat_tracking_code: ['17.checksum'] }) }),
     get(url, options) {
       agents.push(options.headers['User-Agent']);
-      return { status: 200, body: 'slimstat '.repeat(100), timings: { duration: 10 } };
+      return { url: redirected ? url.replace('/?p=17&', '/published-post/?') : url, status: 200, body: 'slimstat '.repeat(100), timings: { duration: 10 } };
     },
   },
 });
@@ -65,4 +68,27 @@ assert.equal(clears, 1, 'A VU starts as a new visitor even when random selects r
 vm.runInContext('Math.random = () => 0.1; __ITER++; run({pages: ["/"]});', visitor);
 assert.equal(new Set(agents).size, 2, 'A new visitor cannot reuse the old cookieless identity.');
 assert.equal(clears, 2);
-console.log('PASS: tracker alphabet, published page discovery and distinct load-test visitors');
+assert.ok(accepted.every(resource => resource.startsWith('/ab~user/?')));
+redirected = true;
+vm.runInContext('run({pages: ["/?p=17"]});', visitor);
+assert.match(accepted.at(-1), /^\/ab~user\/published-post\/\?k6_marker=/, 'Reconcile the final URL, including the installation path.');
+
+// Fail the first stage after a successful old run: reconciliation must find no stale evidence.
+const { spawnSync } = require('node:child_process');
+const os = require('node:os');
+const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'slimstat-perf-runner-'));
+try {
+  const results = path.join(temp, 'tests/perf/results');
+  fs.mkdirSync(results, { recursive: true });
+  for (const ext of ['log', 'json']) fs.writeFileSync(path.join(results, `returning-visitor-load.${ext}`), 'old success');
+  const bin = path.join(temp, 'bin');
+  fs.mkdirSync(bin);
+  fs.writeFileSync(path.join(bin, 'docker'), '#!/bin/sh\necho "{}"\n', { mode: 0o755 });
+  fs.writeFileSync(path.join(bin, 'k6'), '#!/bin/sh\nexit 17\n', { mode: 0o755 });
+  const run = spawnSync('bash', [path.join(__dirname, 'perf/run.sh'), 'first.js', 'returning-visitor-load.js'], {
+    cwd: temp, env: { ...process.env, PATH: `${bin}:${process.env.PATH}` }, encoding: 'utf8',
+  });
+  assert.equal(run.status, 17, run.stderr);
+  for (const ext of ['log', 'json']) assert.equal(fs.existsSync(path.join(results, `returning-visitor-load.${ext}`)), false);
+} finally { fs.rmSync(temp, { recursive: true, force: true }); }
+console.log('PASS: tracker alphabet, page discovery, visitor identity, final URL and fresh run evidence');

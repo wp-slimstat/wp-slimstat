@@ -3,13 +3,13 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: SlimStat Analytics 6.1.4\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-slimstat\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-slimstat-candidate\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-22T16:16:06+00:00\n"
+"POT-Creation-Date: 2026-11-22T16:26:12+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -145,8 +145,8 @@ msgstr ""
 #: admin/view/wp-slimstat-reports.php:120
 #: admin/view/wp-slimstat-reports.php:129
 #: src/Reports/AcquisitionReport.php:136
-#: src/Reports/AcquisitionReport.php:303
-#: src/Reports/AcquisitionReport.php:323
+#: src/Reports/AcquisitionReport.php:304
+#: src/Reports/AcquisitionReport.php:324
 #: src/Reports/CountryCities.php:134
 #: src/Shortcodes/Shortcode.php:81
 #: src/Shortcodes/Shortcode.php:139
@@ -1728,7 +1728,7 @@ msgstr ""
 #: admin/index.php:3425
 #: admin/index.php:3793
 #: src/Modules/Chart.php:74
-#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:642
+#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:637
 msgid "Insufficient permissions"
 msgstr ""
 
@@ -1949,7 +1949,7 @@ msgstr ""
 #: src/Ecommerce/Report.php:483
 #: src/Reports/AcquisitionReport.php:108
 #: src/Reports/AcquisitionReport.php:110
-#: src/Reports/AcquisitionReport.php:297
+#: src/Reports/AcquisitionReport.php:298
 #: src/Tracker/Acquisition.php:107
 msgid "Unassigned"
 msgstr ""
@@ -3076,13 +3076,13 @@ msgstr ""
 
 #: admin/view/heatmaps.php:186
 #: admin/view/partials/ecommerce.php:164
-#: src/Reports/AcquisitionReport.php:366
+#: src/Reports/AcquisitionReport.php:367
 msgid "Previous"
 msgstr ""
 
 #: admin/view/heatmaps.php:188
 #: admin/view/partials/ecommerce.php:164
-#: src/Reports/AcquisitionReport.php:369
+#: src/Reports/AcquisitionReport.php:370
 msgid "Next"
 msgstr ""
 
@@ -3719,7 +3719,7 @@ msgid "No retained visit links in this period. Sales remain unattributed here."
 msgstr ""
 
 #: admin/view/partials/ecommerce.php:164
-#: src/Reports/AcquisitionReport.php:360
+#: src/Reports/AcquisitionReport.php:361
 msgid "Report pages"
 msgstr ""
 
@@ -4550,7 +4550,7 @@ msgid "UTM link builder"
 msgstr ""
 
 #: admin/view/partials/utm-builder.php:20
-#: src/Reports/AcquisitionReport.php:378
+#: src/Reports/AcquisitionReport.php:379
 #: admin/assets/js/ai-analysis.js:75
 #: admin/assets/js/ai-analysis.js:160
 #: admin/assets/js/country-cities.js:18
@@ -5159,7 +5159,7 @@ msgstr ""
 
 #: admin/view/upgrade-pro.php:159
 #: admin/view/wp-slimstat-reports.php:1410
-#: src/Reports/AcquisitionReport.php:287
+#: src/Reports/AcquisitionReport.php:288
 msgid "Build your first campaign link"
 msgstr ""
 
@@ -6291,7 +6291,7 @@ msgstr ""
 
 #. translators: 1: first displayed row, 2: last displayed row, 3: total row count.
 #: admin/view/wp-slimstat-reports.php:1204
-#: src/Reports/AcquisitionReport.php:363
+#: src/Reports/AcquisitionReport.php:364
 #: admin/assets/js/ecommerce.js:60
 #, php-format,js-format
 msgid "%1$s–%2$s of %3$s"
@@ -6521,7 +6521,7 @@ msgstr ""
 #. translators: %s: pageview count.
 #: admin/view/wp-slimstat-reports.php:2720
 #: admin/view/wp-slimstat-reports.php:2804
-#: src/Reports/AcquisitionReport.php:279
+#: src/Reports/AcquisitionReport.php:280
 #, php-format
 msgid "%s pageview"
 msgid_plural "%s pageviews"
@@ -9539,7 +9539,7 @@ msgid "Source breakdown"
 msgstr ""
 
 #: src/Reports/AcquisitionReport.php:136
-#: src/Reports/AcquisitionReport.php:303
+#: src/Reports/AcquisitionReport.php:304
 #: src/Reports/CountryCities.php:134
 msgid "Share"
 msgstr ""
@@ -9588,20 +9588,20 @@ msgstr ""
 msgid "Set up reports"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:268
+#: src/Reports/AcquisitionReport.php:269
 msgid "This report could not be loaded. Check the database connection and report setup, then refresh."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:272
+#: src/Reports/AcquisitionReport.php:273
 msgid "What are campaigns? How do they work?"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:272
+#: src/Reports/AcquisitionReport.php:273
 msgid "What are channels?"
 msgstr ""
 
 #. translators: %s: campaign count.
-#: src/Reports/AcquisitionReport.php:275
+#: src/Reports/AcquisitionReport.php:276
 #, php-format
 msgid "%s campaign"
 msgid_plural "%s campaigns"
@@ -9609,7 +9609,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: channel count.
-#: src/Reports/AcquisitionReport.php:276
+#: src/Reports/AcquisitionReport.php:277
 #, php-format
 msgid "%s channel"
 msgid_plural "%s channels"
@@ -9617,67 +9617,67 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: counted groups, such as 20 campaigns.
-#: src/Reports/AcquisitionReport.php:277
+#: src/Reports/AcquisitionReport.php:278
 #, php-format
 msgid "At least %s"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:282
-#: src/Reports/AcquisitionReport.php:331
+#: src/Reports/AcquisitionReport.php:283
+#: src/Reports/AcquisitionReport.php:332
 msgid "View sales in Ecommerce"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:287
+#: src/Reports/AcquisitionReport.php:288
 msgid "Need a campaign link?"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:290
+#: src/Reports/AcquisitionReport.php:291
 msgid "No tagged pageviews in this period. Add utm_source, utm_medium and utm_campaign to your incoming links, or choose another date range."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:292
+#: src/Reports/AcquisitionReport.php:293
 msgid "No pageviews in this period. Try a wider date range."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:293
+#: src/Reports/AcquisitionReport.php:294
 msgid "No pageviews match this period and these filters. Try a wider date range or clear a filter."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:328
+#: src/Reports/AcquisitionReport.php:329
 msgid "Filter by this campaign"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:328
+#: src/Reports/AcquisitionReport.php:329
 msgid "Filter by this channel"
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:335
+#: src/Reports/AcquisitionReport.php:336
 msgid "Linked orders uses these dates and filters to find orders associated with matching tracked visits. Orders without a visit link are excluded; pageview share is not a purchase rate."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:341
+#: src/Reports/AcquisitionReport.php:342
 msgid "Source breakdowns are available with Pro. Illustrative preview."
 msgstr ""
 
 #. translators: 1: shown pageviews, 2: complete group pageviews.
-#: src/Reports/AcquisitionReport.php:347
+#: src/Reports/AcquisitionReport.php:348
 #, php-format
 msgid "Showing %1$s of %2$s pageviews in this breakdown. The result limit was reached; filter this group or narrow your filters for more detail."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:374
+#: src/Reports/AcquisitionReport.php:375
 msgid "The report result limit was reached. Narrow your filters to see more detail. Shares use all matching pageviews, including rows beyond this limit."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:380
+#: src/Reports/AcquisitionReport.php:381
 msgid "Campaign totals combine all sources and tags. Expand a campaign for each combination of tags on a recorded page URL, not a session or conversion. Values keep their original case. More tags reveals content, term and campaign ID when present. Unassigned means that tag was absent. Use consistent names and tag incoming links, not internal links."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:381
+#: src/Reports/AcquisitionReport.php:382
 msgid "Channel totals combine all sources. Expand a channel for its source breakdown. These are pageview channels, not session attribution. Campaign tags take priority over referring sites. Internal navigation is separate. Direct / unknown means no usable source was sent; it can include untagged email, private messages or apps. Unassigned means the pageview predates report setup."
 msgstr ""
 
-#: src/Reports/AcquisitionReport.php:383
+#: src/Reports/AcquisitionReport.php:384
 msgid "AI Assistants identifies referrals or tagged links from known assistants. AI Crawlers and AI User-requested Fetches identify automated requests by their claimed user agent, not verified identity. They appear only when your tracking settings collect them. Google AI Overviews cannot reliably be separated from Organic Search. Unknown tagged media appear as Unassigned."
 msgstr ""
 
@@ -10124,26 +10124,26 @@ msgstr ""
 msgid "• Red bars highlight peak activity periods"
 msgstr ""
 
-#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:623
+#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:618
 msgid "Too many requests. Please try again later."
 msgstr ""
 
-#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:632
+#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:627
 msgid "Security check failed"
 msgstr ""
 
-#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:660
+#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:655
 msgid "Invalid report ID format"
 msgstr ""
 
-#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:679
+#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:674
 #: src/Services/Privacy/DataExporter.php:38
 #: src/Services/Privacy/DataExporter.php:44
 #: src/Services/Privacy/DataExporter.php:50
 msgid "An error occurred while fetching data"
 msgstr ""
 
-#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:685
+#: src/Reports/Types/Analytics/LiveAnalyticsReport.php:680
 msgid "A fatal error occurred while fetching data"
 msgstr ""
 

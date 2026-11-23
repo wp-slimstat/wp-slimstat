@@ -34,7 +34,7 @@ foreach (['adminbar_today_stats', 'online_count', 'query_online_count', 'build_f
 }
 eval($class . '}');
 $live = file_get_contents(dirname(__DIR__) . '/src/Reports/Types/Analytics/LiveAnalyticsReport.php');
-eval('class ScopedLive { public function count($window_seconds): int {' . slimstat_function_body($live, 'get_sessions_count_within_window') . '} public function chart() {' . slimstat_function_body($live, 'get_users_chart_data') . '} public static function clear_cache() {' . slimstat_function_body($live, 'clear_cache') . '} private function is_tracking_enabled() { return true; } private function generate_chart_labels() { return []; } private function find_peak_index($data) { return null; } }');
+eval('class ScopedLive { private function recent_activity_sql($columns, $start): string {' . slimstat_function_body($live, 'recent_activity_sql') . '} public function count($window_seconds): int {' . slimstat_function_body($live, 'get_sessions_count_within_window') . '} public function chart() {' . slimstat_function_body($live, 'get_users_chart_data') . '} public static function clear_cache() {' . slimstat_function_body($live, 'clear_cache') . '} private function is_tracking_enabled() { return true; } private function generate_chart_labels() { return []; } private function find_peak_index($data) { return null; } }');
 $GLOBALS['admin'] = false;
 $GLOBALS['cache'] = [];
 $keys = [];

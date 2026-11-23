@@ -167,7 +167,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Upgrade Notice ==
 
 = 6.1.4 =
-Older versions keep working, added columns stay, and it removes no rows. Fixes inflated Human Visits from server tracking, Dashboard filter links, multi-line Heatmaps page lists, geolocation downloads on new sites and stuck column-width warnings.
+Older versions keep working, added columns stay, and it removes no rows. Fixes cookieless sessions, delayed pageview updates, Dashboard filter links, Heatmaps page lists, geolocation downloads on new sites and stuck column-width warnings; reduces Real-time database work.
 
 = 6.1.3 =
 Older versions keep working, added columns stay, and it removes no rows. Security fix only: the Access Log user-agent tooltip shows plain text. Update promptly.
@@ -185,6 +185,8 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 **Fixed**
 
+* Delayed pageview updates preserve their original visit, including after cookie expiry and concurrent consent changes.
+* Real-time page, country and visitor counts use less database work while keeping long reads included.
 * Heatmaps preserve line breaks, spaces within patterns, plus signs and encoded paths in Pages to track. Pasted URLs match their paths; older collapsed wildcard and URL lists are recovered without turning path fragments into separate wildcards. Entries with encoded query or fragment delimiters are ignored to keep capture within the selected pages. ([#420](https://github.com/wp-slimstat/wp-slimstat/issues/420))
 * JavaScript URL updates preserve plus signs and accept valid paths. Late consent events keep cookieless visits together when GDPR mode is disabled.
 * Dashboard widget filter links for visitor IP, username and more open the filtered Real-time report instead of a "not allowed" page. ([#418](https://github.com/wp-slimstat/wp-slimstat/issues/418))
