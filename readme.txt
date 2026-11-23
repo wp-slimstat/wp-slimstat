@@ -183,6 +183,10 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 = 6.1.4 - 2026-11-22 =
 
+**Improved**
+
+* Sale offers now come only from Horizon; the built-in Black Friday strip is removed.
+
 **Fixed**
 
 * Delayed pageview updates preserve their original visit, including after cookie expiry and concurrent consent changes.

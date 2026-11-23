@@ -1,5 +1,9 @@
 = 6.1.4 - 2026-11-22 =
 
+**Improved**
+
+* Sale offers now come only from Horizon; the built-in Black Friday strip is removed.
+
 **Fixed**
 
 * Delayed pageview updates keep their original visit when a cookie expires or the request identity changes. Concurrent updates cannot split an established visit or undo a consent merge.
