@@ -24,7 +24,7 @@ class GeolocationService
 	{
 		if (method_exists($this->provider, 'updateDatabase')) {
 			$updated = $this->provider->updateDatabase();
-			if (true === $updated && get_option('slimstat_geoip_error', [])) {
+			if (true === $updated) {
 				Utils::clearDiagnostic('slimstat_geoip_error');
 			}
 			return $updated;

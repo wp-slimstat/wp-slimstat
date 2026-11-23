@@ -162,13 +162,18 @@ class Utils
 	}
 
 	/**
-	 * Wipe a `[code, timestamp]` diagnostic record.
+	 * Wipe a `[code, timestamp]` diagnostic record. A record that is already empty
+	 * is left alone, so clean sites pay no write.
 	 *
 	 * @param string $option Tracker error, warning, or GeoIP error option name.
 	 * @return void
 	 */
 	public static function clearDiagnostic(string $option): void
 	{
+		if (!\get_option($option, [])) {
+			return;
+		}
+
 		\wp_slimstat::update_option($option, [], self::DIAGNOSTIC_AUTOLOAD);
 	}
 
