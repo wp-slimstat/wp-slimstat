@@ -14,13 +14,13 @@ class Ajax
     /** Length of the rate-limiting window, in seconds. */
     private const RATE_LIMIT_WINDOW = 5;
 
-    /** Object-cache group for the counters. Kept out of 'default' so a flush is targeted. */
+    /** Object-cache group for the slots. Kept out of 'default' so a flush is targeted. */
     private const RATE_LIMIT_GROUP = 'slimstat_rl';
 
     /**
      * Whether this client has exceeded the tracking rate limit.
      *
-     * The counter lives in the object cache, never in the options table. It used to be
+     * The budget lives in the object cache, never in the options table. It used to be
      * a transient with a five-second TTL, which is shorter than the gap between most
      * visitors' hits — so the timeout row was normally expired, WordPress deleted both
      * rows and re-inserted them, and the measured cost was 2 to 4 `wp_options` writes
@@ -37,7 +37,7 @@ class Ajax
      *     belongs at the edge, ahead of PHP;
      *   - `slimstat_rate_limit_enabled` lets a site turn it back on regardless.
      *
-     * The counter is keyed on the raw REMOTE_ADDR, unchanged. Behind a CDN or a NAT
+     * The budget is keyed on the raw REMOTE_ADDR, unchanged. Behind a CDN or a NAT
      * gateway that is one bucket for everyone behind it, which is a real limitation —
      * `slimstat_rate_limit_key` exists so such a site can supply the client address it
      * trusts. Resolving forwarded headers here by default would let anyone evade the
@@ -83,21 +83,18 @@ class Ajax
          *
          * @param string $ip Client address as seen by PHP.
          */
-        // Older Redis counters may never expire; a new prefix releases those clients on upgrade.
-        $key = 'rl_v2_' . md5((string) apply_filters('slimstat_rate_limit_key', $ip));
+        // Separate slots also release clients blocked by older, non-expiring Redis counters.
+        $key = 'rl_slot_' . md5((string) apply_filters('slimstat_rate_limit_key', $ip));
 
-        if (wp_cache_add($key, 1, self::RATE_LIMIT_GROUP, self::RATE_LIMIT_WINDOW)) {
-            $hits = 1;
-        } else {
-            $hits = wp_cache_incr($key, 1, self::RATE_LIMIT_GROUP);
-            // Expiry between add and incr returns false on Memcached, or creates a TTL-less 1 on Redis.
-            if (false === $hits || 1 === $hits) {
-                wp_cache_set($key, 1, self::RATE_LIMIT_GROUP, self::RATE_LIMIT_WINDOW);
-                $hits = 1;
+        // Each atomic add reserves one request for five seconds, without a reset that can lose concurrent hits.
+        for ($slot = 0; $slot < self::RATE_LIMIT_HITS; ++$slot) {
+            if (wp_cache_add($key . '_' . $slot, 1, self::RATE_LIMIT_GROUP, self::RATE_LIMIT_WINDOW)) {
+                return false;
             }
         }
 
-        return $hits > self::RATE_LIMIT_HITS;
+        // Preserve fail-open behavior during cache outages without changing any occupied slot.
+        return wp_cache_set($key . '_available', 1, self::RATE_LIMIT_GROUP, self::RATE_LIMIT_WINDOW);
     }
 
     /**

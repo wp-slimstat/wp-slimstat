@@ -76,6 +76,13 @@ function trl_cache_exists(string $slot): bool
     return null !== $entry && (null === $entry['expires'] || $entry['expires'] > $GLOBALS['_trl_clock']);
 }
 
+function trl_interleave(): void
+{
+    $callback = $GLOBALS['_trl_interleave'];
+    $GLOBALS['_trl_interleave'] = null;
+    if ($callback) { $callback(); }
+}
+
 if (!function_exists('wp_using_ext_object_cache')) {
     function wp_using_ext_object_cache(): bool
     {
@@ -86,21 +93,26 @@ if (!function_exists('wp_using_ext_object_cache')) {
 if (!function_exists('wp_cache_add')) {
     function wp_cache_add($key, $value, $group = '', $expire = 0): bool
     {
+        ++$GLOBALS['_trl_add_calls'];
+        if (!$GLOBALS['_trl_cache_available']) { return false; }
         $slot = $group . '|' . $key;
         if (trl_cache_exists($slot)) {
             if ($GLOBALS['_trl_expire_after_add']) {
-                unset($GLOBALS['_trl_cache'][$slot]);
+                $GLOBALS['_trl_clock'] += 5;
                 $GLOBALS['_trl_expire_after_add'] = false;
             }
             return false;
         }
-        return wp_cache_set($key, $value, $group, $expire);
+        wp_cache_set($key, $value, $group, $expire);
+        trl_interleave();
+        return true;
     }
 }
 
 if (!function_exists('wp_cache_set')) {
     function wp_cache_set($key, $value, $group = '', $expire = 0): bool
     {
+        if (!$GLOBALS['_trl_cache_available']) { return false; }
         $slot = $group . '|' . $key;
         $GLOBALS['_trl_cache'][$slot] = [
             'value'   => $value,
@@ -113,16 +125,20 @@ if (!function_exists('wp_cache_set')) {
 if (!function_exists('wp_cache_incr')) {
     function wp_cache_incr($key, $offset = 1, $group = '')
     {
+        if (!$GLOBALS['_trl_cache_available']) { return false; }
         $slot = $group . '|' . $key;
         if (!trl_cache_exists($slot)) {
             if (!$GLOBALS['_trl_redis']) {
+                trl_interleave();
                 return false;
             }
             // Redis Object Cache creates missing counters without an expiry.
             wp_cache_set($key, 0, $group);
         }
         $GLOBALS['_trl_cache'][$slot]['value'] += $offset;
-        return $GLOBALS['_trl_cache'][$slot]['value'];
+        $result = $GLOBALS['_trl_cache'][$slot]['value'];
+        trl_interleave();
+        return $result;
     }
 }
 
@@ -160,6 +176,9 @@ function trl_reset(bool $ext_cache = true, bool $redis = false): void
     $GLOBALS['_trl_clock']        = 1000;
     $GLOBALS['_trl_redis']        = $redis;
     $GLOBALS['_trl_expire_after_add'] = false;
+    $GLOBALS['_trl_interleave'] = null;
+    $GLOBALS['_trl_add_calls'] = 0;
+    $GLOBALS['_trl_cache_available'] = true;
 }
 
 /** How many of `$n` consecutive hits from one address are allowed through. */
@@ -273,6 +292,21 @@ foreach ([false, true] as $redis) {
     $GLOBALS['_trl_clock'] += 5;
     trl_assert("{$backend}: expiry race keeps a TTL", trl_allowed('203.0.113.42', 11) === 10);
 
+    // A second request finishes after the first cache mutation but before its caller resumes.
+    trl_reset(true, $redis);
+    trl_allowed('203.0.113.47', 10);
+    $GLOBALS['_trl_expire_after_add'] = true;
+    $concurrent = 0;
+    $GLOBALS['_trl_interleave'] = static function () use (&$concurrent): void {
+        $concurrent = trl_allowed('203.0.113.47', 1);
+    };
+    $first = trl_allowed('203.0.113.47', 1);
+    $remaining = trl_allowed('203.0.113.47', 10);
+    trl_assert("{$backend}: the competing request ran at expiry", 1 === $concurrent);
+    trl_assert("{$backend}: expiry repair cannot erase a competing request", 10 === $first + $concurrent + $remaining);
+    $GLOBALS['_trl_clock'] += 5;
+    trl_assert("{$backend}: concurrent expiry still recovers", trl_allowed('203.0.113.47', 11) === 10);
+
     trl_reset(true, $redis);
     $GLOBALS['_trl_filters']['slimstat_rate_limit_enabled'] = static fn(): bool => false;
     trl_assert("{$backend}: disabling the limiter allows all requests", trl_allowed('203.0.113.43', 20) === 20);
@@ -283,6 +317,29 @@ foreach ([false, true] as $redis) {
     trl_allowed('203.0.113.44', 10);
     trl_assert("{$backend}: the identity filter still shares a budget", Ajax::isRateLimited('203.0.113.45'));
 }
+
+// Staggered requests retain their own five-second reservations.
+trl_reset();
+trl_allowed('203.0.113.48', 5);
+$GLOBALS['_trl_clock'] += 4;
+trl_assert('five later requests can use the remaining budget', 5 === trl_allowed('203.0.113.48', 6));
+$GLOBALS['_trl_clock'] += 1;
+trl_assert('only the five expired reservations are available', 5 === trl_allowed('203.0.113.48', 6));
+$GLOBALS['_trl_clock'] += 4;
+trl_assert('the later reservations expire after their full five seconds', 5 === trl_allowed('203.0.113.48', 6));
+
+trl_reset();
+trl_allowed('203.0.113.49', 1);
+trl_assert('a fresh budget costs one atomic add', 1 === $GLOBALS['_trl_add_calls']);
+trl_allowed('203.0.113.49', 9);
+$GLOBALS['_trl_add_calls'] = 0;
+Ajax::isRateLimited('203.0.113.49');
+trl_assert('an exhausted budget costs at most ten add attempts', 10 === $GLOBALS['_trl_add_calls']);
+
+trl_reset();
+$GLOBALS['_trl_cache_available'] = false;
+trl_assert('a cache outage does not block tracking', 20 === trl_allowed('203.0.113.50', 20));
+trl_assert('a cache outage does not fall back to option writes', [] === $GLOBALS['_trl_option_calls']);
 
 // Upgrading must recover an IP already locked out by an immortal legacy key.
 trl_reset(true, true);
