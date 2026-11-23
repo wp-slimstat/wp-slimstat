@@ -1,11 +1,4 @@
-= Unreleased =
-
-**Fixed**
-
-* Tracking resumes after the five-second rate-limit window on Redis Object Cache, including for visitors blocked before upgrading. ([#435](https://github.com/wp-slimstat/wp-slimstat/issues/435))
-* Successful geolocation database updates clear old errors from Settings and Tracker Health. Failed updates keep their diagnostics. ([#436](https://github.com/wp-slimstat/wp-slimstat/issues/436))
-
-= 6.1.4 - 2026-11-22 =
+= 6.1.4 - 2026-11-23 =
 
 **Improved**
 
@@ -23,6 +16,8 @@
 * Server tracking: fixed inflated Human Visits when tracking cookies are blocked or disabled, and improved detection of automated HTTP clients. Cookieless visits now honour Extend duration, including when the browser starts accepting tracking cookies during a visit. On a site upgraded from 5.x this starts once "Add the anonymous visitor identity column" has run under SlimStat → Migration; until then visits are counted as before. ([#417](https://github.com/wp-slimstat/wp-slimstat/issues/417))
 * Geolocation downloads begin shortly after activation instead of waiting a week. Missing databases are scheduled from admin visits and settings saves, and repeated GeoIP errors respect the 15-minute throttle after sanitization. ([#430](https://github.com/wp-slimstat/wp-slimstat/issues/430))
 * SlimStat → Migration offers a way out when the database refuses to widen older text columns: it shows repair SQL for your host to review and run during maintenance, or inspection steps for customized columns, and the database warning clears once a reload confirms the repair. ([#429](https://github.com/wp-slimstat/wp-slimstat/issues/429))
+* Tracking resumes after the five-second rate-limit window on Redis Object Cache, including for visitors blocked before upgrading. ([#435](https://github.com/wp-slimstat/wp-slimstat/issues/435))
+* Successful geolocation database updates clear old errors from Settings and Tracker Health. Failed updates keep their diagnostics. ([#436](https://github.com/wp-slimstat/wp-slimstat/issues/436))
 
 = 6.1.3 - 2026-11-21 =
 

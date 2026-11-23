@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-22T19:54:40+00:00\n"
+"POT-Creation-Date: 2026-11-23T11:44:25+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -10400,62 +10400,62 @@ msgid "No .mmdb file found in MaxMind database archive. Files found: %s"
 msgstr ""
 
 #. translators: %s: database extraction exception message.
-#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:261
+#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:257
 #, php-format
 msgid "Error extracting MaxMind database: %s"
 msgstr ""
 
 #. translators: %s: database update error message.
-#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:269
+#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:265
 #, php-format
 msgid "Fatal error updating MaxMind database: %s"
 msgstr ""
 
 #. translators: %s: hostname whose DNS lookup failed.
-#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:289
+#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:285
 #, php-format
 msgid "DNS resolution failed for %s. Please check your internet connection and DNS settings."
 msgstr ""
 
 #. translators: %s: network connection error message.
-#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:295
+#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:291
 #, php-format
 msgid "Cannot connect to MaxMind servers. Network error: %s"
 msgstr ""
 
 #. translators: %s: connectivity check exception message.
-#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:301
+#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:297
 #, php-format
 msgid "Network connectivity check failed: %s"
 msgstr ""
 
 #. translators: %d: HTTP response status code.
-#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:309
+#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:305
 #, php-format
 msgid "HTTP %d error downloading MaxMind database"
 msgstr ""
 
-#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:312
+#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:308
 msgid "Unauthorized. Please check your MaxMind license key. The key may be invalid, expired, or not authorized for GeoLite2 downloads."
 msgstr ""
 
-#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:314
+#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:310
 msgid "Forbidden. Your license key does not have permission to download this database, or you have exceeded the download limit."
 msgstr ""
 
-#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:316
+#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:312
 msgid "Database not found. The requested edition may not exist or may not be available for your account type."
 msgstr ""
 
-#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:318
+#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:314
 msgid "Too many requests. You have exceeded the download limit. Please wait before trying again."
 msgstr ""
 
-#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:323
+#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:319
 msgid "MaxMind server error. Please try again later."
 msgstr ""
 
-#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:329
+#: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php:325
 msgid "License key authentication failed. Please verify your MaxMind license key."
 msgstr ""
 
