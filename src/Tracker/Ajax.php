@@ -18,6 +18,32 @@ class Ajax
     private const RATE_LIMIT_GROUP = 'slimstat_rl';
 
     /**
+     * Whether rate limiting is in effect on this site.
+     *
+     * Exposed so the Tracker Health endpoint can report it: a protection that turns
+     * itself off according to the hosting environment is one a site owner has to be
+     * able to see.
+     *
+     * @param string $ip Client address, when the decision is being made for a request.
+     * @return bool
+     */
+    public static function isRateLimitingActive(string $ip = ''): bool
+    {
+        /**
+         * Filters whether tracking requests are rate limited at all.
+         *
+         * @param bool   $enabled Defaults to true only when a persistent object cache
+         *                        can hold the counter without a database write.
+         * @param string $ip      Client address, or '' when queried for reporting.
+         */
+        // function_exists guarded like every other wp_using_ext_object_cache() call in
+        // the plugin: the tracker can run before the full object-cache API is loaded.
+        $has_persistent_cache = function_exists('wp_using_ext_object_cache') && wp_using_ext_object_cache();
+
+        return (bool) apply_filters('slimstat_rate_limit_enabled', $has_persistent_cache, $ip);
+    }
+
+    /**
      * Whether this client has exceeded the tracking rate limit.
      *
      * The budget lives in the object cache, never in the options table. It used to be
@@ -46,32 +72,6 @@ class Ajax
      * @param string $ip Client address, already validated by the caller.
      * @return bool True when the request should be refused.
      */
-    /**
-     * Whether rate limiting is in effect on this site.
-     *
-     * Exposed so the Tracker Health endpoint can report it: a protection that turns
-     * itself off according to the hosting environment is one a site owner has to be
-     * able to see.
-     *
-     * @param string $ip Client address, when the decision is being made for a request.
-     * @return bool
-     */
-    public static function isRateLimitingActive(string $ip = ''): bool
-    {
-        /**
-         * Filters whether tracking requests are rate limited at all.
-         *
-         * @param bool   $enabled Defaults to true only when a persistent object cache
-         *                        can hold the counter without a database write.
-         * @param string $ip      Client address, or '' when queried for reporting.
-         */
-        // function_exists guarded like every other wp_using_ext_object_cache() call in
-        // the plugin: the tracker can run before the full object-cache API is loaded.
-        $has_persistent_cache = function_exists('wp_using_ext_object_cache') && wp_using_ext_object_cache();
-
-        return (bool) apply_filters('slimstat_rate_limit_enabled', $has_persistent_cache, $ip);
-    }
-
     public static function isRateLimited(string $ip): bool
     {
         if (!self::isRateLimitingActive($ip)) {
