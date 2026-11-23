@@ -181,6 +181,13 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 == Changelog ==
 
+= Unreleased =
+
+**Fixed**
+
+* Tracking resumes after the five-second rate-limit window on Redis Object Cache, including for visitors blocked before upgrading. ([#435](https://github.com/wp-slimstat/wp-slimstat/issues/435))
+* Successful geolocation database updates clear old errors from Settings and Tracker Health. Failed updates keep their diagnostics. ([#436](https://github.com/wp-slimstat/wp-slimstat/issues/436))
+
 = 6.1.4 - 2026-11-22 =
 
 **Improved**

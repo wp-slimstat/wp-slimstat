@@ -2,6 +2,8 @@
 
 namespace SlimStat\Services\Geolocation;
 
+use SlimStat\Tracker\Utils;
+
 class GeolocationService
 {
 	protected $provider;
@@ -21,7 +23,11 @@ class GeolocationService
 	public function updateDatabase()
 	{
 		if (method_exists($this->provider, 'updateDatabase')) {
-			return $this->provider->updateDatabase();
+			$updated = $this->provider->updateDatabase();
+			if (true === $updated && get_option('slimstat_geoip_error', [])) {
+				Utils::clearDiagnostic('slimstat_geoip_error');
+			}
+			return $updated;
 		}
 
 		return false;
