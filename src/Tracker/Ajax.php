@@ -83,15 +83,18 @@ class Ajax
          *
          * @param string $ip Client address as seen by PHP.
          */
-        $key = 'rl_' . md5((string) apply_filters('slimstat_rate_limit_key', $ip));
+        // Older Redis counters may never expire; a new prefix releases those clients on upgrade.
+        $key = 'rl_v2_' . md5((string) apply_filters('slimstat_rate_limit_key', $ip));
 
-        $hits = wp_cache_incr($key, 1, self::RATE_LIMIT_GROUP);
-        if (false === $hits) {
-            // No counter yet, or the window just expired. `add` rather than `set` so
-            // two concurrent requests cannot each reset the other's window; the loser
-            // undercounts by one, which a rate limiter can afford.
-            wp_cache_add($key, 1, self::RATE_LIMIT_GROUP, self::RATE_LIMIT_WINDOW);
+        if (wp_cache_add($key, 1, self::RATE_LIMIT_GROUP, self::RATE_LIMIT_WINDOW)) {
             $hits = 1;
+        } else {
+            $hits = wp_cache_incr($key, 1, self::RATE_LIMIT_GROUP);
+            // Expiry between add and incr returns false on Memcached, or creates a TTL-less 1 on Redis.
+            if (false === $hits || 1 === $hits) {
+                wp_cache_set($key, 1, self::RATE_LIMIT_GROUP, self::RATE_LIMIT_WINDOW);
+                $hits = 1;
+            }
         }
 
         return $hits > self::RATE_LIMIT_HITS;

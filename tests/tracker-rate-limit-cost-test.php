@@ -70,6 +70,12 @@ if (!function_exists('add_option')) {
 }
 
 // ── Object cache: a minimal but faithful stand-in, including expiry ──────────
+function trl_cache_exists(string $slot): bool
+{
+    $entry = $GLOBALS['_trl_cache'][$slot] ?? null;
+    return null !== $entry && (null === $entry['expires'] || $entry['expires'] > $GLOBALS['_trl_clock']);
+}
+
 if (!function_exists('wp_using_ext_object_cache')) {
     function wp_using_ext_object_cache(): bool
     {
@@ -81,12 +87,24 @@ if (!function_exists('wp_cache_add')) {
     function wp_cache_add($key, $value, $group = '', $expire = 0): bool
     {
         $slot = $group . '|' . $key;
-        if (isset($GLOBALS['_trl_cache'][$slot]) && $GLOBALS['_trl_cache'][$slot]['expires'] > $GLOBALS['_trl_clock']) {
+        if (trl_cache_exists($slot)) {
+            if ($GLOBALS['_trl_expire_after_add']) {
+                unset($GLOBALS['_trl_cache'][$slot]);
+                $GLOBALS['_trl_expire_after_add'] = false;
+            }
             return false;
         }
+        return wp_cache_set($key, $value, $group, $expire);
+    }
+}
+
+if (!function_exists('wp_cache_set')) {
+    function wp_cache_set($key, $value, $group = '', $expire = 0): bool
+    {
+        $slot = $group . '|' . $key;
         $GLOBALS['_trl_cache'][$slot] = [
             'value'   => $value,
-            'expires' => $GLOBALS['_trl_clock'] + ($expire ?: 3600),
+            'expires' => $expire ? $GLOBALS['_trl_clock'] + $expire : null,
         ];
         return true;
     }
@@ -96,8 +114,12 @@ if (!function_exists('wp_cache_incr')) {
     function wp_cache_incr($key, $offset = 1, $group = '')
     {
         $slot = $group . '|' . $key;
-        if (!isset($GLOBALS['_trl_cache'][$slot]) || $GLOBALS['_trl_cache'][$slot]['expires'] <= $GLOBALS['_trl_clock']) {
-            return false;
+        if (!trl_cache_exists($slot)) {
+            if (!$GLOBALS['_trl_redis']) {
+                return false;
+            }
+            // Redis Object Cache creates missing counters without an expiry.
+            wp_cache_set($key, 0, $group);
         }
         $GLOBALS['_trl_cache'][$slot]['value'] += $offset;
         return $GLOBALS['_trl_cache'][$slot]['value'];
@@ -129,13 +151,15 @@ function trl_assert(string $name, bool $ok, string $detail = ''): void
     $failures[] = $name . ($detail !== '' ? " — {$detail}" : '');
 }
 
-function trl_reset(bool $ext_cache = true): void
+function trl_reset(bool $ext_cache = true, bool $redis = false): void
 {
     $GLOBALS['_trl_cache']        = [];
     $GLOBALS['_trl_ext_cache']    = $ext_cache;
     $GLOBALS['_trl_option_calls'] = [];
     $GLOBALS['_trl_filters']      = [];
     $GLOBALS['_trl_clock']        = 1000;
+    $GLOBALS['_trl_redis']        = $redis;
+    $GLOBALS['_trl_expire_after_add'] = false;
 }
 
 /** How many of `$n` consecutive hits from one address are allowed through. */
@@ -226,6 +250,46 @@ trl_assert(
     $after === 5,
     "only {$after} of 5 hits allowed a minute later — the client is blocked permanently"
 );
+
+// Both backend behaviours must enforce a fixed window and recover at its boundary.
+foreach ([false, true] as $redis) {
+    $backend = $redis ? 'Redis' : 'core/Memcached';
+    trl_reset(true, $redis);
+    trl_assert("{$backend}: only ten of eleven requests pass", trl_allowed('203.0.113.40', 11) === 10);
+    $GLOBALS['_trl_clock'] += 4;
+    trl_assert("{$backend}: still blocked before expiry", Ajax::isRateLimited('203.0.113.40'));
+    $GLOBALS['_trl_clock'] += 1;
+    trl_assert("{$backend}: a full budget returns at five seconds", trl_allowed('203.0.113.40', 11) === 10);
+    $GLOBALS['_trl_clock'] += 60;
+    trl_assert("{$backend}: repeated windows recover", trl_allowed('203.0.113.40', 11) === 10);
+    trl_assert("{$backend}: another IP has its own budget", trl_allowed('203.0.113.41', 11) === 10);
+    trl_assert("{$backend}: no option or transient calls", $GLOBALS['_trl_option_calls'] === []);
+
+    // The key expires after add observes it but before increment runs.
+    trl_reset(true, $redis);
+    trl_allowed('203.0.113.42', 10);
+    $GLOBALS['_trl_expire_after_add'] = true;
+    trl_assert("{$backend}: expiry race allows a new window", trl_allowed('203.0.113.42', 11) === 10);
+    $GLOBALS['_trl_clock'] += 5;
+    trl_assert("{$backend}: expiry race keeps a TTL", trl_allowed('203.0.113.42', 11) === 10);
+
+    trl_reset(true, $redis);
+    $GLOBALS['_trl_filters']['slimstat_rate_limit_enabled'] = static fn(): bool => false;
+    trl_assert("{$backend}: disabling the limiter allows all requests", trl_allowed('203.0.113.43', 20) === 20);
+    trl_assert("{$backend}: disabled limiter never creates a counter", $GLOBALS['_trl_cache'] === []);
+
+    trl_reset(true, $redis);
+    $GLOBALS['_trl_filters']['slimstat_rate_limit_key'] = static fn(): string => 'shared-client';
+    trl_allowed('203.0.113.44', 10);
+    trl_assert("{$backend}: the identity filter still shares a budget", Ajax::isRateLimited('203.0.113.45'));
+}
+
+// Upgrading must recover an IP already locked out by an immortal legacy key.
+trl_reset(true, true);
+wp_cache_set('rl_' . md5('203.0.113.46'), 100, 'slimstat_rl');
+trl_assert('an upgrade ignores poisoned legacy counters', trl_allowed('203.0.113.46', 11) === 10);
+$GLOBALS['_trl_clock'] += 5;
+trl_assert('an upgraded IP keeps recovering', trl_allowed('203.0.113.46', 11) === 10);
 
 // ── Report ──────────────────────────────────────────────────────────────────
 if ($failures !== []) {
