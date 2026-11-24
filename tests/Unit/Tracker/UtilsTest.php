@@ -142,4 +142,42 @@ class UtilsTest extends WpSlimstatTestCase
 
         $this->assertSame('99', \SlimStat\Tracker\Utils::getValueWithoutChecksum($signed));
     }
+
+    // ── Signing domains: a visit signature must never pass as a pageview id ──
+
+    public function test_a_visit_cookie_signature_is_not_a_valid_pageview_id(): void
+    {
+        \wp_slimstat::$settings['secret'] = 'test-secret';
+        $U = \SlimStat\Tracker\Utils::class;
+
+        // The cookie an anonymous visitor is handed for visit id 42.
+        $visitCookie = $U::getValueWithChecksum('42', $U::DOMAIN_VISIT);
+        $this->assertFalse($U::getValueWithoutChecksum($visitCookie, $U::DOMAIN_PAGEVIEW));
+
+        // The pre-domain bare signature, which old cookies still carry.
+        $bare = '42.' . hash_hmac('sha256', '42', 'test-secret');
+        $this->assertFalse($U::getValueWithoutChecksum($bare, $U::DOMAIN_PAGEVIEW));
+        $this->assertSame('42', $U::getValueWithoutChecksum($bare, $U::DOMAIN_VISIT));
+    }
+
+    public function test_a_pageview_token_round_trips_only_in_its_own_domain(): void
+    {
+        \wp_slimstat::$settings['secret'] = 'test-secret';
+        $U = \SlimStat\Tracker\Utils::class;
+
+        $token = $U::getValueWithChecksum('7', $U::DOMAIN_PAGEVIEW);
+        $this->assertSame('7', $U::getValueWithoutChecksum($token, $U::DOMAIN_PAGEVIEW));
+        $this->assertFalse($U::getValueWithoutChecksum($token, $U::DOMAIN_VISIT));
+        $this->assertFalse($U::getValueWithoutChecksum($token, $U::DOMAIN_CONTENT));
+    }
+
+    public function test_the_legacy_md5_cookie_is_accepted_as_a_visit_but_never_as_a_pageview_id(): void
+    {
+        \wp_slimstat::$settings['secret'] = 'test-secret';
+        $U = \SlimStat\Tracker\Utils::class;
+
+        $legacy = '42.' . md5('42' . 'test-secret');
+        $this->assertSame('42', $U::getValueWithoutChecksum($legacy, $U::DOMAIN_VISIT));
+        $this->assertFalse($U::getValueWithoutChecksum($legacy, $U::DOMAIN_PAGEVIEW));
+    }
 }

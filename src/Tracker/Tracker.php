@@ -72,7 +72,7 @@ class Tracker
         $identifier     = 0;
 
         if (isset($_COOKIE['slimstat_tracking_code'])) {
-            $identifier = Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])));
+            $identifier = Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])), Utils::DOMAIN_VISIT);
             if (false === $identifier) {
                 return false;
             }
@@ -356,7 +356,7 @@ class Tracker
      */
     public static function _get_value_with_checksum($_value = 0)
     {
-        return Utils::getValueWithChecksum($_value);
+        return Utils::getValueWithChecksum($_value, Utils::DOMAIN_VISIT);
     }
 
     /** @deprecated Use SlimStat\Tracker\Utils::getValueWithoutChecksum(). */

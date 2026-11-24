@@ -301,12 +301,24 @@ class Utils
 		return $secret;
 	}
 
-	public static function getValueWithChecksum($value = 0)
+	/** Signing domains. A token signed for one domain never verifies in another. */
+	public const DOMAIN_VISIT    = 'visit';
+	public const DOMAIN_PAGEVIEW = 'pageview';
+	public const DOMAIN_CONTENT  = 'content';
+
+	/**
+	 * Sign a value. With a domain the HMAC covers "domain|value", so a signature issued
+	 * for a visit id can never be replayed as a pageview id with the same number. An
+	 * empty domain keeps the original bare-value signature for add-ons.
+	 */
+	public static function getValueWithChecksum($value = 0, string $domain = '')
 	{
-		return $value . '.' . hash_hmac('sha256', (string) $value, self::resolveSecret());
+		$message = '' === $domain ? (string) $value : $domain . '|' . $value;
+
+		return $value . '.' . hash_hmac('sha256', $message, self::resolveSecret());
 	}
 
-	public static function getValueWithoutChecksum($valueWithChecksum = '')
+	public static function getValueWithoutChecksum($valueWithChecksum = '', string $domain = '')
 	{
 		if (!is_scalar($valueWithChecksum)) {
 			return false;
@@ -320,16 +332,28 @@ class Utils
 		[$value, $checksum] = $parts;
 		$secret = self::resolveSecret();
 
-		if (hash_equals($checksum, hash_hmac('sha256', (string) $value, $secret))) {
+		$message = '' === $domain ? $value : $domain . '|' . $value;
+		if (hash_equals(hash_hmac('sha256', $message, $secret), $checksum)) {
 			return $value;
 		}
 
-		// Legacy scheme, keyed through the same resolver as the branch above. It covers
-		// cookies from before v5.4.2 AND any still minted through the legacy
-		// Tracker::_* surface, so retiring it is not simply a matter of waiting out an
-		// upgrade window — and the two E2E specs that claim to cover it assert only
-		// `status < 500`, so they pass with it deleted. Sunset tracked as W7.
-		if (hash_equals($checksum, md5($value . $secret))) {
+		// Tokens minted before domains existed (visit cookies, cached pages' content info)
+		// carry a bare-value signature. Accept them for those two domains only. A pageview
+		// id is never accepted this way: a bare signature is exactly what a visit cookie
+		// hands out for any integer, so honouring it would let anyone claim another row.
+		$legacyAllowed = '' === $domain || self::DOMAIN_VISIT === $domain || self::DOMAIN_CONTENT === $domain;
+		if (!$legacyAllowed) {
+			return false;
+		}
+
+		if ('' !== $domain && hash_equals(hash_hmac('sha256', (string) $value, $secret), $checksum)) {
+			return $value;
+		}
+
+		// Legacy md5 scheme, keyed through the same resolver. It covers cookies from
+		// before v5.4.2, so retiring it is not simply a matter of waiting out an upgrade
+		// window. Sunset tracked as W7.
+		if (hash_equals(md5($value . $secret), $checksum)) {
 			return $value;
 		}
 

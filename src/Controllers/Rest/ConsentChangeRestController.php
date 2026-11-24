@@ -189,7 +189,7 @@ class ConsentChangeRestController implements RestControllerInterface
 
 		$pageview_id = null;
 		if (!empty($pageview_id_raw)) {
-			$pageview_id_clean = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw);
+			$pageview_id_clean = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw, \SlimStat\Tracker\Utils::DOMAIN_PAGEVIEW);
 			if (false !== $pageview_id_clean && $pageview_id_clean > 0) {
 				$pageview_id = intval($pageview_id_clean);
 			}

@@ -282,7 +282,7 @@ class Ajax
                 }
             }
 
-            $data_js['id'] = Utils::getValueWithoutChecksum($data_js['id']);
+            $data_js['id'] = Utils::getValueWithoutChecksum($data_js['id'], Utils::DOMAIN_PAGEVIEW);
             if (false === $data_js['id']) {
                 return Utils::logError(101);
             }
@@ -290,7 +290,7 @@ class Ajax
             $stat['id'] = intval($data_js['id']);
             if ($stat['id'] < 0) {
                 do_action('slimstat_track_exit_' . abs($stat['id']));
-                return Utils::getValueWithChecksum($stat['id']);
+                return Utils::getValueWithChecksum($stat['id'], Utils::DOMAIN_PAGEVIEW);
             }
 
             if ($isConsentUpgrade && empty($data_js['pos']) && 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off')) {
@@ -312,7 +312,7 @@ class Ajax
                     return $id ?: 0;
                 }
                 do_action('slimstat_track_success');
-                return Utils::getValueWithChecksum($id);
+                return Utils::getValueWithChecksum($id, Utils::DOMAIN_PAGEVIEW);
             }
 
             // Process IP according to consent status (cookie set only by consent upgrade handler)
@@ -492,7 +492,7 @@ class Ajax
                             $stat['id'] = intval($existing_record->id);
                             \wp_slimstat::set_stat($stat);
                             $GLOBALS['wpdb']->query('COMMIT');
-                            return Utils::getValueWithChecksum($stat['id']);
+                            return Utils::getValueWithChecksum($stat['id'], Utils::DOMAIN_PAGEVIEW);
                         }
 
                         $GLOBALS['wpdb']->query('COMMIT');
@@ -618,7 +618,7 @@ class Ajax
 
             $stat = Utils::getClientInfo($data_js, $stat);
             if (!empty($data_js['ci'])) {
-                $validated_ci = Utils::getValueWithoutChecksum($data_js['ci']);
+                $validated_ci = Utils::getValueWithoutChecksum($data_js['ci'], Utils::DOMAIN_CONTENT);
                 if (false === $validated_ci) {
                     Utils::logWarning(102);
                     $data_js['ci'] = '';
@@ -669,6 +669,6 @@ class Ajax
         }
 
         do_action('slimstat_track_success');
-        return Utils::getValueWithChecksum($id);
+        return Utils::getValueWithChecksum($id, Utils::DOMAIN_PAGEVIEW);
     }
 }

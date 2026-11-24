@@ -1568,9 +1568,9 @@ class wp_slimstat
             if (empty(self::$stat['id']) || intval(self::$stat['id']) < 0) {
                 return false;
             }
-            $params['id'] = \SlimStat\Tracker\Utils::getValueWithChecksum(intval(self::$stat['id']));
+            $params['id'] = \SlimStat\Tracker\Utils::getValueWithChecksum(intval(self::$stat['id']), \SlimStat\Tracker\Utils::DOMAIN_PAGEVIEW);
         } else {
-            $params['ci'] = \SlimStat\Tracker\Utils::getValueWithChecksum(\SlimStat\Tracker\Utils::base64UrlEncode(wp_json_encode(\SlimStat\Tracker\Utils::getContentInfo())));
+            $params['ci'] = \SlimStat\Tracker\Utils::getValueWithChecksum(\SlimStat\Tracker\Utils::base64UrlEncode(wp_json_encode(\SlimStat\Tracker\Utils::getContentInfo())), \SlimStat\Tracker\Utils::DOMAIN_CONTENT);
         }
 
         // Always generate wp_rest_nonce (needed for consent banner CSRF protection).

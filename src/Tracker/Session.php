@@ -143,7 +143,7 @@ class Session
 		}
 
 		if (isset($_COOKIE['slimstat_tracking_code'])) {
-			$identifier = Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])));
+			$identifier = Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])), Utils::DOMAIN_VISIT);
 			if (false === $identifier) {
 				return false;
 			}
@@ -220,9 +220,9 @@ class Session
 		}
 
 		if ('id' === $value_type) {
-			$cookie_value = Utils::getValueWithChecksum($value . 'id');
+			$cookie_value = Utils::getValueWithChecksum($value . 'id', Utils::DOMAIN_VISIT);
 		} else {
-			$cookie_value = Utils::getValueWithChecksum($value);
+			$cookie_value = Utils::getValueWithChecksum($value, Utils::DOMAIN_VISIT);
 		}
 
 		if (null === $expires) {
