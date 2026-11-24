@@ -147,7 +147,7 @@ class ConsentHandler
 		// If consent granted via banner, upgrade current pageview from anonymous to PII
 		if ('accepted' === $consent) {
 			if (!empty($pageview_id_raw)) {
-				$pageview_id = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw);
+				$pageview_id = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw, \SlimStat\Tracker\Utils::DOMAIN_PAGEVIEW);
 				if (false !== $pageview_id && $pageview_id > 0) {
 					$pageview_id = intval($pageview_id);
 

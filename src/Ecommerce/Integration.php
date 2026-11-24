@@ -371,7 +371,7 @@ final class Integration
 		if (!self::trackingAllowed() || empty($_COOKIE['slimstat_tracking_code']) || !is_string($_COOKIE['slimstat_tracking_code'])) {
 			return null;
 		}
-		$cookie = Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])));
+		$cookie = Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])), Utils::DOMAIN_VISIT);
 		if (!is_string($cookie) || !ctype_digit($cookie) || (int) $cookie < 1) {
 			return null;
 		}
