@@ -14,7 +14,7 @@ All visitor rows are synthetic.
 Verification:
 
 - Access Log regression failed on development (two headers instead of one), then passed after the fix. Different fingerprints, visit IDs, IPs, browsers, platforms and usernames still separate groups.
-- Six browser scenarios passed with Free alone, then all six passed with licensed Pro enabled through the local test fixture. They cover missing metadata, online refusal, manual SQL recovery, custom attributes, the two-button recovery, and safe rendering of JSON/permission/transport errors.
+- Seven browser scenarios passed with Free alone and with licensed Pro enabled through the local test fixture. They cover missing metadata, online refusal, manual SQL recovery, custom attributes, the two-button recovery, safe rendering of JSON/permission/transport errors, and persistence of long translated diagnostics. The translated diagnostic test failed with byte truncation and passed with UTF-8 character truncation.
 - Free: 839 unit tests / 2,487 assertions; 208 integration tests / 872 assertions; source suite; 85 live report escaping assertions; PHPStan; POT generation and freshness check.
 - Pro: 157 unit tests / 402 assertions; source suite; 43 mutation controls; PHPStan; POT freshness check.
 - Pro's database probe passed on same-database and separate-database MySQL connections and on a separate MariaDB server. Historical values survive conversion and width repair. Custom archive definitions block both tables without mutation.

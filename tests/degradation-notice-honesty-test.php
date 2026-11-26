@@ -200,7 +200,7 @@ if (null === $noticeBody) {
 
 // ── No message may be silently truncated ───────────────────────────────────────────────
 //
-// record_degradation() stores substr($message, 0, 200), and the notice renders what was
+// record_degradation() stores at most 200 UTF-8 characters, and the notice renders what was
 // STORED — so a longer message loses its tail with no warning anywhere. That is not
 // hypothetical: the anonymous-visit-reuse message was written at 236 characters and lost
 // exactly the clause naming the migration that ends it, while its own docblock two lines
@@ -208,10 +208,10 @@ if (null === $noticeBody) {
 //
 // The limit is read from the source rather than hardcoded, so raising it there raises it here.
 $limit = 0;
-if (preg_match('/substr\(\s*\$message\s*,\s*0\s*,\s*(\d+)\s*\)/', $mainLit, $m)) {
+if (preg_match('/mb_substr\(\s*\$message\s*,\s*0\s*,\s*(\d+)\s*,\s*[\'"]UTF-8[\'"]\s*\)/', $mainLit, $m)) {
     $limit = (int) $m[1];
 } else {
-    $failures[] = 'record_degradation() no longer truncates with a literal substr() — re-anchor '
+    $failures[] = 'record_degradation() must truncate UTF-8 characters with mb_substr() — re-anchor '
         . 'this assertion rather than deleting it; the notice renders the STORED message, so a '
         . 'silent length limit anywhere on that path needs a gate';
 }
@@ -312,11 +312,11 @@ if ($limit > 0) {
 
             $measured++;
 
-            if (strlen($message) > $limit) {
+            if (mb_strlen($message, 'UTF-8') > $limit) {
                 $failures[] = sprintf(
                     'a degradation message is %d characters against a %d-character store, so the '
                         . 'admin never sees the end of it: "%s…"',
-                    strlen($message),
+                    mb_strlen($message, 'UTF-8'),
                     $limit,
                     substr($message, 0, 60)
                 );

@@ -178,3 +178,19 @@ test('migration failures render response text safely, including permission and t
     fixture(`$wpdb->query('ALTER TABLE '.$wpdb->prefix.'slim_stats MODIFY city VARCHAR(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL');`);
   }
 });
+
+test('long translated repair failures remain readable after reload', async ({ page }) => {
+  fixture(`
+    $wpdb->query('ALTER TABLE '.$wpdb->prefix.'slim_stats MODIFY city VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL');
+    wp_slimstat::record_degradation('legacy_column_width_repair', 'A'.str_repeat('ش',210), wp_slimstat::DEGRADATION_OPERATIONAL);
+  `);
+  try {
+    await page.goto('/wp-admin/admin.php?page=slimstat_migration');
+    await expect(page.locator('.slimstat-legacy-repair-message')).toHaveText('A' + 'ش'.repeat(199));
+  } finally {
+    fixture(`
+      $wpdb->query('ALTER TABLE '.$wpdb->prefix.'slim_stats MODIFY city VARCHAR(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL');
+      wp_slimstat::clear_degradation('legacy_column_width_repair');
+    `);
+  }
+});
