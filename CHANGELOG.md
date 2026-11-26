@@ -1,4 +1,4 @@
-= 6.1.4 - 2026-11-23 =
+= 6.1.4 - 2026-11-26 =
 
 **Improved**
 
@@ -21,6 +21,10 @@
 * SlimStat → Migration offers a way out when the database refuses to widen older text columns: it shows repair SQL for your host to review and run during maintenance, or inspection steps for customized columns, and the database warning clears once a reload confirms the repair. ([#429](https://github.com/wp-slimstat/wp-slimstat/issues/429))
 * Tracking resumes after the five-second rate-limit window on Redis Object Cache, including for visitors blocked before upgrading. ([#435](https://github.com/wp-slimstat/wp-slimstat/issues/435))
 * Successful geolocation database updates clear old errors from Settings and Tracker Health. Failed updates keep their diagnostics. ([#436](https://github.com/wp-slimstat/wp-slimstat/issues/436))
+
+**Security**
+
+* Prevents a visitor from using a tracking cookie to change another visitor's pageview. Existing visit cookies continue to work.
 
 = 6.1.3 - 2026-11-21 =
 

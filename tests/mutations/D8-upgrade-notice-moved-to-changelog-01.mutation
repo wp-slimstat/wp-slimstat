@@ -10,11 +10,11 @@ rationale: Moves the current Upgrade Notice entry under == Changelog == with a d
  == Upgrade Notice ==
 -
 -= 6.1.4 =
--Older versions keep working, added columns stay, and it removes no rows. Fixes cookieless sessions, Redis tracking lockouts, delayed pageview updates, Dashboard filter links, Heatmaps page lists, geolocation downloads on new sites and stuck column-width warnings; reduces Real-time database work.
+-Older versions keep working, added columns stay, and it removes no rows. Security: prevents forged pageview updates. Fixes visit grouping, Redis tracking lockouts, Heatmaps page lists and geolocation recovery; improves migration guidance. Update promptly.
  
 @@ -183,2 +180,5 @@
  
 += 6.1.4 =
-+Older versions keep working, added columns stay, and it removes no rows. Fixes cookieless sessions, Redis tracking lockouts, delayed pageview updates, Dashboard filter links, Heatmaps page lists, geolocation downloads on new sites and stuck column-width warnings; reduces Real-time database work.
++Older versions keep working, added columns stay, and it removes no rows. Security: prevents forged pageview updates. Fixes visit grouping, Redis tracking lockouts, Heatmaps page lists and geolocation recovery; improves migration guidance. Update promptly.
 +
- = 6.1.4 - 2026-11-23 =
+ = 6.1.4 - 2026-11-26 =

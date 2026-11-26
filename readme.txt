@@ -167,7 +167,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Upgrade Notice ==
 
 = 6.1.4 =
-Older versions keep working, added columns stay, and it removes no rows. Fixes cookieless sessions, Redis tracking lockouts, delayed pageview updates, Dashboard filter links, Heatmaps page lists, geolocation downloads on new sites and stuck column-width warnings; reduces Real-time database work.
+Older versions keep working, added columns stay, and it removes no rows. Security: prevents forged pageview updates. Fixes visit grouping, Redis tracking lockouts, Heatmaps page lists and geolocation recovery; improves migration guidance. Update promptly.
 
 = 6.1.3 =
 Older versions keep working, added columns stay, and it removes no rows. Security fix only: the Access Log user-agent tooltip shows plain text. Update promptly.
@@ -181,7 +181,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 
 == Changelog ==
 
-= 6.1.4 - 2026-11-23 =
+= 6.1.4 - 2026-11-26 =
 
 **Improved**
 
@@ -204,6 +204,10 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 * SlimStat → Migration offers a way out when the database refuses to widen older text columns: it shows repair SQL for your host to review and run during maintenance, or inspection steps for customized columns, and the database warning clears once a reload confirms the repair. ([#429](https://github.com/wp-slimstat/wp-slimstat/issues/429))
 * Tracking resumes after the five-second rate-limit window on Redis Object Cache, including for visitors blocked before upgrading. ([#435](https://github.com/wp-slimstat/wp-slimstat/issues/435))
 * Successful geolocation database updates clear old errors from Settings and Tracker Health. Failed updates keep their diagnostics. ([#436](https://github.com/wp-slimstat/wp-slimstat/issues/436))
+
+**Security**
+
+* Prevents a visitor from using a tracking cookie to change another visitor's pageview. Existing visit cookies continue to work.
 
 = 6.1.3 - 2026-11-21 =
 
