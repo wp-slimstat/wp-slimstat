@@ -25,6 +25,11 @@ $offered_migrations      = (isset($offered_migrations) && is_array($offered_migr
 $analytics_myisam        = !empty($analytics_myisam);
 $column_drift = isset($column_drift) && is_array($column_drift) ? $column_drift : null;
 $manual_column_repairs = isset($manual_column_repairs) && is_array($manual_column_repairs) ? $manual_column_repairs : [];
+$legacy_repair_message = isset($legacy_repair_message) ? $legacy_repair_message : '';
+$offered_ids = array_map(static function ($migration): string { return $migration->getId(); }, $offered_migrations);
+$legacy_repair_offered = in_array('repair-legacy-column-widths', $offered_ids, true);
+$charset_repair_offered = $legacy_repair_offered && in_array('convert-tables-to-utf8mb4', $offered_ids, true)
+    && in_array(true, array_column($manual_column_repairs, 'needs_utf8mb4'), true);
 $counter_initialized = !empty($counter_initialized);
 $upgrade_pending = !empty($upgrade_pending);
 
@@ -81,7 +86,11 @@ $upgrade_pending = !empty($upgrade_pending);
                         <?php elseif (null === $column_drift): ?>
                             <?php echo esc_html__('SlimStat could not verify the database structure. Check the database connection and permissions, then reload this page. Existing warnings are retained.', 'wp-slimstat'); ?>
                         <?php elseif ([] !== $column_drift): ?>
-                            <?php echo esc_html__('Database columns still differ from this version. Review the details and the optional repairs below. If no matching repair is offered, ask your database administrator or SlimStat support to review the definitions before changing them.', 'wp-slimstat'); ?>
+                            <?php if ($manual_column_repairs): ?>
+                                <?php echo esc_html__('Database columns still differ from this version. Follow the recovery steps below. If the optional repair cannot finish, share the SQL and table details below with your database host.', 'wp-slimstat'); ?>
+                            <?php else: ?>
+                                <?php echo esc_html__('Database columns still differ from this version. Review the details and the optional repairs below. If no matching repair is offered, ask your database administrator or SlimStat support to review the definitions before changing them.', 'wp-slimstat'); ?>
+                            <?php endif; ?>
                         <?php elseif (!$counter_initialized || $upgrade_pending): ?>
                             <?php echo esc_html__('Database upgrade is incomplete. Review the recovery guidance below.', 'wp-slimstat'); ?>
                         <?php else: ?>
@@ -108,6 +117,22 @@ $upgrade_pending = !empty($upgrade_pending);
                     <?php if ($manual_column_repairs): ?>
                         <details id="slimstat-manual-column-repair" class="slimstat-details" open>
                             <summary><?php esc_html_e('If the legacy column repair fails or is unavailable', 'wp-slimstat'); ?></summary>
+                            <?php if ($legacy_repair_message): ?>
+                                <p class="slimstat-legacy-repair-message"><?php echo esc_html($legacy_repair_message); ?></p>
+                            <?php endif; ?>
+                            <?php if ($charset_repair_offered): ?>
+                                <div id="slimstat-charset-repair-guidance">
+                                    <h4><?php esc_html_e('Try these steps without SQL first', 'wp-slimstat'); ?></h4>
+                                    <p><?php esc_html_e('Some legacy columns use an older character set. Back up your analytics database, then use Advanced (optional) below. Conversion rebuilds tables and pauses tracking writes while it runs; large tables can take longer.', 'wp-slimstat'); ?></p>
+                                    <ol>
+                                        <li><?php esc_html_e('Run Convert analytics tables to utf8mb4, wait for Done, then reload this page.', 'wp-slimstat'); ?></li>
+                                        <li><?php esc_html_e('Run Repair legacy analytics and archive columns, then reload this page to verify the repair and clear the warning.', 'wp-slimstat'); ?></li>
+                                    </ol>
+                                    <p><?php esc_html_e('If either step fails, use the database host guidance below.', 'wp-slimstat'); ?></p>
+                                </div>
+                            <?php elseif (!$legacy_repair_offered): ?>
+                                <p><?php esc_html_e('The online repair is unavailable because at least one analytics or archive table needs review. No tables are changed by this repair until all have supported definitions and use InnoDB. Review the reasons for each table below with your database host.', 'wp-slimstat'); ?></p>
+                            <?php endif; ?>
                             <p><?php esc_html_e('Share the details below with your database host. Back up the analytics database first. A table rebuild can pause tracking writes for its entire duration and may need additional disk space; large tables can take a long time. SlimStat never runs this SQL automatically.', 'wp-slimstat'); ?></p>
                             <p><?php esc_html_e('Use the database that contains these analytics tables, which may be separate from WordPress. Reload this page after the repair to verify the columns. Newly added archive fields cannot recover previously unrecorded data.', 'wp-slimstat'); ?></p>
                             <?php foreach ($manual_column_repairs as $repair_index => $repair): ?>

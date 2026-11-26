@@ -18,10 +18,15 @@
             $ul.append('<li style="border-bottom:1px solid #eee;margin:6px 0;"></li>');
         }
         steps.forEach(function (s) {
-            var $li = $("<li/>", { id: "slimstat-step-" + s.id });
+            var $li = $("<li/>", { id: "slimstat-step-" + s.id, class: "slimstat-migration-step" });
             // A long description sits under a plain-text summary, in a "Details" disclosure.
             // desc stays html: index steps wrap the index and table names in <code>.
-            var $label = $("<div/>", { class: "label" }).append($("<strong/>").text(s.name));
+            var $label = $("<div/>", { class: "label" }).append(
+                $("<div/>", { class: "slimstat-step-heading" }).append(
+                    $("<strong/>").text(s.name),
+                    $("<span/>", { class: "status", role: "status" })
+                )
+            );
             if (s.summary) {
                 $label.append(
                     $("<p/>").text(s.summary),
@@ -34,7 +39,7 @@
                 $label.append($("<p/>", { html: s.desc }));
             }
             $li.append($label);
-            $li.append($("<span/>", { class: "status" }));
+            $li.append($("<p/>", { class: "slimstat-step-message", "aria-live": "polite" }));
             // An OFFERED step gets its own control and is skipped by "Start Migration".
             // Without the button it would be listed and unstartable, which is how the first
             // version of this shipped: excluded from the run loop and given nothing to replace
@@ -131,7 +136,10 @@
                 return;
             }
 
-            onSettled(ok && !more, ok && more ? SlimstatMigration.labels.notComplete : null);
+            var message = resp && resp.data;
+            message = typeof message === "string" ? message : message && message.message;
+            onSettled(ok && !more, ok && more ? SlimstatMigration.labels.notComplete :
+                (!ok ? (typeof message === "string" && message ? message : SlimstatMigration.labels.notComplete) : null));
         }).fail(function (xhr, textStatus) {
             onSettled(null, transportMessage(xhr, textStatus));
         });
@@ -142,6 +150,17 @@
             return SlimstatMigration.labels.timedOut;
         }
         return SlimstatMigration.labels.requestFailed + " (" + ((xhr && xhr.status) || textStatus) + ")";
+    }
+    function setStepStatus(id, state, message) {
+        var $step = $("#slimstat-step-" + id);
+        var $status = $step.find(".status").attr("data-state", state).text(SlimstatMigration.labels[state]);
+        if (state === "inProgress") $status.append($("<span/>", { class: "spinner is-active" }));
+        var $message = $step.find(".slimstat-step-message").empty().text(message || "");
+        if (state === "failed" && id === "repair-legacy-column-widths" && $("#slimstat-manual-column-repair").length) {
+            $message.append(" ", $("<a/>", {
+                href: "#slimstat-manual-column-repair", text: SlimstatMigration.labels.repairHelp
+            }));
+        }
     }
     function runAll() {
         // OWED ONLY. "Start Migration" applies what the site is owed; an offered step has its
@@ -208,11 +227,10 @@
                 return;
             }
             var step = steps[i];
-            var $row = $("#slimstat-step-" + step.id + " .status");
-            $row.html('<span style="color:#0073aa;">' + SlimstatMigration.labels.inProgress + '</span> <span class="spinner is-active"></span>');
+            setStepStatus(step.id, "inProgress");
             runStep(step.id, function (ok, message) {
                 if (null === ok) {
-                    $row.html('<span style="color:red;">' + SlimstatMigration.labels.failed + "</span>");
+                    setStepStatus(step.id, "failed", message);
                     // Deliberately does NOT call next(). A transport failure means this step's
                     // outcome is unknown — it may still be running server-side — and starting
                     // the next rebuild concurrently with one that may be alive is the exact
@@ -221,7 +239,7 @@
                     return;
                 }
 
-                $row.html(ok ? '<span style="color:green;">' + SlimstatMigration.labels.done + "</span>" : '<span style="color:red;">' + SlimstatMigration.labels.failed + "</span>");
+                setStepStatus(step.id, ok ? "done" : "failed", message);
                 done += ok ? 1 : 0;
                 setProgress(done, total);
                 updateMetrics(done, total, startTs);
@@ -263,12 +281,7 @@
 
             var $btn = $(this).prop("disabled", true);
             var id = $btn.data("migration");
-            var $status = $("#slimstat-step-" + id + " .status");
-
-            $status.html(
-                '<span style="color:#0073aa;">' + SlimstatMigration.labels.inProgress + "</span> " +
-                '<span class="spinner is-active"></span>'
-            );
+            setStepStatus(id, "inProgress");
 
             // Same runner as a step inside the run loop. The offered steps are the two that
             // rebuild whole tables, so they are the ones most likely to need several passes —
@@ -276,15 +289,12 @@
             // would drift.
             runStep(id, function (ok, message) {
                 if (null === ok || !ok) {
-                    $status.html(
-                        '<span style="color:red;">' + SlimstatMigration.labels.failed + "</span> " +
-                        (message ? '<span style="color:#666;">' + message + "</span>" : "")
-                    );
+                    setStepStatus(id, "failed", message);
                     $btn.prop("disabled", false);
                     return;
                 }
 
-                $status.html('<span style="color:green;">' + SlimstatMigration.labels.done + "</span>");
+                setStepStatus(id, "done");
                 // Re-enabled only on failure, so a completed step cannot be started twice by
                 // a second click while the page still shows it.
                 $btn.prop("disabled", true);

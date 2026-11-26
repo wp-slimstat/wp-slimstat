@@ -725,7 +725,7 @@ class wp_slimstat
     {
         $message = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
 
-        $message = substr($message, 0, 200);
+        $message = mb_substr($message, 0, 200, 'UTF-8');
         $now     = time();
         $stored  = self::get_degradations();
 

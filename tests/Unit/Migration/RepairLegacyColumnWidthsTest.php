@@ -317,4 +317,39 @@ class RepairLegacyColumnWidthsTest extends WpSlimstatTestCase
         $this->assertSame([], $queries);
     }
 
+    public function test_charset_recovery_is_only_suggested_for_supported_innodb_columns(): void
+    {
+        foreach (['latin1_swedish_ci', 'utf8_general_ci', 'utf8mb4_unicode_ci'] as $collation) {
+            foreach (['InnoDB', 'MyISAM'] as $engine) {
+                $city = $this->column('city');
+                $city['Collation'] = $collation;
+                $tables = ['wp_slim_stats' => [$city, $this->column('username', 'varchar(256)')],
+                    'wp_slim_stats_archive' => [$this->column('city', 'varchar(256)'), $this->column('username', 'varchar(256)')]];
+                $queries = [];
+                $migration = $this->migration($tables, $queries, true, false, false, $engine);
+                $this->assertSame($engine === 'InnoDB' && $collation !== 'utf8mb4_unicode_ci', $migration->getManualRepairGuidance()[0]['needs_utf8mb4']);
+                $this->assertSame([], $queries);
+            }
+        }
+    }
+
+    public function test_failure_message_describes_the_current_attempt_only(): void
+    {
+        $tables = ['wp_slim_stats' => [$this->column('city'), $this->column('username')],
+            'wp_slim_stats_archive' => [$this->column('city'), $this->column('username')]];
+        $queries = [];
+        $migration = $this->migration($tables, $queries, true, true);
+        $this->assertFalse($migration->run());
+        $this->assertStringContainsString('server refused the online', $migration->getFailureMessage());
+        foreach ($tables as &$columns) {
+            foreach ($columns as &$column) {
+                if ($column['Type'] === 'varchar(255)') { $column['Type'] = 'varchar(256)'; }
+            }
+            unset($column);
+        }
+        unset($columns);
+        $this->assertTrue($migration->run());
+        $this->assertSame('', $migration->getFailureMessage());
+    }
+
 }

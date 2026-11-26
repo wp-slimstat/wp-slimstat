@@ -190,6 +190,9 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 **Fixed**
 
 * Delayed pageview updates preserve their original visit, including after cookie expiry and concurrent consent changes.
+* Access Log keeps a visit together when some pageviews have no browser fingerprint.
+* Migration shows failed repair details beside the step, explains unavailable online repairs, and offers the utf8mb4 conversion and legacy repair sequence before host SQL guidance.
+* Long translated diagnostics remain valid UTF-8 when saved, so their messages remain visible after reloading.
 * Real-time page, country and visitor counts use less database work while keeping long reads included.
 * Heatmaps preserve line breaks, spaces within patterns, plus signs and encoded paths in Pages to track. Pasted URLs match their paths; older collapsed wildcard and URL lists are recovered without turning path fragments into separate wildcards. Entries with encoded query or fragment delimiters are ignored to keep capture within the selected pages. ([#420](https://github.com/wp-slimstat/wp-slimstat/issues/420))
 * JavaScript URL updates preserve plus signs and accept valid paths. Late consent events keep cookieless visits together when GDPR mode is disabled.
