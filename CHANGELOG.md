@@ -6,6 +6,8 @@
 
 **Fixed**
 
+* Access Log keeps a visit together when some pageviews have no browser fingerprint.
+* Migration shows failed repair details beside the step, explains unavailable online repairs, and offers the utf8mb4 conversion and legacy repair sequence before host SQL guidance.
 * Delayed pageview updates keep their original visit when a cookie expires or the request identity changes. Concurrent updates cannot split an established visit or undo a consent merge.
 * Real-time page, country and visitor counts use separate date ranges for new views and long reads, reducing database work while preserving the counts.
 * Heatmaps preserve line breaks, spaces within patterns, plus signs and encoded paths in Pages to track. Pasted URLs match their paths; older collapsed wildcard and URL lists are recovered without turning path fragments into separate wildcards. Entries with encoded query or fragment delimiters are ignored to keep capture within the selected pages. ([#420](https://github.com/wp-slimstat/wp-slimstat/issues/420))
