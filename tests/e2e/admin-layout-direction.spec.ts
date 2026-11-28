@@ -97,16 +97,19 @@ const accessLogProbeRow = `<a class="slimstat-font-logout slimstat-tooltip-trigg
 // 6.0 (16ad233f) put every pageview's details on a second line, flush with the start edge; 5.5 kept them on the resource's line at the far edge.
 test('access log details share the resource line and end at the far edge, like 5.5', async ({ page }) => {
   await page.goto('/wp-admin/admin.php?page=slimview1');
+  // A long title leaves no room beside it, so its details wrap below; the row must grow to hold them.
   await page.locator('#slim_p7_02 .inside').evaluate((el, html) => {
-    const row = document.createElement('p');
-    row.dataset.accessLogProbe = 'true';
-    row.innerHTML = html;
-    el.prepend(row);
+    for (const [probe, title] of [['long', 'A much longer page title that someone wrote for their blog post about analytics and privacy'], ['true', 'Contact Us']]) {
+      const row = document.createElement('p');
+      row.dataset.accessLogProbe = probe;
+      row.innerHTML = html.replace('Contact Us', title);
+      el.prepend(row);
+    }
   }, accessLogProbeRow);
   for (const width of [1920, 1440, 1024, 390]) {
     await page.setViewportSize({ width, height: 900 });
     for (const dir of ['ltr', 'rtl']) {
-      const row = await page.locator('[data-access-log-probe]').evaluate((p, d) => {
+      const row = await page.locator('[data-access-log-probe="true"]').evaluate((p, d) => {
         document.documentElement.dir = d;
         document.body.classList.toggle('rtl', d === 'rtl');
         const r = p.getBoundingClientRect(), cs = getComputedStyle(p);
@@ -121,6 +124,7 @@ test('access log details share the resource line and end at the far edge, like 5
           endGap: Math.round(r.right - parseFloat(cs.paddingRight) - details.right),
           startGap: Math.round(details.left - r.left - parseFloat(cs.paddingLeft)),
           pageOverflow: document.documentElement.scrollWidth - innerWidth,
+          spill: [...document.querySelectorAll('[data-access-log-probe]')].map(q => Math.round(q.querySelector('.details')!.getBoundingClientRect().bottom - q.getBoundingClientRect().bottom)),
         };
       }, dir);
       if (width >= 1440) expect(row.fits, `${dir} ${width}px has room for one line`).toBe(true);
@@ -130,6 +134,7 @@ test('access log details share the resource line and end at the far edge, like 5
         expect(dir === 'rtl' ? row.startGap : row.endGap, `${dir} ${width}px details reach the far edge`).toBeLessThanOrEqual(2);
       }
       expect(row.pageOverflow, `${dir} ${width}px`).toBeLessThanOrEqual(1);
+      expect(Math.max(...row.spill), `${dir} ${width}px details stay inside their row`).toBeLessThanOrEqual(0);
     }
   }
 });

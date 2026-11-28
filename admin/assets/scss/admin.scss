@@ -466,6 +466,11 @@ body.index-php {
   word-wrap: break-word;
 }
 
+/* Access Log details float to the far edge; when a long title pushes them below, the row grows to hold them. */
+[id^="slim_"] p:has(> .details) {
+  display: flow-root;
+}
+
 [id^="slim_"] p:last-child {
   border-bottom: 0;
 }
