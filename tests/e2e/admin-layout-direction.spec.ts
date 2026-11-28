@@ -145,6 +145,8 @@ test('access log fills the viewport when it is the last panel and keeps 465px ot
   await page.goto('/wp-admin/admin.php?page=slimview1');
   const box = page.locator('#slim_p7_02');
   const insideHeight = () => box.locator('.inside').evaluate(el => Math.round(el.getBoundingClientRect().height));
+  // A row, not the empty state: an empty .inside is height:auto (audit E1), so neither height rule would apply.
+  await box.locator('.inside').evaluate((el, html) => { const p = document.createElement('p'); p.innerHTML = html; el.replaceChildren(p); }, accessLogProbeRow);
   // Hidden reports are not rendered, so hiding the panels after it leaves the Access Log as the last child.
   await box.evaluate(el => el.parentElement!.append(el));
   expect(await insideHeight()).toBeGreaterThan(465);
