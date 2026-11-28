@@ -447,12 +447,17 @@ body.index-php {
   height: 465px;
 }
 
-/* GitHub #295: a tall panel that ends the page, because the panels after it are hidden,
-   fills the window instead of stopping at 465px. 160px = admin bar 32 + panel title and
-   footer 105 + gap 15 + 8 spare. Phones keep the fixed box so the page still scrolls. */
+/* GitHub #295: when the reports after it are hidden (hidden reports are not rendered), the report
+   that ends the page fills the window instead of stopping at its fixed height, if it has the row
+   to itself: a full-width report, or the only report left. A narrower last report shares its row,
+   so growing it would stretch the reports beside it. Acquisition boxes size themselves to their
+   content; charts and empty states keep their !important heights. 190px = admin bar 32 + panel
+   title, actions and footer up to 133 + gap 15 + 10 spare. Phones keep the fixed box so the page
+   still scrolls. */
 @media screen and (min-width: 783px) {
-  .wrap-slimstat .meta-box-sortables > .postbox.tall:last-child .inside {
-    height: #{"max(465px, calc(100vh - 160px))"};
+  .wrap-slimstat .meta-box-sortables > [id^="slim_"].postbox.full-width:last-child .inside,
+  .wrap-slimstat .meta-box-sortables > [id^="slim_"].postbox:only-of-type:not(.slimstat-acquisition-box) .inside {
+    height: #{"max(465px, calc(100vh - 190px))"};
   }
 }
 

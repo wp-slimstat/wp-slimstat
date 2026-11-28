@@ -161,6 +161,24 @@ test('access log fills the viewport when it is the last panel and keeps 465px ot
   expect(await insideHeight(), 'a panel below keeps the Access Log at 465px').toBe(465);
 });
 
+// GitHub #295: a normal-width report fills the viewport only when it is the only one left; beside another it keeps 240px.
+test('a normal report fills the viewport when it is the only one left and keeps 240px beside another', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/wp-admin/admin.php?page=slimview2');
+  await page.waitForLoadState('networkidle');
+  // A list report: charts and acquisition boxes size themselves and are meant to keep their height.
+  const id = await page.locator('.meta-box-sortables > [id^="slim_"].postbox:not(.full-width, .slimstat-acquisition-box)').filter({ hasNot: page.locator('canvas, .slimstat-postbox-chart--canvas') }).first().getAttribute('id');
+  const box = page.locator(`#${id}`); // pinned: a locator re-resolves, and the probe added below would match a positional one
+  const insideHeight = () => box.locator('.inside').evaluate(el => Math.round(el.getBoundingClientRect().height));
+  await box.locator('.inside').evaluate((el, html) => { const p = document.createElement('p'); p.innerHTML = html; el.replaceChildren(p); }, accessLogProbeRow);
+  await box.evaluate(el => el.parentElement!.querySelectorAll(':scope > .postbox').forEach(p => p !== el && p.remove()));
+  expect(await insideHeight(), 'the only report left fills the window').toBeGreaterThan(465);
+  expect(await box.evaluate(el => el.getBoundingClientRect().height)).toBeLessThanOrEqual(900 - 32);
+  // Still the last child, but now it shares its row, so it must not grow.
+  await box.evaluate(el => el.before(Object.assign(document.createElement('div'), { id: 'slim_probe', className: 'postbox' })));
+  expect(await insideHeight(), 'a narrow last report sharing its row keeps 240px').toBe(240);
+});
+
 test('long alert copy and actions stay visible in both directions and on phones', async ({ page }) => {
   const html=runWordPressFixture(`<?php
   require_once WP_PLUGIN_DIR . '/wp-slimstat/admin/index.php';

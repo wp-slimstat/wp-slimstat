@@ -190,7 +190,7 @@ SlimStat 6 adds heatmaps, WooCommerce revenue, campaign channels and faster repo
 **Fixed**
 
 * Access Log shows each pageview on one line again, with its details at the far edge, as in 5.5. A long page title or a narrow screen still moves the details below the page.
-* On desktop, the Access Log grows to fill the window when the reports after it are hidden, instead of stopping at 465px. Phones and short windows keep 465px. ([#295](https://github.com/wp-slimstat/wp-slimstat/issues/295))
+* On desktop, when you hide the reports below it, the last report on the page grows to fill the window instead of keeping its fixed height. This covers the Access Log, other full-width reports and any report left on its own. Charts and phones keep their usual size. ([#295](https://github.com/wp-slimstat/wp-slimstat/issues/295))
 * Delayed pageview updates preserve their original visit, including after cookie expiry and concurrent consent changes.
 * Access Log keeps a visit together when some pageviews have no browser fingerprint.
 * Migration shows failed repair details beside the step, explains unavailable online repairs, and offers the utf8mb4 conversion and legacy repair sequence before host SQL guidance.
