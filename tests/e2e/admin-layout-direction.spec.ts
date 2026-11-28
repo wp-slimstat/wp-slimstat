@@ -97,6 +97,10 @@ const accessLogProbeRow = `<a class="slimstat-font-logout slimstat-tooltip-trigg
 // 6.0 (16ad233f) put every pageview's details on a second line, flush with the start edge; 5.5 kept them on the resource's line at the far edge.
 test('access log details share the resource line and end at the far edge, like 5.5', async ({ page }) => {
   await page.goto('/wp-admin/admin.php?page=slimview1');
+  const box = page.locator('#slim_p7_02');
+  // Load the report before injecting rows, or its async response can replace them.
+  await box.scrollIntoViewIfNeeded();
+  await expect(box.locator('.inside .loading')).toHaveCount(0);
   // A long title leaves no room beside it, so its details wrap below; the row must grow to hold them.
   await page.locator('#slim_p7_02 .inside').evaluate((el, html) => {
     for (const [probe, title] of [['long', 'A much longer page title that someone wrote for their blog post about analytics and privacy'], ['true', 'Contact Us']]) {
@@ -145,6 +149,8 @@ test('access log fills the viewport when it is the last panel and keeps 465px ot
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/wp-admin/admin.php?page=slimview1');
   const box = page.locator('#slim_p7_02');
+  await box.scrollIntoViewIfNeeded();
+  await expect(box.locator('.inside .loading')).toHaveCount(0);
   const insideHeight = () => box.locator('.inside').evaluate(el => Math.round(el.getBoundingClientRect().height));
   // A row, not the empty state: an empty .inside is height:auto (audit E1), so neither height rule would apply.
   await box.locator('.inside').evaluate((el, html) => { const p = document.createElement('p'); p.innerHTML = html; el.replaceChildren(p); }, accessLogProbeRow);
