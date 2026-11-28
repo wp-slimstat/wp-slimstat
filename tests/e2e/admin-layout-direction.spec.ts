@@ -161,22 +161,43 @@ test('access log fills the viewport when it is the last panel and keeps 465px ot
   expect(await insideHeight(), 'a panel below keeps the Access Log at 465px').toBe(465);
 });
 
-// GitHub #295: a normal-width report fills the viewport only when it is the only one left; beside another it keeps 240px.
-test('a normal report fills the viewport when it is the only one left and keeps 240px beside another', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
+// GitHub #295: normal-width reports fill the viewport when only one, or a few sharing one row, are left;
+// otherwise they keep 240px, so no card in a row is stretched past its content.
+test('a few normal reports fill the viewport when they share one row and keep 240px otherwise', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 }); // three normal reports per row
   await page.goto('/wp-admin/admin.php?page=slimview2');
   await page.waitForLoadState('networkidle');
   // A list report: charts and acquisition boxes size themselves and are meant to keep their height.
-  const id = await page.locator('.meta-box-sortables > [id^="slim_"].postbox:not(.full-width, .slimstat-acquisition-box)').filter({ hasNot: page.locator('canvas, .slimstat-postbox-chart--canvas') }).first().getAttribute('id');
-  const box = page.locator(`#${id}`); // pinned: a locator re-resolves, and the probe added below would match a positional one
-  const insideHeight = () => box.locator('.inside').evaluate(el => Math.round(el.getBoundingClientRect().height));
+  const id = await page.locator('.meta-box-sortables > [id^="slim_"].postbox:not(.full-width, .large, .extralarge, .slimstat-acquisition-box)').filter({ hasNot: page.locator('canvas, .slimstat-postbox-chart--canvas, .slimstat-empty') }).first().getAttribute('id');
+  const box = page.locator(`#${id}`); // pinned: a locator re-resolves, and the copies added below would match a positional one
   await box.locator('.inside').evaluate((el, html) => { const p = document.createElement('p'); p.innerHTML = html; el.replaceChildren(p); }, accessLogProbeRow);
   await box.evaluate(el => el.parentElement!.querySelectorAll(':scope > .postbox').forEach(p => p !== el && p.remove()));
-  expect(await insideHeight(), 'the only report left fills the window').toBeGreaterThan(465);
-  expect(await box.evaluate(el => el.getBoundingClientRect().height)).toBeLessThanOrEqual(900 - 32);
-  // Still the last child, but now it shares its row, so it must not grow.
-  await box.evaluate(el => el.before(Object.assign(document.createElement('div'), { id: 'slim_probe', className: 'postbox' })));
-  expect(await insideHeight(), 'a narrow last report sharing its row keeps 240px').toBe(240);
+  const layout = () => box.evaluate(el => [...el.parentElement!.querySelectorAll(':scope > .postbox')].map(p => ({
+    inside: Math.round(p.querySelector('.inside')!.getBoundingClientRect().height), top: Math.round(p.getBoundingClientRect().top), box: p.getBoundingClientRect().height,
+  })));
+  const copies = (n: number) => box.evaluate((el, n) => {
+    el.parentElement!.querySelectorAll(':scope > [id^="slim_copy"]').forEach(p => p.remove());
+    for (let i = 0; i < n; i++) el.after(Object.assign(el.cloneNode(true) as HTMLElement, { id: `slim_copy${i}` }));
+  }, n);
+
+  let rows = await layout();
+  expect(rows[0].inside, 'the only report left fills the window').toBeGreaterThan(465);
+  expect(rows[0].box).toBeLessThanOrEqual(900 - 32);
+
+  await copies(2);
+  rows = await layout();
+  expect(new Set(rows.map(r => r.top)).size, 'three reports share one row').toBe(1);
+  for (const r of rows) { expect(r.inside, 'a few reports on one row fill the window together').toBeGreaterThan(465); expect(r.box).toBeLessThanOrEqual(900 - 32); }
+
+  await copies(3);
+  rows = await layout();
+  expect(new Set(rows.map(r => r.top)).size, 'four reports wrap onto two rows').toBe(2);
+  expect(rows.map(r => r.inside), 'reports on two rows keep 240px').toEqual([240, 240, 240, 240]);
+
+  await copies(1);
+  await page.locator('#slim_copy0 .inside').evaluate(el => { el.innerHTML = '<div class="slimstat-empty"><p class="nodata">No data</p></div>'; });
+  rows = await layout();
+  expect(rows[0].inside, 'beside an empty state, which keeps its own height, the report keeps 240px').toBe(240);
 });
 
 test('long alert copy and actions stay visible in both directions and on phones', async ({ page }) => {
