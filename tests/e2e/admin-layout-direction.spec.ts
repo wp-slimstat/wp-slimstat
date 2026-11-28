@@ -148,8 +148,8 @@ test('access log fills the viewport when it is the last panel and keeps 465px ot
   const insideHeight = () => box.locator('.inside').evaluate(el => Math.round(el.getBoundingClientRect().height));
   // A row, not the empty state: an empty .inside is height:auto (audit E1), so neither height rule would apply.
   await box.locator('.inside').evaluate((el, html) => { const p = document.createElement('p'); p.innerHTML = html; el.replaceChildren(p); }, accessLogProbeRow);
-  // Hidden reports are not rendered, so hiding the panels after it leaves the Access Log as the last child.
-  await box.evaluate(el => el.parentElement!.append(el));
+  // Unticking the two reports after it in Screen Options hides them with jQuery's .hide() (core postboxes.js); they stay in the page.
+  await box.evaluate(el => { const after = [...el.parentElement!.querySelectorAll(':scope > .postbox')].filter(p => p !== el).slice(-2); after[0].before(el); after.forEach(p => (window as any).jQuery(p).hide()); });
   expect(await insideHeight()).toBeGreaterThan(465);
   expect(await box.evaluate(el => el.getBoundingClientRect().height)).toBeLessThanOrEqual(900 - 32);
   await page.setViewportSize({ width: 1440, height: 500 });
@@ -158,7 +158,7 @@ test('access log fills the viewport when it is the last panel and keeps 465px ot
   expect(await insideHeight(), 'phones keep a fixed scroll box').toBe(465);
   await page.setViewportSize({ width: 1440, height: 900 });
   await box.evaluate(el => el.after(Object.assign(document.createElement('div'), { className: 'postbox' })));
-  expect(await insideHeight(), 'a panel below keeps the Access Log at 465px').toBe(465);
+  expect(await insideHeight(), 'a shown panel below keeps the Access Log at 465px').toBe(465);
 });
 
 // GitHub #295: normal-width reports fill the viewport when only one, or a few sharing one row, are left;
@@ -168,11 +168,12 @@ test('a few normal reports fill the viewport when they share one row and keep 24
   await page.goto('/wp-admin/admin.php?page=slimview2');
   await page.waitForLoadState('networkidle');
   // A list report: charts and acquisition boxes size themselves and are meant to keep their height.
-  const id = await page.locator('.meta-box-sortables > [id^="slim_"].postbox:not(.full-width, .large, .extralarge, .slimstat-acquisition-box)').filter({ hasNot: page.locator('canvas, .slimstat-postbox-chart--canvas, .slimstat-empty') }).first().getAttribute('id');
+  const id = await page.locator('.meta-box-sortables > [id^="slim_"].postbox:not(.full-width, .large, .extralarge, .slimstat-acquisition-box)').filter({ hasNot: page.locator('canvas, .slimstat-postbox-chart--canvas') }).first().getAttribute('id');
   const box = page.locator(`#${id}`); // pinned: a locator re-resolves, and the copies added below would match a positional one
   await box.locator('.inside').evaluate((el, html) => { const p = document.createElement('p'); p.innerHTML = html; el.replaceChildren(p); }, accessLogProbeRow);
-  await box.evaluate(el => el.parentElement!.querySelectorAll(':scope > .postbox').forEach(p => p !== el && p.remove()));
-  const layout = () => box.evaluate(el => [...el.parentElement!.querySelectorAll(':scope > .postbox')].map(p => ({
+  // Untick every other report, as Screen Options does: jQuery's .hide() leaves them in the page, charts included.
+  await box.evaluate(el => el.parentElement!.querySelectorAll(':scope > .postbox').forEach(p => p !== el && (window as any).jQuery(p).hide()));
+  const layout = () => box.evaluate(el => [...el.parentElement!.querySelectorAll<HTMLElement>(':scope > .postbox')].filter(p => p.style.display !== 'none').map(p => ({
     inside: Math.round(p.querySelector('.inside')!.getBoundingClientRect().height), top: Math.round(p.getBoundingClientRect().top), box: p.getBoundingClientRect().height,
   })));
   const copies = (n: number) => box.evaluate((el, n) => {
@@ -195,6 +196,10 @@ test('a few normal reports fill the viewport when they share one row and keep 24
   expect(rows.map(r => r.inside), 'reports on two rows keep 240px').toEqual([240, 240, 240, 240]);
 
   await copies(1);
+  await page.setViewportSize({ width: 790, height: 900 });
+  rows = await layout();
+  expect(rows.map(r => r.inside), 'at 800px and below reports go full width, so two wrap and keep 240px').toEqual([240, 240]);
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.locator('#slim_copy0 .inside').evaluate(el => { el.innerHTML = '<div class="slimstat-empty"><p class="nodata">No data</p></div>'; });
   rows = await layout();
   expect(rows[0].inside, 'beside an empty state, which keeps its own height, the report keeps 240px').toBe(240);

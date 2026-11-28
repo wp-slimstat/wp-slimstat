@@ -447,28 +447,31 @@ body.index-php {
   height: 465px;
 }
 
-/* GitHub #295: when the reports after it are hidden (hidden reports are not rendered), the report
-   that ends the page fills the window instead of stopping at its fixed height, if it has the row
-   to itself: a full-width report, or the only report left. Acquisition boxes size themselves to
+/* GitHub #295: when the reports after it are hidden, the report that ends the page fills the
+   window instead of stopping at its fixed height, if it has the row to itself: a full-width
+   report, or the only report left. Reports hidden before the page loaded are not rendered; one
+   unticked in Screen Options since is only set to display: none (core postboxes.js), so the
+   selectors count shown reports only ($slimstat-shown). Acquisition boxes size themselves to
    their content; charts and empty states keep their !important heights. 190px = admin bar 32 +
    panel title, actions and footer up to 133 + gap 15 + 10 spare. Phones keep the fixed box so the
    page still scrolls. */
 $slimstat-fill-height: #{"max(465px, calc(100vh - 190px))"};
+$slimstat-shown: '.postbox:not([style*="display: none"])';
 @media screen and (min-width: 783px) {
-  .wrap-slimstat .meta-box-sortables > [id^="slim_"].postbox.full-width:last-child .inside,
-  .wrap-slimstat .meta-box-sortables > [id^="slim_"].postbox:only-of-type:not(.slimstat-acquisition-box) .inside {
+  .wrap-slimstat .meta-box-sortables > [id^="slim_"].postbox.full-width:nth-last-child(1 of #{$slimstat-shown}) .inside,
+  .wrap-slimstat .meta-box-sortables > [id^="slim_"].postbox:nth-child(1 of #{$slimstat-shown}):nth-last-child(1 of #{$slimstat-shown}):not(.slimstat-acquisition-box) .inside {
     height: $slimstat-fill-height;
   }
 }
 
 /* GitHub #295, a few reports left: rows stretch their cards to one height, so a few reports grow
-   together, and only when they all fit on one row (4 above 1560px, 3 above 1080px, 2 above 782px)
-   and are all normal-width lists. A wider report, chart, acquisition or ecommerce box, or empty
-   state among them would be stretched, so the row keeps its fixed height. A separate rule, so a
-   browser without :has() drops only this one. */
-@each $min, $n in (783px, 2), (1081px, 3), (1561px, 4) {
+   together, and only when they all fit on one row (4 above 1560px, 3 above 1080px, 2 above 800px,
+   where reports stop going full width) and are all normal-width lists. A wider report, chart,
+   acquisition or ecommerce box, or empty state among them would be stretched, so the row keeps its
+   fixed height. A separate rule, so a browser without :has() drops only this one. */
+@each $min, $n in (801px, 2), (1081px, 3), (1561px, 4) {
   @media screen and (min-width: $min) {
-    .wrap-slimstat .meta-box-sortables:not(:has(> .large, > .extralarge, > .full-width, > .slimstat-acquisition-box, > .slimstat-ecommerce-box, .slimstat-postbox-chart--canvas, .slimstat-empty)) > [id^="slim_"].postbox:first-of-type:nth-last-of-type(-n + #{$n}) {
+    .wrap-slimstat .meta-box-sortables:not(:has(> #{$slimstat-shown}:is(.large, .extralarge, .full-width, .slimstat-acquisition-box, .slimstat-ecommerce-box), > #{$slimstat-shown} :is(.slimstat-postbox-chart--canvas, .slimstat-empty))) > [id^="slim_"].postbox:nth-child(1 of #{$slimstat-shown}):nth-last-child(-n + #{$n} of #{$slimstat-shown}) {
       &, & ~ .postbox {
         .inside {
           height: $slimstat-fill-height;
