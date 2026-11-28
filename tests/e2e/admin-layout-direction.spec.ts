@@ -123,7 +123,8 @@ test('access log details share the resource line and end at the far edge, like 5
           sameLine: details.top < link.bottom,
           endGap: Math.round(r.right - parseFloat(cs.paddingRight) - details.right),
           startGap: Math.round(details.left - r.left - parseFloat(cs.paddingLeft)),
-          pageOverflow: document.documentElement.scrollWidth - innerWidth,
+          // Scoped to the probe rows (page-wide overflow also measures WordPress chrome, which differs by core version and font); text inside the link is clipped by its phone ellipsis.
+          outside: [...document.querySelectorAll('[data-access-log-probe], [data-access-log-probe] > *, [data-access-log-probe] .details *')].filter(e => { const b = e.getBoundingClientRect(), box = p.parentElement!.getBoundingClientRect(); return b.width > 0 && (b.left < box.left - 1 || b.right > box.right + 1); }).map(e => e.outerHTML.slice(0, 80)),
           spill: [...document.querySelectorAll('[data-access-log-probe]')].map(q => Math.round(q.querySelector('.details')!.getBoundingClientRect().bottom - q.getBoundingClientRect().bottom)),
         };
       }, dir);
@@ -133,7 +134,7 @@ test('access log details share the resource line and end at the far edge, like 5
         if (row.fits) expect(row.sameLine, `${dir} ${width}px details on the resource line`).toBe(true);
         expect(dir === 'rtl' ? row.startGap : row.endGap, `${dir} ${width}px details reach the far edge`).toBeLessThanOrEqual(2);
       }
-      expect(row.pageOverflow, `${dir} ${width}px`).toBeLessThanOrEqual(1);
+      expect(row.outside, `${dir} ${width}px nothing crosses the Access Log edges`).toEqual([]);
       expect(Math.max(...row.spill), `${dir} ${width}px details stay inside their row`).toBeLessThanOrEqual(0);
     }
   }
