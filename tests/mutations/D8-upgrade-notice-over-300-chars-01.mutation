@@ -9,9 +9,9 @@ rationale: Extends the current release notice beyond 300 bytes while preserving 
 @@ -167,7 +167,7 @@
  == Upgrade Notice ==
  
- = 6.1.3 =
--Older versions keep working, added columns stay, and it removes no rows. Security fix only: the Access Log user-agent tooltip shows plain text. Update promptly.
-+Older versions keep working, added columns stay, and it removes no rows. Security fix only: the Access Log user-agent tooltip shows plain text. Update promptly. Read the full release notes and review every migration step before you begin this update. Keep a separate backup for recovery. Test on a staging copy first.
+ = 6.1.4 =
+-Older versions keep working, added columns stay, and it removes no rows. Security: prevents forged pageview updates. Fixes visit grouping, Redis tracking lockouts, Heatmaps page lists and geolocation recovery; improves migration guidance. Update promptly.
++Older versions keep working, added columns stay, and it removes no rows. Security: prevents forged pageview updates. Fixes visit grouping, Redis tracking lockouts, Heatmaps page lists and geolocation recovery; improves migration guidance. Update promptly. Read the full release notes and review every migration step before you begin this update. Keep a separate backup for recovery.
  
- = 6.1.2 =
- Older versions keep working, added columns stay, and it removes no rows. Adds Copy Prompt, AI Analysis (Pro), city drilldown and video tutorials. Fixes privacy exports, tracking, filters, geolocation and RTL layouts. Back up first; repairs wait for your click.
+ = 6.1.3 =
+ Older versions keep working, added columns stay, and it removes no rows. Security fix only: the Access Log user-agent tooltip shows plain text. Update promptly.

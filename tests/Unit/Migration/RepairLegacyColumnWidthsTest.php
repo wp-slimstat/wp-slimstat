@@ -8,6 +8,12 @@ use WpSlimstat\Tests\Unit\WpSlimstatTestCase;
 
 class RepairLegacyColumnWidthsTest extends WpSlimstatTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        \Brain\Monkey\Functions\when('__')->returnArg();
+    }
+
     private function column(string $field, string $type = 'varchar(255)'): array
     {
         return ['Field' => $field, 'Type' => $type, 'Collation' => 'utf8mb4_unicode_ci',
@@ -247,6 +253,103 @@ class RepairLegacyColumnWidthsTest extends WpSlimstatTestCase
         $this->assertTrue($migration->shouldRun());
         $this->assertTrue($migration->run());
         $this->assertStringContainsString('MODIFY COLUMN `City`', implode("\n", $queries));
+    }
+
+    public function test_manual_guidance_offers_copy_for_latin1_and_myisam_without_running_it(): void
+    {
+        $city = $this->column('city');
+        $city['Collation'] = 'latin1_swedish_ci';
+        $tables = ['wp_slim_stats' => [$city, $this->column('username', 'varchar(256)')],
+            'wp_slim_stats_archive' => [$this->column('city', 'varchar(256)'), $this->column('username', 'varchar(256)')]];
+        $queries = [];
+        $migration = $this->migration($tables, $queries, true, false, false, 'MyISAM');
+        $guidance = $migration->getManualRepairGuidance();
+        $this->assertCount(1, $guidance);
+        $this->assertSame('wp_slim_stats', $guidance[0]['table']);
+        $this->assertStringContainsString('CHARACTER SET `latin1` COLLATE `latin1_swedish_ci`', $guidance[0]['sql']);
+        $this->assertStringContainsString('ALGORITHM=COPY', $guidance[0]['sql']);
+        $this->assertStringNotContainsString('LOCK=NONE', $guidance[0]['sql']);
+        $this->assertStringContainsString('MyISAM', implode(' ', $guidance[0]['reasons']));
+        $this->assertSame([], $queries, 'Reading guidance must not execute repair SQL');
+    }
+
+    public function test_manual_guidance_does_not_guess_custom_or_unknown_definitions(): void
+    {
+        foreach (['Default' => '', 'Comment' => '</textarea><script>alert(1)</script>',
+            'Extra' => 'VIRTUAL GENERATED', 'Type' => 'varchar(254)'] as $field => $value) {
+            $city = $this->column('city');
+            $city[$field] = $value;
+            $tables = ['wp_slim_stats' => [$city, $this->column('username')],
+                'wp_slim_stats_archive' => [$this->column('city', 'varchar(256)'), $this->column('username', 'varchar(256)')]];
+            $queries = [];
+            $guidance = $this->migration($tables, $queries)->getManualRepairGuidance();
+            $this->assertCount(1, $guidance);
+            $this->assertSame('', $guidance[0]['sql'], 'Do not offer a partial repair for a table requiring review');
+            $this->assertStringContainsString('city', implode(' ', $guidance[0]['reasons']));
+            if ('Type' !== $field) {
+                $this->assertStringContainsString(strtoupper($field), implode(' ', $guidance[0]['reasons']));
+            }
+            $this->assertStringContainsString('SHOW CREATE TABLE `wp_slim_stats`;', $guidance[0]['inspect']);
+            $this->assertSame([], $queries);
+        }
+    }
+
+    public function test_manual_guidance_covers_missing_archive_columns_and_unreadable_tables(): void
+    {
+        $tables = ['wp_slim_stats_archive' => [$this->column('city', 'varchar(256)'), $this->column('username', 'varchar(256)')]];
+        $queries = [];
+        $migration = $this->migration($tables, $queries);
+        $tables['wp_slim_stats_archive'] = array_values(array_filter($tables['wp_slim_stats_archive'], static fn ($c) => 'email' !== $c['Field']));
+        $guidance = $migration->getManualRepairGuidance();
+        $this->assertCount(2, $guidance);
+        $this->assertSame('', $guidance[0]['sql']);
+        $this->assertStringContainsString('could not read', implode(' ', $guidance[0]['reasons']));
+        $this->assertStringContainsString('ADD COLUMN email VARCHAR(256)', $guidance[1]['sql']);
+        $this->assertSame([], $queries);
+    }
+
+    public function test_manual_guidance_is_empty_for_repaired_tables(): void
+    {
+        $tables = ['wp_slim_stats' => [$this->column('city', 'varchar(256)'), $this->column('username', 'varchar(256)')],
+            'wp_slim_stats_archive' => [$this->column('city', 'varchar(256)'), $this->column('username', 'varchar(256)')]];
+        $queries = [];
+        $this->assertSame([], $this->migration($tables, $queries)->getManualRepairGuidance());
+        $this->assertSame([], $queries);
+    }
+
+    public function test_charset_recovery_is_only_suggested_for_supported_innodb_columns(): void
+    {
+        foreach (['latin1_swedish_ci', 'utf8_general_ci', 'utf8mb4_unicode_ci'] as $collation) {
+            foreach (['InnoDB', 'MyISAM'] as $engine) {
+                $city = $this->column('city');
+                $city['Collation'] = $collation;
+                $tables = ['wp_slim_stats' => [$city, $this->column('username', 'varchar(256)')],
+                    'wp_slim_stats_archive' => [$this->column('city', 'varchar(256)'), $this->column('username', 'varchar(256)')]];
+                $queries = [];
+                $migration = $this->migration($tables, $queries, true, false, false, $engine);
+                $this->assertSame($engine === 'InnoDB' && $collation !== 'utf8mb4_unicode_ci', $migration->getManualRepairGuidance()[0]['needs_utf8mb4']);
+                $this->assertSame([], $queries);
+            }
+        }
+    }
+
+    public function test_failure_message_describes_the_current_attempt_only(): void
+    {
+        $tables = ['wp_slim_stats' => [$this->column('city'), $this->column('username')],
+            'wp_slim_stats_archive' => [$this->column('city'), $this->column('username')]];
+        $queries = [];
+        $migration = $this->migration($tables, $queries, true, true);
+        $this->assertFalse($migration->run());
+        $this->assertStringContainsString('server refused the online', $migration->getFailureMessage());
+        foreach ($tables as &$columns) {
+            foreach ($columns as &$column) {
+                if ($column['Type'] === 'varchar(255)') { $column['Type'] = 'varchar(256)'; }
+            }
+            unset($column);
+        }
+        unset($columns);
+        $this->assertTrue($migration->run());
+        $this->assertSame('', $migration->getFailureMessage());
     }
 
 }

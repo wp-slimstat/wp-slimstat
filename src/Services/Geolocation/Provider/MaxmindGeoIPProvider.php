@@ -249,10 +249,6 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 
 			$final_exists = file_exists($this->dbPath);
 
-			if ($final_exists) {
-				Utils::clearDiagnostic('slimstat_geoip_error');
-			}
-
 			// Always cleanup temporary files, even on success
 			$cleanup();
 			return $final_exists;

@@ -5,6 +5,7 @@ namespace SlimStat\Migration\Admin;
 
 use SlimStat\Migration\MigrationManager;
 use SlimStat\Migration\MigrationService;
+use SlimStat\Migration\Migrations\RepairLegacyColumnWidths;
 use SlimStat\Schema\Schema;
 use SlimStat\Tracker\VisitIdGenerator;
 use wp_slimstat_admin;
@@ -77,6 +78,9 @@ class MigrationAdmin
 		global $parent_file, $submenu_file;
         // Refresh only on the explicit Migration screen; old cached offers can hide a new repair.
         $this->manager->forgetProbe();
+        // A host may have repaired the columns outside the migration runner.
+        delete_transient(Schema::COLUMN_DRIFT_CHECK_TRANSIENT);
+        wp_slimstat_admin::refresh_column_drift_notice();
 		if (!empty(wp_slimstat_admin::$main_menu_slug)) {
 			$parent_file = wp_slimstat_admin::$main_menu_slug;
 			$submenu_file = 'slimstat_migration'; // highlight Migration submenu
@@ -159,6 +163,7 @@ class MigrationAdmin
 				'details' => __('Details', 'wp-slimstat'),
 				'runningShort' => __('Running', 'wp-slimstat'),
 				'failedHelp' => __('A step failed. Please check the logs and retry.', 'wp-slimstat'),
+				'repairHelp' => __('Review the legacy column recovery steps above.', 'wp-slimstat'),
 			],
 		]);
 		wp_enqueue_script('slimstat-migration');
@@ -243,6 +248,12 @@ class MigrationAdmin
 		$offered_migrations = $this->manager->getOfferedMigrations();
 		$has_required_migrations = !empty($required_migrations);
         $column_drift = wp_slimstat_admin::observe_column_drift();
+        $manual_column_repairs = [];
+        $legacy_repair_message = \wp_slimstat::get_degradations()['legacy_column_width_repair']['message'] ?? '';
+        if (null === $column_drift || !empty($column_drift)) {
+            $repair = new RepairLegacyColumnWidths(MigrationService::analyticsConnection(), $GLOBALS['wpdb']);
+            $manual_column_repairs = $repair->getManualRepairGuidance();
+        }
         foreach ($this->manager->getMigrations() as $migration) {
             if (!$migration->isOptional() && method_exists($migration, 'probeUnavailable') && $migration->probeUnavailable()) {
                 $column_drift = null;
@@ -349,6 +360,7 @@ class MigrationAdmin
 				if (null !== $ok) {
 					$name      = $only;
 					$remaining = false;
+					$message = $this->manager->getRunRefusal() ?: __('The migration did not complete. Nothing further has been run.', 'wp-slimstat');
 
 					foreach ($this->manager->getMigrations() as $migration) {
 						if ($migration->getId() === $only) {
@@ -357,6 +369,9 @@ class MigrationAdmin
 							// question from "did this pass work". A long backfill answers true
 							// here for several passes while every one of them succeeded.
 							$remaining = $migration->shouldRun();
+							if ($migration instanceof RepairLegacyColumnWidths && '' !== $migration->getFailureMessage()) {
+								$message = $migration->getFailureMessage();
+							}
 							break;
 						}
 					}
@@ -367,7 +382,7 @@ class MigrationAdmin
 						wp_send_json_success([$name => true, 'remaining' => $remaining]);
 					}
 
-					wp_send_json_error([$name => false, 'remaining' => $remaining]);
+					wp_send_json_error([$name => false, 'remaining' => $remaining, 'message' => $message]);
 				}
 
 				// runOne() answers null when the single-flight claim is held by another

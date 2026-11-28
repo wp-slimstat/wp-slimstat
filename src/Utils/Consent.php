@@ -453,7 +453,7 @@ class Consent
 			// Check for tracking cookie (proof of upgrade in this browser)
 			$hasTrackingCookie = false;
 			if (isset($_COOKIE['slimstat_tracking_code'])) {
-				$cookieValue = \SlimStat\Tracker\Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])));
+				$cookieValue = \SlimStat\Tracker\Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])), \SlimStat\Tracker\Utils::DOMAIN_VISIT);
 				if (false !== $cookieValue) {
 					$hasTrackingCookie = true;
 				}
@@ -642,7 +642,7 @@ class Consent
 
 			// Legacy fallback: If a SlimStat tracking cookie exists, it implies consent was granted previously
 			if (isset($_COOKIE['slimstat_tracking_code'])) {
-				$cookieValue = \SlimStat\Tracker\Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])));
+				$cookieValue = \SlimStat\Tracker\Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])), \SlimStat\Tracker\Utils::DOMAIN_VISIT);
 				if (false !== $cookieValue) {
 					return true;
 				}

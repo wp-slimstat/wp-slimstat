@@ -14,4 +14,4 @@ rationale: Removes always() from the EXPLAIN gate, returning it to a step that h
 +        if: ${{ matrix.php == '8.2' }}
          env:
            EXPLAIN_ROW_THRESHOLD: "100000"
-         run: bash tests/perf/explain-gate.sh
+         run: |

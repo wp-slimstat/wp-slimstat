@@ -3082,8 +3082,9 @@ class wp_slimstat_reports
             return '';
         }
 
-        $request_uri = admin_url('admin.php');
-        $request_uri .= '?page=' . wp_slimstat_admin::$current_screen;
+        // Dashboard widgets have no admin.php page; drill down in Real-time.
+        $screen = 'dashboard' === wp_slimstat_admin::$current_screen ? 'slimview1' : wp_slimstat_admin::$current_screen;
+        $request_uri = admin_url('admin.php') . '?page=' . $screen;
 
         // Avoid XSS attacks ( why would the owner try to hack into his/her own website though? )
         if (!empty($_SERVER['HTTP_REFERER']) && is_string($_SERVER['HTTP_REFERER'])) {

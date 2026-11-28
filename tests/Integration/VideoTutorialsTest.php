@@ -81,7 +81,14 @@ class VideoTutorialsTest extends IntegrationTestCase
         Functions\when('add_menu_page')->justReturn('toplevel_page_slimview1');
         // WordPress returns false instead of a hook for a user without the capability.
         Functions\when('add_submenu_page')->alias(fn ($parent, $title, $label, $cap, $slug) => $this->capability ? 'slimstat_page_' . $slug : false);
-        \wp_slimstat_admin::add_menus();
+        $previousUser = $GLOBALS['current_user'] ?? null;
+        $GLOBALS['current_user'] = (object) ['user_login' => 'viewer'];
+        try {
+            \wp_slimstat_admin::add_menus();
+        } finally {
+            if (null === $previousUser) { unset($GLOBALS['current_user']); }
+            else { $GLOBALS['current_user'] = $previousUser; }
+        }
     }
 
     private function markerHooked(): bool

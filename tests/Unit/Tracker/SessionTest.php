@@ -205,6 +205,26 @@ class SessionTest extends WpSlimstatTestCase
         $this->assertSame(0, $cookieCalls);
     }
 
+    public function test_anonymous_hit_drops_identity_when_column_unreadable(): void
+    {
+        class_exists(\SlimStat\Tracker\VisitIdGenerator::class);
+        class_exists(\SlimStat\Tracker\Session::class);
+        class_exists(\SlimStat\Utils\Consent::class);
+        \Patchwork\redefine('SlimStat\\Tracker\\VisitIdGenerator::generateNextVisitId', static fn() => 42);
+        \Patchwork\redefine('SlimStat\\Tracker\\Session::generateAnonymousVidHash', static fn() => str_repeat('a', 32));
+        \Patchwork\redefine('SlimStat\\Utils\\Consent::getIntegrationKey', static fn() => '');
+        \Patchwork\redefine('SlimStat\\Utils\\Consent::piiAllowed', static fn() => false);
+        \wp_slimstat::$settings['anonymous_tracking'] = 'on';
+        foreach ([0 => true, -1 => false] as $probe => $identityKept) {
+            \Patchwork\redefine('SlimStat\\Tracker\\Session::findExistingAnonymousVisitId', static fn() => $probe);
+            \wp_slimstat::set_stat(['resource' => '/page', 'dt' => time()]);
+            $this->assertTrue(\SlimStat\Tracker\Session::ensureVisitId(true));
+            $stat = \wp_slimstat::get_stat();
+            $this->assertSame(42, $stat['visit_id']);
+            $this->assertSame($identityKept, isset($stat['vid_hash']), 'A vid_hash column that cannot be read must not be named in the INSERT.');
+        }
+    }
+
     // -----------------------------------------------------------------------
     // getVisitId — pure PHP, no DB
     // -----------------------------------------------------------------------

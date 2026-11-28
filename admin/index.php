@@ -320,10 +320,6 @@ class wp_slimstat_admin
         if ('on' === (wp_slimstat::$settings['notice_latest_news'] ?? 'no') && in_array($GLOBALS['pagenow'] ?? '', ['index.php', 'plugins.php'], true) && current_user_can('manage_options')) {
             add_action('admin_notices', [self::class, 'show_latest_news'], 10, 0);
         }
-        // Black Friday 2026: the main Dashboard only; the class decides who sees it and when.
-        if ('index.php' === ($GLOBALS['pagenow'] ?? '')) {
-            add_action('admin_notices', [\SlimStat\Services\BlackFriday2026::class, 'dashboard_notice'], 9, 0);
-        }
 
         // Remove spammers from the database
         if ('on' == wp_slimstat::$settings['ignore_spammers']) {
@@ -441,7 +437,6 @@ class wp_slimstat_admin
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
             }
             add_action('wp_ajax_slimstat_country_cities', [\SlimStat\Reports\CountryCities::class, 'ajax']);
-            add_action('wp_ajax_' . \SlimStat\Services\BlackFriday2026::ACTION, [\SlimStat\Services\BlackFriday2026::class, 'dismiss']);
 
             // Live Analytics AJAX handler is registered via init_hooks() in Bootstrap
             // No need to call it separately here - it's already registered
@@ -471,6 +466,10 @@ class wp_slimstat_admin
         if (!wp_next_scheduled('wp_slimstat_update_geoip_database')) {
             $nextRunInterval = wp_slimstat::get_schedule_interval('weekly');
             wp_schedule_event(time() + $nextRunInterval, 'weekly', 'wp_slimstat_update_geoip_database');
+        }
+
+        if (!wp_doing_ajax() && current_user_can(\wp_slimstat::$settings['capability_can_admin'])) {
+            \SlimStat\Services\GeoService::scheduleMissingDatabaseUpdate();
         }
 
         // Fallback: if WP-Cron is disabled or scheduling failed, trigger a non-blocking direct update
@@ -839,7 +838,9 @@ class wp_slimstat_admin
         // and apply upgrade defaults: no DB-IP, heatmaps off with Pro, the 6.0 release notice.
         // Store the new-install defaults while the database still shows a new site.
         if (false === get_option('slimstat_options') && \SlimStat\Migration\MissingSettingsRecovery::isFresh($my_wpdb, $GLOBALS['wpdb']->prefix)) {
-            add_option('slimstat_options', wp_slimstat::get_fresh_defaults());
+            if (add_option('slimstat_options', wp_slimstat::get_fresh_defaults())) {
+                \SlimStat\Services\GeoService::scheduleDatabaseUpdate();
+            }
         }
 
         // Create the tables and reconcile every index in the manifest. The five probe-and-create
@@ -987,7 +988,9 @@ class wp_slimstat_admin
     {
         $stored = get_option(self::COLUMN_DRIFT_OPTION, []);
 
-        if (!is_array($stored) || [] === $stored) {
+        // Older versions could clear the drift entry but leave a failed repair behind.
+        if (!is_array($stored) || ([] === $stored
+            && !isset(get_option(wp_slimstat::DEGRADATION_OPTION, [])['legacy_column_width_repair']))) {
             return;
         }
 
@@ -1026,6 +1029,7 @@ class wp_slimstat_admin
             // The physical observation also resolves the notice recorded before repair.
             // Preserve every unrelated degradation and never clear on a failed probe.
             wp_slimstat::clear_degradation('schema column drift');
+            wp_slimstat::clear_degradation('legacy_column_width_repair');
 
             return [];
         }

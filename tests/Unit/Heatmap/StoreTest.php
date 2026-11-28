@@ -215,6 +215,89 @@ class StoreTest extends WpSlimstatTestCase
 		return json_encode(['v' => 1, 'vw' => 1280, 'vh' => 720, 's' => $selectors, 'r' => $rows] + (null === $scroll ? [] : ['sc' => $scroll]));
 	}
 
+	/** @dataProvider pageListCases */
+	public function test_page_lists_gate_both_tracker_params_and_ingestion(string $pages, string $page, bool $matches, ?string $requestUri = null): void
+	{
+		$this->readyToIngest();
+		\wp_slimstat::$settings['heatmap_pages'] = $pages;
+		$this->view = ['resource' => $page, 'dt' => 1700000000];
+		self::assertSame($matches ? ['l' => 'full', 'r' => 10000] : null, Store::params($requestUri ?? $page));
+		self::assertSame($matches ? 1 : 0, Store::ingest(42, $this->batch([[0, 1, 0, 1, 1, 1, 1]])));
+		if (!$matches) {
+			self::assertSame([], $this->heatmapQueries(), 'excluded pages must not write heatmap data');
+		}
+	}
+
+	public static function pageListCases(): array
+	{
+		$cases = [];
+		foreach (["\n", "\r\n", "\r", ', ', ' ', "\t", " ,\r\n\t, "] as $separator) {
+			$pages = '/product-range-1/*' . $separator . '/product-range-2/*';
+			foreach (['/product-range-1/song/', '/product-range-2/song/'] as $page) {
+				$cases[json_encode($separator) . $page] = [$pages, $page, true];
+			}
+			$cases[json_encode($separator) . 'excluded'] = [$pages, '/members/', false];
+		}
+		return $cases + [
+			'empty means all pages' => ['', '/members/', true],
+			'blank lines mean all pages' => [" \r\n\t ", '/members/', true],
+			'separators alone do not enable all pages' => [",\n,", '/members/', false],
+			'wildcard includes section root' => ['/section/*', '/section/', true],
+			'wildcard requires slash' => ['/section/*', '/section', false],
+			'wildcard includes descendants' => ['/section/*', '/section/one/two/', true],
+			'case insensitive, query and fragment ignored' => ['/SECTION/*', '/section/?ref=nav#top', true],
+			'plain permalink' => ["/?p=12\n/?page_id=34", '/?page_id=34&ref=nav', true],
+			'plain permalink excluded' => ["/?p=12\n/?page_id=34", '/?p=56', false],
+			'pasted URL counts as its path' => ['https://example.com/section/*', '/section/', true],
+			'pasted URL, other page' => ['https://example.com/section/*', '/members/', false],
+			'pasted URLs, one per line' => ["https://example.com/a/\nHTTP://example.com/b/", '/b/', true],
+			'pasted URLs collapsed into spaces' => ['https://example.com/a/ https://example.com/b/', '/b/', true],
+			'bare origin is the home page' => ['https://example.com', '/', true],
+			'bare origin is only the home page' => ['https://example.com', '/members/', false],
+			'pasted plain permalink' => ['https://example.com?p=12', '/?p=12', true],
+			'entry query and fragment ignored' => ['https://example.com/pricing/?ref=nav#plans', '/pricing/', true],
+			'encoded entry matches stored path' => ['/my%20page/', '/my page/', true],
+			// 6.1.2 matched these; splitting on every space lost them.
+			'space inside a path, single entry' => ['/my page/', '/my page/', true],
+			'space inside a path, comma list' => ['/shop/, /my page/', '/my page/', true],
+			'space inside a path, line list' => ["/shop/\n/search/big sale/*", '/search/big sale/now/', true],
+			'space inside a path is not a separator' => ['/my page/', '/my', false],
+			'a URL inside a path is not an origin' => ['/go/https://example.com/x', '/go/https://example.com/x', true],
+			// A star after a space belongs to its entry; only explicit separators may split it.
+			'lone star after a space is not match-all' => ['/report *', '/members/', false],
+			'lone star after a space stays in its entry' => ['/report *', '/report 2026', true],
+			'ambiguous star-led entry never broadens capture' => ['/one/* *checkout*', '/my-checkout-page/', false],
+			'explicit star-led entry' => ['/one/*, *checkout*', '/my-checkout-page/', true],
+			'space before wildcard suffix stays in its path' => ['/report *2026*, /shop/*', '/report 2026', true],
+			'wildcard suffix never captures an unlisted path' => ['/report *2026*, /shop/*', '/private/2026/', false],
+			'single wildcard suffix never broadens capture' => ['/report *2026*', '/private/2026/', false],
+			'explicit entry keeps space before slash' => ["/report /private/*\n/shop/*", '/private/item/', false],
+			'literal plus path' => ['/c++/', '/c++/', true, '/c%2B%2B/'],
+			'unescaped plus path' => ['/c++/', '/c++/', true],
+			'literal plus is not a space' => ['/c++/', '/c /', false, '/c%20/'],
+			'encoded plus URL' => ['https://example.com/c%2B%2B/', '/c++/', true, '/c%2B%2B/'],
+			'encoded non-ASCII URL' => ['https://example.com/caf%C3%A9/', '/caf%c3%a9/', true, '/caf%C3%A9/'],
+			'encoded URL is not a truncated path' => ['https://example.com/caf%C3%A9/', '/caf/', false],
+			'encoded comma stays in its path' => ['/report%2C*', '/report,2026', true, '/report%2C2026'],
+			'encoded comma never creates match-all' => ['/report%2C*', '/members/', false],
+			'encoded fragment cannot select a shorter path' => ['/pricing%23draft/', '/pricing', false],
+			'encoded query cannot select a shorter path' => ['/pricing%3Fdraft/', '/pricing', false],
+			'pasted encoded delimiter is rejected' => ['https://example.com/pricing%3fdraft/', '/pricing', false],
+			'encoded delimiter cannot select home' => ['/%23draft/', '/', false],
+			'repeated encoding of a delimiter is rejected' => ['/pricing%2523draft/', '/pricingdraft/', false],
+			'rejected entry does not disable another entry' => ["/pricing%23draft/\n/shop/", '/shop/', true],
+			'encoded delimiters in query values do not affect the path' => ['/pricing/?ref=%23draft%3F', '/pricing/', true],
+			// 6.1.2 matched a wildcard post id; keyed like a visited page it became the home page.
+			'wildcard plain permalink' => ['/?p=*', '/?p=12&ref=nav', true],
+			'wildcard plain permalink is not the home page' => ['/?p=*', '/', false],
+			'wildcard plain permalink, other parameter' => ["/?page_id=1*\n/shop/", '/?p=12', false],
+			'pasted wildcard plain permalink' => ['https://example.com/?page_id=*', '/?page_id=34', true],
+			'single-character post wildcard' => ['/?p=!', '/?p=7', true],
+			'encoded wildcard post ID' => ['/?p=%2A', '/?p=12', true],
+			'48 paths' => [implode("\n", array_map(static fn($n) => '/page-' . $n . '/', range(1, 48))), '/page-48/', true],
+		];
+	}
+
 	/** Each gate the tracker applies is applied again here: a cached page can carry a stale hm. */
 	public function test_new_sampling_spreads_visits_and_keeps_cached_v1_trackers_compatible(): void
 	{

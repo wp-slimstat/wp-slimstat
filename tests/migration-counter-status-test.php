@@ -16,6 +16,12 @@ namespace SlimStat\Tracker {
         public static function isInitialized() { return self::$ready; }
     }
 }
+namespace SlimStat\Migration\Migrations {
+    class RepairLegacyColumnWidths {
+        public static $guidanceCalls = 0;
+        public function getManualRepairGuidance() { self::$guidanceCalls++; return []; }
+    }
+}
 namespace {
     define('ABSPATH', __DIR__);
     define('SLIMSTAT_ANALYTICS_VERSION', '6.1.2');
@@ -23,6 +29,7 @@ namespace {
         public static $settings = ['version' => '6.0.0'], $stored = ['version' => '6.0.0'];
         public static function pro_is_installed() { return false; }
         public static function pro_plugin_active() { return false; }
+        public static function get_degradations() { return []; }
     }
     class wp_slimstat_admin {
         public static $retries = 0, $succeeds = false, $drift = [];
@@ -57,6 +64,7 @@ namespace {
     $manager = new \SlimStat\Migration\MigrationManager();
     $admin = new \SlimStat\Migration\Admin\MigrationAdmin($manager);
     $GLOBALS['authorized'] = true;
+    $GLOBALS['wpdb'] = new \stdClass();
     function render($admin) {
         $admin->retryUpgrade();
         ob_start();
@@ -89,6 +97,9 @@ namespace {
     \SlimStat\Tracker\VisitIdGenerator::$ready = true;
     wp_slimstat_admin::$drift = null;
     expect_text('Database is up to date', render($admin), false);
+    if (\SlimStat\Migration\Migrations\RepairLegacyColumnWidths::$guidanceCalls !== 1) {
+        throw new \RuntimeException('Inspect unknown schema, but skip verified empty drift');
+    }
     foreach ([[false, 'valid'], [true, 'invalid']] as [$authorized, $nonce]) {
         $GLOBALS['authorized'] = $authorized;
         $_POST = ['slimstat_retry_upgrade' => '1', '_wpnonce' => $nonce];

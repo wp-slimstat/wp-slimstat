@@ -200,7 +200,7 @@ if (null === $noticeBody) {
 
 // ── No message may be silently truncated ───────────────────────────────────────────────
 //
-// record_degradation() stores substr($message, 0, 200), and the notice renders what was
+// record_degradation() stores at most 200 UTF-8 characters, and the notice renders what was
 // STORED — so a longer message loses its tail with no warning anywhere. That is not
 // hypothetical: the anonymous-visit-reuse message was written at 236 characters and lost
 // exactly the clause naming the migration that ends it, while its own docblock two lines
@@ -208,10 +208,10 @@ if (null === $noticeBody) {
 //
 // The limit is read from the source rather than hardcoded, so raising it there raises it here.
 $limit = 0;
-if (preg_match('/substr\(\s*\$message\s*,\s*0\s*,\s*(\d+)\s*\)/', $mainLit, $m)) {
+if (preg_match('/mb_substr\(\s*\$message\s*,\s*0\s*,\s*(\d+)\s*,\s*[\'"]UTF-8[\'"]\s*\)/', $mainLit, $m)) {
     $limit = (int) $m[1];
 } else {
-    $failures[] = 'record_degradation() no longer truncates with a literal substr() — re-anchor '
+    $failures[] = 'record_degradation() must truncate UTF-8 characters with mb_substr() — re-anchor '
         . 'this assertion rather than deleting it; the notice renders the STORED message, so a '
         . 'silent length limit anywhere on that path needs a gate';
 }
@@ -312,11 +312,11 @@ if ($limit > 0) {
 
             $measured++;
 
-            if (strlen($message) > $limit) {
+            if (mb_strlen($message, 'UTF-8') > $limit) {
                 $failures[] = sprintf(
                     'a degradation message is %d characters against a %d-character store, so the '
                         . 'admin never sees the end of it: "%s…"',
-                    strlen($message),
+                    mb_strlen($message, 'UTF-8'),
                     $limit,
                     substr($message, 0, 60)
                 );
@@ -429,10 +429,10 @@ $persistBody = slimstat_find_function_body($adminRaw, 'persist_column_drift');
 eval('class DriftPersistenceProbe { const COLUMN_DRIFT_OPTION = "slimstat_schema_column_drift"; public static function run(array $drift) {' . $persistBody . '} }');
 $GLOBALS['drift_options'] = [
     'slimstat_schema_column_drift' => ['still narrow'],
-    'slimstat_degradations' => ['schema column drift' => ['message' => 'old drift'], 'purge' => ['message' => 'keep']],
+    'slimstat_degradations' => ['schema column drift' => ['message' => 'old drift'], 'legacy_column_width_repair' => ['message' => 'online repair failed'], 'purge' => ['message' => 'keep']],
 ];
 DriftPersistenceProbe::run(['still narrow']);
-if (!isset($GLOBALS['drift_options']['slimstat_degradations']['schema column drift'])) {
+if (!isset($GLOBALS['drift_options']['slimstat_degradations']['schema column drift'], $GLOBALS['drift_options']['slimstat_degradations']['legacy_column_width_repair'])) {
     $failures[] = 'unresolved drift must retain its degradation';
 }
 DriftPersistenceProbe::run([]);
@@ -470,6 +470,19 @@ DriftRefreshProbe::$observed = [];
 DriftRefreshProbe::run();
 if (get_option('slimstat_schema_column_drift', []) !== []) {
     $failures[] = 'successful empty observations must clear repaired drift';
+}
+
+// An older version may already have cleared the drift option after an external repair.
+$GLOBALS['drift_options']['slimstat_degradations'] = ['legacy_column_width_repair' => ['message' => 'old failure'], 'purge' => ['message' => 'keep']];
+DriftRefreshProbe::$observed = null;
+DriftRefreshProbe::run();
+if (!isset(get_option('slimstat_degradations')['legacy_column_width_repair'])) {
+    $failures[] = 'an unavailable observation must retain an orphaned repair failure';
+}
+DriftRefreshProbe::$observed = [];
+DriftRefreshProbe::run();
+if (get_option('slimstat_degradations') !== ['purge' => ['message' => 'keep']]) {
+    $failures[] = 'a verified clean schema must clear an orphaned repair failure only';
 }
 
 if ($failures) {

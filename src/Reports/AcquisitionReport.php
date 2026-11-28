@@ -257,6 +257,7 @@ class AcquisitionReport
             foreach (array_merge([], ...array_column($rows, 'values')) as $value) {
                 $scope[] = null === $value ? $groupField . ' IS NULL' : $db->prepare($groupField . ' = %s', $value);
             }
+            sort($scope, SORT_STRING);
             $details = $rows && \wp_slimstat::pro_is_installed() ? self::queryRows(['mode' => $mode, 'where' => '(' . implode(' OR ', array_unique($scope)) . ')']) : [];
             $failed = $failed || '' !== (string) $db->last_error;
             $total = \wp_slimstat_db::count_records('id', self::where($mode));

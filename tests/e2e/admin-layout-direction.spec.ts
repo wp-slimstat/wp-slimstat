@@ -91,6 +91,125 @@ for (const direction of ['ltr', 'rtl']) {
   }
 }
 
+// Same markup as admin/view/right-now.php, so the layout tests do not depend on tracked rows.
+const accessLogProbeRow = `<a class="slimstat-font-logout slimstat-tooltip-trigger" title="Open this URL in a new window" href="#"></a> <a class="slimstat-filter-link" href="#"><span dir="auto">Contact Us</span></a> <span class="details"><i class="slimstat-font-stopwatch spaced slimstat-tooltip-trigger" title="Time spent on this page"></i> 00:01 <i class="spaced slimstat-font-doc slimstat-tooltip-trigger" title="Content Type"></i> <a class="slimstat-filter-link" href="#"><span dir="auto">page</span></a> <i class="slimstat-font-gauge spaced slimstat-tooltip-trigger" title="Server Latency and Page Speed in milliseconds"></i> Server 330 ms · Page 155 ms <i class="spaced slimstat-font-clock slimstat-tooltip-trigger" title="Date and Time"></i> Nov 27, 2026 12:06 pm <i class="slimstat-font-edit slimstat-tooltip-trigger"><b class="slimstat-tooltip-content">user: 1</b></i> <a class="slimstat-delete-entry slimstat-font-cancel slimstat-tooltip-trigger" data-pageview-id="0" title="Delete this entry from the database" href="#"></a></span>`;
+
+// 6.0 (16ad233f) put every pageview's details on a second line, flush with the start edge; 5.5 kept them on the resource's line at the far edge.
+test('access log details share the resource line and end at the far edge, like 5.5', async ({ page }) => {
+  await page.goto('/wp-admin/admin.php?page=slimview1');
+  const box = page.locator('#slim_p7_02');
+  // Load the report before injecting rows, or its async response can replace them.
+  await box.scrollIntoViewIfNeeded();
+  await expect(box.locator('.inside .loading')).toHaveCount(0);
+  // A long title leaves no room beside it, so its details wrap below; the row must grow to hold them.
+  await page.locator('#slim_p7_02 .inside').evaluate((el, html) => {
+    for (const [probe, title] of [['long', 'A much longer page title that someone wrote for their blog post about analytics and privacy'], ['true', 'Contact Us']]) {
+      const row = document.createElement('p');
+      row.dataset.accessLogProbe = probe;
+      row.innerHTML = html.replace('Contact Us', title);
+      el.prepend(row);
+    }
+  }, accessLogProbeRow);
+  for (const width of [1920, 1440, 1024, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const dir of ['ltr', 'rtl']) {
+      const row = await page.locator('[data-access-log-probe="true"]').evaluate((p, d) => {
+        document.documentElement.dir = d;
+        document.body.classList.toggle('rtl', d === 'rtl');
+        const r = p.getBoundingClientRect(), cs = getComputedStyle(p);
+        const link = p.querySelector(':scope > .slimstat-filter-link')!.getBoundingClientRect();
+        const detailsEl = p.querySelector('.details')!, details = detailsEl.getBoundingClientRect();
+        const resource = document.createRange();
+        resource.setStartBefore(p.firstChild!);
+        resource.setEndBefore(detailsEl);
+        return {
+          fits: resource.getBoundingClientRect().width + details.width <= r.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight),
+          sameLine: details.top < link.bottom,
+          endGap: Math.round(r.right - parseFloat(cs.paddingRight) - details.right),
+          startGap: Math.round(details.left - r.left - parseFloat(cs.paddingLeft)),
+          // Scoped to the probe rows (page-wide overflow also measures WordPress chrome, which differs by core version and font); text inside the link is clipped by its phone ellipsis.
+          outside: [...document.querySelectorAll('[data-access-log-probe], [data-access-log-probe] > *, [data-access-log-probe] .details *')].filter(e => { const b = e.getBoundingClientRect(), box = p.parentElement!.getBoundingClientRect(); return b.width > 0 && (b.left < box.left - 1 || b.right > box.right + 1); }).map(e => e.outerHTML.slice(0, 80)),
+          spill: [...document.querySelectorAll('[data-access-log-probe]')].map(q => Math.round(q.querySelector('.details')!.getBoundingClientRect().bottom - q.getBoundingClientRect().bottom)),
+        };
+      }, dir);
+      if (width >= 1440) expect(row.fits, `${dir} ${width}px has room for one line`).toBe(true);
+      if (width > 800) {
+        // Too narrow for one line, the details drop below the resource, still at the far edge.
+        if (row.fits) expect(row.sameLine, `${dir} ${width}px details on the resource line`).toBe(true);
+        expect(dir === 'rtl' ? row.startGap : row.endGap, `${dir} ${width}px details reach the far edge`).toBeLessThanOrEqual(2);
+      }
+      expect(row.outside, `${dir} ${width}px nothing crosses the Access Log edges`).toEqual([]);
+      expect(Math.max(...row.spill), `${dir} ${width}px details stay inside their row`).toBeLessThanOrEqual(0);
+    }
+  }
+});
+
+// GitHub #295: a tall panel that ends the page grows to the viewport instead of stopping at 465px.
+test('access log fills the viewport when it is the last panel and keeps 465px otherwise', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/wp-admin/admin.php?page=slimview1');
+  const box = page.locator('#slim_p7_02');
+  await box.scrollIntoViewIfNeeded();
+  await expect(box.locator('.inside .loading')).toHaveCount(0);
+  const insideHeight = () => box.locator('.inside').evaluate(el => Math.round(el.getBoundingClientRect().height));
+  // A row, not the empty state: an empty .inside is height:auto (audit E1), so neither height rule would apply.
+  await box.locator('.inside').evaluate((el, html) => { const p = document.createElement('p'); p.innerHTML = html; el.replaceChildren(p); }, accessLogProbeRow);
+  // Unticking the two reports after it in Screen Options hides them with jQuery's .hide() (core postboxes.js); they stay in the page.
+  await box.evaluate(el => { const after = [...el.parentElement!.querySelectorAll(':scope > .postbox')].filter(p => p !== el).slice(-2); after[0].before(el); after.forEach(p => (window as any).jQuery(p).hide()); });
+  expect(await insideHeight()).toBeGreaterThan(465);
+  expect(await box.evaluate(el => el.getBoundingClientRect().height)).toBeLessThanOrEqual(900 - 32);
+  await page.setViewportSize({ width: 1440, height: 500 });
+  expect(await insideHeight(), 'short windows keep the old minimum').toBe(465);
+  await page.setViewportSize({ width: 390, height: 900 });
+  expect(await insideHeight(), 'phones keep a fixed scroll box').toBe(465);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await box.evaluate(el => el.after(Object.assign(document.createElement('div'), { className: 'postbox' })));
+  expect(await insideHeight(), 'a shown panel below keeps the Access Log at 465px').toBe(465);
+});
+
+// GitHub #295: normal-width reports fill the viewport when only one, or a few sharing one row, are left;
+// otherwise they keep 240px, so no card in a row is stretched past its content.
+test('a few normal reports fill the viewport when they share one row and keep 240px otherwise', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 }); // three normal reports per row
+  await page.goto('/wp-admin/admin.php?page=slimview2');
+  await page.waitForLoadState('networkidle');
+  // A list report: charts and acquisition boxes size themselves and are meant to keep their height.
+  const id = await page.locator('.meta-box-sortables > [id^="slim_"].postbox:not(.full-width, .large, .extralarge, .slimstat-acquisition-box)').filter({ hasNot: page.locator('canvas, .slimstat-postbox-chart--canvas') }).first().getAttribute('id');
+  const box = page.locator(`#${id}`); // pinned: a locator re-resolves, and the copies added below would match a positional one
+  await box.locator('.inside').evaluate((el, html) => { const p = document.createElement('p'); p.innerHTML = html; el.replaceChildren(p); }, accessLogProbeRow);
+  // Untick every other report, as Screen Options does: jQuery's .hide() leaves them in the page, charts included.
+  await box.evaluate(el => el.parentElement!.querySelectorAll(':scope > .postbox').forEach(p => p !== el && (window as any).jQuery(p).hide()));
+  const layout = () => box.evaluate(el => [...el.parentElement!.querySelectorAll<HTMLElement>(':scope > .postbox')].filter(p => p.style.display !== 'none').map(p => ({
+    inside: Math.round(p.querySelector('.inside')!.getBoundingClientRect().height), top: Math.round(p.getBoundingClientRect().top), box: p.getBoundingClientRect().height,
+  })));
+  const copies = (n: number) => box.evaluate((el, n) => {
+    el.parentElement!.querySelectorAll(':scope > [id^="slim_copy"]').forEach(p => p.remove());
+    for (let i = 0; i < n; i++) el.after(Object.assign(el.cloneNode(true) as HTMLElement, { id: `slim_copy${i}` }));
+  }, n);
+
+  let rows = await layout();
+  expect(rows[0].inside, 'the only report left fills the window').toBeGreaterThan(465);
+  expect(rows[0].box).toBeLessThanOrEqual(900 - 32);
+
+  await copies(2);
+  rows = await layout();
+  expect(new Set(rows.map(r => r.top)).size, 'three reports share one row').toBe(1);
+  for (const r of rows) { expect(r.inside, 'a few reports on one row fill the window together').toBeGreaterThan(465); expect(r.box).toBeLessThanOrEqual(900 - 32); }
+
+  await copies(3);
+  rows = await layout();
+  expect(new Set(rows.map(r => r.top)).size, 'four reports wrap onto two rows').toBe(2);
+  expect(rows.map(r => r.inside), 'reports on two rows keep 240px').toEqual([240, 240, 240, 240]);
+
+  await copies(1);
+  await page.setViewportSize({ width: 790, height: 900 });
+  rows = await layout();
+  expect(rows.map(r => r.inside), 'at 800px and below reports go full width, so two wrap and keep 240px').toEqual([240, 240]);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.locator('#slim_copy0 .inside').evaluate(el => { el.innerHTML = '<div class="slimstat-empty"><p class="nodata">No data</p></div>'; });
+  rows = await layout();
+  expect(rows[0].inside, 'beside an empty state, which keeps its own height, the report keeps 240px').toBe(240);
+});
 
 test('long alert copy and actions stay visible in both directions and on phones', async ({ page }) => {
   const html=runWordPressFixture(`<?php

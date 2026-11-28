@@ -1,3 +1,33 @@
+= 6.1.4 - 2026-11-26 =
+
+**Improved**
+
+* Sale offers now come only from Horizon; the built-in Black Friday strip is removed.
+
+**Fixed**
+
+* Access Log shows each pageview on one line again, with its details at the far edge, as in 5.5. A long page title or a narrow screen still moves the details below the page.
+* On desktop, when you hide reports, the ones left grow to fill the window instead of keeping their fixed height. This covers a full-width report at the end of the page (such as the Access Log), a report left on its own, and a few reports that share one row. Charts and phones keep their usual size. ([#295](https://github.com/wp-slimstat/wp-slimstat/issues/295))
+* Access Log keeps a visit together when some pageviews have no browser fingerprint.
+* Migration shows failed repair details beside the step, explains unavailable online repairs, and offers the utf8mb4 conversion and legacy repair sequence before host SQL guidance.
+* Long translated diagnostics remain valid UTF-8 when saved, so their messages remain visible after reloading.
+* Delayed pageview updates keep their original visit when a cookie expires or the request identity changes. Concurrent updates cannot split an established visit or undo a consent merge.
+* Real-time page, country and visitor counts use separate date ranges for new views and long reads, reducing database work while preserving the counts.
+* Heatmaps preserve line breaks, spaces within patterns, plus signs and encoded paths in Pages to track. Pasted URLs match their paths; older collapsed wildcard and URL lists are recovered without turning path fragments into separate wildcards. Entries with encoded query or fragment delimiters are ignored to keep capture within the selected pages. ([#420](https://github.com/wp-slimstat/wp-slimstat/issues/420))
+* JavaScript URL updates preserve plus signs and accept valid paths. Late consent events keep cookieless visits together when GDPR mode is disabled.
+* Visitor IP, username and other filter links in WordPress Dashboard widgets now open the filtered Real-time report instead of a "not allowed" page. ([#418](https://github.com/wp-slimstat/wp-slimstat/issues/418))
+* Simultaneous first visits now share the same daily visitor salt, keeping cookieless identities consistent.
+* Access Log handles historical visitor rows with missing notes without PHP deprecation warnings.
+* Server tracking: fixed inflated Human Visits when tracking cookies are blocked or disabled, and improved detection of automated HTTP clients. Cookieless visits now honour Extend duration, including when the browser starts accepting tracking cookies during a visit. On a site upgraded from 5.x this starts once "Add the anonymous visitor identity column" has run under SlimStat → Migration; until then visits are counted as before. ([#417](https://github.com/wp-slimstat/wp-slimstat/issues/417))
+* Geolocation downloads begin shortly after activation instead of waiting a week. Missing databases are scheduled from admin visits and settings saves, and repeated GeoIP errors respect the 15-minute throttle after sanitization. ([#430](https://github.com/wp-slimstat/wp-slimstat/issues/430))
+* SlimStat → Migration offers a way out when the database refuses to widen older text columns: it shows repair SQL for your host to review and run during maintenance, or inspection steps for customized columns, and the database warning clears once a reload confirms the repair. ([#429](https://github.com/wp-slimstat/wp-slimstat/issues/429))
+* Tracking resumes after the five-second rate-limit window on Redis Object Cache, including for visitors blocked before upgrading. ([#435](https://github.com/wp-slimstat/wp-slimstat/issues/435))
+* Successful geolocation database updates clear old errors from Settings and Tracker Health. Failed updates keep their diagnostics. ([#436](https://github.com/wp-slimstat/wp-slimstat/issues/436))
+
+**Security**
+
+* Prevents a visitor from using a tracking cookie to change another visitor's pageview. Existing visit cookies continue to work.
+
 = 6.1.3 - 2026-11-21 =
 
 **Security**

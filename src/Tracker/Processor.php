@@ -51,9 +51,12 @@ class Processor
     /** A request URI as stored in `resource`: decoded, sanitised, non-ASCII bytes as lowercase %xx. */
     public static function sanitizeResource(string $uri): string
     {
+        // A plus is literal in a URL path; only query values use form decoding.
+        $parts = explode('?', $uri, 2);
+        $decoded = rawurldecode($parts[0]) . (isset($parts[1]) ? '?' . urldecode($parts[1]) : '');
         return (string) preg_replace_callback('/[^\x20-\x7E]/', static function ($m) {
             return '%' . bin2hex($m[0]);
-        }, sanitize_text_field(urldecode($uri)));
+        }, sanitize_text_field($decoded));
     }
 
     /**
@@ -515,12 +518,12 @@ class Processor
 				$requestedVisitIdRaw = $_REQUEST['visit_id'] ?? '';
 				if (is_scalar($requestedVisitIdRaw) && '' !== (string) $requestedVisitIdRaw) {
 					$visitIdRaw = sanitize_text_field(wp_unslash((string) $requestedVisitIdRaw));
-					$visitIdValue = Utils::getValueWithoutChecksum($visitIdRaw);
+					$visitIdValue = Utils::getValueWithoutChecksum($visitIdRaw, Utils::DOMAIN_VISIT);
 					if (false !== $visitIdValue) {
 						$requestedVisitId = intval($visitIdValue);
 					}
 				} elseif (!empty($data_js['visit_id'])) {
-					$visitIdValue = Utils::getValueWithoutChecksum($data_js['visit_id']);
+					$visitIdValue = Utils::getValueWithoutChecksum($data_js['visit_id'], Utils::DOMAIN_VISIT);
 					if (false !== $visitIdValue) {
 						$requestedVisitId = intval($visitIdValue);
 					}
@@ -539,7 +542,7 @@ class Processor
 					$requestId = 0;
 					if (!empty($data_js['id'])) {
 						// ID in data_js usually has checksum, verify and strip it
-						$requestId = Utils::getValueWithoutChecksum($data_js['id']);
+						$requestId = Utils::getValueWithoutChecksum($data_js['id'], Utils::DOMAIN_PAGEVIEW);
 					}
 
 					$query = Query::select('id, ip, visit_id, fingerprint, username, email, notes')

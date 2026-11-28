@@ -4,6 +4,7 @@ namespace SlimStat\Tracker;
 
 use SlimStat\Services\Browscap;
 use SlimStat\Utils\Consent;
+use SlimStat\Utils\Query;
 
 class Ajax
 {
@@ -13,38 +14,9 @@ class Ajax
     /** Length of the rate-limiting window, in seconds. */
     private const RATE_LIMIT_WINDOW = 5;
 
-    /** Object-cache group for the counters. Kept out of 'default' so a flush is targeted. */
+    /** Object-cache group for the slots. Kept out of 'default' so a flush is targeted. */
     private const RATE_LIMIT_GROUP = 'slimstat_rl';
 
-    /**
-     * Whether this client has exceeded the tracking rate limit.
-     *
-     * The counter lives in the object cache, never in the options table. It used to be
-     * a transient with a five-second TTL, which is shorter than the gap between most
-     * visitors' hits — so the timeout row was normally expired, WordPress deleted both
-     * rows and re-inserted them, and the measured cost was 2 to 4 `wp_options` writes
-     * on *every tracked hit*. That is several times the write work of storing the
-     * pageview, spent to save roughly six queries on the rare request it refuses. (D29)
-     *
-     * Without a persistent object cache there is nowhere free to keep a cross-request
-     * counter, so the limiter stands down rather than charging every site a write per
-     * hit for a counter it cannot afford. Two things make that the right trade rather
-     * than a silent loss of protection:
-     *
-     *   - by the time this runs, the request has already paid for the full WordPress
-     *     bootstrap, so refusing it saves a fraction of its cost. A cap that matters
-     *     belongs at the edge, ahead of PHP;
-     *   - `slimstat_rate_limit_enabled` lets a site turn it back on regardless.
-     *
-     * The counter is keyed on the raw REMOTE_ADDR, unchanged. Behind a CDN or a NAT
-     * gateway that is one bucket for everyone behind it, which is a real limitation —
-     * `slimstat_rate_limit_key` exists so such a site can supply the client address it
-     * trusts. Resolving forwarded headers here by default would let anyone evade the
-     * limit by varying a header, which is a worse trade than the one it fixes.
-     *
-     * @param string $ip Client address, already validated by the caller.
-     * @return bool True when the request should be refused.
-     */
     /**
      * Whether rate limiting is in effect on this site.
      *
@@ -71,6 +43,35 @@ class Ajax
         return (bool) apply_filters('slimstat_rate_limit_enabled', $has_persistent_cache, $ip);
     }
 
+    /**
+     * Whether this client has exceeded the tracking rate limit.
+     *
+     * The budget lives in the object cache, never in the options table. It used to be
+     * a transient with a five-second TTL, which is shorter than the gap between most
+     * visitors' hits — so the timeout row was normally expired, WordPress deleted both
+     * rows and re-inserted them, and the measured cost was 2 to 4 `wp_options` writes
+     * on *every tracked hit*. That is several times the write work of storing the
+     * pageview, spent to save roughly six queries on the rare request it refuses. (D29)
+     *
+     * Without a persistent object cache there is nowhere free to keep a cross-request
+     * counter, so the limiter stands down rather than charging every site a write per
+     * hit for a counter it cannot afford. Two things make that the right trade rather
+     * than a silent loss of protection:
+     *
+     *   - by the time this runs, the request has already paid for the full WordPress
+     *     bootstrap, so refusing it saves a fraction of its cost. A cap that matters
+     *     belongs at the edge, ahead of PHP;
+     *   - `slimstat_rate_limit_enabled` lets a site turn it back on regardless.
+     *
+     * The budget is keyed on the raw REMOTE_ADDR, unchanged. Behind a CDN or a NAT
+     * gateway that is one bucket for everyone behind it, which is a real limitation —
+     * `slimstat_rate_limit_key` exists so such a site can supply the client address it
+     * trusts. Resolving forwarded headers here by default would let anyone evade the
+     * limit by varying a header, which is a worse trade than the one it fixes.
+     *
+     * @param string $ip Client address, already validated by the caller.
+     * @return bool True when the request should be refused.
+     */
     public static function isRateLimited(string $ip): bool
     {
         if (!self::isRateLimitingActive($ip)) {
@@ -82,18 +83,18 @@ class Ajax
          *
          * @param string $ip Client address as seen by PHP.
          */
-        $key = 'rl_' . md5((string) apply_filters('slimstat_rate_limit_key', $ip));
+        // Separate slots also release clients blocked by older, non-expiring Redis counters.
+        $key = 'rl_slot_' . md5((string) apply_filters('slimstat_rate_limit_key', $ip));
 
-        $hits = wp_cache_incr($key, 1, self::RATE_LIMIT_GROUP);
-        if (false === $hits) {
-            // No counter yet, or the window just expired. `add` rather than `set` so
-            // two concurrent requests cannot each reset the other's window; the loser
-            // undercounts by one, which a rate limiter can afford.
-            wp_cache_add($key, 1, self::RATE_LIMIT_GROUP, self::RATE_LIMIT_WINDOW);
-            $hits = 1;
+        // Each atomic add reserves one request for five seconds, without a reset that can lose concurrent hits.
+        for ($slot = 0; $slot < self::RATE_LIMIT_HITS; ++$slot) {
+            if (wp_cache_add($key . '_' . $slot, 1, self::RATE_LIMIT_GROUP, self::RATE_LIMIT_WINDOW)) {
+                return false;
+            }
         }
 
-        return $hits > self::RATE_LIMIT_HITS;
+        // Preserve fail-open behavior during cache outages without changing any occupied slot.
+        return wp_cache_set($key . '_available', 1, self::RATE_LIMIT_GROUP, self::RATE_LIMIT_WINDOW);
     }
 
     /**
@@ -281,7 +282,7 @@ class Ajax
                 }
             }
 
-            $data_js['id'] = Utils::getValueWithoutChecksum($data_js['id']);
+            $data_js['id'] = Utils::getValueWithoutChecksum($data_js['id'], Utils::DOMAIN_PAGEVIEW);
             if (false === $data_js['id']) {
                 return Utils::logError(101);
             }
@@ -289,7 +290,7 @@ class Ajax
             $stat['id'] = intval($data_js['id']);
             if ($stat['id'] < 0) {
                 do_action('slimstat_track_exit_' . abs($stat['id']));
-                return Utils::getValueWithChecksum($stat['id']);
+                return Utils::getValueWithChecksum($stat['id'], Utils::DOMAIN_PAGEVIEW);
             }
 
             if ($isConsentUpgrade && empty($data_js['pos']) && 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off')) {
@@ -311,7 +312,7 @@ class Ajax
                     return $id ?: 0;
                 }
                 do_action('slimstat_track_success');
-                return Utils::getValueWithChecksum($id);
+                return Utils::getValueWithChecksum($id, Utils::DOMAIN_PAGEVIEW);
             }
 
             // Process IP according to consent status (cookie set only by consent upgrade handler)
@@ -369,7 +370,7 @@ class Ajax
                         // Remove any path traversal attempts
                         $path = str_replace(['../', '..\\', '%2e%2e', '%2E%2E'], '', $path);
                         // Validate path contains only safe characters
-                        if (!preg_match('#^[/\w\-\.~!*\'();:@&=+$,?#\[\]%]*$#', $path)) {
+                        if (!preg_match('#^[/\w\-\.~!*\'();:@&=+$,?\#\[\]%]*$#', $path)) {
                             // Invalid path format - reject request
                             return Utils::logError(203);
                         }
@@ -377,10 +378,7 @@ class Ajax
                         // Extract path from resource URL
                         $stat['resource'] = $path . (empty($parsed_resource['query']) ? '' : '?' . $parsed_resource['query']);
                         $stat['resource'] = Utils::normalizeResourceParameters($stat['resource']);
-                        $stat['resource'] = sanitize_text_field(urldecode($stat['resource']));
-                        $stat['resource'] = preg_replace_callback('/[^\x20-\x7E]/', function ($m) {
-                            return '%' . bin2hex($m[0]);
-                        }, $stat['resource']);
+                        $stat['resource'] = Processor::sanitizeResource($stat['resource']);
 
                         // Security: Limit resource length to prevent DoS
                         if (strlen($stat['resource']) > 2048) {
@@ -410,8 +408,19 @@ class Ajax
                 // See: https://github.com/wp-slimstat/wp-slimstat/issues/242
                 \wp_slimstat::set_stat($stat);
 
-                // Security: Ensure visit ID is generated successfully
-                $visitIdAssigned = Session::ensureVisitId(true);
+                // A signed update belongs to the original pageview, even after its
+                // cookie expires or the request identity changes. Consent merges
+                // use Processor above; only unassigned rows need a session here.
+                $existingVisit = (int) Query::select('visit_id')
+                    ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
+                    ->where('id', '=', $stat['id'])
+                    ->getVar();
+                if ($existingVisit > 0) {
+                    $stat['visit_id'] = $existingVisit;
+                    \wp_slimstat::set_stat($stat);
+                } else {
+                    Session::ensureVisitId(true);
+                }
                 $stat = \wp_slimstat::get_stat();
 
                 // Security: Validate visit_id exists - return error if generation failed
@@ -483,7 +492,7 @@ class Ajax
                             $stat['id'] = intval($existing_record->id);
                             \wp_slimstat::set_stat($stat);
                             $GLOBALS['wpdb']->query('COMMIT');
-                            return Utils::getValueWithChecksum($stat['id']);
+                            return Utils::getValueWithChecksum($stat['id'], Utils::DOMAIN_PAGEVIEW);
                         }
 
                         $GLOBALS['wpdb']->query('COMMIT');
@@ -494,6 +503,27 @@ class Ajax
                 }
 
                 $id = Storage::updateRow($stat)->id();
+                if ($id > 0 && $existingVisit <= 0) {
+                    // Another first assignment can win after our read. Its session
+                    // must also win in the response cookie, or the next page splits.
+                    $winner = (int) Query::select('visit_id')
+                        ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
+                        ->where('id', '=', $id)->getVar();
+                    if ($winner > 0 && $winner !== (int) $stat['visit_id']) {
+                        $stat['visit_id'] = $winner;
+                        \wp_slimstat::set_stat($stat);
+                        $remaining = null;
+                        if ('on' !== (\wp_slimstat::$settings['extend_session'] ?? 'off')) {
+                            $started = (int) Query::select('dt')
+                                ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
+                                ->where('visit_id', '=', $winner)
+                                ->orderBy('dt', 'ASC')->limit(1)->getVar();
+                            $duration = (int) (\wp_slimstat::$settings['session_duration'] ?: 1800);
+                            $remaining = max(0, $started + $duration - \wp_slimstat::now());
+                        }
+                        Session::setTrackingCookie($winner, 'visit', $remaining);
+                    }
+                }
             } else {
                 // Security: Validate and sanitize event position (x,y coordinates)
                 $position = self::sanitizePosition($data_js['pos'] ?? '');
@@ -588,7 +618,7 @@ class Ajax
 
             $stat = Utils::getClientInfo($data_js, $stat);
             if (!empty($data_js['ci'])) {
-                $validated_ci = Utils::getValueWithoutChecksum($data_js['ci']);
+                $validated_ci = Utils::getValueWithoutChecksum($data_js['ci'], Utils::DOMAIN_CONTENT);
                 if (false === $validated_ci) {
                     Utils::logWarning(102);
                     $data_js['ci'] = '';
@@ -639,6 +669,6 @@ class Ajax
         }
 
         do_action('slimstat_track_success');
-        return Utils::getValueWithChecksum($id);
+        return Utils::getValueWithChecksum($id, Utils::DOMAIN_PAGEVIEW);
     }
 }

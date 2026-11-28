@@ -171,11 +171,38 @@ final class Store
 		if (0 === $rate || self::isPreview() || !self::capturing() || !self::ready()) {
 			return null;
 		}
-		$pages = trim((string) (\wp_slimstat::$settings['heatmap_pages'] ?? ''));
-		if ('' !== $pages && !Utils::isBlacklisted(Query::pageKeyFromUrl($requestUri), $pages)) {
+		if (!self::matchesPage(Query::pageKeyFromUrl($requestUri))) {
 			return null;
 		}
 		return ['l' => self::level(), 'r' => $rate];
+	}
+
+	private static function matchesPage(string $page): bool
+	{
+		$pages = trim((string) (\wp_slimstat::$settings['heatmap_pages'] ?? ''));
+		if ('' === $pages) {
+			return true;
+		}
+		// Explicit separators own their entries. Recover only legacy wildcard paths and
+		// pasted URL lists; a space before * must never create a broader standalone pattern.
+		$separator = preg_match('~\R|,~', $pages)
+			? '~\R+|,~'
+			: '~(?<=/\*)\h+(?=/)|\h+(?=https?://)~i';
+		$entries = preg_split($separator, $pages) ?: [];
+		$keys = array_map(static function (string $entry): string {
+			$entry = (string) preg_replace('~^https?://[^/\s,?#]+/?~i', '/', trim($entry));
+			// Decoding a path delimiter would make pageKey select a shorter, unlisted page.
+			if (preg_match('~^[^?#]*%(?:25)*(?:23|3f)~i', $entry)) {
+				return '';
+			}
+			$entry = \SlimStat\Tracker\Processor::sanitizeResource($entry);
+			// Plain-permalink wildcards must survive the page-key normalizer.
+			return preg_match('~^([^?#]*)(\?(?:p|page_id)=[^&#]*[*!][^&#]*)~', $entry, $m)
+				? $m[1] . $m[2]
+				: Query::pageKey($entry);
+		}, $entries);
+		// A decoded %2C belongs to its path, not to the list's separators.
+		return Utils::isBlacklisted($page, array_filter($keys, static fn(string $key): bool => '' !== $key));
 	}
 
 	/** Spread new batches across sequential pageviews; accept the old cached-client sampling rule. */
@@ -225,8 +252,7 @@ final class Store
 			throw new \RuntimeException($db->last_error);
 		}
 		$page  = Query::pageKey((string) ($view['resource'] ?? ''));
-		$pages = trim((string) (\wp_slimstat::$settings['heatmap_pages'] ?? ''));
-		if ('' === $page || ('' !== $pages && !Utils::isBlacklisted($page, $pages))) {
+		if ('' === $page || !self::matchesPage($page)) {
 			return 0;
 		}
 

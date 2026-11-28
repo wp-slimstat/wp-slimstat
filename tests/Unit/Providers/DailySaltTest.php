@@ -157,17 +157,17 @@ class DailySaltTest extends WpSlimstatTestCase
     }
 
     /**
-     * First ever mint: there is no row to compare against, so it is a bare INSERT and
-     * the unique index picks the winner. add_option() cannot do this — it does a
+     * First ever mint: the unique index picks the winner and IGNORE reports a lost
+     * race as zero affected rows. add_option() cannot do this — it does a
      * PHP-level get_option() pre-check and then INSERT ... ON DUPLICATE KEY UPDATE,
      * which overwrites, so the index never rejects anyone.
      */
-    public function test_the_first_ever_mint_is_a_bare_insert(): void
+    public function test_the_first_ever_mint_cannot_replace_a_concurrent_winner(): void
     {
         $salt = IPHashProvider::generateDailySalt();
 
         $this->assertNotEmpty($this->statements);
-        $this->assertStringContainsString('INSERT INTO', $this->statements[0]);
+        $this->assertStringContainsString('INSERT IGNORE INTO', $this->statements[0]);
         $this->assertStringNotContainsString('ON DUPLICATE KEY', $this->statements[0]);
         $this->assertSame('minted-salt-1', $salt);
     }

@@ -3,7 +3,7 @@
  * Seeds, renders every registered SlimStat report with query capture on, then
  * EXPLAINs everything captured and reports a verdict.
  *
- * Run via tests/perf/explain-gate.sh, or directly against any WP install:
+ * Run via tests/perf/explain-gate.sh, or directly against a disposable WP install:
  *
  *     wp eval-file tests/perf/lib/explain-run.php 100000
  *
@@ -24,10 +24,21 @@ if (!defined('ABSPATH')) {
     exit(2);
 }
 
+if (!defined('WP_CLI') || !WP_CLI || !preg_match('/^(tests?[-_]|wordpress$)/', DB_NAME)) {
+    echo "ERROR: a disposable database is required for synthetic seeding\nVERDICT: ERROR\n";
+    return;
+}
+
 $threshold = isset($args[0]) ? (int) $args[0] : 100000;
 $seed_rows = (int) ($threshold + intdiv($threshold, 5));
 
 require_once __DIR__ . '/explain-capture.php';
+require_once __DIR__ . '/scan-budget.php';
+$budgets = json_decode((string) file_get_contents(__DIR__ . '/aggregate-budgets.json'), true);
+if (!is_array($budgets) || $budgets === []) {
+    echo "ERROR: aggregate budgets missing or invalid\nVERDICT: ERROR\n";
+    return;
+}
 
 if (!class_exists('wp_slimstat')) {
     echo "ERROR: wp_slimstat is not loaded — is the plugin active?\n";
@@ -47,9 +58,6 @@ if (!$raw_wpdb instanceof wpdb) {
     return;
 }
 wp_slimstat::$wpdb = new SlimStat_Explain_Capture_WPDB($raw_wpdb);
-
-$stats_table  = $raw_wpdb->prefix . 'slim_stats';
-$events_table = $raw_wpdb->prefix . 'slim_events';
 
 // ── Seed ───────────────────────────────────────────────────────────────────
 // A plan is only meaningful on a table big enough that the optimiser stops
@@ -73,13 +81,17 @@ try {
 }
 
 $row_counts = [];
-foreach ([$stats_table, $events_table] as $table) {
+$tables = $raw_wpdb->get_col($raw_wpdb->prepare('SHOW TABLES LIKE %s', $raw_wpdb->esc_like($raw_wpdb->prefix . 'slim_') . '%'));
+foreach ($tables as $table) {
     $row_counts[$table] = (int) $raw_wpdb->get_var("SELECT COUNT(*) FROM `{$table}`");
     printf("table %-28s %10s rows\n", $table, number_format($row_counts[$table]));
 }
 echo "\n";
 
 // ── Render every registered report ─────────────────────────────────────────
+// Capture cold SQL on reruns too; a cached report otherwise disappears from the gate.
+WP_CLI::runcommand('transient delete --all');
+wp_cache_flush();
 require_once dirname(__DIR__, 2) . '/bench/lib/reports-bootstrap.php';
 
 $reports = slimstat_bench_bootstrap_reports();
@@ -139,6 +151,10 @@ if ($captured === []) {
 
 $offenders = [];
 $checked   = 0;
+$plan_errors = [];
+$budgeted_scans = [];
+$report_costs = [];
+$recent_counts = [];
 
 foreach ($captured as $entry) {
     $sql = $entry['sql'];
@@ -146,22 +162,11 @@ foreach ($captured as $entry) {
     // EXPLAIN through the raw handle so the plan queries aren't self-captured.
     $plan = $raw_wpdb->get_results('EXPLAIN ' . $sql, ARRAY_A);
     if (!$plan) {
-        continue; // statement shape MySQL won't plan; nothing to assert
-    }
-    $checked++;
-
-    // EXPLAIN reports the *alias* ("t1", "te"), not the table, so per-row name
-    // lookup silently treats every joined scan as unknown-and-therefore-fine.
-    // Size the statement by the largest table it actually names instead.
-    $max_rows = 0;
-    foreach ($row_counts as $table => $count) {
-        if (strpos($sql, $table) !== false) {
-            $max_rows = max($max_rows, $count);
-        }
-    }
-    if ($max_rows <= $threshold) {
+        $plan_errors[] = $entry['context'] . ': ' . $raw_wpdb->last_error;
         continue;
     }
+    $checked++;
+    $samples = null;
 
     foreach ($plan as $row) {
         if (!slimstat_plan_row_is_full_scan($row)) {
@@ -174,17 +179,68 @@ foreach ($captured as $entry) {
             continue;
         }
 
-        $offenders[] = [
+        $physical_table = slimstat_plan_table($sql, $table, array_keys($row_counts));
+        if ($physical_table === null) {
+            $plan_errors[] = $entry['context'] . ': cannot resolve scan alias ' . $table;
+            continue;
+        }
+        if ($row_counts[$physical_table] <= $threshold) {
+            continue;
+        }
+
+        $scan = [
+            'table'    => $physical_table,
             'context'  => $entry['context'],
             'alias'    => $table,
             'type'     => (string) ($row['type'] ?? ''),
-            'rows'     => $max_rows,
+            'rows'     => $row_counts[$physical_table],
             'examined' => (int) ($row['rows'] ?? 0),
             'key'      => $row['key'] ?? null,
             'key_len'  => $row['key_len'] ?? null,
             'extra'    => $row['Extra'] ?? '',
             'sql'      => $sql,
         ];
+        $shape = slimstat_scan_shape($raw_wpdb->remove_placeholder_escape($sql), $raw_wpdb->prefix, home_url());
+        $budget = slimstat_scan_budget($budgets, $shape, $entry['context']);
+        if ($budget !== null) {
+            try {
+                if ($samples === null) {
+                    $samples = slimstat_measure_scan($raw_wpdb, $sql);
+                    $report_costs[$entry['context']] = ($report_costs[$entry['context']] ?? 0) + max(array_column($samples, 'ms'));
+                }
+                $scan['samples'] = $samples;
+                $scan['budget'] = $budget;
+                $recent_rows = null;
+                if (isset($budget['min_recent_fraction'])) {
+                    if (!preg_match('/\bdt >= ([0-9]{10})\b/', $sql, $window)) {
+                        throw new RuntimeException('Cannot identify live window');
+                    }
+                    $start = (int) $window[1];
+                    $end = preg_match('/\bWHERE dt <= ([0-9]{10})\b/', $sql, $upper) ? (int) $upper[1] : 0;
+                    $upper_sql = $end > 0 ? $raw_wpdb->prepare(' AND dt <= %d', $end) : '';
+                    $cache_key = $physical_table . ':' . $start . ':' . $end;
+                    if (!isset($recent_counts[$cache_key])) {
+                        $recent_counts[$cache_key] = (int) $raw_wpdb->get_var($raw_wpdb->prepare(
+                            "SELECT (SELECT COUNT(*) FROM `{$physical_table}` WHERE dt >= %d{$upper_sql})
+                                + (SELECT COUNT(*) FROM `{$physical_table}` WHERE dt < %d AND dt_out >= %d{$upper_sql})",
+                            $start, $start, $start
+                        ));
+                        if ($raw_wpdb->last_error) { throw new RuntimeException($raw_wpdb->last_error); }
+                    }
+                    $recent_rows = $recent_counts[$cache_key];
+                    $scan['recent_rows'] = $recent_rows;
+                    $scan['window_start'] = $start;
+                    $scan['window_end'] = $end;
+                }
+                if (slimstat_scan_within_budget($samples, $row_counts[$physical_table], $budget, $recent_rows)) {
+                    $budgeted_scans[] = $scan;
+                    continue;
+                }
+            } catch (\Throwable $e) {
+                $plan_errors[] = $entry['context'] . ': ' . $e->getMessage();
+            }
+        }
+        $offenders[] = $scan;
     }
 }
 
@@ -215,12 +271,21 @@ echo wp_json_encode([
     'shapes'        => $checked,
     'offenders'     => $offenders,
     'render_errors' => $render_errors,
+    'plan_errors'   => $plan_errors,
+    'budgeted_scans' => $budgeted_scans,
+    'report_scan_ms' => $report_costs,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n\n";
 
-if ($offenders !== []) {
-    printf("VERDICT: FAIL — %d full scan(s) over %s rows\n",
-        count($offenders), number_format($threshold));
+if ($render_errors !== [] || $plan_errors !== []) {
+    echo "VERDICT: ERROR — report rendering or plan inspection failed\n";
     return;
 }
 
+if ($offenders !== [] || ($report_costs !== [] && max($report_costs) > 2000)) {
+    printf("VERDICT: FAIL — %d unbudgeted/over-budget full scan(s) over %s rows; maximum report scan cost %.2fms (limit 2000ms)\n",
+        count($offenders), number_format($threshold), $report_costs === [] ? 0 : max($report_costs));
+    return;
+}
+
+printf("Measured %d reviewed report scans within their query time/work budgets; each report/range <=2000ms\n", count($budgeted_scans));
 echo "VERDICT: PASS\n";

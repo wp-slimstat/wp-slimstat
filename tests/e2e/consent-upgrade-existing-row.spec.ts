@@ -66,7 +66,7 @@ async function seedPageview(request: APIRequestContext, marker: string): Promise
   return id!;
 }
 
-test.describe('Consent upgrade on an already-tracked pageview', () => {
+test.describe('Consent upgrade on an already-tracked pageview @compat', () => {
   test.beforeAll(async () => {
     await snapshotSlimstatOptions();
   });
@@ -86,6 +86,7 @@ test.describe('Consent upgrade on an already-tracked pageview', () => {
       // row to merge, so the upgrade must be an in-place update of the known row.
       anonymous_tracking: 'off',
       gdpr_enabled: 'off',
+      set_tracker_cookie: 'off',
       ignore_wp_users: 'no',
       ignore_bots: 'no',
       enable_browscap: 'no',
@@ -94,7 +95,7 @@ test.describe('Consent upgrade on an already-tracked pageview', () => {
   });
 
   for (const arm of [
-    { name: 'REST', path: '/wp-json/slimstat/v1/hit' },
+    { name: 'REST', path: '/?rest_route=/slimstat/v1/hit' },
     { name: 'AJAX', path: '/wp-admin/admin-ajax.php' },
   ]) {
     test(`${arm.name} transport upgrades the existing row instead of inserting a second`, async ({
@@ -102,6 +103,7 @@ test.describe('Consent upgrade on an already-tracked pageview', () => {
     }) => {
       const marker = `${arm.name.toLowerCase()}-${Date.now()}`;
       const seedId = await seedPageview(request, marker);
+      const [before] = await getPool().query<any[]>('SELECT visit_id FROM wp_slim_stats WHERE id = ?', [Number(seedId.split('.')[0])]);
 
       const res = await request.post(`${BASE_URL}${arm.path}`, {
         headers: { 'User-Agent': UA },
@@ -113,6 +115,9 @@ test.describe('Consent upgrade on an already-tracked pageview', () => {
         },
       });
       const body = (await res.text()).trim();
+      const [after] = await getPool().query<any[]>('SELECT visit_id FROM wp_slim_stats WHERE id = ?', [Number(seedId.split('.')[0])]);
+      expect(Number(before[0].visit_id)).toBeGreaterThan(0);
+      expect(after[0].visit_id, 'A delayed consent event with GDPR disabled must preserve the cookieless visit').toBe(before[0].visit_id);
 
       expect(
         await countRows(),
@@ -129,11 +134,33 @@ test.describe('Consent upgrade on an already-tracked pageview', () => {
     });
   }
 
+  for (const transport of ['/wp-admin/admin-ajax.php', '/?rest_route=/slimstat/v1/hit']) {
+    test(`explicit URL updates preserve plus paths over ${transport}`, async ({ request }) => {
+      const seedId = await seedPageview(request, `plus-${Date.now()}`);
+      for (const path of ['/c++/', '/c%2B%2B/']) {
+        const res = await request.post(`${BASE_URL}${transport}`, {
+          headers: { 'User-Agent': UA },
+          form: { action: 'slimtrack', id: seedId, res: Buffer.from(`${BASE_URL}${path}?q=a+b%2Bc`).toString('base64url') },
+        });
+        expect((await res.text()).trim()).toBe(seedId);
+        expect(await resources()).toEqual(['/c++/?q=a%20b+c']);
+      }
+      for (const url of ['https://outside.invalid/c++/', `${BASE_URL}/bad|path/`]) {
+        const rejected = await request.post(`${BASE_URL}${transport}`, {
+          headers: { 'User-Agent': UA },
+          form: { action: 'slimtrack', id: seedId, res: Buffer.from(url).toString('base64url') },
+        });
+        expect((await rejected.text()).trim()).toBe('-203');
+        expect(await resources()).toEqual(['/c++/?q=a%20b+c']);
+      }
+    });
+  }
+
   test('the upgraded row keeps the page URL the visitor was on', async ({ request }) => {
     const marker = `resource-${Date.now()}`;
     const seedId = await seedPageview(request, marker);
 
-    await request.post(`${BASE_URL}/wp-json/slimstat/v1/hit`, {
+    await request.post(`${BASE_URL}/?rest_route=/slimstat/v1/hit`, {
       headers: { 'User-Agent': UA },
       form: { action: 'slimtrack', id: seedId, consent_upgrade: '1', pageview_id: seedId },
     });

@@ -945,14 +945,12 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
                         'license'   => $license,
                         'precision' => $precision,
                     ]);
-                    $dbExists = file_exists($service->getProvider()->getDbPath());
+                    $dbExists = is_readable($service->getProvider()->getDbPath());
 
                     if (!$dbExists || $provider !== $prevProvider) {
-                        // Schedule a single-run background job shortly after save
-                        if (!wp_next_scheduled('wp_slimstat_update_geoip_database')) {
-                            wp_schedule_single_event(time() + 10, 'wp_slimstat_update_geoip_database');
-                        }
-                        $save_messages[] = __('The geolocation database update has been scheduled in the background. You can also use the Update Database button below to start it now.', 'wp-slimstat');
+                        $save_messages[] = \SlimStat\Services\GeoService::scheduleDatabaseUpdate()
+                            ? __('The geolocation database update has been scheduled in the background. You can also use the Update Database button below to start it now.', 'wp-slimstat')
+                            : __('The geolocation database update could not be scheduled. Use the Update Database button below to try again.', 'wp-slimstat');
                     }
                 } catch (\Exception $e) {
                     $save_messages[] = $e->getMessage();
@@ -991,6 +989,9 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
                 if ('rich_text' === $settings[$current_tab]['rows'][$a_post_slug]['type']) {
                     // Rich text editor: use wp_kses_post to sanitize HTML
                     wp_slimstat::$settings[$a_post_slug] = wp_kses_post($a_post_value);
+                } elseif ('heatmap_pages' === $a_post_slug) {
+                    // Text sanitizers delete percent-encoded path bytes from pasted URLs.
+                    wp_slimstat::$settings[$a_post_slug] = wp_strip_all_tags(wp_check_invalid_utf8($a_post_value));
                 } elseif (empty($settings[$current_tab]['rows'][$a_post_slug]['use_code_editor'])) {
                     wp_slimstat::$settings[$a_post_slug] = sanitize_text_field($a_post_value);
                 } else {
