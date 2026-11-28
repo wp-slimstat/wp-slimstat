@@ -91,6 +91,67 @@ for (const direction of ['ltr', 'rtl']) {
   }
 }
 
+// Same markup as admin/view/right-now.php, so the layout tests do not depend on tracked rows.
+const accessLogProbeRow = `<a class="slimstat-font-logout slimstat-tooltip-trigger" title="Open this URL in a new window" href="#"></a> <a class="slimstat-filter-link" href="#"><span dir="auto">Contact Us</span></a> <span class="details"><i class="slimstat-font-stopwatch spaced slimstat-tooltip-trigger" title="Time spent on this page"></i> 00:01 <i class="spaced slimstat-font-doc slimstat-tooltip-trigger" title="Content Type"></i> <a class="slimstat-filter-link" href="#"><span dir="auto">page</span></a> <i class="slimstat-font-gauge spaced slimstat-tooltip-trigger" title="Server Latency and Page Speed in milliseconds"></i> Server 330 ms · Page 155 ms <i class="spaced slimstat-font-clock slimstat-tooltip-trigger" title="Date and Time"></i> Nov 27, 2026 12:06 pm <i class="slimstat-font-edit slimstat-tooltip-trigger"><b class="slimstat-tooltip-content">user: 1</b></i> <a class="slimstat-delete-entry slimstat-font-cancel slimstat-tooltip-trigger" data-pageview-id="0" title="Delete this entry from the database" href="#"></a></span>`;
+
+// 6.0 (16ad233f) put every pageview's details on a second line, flush with the start edge; 5.5 kept them on the resource's line at the far edge.
+test('access log details share the resource line and end at the far edge, like 5.5', async ({ page }) => {
+  await page.goto('/wp-admin/admin.php?page=slimview1');
+  await page.locator('#slim_p7_02 .inside').evaluate((el, html) => {
+    const row = document.createElement('p');
+    row.dataset.accessLogProbe = 'true';
+    row.innerHTML = html;
+    el.prepend(row);
+  }, accessLogProbeRow);
+  for (const width of [1920, 1440, 1024, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const dir of ['ltr', 'rtl']) {
+      const row = await page.locator('[data-access-log-probe]').evaluate((p, d) => {
+        document.documentElement.dir = d;
+        document.body.classList.toggle('rtl', d === 'rtl');
+        const r = p.getBoundingClientRect(), cs = getComputedStyle(p);
+        const link = p.querySelector(':scope > .slimstat-filter-link')!.getBoundingClientRect();
+        const detailsEl = p.querySelector('.details')!, details = detailsEl.getBoundingClientRect();
+        const resource = document.createRange();
+        resource.setStartBefore(p.firstChild!);
+        resource.setEndBefore(detailsEl);
+        return {
+          fits: resource.getBoundingClientRect().width + details.width <= r.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight),
+          sameLine: details.top < link.bottom,
+          endGap: Math.round(r.right - parseFloat(cs.paddingRight) - details.right),
+          startGap: Math.round(details.left - r.left - parseFloat(cs.paddingLeft)),
+          pageOverflow: document.documentElement.scrollWidth - innerWidth,
+        };
+      }, dir);
+      if (width >= 1440) expect(row.fits, `${dir} ${width}px has room for one line`).toBe(true);
+      if (width > 800) {
+        // Too narrow for one line, the details drop below the resource, still at the far edge.
+        if (row.fits) expect(row.sameLine, `${dir} ${width}px details on the resource line`).toBe(true);
+        expect(dir === 'rtl' ? row.startGap : row.endGap, `${dir} ${width}px details reach the far edge`).toBeLessThanOrEqual(2);
+      }
+      expect(row.pageOverflow, `${dir} ${width}px`).toBeLessThanOrEqual(1);
+    }
+  }
+});
+
+// GitHub #295: a tall panel that ends the page grows to the viewport instead of stopping at 465px.
+test('access log fills the viewport when it is the last panel and keeps 465px otherwise', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/wp-admin/admin.php?page=slimview1');
+  const box = page.locator('#slim_p7_02');
+  const insideHeight = () => box.locator('.inside').evaluate(el => Math.round(el.getBoundingClientRect().height));
+  // Hidden reports are not rendered, so hiding the panels after it leaves the Access Log as the last child.
+  await box.evaluate(el => el.parentElement!.append(el));
+  expect(await insideHeight()).toBeGreaterThan(465);
+  expect(await box.evaluate(el => el.getBoundingClientRect().height)).toBeLessThanOrEqual(900 - 32);
+  await page.setViewportSize({ width: 1440, height: 500 });
+  expect(await insideHeight(), 'short windows keep the old minimum').toBe(465);
+  await page.setViewportSize({ width: 390, height: 900 });
+  expect(await insideHeight(), 'phones keep a fixed scroll box').toBe(465);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await box.evaluate(el => el.after(Object.assign(document.createElement('div'), { className: 'postbox' })));
+  expect(await insideHeight(), 'a panel below keeps the Access Log at 465px').toBe(465);
+});
 
 test('long alert copy and actions stay visible in both directions and on phones', async ({ page }) => {
   const html=runWordPressFixture(`<?php

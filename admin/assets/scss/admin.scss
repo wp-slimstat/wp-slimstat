@@ -447,6 +447,15 @@ body.index-php {
   height: 465px;
 }
 
+/* GitHub #295: a tall panel that ends the page, because the panels after it are hidden,
+   fills the window instead of stopping at 465px. 160px = admin bar 32 + panel title and
+   footer 105 + gap 15 + 8 spare. Phones keep the fixed box so the page still scrolls. */
+@media screen and (min-width: 783px) {
+  .wrap-slimstat .meta-box-sortables > .postbox.tall:last-child .inside {
+    height: #{"max(465px, calc(100vh - 160px))"};
+  }
+}
+
 [id^="slim_"] p {
   border-bottom: 1px solid $graySix;
   line-height: 1.5em;
@@ -1289,28 +1298,6 @@ body.slimstat-admin-page.rtl .ui-datepicker-multi .ui-datepicker-group {
     font-size: 1em;
     line-height: 1.5em;
   }
-  .wrap-slimstat .postbox p span.details {
-    float: none !important;
-    display: block;
-    padding: 0px !important;
-    margin-top: 10px;
-    align-items: center;
-
-    & > *:nth-last-child(1) {
-      position: relative;
-      float: right;
-      right: -25px;
-    }
-
-    & > *:nth-last-child(2) {
-      position: relative;
-      float: right;
-      right: 25px;
-    }
-  }
-  [id^="slim_"] .spaced {
-    margin: 0;
-  }
 }
 
 .index-php {
@@ -1423,11 +1410,12 @@ body.slimstat-admin-page.rtl .ui-datepicker-multi .ui-datepicker-group {
     overflow-wrap: break-word;
   }
 
-  [id^="slim_"] p .details {
+  [id^="slim_"] p span.details {
+    float: none;
     display: block;
     margin-top: 5px;
     font-size: 0.9em;
-    line-height: 1.3em;
+    line-height: 1.8;
   }
 
   [id^="slim_"] p .spaced {
@@ -1480,40 +1468,6 @@ body.slimstat-admin-page.rtl .ui-datepicker-multi .ui-datepicker-group {
     padding: 4px;
     border-radius: 3px;
   }
-
-  /* Access Log Entry specific styles */
-  [id^="slim_"] p.access-log-entry {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-
-  [id^="slim_"] p.access-log-entry .details {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.85em;
-    color: #666;
-    margin-top: 4px;
-  }
-
-  /* Responsive improvements for access log entries */
-  [id^="slim_"] p.access-log-entry {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  [id^="slim_"] p.access-log-entry .details {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-
-  [id^="slim_"] p.access-log-entry .details > * {
-    margin-bottom: 2px;
-  }
 }
 /* Additional responsive improvements for very small screens */
 @media screen and (max-width: 600px) {
@@ -1554,16 +1508,9 @@ body.slimstat-admin-page.rtl .ui-datepicker-multi .ui-datepicker-group {
   [id^="slim_"] p.header .inline-icon {
     margin-bottom: 2px;
   }
-
-  /* Access Log Entry specific styles for very small screens */
-  [id^="slim_"] p.access-log-entry .details {
-    font-size: 0.8em;
-  }
 }
 
 /* URL truncation and tooltip improvements - moved to media queries */
-
-/* Access Log Entry specific styles - moved to media queries */
 
 /* Fontello - Custom Icon Fonts for SlimStat | Uses Fontelico (C) 2012 by Fontello project, Elusive (C) 2013 by Aristeides Stathopoulos, Font Awesome (C) 2012 by Dave Gandy | https://www.fontello.com */
 @font-face {
@@ -3613,19 +3560,6 @@ body.slimstat-admin-page {
 .wrap-slimstat .ss-ai-intro p,
 .wrap-slimstat .ss-ai-intro li { unicode-bidi: plaintext; }
 
-// Access Log details are inline content, not independent floating controls.
-.wrap-slimstat #slim_p7_02 p .details {
-  display: block;
-  float: none !important;
-  margin-top: 8px;
-  padding: 0;
-  line-height: 1.8;
-  unicode-bidi: plaintext;
-  > * { position: static !important; float: none !important; }
-  .spaced { margin-inline: 8px 4px; }
-  .slimstat-delete-entry { margin-inline-start: 8px; }
-}
-
 @media (max-width: 600px) {
   .wrap-slimstat [id^="slim_"] p.pagination {
     display: flow-root;
@@ -3640,8 +3574,6 @@ body.slimstat-admin-page {
   }
   .wrap-slimstat [id^="slim_"]:has(> p.pagination) .inside { margin-bottom: 108px !important; }
 }
-
-.rtl .wrap-slimstat #slim_p7_02 p .details { text-align: right; }
 
 // Counts isolate Latin digits without changing which edge receives the auto margin.
 .rtl [id^="slim_"] p span.slimstat-count-pct {
